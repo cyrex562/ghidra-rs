@@ -1,3 +1,5 @@
+use crate::ghidra::framework::data_buffer::DataBuffer;
+
 pub trait BufferFile {
     /// returns true if the file cannot be modified via the buffer put method
     fn is_read_only(&self) -> bool;

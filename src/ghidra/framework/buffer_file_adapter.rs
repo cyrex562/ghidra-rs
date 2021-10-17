@@ -1,5 +1,6 @@
 use crate::ghidra::framework::buffer_file::BufferFile;
 use crate::ghidra::framework::buffer_file_handle::BufferFileHandle;
+use crate::ghidra::framework::data_buffer::DataBuffer;
 
 #[derive(Clone,Debug,Default)]
 pub struct BufferFileAdapter {
