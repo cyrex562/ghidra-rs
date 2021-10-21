@@ -7,8 +7,8 @@ pub struct BufferNode {
     pub prev_cached: BufferNode,
     pub next_version: BufferNode,
     pub prev_version: BufferNode,
-    pub next_in_checkpoint: BufferNode,
-    pub prev_in_checkpoint: BufferNode,
+    pub next_in_checkpoint: Option<BufferNode>,
+    pub prev_in_checkpoint: Option<BufferNode>,
     pub id: i64,
     pub checkpoint: i64,
     pub buffer: DataBuffer,
@@ -56,5 +56,24 @@ impl BufferNode {
     fn remove_from_cache(&mut self) {
         self.prev_cached.next_cached = self.next_cached.clone();
         self.next_cached.prev_cached = self.prev_cached.clone();
+    }
+
+    fn add_to_cache(&mut self, cache_head: &mut BufferNode) {
+        self.prev_cached = cache_head.clone();
+        self.next_cached = cache_head.next_cached.clone();
+        cache_head.next_cached.prev_cached = self.clone();
+        cache_head.next_cached = self.clone();
+    }
+
+    fn remove_from_check_point(&mut self) {
+        self.prev_in_checkpoint.next_in_checkpoint = self.next_in_checkpoint.clone();
+        self.next_in_checkpoint.prev_in_checkpoint = self.prev_in_checkpoint.clone();
+        self.next_in_checkpoint = None;
+        self.prev_in_checkpoint = None;
+    }
+
+    fn add_to_check_point(&mut self, checkpoint_head: &BufferNode) {
+        self.prev_in_checkpoint = Some(checkpoint_head.clone());
+        self.next_in_checkpoint = checkpoint_head.next_in_checkpoint.clone();
     }
 }
