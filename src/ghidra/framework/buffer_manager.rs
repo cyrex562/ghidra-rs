@@ -31,7 +31,7 @@ pub struct BufferManager {
     pub max_cache_size: isize,
     pub current_checkpoint: i32,
     pub corrupted_state: bool,
-    pub source_file: BufferFile,
+    pub source_file: dyn BufferFile,
     pub cache_file: LocalBufferFile,
     pub recovery_manager: RecoveryManager,
     pub snapshot_lock: bool,
@@ -48,7 +48,7 @@ pub struct BufferManager {
     pub cache_misses: i64,
     pub low_water_mark: i64,
     pub check_point_heads: Vec<BufferNode>,
-    pub redo_checkpoint_heads: Vec<BufferNode>,
+    pub redo_checkpoint_heads: Option<Vec<BufferNode>>,
     pub current_checkpoint_head: BufferNode,
     pub baseline_checkpoint_head: BufferNode,
     pub index_provider: IndexProvider,
@@ -189,42 +189,97 @@ impl BufferManager {
         self.cache_file.set_parameter(name, value);
     }
 
-    pub fn dispose(&self) {
+    pub fn dispose(&mut self) {
         self.dispose2(false);
     }
 
     pub fn dispose2(&mut self, keep_recovery_data: bool) {
         // todo: sync block
-        self.stop_pre_cache()
+        // synchronized (snapshotLock) {
+        //
+        // 			stopPreCache();
+        self.stop_pre_cache();
+        //
+        // 			synchronized (this) {
+        //
+        // 				if (recoveryMgr != null) {
         if self.recovery_manager != None {
+            // 					if (!keepRecoveryData) {
+            // 						recoveryMgr.dispose();
+            // 					}
             if !keep_recovery_data {
-                self.recover_manager.dispose();
+                self.recovery_manager.dispose();
             }
+            // 					recoveryMgr = null;
             self.recovery_manager = None;
-            if self.source_file.is_some() {
-                self.source_file.dispose();
-                self.source_file = None;
-            }
-            if self.cache_file.is_some() {
-                self.cache_file.delete();
-                self.cache_file = None;
-            }
+            // 				}
         }
+            // 				if (sourceFile != null) {
+            // 					sourceFile.dispose();
+            // 					sourceFile = null;
+            // 				}
+        if self.source_file.is_some() {
+            self.source_file.dispose();
+            self.source_file = None;
+        }
+            // 				if (cacheFile != null) {
+            // 					cacheFile.delete();
+            // 					cacheFile = null;
+            // 				}
+        if self.cache_file.is_some() {
+            self.cache_file.delete();
+            self.cache_file = None;
+        }
+            //
+            // 				// Dispose all buffer nodes - speeds up garbage collection
+            // 				if (checkpointHeads != null) {
+            // 					Iterator<BufferNode> iter = checkpointHeads.iterator();
+            // 					while (iter.hasNext()) {
+            // 						BufferNode node = iter.next();
+            // 						while (node != null) {
+            // 							BufferNode next = node.nextInCheckpoint;
+            // 							node.buffer = null;
+            // 							node.nextCached = null;
+            // 							node.prevCached = null;
+            // 							node.nextInCheckpoint = null;
+            // 							node.prevInCheckpoint = null;
+            // 							node.nextVersion = null;
+            // 							node.prevVersion = null;
+            // 							node = next;
+            // 						}
+            // 					}
+            // 					checkpointHeads = null;
+            // 				}
+        if !self.check_point_heads.is_empty() {
+            for cph in self.check_point_heads {
 
-        if self.check_point_heads.is_empty() == false {
-            for node in self.check_point_heads.iter() {
-                let next = node.next_in_checkpoint;
-                node.buffer = None;
-                node.next_cached = None;
-                node.prev_cached = None;
-                node.next_in_checkpoint = None;
-                node.prev_in_checkpoint = None;
-                node.next_version = None;
-                node.prev_version = None;
-                node = next;
             }
-            self.redo_checkpoint_heads = None;
-            
         }
-    }
-}
+            // 				if (redoCheckpointHeads != null) {
+            // 					Iterator<BufferNode> iter = redoCheckpointHeads.iterator();
+            // 					while (iter.hasNext()) {
+            // 						BufferNode node = iter.next();
+            // 						while (node != null) {
+            // 							BufferNode next = node.nextInCheckpoint;
+            // 							node.buffer = null;
+            // 							node.nextCached = null;
+            // 							node.prevCached = null;
+            // 							node.nextInCheckpoint = null;
+            // 							node.prevInCheckpoint = null;
+            // 							node.nextVersion = null;
+            // 							node.prevVersion = null;
+            // 							node = next;
+            // 						}
+            // 					}
+            // 					redoCheckpointHeads = null;
+            // 				}
+            // 				bufferTable = null;
+            // 				currentCheckpointHead = null;
+            // 				baselineCheckpointHead = null;
+            // 				hasNonUndoableChanges = false;
+            //
+            // 				removeInstance(this);
+            // 			}
+            // 		}
+    } // end of dispose2
+} // end of impl BufferManager
