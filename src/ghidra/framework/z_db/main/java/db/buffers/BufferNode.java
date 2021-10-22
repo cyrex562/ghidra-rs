@@ -175,4 +175,6 @@ class BufferNode {
 		versionHead.nextVersion.prevVersion = this;
 		versionHead.nextVersion = this;
 	}
+
+
 }

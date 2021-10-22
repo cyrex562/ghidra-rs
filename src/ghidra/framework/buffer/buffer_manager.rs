@@ -1,14 +1,14 @@
 use std::collections::HashSet;
-use std::default::default;
 use std::sync::RwLock;
 use std::thread::Thread;
 use crate::ghidra::framework::buffer_file::BufferFile;
+use crate::ghidra::framework::buffer_node::BufferNode;
 use crate::ghidra::framework::data_buffer::DataBuffer;
 
 pub const BUFFER_MANAGER_ALWAYS_PRECACHE_PROPERTY: String = "db.always.precache".to_string();
 pub const BUFFER_MANAGER_ALWAYS_PRECACHE: bool = false;
 pub const BUFFER_MANAGER_DEFAULT_BUFFER_SIZE: isize = 16 * 1024;
-pub const BUFFER_MANAGER_DEFAULT_CHECKPOINT_CACHE: isize = 10;
+pub const BUFFER_MANAGER_DEFAULT_CHECKPOINT_COUNT: isize = 10;
 pub const BUFFER_MANAGER_CACHE_SIZE: isize = 4 * 1024 * 1024;
 pub const BUFFER_MANAGER_MINIMUM_CACHE_SIZE: isize = 64 * 1024;
 pub const BUFFER_MANAGER_CACHE_FILE_PREFIX: String = "ghidra".to_string();
@@ -55,7 +55,7 @@ pub struct BufferManager {
     pub cache_index_privder: IndexProvider,
     pub buffer_table: Vec<DataBuffer>,
     pub pre_cache_status: PreCacheStatus,
-    pub pre_cache_thread: Thread,
+    pub pre_cache_thread: Option<Thread>,
     pub pre_cache_lock: bool,
 }
 
@@ -73,29 +73,31 @@ impl BufferManager {
     }
 
     fn from_source_file(source_file: &dyn BufferFile) -> BufferManager {
-        BufferManager {
-            source_file: source_file.clone(),
-            buffer_size: BUFFER_MANAGER_DEFAULT_BUFFER_SIZE,
-            cache_size: BUFFER_MANAGER_CACHE_SIZE,
-            max_checkpoints: BUFFER_MANAGER_DEFAULT_CHECKPOINT_CACHE,
-            ..default()
-        }
+        let mut bm = BufferManager::new();
+        bm.source_file = source_file.clone();
+        bm.buffer_size = BUFFER_MANAGER_DEFAULT_BUFFER_SIZE;
+        bm.cache_size = BUFFER_MANAGER_MINIMUM_CACHE_SIZE;
+        bm.max_checkpoints = BUFFER_MANAGER_DEFAULT_CHECKPOINT_COUNT;
+        bm
     }
 
     fn from_source_file_2(source_file: &BufferFile, approx_cache_size: isize, max_undos: isize) -> BufferManager {
-        BufferManager {
-            source_file: source_file.clone(),
-            cache_size: approx_cache_size,
-            max_checkpoints: max_undos,
-            buffer_size: BUFFER_MANAGER_DEFAULT_CHECKPOINT_CACHE,
-            ..default()
-        }
+        let mut b = BufferManager::new();
+        b.source_file = source_file.clone();
+        b.cache_size = approx_cache_size;
+        b.max_checkpoints = max_undos;
+        b
     }
 
     fn from_source_file_3(source_file: &dyn BufferFile, requested_buffer_size: isize, approx_cache_size: isize, max_undos: isize) -> BufferManager {
+        let mut bm = BufferManager::new();
         let buf_size = requested_buffer_size;
+        bm.source_file = source_file.clone();
         let count = source_file.get_index_count();
         let index_provider = IndexProvider::new(count, source_file.get_free_indexes());
+
+
+
         let mut max_check_points = max_undos + 1;
         if max_undos < 1 {
             max_check_points = DEFAULT_CHECKPOINT_COUNT;
