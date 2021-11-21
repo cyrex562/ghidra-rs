@@ -606,8 +606,8 @@ public class LocalBufferFile implements BufferFile {
 			return buf;
 		}
 
-		int bufferId = BigEndianDataConverter.INSTANCE.getInt(blockData, 1);
-		buf.setId(bufferId);
+		int buffer_id = BigEndianDataConverter.INSTANCE.getInt(blockData, 1);
+		buf.setId(buffer_id);
 
 		byte[] bufData = new byte[blockData.length - BUFFER_PREFIX_SIZE];
 		System.arraycopy(blockData, BUFFER_PREFIX_SIZE, bufData, 0, bufData.length);
@@ -1144,7 +1144,7 @@ public class LocalBufferFile implements BufferFile {
 
 			for (int bufferIndex = 0; bufferIndex < bufferCount; bufferIndex++) {
 				if (!emptySet.contains(bufferIndex) &&
-					(changeMap.hasChanged(bufferIndex) || !changeMap.containsIndex(bufferIndex))) {
+					(changeMap.has_changed(bufferIndex) || !changeMap.contains_index(bufferIndex))) {
 					// Add block index if block is not empty and block has either been
 					// modified in versioned srcFile since checkout to initial destFile, or
 					// block was added in most recent version of srcFile

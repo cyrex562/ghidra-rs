@@ -1,9 +1,13 @@
 use std::collections::HashSet;
 use std::sync::RwLock;
 use std::thread::Thread;
+use crate::ghidra::framework::buffer::buffer_file::BufferFile;
+use crate::ghidra::framework::buffer::buffer_node::BufferNode;
+use crate::ghidra::framework::buffer::data_buffer::DataBuffer;
 use crate::ghidra::framework::buffer_file::BufferFile;
 use crate::ghidra::framework::buffer_node::BufferNode;
 use crate::ghidra::framework::data_buffer::DataBuffer;
+use crate::ghidra::framework::index_provder::IndexProvider;
 
 pub const BUFFER_MANAGER_ALWAYS_PRECACHE_PROPERTY: String = "db.always.precache".to_string();
 pub const BUFFER_MANAGER_ALWAYS_PRECACHE: bool = false;
@@ -60,16 +64,15 @@ pub struct BufferManager {
 }
 
 impl BufferManager {
-    fn new() -> BufferManager {
+    pub(crate) fn new() -> BufferManager {
         BufferManager::default()
     }
 
-    fn new2(requested_buffer_size: isize, approx_cache_size: isize, max_undos: isize) -> BufferManager {
+    pub(crate) fn new2(requested_buffer_size: isize, approx_cache_size: isize, max_undos: isize) -> BufferManager {
         let mut mgr: BufferManager = BufferManager::default();
         mgr.buffer_size = requested_buffer_size;
         mgr.cache_size = approx_cache_size;
         mgr.max_checkpoints = max_undos;
-        mgr
     }
 
     fn from_source_file(source_file: &dyn BufferFile) -> BufferManager {

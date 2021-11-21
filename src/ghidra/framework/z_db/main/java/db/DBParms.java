@@ -51,25 +51,25 @@ class DBParms {
 
 	private static final byte VERSION = 1;
 	
-	private BufferMgr bufferMgr;
+	private BufferMgr buffer_mgr;
 	private int size;
 
 	private IntIntHashtable cache = new IntIntHashtable();
 	
 	/**
 	 * Construct a new or existing parameter buffer.
-	 * @param bufferMgr buffer manager
-	 * @param create if true storage buffers will be allocated with the bufferMgr.
+	 * @param buffer_mgr buffer manager
+	 * @param create if true storage buffers will be allocated with the buffer_mgr.
 	 * This must be the first buffer allocation - if buffer 0 is not available
 	 * a runtime exception will be thrown.
 	 * @throws IOException
 	 */
-	DBParms(BufferMgr bufferMgr, boolean create) throws IOException {
-		this.bufferMgr = bufferMgr;
+	DBParms(BufferMgr buffer_mgr, boolean create) throws IOException {
+		this.buffer_mgr = buffer_mgr;
 		if (create) {
 			DataBuffer buffer = null;
 			try {
-				buffer = bufferMgr.createBuffer();
+				buffer = buffer_mgr.createBuffer();
 				if (buffer.getId() != 0) {
 					throw new AssertException("DBParms must be first buffer allocation");
 				}
@@ -80,7 +80,7 @@ class DBParms {
 			}
 			finally {
 				if (buffer != null) {
-					bufferMgr.releaseBuffer(buffer);
+					buffer_mgr.releaseBuffer(buffer);
 				}
 			}
 		}
@@ -142,7 +142,7 @@ class DBParms {
 	 * @throws IOException thrown if an IO error occurs
 	 */
 	void set(int parm, int value) throws IOException {
-		DataBuffer buffer = bufferMgr.getBuffer(0);
+		DataBuffer buffer = buffer_mgr.getBuffer(0);
 		try {
 			storeParm(parm, value, buffer);
 			if (parm >= size) {
@@ -155,7 +155,7 @@ class DBParms {
 			cache.put(parm, value);
 		}
 		finally {
-			bufferMgr.releaseBuffer(buffer);
+			buffer_mgr.releaseBuffer(buffer);
 		}
 	}
 
@@ -181,7 +181,7 @@ class DBParms {
 	 * @throws IOException thrown if an IO error occurs.
 	 */
 	void refresh() throws IOException {
-		DataBuffer buffer = bufferMgr.getBuffer(0);
+		DataBuffer buffer = buffer_mgr.getBuffer(0);
 		try {
 			if (buffer.getByte(NODE_TYPE_OFFSET) != NodeMgr.CHAINED_BUFFER_DATA_NODE) {
 				throw new AssertException("Unexpected DBParms buffer node type");
@@ -196,7 +196,7 @@ class DBParms {
 			}
 		}
 		finally {
-			bufferMgr.releaseBuffer(buffer);
+			buffer_mgr.releaseBuffer(buffer);
 		}
 	}
 

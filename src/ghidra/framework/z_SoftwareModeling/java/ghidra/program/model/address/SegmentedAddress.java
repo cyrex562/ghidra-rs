@@ -104,11 +104,11 @@ public class SegmentedAddress extends GenericAddress {
 	 * @see ghidra.program.model.address.Address#getNewAddress(long)
 	 */
 	@Override
-	public Address getNewAddress(long byteOffset) {
+	public Address getNewAddress(long byte_offset) {
 		SegmentedAddressSpace segSpace = (SegmentedAddressSpace) addrSpace;
-		SegmentedAddress res = segSpace.getAddressInSegment(byteOffset, segment);
+		SegmentedAddress res = segSpace.getAddressInSegment(byte_offset, segment);
 		if (res == null) {
-			return segSpace.getAddress(byteOffset);
+			return segSpace.getAddress(byte_offset);
 		}
 		return res;
 	}

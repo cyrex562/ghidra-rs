@@ -117,11 +117,11 @@ public class HexFormatModel implements UniversalDataFormatModel {
 	/**
 	 * Given the byte offset into a unit, get the column position.
 	 */
-	public int getColumnPosition(ByteBlock block, int byteOffset) {
+	public int getColumnPosition(ByteBlock block, int byte_offset) {
 		if (prefixEnabled) {
-			return byteOffset * 2 + 2;
+			return byte_offset * 2 + 2;
 		}
-		return byteOffset * 2;
+		return byte_offset * 2;
 	}
 
 	/**

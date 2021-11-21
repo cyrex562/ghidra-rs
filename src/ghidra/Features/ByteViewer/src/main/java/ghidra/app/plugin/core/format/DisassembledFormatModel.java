@@ -72,7 +72,7 @@ public class DisassembledFormatModel implements ProgramDataFormatModel {
 	 * Given the byte offset into a unit, get the column position.
 	 */
 	@Override
-	public int getColumnPosition(ByteBlock block, int byteOffset) {
+	public int getColumnPosition(ByteBlock block, int byte_offset) {
 		return 0;
 	}
 

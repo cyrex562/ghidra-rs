@@ -67,7 +67,7 @@ public interface DataFormatModel extends ExtensionPoint {
 	/**
 	 * Given the byte offset into a unit, get the column position.
 	 */
-	public int getColumnPosition(ByteBlock block, int byteOffset);
+	public int getColumnPosition(ByteBlock block, int byte_offset);
 
 	/**
 	 * Gets the string representation at the given index in the block.

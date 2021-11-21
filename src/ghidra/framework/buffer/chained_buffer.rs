@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package db;
+// package db;
+//
+// import java.io.IOException;
+// import java.io.InputStream;
+// import java.util.Arrays;
+//
+// import db.buffers.BufferMgr;
+// import db.buffers.DataBuffer;
+// import ghidra.util.exception.AssertException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-
-import db.buffers.BufferMgr;
-import db.buffers.DataBuffer;
-import ghidra.util.exception.AssertException;
+use std::io::Chain;
+use crate::ghidra::framework::buffer::buffer::Buffer;
+use crate::ghidra::framework::buffer::buffer_manager::BufferManager;
+use crate::ghidra::framework::buffer::data_buffer::DataBuffer;
+use crate::ghidra_error::GhidraError;
 
 /**
  * <code>DBBuffer</code> provides storage for large data objects utilizing a common
@@ -56,61 +62,53 @@ import ghidra.util.exception.AssertException;
  * Once a DBBuffer is deleted or appended to another DBBuffer, it becomes invalid and 
  * may no longer be used.
  */
-public class ChainedBuffer implements Buffer {
 
-	// @formatter:off
-	private static final byte[] XOR_MASK_BYTES = new byte[] {
-		(byte)0x59, (byte)0xea, (byte)0x67, (byte)0x23, (byte)0xda, (byte)0xb8, (byte)0x00, (byte)0xb8, 
-		(byte)0xc3, (byte)0x48, (byte)0xdd, (byte)0x8b, (byte)0x21, (byte)0xd6, (byte)0x94, (byte)0x78, 
-		(byte)0x35, (byte)0xab, (byte)0x2b, (byte)0x7e, (byte)0xb2, (byte)0x4f, (byte)0x82, (byte)0x4e, 
-		(byte)0x0e, (byte)0x16, (byte)0xc4, (byte)0x57, (byte)0x12, (byte)0x8e, (byte)0x7e, (byte)0xe6, 
-		(byte)0xb6, (byte)0xbd, (byte)0x56, (byte)0x91, (byte)0x57, (byte)0x72, (byte)0xe6, (byte)0x91, 
-		(byte)0xdc, (byte)0x52, (byte)0x2e, (byte)0xf2, (byte)0x1a, (byte)0xb7, (byte)0xd6, (byte)0x6f, 
-		(byte)0xda, (byte)0xde, (byte)0xe8, (byte)0x48, (byte)0xb1, (byte)0xbb, (byte)0x50, (byte)0x6f, 
-		(byte)0xf4, (byte)0xdd, (byte)0x11, (byte)0xee, (byte)0xf2, (byte)0x67, (byte)0xfe, (byte)0x48, 
-		(byte)0x8d, (byte)0xae, (byte)0x69, (byte)0x1a, (byte)0xe0, (byte)0x26, (byte)0x8c, (byte)0x24, 
-		(byte)0x8e, (byte)0x17, (byte)0x76, (byte)0x51, (byte)0xe2, (byte)0x60, (byte)0xd7, (byte)0xe6, 
-		(byte)0x83, (byte)0x65, (byte)0xd5, (byte)0xf0, (byte)0x7f, (byte)0xf2, (byte)0xa0, (byte)0xd6, 
-		(byte)0x4b, (byte)0xbd, (byte)0x24, (byte)0xd8, (byte)0xab, (byte)0xea, (byte)0x9e, (byte)0xa6, 
-		(byte)0x48, (byte)0x94, (byte)0x3e, (byte)0x7b, (byte)0x2c, (byte)0xf4, (byte)0xce, (byte)0xdc, 
-		(byte)0x69, (byte)0x11, (byte)0xf8, (byte)0x3c, (byte)0xa7, (byte)0x3f, (byte)0x5d, (byte)0x77, 
-		(byte)0x94, (byte)0x3f, (byte)0xe4, (byte)0x8e, (byte)0x48, (byte)0x20, (byte)0xdb, (byte)0x56, 
-		(byte)0x32, (byte)0xc1, (byte)0x87, (byte)0x01, (byte)0x2e, (byte)0xe3, (byte)0x7f, (byte)0x40,
-		
-	};
-	// @formatter:on
+pub const XOR_MASK_BYTES: [u8;128] = [
+0x59, 0xea, 0x67, 0x23, 0xda, 0xb8, 0x00, 0xb8,
+0xc3, 0x48, 0xdd, 0x8b, 0x21, 0xd6, 0x94, 0x78,
+0x35, 0xab, 0x2b, 0x7e, 0xb2, 0x4f, 0x82, 0x4e,
+0x0e, 0x16, 0xc4, 0x57, 0x12, 0x8e, 0x7e, 0xe6,
+0xb6, 0xbd, 0x56, 0x91, 0x57, 0x72, 0xe6, 0x91,
+0xdc, 0x52, 0x2e, 0xf2, 0x1a, 0xb7, 0xd6, 0x6f,
+0xda, 0xde, 0xe8, 0x48, 0xb1, 0xbb, 0x50, 0x6f,
+0xf4, 0xdd, 0x11, 0xee, 0xf2, 0x67, 0xfe, 0x48,
+0x8d, 0xae, 0x69, 0x1a, 0xe0, 0x26, 0x8c, 0x24,
+0x8e, 0x17, 0x76, 0x51, 0xe2, 0x60, 0xd7, 0xe6,
+0x83, 0x65, 0xd5, 0xf0, 0x7f, 0xf2, 0xa0, 0xd6,
+0x4b, 0xbd, 0x24, 0xd8, 0xab, 0xea, 0x9e, 0xa6,
+0x48, 0x94, 0x3e, 0x7b, 0x2c, 0xf4, 0xce, 0xdc,
+0x69, 0x11, 0xf8, 0x3c, 0xa7, 0x3f, 0x5d, 0x77,
+0x94, 0x3f, 0xe4, 0x8e, 0x48, 0x20, 0xdb, 0x56,
+0x32, 0xc1, 0x87, 0x01, 0x2e, 0xe3, 0x7f, 0x40, ];
 
-	private static final int NODE_TYPE_SIZE = 1;
-	private static final int DATA_LENGTH_SIZE = 4;
-	private static final int ID_SIZE = 4;
+pub const NODE_TYPE_SIZE: isize = 1;
+pub const DATA_LENGTH_SIZE: isize = 4;
+pub const ID_SIZE: isize = 4;
+pub const NODE_TYPE_OFFSET: isize = 0;
+pub const DATA_LENGTH_OFFSET: isize = NODE_TYPE_SIZE;
+pub const NEXT_INDEX_ID_OFFSET: isize = DATA_LENGTH_OFFSET + DATA_LENGTH_SIZE;
+pub const INDEX_BASE_OFFSET: isize = NEXT_INDEX_ID_OFFSET + ID_SIZE;
+pub const DATA_BASE_OFFSET_NONINDEXED: isize = NODE_TYPE_SIZE + DATA_LENGTH_SIZE;
+pub const DATA_BASE_OFFSET_INDEXED: isize = NODE_TYPE_SIZE;
 
-	private static final int NODE_TYPE_OFFSET = 0;
-	private static final int DATA_LENGTH_OFFSET = NODE_TYPE_SIZE;
-	private static final int NEXT_INDEX_ID_OFFSET = DATA_LENGTH_OFFSET + DATA_LENGTH_SIZE;
+#[derive(Clone,Debug)]
+pub struct ChainedBuffer {
+    pub buffer_mgr: BufferManager,
+    pub buf_size: isize,
+    pub first_buffer_id: i64,
+    pub xor_data: Vec<u8>,
+    pub use_xor_mask: bool,
+    pub read_only: bool,
+    pub uninitialized_data_source: Option<dyn Buffer>,
+    pub uninitialized_data_source_offset: isize,
+    pub index_buffer_id_table: Vec<i64>,
+    pub data_buffer_id_table: Vec<i64>,
+    pub indexes_per_buffer: Vec<i64>,
+    pub data_base_offset: i64,
+    pub data_space: i64,
+}
 
-	private static final int INDEX_BASE_OFFSET = NEXT_INDEX_ID_OFFSET + ID_SIZE;
-
-	private static final int DATA_BASE_OFFSET_NONINDEXED = NODE_TYPE_SIZE + DATA_LENGTH_SIZE;
-	private static final int DATA_BASE_OFFSET_INDEXED = NODE_TYPE_SIZE;
-
-	private BufferMgr buffer_mgr;
-	private int size;
-	private int firstBufferId;
-
-	private byte[] xorData;
-	private boolean useXORMask = false;
-
-	private boolean readOnly = false;
-	private Buffer uninitialized_data_source;
-	private int uninitializedDataSourceOffset;
-
-	private int[] indexBufferIdTable;
-	private int[] dataBufferIdTable;
-	private int indexesPerBuffer;
-
-	private int dataBaseOffset;
-	private int dataSpace;
-
+impl ChainedBuffer {
 	/**
 	 * Construct a new chained buffer with optional obfuscation and uninitialized data source.
 	 * This method may only be invoked while a database transaction 
@@ -125,43 +123,61 @@ public class ChainedBuffer implements Buffer {
 	 * @param buffer_mgr database buffer manager
 	 * @throws IOException thrown if an IO error occurs
 	 */
-	public ChainedBuffer(int size, boolean enable_obfuscation, Buffer uninitialized_data_source,
-			int unintialized_data_source_offset, BufferMgr buffer_mgr) throws IOException {
-		this.buffer_mgr = buffer_mgr;
-		this.size = size;
-		this.useXORMask = enable_obfuscation;
+	pub fn new (
+        size: isize,
+        enable_obfuscation: bool,
+        uninitialized_data_source: Option<&dyn Buffer>,
+        unintialized_data_source_offset: isize,
+        buffer_mgr: &BufferManager
+    ) -> Result<ChainedBuffer, GhidraError> {
+        let mut x = ChainedBuffer {
+            buffer_mgr: buffer_mgr.clone(),
+            buf_size: size,
+            first_buffer_id: 0,
+            xor_data: vec![],
+            use_xor_mask: enable_obfuscation,
+            read_only: false,
+            uninitialized_data_source: None,
+            uninitialized_data_source_offset: 0,
+            index_buffer_id_table: vec![],
+            data_buffer_id_table: vec![],
+            indexes_per_buffer: vec![],
+            data_base_offset: 0,
+            data_space: 0
+        };
 
-		if (size == 0) {
-			throw new IllegalArgumentException("Zero length buffer not permitted");
-		}
-		if (size < 0) {
-			throw new IllegalArgumentException(
-				"Maximum bufer size is " + Integer.MAX_VALUE + "; given size of " + size);
-		}
+        if size == 0 {
+            return Err(GhidraError::new(0, "Zero length buffer not permitted"));
+        }
+        if size < 0 {
+            return Err(GhidraError::new(0, fmt!("maximum buffer size is {}; given size of {}", i64, size)));
+        }
 
-		if (uninitialized_data_source != null) {
-			setUnintializedDataSource(uninitialized_data_source, unintialized_data_source_offset);
-		}
+        if x.uninitialized_data_source.is_some() {
+            x.set_unitialized_data_source(unitialized_data_source, uninitialized_data_source_offset);
+        }
 
-		DataBuffer first_buffer = buffer_mgr.createBuffer();
-		firstBufferId = first_buffer.getId();
+        let mut first_buffer: DataBuffer = x.buffer_mgr.create_buffer();
+        x.first_buffer_id = first_buffer.id;
 
 		// Attempt to employ single data buffer
-		dataBaseOffset = DATA_BASE_OFFSET_NONINDEXED;
-		dataSpace = buffer_mgr.getBufferSize() - dataBaseOffset;
+		x.data_base_offset = DATA_BASE_OFFSET_NONINDEXED as i64;
+		x.data_space = buffer_mgr.get_buffer_size() - x.data_base_offset;
 
-		if (size <= dataSpace) {
-			dataBufferIdTable = new int[] { firstBufferId };
-			initializeAllocatedBuffer(0, first_buffer);
-			first_buffer.putByte(NODE_TYPE_OFFSET, NodeMgr.CHAINED_BUFFER_DATA_NODE);
-			first_buffer.putInt(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
-			buffer_mgr.releaseBuffer(first_buffer);
+		if size <= dataSpace {
+			x.data_buffer_id_table: Vec<i64> = vec![x.first_buffer_id];
+			x.initialize_allocated_buffer(0, &first_buffer);
+			first_buffer.put_byte(NODE_TYPE_OFFSET, NodeMgr.CHAINED_BUFFER_DATA_NODE);
+			first_buffer.put_int(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
+			x.buffer_mgr.release_buffer(first_buffer);
 		}
 
 		// Employ index for large chained buffers
 		else {
-			createIndex(first_buffer);
+			x.create_index(first_buffer);
 		}
+
+        Ok(x.clone())
 	}
 
 	/**
@@ -173,9 +189,8 @@ public class ChainedBuffer implements Buffer {
 	 * @param buffer_mgr database buffer manager
 	 * @throws IOException thrown if an IO error occurs
 	 */
-	public ChainedBuffer(int size, boolean enable_obfuscation, BufferMgr buffer_mgr)
-			throws IOException {
-		this(size, enable_obfuscation, null, 0, buffer_mgr);
+	pub fn new2(size: isize, enable_obfuscation: bool, buffer_mgr: &BufferMgr) -> Result<Self, GhidraError> {
+		Self::new(size, enable_obfuscation, None, 0, buffer_mgr)
 	}
 
 	/**
@@ -185,8 +200,8 @@ public class ChainedBuffer implements Buffer {
 	 * @param buffer_mgr database buffer manager
 	 * @throws IOException thrown if an IO error occurs
 	 */
-	public ChainedBuffer(int size, BufferMgr buffer_mgr) throws IOException {
-		this(size, false, null, 0, buffer_mgr);
+	pub fn new3 (size: isize, buffer_mgr: &BufferMgr) -> Result<ChainedBuffer, GhidraError> {
+        ChainedBuffer::new(size, false, None, 0, buffer_mgr)
 	}
 
 	/**
@@ -200,48 +215,54 @@ public class ChainedBuffer implements Buffer {
 	 * this buffers contents.
 	 * @throws IOException thrown if an IO error occurs
 	 */
-	public ChainedBuffer(BufferMgr buffer_mgr, int buffer_id, Buffer uninitialized_data_source,
-			int unintialized_data_source_offset) throws IOException {
-		this.buffer_mgr = buffer_mgr;
-		this.firstBufferId = buffer_id;
+	pub fn new4(
+        buffer_mgr: &BufferManager,
+        buffer_id: isize,
+        uninitialized_data_source: &dyn Buffer,
+        unintialized_data_source_offset: isize
+    ) -> Result<ChainedBuffer> {
+		let mut x: ChainedBuffer = Default::default();
+        x.buffer_mgr = buffer_mgr.clone();
+		x.first_buffer_id = buffer_id as i64;
 
-		DataBuffer first_buffer = buffer_mgr.getBuffer(buffer_id);
-		size = first_buffer.getInt(DATA_LENGTH_OFFSET);
-		if (size < 0) {
-			this.useXORMask = true;
-			size = size & Integer.MAX_VALUE;
+		let mut first_buffer: DataBuffer = buffer_mgr.get_buffer(buffer_id);
+		x.buf_size = first_buffer.get_int(DATA_LENGTH_OFFSET);
+		if size < 0 {
+			x.use_xor_mask = true;
+			x.buf_size = x.buf_size & Integer.MAX_VALUE;
 		}
-		byte buf_type = first_buffer.getByte(NODE_TYPE_OFFSET);
-		if (buf_type == NodeMgr.CHAINED_BUFFER_INDEX_NODE) {
-			buildIndex(first_buffer); // releases first_buffer
+		let mut buf_type: u8 = first_buffer.get_byte(NODE_TYPE_OFFSET);
+		if buf_type == NodeMgr.CHAINED_BUFFER_INDEX_NODE {
+			x.build_index(first_buffer); // releases first_buffer
 		}
-		else if (buf_type == NodeMgr.CHAINED_BUFFER_DATA_NODE) {
-			try {
-				dataBaseOffset = DATA_BASE_OFFSET_NONINDEXED;
-				dataSpace = first_buffer.length() - dataBaseOffset;
-				dataBufferIdTable = new int[] { buffer_id };
-			}
-			finally {
-				buffer_mgr.releaseBuffer(first_buffer);
-			}
+		else if buf_type == NodeMgr.CHAINED_BUFFER_DATA_NODE {
+			// try {
+				x.data_base_offset = DATA_BASE_OFFSET_NONINDEXED as i64;
+				x.data_space = first_buffer.len() - x.data_base_offset;
+				x.data_buffer_id_table = vec![ x.buffer_id ];
+			// }
+			// finally {
+                buffer_mgr.release_buffer(first_buffer);
+			// }
 		}
 		else {
-			throw new IOException("Invalid Buffer");
+			// throw new IOException("Invalid Buffer")
+            return Err(GhidraError::new(0,"invalid buffer"));
 		}
 
-		if (uninitialized_data_source != null) {
-			setUnintializedDataSource(uninitialized_data_source, unintialized_data_source_offset);
+		if (uninitialized_data_source.is_some()) {
+			x.set_unintialized_data_source(uninitialized_data_source, unintialized_data_source_offset);
 		}
 	}
 
 	/**
 	 * Construct an existing chained buffer.
-	 * @param buffer_mgr database buffer manager
-	 * @param buffer_id database buffer ID which corresponds to a stored ChainedBuffer
+	 * @param bufferMgr database buffer manager
+	 * @param bufferId database buffer ID which corresponds to a stored ChainedBuffer
 	 * @throws IOException thrown if an IO error occurs
 	 */
-	public ChainedBuffer(BufferMgr buffer_mgr, int buffer_id) throws IOException {
-		this(buffer_mgr, buffer_id, null, 0);
+	public ChainedBuffer(BufferMgr bufferMgr, int bufferId) throws IOException {
+		this(bufferMgr, bufferId, null, 0);
 	}
 
 	private int getObfuscationDataLengthFieldValue() {
@@ -301,7 +322,7 @@ public class ChainedBuffer implements Buffer {
 				" bytes at offset " + dataSourceOffset);
 		}
 
-		this.uninitialized_data_source = dataSource;
+		this.uninitializedDataSource = dataSource;
 		this.uninitializedDataSourceOffset = dataSourceOffset;
 	}
 
@@ -344,7 +365,7 @@ public class ChainedBuffer implements Buffer {
 		if (readOnly) {
 			throw new UnsupportedOperationException("Read-only buffer");
 		}
-		if (uninitialized_data_source != null) {
+		if (uninitializedDataSource != null) {
 			throw new UnsupportedOperationException(
 				"Buffer size may not be changed when using unintialized data source");
 		}
@@ -377,14 +398,14 @@ public class ChainedBuffer implements Buffer {
 			// Transition to an indexed chained buffer
 			if (newSize > dataSpace) {
 
-				DataBuffer first_buffer = buffer_mgr.getBuffer(firstBufferId);
+				DataBuffer firstBuffer = bufferMgr.getBuffer(firstBufferId);
 				DataBuffer newFirstDataBuf = null;
 
 				try {
 					// Save data in new data buffer
 					if (preserveData) {
-						newFirstDataBuf = buffer_mgr.createBuffer();
-						newFirstDataBuf.copy(DATA_BASE_OFFSET_INDEXED, first_buffer,
+						newFirstDataBuf = bufferMgr.createBuffer();
+						newFirstDataBuf.copy(DATA_BASE_OFFSET_INDEXED, firstBuffer,
 							DATA_BASE_OFFSET_NONINDEXED, oldSize);
 
 						int indexedDataSpace = newFirstDataBuf.length() - DATA_BASE_OFFSET_INDEXED;
@@ -399,8 +420,8 @@ public class ChainedBuffer implements Buffer {
 					}
 
 					// Establish index for DBBuffer
-					createIndex(first_buffer);
-					first_buffer = null;
+					createIndex(firstBuffer);
+					firstBuffer = null;
 
 					// Establish first data buffer
 					if (preserveData) {
@@ -408,11 +429,11 @@ public class ChainedBuffer implements Buffer {
 					}
 				}
 				finally {
-					if (first_buffer != null) {
-						buffer_mgr.releaseBuffer(first_buffer);
+					if (firstBuffer != null) {
+						bufferMgr.releaseBuffer(firstBuffer);
 					}
 					if (newFirstDataBuf != null) {
-						buffer_mgr.releaseBuffer(newFirstDataBuf);
+						bufferMgr.releaseBuffer(newFirstDataBuf);
 					}
 				}
 
@@ -420,9 +441,9 @@ public class ChainedBuffer implements Buffer {
 			}
 
 			// Adjust stored buffer size
-			DataBuffer buffer = buffer_mgr.getBuffer(firstBufferId);
+			DataBuffer buffer = bufferMgr.getBuffer(firstBufferId);
 			buffer.putInt(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 		}
 
 		// Already using an index - existing data is always preserved
@@ -453,19 +474,19 @@ public class ChainedBuffer implements Buffer {
 
 				// Allocate additional index buffers
 				DataBuffer indexBuffer =
-					buffer_mgr.getBuffer(indexBufferIdTable[oldIndexBufferCount - 1]);
+					bufferMgr.getBuffer(indexBufferIdTable[oldIndexBufferCount - 1]);
 				for (int i = oldIndexBufferCount; i < newIndexBufferCount; i++) {
 					indexBuffer = appendIndexBuffer(indexBuffer);
 					indexBuffer.put(INDEX_BASE_OFFSET, emptyIndexData);  // initialize to all -1's
 					indexBufferIdTable[i] = indexBuffer.getId();
 				}
-				buffer_mgr.releaseBuffer(indexBuffer);
+				bufferMgr.releaseBuffer(indexBuffer);
 			}
 
 			// Adjust stored buffer size
-			DataBuffer buffer = buffer_mgr.getBuffer(firstBufferId);
+			DataBuffer buffer = bufferMgr.getBuffer(firstBufferId);
 			buffer.putInt(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 		}
 
 	}
@@ -480,41 +501,41 @@ public class ChainedBuffer implements Buffer {
 	 */
 	private boolean shrinkToSingleBuffer(boolean preserveData) throws IOException {
 
-		int singleDataSpace = buffer_mgr.getBufferSize() - DATA_BASE_OFFSET_NONINDEXED;
+		int singleDataSpace = bufferMgr.getBufferSize() - DATA_BASE_OFFSET_NONINDEXED;
 		if (size > singleDataSpace) {
 			return false;
 		}
 
 		// Convert first index buffer to a data buffer
-		DataBuffer first_buffer = buffer_mgr.getBuffer(firstBufferId);
+		DataBuffer firstBuffer = bufferMgr.getBuffer(firstBufferId);
 		DataBuffer oldFirstDataBuf = null;
 		try {
-			first_buffer.putByte(NODE_TYPE_OFFSET, NodeMgr.CHAINED_BUFFER_DATA_NODE);
-			first_buffer.putInt(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
+			firstBuffer.putByte(NODE_TYPE_OFFSET, NodeMgr.CHAINED_BUFFER_DATA_NODE);
+			firstBuffer.putInt(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
 
 			if (preserveData && dataBufferIdTable[0] >= 0) {
-				oldFirstDataBuf = buffer_mgr.getBuffer(dataBufferIdTable[0]);
-				first_buffer.copy(DATA_BASE_OFFSET_NONINDEXED, oldFirstDataBuf,
+				oldFirstDataBuf = bufferMgr.getBuffer(dataBufferIdTable[0]);
+				firstBuffer.copy(DATA_BASE_OFFSET_NONINDEXED, oldFirstDataBuf,
 					DATA_BASE_OFFSET_INDEXED, size);
 			}
 		}
 		finally {
-			buffer_mgr.releaseBuffer(first_buffer);
+			bufferMgr.releaseBuffer(firstBuffer);
 			if (oldFirstDataBuf != null) {
-				buffer_mgr.releaseBuffer(oldFirstDataBuf);
+				bufferMgr.releaseBuffer(oldFirstDataBuf);
 			}
 		}
 
 		// Remove all data buffers
 		for (int element : dataBufferIdTable) {
 			if (element >= 0) {
-				buffer_mgr.deleteBuffer(element);
+				bufferMgr.deleteBuffer(element);
 			}
 		}
 
 		// Remove all, except the first, index buffers
 		for (int i = 1; i < indexBufferIdTable.length; i++) {
-			buffer_mgr.deleteBuffer(indexBufferIdTable[i]);
+			bufferMgr.deleteBuffer(indexBufferIdTable[i]);
 		}
 
 		// Update buffer offsets, sizes and elliminate index
@@ -539,9 +560,9 @@ public class ChainedBuffer implements Buffer {
 
 		// Currently using a single data buffer - data is always preserved
 		if (dataBufferIdTable.length == 1) {
-			DataBuffer buffer = buffer_mgr.getBuffer(firstBufferId);
+			DataBuffer buffer = bufferMgr.getBuffer(firstBufferId);
 			buffer.putInt(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 		}
 
 		// Already using an index
@@ -555,7 +576,7 @@ public class ChainedBuffer implements Buffer {
 			int oldIndexCount = dataBufferIdTable.length;
 			for (int i = newIndexCount; i < oldIndexCount; i++) {
 				if (dataBufferIdTable[i] >= 0) {
-					buffer_mgr.deleteBuffer(dataBufferIdTable[i]);
+					bufferMgr.deleteBuffer(dataBufferIdTable[i]);
 				}
 			}
 
@@ -571,7 +592,7 @@ public class ChainedBuffer implements Buffer {
 
 				// Delete extra index and data buffers
 				for (int i = newIndexBufferCount; i < oldIndexBufferCount; i++) {
-					buffer_mgr.deleteBuffer(indexBufferIdTable[i]);
+					bufferMgr.deleteBuffer(indexBufferIdTable[i]);
 				}
 
 				int[] newIndexBufferIdTable = new int[newIndexBufferCount];
@@ -581,9 +602,9 @@ public class ChainedBuffer implements Buffer {
 			}
 
 			// Adjust stored buffer size
-			DataBuffer buffer = buffer_mgr.getBuffer(firstBufferId);
+			DataBuffer buffer = bufferMgr.getBuffer(firstBufferId);
 			buffer.putInt(DATA_LENGTH_OFFSET, getObfuscationDataLengthFieldValue());
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 		}
 	}
 
@@ -611,8 +632,8 @@ public class ChainedBuffer implements Buffer {
 
 		// Create new DBBuffer
 		int cnt = size - offset;
-		ChainedBuffer newDBBuf = new ChainedBuffer(cnt, useXORMask, uninitialized_data_source,
-			uninitializedDataSourceOffset + offset, buffer_mgr);
+		ChainedBuffer newDBBuf = new ChainedBuffer(cnt, useXORMask, uninitializedDataSource,
+			uninitializedDataSourceOffset + offset, bufferMgr);
 
 		// Copy data from this DBBuffer into new DBBuffer
 		int newOffset = 0;
@@ -625,7 +646,7 @@ public class ChainedBuffer implements Buffer {
 			}
 			if (dataBufferIdTable[index] >= 0) {
 
-				DataBuffer dataBuf = buffer_mgr.getBuffer(dataBufferIdTable[index]);
+				DataBuffer dataBuf = bufferMgr.getBuffer(dataBufferIdTable[index]);
 				try {
 					dataBuf.get(bufferDataOffset + dataBaseOffset, data, 0, dataSize);
 					if (useXORMask) {
@@ -636,12 +657,12 @@ public class ChainedBuffer implements Buffer {
 					newDBBuf.put(newOffset, data, 0, dataSize);
 				}
 				finally {
-					buffer_mgr.releaseBuffer(dataBuf);
+					bufferMgr.releaseBuffer(dataBuf);
 				}
 
 				// Delete original data buffer if all data was copied
 				if (bufferDataOffset == 0) {
-					buffer_mgr.deleteBuffer(dataBufferIdTable[index]);
+					bufferMgr.deleteBuffer(dataBufferIdTable[index]);
 					dataBufferIdTable[index] = -1;
 				}
 			}
@@ -670,7 +691,7 @@ public class ChainedBuffer implements Buffer {
 		if (readOnly) {
 			throw new UnsupportedOperationException("Read-only buffer");
 		}
-		if (uninitialized_data_source != null) {
+		if (uninitializedDataSource != null) {
 			throw new UnsupportedOperationException(
 				"Buffer size may not be changed when using unintialized data source");
 		}
@@ -687,7 +708,7 @@ public class ChainedBuffer implements Buffer {
 		grow(newSize, true);
 
 		// Delete dbBuf index buffers
-		BufferMgr otherBufMgr = dbBuf.buffer_mgr;
+		BufferMgr otherBufMgr = dbBuf.bufferMgr;
 		if (dbBuf.indexBufferIdTable != null) {
 			for (int element : dbBuf.indexBufferIdTable) {
 				otherBufMgr.deleteBuffer(element);
@@ -741,7 +762,7 @@ public class ChainedBuffer implements Buffer {
 	 */
 	private DataBuffer appendIndexBuffer(DataBuffer indexBuffer) throws IOException {
 		try {
-			DataBuffer nextBuf = buffer_mgr.createBuffer();
+			DataBuffer nextBuf = bufferMgr.createBuffer();
 			nextBuf.putByte(NODE_TYPE_OFFSET, NodeMgr.CHAINED_BUFFER_INDEX_NODE);
 			nextBuf.putInt(DATA_LENGTH_OFFSET, -1);  // only used in first buffer
 			nextBuf.putInt(NEXT_INDEX_ID_OFFSET, -1);
@@ -749,7 +770,7 @@ public class ChainedBuffer implements Buffer {
 			return nextBuf;
 		}
 		finally {
-			buffer_mgr.releaseBuffer(indexBuffer);
+			bufferMgr.releaseBuffer(indexBuffer);
 		}
 	}
 
@@ -799,7 +820,7 @@ public class ChainedBuffer implements Buffer {
 			}
 		}
 		finally {
-			buffer_mgr.releaseBuffer(indexBuffer);
+			bufferMgr.releaseBuffer(indexBuffer);
 		}
 	}
 
@@ -828,8 +849,8 @@ public class ChainedBuffer implements Buffer {
 					if (nextId < 0) {
 						throw new AssertException();
 					}
-					buffer_mgr.releaseBuffer(indexBuffer);
-					indexBuffer = buffer_mgr.getBuffer(nextId);
+					bufferMgr.releaseBuffer(indexBuffer);
+					indexBuffer = bufferMgr.getBuffer(nextId);
 					indexBufferIdTable[++index] = indexBuffer.getId();
 					ix = 0;
 					offset = INDEX_BASE_OFFSET;
@@ -842,7 +863,7 @@ public class ChainedBuffer implements Buffer {
 			}
 		}
 		finally {
-			buffer_mgr.releaseBuffer(indexBuffer);
+			bufferMgr.releaseBuffer(indexBuffer);
 		}
 	}
 
@@ -872,7 +893,7 @@ public class ChainedBuffer implements Buffer {
 		// Remove all data buffers
 		for (int element : dataBufferIdTable) {
 			if (element >= 0) {
-				buffer_mgr.deleteBuffer(element);
+				bufferMgr.deleteBuffer(element);
 			}
 		}
 		dataBufferIdTable = null;
@@ -880,7 +901,7 @@ public class ChainedBuffer implements Buffer {
 		// Remove all, except the first, index buffers
 		if (indexBufferIdTable != null) {
 			for (int element : indexBufferIdTable) {
-				buffer_mgr.deleteBuffer(element);
+				bufferMgr.deleteBuffer(element);
 			}
 		}
 		indexBufferIdTable = null;
@@ -907,8 +928,8 @@ public class ChainedBuffer implements Buffer {
 		int len = availableData < length ? availableData : length;
 		int id = dataBufferIdTable[index];
 		if (id < 0) {
-			if (uninitialized_data_source != null) {
-				uninitialized_data_source.get(uninitializedDataSourceOffset + offset, data,
+			if (uninitializedDataSource != null) {
+				uninitializedDataSource.get(uninitializedDataSourceOffset + offset, data,
 					dataOffset, len);
 			}
 			else {
@@ -916,9 +937,9 @@ public class ChainedBuffer implements Buffer {
 			}
 		}
 		else {
-			DataBuffer buffer = buffer_mgr.getBuffer(id);
+			DataBuffer buffer = bufferMgr.getBuffer(id);
 			buffer.get(dataBaseOffset + bufferDataOffset, data, dataOffset, len);
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 			if (useXORMask) {
 				int dataIndex = dataOffset;
 				for (int i = 0; i < len; i++, dataIndex++) {
@@ -989,14 +1010,14 @@ public class ChainedBuffer implements Buffer {
 		int bufferDataOffset = offset % dataSpace;
 		int id = dataBufferIdTable[index];
 		if (id < 0) {
-			if (uninitialized_data_source != null) {
-				return uninitialized_data_source.getByte(uninitializedDataSourceOffset + offset);
+			if (uninitializedDataSource != null) {
+				return uninitializedDataSource.getByte(uninitializedDataSourceOffset + offset);
 			}
 			return 0;
 		}
-		DataBuffer buffer = buffer_mgr.getBuffer(id);
+		DataBuffer buffer = bufferMgr.getBuffer(id);
 		byte b = buffer.getByte(dataBaseOffset + bufferDataOffset);
-		buffer_mgr.releaseBuffer(buffer);
+		bufferMgr.releaseBuffer(buffer);
 		if (useXORMask) {
 			b = xorMaskByte(bufferDataOffset, b);
 		}
@@ -1019,14 +1040,14 @@ public class ChainedBuffer implements Buffer {
 			int index = offset / dataSpace;
 			int id = dataBufferIdTable[index];
 			if (id < 0) {
-				if (uninitialized_data_source != null) {
-					return uninitialized_data_source.getInt(uninitializedDataSourceOffset + offset);
+				if (uninitializedDataSource != null) {
+					return uninitializedDataSource.getInt(uninitializedDataSourceOffset + offset);
 				}
 				return 0;
 			}
-			DataBuffer buffer = buffer_mgr.getBuffer(id);
+			DataBuffer buffer = bufferMgr.getBuffer(id);
 			int value = buffer.getInt(bufferOffset);
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 			if (useXORMask) {
 				value = value ^ (int) getXorMask(offset % dataSpace, 4);
 			}
@@ -1053,14 +1074,14 @@ public class ChainedBuffer implements Buffer {
 			int index = offset / dataSpace;
 			int id = dataBufferIdTable[index];
 			if (id < 0) {
-				if (uninitialized_data_source != null) {
-					return uninitialized_data_source.getLong(uninitializedDataSourceOffset + offset);
+				if (uninitializedDataSource != null) {
+					return uninitializedDataSource.getLong(uninitializedDataSourceOffset + offset);
 				}
 				return 0;
 			}
-			DataBuffer buffer = buffer_mgr.getBuffer(id);
+			DataBuffer buffer = bufferMgr.getBuffer(id);
 			long value = buffer.getLong(bufferOffset);
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 			if (useXORMask) {
 				value = value ^ getXorMask(offset % dataSpace, 8);
 			}
@@ -1089,14 +1110,14 @@ public class ChainedBuffer implements Buffer {
 			int index = offset / dataSpace;
 			int id = dataBufferIdTable[index];
 			if (id < 0) {
-				if (uninitialized_data_source != null) {
-					return uninitialized_data_source.getShort(uninitializedDataSourceOffset + offset);
+				if (uninitializedDataSource != null) {
+					return uninitializedDataSource.getShort(uninitializedDataSourceOffset + offset);
 				}
 				return 0;
 			}
-			DataBuffer buffer = buffer_mgr.getBuffer(id);
+			DataBuffer buffer = bufferMgr.getBuffer(id);
 			short value = buffer.getShort(bufferOffset);
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 			if (useXORMask) {
 				value = (short) (value ^ (int) getXorMask(offset % dataSpace, 2));
 			}
@@ -1182,7 +1203,7 @@ public class ChainedBuffer implements Buffer {
 		}
 		DataBuffer buffer = getBuffer(index);
 		buffer.put(bufferDataOffset + dataBaseOffset, data, dataOffset, len);
-		buffer_mgr.releaseBuffer(buffer);
+		bufferMgr.releaseBuffer(buffer);
 		return len;
 	}
 
@@ -1299,7 +1320,7 @@ public class ChainedBuffer implements Buffer {
 			b = xorMaskByte(bufferDataOffset, b);
 		}
 		buffer.putByte(dataBaseOffset + bufferDataOffset, b);
-		buffer_mgr.releaseBuffer(buffer);
+		bufferMgr.releaseBuffer(buffer);
 		return offset + 1;
 	}
 
@@ -1324,7 +1345,7 @@ public class ChainedBuffer implements Buffer {
 			}
 			DataBuffer buffer = getBuffer(offset / dataSpace);
 			buffer.putInt(bufferOffset, v);
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 		}
 		else {
 			byte[] data = new byte[4];
@@ -1358,7 +1379,7 @@ public class ChainedBuffer implements Buffer {
 			}
 			DataBuffer buffer = getBuffer(offset / dataSpace);
 			buffer.putLong(bufferOffset, v);
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 		}
 		else {
 			byte[] data = new byte[8];
@@ -1393,7 +1414,7 @@ public class ChainedBuffer implements Buffer {
 			}
 			DataBuffer buffer = getBuffer(offset / dataSpace);
 			buffer.putShort(bufferOffset, v);
-			buffer_mgr.releaseBuffer(buffer);
+			bufferMgr.releaseBuffer(buffer);
 		}
 		else {
 			byte[] data = new byte[2];
@@ -1412,15 +1433,15 @@ public class ChainedBuffer implements Buffer {
 	 */
 	private DataBuffer getBuffer(int index) throws IOException {
 		// if databufferIdTable is null, index must be null.  let it throw null pointer in this case.
-		int buffer_id =
+		int bufferId =
 			(dataBufferIdTable == null && index == 0) ? firstBufferId : dataBufferIdTable[index];
-		if (buffer_id < 0) {
-			DataBuffer buf = buffer_mgr.createBuffer();
+		if (bufferId < 0) {
+			DataBuffer buf = bufferMgr.createBuffer();
 			initializeAllocatedBuffer(index, buf);
 			addBuffer(index, buf);
 			return buf;
 		}
-		return buffer_mgr.getBuffer(buffer_id);
+		return bufferMgr.getBuffer(bufferId);
 	}
 
 	/**
@@ -1442,8 +1463,8 @@ public class ChainedBuffer implements Buffer {
 		}
 
 		byte[] data = new byte[len];
-		if (uninitialized_data_source != null) {
-			uninitialized_data_source.get(uninitializedDataSourceOffset + offset, data, 0, len);
+		if (uninitializedDataSource != null) {
+			uninitializedDataSource.get(uninitializedDataSourceOffset + offset, data, 0, len);
 		}
 		if (useXORMask) {
 			for (int i = 0; i < len; i++) {
@@ -1466,16 +1487,70 @@ public class ChainedBuffer implements Buffer {
 		int indexOffset = INDEX_BASE_OFFSET + ((index % indexesPerBuffer) * ID_SIZE);
 		DataBuffer indexBuffer = null;
 		try {
-			indexBuffer = buffer_mgr.getBuffer(indexBufferId);
+			indexBuffer = bufferMgr.getBuffer(indexBufferId);
 			indexBuffer.putInt(indexOffset, buf.getId());
-			buffer_mgr.releaseBuffer(indexBuffer);
+			bufferMgr.releaseBuffer(indexBuffer);
 		}
 		finally {
 			if (indexBuffer == null) {
-				buffer_mgr.releaseBuffer(buf);
+				bufferMgr.releaseBuffer(buf);
 			}
 		}
 
 	}
 
+}
+
+impl Buffer for ChainedBuffer {
+    fn get_id() -> i64 {
+        todo!()
+    }
+
+    fn length() -> usize {
+        todo!()
+    }
+
+    fn get(offset: isize, bytes: &mut [u8]) {
+        todo!()
+    }
+
+    fn get_offset(offset: isize, data: &mut [u8], data_offset: isize, length: isize) {
+        todo!()
+    }
+
+    fn get_byte(offset: isize) -> u8 {
+        todo!()
+    }
+
+    fn get_u32(offset: isize) -> u32 {
+        todo!()
+    }
+
+    fn get_u16(offset: isize) -> u16 {
+        todo!()
+    }
+
+    fn get_u64(offset: isize) -> u64 {
+        todo!()
+    }
+
+    fn put(offset: isize, data: &[u8], data_offset: isize, length: isize) -> isize {
+        todo!()
+    }
+
+    fn put_byte(offset: isize, byte: u8) -> isize {
+        todo!()
+    }
+
+    fn put_u32(offset: isize, item: u32) -> isize {
+        todo!()
+    }
+
+    fn put_u16(offset: isize, item: u16) -> isize {
+        todo!()
+    }
+
+    fn put_u64(offset: isize, ite: u64) -> isize {
+        todo!()
+    }
 }

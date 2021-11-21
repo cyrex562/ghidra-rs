@@ -287,9 +287,9 @@ public class BufferMgr {
 					instanceList = openInstances.toArray();
 				}
 				for (int i = 0; i < instanceList.length; i++) {
-					BufferMgr bufferMgr = (BufferMgr) instanceList[i];
+					BufferMgr buffer_mgr = (BufferMgr) instanceList[i];
 					try {
-						bufferMgr.dispose();
+						buffer_mgr.dispose();
 					}
 					catch (Throwable t) {
 						// Ignore errors

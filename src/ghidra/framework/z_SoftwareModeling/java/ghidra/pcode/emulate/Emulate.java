@@ -546,17 +546,17 @@ public class Emulate {
 			addrFactory.getAddressSpace((int) op.getInput(0).getAddress().getOffset()); // Space to read from
 
 		long offset = memstate.getValue(op.getInput(1)); // Offset to read from
-		long byteOffset =
+		long byte_offset =
 			space.truncateAddressableWordOffset(offset) * space.getAddressableUnitSize();
 
 		Varnode outvar = op.getOutput();
 		if (outvar.getSize() > 8) {
 			BigInteger res =
-				memstate.getBigInteger(space, byteOffset, op.getOutput().getSize(), false);
+				memstate.getBigInteger(space, byte_offset, op.getOutput().getSize(), false);
 			memstate.setValue(outvar, res);
 		}
 		else {
-			long res = memstate.getValue(space, byteOffset, op.getOutput().getSize());
+			long res = memstate.getValue(space, byte_offset, op.getOutput().getSize());
 			memstate.setValue(op.getOutput(), res);
 		}
 	}
@@ -569,17 +569,17 @@ public class Emulate {
 			addrFactory.getAddressSpace((int) op.getInput(0).getAddress().getOffset()); // Space to store in
 
 		long offset = memstate.getValue(op.getInput(1)); // Offset to store at
-		long byteOffset =
+		long byte_offset =
 			space.truncateAddressableWordOffset(offset) * space.getAddressableUnitSize();
 
 		Varnode storedVar = op.getInput(2); // Value being stored
 		if (storedVar.getSize() > 8) {
 			BigInteger val = memstate.getBigInteger(storedVar, false);
-			memstate.setValue(space, byteOffset, op.getInput(2).getSize(), val);
+			memstate.setValue(space, byte_offset, op.getInput(2).getSize(), val);
 		}
 		else {
 			long val = memstate.getValue(storedVar);
-			memstate.setValue(space, byteOffset, op.getInput(2).getSize(), val);
+			memstate.setValue(space, byte_offset, op.getInput(2).getSize(), val);
 		}
 	}
 

@@ -341,8 +341,8 @@ public class DefaultProject implements Project {
 	}
 
 	@Override
-	public boolean hasChanged() {
-		return changed || (toolManager != null && toolManager.hasChanged());
+	public boolean has_changed() {
+		return changed || (toolManager != null && toolManager.has_changed());
 	}
 
 	@Override

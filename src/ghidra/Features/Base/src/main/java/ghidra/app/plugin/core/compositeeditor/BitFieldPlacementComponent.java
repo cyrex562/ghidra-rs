@@ -315,12 +315,12 @@ public class BitFieldPlacementComponent extends JPanel implements Scrollable {
 	 * When {@link #editMode} is not {@link EditMode#NONE} the specified
 	 * bitSize and bitOffset specify the active edit bitfield.
 	 * @param byteSize allocation unit byte size
-	 * @param byteOffset allocation unit byte offset within composite
+	 * @param byte_offset allocation unit byte offset within composite
 	 * @param bitSize component bitsize
 	 * @param bitOffset component lsb bit offset from lsb of allocation unit.
 	 */
-	void refresh(int byteSize, int byteOffset, int bitSize, int bitOffset) {
-		this.allocationByteOffset = byteOffset;
+	void refresh(int byteSize, int byte_offset, int bitSize, int bitOffset) {
+		this.allocationByteOffset = byte_offset;
 		this.allocationByteSize = byteSize;
 		bitFieldAllocation = new BitFieldAllocation(bitSize, bitOffset);
 		updatePreferredSize();
@@ -332,10 +332,10 @@ public class BitFieldPlacementComponent extends JPanel implements Scrollable {
 	 * affect the size of this component, its bounds will be updated the component
 	 * repainted.
 	 * @param byteSize allocation byte size
-	 * @param byteOffset offset of allocation from start of composite
+	 * @param byte_offset offset of allocation from start of composite
 	 */
-	void updateAllocation(int byteSize, int byteOffset) {
-		this.allocationByteOffset = byteOffset;
+	void updateAllocation(int byteSize, int byte_offset) {
+		this.allocationByteOffset = byte_offset;
 		this.allocationByteSize = byteSize;
 		setBounds(0, 0, getPreferredWidth(), getPreferredHeight());
 		invalidate();

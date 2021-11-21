@@ -59,12 +59,12 @@ public interface Address extends Comparable<Address> {
 	/**
 	 * Creates a new Address in this address's space with the given byte offset.
 	 *
-	 * @param byteOffset the byte offset for the new address.
+	 * @param byte_offset the byte offset for the new address.
 	 * @return the new Address.
 	 * @throws AddressOutOfBoundsException if the offset is less than the minimum offset or 
 	 * greater than the max offset allowed for this space.
 	 */
-	public Address getNewAddress(long byteOffset);
+	public Address getNewAddress(long byte_offset);
 
 	/**
 	 * Returns a new address in this address's space with the given offset.  
@@ -75,7 +75,7 @@ public interface Address extends Comparable<Address> {
 	 * @param isAddressableWordOffset if true the specified offset is an addressable unit/word offset,
 	 * otherwise offset is a byte offset.  See {@link ghidra.program.model.address.AddressSpace#getAddressableUnitSize()
 	 * AddressSpace#getAddressableUnitSize()} to understand the distinction
-	 * (i.e., wordOffset = byteOffset * addressableUnitSize).
+	 * (i.e., wordOffset = byte_offset * addressableUnitSize).
 	 * @return address with given offset
 	 * @throws AddressOutOfBoundsException if the offset is less than 0 or greater
 	 * than the max offset allowed for this space.
@@ -93,7 +93,7 @@ public interface Address extends Comparable<Address> {
 	 * @param isAddressableWordOffset if true the specified offset is an addressable unit/word offset,
 	 * otherwise offset is a byte offset.  See {@link ghidra.program.model.address.AddressSpace#getAddressableUnitSize()
 	 * AddressSpace#getAddressableUnitSize()} to understand the distinction
-	 * (i.e., wordOffset = byteOffset * addressableUnitSize).
+	 * (i.e., wordOffset = byte_offset * addressableUnitSize).
 	 * @return address with given byte offset truncated to the physical space size
 	 */
 	Address getNewTruncatedAddress(long offset, boolean isAddressableWordOffset);

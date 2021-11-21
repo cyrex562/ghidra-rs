@@ -149,32 +149,32 @@ abstract class AbstractAddressSpace implements AddressSpace {
 	}
 
 	@Override
-	public long getAddressableWordOffset(long byteOffset) {
+	public long getAddressableWordOffset(long byte_offset) {
 		boolean isNegative = false;
-		if (signed && byteOffset < 0) {
-			byteOffset = -byteOffset;
+		if (signed && byte_offset < 0) {
+			byte_offset = -byte_offset;
 			isNegative = true;
 		}
 
-		long offset = getUnsignedWordOffset(byteOffset, unitSize);
+		long offset = getUnsignedWordOffset(byte_offset, unitSize);
 		if (isNegative) {
 			offset = -offset;
 		}
 		return offset;
 	}
 
-	private static long getUnsignedWordOffset(long byteOffset, int wordSize) {
+	private static long getUnsignedWordOffset(long byte_offset, int wordSize) {
 		switch (wordSize) {
 			case 1:
-				return byteOffset;
+				return byte_offset;
 			case 2:
-				return byteOffset >>> 1;
+				return byte_offset >>> 1;
 			case 4:
-				return byteOffset >>> 2;
+				return byte_offset >>> 2;
 			case 8:
-				return byteOffset >>> 3;
+				return byte_offset >>> 3;
 		}
-		return MathUtilities.unsignedDivide(byteOffset, wordSize);
+		return MathUtilities.unsignedDivide(byte_offset, wordSize);
 	}
 
 	@Override
@@ -261,8 +261,8 @@ abstract class AbstractAddressSpace implements AddressSpace {
 	@Override
 	public Address getAddress(long offset, boolean isAddressableWordOffset)
 			throws AddressOutOfBoundsException {
-		long byteOffset = isAddressableWordOffset ? (offset * unitSize) : offset;
-		return getAddress(byteOffset);
+		long byte_offset = isAddressableWordOffset ? (offset * unitSize) : offset;
+		return getAddress(byte_offset);
 	}
 
 	@Override
@@ -439,10 +439,10 @@ abstract class AbstractAddressSpace implements AddressSpace {
 	}
 
 	@Override
-	public boolean isValidRange(long byteOffset, long length) {
+	public boolean isValidRange(long byte_offset, long length) {
 		Address start;
 		try {
-			start = getAddress(byteOffset);
+			start = getAddress(byte_offset);
 		}
 		catch (Exception e1) {
 			return false;

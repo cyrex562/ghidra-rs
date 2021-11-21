@@ -593,10 +593,10 @@ public class SleighDebugLogger {
 	 * NOTE: Method has no affect unless constructed with VERBOSE logging mode.
 	 * @param maskvec
 	 * @param valvec
-	 * @param byteOffset
+	 * @param byte_offset
 	 * @param pos
 	 */
-	public void dumpContextPattern(int[] maskvec, int[] valvec, int byteOffset,
+	public void dumpContextPattern(int[] maskvec, int[] valvec, int byte_offset,
 			SleighParserContext pos) {
 		if (!isVerboseEnabled()) {
 			return;
@@ -618,15 +618,15 @@ public class SleighDebugLogger {
 			maskActualValue.length / 2);
 
 		int vecByteCnt =
-			Math.min(contextBaseRegister.getMinimumByteSize() - byteOffset, maskvec.length * 4);
+			Math.min(contextBaseRegister.getMinimumByteSize() - byte_offset, maskvec.length * 4);
 
 		byte[] maskPatternValue = new byte[2 * contextBaseRegister.getMinimumByteSize()];
 		System.arraycopy(getBytes(valvec), 0, maskPatternValue,
-			(maskPatternValue.length / 2) + byteOffset, vecByteCnt);
+			(maskPatternValue.length / 2) + byte_offset, vecByteCnt);
 
 		byte[] mask = getBytes(maskvec);
-		System.arraycopy(mask, 0, maskActualValue, byteOffset, vecByteCnt);
-		System.arraycopy(mask, 0, maskPatternValue, byteOffset, vecByteCnt);
+		System.arraycopy(mask, 0, maskActualValue, byte_offset, vecByteCnt);
+		System.arraycopy(mask, 0, maskPatternValue, byte_offset, vecByteCnt);
 
 		RegisterValue actualValue = new RegisterValue(contextBaseRegister, maskActualValue);
 		RegisterValue matchValue = new RegisterValue(contextBaseRegister, maskPatternValue);
@@ -674,8 +674,8 @@ public class SleighDebugLogger {
 		byte[] maskActualValue = new byte[currentValue.length * 4 * 2];
 		System.arraycopy(getBytes(currentValue), 0, maskActualValue, maskActualValue.length / 2,
 			maskActualValue.length / 2);
-		int byteOffset = num * 4;
-		System.arraycopy(getBytes(new int[] { mask }), 0, maskActualValue, byteOffset, 4);
+		int byte_offset = num * 4;
+		System.arraycopy(getBytes(new int[] { mask }), 0, maskActualValue, byte_offset, 4);
 
 		RegisterValue actualValue = new RegisterValue(contextBaseRegister, maskActualValue);
 
@@ -722,10 +722,10 @@ public class SleighDebugLogger {
 			Address setAddr) {
 
 		byte[] maskActualValue = new byte[contextBaseRegister.getMinimumByteSize() * 2];
-		int byteOffset = num * 4;
+		int byte_offset = num * 4;
 		System.arraycopy(getBytes(new int[] { value }), 0, maskActualValue,
-			(maskActualValue.length / 2) + byteOffset, 4);
-		System.arraycopy(getBytes(new int[] { mask }), 0, maskActualValue, byteOffset, 4);
+			(maskActualValue.length / 2) + byte_offset, 4);
+		System.arraycopy(getBytes(new int[] { mask }), 0, maskActualValue, byte_offset, 4);
 
 		RegisterValue actualValue = new RegisterValue(contextBaseRegister, maskActualValue);
 

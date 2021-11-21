@@ -118,7 +118,7 @@ class NodeMgr {
 	 */
 	static final byte CHAINED_BUFFER_DATA_NODE = 9;
 
-	private BufferMgr bufferMgr;
+	private BufferMgr buffer_mgr;
 	private Schema schema;
 	private String tableName;
 
@@ -129,10 +129,10 @@ class NodeMgr {
 	/**
 	 * Construct a node manager for a specific table.
 	 * @param table associated table
-	 * @param bufferMgr buffer manager.
+	 * @param buffer_mgr buffer manager.
 	 */
-	NodeMgr(Table table, BufferMgr bufferMgr) {
-		this.bufferMgr = bufferMgr;
+	NodeMgr(Table table, BufferMgr buffer_mgr) {
+		this.buffer_mgr = buffer_mgr;
 		this.schema = table.getSchema();
 		this.tableName = table.getName();
 	}
@@ -142,7 +142,7 @@ class NodeMgr {
 	 * @return BufferMgr
 	 */
 	BufferMgr getBufferMgr() {
-		return bufferMgr;
+		return buffer_mgr;
 	}
 
 	/**
@@ -172,7 +172,7 @@ class NodeMgr {
 			if (node instanceof RecordNode) {
 				leafRecordCnt -= node.getKeyCount();
 			}
-			bufferMgr.releaseBuffer(node.getBuffer());
+			buffer_mgr.releaseBuffer(node.getBuffer());
 		}
 		nodeTable = new HashMap<>();
 		int result = -leafRecordCnt;
@@ -184,11 +184,11 @@ class NodeMgr {
 	 * Release a specific read-only buffer node.
 	 * WARNING! This method may only be used to release read-only buffers,
 	 * if a release buffer has been modified an IOException will be thrown.
-	 * @param bufferId buffer ID
+	 * @param buffer_id buffer ID
 	 * @throws IOException if IO error occurs on database
 	 */
-	void releaseReadOnlyNode(int bufferId) throws IOException {
-		BTreeNode node = nodeTable.get(bufferId);
+	void releaseReadOnlyNode(int buffer_id) throws IOException {
+		BTreeNode node = nodeTable.get(buffer_id);
 		if (node.getBuffer().isDirty()) {
 			// There is a possible leafRecordCount error if buffer is released multiple times
 			throw new IOException("Releasing modified buffer node as read-only");
@@ -196,8 +196,8 @@ class NodeMgr {
 		if (node instanceof RecordNode) {
 			leafRecordCnt -= node.getKeyCount();
 		}
-		bufferMgr.releaseBuffer(node.getBuffer());
-		nodeTable.remove(bufferId);
+		buffer_mgr.releaseBuffer(node.getBuffer());
+		nodeTable.remove(buffer_id);
 	}
 
 	/**
@@ -215,46 +215,46 @@ class NodeMgr {
 	 * @throws IOException thrown if an IO error occurs
 	 */
 	void deleteNode(BTreeNode node) throws IOException {
-		int bufferId = node.getBufferId();
-		nodeTable.remove(bufferId);
-		bufferMgr.releaseBuffer(node.getBuffer());
-		bufferMgr.deleteBuffer(bufferId);
+		int buffer_id = node.getBufferId();
+		nodeTable.remove(buffer_id);
+		buffer_mgr.releaseBuffer(node.getBuffer());
+		buffer_mgr.deleteBuffer(buffer_id);
 	}
 
 	/**
 	 * Perform a test of the specified buffer to determine if it is
 	 * a VarKeyNode type.  It is important that the specified buffer
 	 * not be in use.
-	 * @param bufferMgr buffer manager
-	 * @param bufferId buffer ID
+	 * @param buffer_mgr buffer manager
+	 * @param buffer_id buffer ID
 	 * @return true if node found and is a VarKeyNode type
 	 * @throws IOException thrown if an IO error occurs
 	 */
-	static boolean isVarKeyNode(BufferMgr bufferMgr, int bufferId) throws IOException {
-		DataBuffer buf = bufferMgr.getBuffer(bufferId);
+	static boolean isVarKeyNode(BufferMgr buffer_mgr, int buffer_id) throws IOException {
+		DataBuffer buf = buffer_mgr.getBuffer(buffer_id);
 		try {
 			int nodeType = getNodeType(buf);
 			return nodeType == VARKEY_REC_NODE || nodeType == VARKEY_INTERIOR_NODE;
 		}
 		finally {
-			bufferMgr.releaseBuffer(buf);
+			buffer_mgr.releaseBuffer(buf);
 		}
 	}
 
 	/**
 	 * Get a LongKeyNode object for a specified buffer
-	 * @param bufferId buffer ID
+	 * @param buffer_id buffer ID
 	 * @return LongKeyNode instance
 	 * @throws ClassCastException if node type is incorrect.
 	 * @throws IOException if IO error occurs on database
 	 */
-	LongKeyNode getLongKeyNode(int bufferId) throws IOException {
-		LongKeyNode node = (LongKeyNode) nodeTable.get(bufferId);
+	LongKeyNode getLongKeyNode(int buffer_id) throws IOException {
+		LongKeyNode node = (LongKeyNode) nodeTable.get(buffer_id);
 		if (node != null) {
 			return node;
 		}
 
-		DataBuffer buf = bufferMgr.getBuffer(bufferId);
+		DataBuffer buf = buffer_mgr.getBuffer(buffer_id);
 		int nodeType = getNodeType(buf);
 		switch (nodeType) {
 			case LONGKEY_VAR_REC_NODE:
@@ -269,7 +269,7 @@ class NodeMgr {
 				node = new LongKeyInteriorNode(this, buf);
 				break;
 			default:
-				bufferMgr.releaseBuffer(buf);
+				buffer_mgr.releaseBuffer(buf);
 				throw new AssertException(
 					"Unexpected Node Type (" + nodeType + ") found, expecting LongKeyNode");
 		}
@@ -278,18 +278,18 @@ class NodeMgr {
 
 	/**
 	 * Get a FixedKeyNode object for a specified buffer
-	 * @param bufferId buffer ID
+	 * @param buffer_id buffer ID
 	 * @return LongKeyNode instance
 	 * @throws ClassCastException if node type is incorrect.
 	 * @throws IOException if IO error occurs on database
 	 */
-	FixedKeyNode getFixedKeyNode(int bufferId) throws IOException {
-		FixedKeyNode node = (FixedKeyNode) nodeTable.get(bufferId);
+	FixedKeyNode getFixedKeyNode(int buffer_id) throws IOException {
+		FixedKeyNode node = (FixedKeyNode) nodeTable.get(buffer_id);
 		if (node != null) {
 			return node;
 		}
 
-		DataBuffer buf = bufferMgr.getBuffer(bufferId);
+		DataBuffer buf = buffer_mgr.getBuffer(buffer_id);
 		int nodeType = getNodeType(buf);
 		switch (nodeType) {
 			case FIXEDKEY_VAR_REC_NODE:
@@ -304,7 +304,7 @@ class NodeMgr {
 				node = new FixedKeyInteriorNode(this, buf);
 				break;
 			default:
-				bufferMgr.releaseBuffer(buf);
+				buffer_mgr.releaseBuffer(buf);
 				throw new IOException(
 					"Unexpected Node Type (" + nodeType + ") found, expecting FixedKeyNode");
 		}
@@ -313,18 +313,18 @@ class NodeMgr {
 
 	/**
 	 * Get a VarKeyNode object for a specified buffer
-	 * @param bufferId buffer ID
+	 * @param buffer_id buffer ID
 	 * @return VarKeyNode instance
 	 * @throws ClassCastException if node type is incorrect.
 	 * @throws IOException if IO error occurs on database
 	 */
-	VarKeyNode getVarKeyNode(int bufferId) throws IOException {
-		VarKeyNode node = (VarKeyNode) nodeTable.get(bufferId);
+	VarKeyNode getVarKeyNode(int buffer_id) throws IOException {
+		VarKeyNode node = (VarKeyNode) nodeTable.get(buffer_id);
 		if (node != null) {
 			return node;
 		}
 
-		DataBuffer buf = bufferMgr.getBuffer(bufferId);
+		DataBuffer buf = buffer_mgr.getBuffer(buffer_id);
 		int nodeType = getNodeType(buf);
 		switch (nodeType) {
 			case VARKEY_REC_NODE:
@@ -335,7 +335,7 @@ class NodeMgr {
 				node = new VarKeyInteriorNode(this, buf);
 				break;
 			default:
-				bufferMgr.releaseBuffer(buf);
+				buffer_mgr.releaseBuffer(buf);
 				throw new AssertException(
 					"Unexpected Node Type (" + nodeType + ") found, expecting VarKeyNode");
 		}

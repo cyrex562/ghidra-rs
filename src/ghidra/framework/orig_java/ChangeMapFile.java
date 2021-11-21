@@ -84,15 +84,15 @@ public class ChangeMapFile {
 				
 				
 				int lastByteOffset = (indexCnt-1) / 8;
-				byte lastByte = 0;
+				byte last_byte = 0;
 				int index = indexCnt;
 				int bit;
 				while((bit = index % 8) != 0) {
-					int bitMask = 1 << bit;
-					lastByte = (byte)(lastByte | bitMask);
+					int bit_mask = 1 << bit;
+					last_byte = (byte)(last_byte | bit_mask);
 					++index;
 				}
-				buffer.putByte(lastByteOffset, lastByte);
+				buffer.putByte(lastByteOffset, last_byte);
 								
 			}
 			else {
@@ -102,9 +102,9 @@ public class ChangeMapFile {
 					throw new IOException("Bad modification map file: " + file);
 				}
 				
-				long oldTargetFileId = ((long)mapFile.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
+				long old_target_file_id = ((long)mapFile.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
 					(mapFile.getParameter(TARGET_FILE_ID_LOW_PARM) & 0xffffffffL);
-				if (oldTargetFileId != oldFile.getFileId()) {
+				if (old_target_file_id != oldFile.getFileId()) {
 					throw new IOException("Modification map file does not correspond to target: " + file);
 				}
 				
@@ -119,9 +119,9 @@ public class ChangeMapFile {
 				buffer = new ChainedBuffer(bufMgr, id);
 			}
 			
-			long targetFileId = newFile.getFileId();
-			bufMgr.setParameter(TARGET_FILE_ID_HI_PARM, (int)(targetFileId >> 32));
-			bufMgr.setParameter(TARGET_FILE_ID_LOW_PARM, (int)(targetFileId & 0xffffffffL));
+			long target_file_id = newFile.getFileId();
+			bufMgr.setParameter(TARGET_FILE_ID_HI_PARM, (int)(target_file_id >> 32));
+			bufMgr.setParameter(TARGET_FILE_ID_LOW_PARM, (int)(target_file_id & 0xffffffffL));
 			
 			success = true;
 		}
@@ -158,9 +158,9 @@ public class ChangeMapFile {
 				throw new IOException("Bad modification map file: " + file);
 			}
 			
-			long oldTargetFileId = ((long)mapFile.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
+			long old_target_file_id = ((long)mapFile.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
 				(mapFile.getParameter(TARGET_FILE_ID_LOW_PARM) & 0xffffffffL);
-			if (oldTargetFileId != targetFile.getFileId()) {
+			if (old_target_file_id != targetFile.getFileId()) {
 				throw new IOException("Modification map file does not correspond to target: " + file);
 			}
 		
@@ -194,10 +194,10 @@ public class ChangeMapFile {
 	 * Returns true if this change map corresponds to the specified target file.
 	 * @param targetFile
 	 */
-	boolean isValidFor(LocalBufferFile targetFile) {
-		long targetFileId = ((long)bufMgr.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
+	boolean is_valid_for(LocalBufferFile targetFile) {
+		long target_file_id = ((long)bufMgr.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
 			(bufMgr.getParameter(TARGET_FILE_ID_LOW_PARM) & 0xffffffffL);
-		return (targetFileId == targetFile.getFileId());
+		return (target_file_id == targetFile.getFileId());
 	}
 
 	/**
@@ -259,19 +259,19 @@ public class ChangeMapFile {
 		if (index >= indexCnt) {
 			return; // no need to track new buffers
 		}
-		int byteOffset = index / 8;
+		int byte_offset = index / 8;
 		byte b;
 		if (empty) {
 			// Clear bit if buffer is removed
-			int bitMask = ~(1 << (index % 8));
-			b = (byte)(buffer.getByte(byteOffset) & bitMask);
+			int bit_mask = ~(1 << (index % 8));
+			b = (byte)(buffer.getByte(byte_offset) & bit_mask);
 		}
 		else {
 			// Set bit if buffer is set
-			int bitMask = 1 << (index % 8);
-			b = (byte)(buffer.getByte(byteOffset) | bitMask);
+			int bit_mask = 1 << (index % 8);
+			b = (byte)(buffer.getByte(byte_offset) | bit_mask);
 		}
-		buffer.putByte(byteOffset, b);
+		buffer.putByte(byte_offset, b);
 	}
 
 	/**

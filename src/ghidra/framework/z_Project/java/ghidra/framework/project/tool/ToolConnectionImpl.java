@@ -245,7 +245,7 @@ class ToolConnectionImpl implements ToolConnection, ToolListener {
 	/**
 	 * Return true if the connection changed.
 	 */
-	boolean hasChanged() {
+	boolean has_changed() {
 		return changed;
 	}
 

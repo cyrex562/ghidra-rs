@@ -271,12 +271,12 @@ class FixedKeyInteriorNode extends FixedKeyNode implements FieldKeyInteriorNode 
 	 * existing entries is not necessary.
 	 * @param index child key index
 	 * @param key child node key
-	 * @param bufferId child node buffer ID
+	 * @param buffer_id child node buffer ID
 	 */
-	private void putEntry(int index, byte[] key, int bufferId) {
+	private void putEntry(int index, byte[] key, int buffer_id) {
 		int offset = BASE + (index * entrySize);
 		buffer.put(offset, key);
-		buffer.putInt(offset + keySize, bufferId);
+		buffer.putInt(offset + keySize, buffer_id);
 	}
 
 	/**
@@ -285,15 +285,15 @@ class FixedKeyInteriorNode extends FixedKeyNode implements FieldKeyInteriorNode 
 	 * The node key count is adjusted to reflect the addition of a child.
 	 * @param index child key index
 	 * @param key child node key
-	 * @param bufferId child node buffer ID
+	 * @param buffer_id child node buffer ID
 	 */
-	private void insertEntry(int index, byte[] key, int bufferId) {
+	private void insertEntry(int index, byte[] key, int buffer_id) {
 
 		int start = BASE + (index * entrySize);
 		int end = BASE + (keyCount * entrySize);
 		buffer.move(start, start + entrySize, end - start);
 		buffer.put(start, key);
-		buffer.putInt(start + keySize, bufferId);
+		buffer.putInt(start + keySize, buffer_id);
 
 		setKeyCount(keyCount + 1);
 	}

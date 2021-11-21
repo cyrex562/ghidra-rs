@@ -914,13 +914,13 @@ public class StringDataInstance {
 			StringRenderBuilder.DOUBLE_QUOTE);
 	}
 
-	private boolean isReplacementCharAt(byte[] stringBytes, int byteOffset) {
-		if (byteOffset + charSize > stringBytes.length) {
+	private boolean isReplacementCharAt(byte[] stringBytes, int byte_offset) {
+		if (byte_offset + charSize > stringBytes.length) {
 			return false;
 		}
 		long origCodePointValue = DataConverter.getInstance(buf.isBigEndian())
 				.getValue(stringBytes,
-					byteOffset, charSize);
+					byte_offset, charSize);
 		return origCodePointValue == StringUtilities.UNICODE_REPLACEMENT;
 	}
 
@@ -969,31 +969,31 @@ public class StringDataInstance {
 	}
 
 	public String getOffcutLabelString(String prefixStr, String abbrevPrefixStr, String defaultStr,
-			DataTypeDisplayOptions options, int byteOffset) {
+			DataTypeDisplayOptions options, int byte_offset) {
 		if (isBadCharSize() || isProbe()) {
 			return defaultStr;
 		}
-		StringDataInstance sub = getByteOffcut(byteOffset);
+		StringDataInstance sub = getByteOffcut(byte_offset);
 		return sub.getLabel(prefixStr, abbrevPrefixStr, defaultStr, options);
 	}
 
 	/**
 	 * Returns a new {@link StringDataInstance} that points to the string characters
-	 * that start at {@code byteOffset} from the start of this instance.
+	 * that start at {@code byte_offset} from the start of this instance.
 	 * <p>
 	 * If the requested offset is not valid, the base string instance (itself) will be returned
 	 * instead of a new instance.
 	 * <p>
-	 * @param byteOffset number of bytes from start of data instance to start new instance.
+	 * @param byte_offset number of bytes from start of data instance to start new instance.
 	 * @return new StringDataInstance, or <code>this</code> if offset not valid.
 	 */
-	public StringDataInstance getByteOffcut(int byteOffset) {
-		if (isBadCharSize() || isProbe() || !isValidOffcutOffset(byteOffset)) {
+	public StringDataInstance getByteOffcut(int byte_offset) {
+		if (isBadCharSize() || isProbe() || !isValidOffcutOffset(byte_offset)) {
 			return NULL_INSTANCE;
 		}
-		int newLength = Math.max(0, length - byteOffset);
+		int newLength = Math.max(0, length - byte_offset);
 		StringDataInstance sub = new StringDataInstance(this, getOffcutLayout(),
-			new WrappedMemBuffer(buf, byteOffset), newLength, charsetName);
+			new WrappedMemBuffer(buf, byte_offset), newLength, charsetName);
 
 		return sub;
 	}

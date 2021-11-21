@@ -109,7 +109,7 @@ public interface Structure extends Composite {
 	/**
 	 * Inserts a new bitfield at the specified location in this composite. This method is intended
 	 * to be used with structures with packing disabled where the bitfield will be precisely placed. Within an
-	 * packed structure the specified byteOffset, byteWidth and bitOffset will be used to identify
+	 * packed structure the specified byte_offset, byteWidth and bitOffset will be used to identify
 	 * the appropriate ordinal but may not be preserved. The component length will be computed based
 	 * upon the specified parameters and will be reduced from byteWidth to its minimal size for the
 	 * new component.
@@ -130,7 +130,7 @@ public interface Structure extends Composite {
 	 * determining its ordinal placement.
 	 * <p>
 	 * 
-	 * @param byteOffset the first byte offset within this structure which corresponds to the first
+	 * @param byte_offset the first byte offset within this structure which corresponds to the first
 	 *            byte of the specified storage unit identified by its byteWidth.
 	 * @param byteWidth the storage unit width which contains the bitfield. Must be large enough to
 	 *            contain the specified bitSize and corresponding bitOffset. The actual component
@@ -147,7 +147,7 @@ public interface Structure extends Composite {
 	 * @throws InvalidDataTypeException if the specified data type is not a valid base type for
 	 *             bitfields.
 	 */
-	public DataTypeComponent insertBitFieldAt(int byteOffset, int byteWidth, int bitOffset,
+	public DataTypeComponent insertBitFieldAt(int byte_offset, int byteWidth, int bitOffset,
 			DataType baseDataType, int bitSize, String componentName, String comment)
 			throws InvalidDataTypeException;
 
@@ -407,7 +407,7 @@ public interface Structure extends Composite {
 		 * ordering. If future support is added for alternate bitfield packing, this implementation
 		 * will require modification.
 		 * 
-		 * @param byteOffset byte offset within structure of storage unit
+		 * @param byte_offset byte offset within structure of storage unit
 		 * @param storageSize storage unit size (i.e., component length)
 		 * @param effectiveBitSize size of bitfield in bits
 		 * @param bitOffset left shift amount for bitfield based upon a big-endian view of the
@@ -415,9 +415,9 @@ public interface Structure extends Composite {
 		 * @param bigEndian true if big-endian packing applies
 		 * @return normalized bit-offset
 		 */
-		public static int getNormalizedBitfieldOffset(int byteOffset, int storageSize,
+		public static int getNormalizedBitfieldOffset(int byte_offset, int storageSize,
 				int effectiveBitSize, int bitOffset, boolean bigEndian) {
-			int offset = (8 * byteOffset);
+			int offset = (8 * byte_offset);
 			if (effectiveBitSize == 0) {
 				// force zero-length bitfield placement
 				effectiveBitSize = 1;

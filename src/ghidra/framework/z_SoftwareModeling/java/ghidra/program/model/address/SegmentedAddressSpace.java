@@ -281,24 +281,24 @@ public class SegmentedAddressSpace extends GenericAddressSpace {
 	 * @see ghidra.program.model.address.AddressSpace#getAddress(long)
 	 */
 	@Override
-	public SegmentedAddress getAddress(long byteOffset) {
-		return new SegmentedAddress(this, byteOffset);
+	public SegmentedAddress getAddress(long byte_offset) {
+		return new SegmentedAddress(this, byte_offset);
 	}
 
 	/**
 	 * @see ghidra.program.model.address.AddressSpace#getAddressInThisSpaceOnly(long)
 	 */
 	@Override
-	public SegmentedAddress getAddressInThisSpaceOnly(long byteOffset) {
-		return new SegmentedAddress(this, byteOffset);
+	public SegmentedAddress getAddressInThisSpaceOnly(long byte_offset) {
+		return new SegmentedAddress(this, byte_offset);
 	}
 
 	/**
 	 * @see ghidra.program.model.address.AbstractAddressSpace#getUncheckedAddress(long)
 	 */
 	@Override
-	protected SegmentedAddress getUncheckedAddress(long byteOffset) {
-		return new SegmentedAddress(byteOffset, this);
+	protected SegmentedAddress getUncheckedAddress(long byte_offset) {
+		return new SegmentedAddress(byte_offset, this);
 	}
 
 	/**

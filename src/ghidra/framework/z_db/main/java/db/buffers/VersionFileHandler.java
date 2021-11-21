@@ -52,13 +52,13 @@ public class VersionFileHandler {
 	 * for the version origVer.
 	 * @param bf current buffer file which will use this version file
 	 * handler to reconstruct an older version.
-	 * @param targetFileId file ID of buffer file to which the version file
+	 * @param target_file_id file ID of buffer file to which the version file
 	 * buffers will be applied.
 	 * @param targetVer version of target buffer file.
 	 * @param origVer an older version number
 	 * @throws IOException if an IO error occurs or data is missing
 	 */
-	VersionFileHandler(BufferFileManager bfMgr, long targetFileId, int targetVer, int origVer) throws IOException {
+	VersionFileHandler(BufferFileManager bfMgr, long target_file_id, int targetVer, int origVer) throws IOException {
 
 		versionFiles = new VersionFile[targetVer - origVer];
 		long lastTargetFileId = 0;
@@ -104,7 +104,7 @@ public class VersionFileHandler {
 					}
 				}
 			}
-			if (lastTargetFileId != targetFileId)	{
+			if (lastTargetFileId != target_file_id)	{
 				throw new IOException("Incorrect version file - wrong file ID");	
 			}
 			success = true;
@@ -231,9 +231,9 @@ public class VersionFileHandler {
 	}
 	
 	private void setMapDataBit(byte[] data, int index) {
-		int byteOffset = index / 8;
-		int bitMask = 1 << (index % 8);
-		data[byteOffset] = (byte)(data[byteOffset] | bitMask);
+		int byte_offset = index / 8;
+		int bit_mask = 1 << (index % 8);
+		data[byte_offset] = (byte)(data[byte_offset] | bit_mask);
 	}
 	
 	/**

@@ -216,8 +216,8 @@ public class ContextState {
 			}
 			Varnode byteValue = new Varnode(addrFactory.getConstantAddress(val), 1);
 			byteValue.trim();
-			long byteOffset = language.isBigEndian() ? i : (size - i - 1);
-			memoryMap.put(baseAddr.addWrap(byteOffset), byteValue);
+			long byte_offset = language.isBigEndian() ? i : (size - i - 1);
+			memoryMap.put(baseAddr.addWrap(byte_offset), byteValue);
 		}
 	}
 
@@ -428,8 +428,8 @@ public class ContextState {
 			long baseOffset = frameNode.frameOffset;
 			for (int i = 0; i < size; i++) {
 				Varnode byteValue = getVarnodeByte(storedValue, i);
-				long byteOffset = language.isBigEndian() ? (size - i - 1) : i;
-				frameMap.put(baseOffset + byteOffset, byteValue);
+				long byte_offset = language.isBigEndian() ? (size - i - 1) : i;
+				frameMap.put(baseOffset + byte_offset, byteValue);
 			}
 		}
 		return true;
@@ -476,8 +476,8 @@ public class ContextState {
 			Address baseAddr = addressVarnode.getAddress();
 			for (int i = 0; i < size; i++) {
 				Varnode byteValue = getVarnodeByte(storedValue, i);
-				long byteOffset = language.isBigEndian() ? (size - i - 1) : i;
-				memoryMap.put(baseAddr.addWrap(byteOffset), byteValue);
+				long byte_offset = language.isBigEndian() ? (size - i - 1) : i;
+				memoryMap.put(baseAddr.addWrap(byte_offset), byteValue);
 			}
 		}
 	}

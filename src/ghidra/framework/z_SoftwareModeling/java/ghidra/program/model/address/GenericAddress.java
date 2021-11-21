@@ -70,8 +70,8 @@ public class GenericAddress implements Address {
 	 * @see ghidra.program.model.address.Address#getNewAddress(long)
 	 */
 	@Override
-	public Address getNewAddress(long byteOffset) {
-		return addrSpace.getAddress(byteOffset);
+	public Address getNewAddress(long byte_offset) {
+		return addrSpace.getAddress(byte_offset);
 	}
 
 	@Override

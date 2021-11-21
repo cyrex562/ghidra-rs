@@ -284,12 +284,12 @@ class LongKeyInteriorNode extends LongKeyNode implements InteriorNode {
 	 * existing entries is not necessary.
 	 * @param index child key index
 	 * @param key child node key
-	 * @param bufferId child node buffer ID
+	 * @param buffer_id child node buffer ID
 	 */
-	private void putEntry(int index, long key, int bufferId) {
+	private void putEntry(int index, long key, int buffer_id) {
 		int offset = BASE + (index * ENTRY_SIZE);
 		buffer.putLong(offset, key);
-		buffer.putInt(offset + KEY_SIZE, bufferId);
+		buffer.putInt(offset + KEY_SIZE, buffer_id);
 	}
 
 	/**
@@ -298,15 +298,15 @@ class LongKeyInteriorNode extends LongKeyNode implements InteriorNode {
 	 * The node key count is adjusted to reflect the addition of a child.
 	 * @param index child key index
 	 * @param key child node key
-	 * @param bufferId child node buffer ID
+	 * @param buffer_id child node buffer ID
 	 */
-	private void insertEntry(int index, long key, int bufferId) {
+	private void insertEntry(int index, long key, int buffer_id) {
 
 		int start = BASE + (index * ENTRY_SIZE);
 		int end = BASE + (keyCount * ENTRY_SIZE);
 		buffer.move(start, start + ENTRY_SIZE, end - start);
 		buffer.putLong(start, key);
-		buffer.putInt(start + KEY_SIZE, bufferId);
+		buffer.putInt(start + KEY_SIZE, buffer_id);
 
 		setKeyCount(keyCount + 1);
 	}

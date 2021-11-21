@@ -149,34 +149,34 @@ public class Table {
 		return statList;
 	}
 
-	private BTreeNode getBTreeNode(int bufferId) throws IOException {
+	private BTreeNode getBTreeNode(int buffer_id) throws IOException {
 		if (schema.useLongKeyNodes()) {
-			return nodeMgr.getLongKeyNode(bufferId);
+			return nodeMgr.getLongKeyNode(buffer_id);
 		}
 		if (schema.useFixedKeyNodes()) {
-			return nodeMgr.getFixedKeyNode(bufferId);
+			return nodeMgr.getFixedKeyNode(buffer_id);
 		}
-		return nodeMgr.getVarKeyNode(bufferId);
+		return nodeMgr.getVarKeyNode(buffer_id);
 	}
 
-	private FieldKeyNode getFieldKeyNode(int bufferId) throws IOException {
+	private FieldKeyNode getFieldKeyNode(int buffer_id) throws IOException {
 		if (schema.useFixedKeyNodes()) {
-			return nodeMgr.getFixedKeyNode(bufferId);
+			return nodeMgr.getFixedKeyNode(buffer_id);
 		}
-		return nodeMgr.getVarKeyNode(bufferId);
+		return nodeMgr.getVarKeyNode(buffer_id);
 	}
 
 	/**
 	 * Accumulate node statistics
 	 * @param stats statistics collection object
-	 * @param bufferId node buffer ID to examine
+	 * @param buffer_id node buffer ID to examine
 	 * @throws IOException thrown if IO error occurs
 	 */
-	private void accumulateNodeStatistics(TableStatistics stats, int bufferId) throws IOException {
-		if (bufferId < 0) {
+	private void accumulateNodeStatistics(TableStatistics stats, int buffer_id) throws IOException {
+		if (buffer_id < 0) {
 			return;
 		}
-		BTreeNode node = getBTreeNode(bufferId);
+		BTreeNode node = getBTreeNode(buffer_id);
 		++stats.bufferCount;
 
 		int[] ids = node.getBufferReferences();
@@ -2026,7 +2026,7 @@ public class Table {
 	 */
 	private class LongKeyRecordIterator implements RecordIterator {
 
-		private int bufferId = -1; // current record buffer ID
+		private int buffer_id = -1; // current record buffer ID
 		private int recordIndex; // current record index
 		private boolean isNext; // recover position is next record
 		private boolean isPrev; // recover position is previous record
@@ -2121,7 +2121,7 @@ public class Table {
 				}
 
 				if (hasPrev || hasNext) {
-					bufferId = leaf.getBufferId();
+					buffer_id = leaf.getBufferId();
 					record = leaf.getRecord(schema, recordIndex);
 					curKey = record.getKey();
 				}
@@ -2139,7 +2139,7 @@ public class Table {
 		 * else if false and the current record no longer exists, the current position
 		 * will be set to the next record and isNext set to true.
 		 * @return LongKeyRecordNode the leaf node containing the current record position
-		 * identified by bufferId and recordIndex.  If null, the current record was not found
+		 * identified by buffer_id and recordIndex.  If null, the current record was not found
 		 * or the position could not be set to a next/previous record position based upon the
 		 * recoverPrev value specified.
 		 * @throws IOException thrown if IO error occurs
@@ -2155,7 +2155,7 @@ public class Table {
 			isPrev = false;
 
 			if (expectedModCount == modCount) {
-				leaf = (LongKeyRecordNode) nodeMgr.getLongKeyNode(bufferId);
+				leaf = (LongKeyRecordNode) nodeMgr.getLongKeyNode(buffer_id);
 				if (recordIndex >= leaf.keyCount || leaf.getKey(recordIndex) != curKey) {
 					leaf = null; // something changed - key search required
 				}
@@ -2187,7 +2187,7 @@ public class Table {
 					}
 				}
 				if (leaf != null) {
-					bufferId = leaf.getBufferId();
+					buffer_id = leaf.getBufferId();
 					recordIndex = index;
 				}
 				expectedModCount = modCount;
@@ -2213,7 +2213,7 @@ public class Table {
 						if (!isNext) {
 							++nextIndex;
 						}
-						int nextBufferId = bufferId;
+						int nextBufferId = buffer_id;
 						if (nextIndex == leaf.keyCount) {
 							leaf = leaf.getNextLeaf();
 							if (leaf == null) {
@@ -2227,7 +2227,7 @@ public class Table {
 						DBRecord nextRecord = leaf.getRecord(schema, nextIndex);
 						hasNext = nextRecord.getKey() <= maxKey;
 						if (hasNext) {
-							bufferId = nextBufferId;
+							buffer_id = nextBufferId;
 							recordIndex = nextIndex;
 							record = nextRecord;
 							curKey = record.getKey();
@@ -2260,7 +2260,7 @@ public class Table {
 						if (!isPrev) {
 							--prevIndex;
 						}
-						int prevBufferId = bufferId;
+						int prevBufferId = buffer_id;
 						if (prevIndex < 0) {
 							leaf = leaf.getPreviousLeaf();
 							if (leaf == null) {
@@ -2274,7 +2274,7 @@ public class Table {
 						DBRecord prevRecord = leaf.getRecord(schema, prevIndex);
 						hasPrev = prevRecord.getKey() >= minKey;
 						if (hasPrev) {
-							bufferId = prevBufferId;
+							buffer_id = prevBufferId;
 							recordIndex = prevIndex;
 							record = prevRecord;
 							curKey = record.getKey();
@@ -2328,7 +2328,7 @@ public class Table {
 	 */
 	private class FieldKeyRecordIterator implements RecordIterator {
 
-		private int bufferId = -1; // current record buffer ID
+		private int buffer_id = -1; // current record buffer ID
 		private int recordIndex; // current record index
 		private boolean isNext; // recover position is next record
 		private boolean isPrev; // recover position is previous record
@@ -2383,7 +2383,7 @@ public class Table {
 				// If startKey not specified, start with leftmost record
 				if (startKey == null) {
 					FieldKeyRecordNode leaf = rootNode.getLeftmostLeafNode();
-					bufferId = leaf.getBufferId();
+					buffer_id = leaf.getBufferId();
 					recordIndex = 0;
 					record = leaf.getRecord(schema, 0);
 //					curKey = record.getKeyField();
@@ -2441,7 +2441,7 @@ public class Table {
 					}
 
 					if (hasPrev || hasNext) {
-						bufferId = leaf.getBufferId();
+						buffer_id = leaf.getBufferId();
 						record = leaf.getRecord(schema, recordIndex);
 //						curKey = record.getKeyField();
 					}
@@ -2462,7 +2462,7 @@ public class Table {
 		 * else if false and the current record no longer exists, the current position
 		 * will be set to the next record and isNext set to true.
 		 * @return FieldKeyRecordNode the leaf node containing the current record position
-		 * identified by bufferId and recordIndex.  If null, the current record was not found
+		 * identified by buffer_id and recordIndex.  If null, the current record was not found
 		 * or the position could not be set to a next/previous record position based upon the
 		 * recoverPrev value specified.
 		 * @throws IOException thrown if IO error occurs
@@ -2479,7 +2479,7 @@ public class Table {
 			isPrev = false;
 
 			if (expectedModCount == modCount) {
-				leaf = (FieldKeyRecordNode) getFieldKeyNode(bufferId);
+				leaf = (FieldKeyRecordNode) getFieldKeyNode(buffer_id);
 				if (recordIndex >= leaf.getKeyCount() ||
 					!leaf.getKeyField(recordIndex).equals(key)) {
 					leaf = null; // something changed - key search required
@@ -2512,7 +2512,7 @@ public class Table {
 					}
 				}
 				if (leaf != null) {
-					bufferId = leaf.getBufferId();
+					buffer_id = leaf.getBufferId();
 					recordIndex = index;
 				}
 				expectedModCount = modCount;
@@ -2538,7 +2538,7 @@ public class Table {
 						if (!isNext) {
 							++nextIndex;
 						}
-						int nextBufferId = bufferId;
+						int nextBufferId = buffer_id;
 						if (nextIndex == leaf.getKeyCount()) {
 							leaf = leaf.getNextLeaf();
 							if (leaf == null) {
@@ -2553,7 +2553,7 @@ public class Table {
 						hasNext = maxKey == null ? true
 								: (nextRecord.getKeyField().compareTo(maxKey) <= 0);
 						if (hasNext) {
-							bufferId = nextBufferId;
+							buffer_id = nextBufferId;
 							recordIndex = nextIndex;
 							record = nextRecord;
 //							curKey = record.getKeyField();
@@ -2586,7 +2586,7 @@ public class Table {
 						if (!isPrev) {
 							--prevIndex;
 						}
-						int prevBufferId = bufferId;
+						int prevBufferId = buffer_id;
 						if (prevIndex < 0) {
 							leaf = leaf.getPreviousLeaf();
 							if (leaf == null) {
@@ -2601,7 +2601,7 @@ public class Table {
 						hasPrev = minKey == null ? true
 								: (prevRecord.getKeyField().compareTo(minKey) >= 0);
 						if (hasPrev) {
-							bufferId = prevBufferId;
+							buffer_id = prevBufferId;
 							recordIndex = prevIndex;
 							record = prevRecord;
 //							curKey = record.getKeyField();
@@ -2730,7 +2730,7 @@ public class Table {
 	 */
 	private class LongKeyIterator1 implements DBLongIterator {
 
-		private int bufferId;
+		private int buffer_id;
 		private int keyIndex;
 		private long[] keys;
 		private long key;
@@ -2747,7 +2747,7 @@ public class Table {
 
 		LongKeyIterator1(LongKeyIterator2 keyIter) throws IOException {
 
-			this.bufferId = keyIter.bufferId;
+			this.buffer_id = keyIter.buffer_id;
 			this.keyIndex = keyIter.keyIndex;
 			this.key = keyIter.key;
 			this.lastKey = keyIter.lastKey;
@@ -2758,13 +2758,13 @@ public class Table {
 			this.minKey = keyIter.minKey;
 			this.maxKey = keyIter.maxKey;
 
-			if (bufferId >= 0) {
+			if (buffer_id >= 0) {
 
 				if (modCount != expectedModCount) {
 					reset();
 				}
 				else {
-					LongKeyRecordNode leaf = (LongKeyRecordNode) nodeMgr.getLongKeyNode(bufferId);
+					LongKeyRecordNode leaf = (LongKeyRecordNode) nodeMgr.getLongKeyNode(buffer_id);
 					getKeys(leaf);
 				}
 
@@ -2807,7 +2807,7 @@ public class Table {
 			hasNext = false;
 
 			if (rootBufferId < 0) {
-				bufferId = -1;
+				buffer_id = -1;
 				keys = new long[0];
 				return;
 			}
@@ -2850,7 +2850,7 @@ public class Table {
 							leaf = leaf.getNextLeaf();
 							if (leaf == null) {
 								keys = new long[0];
-								bufferId = -1;
+								buffer_id = -1;
 								return;
 							}
 							keyIndex = 0;
@@ -2871,7 +2871,7 @@ public class Table {
 								leaf = leaf.getPreviousLeaf();
 								if (leaf == null) {
 									keys = new long[0];
-									bufferId = -1;
+									buffer_id = -1;
 									return;
 								}
 								keyIndex = leaf.keyCount - 1;
@@ -2907,7 +2907,7 @@ public class Table {
 		}
 
 		private void getKeys(LongKeyRecordNode node) {
-			bufferId = node.getBufferId();
+			buffer_id = node.getBufferId();
 			if (keys == null || keys.length != node.keyCount) {
 				keys = new long[node.keyCount];
 			}
@@ -2930,11 +2930,11 @@ public class Table {
 					// Process next leaf if needed
 					if (nextIndex >= keys.length) {
 						try {
-							if (bufferId == -1) {
+							if (buffer_id == -1) {
 								return false;
 							}
 							LongKeyRecordNode leaf = ((LongKeyRecordNode) nodeMgr.getLongKeyNode(
-								bufferId)).getNextLeaf();
+								buffer_id)).getNextLeaf();
 							if (leaf == null || leaf.getKey(0) > maxKey) {
 								return false;
 							}
@@ -2978,11 +2978,11 @@ public class Table {
 					// Process previous leaf if needed
 					if (prevIndex < 0 || keys.length == 0) {
 						try {
-							if (bufferId == -1) {
+							if (buffer_id == -1) {
 								return false;
 							}
 							LongKeyRecordNode leaf = ((LongKeyRecordNode) nodeMgr.getLongKeyNode(
-								bufferId)).getPreviousLeaf();
+								buffer_id)).getPreviousLeaf();
 							if (leaf == null) {
 								return false;
 							}
@@ -3072,7 +3072,7 @@ public class Table {
 	 */
 	private class LongKeyIterator2 implements DBLongIterator {
 
-		private int bufferId;
+		private int buffer_id;
 		private int keyIndex;
 		private long key;
 		private long lastKey;
@@ -3128,7 +3128,7 @@ public class Table {
 			expectedModCount = modCount;
 			hasPrev = false;
 			hasNext = false;
-			bufferId = -1;
+			buffer_id = -1;
 
 			if (rootBufferId < 0) {
 				return;
@@ -3139,7 +3139,7 @@ public class Table {
 				LongKeyNode rootNode = nodeMgr.getLongKeyNode(rootBufferId);
 
 				leaf = rootNode.getLeafNode(targetKey);
-				bufferId = leaf.getBufferId();
+				buffer_id = leaf.getBufferId();
 
 				// Empty leaf node - special case
 				if (leaf.keyCount == 0) {
@@ -3194,7 +3194,7 @@ public class Table {
 				}
 				if (!hasNext) {
 
-					if (bufferId < 0 || keyIndex < 0) {
+					if (buffer_id < 0 || keyIndex < 0) {
 						return false;
 					}
 
@@ -3204,7 +3204,7 @@ public class Table {
 					try {
 						// Process next leaf if needed
 						LongKeyRecordNode leaf =
-							(LongKeyRecordNode) nodeMgr.getLongKeyNode(bufferId);
+							(LongKeyRecordNode) nodeMgr.getLongKeyNode(buffer_id);
 						if (nextIndex >= leaf.keyCount) {
 							leaf = leaf.getNextLeaf();
 							if (leaf == null) {
@@ -3214,7 +3214,7 @@ public class Table {
 							if (nextKey > maxKey) {
 								return false;
 							}
-							bufferId = leaf.getBufferId();
+							buffer_id = leaf.getBufferId();
 							key = nextKey;
 							keyIndex = 0;
 							hasNext = true;
@@ -3249,7 +3249,7 @@ public class Table {
 				}
 				if (!hasPrev) {
 
-					if (bufferId < 0 || keyIndex < 0) {
+					if (buffer_id < 0 || keyIndex < 0) {
 						return false;
 					}
 
@@ -3259,7 +3259,7 @@ public class Table {
 					try {
 						// Process previous leaf if needed
 						LongKeyRecordNode leaf =
-							(LongKeyRecordNode) nodeMgr.getLongKeyNode(bufferId);
+							(LongKeyRecordNode) nodeMgr.getLongKeyNode(buffer_id);
 						if (prevIndex < 0) {
 							leaf = leaf.getPreviousLeaf();
 							if (leaf == null) {
@@ -3270,7 +3270,7 @@ public class Table {
 							if (prevKey < minKey) {
 								return false;
 							}
-							bufferId = leaf.getBufferId();
+							buffer_id = leaf.getBufferId();
 							key = prevKey;
 							keyIndex = prevIndex;
 							hasNext = false;
@@ -3429,7 +3429,7 @@ public class Table {
 	 */
 	private class FieldKeyIterator1 implements DBFieldIterator {
 
-		private int bufferId;
+		private int buffer_id;
 		private int keyIndex;
 		private Field[] keys;
 		private Field key;
@@ -3445,7 +3445,7 @@ public class Table {
 
 		FieldKeyIterator1(FieldKeyIterator2 keyIter) throws IOException {
 
-			this.bufferId = keyIter.bufferId;
+			this.buffer_id = keyIter.buffer_id;
 			this.keyIndex = keyIter.keyIndex;
 			this.key = keyIter.key;
 			this.lastKey = keyIter.lastKey;
@@ -3455,13 +3455,13 @@ public class Table {
 			this.minKey = keyIter.minKey;
 			this.maxKey = keyIter.maxKey;
 
-			if (bufferId >= 0) {
+			if (buffer_id >= 0) {
 
 				if (modCount != expectedModCount) {
 					reset();
 				}
 				else {
-					FieldKeyRecordNode leaf = (FieldKeyRecordNode) getFieldKeyNode(bufferId);
+					FieldKeyRecordNode leaf = (FieldKeyRecordNode) getFieldKeyNode(buffer_id);
 					getKeys(leaf);
 				}
 
@@ -3485,7 +3485,7 @@ public class Table {
 
 			if (rootBufferId < 0) {
 				keys = Field.EMPTY_ARRAY;
-				bufferId = -1;
+				buffer_id = -1;
 				return;
 			}
 
@@ -3541,7 +3541,7 @@ public class Table {
 							leaf = leaf.getNextLeaf();
 							if (leaf == null) {
 								keys = Field.EMPTY_ARRAY;
-								bufferId = -1;
+								buffer_id = -1;
 								return;
 							}
 							keyIndex = 0;
@@ -3563,7 +3563,7 @@ public class Table {
 								leaf = leaf.getPreviousLeaf();
 								if (leaf == null) {
 									keys = Field.EMPTY_ARRAY;
-									bufferId = -1;
+									buffer_id = -1;
 									return;
 								}
 								keyIndex = leaf.getKeyCount() - 1;
@@ -3599,7 +3599,7 @@ public class Table {
 		}
 
 		private void getKeys(FieldKeyRecordNode node) throws IOException {
-			bufferId = node.getBufferId();
+			buffer_id = node.getBufferId();
 			int keyCount = node.getKeyCount();
 			if (keys == null || keys.length != keyCount) {
 				keys = new Field[keyCount];
@@ -3617,7 +3617,7 @@ public class Table {
 				}
 				if (!hasNext) {
 
-					if (bufferId < 0) {
+					if (buffer_id < 0) {
 						return false;
 					}
 
@@ -3628,7 +3628,7 @@ public class Table {
 					if (nextIndex >= keys.length) {
 						try {
 							FieldKeyRecordNode leaf =
-								((FieldKeyRecordNode) getFieldKeyNode(bufferId)).getNextLeaf();
+								((FieldKeyRecordNode) getFieldKeyNode(buffer_id)).getNextLeaf();
 							if (leaf == null ||
 								(maxKey != null && leaf.getKeyField(0).compareTo(maxKey) > 0)) {
 								return false;
@@ -3667,7 +3667,7 @@ public class Table {
 				}
 				if (!hasPrev) {
 
-					if (bufferId < 0) {
+					if (buffer_id < 0) {
 						return false;
 					}
 
@@ -3678,7 +3678,7 @@ public class Table {
 					if (prevIndex < 0) {
 						try {
 							FieldKeyRecordNode leaf =
-								((FieldKeyRecordNode) getFieldKeyNode(bufferId)).getPreviousLeaf();
+								((FieldKeyRecordNode) getFieldKeyNode(buffer_id)).getPreviousLeaf();
 							if (leaf == null) {
 								return false;
 							}
@@ -3767,7 +3767,7 @@ public class Table {
 	 */
 	private class FieldKeyIterator2 implements DBFieldIterator {
 
-		private int bufferId;
+		private int buffer_id;
 		private int keyIndex;
 		private Field lastKey;
 		private Field key;
@@ -3811,7 +3811,7 @@ public class Table {
 			expectedModCount = modCount;
 			hasNext = false;
 			hasPrev = false;
-			bufferId = -1;
+			buffer_id = -1;
 
 			if (rootBufferId < 0) {
 				return;
@@ -3829,14 +3829,14 @@ public class Table {
 				// If startKey not specified, start with leftmost record
 				if (targetKey == null) {
 					leaf = rootNode.getLeftmostLeafNode();
-					bufferId = leaf.getBufferId();
+					buffer_id = leaf.getBufferId();
 					key = leaf.getKeyField(0);
 					keyIndex = 0;
 					hasNext = true;
 					return;
 				}
 				leaf = rootNode.getLeafNode(targetKey);
-				bufferId = leaf.getBufferId();
+				buffer_id = leaf.getBufferId();
 
 				// Empty leaf node - special case
 				if (leaf.getKeyCount() == 0) {
@@ -3892,7 +3892,7 @@ public class Table {
 				}
 				if (!hasNext) {
 
-					if (bufferId < 0 || keyIndex < 0) {
+					if (buffer_id < 0 || keyIndex < 0) {
 						return false;
 					}
 
@@ -3901,7 +3901,7 @@ public class Table {
 
 					try {
 						// Process next leaf if needed
-						FieldKeyRecordNode leaf = (FieldKeyRecordNode) getFieldKeyNode(bufferId);
+						FieldKeyRecordNode leaf = (FieldKeyRecordNode) getFieldKeyNode(buffer_id);
 						if (nextIndex >= leaf.getKeyCount()) {
 							leaf = leaf.getNextLeaf();
 							if (leaf == null) {
@@ -3911,7 +3911,7 @@ public class Table {
 							if (maxKey != null && nextKey.compareTo(maxKey) > 0) {
 								return false;
 							}
-							bufferId = leaf.getBufferId();
+							buffer_id = leaf.getBufferId();
 							key = nextKey;
 							keyIndex = 0;
 							hasNext = true;
@@ -3945,7 +3945,7 @@ public class Table {
 				}
 				if (!hasPrev) {
 
-					if (bufferId < 0 || keyIndex < 0) {
+					if (buffer_id < 0 || keyIndex < 0) {
 						return false;
 					}
 
@@ -3954,7 +3954,7 @@ public class Table {
 
 					try {
 						// Process previous leaf if needed
-						FieldKeyRecordNode leaf = (FieldKeyRecordNode) getFieldKeyNode(bufferId);
+						FieldKeyRecordNode leaf = (FieldKeyRecordNode) getFieldKeyNode(buffer_id);
 						if (prevIndex < 0) {
 							leaf = leaf.getPreviousLeaf();
 							if (leaf == null) {
@@ -3965,7 +3965,7 @@ public class Table {
 							if (minKey != null && prevKey.compareTo(minKey) < 0) {
 								return false;
 							}
-							bufferId = leaf.getBufferId();
+							buffer_id = leaf.getBufferId();
 							key = prevKey;
 							keyIndex = prevIndex;
 							hasNext = false;

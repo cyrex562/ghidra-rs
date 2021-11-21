@@ -166,12 +166,12 @@ class FieldFactory {
 	/**
 	 * Get the column position given the byte offset.
 	 * @param block byte block
-	 * @param byteOffset byte offset into the unit
+	 * @param byte_offset byte offset into the unit
 	 *
 	 * @return int column position within the field
 	 */
-	int getColumnPosition(ByteBlock block, int byteOffset) {
-		return model.getColumnPosition(block, byteOffset);
+	int getColumnPosition(ByteBlock block, int byte_offset) {
+		return model.getColumnPosition(block, byte_offset);
 	}
 
 	/**

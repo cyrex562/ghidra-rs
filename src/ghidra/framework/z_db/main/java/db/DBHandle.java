@@ -33,7 +33,7 @@ import ghidra.util.task.TaskMonitor;
  */
 public class DBHandle {
 
-	protected BufferMgr bufferMgr;
+	protected BufferMgr buffer_mgr;
 	private DBParms dbParms;
 	private MasterTable masterTable;
 	private Hashtable<String, Table> tables;
@@ -78,13 +78,13 @@ public class DBHandle {
 	 * @throws IOException if a IO error occurs
 	 */
 	public DBHandle(int requestedBufferSize, long approxCacheSize) throws IOException {
-		bufferMgr =
+		buffer_mgr =
 			new BufferMgr(requestedBufferSize, approxCacheSize, BufferMgr.DEFAULT_CHECKPOINT_COUNT);
-		dbParms = new DBParms(bufferMgr, true);
+		dbParms = new DBParms(buffer_mgr, true);
 		dbParms.set(DBParms.MASTER_TABLE_ROOT_BUFFER_ID_PARM, -1);
 		masterTable = new MasterTable(this);
 		initDatabaseId();
-		bufferMgr.clearCheckpoints();
+		buffer_mgr.clearCheckpoints();
 		tables = new Hashtable<>();
 	}
 
@@ -95,13 +95,13 @@ public class DBHandle {
 	 * @throws IOException if IO error occurs
 	 */
 	public DBHandle(BufferFile bufferFile) throws IOException {
-		bufferMgr = new BufferMgr(bufferFile);
-		dbParms = new DBParms(bufferMgr, false);
+		buffer_mgr = new BufferMgr(bufferFile);
+		dbParms = new DBParms(buffer_mgr, false);
 		readDatabaseId();
-		if (databaseId == 0 && bufferMgr.canSave()) {
+		if (databaseId == 0 && buffer_mgr.canSave()) {
 			// Database is updatable - establish missing databaseId
 			initDatabaseId();
-			bufferMgr.clearCheckpoints();
+			buffer_mgr.clearCheckpoints();
 		}
 		masterTable = new MasterTable(this);
 		loadTables();
@@ -118,22 +118,22 @@ public class DBHandle {
 	 */
 	public DBHandle(BufferFile bufferFile, boolean recover, TaskMonitor monitor)
 			throws IOException, CancelledException {
-		bufferMgr = new BufferMgr(bufferFile);
-		if (bufferMgr.canSave()) {
+		buffer_mgr = new BufferMgr(bufferFile);
+		if (buffer_mgr.canSave()) {
 			if (recover) {
-				bufferMgr.recover(monitor);
+				buffer_mgr.recover(monitor);
 			}
 			else {
-				bufferMgr.clearRecoveryFiles();
+				buffer_mgr.clearRecoveryFiles();
 			}
 		}
-		dbParms = new DBParms(bufferMgr, false);
+		dbParms = new DBParms(buffer_mgr, false);
 		readDatabaseId();
-		if (databaseId == 0 && bufferMgr.canSave()) {
+		if (databaseId == 0 && buffer_mgr.canSave()) {
 			// Database is updatable - establish missing databaseId
 			initDatabaseId();
 		}
-		bufferMgr.clearCheckpoints();
+		buffer_mgr.clearCheckpoints();
 		masterTable = new MasterTable(this);
 		loadTables();
 	}
@@ -149,8 +149,8 @@ public class DBHandle {
 		BufferFile bfile = new LocalBufferFile(file, true);
 		boolean success = false;
 		try {
-			bufferMgr = new BufferMgr(bfile);
-			dbParms = new DBParms(bufferMgr, false);
+			buffer_mgr = new BufferMgr(bfile);
+			dbParms = new DBParms(buffer_mgr, false);
 			readDatabaseId();
 			masterTable = new MasterTable(this);
 			loadTables();
@@ -261,7 +261,7 @@ public class DBHandle {
 	 * @throws IOException if IO error occurs
 	 */
 	public LocalBufferFile getRecoveryChangeSetFile() throws IOException {
-		return bufferMgr.getRecoveryChangeSetFile();
+		return buffer_mgr.getRecoveryChangeSetFile();
 	}
 
 	/**
@@ -277,7 +277,7 @@ public class DBHandle {
 			throws CancelledException, IOException {
 		long cpNum;
 		synchronized (this) {
-			if (!bufferMgr.modifiedSinceSnapshot()) {
+			if (!buffer_mgr.modifiedSinceSnapshot()) {
 				return true;
 			}
 			if (txStarted) {
@@ -288,7 +288,7 @@ public class DBHandle {
 			}
 			cpNum = checkpointNum;
 		}
-		if (!bufferMgr.takeRecoverySnapshot(changeSet, monitor)) {
+		if (!buffer_mgr.takeRecoverySnapshot(changeSet, monitor)) {
 			return false;
 		}
 		synchronized (this) {
@@ -365,7 +365,7 @@ public class DBHandle {
 	 * @return the buffer manager
 	 */
 	BufferMgr getBufferMgr() {
-		return bufferMgr;
+		return buffer_mgr;
 	}
 
 	/**
@@ -373,7 +373,7 @@ public class DBHandle {
 	 * WARNING! EXPERIMENTAL !!!
 	 */
 	public void enablePreCache() {
-		bufferMgr.enablePreCache();
+		buffer_mgr.enablePreCache();
 	}
 
 	/**
@@ -431,17 +431,17 @@ public class DBHandle {
 			throw new IllegalStateException("Transaction id is not active");
 		}
 		try {
-			if (bufferMgr != null && !bufferMgr.atCheckpoint()) {
+			if (buffer_mgr != null && !buffer_mgr.atCheckpoint()) {
 				if (commit) {
 					masterTable.flush();
-					if (bufferMgr.checkpoint()) {
+					if (buffer_mgr.checkpoint()) {
 						++checkpointNum;
 						return true;
 					}
 					return false;
 				}
 				// rollback
-				bufferMgr.undo(false);
+				buffer_mgr.undo(false);
 				reloadTables();
 			}
 		}
@@ -456,7 +456,7 @@ public class DBHandle {
 	 * @return  true if there are uncommitted changes to the database.
 	 */
 	public synchronized boolean hasUncommittedChanges() {
-		return (bufferMgr != null && !bufferMgr.atCheckpoint());
+		return (buffer_mgr != null && !buffer_mgr.atCheckpoint());
 	}
 
 	public synchronized void terminateTransaction(long id, boolean commit) throws IOException {
@@ -469,7 +469,7 @@ public class DBHandle {
 	 * @return true if an undo can be performed.
 	 */
 	public boolean canUndo() {
-		return !txStarted && bufferMgr != null && bufferMgr.hasUndoCheckpoints();
+		return !txStarted && buffer_mgr != null && buffer_mgr.hasUndoCheckpoints();
 	}
 
 	/**
@@ -480,7 +480,7 @@ public class DBHandle {
 	 * @throws IOException if IO error occurs
 	 */
 	public synchronized boolean undo() throws IOException {
-		if (canUndo() && bufferMgr.undo(true)) {
+		if (canUndo() && buffer_mgr.undo(true)) {
 			++checkpointNum;
 			reloadTables();
 			return true;
@@ -492,14 +492,14 @@ public class DBHandle {
 	 * @return number of undo-able transactions
 	 */
 	public int getAvailableUndoCount() {
-		return bufferMgr != null ? bufferMgr.getAvailableUndoCount() : 0;
+		return buffer_mgr != null ? buffer_mgr.getAvailableUndoCount() : 0;
 	}
 
 	/**
 	 * @return the number of redo-able transactions
 	 */
 	public int getAvailableRedoCount() {
-		return bufferMgr != null ? bufferMgr.getAvailableRedoCount() : 0;
+		return buffer_mgr != null ? buffer_mgr.getAvailableRedoCount() : 0;
 	}
 
 	/**
@@ -507,7 +507,7 @@ public class DBHandle {
 	 * @return true if a redo can be performed.
 	 */
 	public boolean canRedo() {
-		return !txStarted && bufferMgr != null && bufferMgr.hasRedoCheckpoints();
+		return !txStarted && buffer_mgr != null && buffer_mgr.hasRedoCheckpoints();
 	}
 
 	/**
@@ -519,7 +519,7 @@ public class DBHandle {
 	 * @throws IOException if IO error occurs
 	 */
 	public synchronized boolean redo() throws IOException {
-		if (canRedo() && bufferMgr.redo()) {
+		if (canRedo() && buffer_mgr.redo()) {
 			++checkpointNum;
 			reloadTables();
 			return true;
@@ -534,7 +534,7 @@ public class DBHandle {
 	 * value restores the default value.
 	 */
 	public synchronized void setMaxUndos(int maxUndos) {
-		bufferMgr.setMaxUndos(maxUndos);
+		buffer_mgr.setMaxUndos(maxUndos);
 	}
 
 	/**
@@ -558,7 +558,7 @@ public class DBHandle {
 //	boolean revert(int oldVersion, TaskMonitor monitor) throws IOException {
 //		for (int v = (version-1); v >= oldVersion; --v) {
 //			monitor.setMessage("Processing Version " + v);
-//			bufferMgr.applyVersionFile(db.getVersionFile(v), monitor);
+//			buffer_mgr.applyVersionFile(db.getVersionFile(v), monitor);
 //			if (monitor.isCancelled())
 //				return false;
 //		}
@@ -580,10 +580,10 @@ public class DBHandle {
 	 */
 	public synchronized void close(boolean keepRecoveryData) {
 		closeScratchPad();
-		if (bufferMgr != null) {
+		if (buffer_mgr != null) {
 			dbClosed();
-			bufferMgr.dispose(keepRecoveryData);
-			bufferMgr = null;
+			buffer_mgr.dispose(keepRecoveryData);
+			buffer_mgr = null;
 		}
 	}
 
@@ -591,14 +591,14 @@ public class DBHandle {
 	 * @return true if unsaved changes have been made.
 	 */
 	public synchronized boolean isChanged() {
-		return bufferMgr != null && bufferMgr.isChanged();
+		return buffer_mgr != null && buffer_mgr.isChanged();
 	}
 
 	/**
 	 * @return true if this database handle has been closed.
 	 */
 	public boolean isClosed() {
-		return bufferMgr == null;
+		return buffer_mgr == null;
 	}
 
 	/**
@@ -628,7 +628,7 @@ public class DBHandle {
 			endTransaction(txId, true); // saved file may be corrupt on IOException
 		}
 
-		bufferMgr.save(comment, changeSet, monitor);
+		buffer_mgr.save(comment, changeSet, monitor);
 	}
 
 	/**
@@ -653,7 +653,7 @@ public class DBHandle {
 		boolean addedTx = false;
 		try {
 			// About to create copy of existing file - assign new databaseId
-			if (bufferMgr.getSourceFile() != null) {
+			if (buffer_mgr.getSourceFile() != null) {
 				initDatabaseId();
 			}
 			masterTable.flush();
@@ -662,7 +662,7 @@ public class DBHandle {
 			addedTx = endTransaction(txId, true); // saved file may be corrupt on IOException
 		}
 
-		bufferMgr.saveAs(outFile, associateWithNewFile, monitor);
+		buffer_mgr.saveAs(outFile, associateWithNewFile, monitor);
 
 		if (addedTx && !associateWithNewFile) {
 			// Restore state and original databaseId
@@ -704,7 +704,7 @@ public class DBHandle {
 			endTransaction(txId, true); // saved file may be corrupt on IOException
 		}
 
-		bufferMgr.saveAs(outFile, true, monitor);
+		buffer_mgr.saveAs(outFile, true, monitor);
 	}
 
 	/**
@@ -726,7 +726,7 @@ public class DBHandle {
 			throw new DuplicateFileException("File already exists: " + file);
 		}
 
-		LocalBufferFile outFile = new LocalBufferFile(file, bufferMgr.getBufferSize());
+		LocalBufferFile outFile = new LocalBufferFile(file, buffer_mgr.getBufferSize());
 		boolean success = false;
 		try {
 			saveAs(outFile, associateWithNewFile, monitor);
@@ -753,7 +753,7 @@ public class DBHandle {
 	 */
 	public DBBuffer createBuffer(int length) throws IOException {
 		checkTransaction();
-		return new DBBuffer(this, new ChainedBuffer(length, true, bufferMgr));
+		return new DBBuffer(this, new ChainedBuffer(length, true, buffer_mgr));
 	}
 
 	/**
@@ -769,7 +769,7 @@ public class DBHandle {
 	public DBBuffer createBuffer(DBBuffer shadowBuffer) throws IOException {
 		checkTransaction();
 		return new DBBuffer(this,
-			new ChainedBuffer(shadowBuffer.length(), true, shadowBuffer.buf, 0, bufferMgr));
+			new ChainedBuffer(shadowBuffer.length(), true, shadowBuffer.buf, 0, buffer_mgr));
 	}
 
 	/**
@@ -781,7 +781,7 @@ public class DBHandle {
 	 * @throws IOException if an I/O error occurs while getting the buffer.
 	 */
 	public DBBuffer getBuffer(int id) throws IOException {
-		return new DBBuffer(this, new ChainedBuffer(bufferMgr, id));
+		return new DBBuffer(this, new ChainedBuffer(buffer_mgr, id));
 	}
 
 	/**
@@ -796,7 +796,7 @@ public class DBHandle {
 	 * @throws IOException if an I/O error occurs while getting the buffer.
 	 */
 	public DBBuffer getBuffer(int id, DBBuffer shadowBuffer) throws IOException {
-		return new DBBuffer(this, new ChainedBuffer(bufferMgr, id, shadowBuffer.buf, 0));
+		return new DBBuffer(this, new ChainedBuffer(buffer_mgr, id, shadowBuffer.buf, 0));
 	}
 
 	/**
@@ -805,7 +805,7 @@ public class DBHandle {
 	 */
 	public boolean canUpdate() {
 		try {
-			return bufferMgr != null && bufferMgr.canSave();
+			return buffer_mgr != null && buffer_mgr.canSave();
 		}
 		catch (IOException e) {
 			return false;
@@ -977,21 +977,21 @@ public class DBHandle {
 	 * @return number of buffer cache hits
 	 */
 	public long getCacheHits() {
-		return bufferMgr.getCacheHits();
+		return buffer_mgr.getCacheHits();
 	}
 
 	/**
 	 * @return number of buffer cache misses
 	 */
 	public long getCacheMisses() {
-		return bufferMgr.getCacheMisses();
+		return buffer_mgr.getCacheMisses();
 	}
 
 	/**
 	 * @return low water mark (minimum buffer pool size)
 	 */
 	public int getLowBufferCount() {
-		return bufferMgr.getLowBufferCount();
+		return buffer_mgr.getLowBufferCount();
 	}
 
 	/*
@@ -1011,7 +1011,7 @@ public class DBHandle {
 	 * @return buffer size utilized by this database
 	 */
 	public int getBufferSize() {
-		return bufferMgr.getBufferSize();
+		return buffer_mgr.getBufferSize();
 	}
 
 }

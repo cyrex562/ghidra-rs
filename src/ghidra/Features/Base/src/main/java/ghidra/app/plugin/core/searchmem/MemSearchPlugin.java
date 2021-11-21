@@ -741,10 +741,10 @@ public class MemSearchPlugin extends Plugin implements OptionsChangeListener,
 
 		}
 
-		private int getCharPosition(String text, int byteOffset) {
+		private int getCharPosition(String text, int byte_offset) {
 			int groupSize = byteGroupSize * 2 + byteDelimiter.length();
-			int groupIndex = byteOffset / byteGroupSize;
-			int groupOffset = byteOffset % byteGroupSize;
+			int groupIndex = byte_offset / byteGroupSize;
+			int groupOffset = byte_offset % byteGroupSize;
 
 			int pos = groupIndex * groupSize + 2 * groupOffset;
 			return Math.min(text.length() - 1, pos);

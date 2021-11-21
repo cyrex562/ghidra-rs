@@ -48,7 +48,7 @@ public class DBTraceMemoryBufferEntry extends DBAnnotatedObject {
 	@DBAnnotatedField(column = IN_USE_COLUMN_NAME)
 	private byte[] inUse = new byte[DBTraceMemorySpace.BLOCKS_PER_BUFFER / Byte.SIZE];
 	@DBAnnotatedField(column = BUFFER_ID_COLUMN_NAME)
-	private int bufferId = -1;
+	private int buffer_id = -1;
 	@DBAnnotatedField(column = COMPRESSED_COLUMN_NAME)
 	private boolean compressed;
 
@@ -70,10 +70,10 @@ public class DBTraceMemoryBufferEntry extends DBAnnotatedObject {
 		if (created) {
 			buffer = dbh.createBuffer(
 				DBTraceMemorySpace.BLOCKS_PER_BUFFER << DBTraceMemorySpace.BLOCK_SHIFT);
-			bufferId = buffer.getId();
+			buffer_id = buffer.getId();
 		}
 		else {
-			buffer = dbh.getBuffer(bufferId);
+			buffer = dbh.getBuffer(buffer_id);
 		}
 	}
 
@@ -89,7 +89,7 @@ public class DBTraceMemoryBufferEntry extends DBAnnotatedObject {
 		}
 		buffer.delete();
 		buffer = newBuffer;
-		bufferId = buffer.getId();
+		buffer_id = buffer.getId();
 		compressed = true;
 		update(BUFFER_ID_COLUMN, COMPRESSED_COLUMN);
 	}
@@ -107,7 +107,7 @@ public class DBTraceMemoryBufferEntry extends DBAnnotatedObject {
 		}
 		buffer.delete();
 		buffer = newBuffer;
-		bufferId = buffer.getId();
+		buffer_id = buffer.getId();
 		compressed = false;
 		update(BUFFER_ID_COLUMN, COMPRESSED_COLUMN);
 	}

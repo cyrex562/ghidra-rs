@@ -413,10 +413,10 @@ class VarRecNode extends LongKeyRecordNode {
 
 	/**
 	 * Remove a chained buffer.
-	 * @param bufferId chained buffer ID
+	 * @param buffer_id chained buffer ID
 	 */
-	private void removeChainedBuffer(int bufferId) throws IOException {
-		ChainedBuffer chainedBuffer = new ChainedBuffer(nodeMgr.getBufferMgr(), bufferId);
+	private void removeChainedBuffer(int buffer_id) throws IOException {
+		ChainedBuffer chainedBuffer = new ChainedBuffer(nodeMgr.getBufferMgr(), buffer_id);
 		chainedBuffer.delete();
 	}
 
@@ -427,8 +427,8 @@ class VarRecNode extends LongKeyRecordNode {
 		for (int index = 0; index < keyCount; index++) {
 			if (hasIndirectStorage(index)) {
 				int offset = getRecordDataOffset(index);
-				int bufferId = buffer.getInt(offset);
-				removeChainedBuffer(bufferId);
+				int buffer_id = buffer.getInt(offset);
+				removeChainedBuffer(buffer_id);
 				buffer.putInt(offset, -1);
 			}
 		}

@@ -321,9 +321,9 @@ class VarKeyInteriorNode extends VarKeyNode implements FieldKeyInteriorNode {
 	 * The node key count is adjusted to reflect the addition of a child.
 	 * @param index child key index
 	 * @param key child node key
-	 * @param bufferId child node buffer ID
+	 * @param buffer_id child node buffer ID
 	 */
-	private void insertEntry(int index, Field key, int bufferId) throws IOException {
+	private void insertEntry(int index, Field key, int buffer_id) throws IOException {
 		// Make room for key data
 		int offset = moveKeys(index, -key.length());
 
@@ -334,7 +334,7 @@ class VarKeyInteriorNode extends VarKeyNode implements FieldKeyInteriorNode {
 
 		// Store key entry and data
 		buffer.putInt(start, offset);
-		buffer.putInt(start + KEY_OFFSET_SIZE, bufferId);
+		buffer.putInt(start + KEY_OFFSET_SIZE, buffer_id);
 		key.write(buffer, offset);
 
 		setKeyCount(keyCount + 1);

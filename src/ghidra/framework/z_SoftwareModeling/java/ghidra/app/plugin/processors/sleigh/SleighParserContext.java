@@ -249,11 +249,11 @@ public class SleighParserContext implements ParserContext {
 	public int getContextBytes(int bytestart, int bytesize) {
 		int intstart = bytestart / 4;
 		int res = context[intstart];
-		int byteOffset = bytestart % 4;
+		int byte_offset = bytestart % 4;
 		int unusedBytes = 4 - bytesize;
-		res <<= byteOffset * 8;
+		res <<= byte_offset * 8;
 		res >>>= unusedBytes * 8;
-		int remaining = bytesize - 4 + byteOffset;
+		int remaining = bytesize - 4 + byte_offset;
 		if (remaining > 0 && ++intstart < context.length) {
 			int res2 = context[intstart];
 			unusedBytes = 4 - remaining;

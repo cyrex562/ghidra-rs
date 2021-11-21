@@ -65,14 +65,14 @@ public class HexIntegerFormatModel implements UniversalDataFormatModel {
 	/**
 	 * Given the byte offset into a unit, get the column position.
 	 */
-	public int getColumnPosition(ByteBlock block, int byteOffset) {
-		if (byteOffset > 3) {
-			throw new IllegalArgumentException("invalid byteOffset: " + byteOffset);
+	public int getColumnPosition(ByteBlock block, int byte_offset) {
+		if (byte_offset > 3) {
+			throw new IllegalArgumentException("invalid byte_offset: " + byte_offset);
 		}
 		if (block.isBigEndian()) {
-			return byteOffset * 2;
+			return byte_offset * 2;
 		}
-		return (3 - byteOffset) * 2;
+		return (3 - byte_offset) * 2;
 	}
 
 	/**
@@ -141,12 +141,12 @@ public class HexIntegerFormatModel implements UniversalDataFormatModel {
 
 		byte cb = Byte.parseByte(new String(charArray), 16);
 		// get the correct byte offset based on position
-		int byteOffset = getByteOffset(block, charPosition);
+		int byte_offset = getByteOffset(block, charPosition);
 		BigInteger saveIndex = index;
-		index = index.add(BigInteger.valueOf(byteOffset));
+		index = index.add(BigInteger.valueOf(byte_offset));
 		byte b = block.getByte(index);
 		b = adjustByte(b, cb, charPosition);
-		int intValue = getInt(block, saveIndex, b, byteOffset);
+		int intValue = getInt(block, saveIndex, b, byte_offset);
 		block.setInt(saveIndex, intValue);
 		return true;
 	}
@@ -217,13 +217,13 @@ public class HexIntegerFormatModel implements UniversalDataFormatModel {
 		return b;
 	}
 
-	private int getInt(ByteBlock block, BigInteger offset, byte newb, int byteOffset) {
+	private int getInt(ByteBlock block, BigInteger offset, byte newb, int byte_offset) {
 		byte[] b = new byte[4];
 		try {
 			for (int i = 0; i < b.length; i++) {
 				b[i] = block.getByte(offset.add(BigInteger.valueOf(i)));
 			}
-			b[byteOffset] = newb;
+			b[byte_offset] = newb;
 
 			if (block.isBigEndian()) {
 				return (b[0] << 24) | ((b[1] << 16) & 0x00FF0000) | ((b[2] << 8) & 0x0000FF00) |

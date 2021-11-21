@@ -711,11 +711,11 @@ public class DWARFProgram implements Closeable {
 	 * <p>
 	 * Returns null if the requested entry does not exist.
 	 *
-	 * @param byteOffset the byte offset
+	 * @param byte_offset the byte offset
 	 * @return the entry with the given byte offset
 	 */
-	public DebugInfoEntry getEntryAtByteOffsetUnchecked(long byteOffset) {
-		return offsetMap.get(Long.valueOf(byteOffset));
+	public DebugInfoEntry getEntryAtByteOffsetUnchecked(long byte_offset) {
+		return offsetMap.get(Long.valueOf(byte_offset));
 	}
 
 	private List<DIEAggregate> getTypeReferers(DIEAggregate targetDIEA) {

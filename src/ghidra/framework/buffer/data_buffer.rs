@@ -100,7 +100,7 @@ impl DataBuffer {
         out
     }
 
-    fn get_byte(&self, offset: isize) -> u8 {
+    pub(crate) fn get_byte(&self, offset: isize) -> u8 {
         self.data[offset]
     }
 

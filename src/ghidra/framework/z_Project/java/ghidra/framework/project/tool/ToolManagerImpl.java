@@ -361,13 +361,13 @@ public class ToolManagerImpl implements ToolManager, PropertyChangeListener {
 	 * added or removed from any of the workspaces.
 	 * @return true if any tools in this workspace have changed
 	 */
-	public boolean hasChanged() {
+	public boolean has_changed() {
 		// check the connections for changes
 		Iterator<String> keys = connectMap.keySet().iterator();
 		while (keys.hasNext()) {
 			String key = keys.next();
 			ToolConnectionImpl tc = connectMap.get(key);
-			if (tc.hasChanged()) {
+			if (tc.has_changed()) {
 				return true;
 			}
 		}

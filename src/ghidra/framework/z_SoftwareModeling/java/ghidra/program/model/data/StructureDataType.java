@@ -648,11 +648,11 @@ public class StructureDataType extends CompositeDataTypeImpl implements Structur
 	}
 
 	@Override
-	public DataTypeComponentImpl insertBitFieldAt(int byteOffset, int byteWidth, int bitOffset,
+	public DataTypeComponentImpl insertBitFieldAt(int byte_offset, int byteWidth, int bitOffset,
 			DataType baseDataType, int bitSize, String componentName, String comment)
 			throws InvalidDataTypeException {
 
-		if (byteOffset < 0 || bitSize < 0) {
+		if (byte_offset < 0 || bitSize < 0) {
 			throw new IllegalArgumentException(
 				"Negative values not permitted when defining bitfield");
 		}
@@ -677,7 +677,7 @@ public class StructureDataType extends CompositeDataTypeImpl implements Structur
 		boolean hasConflict = false;
 		int additionalShift = 0;
 
-		int startBitOffset = BitOffsetComparator.getNormalizedBitfieldOffset(byteOffset, byteWidth,
+		int startBitOffset = BitOffsetComparator.getNormalizedBitfieldOffset(byte_offset, byteWidth,
 			effectiveBitSize, bitOffset, bigEndian);
 
 		Comparator<Object> bitOffsetComparator =
@@ -694,7 +694,7 @@ public class StructureDataType extends CompositeDataTypeImpl implements Structur
 				hasConflict = dtc.getOffset() != (startBitOffset / 8);
 			}
 			if (hasConflict) {
-				additionalShift = byteOffset - dtc.getOffset();
+				additionalShift = byte_offset - dtc.getOffset();
 			}
 		}
 
@@ -737,7 +737,7 @@ public class StructureDataType extends CompositeDataTypeImpl implements Structur
 			shiftOffsets(startIndex, 1, byteWidth + additionalShift);
 		}
 
-		int requiredLength = byteOffset + byteWidth;
+		int requiredLength = byte_offset + byteWidth;
 		if (requiredLength > structLength) {
 			structLength = requiredLength;
 		}
@@ -746,10 +746,10 @@ public class StructureDataType extends CompositeDataTypeImpl implements Structur
 		int storageBitOffset = bitOffset % 8;
 		int revisedOffset;
 		if (bigEndian) {
-			revisedOffset = byteOffset + byteWidth - ((effectiveBitSize + bitOffset + 7) / 8);
+			revisedOffset = byte_offset + byteWidth - ((effectiveBitSize + bitOffset + 7) / 8);
 		}
 		else {
-			revisedOffset = byteOffset + (bitOffset / 8);
+			revisedOffset = byte_offset + (bitOffset / 8);
 		}
 
 		BitFieldDataType bitfieldDt = new BitFieldDataType(baseDataType, bitSize, storageBitOffset);

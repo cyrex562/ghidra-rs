@@ -64,7 +64,7 @@ class VersionFile {
 	private int initialBufCount;
 	
 	private BufferFile versionFile;
-	private long targetFileId;
+	private long target_file_id;
 	private long originalFileId;
 	private IndexProvider vfIndexProvider;
 	private int[] freeIndexes; // sorted to facilitate binary search
@@ -102,7 +102,7 @@ class VersionFile {
 		originalFileId = originalBf.getFileId();
 		versionFile.setParameter(ORIGINAL_FILE_ID_HI_PARM, (int)(originalFileId >> 32));
 		versionFile.setParameter(ORIGINAL_FILE_ID_LOW_PARM, (int)(originalFileId & 0xffffffffL));
-		targetFileId = targetBf.getFileId();
+		target_file_id = targetBf.getFileId();
 		
 		// Save original buffer count
 		versionFile.setParameter(ORIGINAL_BUFFER_COUNT_PARM, originalBufCount);
@@ -203,8 +203,8 @@ class VersionFile {
 			}
 			
 			// Set target file ID
-			versionFile.setParameter(TARGET_FILE_ID_HI_PARM, (int)(targetFileId >> 32));
-			versionFile.setParameter(TARGET_FILE_ID_LOW_PARM, (int)(targetFileId & 0xffffffffL));
+			versionFile.setParameter(TARGET_FILE_ID_HI_PARM, (int)(target_file_id >> 32));
+			versionFile.setParameter(TARGET_FILE_ID_LOW_PARM, (int)(target_file_id & 0xffffffffL));
 		}
 		versionFile.close();
 		versionFile = null;	
@@ -268,7 +268,7 @@ class VersionFile {
 			originalFileId = ((long)versionFile.getParameter(ORIGINAL_FILE_ID_HI_PARM) << 32) |
 				(versionFile.getParameter(ORIGINAL_FILE_ID_LOW_PARM) & 0xffffffffL);
 				
-			targetFileId = ((long)versionFile.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
+			target_file_id = ((long)versionFile.getParameter(TARGET_FILE_ID_HI_PARM) << 32) |
 				(versionFile.getParameter(TARGET_FILE_ID_LOW_PARM) & 0xffffffffL);
 				
 			readBufferMap(versionFile.getParameter(MAP_BUFFER_INDEX_PARM));
@@ -472,7 +472,7 @@ class VersionFile {
 		if (readOnly) {
 			throw new IOException("Version file is read-only");	
 		}
-		targetFileId = fileId;
+		target_file_id = fileId;
 	}
 	
 	/**
@@ -556,7 +556,7 @@ class VersionFile {
 	 * Returns file ID for buffer file to which this version file may be applied.
 	 */
 	long getTargetFileID() {
-		return targetFileId;
+		return target_file_id;
 	}
 
 	/**

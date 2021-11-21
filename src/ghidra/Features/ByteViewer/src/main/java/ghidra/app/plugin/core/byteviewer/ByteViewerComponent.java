@@ -169,8 +169,8 @@ public class ByteViewerComponent extends FieldPanel implements FieldMouseListene
 
 		ByteBlock block = info.getBlock();
 		BigInteger offset = info.getOffset();
-		int byteOffset = model.getByteOffset(info.getBlock(), pos);
-		offset = offset.add(BigInteger.valueOf(byteOffset));
+		int byte_offset = model.getByteOffset(info.getBlock(), pos);
+		offset = offset.add(BigInteger.valueOf(byte_offset));
 		panel.setInsertionField(this, block, offset, index, loc.getCol(), isAltDown);
 	}
 
@@ -636,8 +636,8 @@ public class ByteViewerComponent extends FieldPanel implements FieldMouseListene
 		}
 		ByteBlock block = info.getBlock();
 		BigInteger offset = info.getOffset();
-		int byteOffset = model.getByteOffset(info.getBlock(), pos);
-		offset = offset.add(BigInteger.valueOf(byteOffset));
+		int byte_offset = model.getByteOffset(info.getBlock(), pos);
+		offset = offset.add(BigInteger.valueOf(byte_offset));
 		return new ByteBlockInfo(block, offset, loc.getCol());
 	}
 

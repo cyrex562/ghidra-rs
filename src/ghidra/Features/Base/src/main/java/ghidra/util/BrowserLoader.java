@@ -111,7 +111,7 @@ public class BrowserLoader {
 			// -if not cancelled, then show the options dialog
 			service.showOptionsDialog(ManualViewerCommandWrappedOption.OPTIONS_CATEGORY_NAME,
 				ManualViewerCommandWrappedOption.OPTIONS_CATEGORY_NAME);
-			if (!listener.hasChanged()) {
+			if (!listener.has_changed()) {
 				return;  // the user didn't change the options, so we can't do anything
 			}
 
@@ -178,15 +178,15 @@ public class BrowserLoader {
 //==================================================================================================
 
 	static class ImmediateOptionsChangeListener implements OptionsChangeListener {
-		private boolean hasChanged = false;
+		private boolean has_changed = false;
 
 		@Override
 		public void optionsChanged(ToolOptions theOptions, String name, Object oldValue, Object newValue) {
-			hasChanged = true;
+			has_changed = true;
 		}
 
-		boolean hasChanged() {
-			return hasChanged;
+		boolean has_changed() {
+			return has_changed;
 		}
 	}
 

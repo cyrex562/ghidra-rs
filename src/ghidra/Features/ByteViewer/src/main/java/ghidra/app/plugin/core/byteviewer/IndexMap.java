@@ -123,10 +123,10 @@ public class IndexMap {
 				int nbytesPerField = bytesInLine.intValue() / factorys.length;
 				int fieldOffset = (lineOffset / nbytesPerField) * nbytesPerField;
 
-				int byteOffset = lineOffset % nbytesPerField;
+				int byte_offset = lineOffset % nbytesPerField;
 
 				int fieldNum = getFieldNum(index, fieldOffset, factorys);
-				int col = factorys[fieldNum].getColumnPosition(block, byteOffset);
+				int col = factorys[fieldNum].getColumnPosition(block, byte_offset);
 				return new FieldLocation(index, fieldNum, 0, col);
 			}
 		}

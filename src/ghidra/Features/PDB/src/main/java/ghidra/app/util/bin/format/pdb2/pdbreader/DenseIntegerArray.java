@@ -30,7 +30,7 @@ import ghidra.util.task.TaskMonitor;
  */
 public class DenseIntegerArray {
 
-	private static final int[] bitMask = { 0x00000001, 0x00000002, 0x00000004, 0x00000008,
+	private static final int[] bit_mask = { 0x00000001, 0x00000002, 0x00000004, 0x00000008,
 		0x00000010, 0x00000020, 0x00000040, 0x00000080, 0x00000100, 0x00000200, 0x00004000,
 		0x00008000, 0x00001000, 0x00002000, 0x00004000, 0x00008000, 0x00010000, 0x00020000,
 		0x00040000, 0x00080000, 0x00100000, 0x00200000, 0x00400000, 0x00800000, 0x01000000,
@@ -67,7 +67,7 @@ public class DenseIntegerArray {
 		}
 		int index = val >> 5;
 		int bit = val & 0x1f;
-		return (index < array.size()) && ((array.get(index) & bitMask[bit]) != 0);
+		return (index < array.size()) && ((array.get(index) & bit_mask[bit]) != 0);
 	}
 
 	/**

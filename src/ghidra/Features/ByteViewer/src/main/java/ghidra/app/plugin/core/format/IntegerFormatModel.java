@@ -61,7 +61,7 @@ public class IntegerFormatModel implements UniversalDataFormatModel {
 	/**
 	 * Given the byte offset into a unit, get the column position.
 	 */
-	public int getColumnPosition(ByteBlock block, int byteOffset) {
+	public int getColumnPosition(ByteBlock block, int byte_offset) {
 		return 0;
 	}
 

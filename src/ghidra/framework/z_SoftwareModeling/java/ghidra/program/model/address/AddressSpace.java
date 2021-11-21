@@ -127,8 +127,8 @@ public interface AddressSpace extends Comparable<AddressSpace> {
 	 * to a byte-offset simple multiplication may be used.  Neither of these
 	 * transformations perform address space bounds checking.
 	 * <pre>
-	 *   byteOffset = wordOffset * addressUnitSize
-	 *   wordOffset = getAddressableWordOffset(byteOffset)
+	 *   byte_offset = wordOffset * addressUnitSize
+	 *   wordOffset = getAddressableWordOffset(byte_offset)
 	 * </pre>
 	 */
 	int getAddressableUnitSize();
@@ -138,10 +138,10 @@ public interface AddressSpace extends Comparable<AddressSpace> {
 	 * memory byte offset.  This method handles some of the issues of unsigned 
 	 * math when stuck using Java's signed long primitives. No space bounds
 	 * checking is performed.
-	 * @param byteOffset memory byte offset
+	 * @param byte_offset memory byte offset
 	 * @return addressable memory word offset
 	 */
-	public long getAddressableWordOffset(long byteOffset);
+	public long getAddressableWordOffset(long byte_offset);
 
 	/**
 	 * Returns the absolute size of a pointer into this space (in bytes).
@@ -181,13 +181,13 @@ public interface AddressSpace extends Comparable<AddressSpace> {
 
 	/**
 	 * Returns a new address in this space with the given byte offset.
-	 * NOTE: This method is the same as invoking getAddress(long byteOffset, false).
-	 * @param byteOffset the byte offset for the new address.
+	 * NOTE: This method is the same as invoking getAddress(long byte_offset, false).
+	 * @param byte_offset the byte offset for the new address.
 	 * @return address with given byte offset
 	 * @throws AddressOutOfBoundsException if the offset is less than 0 or greater
 	 * than the max offset allowed for this space.
 	 */
-	Address getAddress(long byteOffset) throws AddressOutOfBoundsException;
+	Address getAddress(long byte_offset) throws AddressOutOfBoundsException;
 
 	/**
 	 * Returns a new address in this space with the given offset.  
@@ -197,7 +197,7 @@ public interface AddressSpace extends Comparable<AddressSpace> {
 	 * @param offset the offset for the new address.
 	 * @param isAddressableWordOffset if true the specified offset is an addressable unit/word offset,
 	 * otherwise offset is a byte offset.  See {@link #getAddressableUnitSize()}
-	 * to understand the distinction (i.e., wordOffset = byteOffset * addressableUnitSize).
+	 * to understand the distinction (i.e., wordOffset = byte_offset * addressableUnitSize).
 	 * @return address with given offset
 	 * @throws AddressOutOfBoundsException if the offset is less than 0 or greater
 	 * than the max offset allowed for this space.
@@ -214,7 +214,7 @@ public interface AddressSpace extends Comparable<AddressSpace> {
 	 * @param offset the offset for the new address.
 	 * @param isAddressableWordOffset if true the specified offset is an addressable unit/word offset,
 	 * otherwise offset is a byte offset.  See {@link #getAddressableUnitSize()}
-	 * to understand the distinction (i.e., wordOffset = byteOffset * addressableUnitSize).
+	 * to understand the distinction (i.e., wordOffset = byte_offset * addressableUnitSize).
 	 * @return address with given byte offset truncated to the physical space size
 	 */
 	Address getTruncatedAddress(long offset, boolean isAddressableWordOffset);
@@ -224,20 +224,20 @@ public interface AddressSpace extends Comparable<AddressSpace> {
 	 * to remap the address into a base space when the address is not
 	 * contained in the bounds of the overlay region.
 	 * 
-	 * @param byteOffset the byte offset for the new address.
+	 * @param byte_offset the byte offset for the new address.
 	 * @return an address if the offset is valid.
 	 * 
 	 * @throws AddressOutOfBoundsException if the offset is less than 0 or greater
 	 * than the max offset allowed for this space.
 	 */
-	Address getAddressInThisSpaceOnly(long byteOffset) throws AddressOutOfBoundsException;
+	Address getAddressInThisSpaceOnly(long byte_offset) throws AddressOutOfBoundsException;
 
 	/**
 	 * Truncate the specified byte offset within this space to produce a valid offset.
-	 * @param byteOffset any byte offset
+	 * @param byte_offset any byte offset
 	 * @return truncated byte offset
 	 */
-	long truncateOffset(long byteOffset);
+	long truncateOffset(long byte_offset);
 
 	/**
 	 * Truncate the specified addressable unit/word offset within this space to produce a 
@@ -371,11 +371,11 @@ public interface AddressSpace extends Comparable<AddressSpace> {
 	/**
 	 * Check the specified address range for validity within this space.
 	 * Segmented spaces will restrict a range to a single segment.
-	 * @param byteOffset
+	 * @param byte_offset
 	 * @param length
 	 * @return true if range is valid for this space
 	 */
-	public boolean isValidRange(long byteOffset, long length);
+	public boolean isValidRange(long byte_offset, long length);
 
 	/**
 	 * Tests whether addr2 immediately follows addr1.

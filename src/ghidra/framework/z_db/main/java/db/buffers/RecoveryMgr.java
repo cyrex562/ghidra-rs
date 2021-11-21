@@ -48,7 +48,7 @@ class RecoveryMgr {
 	private boolean recovered = false;
 	private boolean recoveryHasChangeSet = false;
 
-	private BufferMgr bufferMgr;
+	private BufferMgr buffer_mgr;
 
 	private int[] buffersSaved = new int[] { 0, 0 };
 	private int[] buffersIgnored = new int[] { 0, 0 };
@@ -57,13 +57,13 @@ class RecoveryMgr {
 	/**
 	 * Constructor used to perform recovery.
 	 * Once constructed snapshots may be performed.
-	 * @param bufferMgr
+	 * @param buffer_mgr
 	 * @param monitor
 	 */
-	RecoveryMgr(BufferMgr bufferMgr, TaskMonitor monitor) throws IOException, CancelledException {
+	RecoveryMgr(BufferMgr buffer_mgr, TaskMonitor monitor) throws IOException, CancelledException {
 
-		this.bufferMgr = bufferMgr;
-		BufferFile bf = bufferMgr.getSourceFile();
+		this.buffer_mgr = buffer_mgr;
+		BufferFile bf = buffer_mgr.getSourceFile();
 		if (!(bf instanceof LocalBufferFile)) {
 			throw new RuntimeException("Invalid use of recovery manager");
 		}
@@ -84,7 +84,7 @@ class RecoveryMgr {
 				}
 				if (!recoveryHasChangeSet || changeFiles[snapshotIndex].exists()) {
 					Msg.info(this, "Applying buffer file recovery data: " + lbf.getFile());
-					bufferMgr.recover(recoveryFile, snapshotIndex, monitor);
+					buffer_mgr.recover(recoveryFile, snapshotIndex, monitor);
 					recovered = true;
 				}
 			}
@@ -108,12 +108,12 @@ class RecoveryMgr {
 
 	/**
 	 * Constructor for snapshot use only.
-	 * @param bufferMgr
+	 * @param buffer_mgr
 	 */
-	RecoveryMgr(BufferMgr bufferMgr) {
+	RecoveryMgr(BufferMgr buffer_mgr) {
 
-		this.bufferMgr = bufferMgr;
-		BufferFile bf = bufferMgr.getSourceFile();
+		this.buffer_mgr = buffer_mgr;
+		BufferFile bf = buffer_mgr.getSourceFile();
 		if (!(bf instanceof LocalBufferFile)) {
 			throw new RuntimeException("Invalid use of recovery manager");
 		}
@@ -307,7 +307,7 @@ class RecoveryMgr {
 		try {
 			newSnapshot = !snapshotFiles[snapshotIndex].exists();
 			try {
-				activeFile = new RecoveryFile((LocalBufferFile) bufferMgr.getSourceFile(),
+				activeFile = new RecoveryFile((LocalBufferFile) buffer_mgr.getSourceFile(),
 					snapshotFiles[snapshotIndex], newSnapshot);
 			}
 			catch (IOException e) {
@@ -317,7 +317,7 @@ class RecoveryMgr {
 				// Assume an invalid file - remove bad snapshot and create a new file
 				snapshotFiles[snapshotIndex].delete();
 				newSnapshot = true;
-				activeFile = new RecoveryFile((LocalBufferFile) bufferMgr.getSourceFile(),
+				activeFile = new RecoveryFile((LocalBufferFile) buffer_mgr.getSourceFile(),
 					snapshotFiles[snapshotIndex], newSnapshot);
 			}
 			activeFile.setIndexCount(indexCnt);

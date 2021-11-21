@@ -61,7 +61,7 @@ public interface Project {
 	/**
 	 * Return whether the project configuration has changed.
 	 */
-	public boolean hasChanged();
+	public boolean has_changed();
 
 	/**
 	 * Returns whether this project instance has been closed
