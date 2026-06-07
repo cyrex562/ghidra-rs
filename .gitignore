@@ -1,0 +1,11 @@
+/target
+/orig_src
+**/*.rs.bk
+.env
+Cargo.lock
+__pycache__/
+*.py[cod]
+*$py.class
+.venv
+venv/
+ENV/
