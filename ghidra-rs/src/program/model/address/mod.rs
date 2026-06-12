@@ -1,19 +1,32 @@
 pub mod address_format_exception;
+pub mod address_out_of_bounds_exception;
+pub mod address_overflow_exception;
+pub mod address_range_to_address_comparator;
+pub mod address_set;
+pub mod address_set_collection;
+pub mod address_set_view_adapter;
 pub mod factory;
 pub mod iterator;
+pub mod key_range;
 pub mod range;
 pub mod segment_mismatch_exception;
 
-use crate::util::exception::AddressOverflowException;
 use std::fmt;
 use std::sync::Arc;
 
 pub use address_format_exception::AddressFormatException;
+pub use address_out_of_bounds_exception::AddressOutOfBoundsException;
+pub use address_overflow_exception::AddressOverflowException;
+pub use address_range_to_address_comparator::AddressRangeToAddressComparator;
+pub use address_set::{AddressSet, AddressSetView};
+pub use address_set_collection::{AddressSetCollection, SingleAddressSetCollection};
+pub use address_set_view_adapter::AddressSetViewAdapter;
 pub use factory::{AddressFactory, DefaultAddressFactory};
 pub use iterator::{
     AddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
     EmptyAddressIterator, EmptyAddressRangeIterator,
 };
+pub use key_range::KeyRange;
 pub use range::AddressRange;
 pub use segment_mismatch_exception::SegmentMismatchException;
 
@@ -205,7 +218,7 @@ impl Address {
         let new_offset = self
             .offset
             .checked_add(displacement)
-            .ok_or_else(|| AddressOverflowException("Overflow".to_string()))?;
+            .ok_or_else(|| AddressOverflowException::new("Overflow"))?;
         Ok(Self::new(self.space.clone(), new_offset))
     }
 }

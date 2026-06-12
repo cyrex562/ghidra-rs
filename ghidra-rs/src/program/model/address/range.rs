@@ -1,5 +1,5 @@
-use super::{Address, AddressSpace};
-use crate::util::exception::AddressOverflowException;
+use super::{Address, AddressOverflowException, AddressSpace};
+use std::cmp::Ordering;
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -65,11 +65,66 @@ impl AddressRange {
         addr.offset() >= self.min.offset() && addr.offset() <= self.max.offset()
     }
 
+    pub fn intersect(&self, other: &AddressRange) -> Option<Self> {
+        if !self.intersects(other) {
+            return None;
+        }
+        let min = self.min.clone().max(other.min.clone());
+        let max = self.max.clone().min(other.max.clone());
+        Some(Self { min, max })
+    }
+
+    pub fn intersect_range(&self, start: &Address, end: &Address) -> Option<Self> {
+        self.intersect(&Self::new(start.clone(), end.clone()))
+    }
+
     pub fn intersects(&self, other: &AddressRange) -> bool {
         if self.min.space() != other.min.space() {
             return false;
         }
         self.min.offset() <= other.max.offset() && self.max.offset() >= other.min.offset()
+    }
+
+    pub fn intersects_range(&self, start: &Address, end: &Address) -> bool {
+        self.intersects(&Self::new(start.clone(), end.clone()))
+    }
+
+    pub fn compare_to_address(&self, addr: &Address) -> Ordering {
+        if addr < &self.min {
+            Ordering::Greater
+        } else if addr > &self.max {
+            Ordering::Less
+        } else {
+            Ordering::Equal
+        }
+    }
+
+    pub fn addresses(&self) -> AddressRangeAddressIterator {
+        AddressRangeAddressIterator {
+            current: Some(self.min.clone()),
+            max: self.max.clone(),
+        }
+    }
+}
+
+/// Iterator over each address in an inclusive `AddressRange`.
+#[derive(Debug, Clone)]
+pub struct AddressRangeAddressIterator {
+    current: Option<Address>,
+    max: Address,
+}
+
+impl Iterator for AddressRangeAddressIterator {
+    type Item = Address;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.current.clone()?;
+        self.current = if next == self.max {
+            None
+        } else {
+            Some(next.add(1).ok()?)
+        };
+        Some(next)
     }
 }
 
@@ -82,5 +137,66 @@ impl PartialOrd for AddressRange {
 impl Ord for AddressRange {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.min.cmp(&other.min).then(self.max.cmp(&other.max))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::program::model::address::{AddressSpace, AddressSpaceType};
+
+    #[test]
+    fn intersect_returns_common_range() {
+        let range = AddressRange::new(addr(0x1000), addr(0x10ff));
+        let other = AddressRange::new(addr(0x1080), addr(0x11ff));
+
+        let intersection = range.intersect(&other).unwrap();
+
+        assert_eq!(intersection.min_address(), &addr(0x1080));
+        assert_eq!(intersection.max_address(), &addr(0x10ff));
+    }
+
+    #[test]
+    fn intersect_returns_none_for_disjoint_range() {
+        let range = AddressRange::new(addr(0x1000), addr(0x10ff));
+        let other = AddressRange::new(addr(0x1100), addr(0x11ff));
+
+        assert!(range.intersect(&other).is_none());
+    }
+
+    #[test]
+    fn range_intersection_accepts_start_and_end_addresses() {
+        let range = AddressRange::new(addr(0x1000), addr(0x10ff));
+
+        assert!(range.intersects_range(&addr(0x0fff), &addr(0x1000)));
+        assert!(!range.intersects_range(&addr(0x0f00), &addr(0x0fff)));
+
+        let intersection = range.intersect_range(&addr(0x10f0), &addr(0x1100)).unwrap();
+        assert_eq!(intersection.min_address(), &addr(0x10f0));
+        assert_eq!(intersection.max_address(), &addr(0x10ff));
+    }
+
+    #[test]
+    fn compare_to_address_matches_java_signs() {
+        let range = AddressRange::new(addr(0x1000), addr(0x10ff));
+
+        assert_eq!(range.compare_to_address(&addr(0x0fff)), Ordering::Greater);
+        assert_eq!(range.compare_to_address(&addr(0x1000)), Ordering::Equal);
+        assert_eq!(range.compare_to_address(&addr(0x1080)), Ordering::Equal);
+        assert_eq!(range.compare_to_address(&addr(0x10ff)), Ordering::Equal);
+        assert_eq!(range.compare_to_address(&addr(0x1100)), Ordering::Less);
+    }
+
+    #[test]
+    fn addresses_iterates_inclusive_range() {
+        let range = AddressRange::new(addr(0x1000), addr(0x1002));
+        let addresses: Vec<_> = range.addresses().collect();
+
+        assert_eq!(addresses, vec![addr(0x1000), addr(0x1001), addr(0x1002)]);
+    }
+
+    fn addr(offset: i64) -> Address {
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
     }
 }
