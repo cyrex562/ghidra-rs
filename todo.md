@@ -57,10 +57,13 @@
 
   - [x] **Foundational Modeling Types**
   - [x] `AddressFormatException` (program/model/address/address_format_exception.rs)
+  - [x] `AddressLabelPair` (program/model/symbol/address_label_pair.rs)
   - [x] `AddressSpace` (program/model/address/mod.rs)
   - [x] `Address` (program/model/address/mod.rs)
+  - [x] `ExternalPath` (program/model/symbol/external_path.rs)
   - [x] `IdentityNameTransformer` / `NameTransformer` (program/model/symbol/name_transformer.rs)
   - [x] `InvalidAddressException` (program/model/mem/invalid_address_exception.rs)
+  - [x] `LabelHistory` (program/model/symbol/label_history.rs)
   - [x] `MemoryConstants` (program/model/mem/memory_constants.rs)
   - [x] `MemoryBlockException` (program/model/mem/memory_block_exception.rs)
   - [x] `MemoryBlockListener` (program/model/mem/memory_block_listener.rs)

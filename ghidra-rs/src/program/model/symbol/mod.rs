@@ -2,10 +2,16 @@ use crate::program::model::address::Address;
 use std::io;
 use std::sync::Arc;
 
+pub mod address_label_pair;
+pub mod external_path;
+pub mod label_history;
 pub mod source_type;
 pub mod symbol_type;
 pub mod name_transformer;
 
+pub use address_label_pair::AddressLabelPair;
+pub use external_path::{ExternalPath, ExternalPathError, EXTERNAL_PATH_DELIMITER};
+pub use label_history::{LabelHistory, LabelHistoryAction};
 pub use name_transformer::{IdentityNameTransformer, NameTransformer};
 pub use source_type::SourceType;
 pub use symbol_type::SymbolType;
