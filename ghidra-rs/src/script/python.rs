@@ -1,12 +1,12 @@
 use crate::program::database::ProgramDB;
 use crate::program::model::address::Address;
-use crate::program::model::symbol::{SourceType, SymbolTable};
 use crate::program::model::listing::Program;
+use crate::program::model::symbol::{SourceType, SymbolTable};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use std::ffi::CString;
 use std::fs;
 use std::sync::{Arc, RwLock};
-use std::ffi::CString;
 
 #[pyclass(from_py_object)]
 #[derive(Clone)]
@@ -25,7 +25,9 @@ impl PyAddress {
     }
 
     fn add(&self, displacement: i64) -> PyResult<Self> {
-        let new_addr = self.inner.add(displacement)
+        let new_addr = self
+            .inner
+            .add(displacement)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("{:?}", e)))?;
         Ok(Self { inner: new_addr })
     }
@@ -57,7 +59,8 @@ impl PyProgram {
         let p = self.inner.read().unwrap();
         let symbol_table_arc = p.get_symbol_table();
         let mut symbol_table = symbol_table_arc.write().unwrap();
-        symbol_table.create_label(&address.inner, name, SourceType::UserDefined)
+        symbol_table
+            .create_label(&address.inner, name, SourceType::UserDefined)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("{}", e)))?;
         Ok(())
     }
@@ -66,9 +69,10 @@ impl PyProgram {
         let p = self.inner.read().unwrap();
         let symbol_table_arc = p.get_symbol_table();
         let symbol_table = symbol_table_arc.read().unwrap();
-        let symbols = symbol_table.get_symbols(&address.inner)
+        let symbols = symbol_table
+            .get_symbols(&address.inner)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("{}", e)))?;
-        
+
         let py_symbols = symbols
             .into_iter()
             .map(|s| PySymbol {
@@ -111,19 +115,22 @@ impl PythonScriptRunner {
 
         Python::attach(|py| {
             let globals = PyDict::new(py);
-            
+
             // Expose currentProgram
             let py_program = PyProgram { inner: program };
-            globals.set_item("currentProgram", py_program)
+            globals
+                .set_item("currentProgram", py_program)
                 .map_err(|e| format!("Failed to set currentProgram: {:?}", e))?;
 
             // Expose currentAddress if present
             if let Some(addr) = current_address {
                 let py_addr = PyAddress { inner: addr };
-                globals.set_item("currentAddress", py_addr)
+                globals
+                    .set_item("currentAddress", py_addr)
                     .map_err(|e| format!("Failed to set currentAddress: {:?}", e))?;
             } else {
-                globals.set_item("currentAddress", py.None())
+                globals
+                    .set_item("currentAddress", py.None())
                     .map_err(|e| format!("Failed to set currentAddress: {:?}", e))?;
             }
 
@@ -132,9 +139,7 @@ impl PythonScriptRunner {
 
             // Execute the script
             py.run(c_str.as_c_str(), Some(&globals), None)
-                .map_err(|e| {
-                    format!("Python script failed: {:?}", e)
-                })?;
+                .map_err(|e| format!("Python script failed: {:?}", e))?;
 
             Ok(())
         })
@@ -145,12 +150,12 @@ impl PythonScriptRunner {
 mod tests {
     use super::*;
     use crate::program::database::ProgramDB;
-    use crate::program::model::address::{Address, DefaultAddressFactory};
     use crate::program::model::address::factory::AddressFactory;
+    use crate::program::model::address::{Address, DefaultAddressFactory};
     use crate::program::model::lang::sleigh::SleighLanguage;
     use crate::program::model::pcode::PackedDecode;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_python_script_execution() {
@@ -181,7 +186,9 @@ mod tests {
         let factory = Arc::new(DefaultAddressFactory::new(vec![]));
         let decoder = PackedDecode::new(factory, data);
         let language = Arc::new(SleighLanguage::decode(&decoder, "test".to_string()).unwrap());
-        let program = Arc::new(RwLock::new(ProgramDB::new("test_prog".to_string(), language.clone()).unwrap()));
+        let program = Arc::new(RwLock::new(
+            ProgramDB::new("test_prog".to_string(), language.clone()).unwrap(),
+        ));
 
         let space = language
             .get_address_factory()
@@ -205,7 +212,8 @@ assert symbols[0].name == "python_label"
             tmp_file.path().to_str().unwrap(),
             program.clone(),
             Some(addr.clone()),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Verify that the label was created in the program
         let symbol_table_arc = program.read().unwrap().get_symbol_table();

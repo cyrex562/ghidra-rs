@@ -28,7 +28,10 @@ mod tests {
     fn identity_transformer_returns_input_unchanged() {
         let transformer = IdentityNameTransformer;
 
-        assert_eq!(transformer.simplify("std::vector<int>").as_ref(), "std::vector<int>");
+        assert_eq!(
+            transformer.simplify("std::vector<int>").as_ref(),
+            "std::vector<int>"
+        );
         assert_eq!(transformer.simplify("").as_ref(), "");
     }
 
@@ -36,6 +39,9 @@ mod tests {
     fn transformer_trait_can_be_used_dynamically() {
         let transformer: &dyn NameTransformer = &IdentityNameTransformer;
 
-        assert_eq!(transformer.simplify("Namespace::Function").as_ref(), "Namespace::Function");
+        assert_eq!(
+            transformer.simplify("Namespace::Function").as_ref(),
+            "Namespace::Function"
+        );
     }
 }

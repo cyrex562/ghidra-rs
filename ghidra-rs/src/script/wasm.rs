@@ -2,7 +2,7 @@ use crate::program::database::ProgramDB;
 use crate::program::model::address::Address;
 use crate::program::model::symbol::{SourceType, SymbolTable};
 use std::sync::{Arc, RwLock};
-use wasmer::{imports, Function, Instance, Module, Store, FunctionEnv, FunctionEnvMut};
+use wasmer::{imports, Function, FunctionEnv, FunctionEnvMut, Instance, Module, Store};
 
 pub struct WasmEnv {
     pub program: Arc<RwLock<ProgramDB>>,
@@ -50,10 +50,13 @@ impl WasmPluginRunner {
         let instance = Instance::new(&mut store, &module, &import_object)
             .map_err(|e| format!("Failed to instantiate WASM: {:?}", e))?;
 
-        let run_fn = instance.exports.get_function("ghidra_plugin_main")
+        let run_fn = instance
+            .exports
+            .get_function("ghidra_plugin_main")
             .map_err(|e| format!("Could not find ghidra_plugin_main in WASM module: {:?}", e))?;
 
-        run_fn.call(&mut store, &[])
+        run_fn
+            .call(&mut store, &[])
             .map_err(|e| format!("Error calling ghidra_plugin_main: {:?}", e))?;
 
         Ok(())
@@ -98,7 +101,9 @@ mod tests {
         let factory = Arc::new(DefaultAddressFactory::new(vec![]));
         let decoder = PackedDecode::new(factory, data);
         let language = Arc::new(SleighLanguage::decode(&decoder, "test".to_string()).unwrap());
-        let program = Arc::new(RwLock::new(ProgramDB::new("test_prog".to_string(), language.clone()).unwrap()));
+        let program = Arc::new(RwLock::new(
+            ProgramDB::new("test_prog".to_string(), language.clone()).unwrap(),
+        ));
 
         let space = language
             .get_address_factory()
@@ -117,11 +122,7 @@ mod tests {
 "#;
         let wasm_bytes = wasmer::wat2wasm(wat_code.as_bytes()).unwrap();
 
-        WasmPluginRunner::run_plugin(
-            &wasm_bytes,
-            program.clone(),
-            Some(addr.clone()),
-        ).unwrap();
+        WasmPluginRunner::run_plugin(&wasm_bytes, program.clone(), Some(addr.clone())).unwrap();
 
         // Verify that the label was created at offset 4096 (0x1000)
         let symbol_table_arc = program.read().unwrap().get_symbol_table();

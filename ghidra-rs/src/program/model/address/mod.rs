@@ -1,5 +1,6 @@
 pub mod address_format_exception;
 pub mod factory;
+pub mod iterator;
 pub mod range;
 pub mod segment_mismatch_exception;
 
@@ -9,6 +10,10 @@ use std::sync::Arc;
 
 pub use address_format_exception::AddressFormatException;
 pub use factory::{AddressFactory, DefaultAddressFactory};
+pub use iterator::{
+    AddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
+    EmptyAddressIterator, EmptyAddressRangeIterator,
+};
 pub use range::AddressRange;
 pub use segment_mismatch_exception::SegmentMismatchException;
 

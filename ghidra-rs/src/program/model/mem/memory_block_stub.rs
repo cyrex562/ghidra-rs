@@ -75,11 +75,7 @@ impl MemoryBlock for MemoryBlockStub {
         unsupported()
     }
 
-    fn set_bytes(
-        &mut self,
-        _addr: &Address,
-        _source: &[u8],
-    ) -> Result<(), MemoryAccessException> {
+    fn set_bytes(&mut self, _addr: &Address, _source: &[u8]) -> Result<(), MemoryAccessException> {
         unsupported()
     }
 }
