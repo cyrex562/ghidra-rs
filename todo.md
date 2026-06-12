@@ -60,7 +60,9 @@
   - [x] `AddressLabelPair` (program/model/symbol/address_label_pair.rs)
   - [x] `AddressSpace` (program/model/address/mod.rs)
   - [x] `Address` (program/model/address/mod.rs)
+  - [x] `EquateReference` (program/model/symbol/equate_reference.rs)
   - [x] `ExternalPath` (program/model/symbol/external_path.rs)
+  - [x] `IllegalCharCppTransformer` (program/model/symbol/illegal_char_cpp_transformer.rs)
   - [x] `IdentityNameTransformer` / `NameTransformer` (program/model/symbol/name_transformer.rs)
   - [x] `InvalidAddressException` (program/model/mem/invalid_address_exception.rs)
   - [x] `LabelHistory` (program/model/symbol/label_history.rs)
@@ -71,6 +73,7 @@
   - [x] `MemoryBlockType` (program/model/mem/memory_block_type.rs)
   - [x] `MemoryConflictException` (program/model/mem/memory_conflict_exception.rs)
   - [x] `SegmentMismatchException` (program/model/address/segment_mismatch_exception.rs)
+  - [x] `SymbolIterator` / `SymbolIteratorAdapter` (program/model/symbol/symbol_iterator.rs)
   - [x] `Varnode` (program/model/pcode/mod.rs)
   - [x] `PcodeOp` (program/model/pcode/mod.rs)
 - [ ] **SLA Loading**

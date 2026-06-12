@@ -3,17 +3,23 @@ use std::io;
 use std::sync::Arc;
 
 pub mod address_label_pair;
+pub mod equate_reference;
 pub mod external_path;
+pub mod illegal_char_cpp_transformer;
 pub mod label_history;
 pub mod source_type;
+pub mod symbol_iterator;
 pub mod symbol_type;
 pub mod name_transformer;
 
 pub use address_label_pair::AddressLabelPair;
+pub use equate_reference::{EquateReference, SimpleEquateReference};
 pub use external_path::{ExternalPath, ExternalPathError, EXTERNAL_PATH_DELIMITER};
+pub use illegal_char_cpp_transformer::IllegalCharCppTransformer;
 pub use label_history::{LabelHistory, LabelHistoryAction};
 pub use name_transformer::{IdentityNameTransformer, NameTransformer};
 pub use source_type::SourceType;
+pub use symbol_iterator::{EmptySymbolIterator, SymbolIterator, SymbolIteratorAdapter};
 pub use symbol_type::SymbolType;
 
 pub trait Symbol: Send + Sync {
