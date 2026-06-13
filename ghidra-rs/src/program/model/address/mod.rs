@@ -181,6 +181,23 @@ impl AddressSpace {
         Address::new(self.clone(), offset)
     }
 
+    pub fn checked_address(
+        self: &Arc<Self>,
+        offset: i64,
+    ) -> Result<Address, AddressOutOfBoundsException> {
+        Ok(Address {
+            space: self.clone(),
+            offset: self.make_valid_offset(offset)?,
+        })
+    }
+
+    pub fn address_from_word_offset(
+        self: &Arc<Self>,
+        offset: i64,
+    ) -> Result<Address, AddressOutOfBoundsException> {
+        self.checked_address(offset.wrapping_mul(self.unit_size as i64))
+    }
+
     pub fn parse_address(
         self: &Arc<Self>,
         addr_string: &str,
@@ -209,10 +226,15 @@ impl AddressSpace {
             return Err(AddressFormatException::new("Address offset is empty"));
         }
 
-        let unsigned_text = offset_text
+        let (word_text, mod_text) = offset_text
+            .split_once('.')
+            .map(|(word, suffix)| (word, Some(suffix)))
+            .unwrap_or((offset_text, None));
+
+        let unsigned_text = word_text
             .strip_prefix("0x")
-            .or_else(|| offset_text.strip_prefix("0X"))
-            .unwrap_or(offset_text);
+            .or_else(|| word_text.strip_prefix("0X"))
+            .unwrap_or(word_text);
         let offset = if self.signed && unsigned_text.starts_with('-') {
             let magnitude = i64::from_str_radix(&unsigned_text[1..], 16)
                 .map_err(|_| AddressFormatException::new("Invalid address offset"))?;
@@ -221,6 +243,16 @@ impl AddressSpace {
             i64::from_str_radix(unsigned_text, 16)
                 .map_err(|_| AddressFormatException::new("Invalid address offset"))?
         };
+        let mut offset = offset.wrapping_mul(self.unit_size as i64);
+        if let Some(mod_text) = mod_text {
+            let unit_mod = mod_text
+                .parse::<i64>()
+                .map_err(|_| AddressFormatException::new("Invalid address offset"))?;
+            if unit_mod < 0 || unit_mod >= self.unit_size as i64 {
+                return Err(AddressFormatException::new("Address offset is out of bounds"));
+            }
+            offset = offset.wrapping_add(unit_mod);
+        }
 
         if !self.contains_offset(offset) {
             return Err(AddressFormatException::new("Address offset is out of bounds"));
@@ -235,22 +267,160 @@ impl AddressSpace {
         self._min_offset <= offset && offset <= self._max_offset
     }
 
+    pub fn make_valid_offset(&self, offset: i64) -> Result<i64, AddressOutOfBoundsException> {
+        if self.size == 64 {
+            return Ok(offset);
+        }
+        if self._min_offset <= offset && offset <= self._max_offset {
+            return Ok(offset);
+        }
+        let space_size = self.space_size();
+        if self.signed {
+            if offset > self._max_offset && (offset as i128) < space_size {
+                return Ok((offset as i128 - space_size) as i64);
+            }
+        } else if offset < 0 && offset >= -self._max_offset - 1 {
+            return Ok((offset as i128 + space_size) as i64);
+        }
+        Err(AddressOutOfBoundsException::new(format!(
+            "Offset must be between 0x{:x} and 0x{:x}, got 0x{:x} instead!",
+            self._min_offset, self._max_offset, offset
+        )))
+    }
+
+    pub fn addressable_word_offset(&self, byte_offset: i64) -> i64 {
+        let mut offset = byte_offset;
+        let mut negative = false;
+        if self.signed && offset < 0 {
+            offset = offset.wrapping_neg();
+            negative = true;
+        }
+        let word_offset = match self.unit_size {
+            1 => offset,
+            2 => ((offset as u64) >> 1) as i64,
+            4 => ((offset as u64) >> 2) as i64,
+            8 => ((offset as u64) >> 3) as i64,
+            unit => ((offset as u64) / unit as u64) as i64,
+        };
+        if negative {
+            word_offset.wrapping_neg()
+        } else {
+            word_offset
+        }
+    }
+
+    pub fn truncate_addressable_word_offset(&self, word_offset: i64) -> i64 {
+        self.addressable_word_offset(self.truncate_offset(word_offset.wrapping_mul(self.unit_size as i64)))
+    }
+
+    pub fn add_wrap(self: &Arc<Self>, address: &Address, displacement: i64) -> Address {
+        self.check_same_space(address);
+        Address {
+            space: self.clone(),
+            offset: self.truncate_offset(address.offset().wrapping_add(displacement)),
+        }
+    }
+
+    pub fn subtract_wrap(self: &Arc<Self>, address: &Address, displacement: i64) -> Address {
+        self.check_same_space(address);
+        Address {
+            space: self.clone(),
+            offset: self.truncate_offset(address.offset().wrapping_sub(displacement)),
+        }
+    }
+
+    pub fn add_no_wrap(
+        self: &Arc<Self>,
+        address: &Address,
+        displacement: i64,
+    ) -> Result<Address, AddressOverflowException> {
+        if displacement == 0 {
+            return Ok(address.clone());
+        }
+        if displacement < 0 {
+            return self.subtract_no_wrap(address, displacement.wrapping_neg());
+        }
+        self.check_same_space(address);
+        if self.size != 64 && (displacement as i128) > self.space_size() {
+            return Err(AddressOverflowException::new("Address Overflow in add"));
+        }
+        let result = address.offset().wrapping_add(displacement);
+        if self.signed {
+            if result < address.offset() || result > self._max_offset {
+                return Err(AddressOverflowException::new("Address Overflow in add"));
+            }
+        } else if unsigned_gt(result, self._max_offset) || unsigned_lt(result, address.offset()) {
+            return Err(AddressOverflowException::new("Address Overflow in add"));
+        }
+        Ok(Address {
+            space: self.clone(),
+            offset: result,
+        })
+    }
+
+    pub fn subtract_no_wrap(
+        self: &Arc<Self>,
+        address: &Address,
+        displacement: i64,
+    ) -> Result<Address, AddressOverflowException> {
+        if displacement == 0 {
+            return Ok(address.clone());
+        }
+        if displacement < 0 {
+            if displacement == i64::MIN {
+                return Err(AddressOverflowException::new("Address Overflow in subtract"));
+            }
+            return self.add_no_wrap(address, -displacement);
+        }
+        self.check_same_space(address);
+        if self.size != 64 && (displacement as i128) > self.space_size() {
+            return Err(AddressOverflowException::new("Address Overflow in subtract"));
+        }
+        let result = address.offset().wrapping_sub(displacement);
+        if self.signed {
+            if result < self._min_offset || result > address.offset() {
+                return Err(AddressOverflowException::new("Address Overflow in subtract"));
+            }
+        } else if unsigned_lt(address.offset(), result) {
+            return Err(AddressOverflowException::new("Address Overflow in subtract"));
+        }
+        Ok(Address {
+            space: self.clone(),
+            offset: result,
+        })
+    }
+
     pub fn truncate_offset(&self, offset: i64) -> i64 {
         if self.size == 64 {
             return offset;
         }
-        let mask = (1i64 << self.size) - 1;
-        if self.signed {
-            let unsigned_val = (offset as u64) & (mask as u64);
-            let bit = 1u64 << (self.size - 1);
-            if (unsigned_val & bit) != 0 {
-                (unsigned_val | !(mask as u64)) as i64
-            } else {
-                unsigned_val as i64
-            }
-        } else {
-            offset & mask
+        let space_size = self.space_size();
+        if self._min_offset <= offset && offset <= self._max_offset {
+            return offset;
         }
+        if self.signed {
+            let mut wrapped = (offset as i128 + self._max_offset as i128 + 1) % space_size;
+            if wrapped < 0 {
+                wrapped += space_size;
+            }
+            (wrapped - self._max_offset as i128 - 1) as i64
+        } else {
+            let mut wrapped = (offset as i128) % space_size;
+            if wrapped < 0 {
+                wrapped += space_size;
+            }
+            wrapped as i64
+        }
+    }
+
+    fn check_same_space(&self, address: &Address) {
+        if self != address.space().as_ref() {
+            panic!("Address does not belong to this address space");
+        }
+    }
+
+    fn space_size(&self) -> i128 {
+        (self.unit_size as i128) << self.size
     }
 }
 
@@ -305,17 +475,38 @@ impl Address {
         self.offset
     }
 
+    pub fn unsigned_offset(&self) -> u64 {
+        if self.offset >= 0 || !self.space.is_signed() {
+            self.offset as u64
+        } else if self.space.size() == 64 {
+            self.offset as u64
+        } else {
+            (self.space.space_size() + self.offset as i128) as u64
+        }
+    }
+
+    pub fn addressable_word_offset(&self) -> i64 {
+        self.space.addressable_word_offset(self.offset)
+    }
+
     pub fn add(&self, displacement: i64) -> Result<Self, AddressOverflowException> {
-        let new_offset = self.offset.wrapping_add(displacement);
-        Ok(Self::new(self.space.clone(), new_offset))
+        self.add_no_wrap(displacement)
+    }
+
+    pub fn add_wrap(&self, displacement: i64) -> Self {
+        self.space.add_wrap(self, displacement)
     }
 
     pub fn add_no_wrap(&self, displacement: i64) -> Result<Self, AddressOverflowException> {
-        let new_offset = self
-            .offset
-            .checked_add(displacement)
-            .ok_or_else(|| AddressOverflowException::new("Overflow"))?;
-        Ok(Self::new(self.space.clone(), new_offset))
+        self.space.add_no_wrap(self, displacement)
+    }
+
+    pub fn subtract_wrap(&self, displacement: i64) -> Self {
+        self.space.subtract_wrap(self, displacement)
+    }
+
+    pub fn subtract_no_wrap(&self, displacement: i64) -> Result<Self, AddressOverflowException> {
+        self.space.subtract_no_wrap(self, displacement)
     }
 
     pub fn next(&self) -> Result<Self, AddressOverflowException> {
@@ -335,6 +526,83 @@ impl Address {
 
     pub fn is_successor(&self, other: &Address) -> bool {
         self.space() == other.space() && self.offset == other.offset.wrapping_add(1)
+    }
+
+    pub fn same_address_space(&self, other: &Address) -> bool {
+        self.space() == other.space()
+    }
+
+    pub fn is_memory_address(&self) -> bool {
+        self.space.is_memory_space()
+    }
+
+    pub fn is_loaded_memory_address(&self) -> bool {
+        self.space.is_loaded_memory_space()
+    }
+
+    pub fn is_stack_address(&self) -> bool {
+        self.space.space_type() == AddressSpaceType::Stack
+    }
+
+    pub fn is_unique_address(&self) -> bool {
+        self.space.space_type() == AddressSpaceType::Unique
+    }
+
+    pub fn is_constant_address(&self) -> bool {
+        self.space.space_type() == AddressSpaceType::Constant
+    }
+
+    pub fn is_register_address(&self) -> bool {
+        self.space.space_type() == AddressSpaceType::Register
+    }
+
+    pub fn to_string_with_prefix(&self, prefix: &str) -> String {
+        format!("{}{}", prefix, self.format(false, 8))
+    }
+
+    pub fn format(&self, show_address_space: bool, min_num_digits: usize) -> String {
+        let mut result = String::new();
+        let mut digits = min_num_digits;
+        let stack = self.is_stack_address();
+        if stack {
+            result.push_str("Stack[");
+            digits = 1;
+        } else if show_address_space {
+            result.push_str(self.space.name());
+            result.push(':');
+        }
+
+        let unit_size = if stack { 1 } else { self.space.unit_size() };
+        let max_digits = ((self.space.size() - 1) / 4 + 1) as usize;
+        let pad_size = digits.min(max_digits);
+        let mut display_offset = self.offset;
+        if stack {
+            if display_offset < 0 {
+                result.push('-');
+                display_offset = display_offset.wrapping_neg();
+            }
+            result.push_str("0x");
+        }
+
+        let mut unit_mod = 0;
+        if unit_size > 1 {
+            unit_mod = display_offset.rem_euclid(unit_size as i64);
+            display_offset = self.space.addressable_word_offset(display_offset);
+        }
+
+        let text = format!("{:x}", display_offset);
+        for _ in 0..pad_size.saturating_sub(text.len()) {
+            result.push('0');
+        }
+        result.push_str(&text);
+        if unit_mod != 0 {
+            result.push('.');
+            result.push_str(&unit_mod.to_string());
+        }
+        if stack {
+            result.push(']');
+        }
+        result
     }
 }
 
@@ -367,10 +635,27 @@ impl PartialOrd for Address {
 
 impl Ord for Address {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.space
-            .cmp(&other.space)
-            .then(self.offset.cmp(&other.offset))
+        let space_cmp = self.space.cmp(&other.space);
+        if space_cmp != std::cmp::Ordering::Equal {
+            return space_cmp;
+        }
+        if self.space.is_signed() {
+            self.offset.cmp(&other.offset)
+        } else {
+            (self.offset as u64).cmp(&(other.offset as u64))
+        }
     }
+}
+
+pub type GenericAddress = Address;
+pub type GenericAddressSpace = AddressSpace;
+
+fn unsigned_lt(left: i64, right: i64) -> bool {
+    (left as u64) < (right as u64)
+}
+
+fn unsigned_gt(left: i64, right: i64) -> bool {
+    (left as u64) > (right as u64)
 }
 
 #[cfg(test)]
@@ -392,8 +677,113 @@ mod tests {
         assert_eq!(next.offset(), 0x1010);
 
         let addr2 = Address::new(ram.clone(), 0);
-        let wrap = addr2.add(-1).unwrap();
+        assert!(addr2.add(-1).is_err());
+        let wrap = addr2.add_wrap(-1);
         assert_eq!(wrap.offset() as u64, 0xFFFFFFFF);
+    }
+
+    #[test]
+    fn generic_address_space_parses_word_offsets() {
+        let word_space = AddressSpace::new("Test3", 16, 2, AddressSpaceType::Ram, 1);
+
+        let addr = word_space.parse_address("0x0010.1", true).unwrap().unwrap();
+        assert_eq!(addr.offset(), 0x21);
+        assert_eq!(addr.to_string_with_prefix("0x"), "0x0010.1");
+
+        let addr = word_space.parse_address("0x10", true).unwrap().unwrap();
+        assert_eq!(addr.offset(), 0x20);
+        assert_eq!(addr.to_string_with_prefix("0x"), "0x0010");
+
+        let addr = word_space.parse_address("0xffff.1", true).unwrap().unwrap();
+        assert_eq!(addr.offset(), 0x1ffff);
+        assert_eq!(addr.to_string_with_prefix("0x"), "0xffff.1");
+        assert!(addr.add(1).is_err());
+        assert_eq!(addr.add_wrap(1).offset(), 0);
+    }
+
+    #[test]
+    fn generic_address_space_checked_offsets_match_java_bounds() {
+        let ram = AddressSpace::new("Test", 8, 1, AddressSpaceType::Ram, 0);
+        let register = AddressSpace::new("Register", 8, 1, AddressSpaceType::Register, 0);
+        let stack = AddressSpace::new("stack", 8, 1, AddressSpaceType::Stack, 0);
+
+        assert_eq!(ram.checked_address(5).unwrap().offset(), 5);
+        assert!(ram.checked_address(257).is_err());
+        assert!(ram.checked_address(-300).is_err());
+
+        assert_eq!(register.checked_address(-5).unwrap().offset(), 0xfb);
+        assert!(register.checked_address(1024).is_err());
+        assert!(register.checked_address(-257).is_err());
+
+        assert_eq!(stack.checked_address(5).unwrap().offset(), 5);
+        assert_eq!(stack.checked_address(-5).unwrap().offset(), -5);
+        assert!(stack.checked_address(256).is_err());
+        assert!(stack.checked_address(-129).is_err());
+    }
+
+    #[test]
+    fn generic_address_space_wrap_and_no_wrap_arithmetic() {
+        let space = AddressSpace::new("Test", 8, 1, AddressSpaceType::Ram, 0);
+        let addr = space.address(5);
+
+        assert_eq!(space.add_wrap(&addr, 3), space.address(8));
+        assert_eq!(space.add_wrap(&addr, -4), space.address(1));
+        assert_eq!(space.add_wrap(&addr, 1024), space.address(5));
+        assert_eq!(space.subtract_wrap(&addr, 10), space.address(251));
+
+        assert_eq!(space.add_no_wrap(&addr, 3).unwrap(), space.address(8));
+        assert_eq!(space.subtract_no_wrap(&addr, 3).unwrap(), space.address(2));
+        assert!(space.add_no_wrap(&addr, 1024).is_err());
+        assert!(space.subtract_no_wrap(&addr, 1024).is_err());
+        assert!(space.add_no_wrap(&space.max_address(), 1).is_err());
+        assert!(space.subtract_no_wrap(&space.min_address(), 1).is_err());
+    }
+
+    #[test]
+    fn generic_address_space_word_offset_and_truncation_match_java() {
+        let space = AddressSpace::new("space1", 31, 2, AddressSpaceType::Ram, 0);
+
+        assert_eq!(space.truncate_offset(0x25), 0x25);
+        assert_eq!(space.truncate_offset(0x200000025), 0x25);
+        assert_eq!(space.truncate_addressable_word_offset(0x15), 0x15);
+        assert_eq!(space.truncate_addressable_word_offset(0x80000015), 0x15);
+
+        let addr = Address::new(space.clone(), space.truncate_offset(0x200000025));
+        assert_eq!(addr.offset(), 0x25);
+        let addr = space.address_from_word_offset(0x15).unwrap();
+        assert_eq!(addr.addressable_word_offset(), 0x15);
+    }
+
+    #[test]
+    fn generic_address_order_uses_unsigned_offsets_for_unsigned_spaces() {
+        let unsigned = AddressSpace::new("test", 64, 1, AddressSpaceType::Code, 0);
+        let zero = unsigned.address(0);
+        let one = unsigned.address(1);
+        let large = unsigned.address(-2);
+        let max = unsigned.max_address();
+
+        assert!(zero < one);
+        assert!(one < large);
+        assert!(large < max);
+
+        let signed = AddressSpace::new("stack", 64, 1, AddressSpaceType::Stack, 0);
+        assert!(signed.address(-2) < signed.address(0));
+    }
+
+    #[test]
+    fn addressable_word_offset_matches_java_unsigned_division() {
+        let sp1 = AddressSpace::new("AnotherSpace", 64, 1, AddressSpaceType::Code, 1);
+        let sp2 = AddressSpace::new("AnotherSpace", 63, 2, AddressSpaceType::Code, 2);
+        let sp3 = AddressSpace::new("AnotherSpace", 62, 3, AddressSpaceType::Code, 3);
+
+        assert_eq!(sp1.addressable_word_offset(i64::MIN), i64::MIN);
+        assert_eq!(sp1.addressable_word_offset(-1), -1);
+        assert_eq!(sp2.addressable_word_offset(i64::MIN), 0x4000000000000000);
+        assert_eq!(sp2.addressable_word_offset(-1), 0x7fffffffffffffff);
+        assert_eq!(sp2.addressable_word_offset(-3), 0x7ffffffffffffffe);
+        assert_eq!(sp3.addressable_word_offset(0xbfffffffffffffff_u64 as i64), 0x3fffffffffffffff);
+        assert_eq!(sp3.addressable_word_offset(3), 1);
+        assert_eq!(sp3.addressable_word_offset(0x7fffffffffffffff), 0x2aaaaaaaaaaaaaaa);
     }
 }
 pub use address_collectors::AddressCollectors;

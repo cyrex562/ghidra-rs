@@ -75,6 +75,7 @@
   - [x] `AddressRangeChunker` / `AddressRangeSplitter` (program/model/address/range_splitter.rs)
   - [x] `AddressSpace` (program/model/address/mod.rs)
   - [x] `Address` (program/model/address/mod.rs)
+  - [x] `GenericAddress` / `GenericAddressSpace` behavior (program/model/address/mod.rs)
   - [x] `EntryPointReference` (program/model/symbol/entry_point_reference.rs)
   - [x] `EquateReference` (program/model/symbol/equate_reference.rs)
   - [x] `ExternalPath` (program/model/symbol/external_path.rs)
