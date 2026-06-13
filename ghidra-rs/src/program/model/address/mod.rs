@@ -1,33 +1,44 @@
+pub mod address_collectors;
 pub mod address_format_exception;
+pub mod address_map_impl;
+pub mod address_object_map;
 pub mod address_out_of_bounds_exception;
 pub mod address_overflow_exception;
 pub mod address_range_to_address_comparator;
 pub mod address_set;
 pub mod address_set_collection;
+pub mod address_set_mapping;
 pub mod address_set_view_adapter;
 pub mod factory;
+pub mod immutable_address_set;
 pub mod iterator;
 pub mod key_range;
 pub mod range;
+pub mod range_splitter;
 pub mod segment_mismatch_exception;
 
 use std::fmt;
 use std::sync::Arc;
 
 pub use address_format_exception::AddressFormatException;
+pub use address_map_impl::AddressMapImpl;
+pub use address_object_map::AddressObjectMap;
 pub use address_out_of_bounds_exception::AddressOutOfBoundsException;
 pub use address_overflow_exception::AddressOverflowException;
 pub use address_range_to_address_comparator::AddressRangeToAddressComparator;
 pub use address_set::{AddressSet, AddressSetView};
 pub use address_set_collection::{AddressSetCollection, SingleAddressSetCollection};
+pub use address_set_mapping::AddressSetMapping;
 pub use address_set_view_adapter::AddressSetViewAdapter;
 pub use factory::{AddressFactory, DefaultAddressFactory};
+pub use immutable_address_set::ImmutableAddressSet;
 pub use iterator::{
     AddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
     EmptyAddressIterator, EmptyAddressRangeIterator,
 };
 pub use key_range::KeyRange;
 pub use range::AddressRange;
+pub use range_splitter::{AddressRangeChunker, AddressRangeSplitter};
 pub use segment_mismatch_exception::SegmentMismatchException;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -139,6 +150,91 @@ impl AddressSpace {
         self._unique
     }
 
+    pub fn min_offset(&self) -> i64 {
+        self._min_offset
+    }
+
+    pub fn max_offset(&self) -> i64 {
+        self._max_offset
+    }
+
+    pub fn min_address(self: &Arc<Self>) -> Address {
+        Address::new(self.clone(), self._min_offset)
+    }
+
+    pub fn max_address(self: &Arc<Self>) -> Address {
+        Address::new(self.clone(), self._max_offset)
+    }
+
+    pub fn is_memory_space(&self) -> bool {
+        matches!(
+            self.space_type,
+            AddressSpaceType::Ram | AddressSpaceType::Code | AddressSpaceType::Other
+        )
+    }
+
+    pub fn is_loaded_memory_space(&self) -> bool {
+        matches!(self.space_type, AddressSpaceType::Ram | AddressSpaceType::Code)
+    }
+
+    pub fn address(self: &Arc<Self>, offset: i64) -> Address {
+        Address::new(self.clone(), offset)
+    }
+
+    pub fn parse_address(
+        self: &Arc<Self>,
+        addr_string: &str,
+        case_sensitive: bool,
+    ) -> Result<Option<Address>, AddressFormatException> {
+        let text = addr_string.trim();
+        if text.is_empty() {
+            return Err(AddressFormatException::new("Address string is empty"));
+        }
+
+        let offset_text = if let Some((space_name, offset_text)) = text.split_once(':') {
+            let matches_space = if case_sensitive {
+                space_name == self.name()
+            } else {
+                space_name.eq_ignore_ascii_case(self.name())
+            };
+            if !matches_space {
+                return Ok(None);
+            }
+            offset_text
+        } else {
+            text
+        };
+
+        if offset_text.is_empty() {
+            return Err(AddressFormatException::new("Address offset is empty"));
+        }
+
+        let unsigned_text = offset_text
+            .strip_prefix("0x")
+            .or_else(|| offset_text.strip_prefix("0X"))
+            .unwrap_or(offset_text);
+        let offset = if self.signed && unsigned_text.starts_with('-') {
+            let magnitude = i64::from_str_radix(&unsigned_text[1..], 16)
+                .map_err(|_| AddressFormatException::new("Invalid address offset"))?;
+            -magnitude
+        } else {
+            i64::from_str_radix(unsigned_text, 16)
+                .map_err(|_| AddressFormatException::new("Invalid address offset"))?
+        };
+
+        if !self.contains_offset(offset) {
+            return Err(AddressFormatException::new("Address offset is out of bounds"));
+        }
+        Ok(Some(Address::new(self.clone(), offset)))
+    }
+
+    pub fn contains_offset(&self, offset: i64) -> bool {
+        if self.size == 64 && !self.signed {
+            return offset >= 0 || self._max_offset == -1;
+        }
+        self._min_offset <= offset && offset <= self._max_offset
+    }
+
     pub fn truncate_offset(&self, offset: i64) -> i64 {
         if self.size == 64 {
             return offset;
@@ -221,6 +317,25 @@ impl Address {
             .ok_or_else(|| AddressOverflowException::new("Overflow"))?;
         Ok(Self::new(self.space.clone(), new_offset))
     }
+
+    pub fn next(&self) -> Result<Self, AddressOverflowException> {
+        self.add_no_wrap(1)
+    }
+
+    pub fn previous(&self) -> Result<Self, AddressOverflowException> {
+        self.add_no_wrap(-1)
+    }
+
+    pub fn subtract(&self, other: &Address) -> i64 {
+        if self.space() != other.space() {
+            panic!("Cannot subtract addresses from different spaces");
+        }
+        self.offset.wrapping_sub(other.offset)
+    }
+
+    pub fn is_successor(&self, other: &Address) -> bool {
+        self.space() == other.space() && self.offset == other.offset.wrapping_add(1)
+    }
 }
 
 impl fmt::Display for Address {
@@ -281,3 +396,4 @@ mod tests {
         assert_eq!(wrap.offset() as u64, 0xFFFFFFFF);
     }
 }
+pub use address_collectors::AddressCollectors;
