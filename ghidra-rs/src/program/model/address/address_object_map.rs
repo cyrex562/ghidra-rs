@@ -92,7 +92,11 @@ impl<T: Clone + Eq> AddressObjectMap<T> {
             if let Some(cursor_value) = cursor {
                 if cursor_value < range.start {
                     let gap_end = range.start.saturating_sub(1).min(end);
-                    rebuilt.push(ObjectRange::new(cursor_value, gap_end, vec![object.clone()]));
+                    rebuilt.push(ObjectRange::new(
+                        cursor_value,
+                        gap_end,
+                        vec![object.clone()],
+                    ));
                 }
             }
 

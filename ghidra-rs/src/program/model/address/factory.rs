@@ -72,8 +72,15 @@ impl DefaultAddressFactory {
             }
         }
 
-        let register_space = register_space
-            .or_else(|| Some(AddressSpace::new("REGISTER", 32, 1, AddressSpaceType::Register, 0)));
+        let register_space = register_space.or_else(|| {
+            Some(AddressSpace::new(
+                "REGISTER",
+                32,
+                1,
+                AddressSpaceType::Register,
+                0,
+            ))
+        });
 
         Self {
             spaces_by_name,
@@ -116,7 +123,11 @@ impl AddressFactory for DefaultAddressFactory {
         let mut loaded_memory = Vec::new();
         let mut other_memory = Vec::new();
 
-        for space in self.all_spaces.iter().filter(|space| space.is_memory_space()) {
+        for space in self
+            .all_spaces
+            .iter()
+            .filter(|space| space.is_memory_space())
+        {
             let Ok(Some(address)) = space.parse_address(addr_string, case_sensitive) else {
                 continue;
             };
@@ -300,7 +311,10 @@ mod tests {
         assert_eq!(addresses, vec![ram.address(0x1000), code.address(0x1000)]);
 
         let other_only = DefaultAddressFactory::new(vec![other.clone()]);
-        assert_eq!(other_only.get_all_addresses("1000"), vec![other.address(0x1000)]);
+        assert_eq!(
+            other_only.get_all_addresses("1000"),
+            vec![other.address(0x1000)]
+        );
     }
 
     #[test]
@@ -317,7 +331,10 @@ mod tests {
         ]);
 
         assert_eq!(factory.get_address_space_by_name("ram"), Some(ram.clone()));
-        assert_eq!(factory.get_address_space_by_id(ram.space_id()), Some(ram.clone()));
+        assert_eq!(
+            factory.get_address_space_by_id(ram.space_id()),
+            Some(ram.clone())
+        );
         assert_eq!(factory.get_address_spaces(), vec![ram.clone()]);
         assert_eq!(factory.get_num_address_spaces(), 1);
         assert_eq!(factory.get_all_address_spaces().len(), 4);
@@ -335,7 +352,10 @@ mod tests {
         let index = factory.get_index(&address);
 
         assert_eq!(factory.old_get_address_from_long(index), Some(address));
-        assert_eq!(factory.address(ram.space_id(), 0x20), Some(ram.address(0x20)));
+        assert_eq!(
+            factory.address(ram.space_id(), 0x20),
+            Some(ram.address(0x20))
+        );
         assert!(factory.is_valid_address(&ram.address(0)));
     }
 

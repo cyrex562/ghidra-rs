@@ -10,12 +10,17 @@ pub mod address_set_collection;
 pub mod address_set_mapping;
 pub mod address_set_view_adapter;
 pub mod factory;
+pub mod global_namespace;
 pub mod immutable_address_set;
 pub mod iterator;
 pub mod key_range;
+pub mod old_generic_namespace_address;
+pub mod overlay_address_space;
 pub mod range;
 pub mod range_splitter;
 pub mod segment_mismatch_exception;
+pub mod segmented_address;
+pub mod special_address;
 
 use std::fmt;
 use std::sync::Arc;
@@ -31,15 +36,24 @@ pub use address_set_collection::{AddressSetCollection, SingleAddressSetCollectio
 pub use address_set_mapping::AddressSetMapping;
 pub use address_set_view_adapter::AddressSetViewAdapter;
 pub use factory::{AddressFactory, DefaultAddressFactory};
+pub use global_namespace::{
+    GlobalNamespace, GlobalSymbol, GLOBAL_NAMESPACE_ID, GLOBAL_NAMESPACE_NAME, GLOBAL_SYMBOL_NAME,
+};
 pub use immutable_address_set::ImmutableAddressSet;
 pub use iterator::{
     AddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
     EmptyAddressIterator, EmptyAddressRangeIterator,
 };
 pub use key_range::KeyRange;
+pub use old_generic_namespace_address::{
+    OldGenericNamespaceAddress, OLD_MAX_NAMESPACE_ID, OLD_MIN_NAMESPACE_ID,
+};
+pub use overlay_address_space::{OverlayAddressSpace, OV_SEPARATOR};
 pub use range::AddressRange;
 pub use range_splitter::{AddressRangeChunker, AddressRangeSplitter};
 pub use segment_mismatch_exception::SegmentMismatchException;
+pub use segmented_address::{ProtectedAddressSpace, SegmentedAddress, SegmentedAddressSpace};
+pub use special_address::SpecialAddress;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum AddressSpaceType {
@@ -174,7 +188,10 @@ impl AddressSpace {
     }
 
     pub fn is_loaded_memory_space(&self) -> bool {
-        matches!(self.space_type, AddressSpaceType::Ram | AddressSpaceType::Code)
+        matches!(
+            self.space_type,
+            AddressSpaceType::Ram | AddressSpaceType::Code
+        )
     }
 
     pub fn address(self: &Arc<Self>, offset: i64) -> Address {
@@ -249,13 +266,17 @@ impl AddressSpace {
                 .parse::<i64>()
                 .map_err(|_| AddressFormatException::new("Invalid address offset"))?;
             if unit_mod < 0 || unit_mod >= self.unit_size as i64 {
-                return Err(AddressFormatException::new("Address offset is out of bounds"));
+                return Err(AddressFormatException::new(
+                    "Address offset is out of bounds",
+                ));
             }
             offset = offset.wrapping_add(unit_mod);
         }
 
         if !self.contains_offset(offset) {
-            return Err(AddressFormatException::new("Address offset is out of bounds"));
+            return Err(AddressFormatException::new(
+                "Address offset is out of bounds",
+            ));
         }
         Ok(Some(Address::new(self.clone(), offset)))
     }
@@ -310,7 +331,9 @@ impl AddressSpace {
     }
 
     pub fn truncate_addressable_word_offset(&self, word_offset: i64) -> i64 {
-        self.addressable_word_offset(self.truncate_offset(word_offset.wrapping_mul(self.unit_size as i64)))
+        self.addressable_word_offset(
+            self.truncate_offset(word_offset.wrapping_mul(self.unit_size as i64)),
+        )
     }
 
     pub fn add_wrap(self: &Arc<Self>, address: &Address, displacement: i64) -> Address {
@@ -368,21 +391,29 @@ impl AddressSpace {
         }
         if displacement < 0 {
             if displacement == i64::MIN {
-                return Err(AddressOverflowException::new("Address Overflow in subtract"));
+                return Err(AddressOverflowException::new(
+                    "Address Overflow in subtract",
+                ));
             }
             return self.add_no_wrap(address, -displacement);
         }
         self.check_same_space(address);
         if self.size != 64 && (displacement as i128) > self.space_size() {
-            return Err(AddressOverflowException::new("Address Overflow in subtract"));
+            return Err(AddressOverflowException::new(
+                "Address Overflow in subtract",
+            ));
         }
         let result = address.offset().wrapping_sub(displacement);
         if self.signed {
             if result < self._min_offset || result > address.offset() {
-                return Err(AddressOverflowException::new("Address Overflow in subtract"));
+                return Err(AddressOverflowException::new(
+                    "Address Overflow in subtract",
+                ));
             }
         } else if unsigned_lt(address.offset(), result) {
-            return Err(AddressOverflowException::new("Address Overflow in subtract"));
+            return Err(AddressOverflowException::new(
+                "Address Overflow in subtract",
+            ));
         }
         Ok(Address {
             space: self.clone(),
@@ -556,11 +587,21 @@ impl Address {
         self.space.space_type() == AddressSpaceType::Register
     }
 
+    pub fn is_special_address(&self) -> bool {
+        self.space.space_type() == AddressSpaceType::None && self.space.size() == 0
+    }
+
     pub fn to_string_with_prefix(&self, prefix: &str) -> String {
+        if self.is_special_address() {
+            return self.space.name().to_string();
+        }
         format!("{}{}", prefix, self.format(false, 8))
     }
 
     pub fn format(&self, show_address_space: bool, min_num_digits: usize) -> String {
+        if self.is_special_address() {
+            return self.space.name().to_string();
+        }
         let mut result = String::new();
         let mut digits = min_num_digits;
         let stack = self.is_stack_address();
@@ -608,6 +649,9 @@ impl Address {
 
 impl fmt::Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_special_address() {
+            return f.write_str(self.space.name());
+        }
         write!(f, "{}:0x{:x}", self.space.name(), self.offset)
     }
 }
@@ -781,9 +825,15 @@ mod tests {
         assert_eq!(sp2.addressable_word_offset(i64::MIN), 0x4000000000000000);
         assert_eq!(sp2.addressable_word_offset(-1), 0x7fffffffffffffff);
         assert_eq!(sp2.addressable_word_offset(-3), 0x7ffffffffffffffe);
-        assert_eq!(sp3.addressable_word_offset(0xbfffffffffffffff_u64 as i64), 0x3fffffffffffffff);
+        assert_eq!(
+            sp3.addressable_word_offset(0xbfffffffffffffff_u64 as i64),
+            0x3fffffffffffffff
+        );
         assert_eq!(sp3.addressable_word_offset(3), 1);
-        assert_eq!(sp3.addressable_word_offset(0x7fffffffffffffff), 0x2aaaaaaaaaaaaaaa);
+        assert_eq!(
+            sp3.addressable_word_offset(0x7fffffffffffffff),
+            0x2aaaaaaaaaaaaaaa
+        );
     }
 }
 pub use address_collectors::AddressCollectors;
