@@ -3,19 +3,21 @@ import json
 import os
 import re
 import sys
-from collections import deque
+from collections import deque, defaultdict
 
 
 class JavaDependencyAnalyzer:
     def __init__(self, root_dir):
         self.root_dir = root_dir
-        self.file_to_package = {}  # rel_path -> package.ClassName
-        self.package_to_file = {}  # package.ClassName -> rel_path
-        self.dependencies = {}  # rel_path -> set(rel_path)
+        self.file_to_package = {}        # rel_path -> package.ClassName
+        self.package_to_file = {}        # package.ClassName -> rel_path
+        self.package_members = defaultdict(list)  # package -> [rel_path] (for wildcard imports)
+        self.dependencies = {}           # rel_path -> set(rel_path)  (all in-repo direct deps)
+        self.done = set()                # rel_paths that are already ported (status DONE)
         self.all_files = []
 
     def scan_files(self):
-        print(f"Scanning {self.root_dir} for Java files...")
+        print(f"Scanning {self.root_dir} for Java files...", file=sys.stderr)
         for root, dirs, files in os.walk(self.root_dir):
             for file in files:
                 if file.endswith(".java"):
@@ -23,9 +25,6 @@ class JavaDependencyAnalyzer:
                     rel_path = rel_path.replace(os.sep, "/")
                     self.all_files.append(rel_path)
 
-                    # Try to determine package from path
-                    # Standard structure: .../src/main/java/package/path/File.java
-                    # Some scripts are in .../ghidra_scripts/File.java
                     package_name = self._extract_package_from_file(
                         os.path.join(root, file)
                     )
@@ -34,6 +33,7 @@ class JavaDependencyAnalyzer:
                         full_name = f"{package_name}.{class_name}"
                         self.package_to_file[full_name] = rel_path
                         self.file_to_package[rel_path] = full_name
+                        self.package_members[package_name].append(rel_path)
 
     def _extract_package_from_file(self, file_path):
         try:
@@ -47,12 +47,36 @@ class JavaDependencyAnalyzer:
                         or line.startswith("public ")
                         or line.startswith("class ")
                     ):
-                        break  # Optimization: package should be at the top
+                        break  # package declaration is always at the top
         except Exception:
             pass
         return None
 
+    def load_manifest(self, manifest_path):
+        """Mark files whose manifest status is DONE so they drop out of dep counts.
+
+        Manifest rows are TAB-separated: <path>\t<status>\t<package...>
+        Paths include the root prefix (e.g. 'orig_src/...'), so strip it to match
+        our root-relative rel_paths.
+        """
+        if not manifest_path or not os.path.exists(manifest_path):
+            return 0
+        root_prefix = os.path.basename(self.root_dir.rstrip("/")) + "/"
+        n = 0
+        with open(manifest_path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                parts = line.rstrip("\n").split("\t")
+                if len(parts) < 2:
+                    continue
+                path, status = parts[0], parts[1].strip().upper()
+                if status == "DONE":
+                    rel = path[len(root_prefix):] if path.startswith(root_prefix) else path
+                    self.done.add(rel)
+                    n += 1
+        return n
+
     def get_dependencies(self, rel_path):
+        """All in-repo direct dependencies (explicit imports + wildcard expansion)."""
         if rel_path in self.dependencies:
             return self.dependencies[rel_path]
 
@@ -61,47 +85,55 @@ class JavaDependencyAnalyzer:
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-                # Simple regex for imports
-                imports = re.findall(r"^import\s+([\w\.]+);", content, re.MULTILINE)
-                for imp in imports:
-                    if imp in self.package_to_file:
-                        deps.add(self.package_to_file[imp])
-                    else:
-                        # Handle wildcard imports? (e.g. import ghidra.util.*;)
-                        # For now, let's keep it simple and only match exact classes
-                        pass
+
+            # Explicit single-class imports: import a.b.C;
+            for imp in re.findall(r"^import\s+(?:static\s+)?([\w\.]+);", content, re.MULTILINE):
+                if imp.endswith(".*"):
+                    continue  # handled below
+                if imp in self.package_to_file:
+                    deps.add(self.package_to_file[imp])
+
+            # Wildcard imports: import a.b.*;  -> every in-repo class in package a.b
+            for pkg in re.findall(r"^import\s+(?:static\s+)?([\w\.]+)\.\*;", content, re.MULTILINE):
+                for member in self.package_members.get(pkg, ()):
+                    deps.add(member)
         except Exception:
             pass
 
+        deps.discard(rel_path)  # never depend on self
         self.dependencies[rel_path] = deps
         return deps
+
+    def get_remaining_dependencies(self, rel_path):
+        """Direct deps that are NOT yet ported -- the dynamic, status-aware count."""
+        return self.get_dependencies(rel_path) - self.done
 
     def get_recursive_dependencies(self, rel_path):
         visited = set()
         to_visit = deque([rel_path])
-
         while to_visit:
             current = to_visit.popleft()
             if current not in visited:
                 visited.add(current)
-                deps = self.get_dependencies(current)
-                for dep in deps:
+                for dep in self.get_dependencies(current):
                     if dep not in visited:
                         to_visit.append(dep)
-
-        visited.remove(rel_path)
+        visited.discard(rel_path)
         return visited
 
     def get_all_stats(self):
         stats = []
         for f in self.all_files:
             deps = self.get_dependencies(f)
+            remaining = deps - self.done
             stats.append(
                 {
                     "file": f,
                     "package": self.file_to_package.get(f, ""),
                     "dep_count": len(deps),
-                    "dependencies": sorted(list(deps)),
+                    "remaining_dep_count": len(remaining),
+                    "done": f in self.done,
+                    "dependencies": sorted(deps),
                 }
             )
         return stats
@@ -110,27 +142,18 @@ class JavaDependencyAnalyzer:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Ghidra-rs Parity & Dependency Checker"
-    )
-    parser.add_argument(
-        "--root", default="orig_src", help="Root directory of original source"
-    )
-    parser.add_argument(
-        "--json", action="store_true", help="Output results in JSON format"
-    )
-    parser.add_argument(
-        "--csv", action="store_true", help="Output results in CSV format"
-    )
-    parser.add_argument(
-        "--check-deps", help="Check recursive dependencies for a specific file"
-    )
-    parser.add_argument(
-        "--utility-only",
-        action="store_true",
-        help="Only analyze files in Ghidra/Framework/Utility",
-    )
-
+    parser = argparse.ArgumentParser(description="Ghidra-rs Parity & Dependency Checker")
+    parser.add_argument("--root", default="orig_src", help="Root directory of original source")
+    parser.add_argument("--manifest", default="PORT_MANIFEST.tsv",
+                        help="Manifest TSV used to determine which files are already DONE")
+    parser.add_argument("--json", action="store_true", help="Output results in JSON format")
+    parser.add_argument("--csv", action="store_true", help="Output results in CSV format")
+    parser.add_argument("--check-deps", help="Check recursive dependencies for a specific file")
+    parser.add_argument("--utility-only", action="store_true",
+                        help="Only analyze files in Ghidra/Framework/Utility")
+    parser.add_argument("--port-order", action="store_true",
+                        help="Emit TODO files ordered by remaining (unported) dependency count "
+                             "-- the frontier the daemon should port next. Output: '<n>\\t<file>'.")
     args = parser.parse_args()
 
     if not os.path.exists(args.root):
@@ -139,14 +162,14 @@ def main():
 
     analyzer = JavaDependencyAnalyzer(args.root)
     analyzer.scan_files()
+    done_n = analyzer.load_manifest(args.manifest)
+    if done_n:
+        print(f"Loaded {done_n} DONE entries from {args.manifest}", file=sys.stderr)
 
     if args.utility_only:
-        analyzer.all_files = [
-            f for f in analyzer.all_files if "Ghidra/Framework/Utility" in f
-        ]
+        analyzer.all_files = [f for f in analyzer.all_files if "Ghidra/Framework/Utility" in f]
 
     if args.check_deps:
-        # Find file by partial match if needed
         target = args.check_deps
         if target not in analyzer.all_files:
             matches = [f for f in analyzer.all_files if target in f]
@@ -158,30 +181,45 @@ def main():
             else:
                 print(f"File not found: {target}")
                 sys.exit(1)
-
         deps = analyzer.get_recursive_dependencies(target)
         print(f"Recursive dependencies for {target}:")
-        for d in sorted(list(deps)):
+        for d in sorted(deps):
             print(f"  {d}")
         print(f"\nTotal recursive dependencies: {len(deps)}")
+        return
+
+    if args.port_order:
+        # Frontier first: lowest remaining (unported) deps, then lowest total deps, then path.
+        # Files already DONE are excluded. Count 0 == ready to port now with no stubbing.
+        todo = [f for f in analyzer.all_files if f not in analyzer.done]
+        ordered = sorted(
+            todo,
+            key=lambda f: (
+                len(analyzer.get_remaining_dependencies(f)),
+                len(analyzer.get_dependencies(f)),
+                f,
+            ),
+        )
+        for f in ordered:
+            print(f"{len(analyzer.get_remaining_dependencies(f))}\t{f}")
         return
 
     stats = analyzer.get_all_stats()
 
     if args.json:
-        # For token efficiency, use compact JSON
         print(json.dumps(stats, separators=(",", ":")))
     elif args.csv:
-        writer = csv.DictWriter(sys.stdout, fieldnames=["file", "package", "dep_count"])
+        writer = csv.DictWriter(
+            sys.stdout, fieldnames=["file", "package", "dep_count", "remaining_dep_count", "done"]
+        )
         writer.writeheader()
         for s in stats:
-            writer.writerow({k: s[k] for k in ["file", "package", "dep_count"]})
+            writer.writerow({k: s[k] for k in ["file", "package", "dep_count", "remaining_dep_count", "done"]})
     else:
-        # Default: Print top 20 files with lowest dependencies
-        print("\nTop 20 files with lowest direct dependencies:")
-        sorted_stats = sorted(stats, key=lambda x: x["dep_count"])
-        for s in sorted_stats[:20]:
-            print(f"{s['dep_count']:3} | {s['file']}")
+        print("\nTop 20 unported files with fewest remaining dependencies:")
+        todo = [s for s in stats if not s["done"]]
+        for s in sorted(todo, key=lambda x: (x["remaining_dep_count"], x["dep_count"]))[:20]:
+            print(f"{s['remaining_dep_count']:3} rem ({s['dep_count']:3} total) | {s['file']}")
 
 
 if __name__ == "__main__":
