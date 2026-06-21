@@ -916,7 +916,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/b
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/bookmark/TraceBookmarkSpace.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model bookmark 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/bookmark/TraceBookmarkType.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model bookmark 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointCommon.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model breakpoint 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointKind.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model breakpoint 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointKind.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model breakpoint
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointLocation.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model breakpoint 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model breakpoint 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointSpec.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model breakpoint 
