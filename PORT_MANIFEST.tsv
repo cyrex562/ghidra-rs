@@ -1146,7 +1146,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/docking/widgets/table/SpannedR
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/docking/widgets/table/ThreadedEnumeratedColumnTableModel.java	TODO	orig_src Ghidra Debug ProposedUtils src main java docking widgets table 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/docking/widgets/tree/AnyChangeTreeModelListener.java	DONE	orig_src Ghidra Debug ProposedUtils src main java docking widgets tree
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/docking/widgets/tree/SearchableByObjectGTreeNode.java	TODO	orig_src Ghidra Debug ProposedUtils src main java docking widgets tree 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/AbstractUnionedCollection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/AbstractUnionedCollection.java	DONE	orig_src Ghidra Debug ProposedUtils src main java generic 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/CatenatedCollection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/End.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/ID.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic 
