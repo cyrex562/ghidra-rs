@@ -73,7 +73,7 @@ flock -n 9 || { echo "another tick is running; exiting"; exit 0; }
 
 cd "$REPO_DIR" || { echo "no repo at $REPO_DIR"; exit 1; }
 touch "$PARKED"
-[ -f "$RESULTS_FILE" ] || printf 'ts\tclass\tresult\ttests\tdur_s\tcost_usd\tsrcpath\n' > "$RESULTS_FILE"
+[ -f "$RESULTS_FILE" ] || printf 'ts\tclass\tresult\ttests\tdur_s\tcost_usd\tsrcpath\tnote\n' > "$RESULTS_FILE"
 
 # --- run state ---
 START_TS=$(date +%s)
@@ -108,9 +108,9 @@ write_status() {
   } > "$tmp" && mv "$tmp" "$STATUS_FILE"
 }
 
-record_result() { # class result tests dur cost srcpath
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$(date '+%Y-%m-%dT%H:%M:%S')" "$1" "$2" "$3" "$4" "$5" "$6" >> "$RESULTS_FILE"
+record_result() { # class result tests dur cost srcpath note
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$(date '+%Y-%m-%dT%H:%M:%S')" "$1" "$2" "$3" "$4" "$5" "$6" "${7:-}" >> "$RESULTS_FILE"
 }
 
 on_signal() { STOP="signal"; echo; echo "[signal] caught -- finishing current iteration, then stopping."; write_status "" "stopping on signal"; }
@@ -161,13 +161,16 @@ for ((i = 1; i <= MAX_ITERS; i++)); do
 
   echo "=================== iteration $i / $MAX_ITERS  (elapsed $(hms "$(elapsed)"), spend \$$spent) ==================="
 
-  # 1. next ready, unparked class at the frontier
+  # 1. next ready, unparked class at the frontier, restricted to MAPPED areas
+  #    (unmapped areas would be parked by the model -- skip them without spending).
   next=$("$PY" scripts/sync_check.py --root orig_src --manifest "$MANIFEST" --port-order 2>/dev/null \
         | awk -F'\t' '$1==0{print $2}' \
+        | "$PY" scripts/portlib.py mapped \
         | grep -vxF -f <(sed 's#^orig_src/##' "$PARKED") \
         | head -1)
   if [ -z "$next" ]; then
-    echo "no ready, unparked class at the frontier -- batch complete."
+    echo "no ready, unparked, mapped class at the frontier -- batch complete."
+    echo "(unmapped areas remain; run '$PY scripts/portlib.py report' to see what needs mapping.)"
     break
   fi
 
@@ -216,6 +219,8 @@ PORT_RESULT: PARKED followed by a one-line reason."
   "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1])).get("result",""))' "$jlog" >>"$log" 2>/dev/null || true
   add_cost "$cost"
   [ "$claude_rc" -eq 124 ] && echo "claude TIMED OUT after ${CLAUDE_TIMEOUT}s" >>"$log"
+  # the model's own park rationale, for triage (empty on success)
+  preason=$(grep -m1 'PORT_RESULT:' "$log" 2>/dev/null | sed 's/.*PORT_RESULT:[[:space:]]*//' | tr '\t' ' ' | cut -c1-200)
 
   # 5. verify: manifest row DONE AND crate builds (the real gate -- not claude's say-so)
   status=$(grep -F "$srcpath"$'\t' "$MANIFEST" | head -1 | cut -f2 | tr -d '[:space:]')
@@ -261,7 +266,7 @@ PORT_RESULT: PARKED followed by a one-line reason."
       parked=$((parked + 1)); consec_park=$((consec_park + 1))
       dur=$(( $(date +%s) - iter_start ))
       echo "PARK: ${class} broke integration on merge -- reverted+parked. log: $log"
-      record_result "$class" "PARK-MERGEBUILD" "$tests" "$dur" "$cost" "$srcpath"
+      record_result "$class" "PARK-MERGEBUILD" "$tests" "$dur" "$cost" "$srcpath" "post-merge build broke integration"
       write_status "$srcpath" "PARK ${class} (post-merge build)"
       "$PY" scripts/issuelib.py park "$srcpath" --comment "Combined build broke integration; reverted+parked." >>"$log" 2>&1 || true
       continue
@@ -272,7 +277,7 @@ PORT_RESULT: PARKED followed by a one-line reason."
     parked=$((parked + 1)); consec_park=$((consec_park + 1))
     dur=$(( $(date +%s) - iter_start ))
     echo "PARK: ${class} merge conflict -- aborted+parked. branch ${branch} left. log: $log"
-    record_result "$class" "PARK-CONFLICT" "$tests" "$dur" "$cost" "$srcpath"
+    record_result "$class" "PARK-CONFLICT" "$tests" "$dur" "$cost" "$srcpath" "merge conflict against ${INTEGRATION}"
     write_status "$srcpath" "PARK ${class} (merge conflict)"
     "$PY" scripts/issuelib.py park "$srcpath" --comment "Merge conflict against ${INTEGRATION}; parked." >>"$log" 2>&1 || true
     continue
@@ -287,7 +292,7 @@ PORT_RESULT: PARKED followed by a one-line reason."
   dur=$(( $(date +%s) - iter_start ))
   reason="status='${status}'"; [ "$claude_rc" -eq 124 ] && reason="timeout"
   echo "PARK: ${class} did not complete (${reason}). branch ${branch} left. log: $log"
-  record_result "$class" "PARK" "tests:NA" "$dur" "$cost" "$srcpath"
+  record_result "$class" "PARK" "tests:NA" "$dur" "$cost" "$srcpath" "${preason:-$reason}"
   write_status "$srcpath" "PARK ${class} (${reason})"
   "$PY" scripts/issuelib.py park "$srcpath" --comment "Could not port cleanly (${reason}). See log." >>"$log" 2>&1 || true
 done
