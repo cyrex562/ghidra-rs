@@ -407,7 +407,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/mo
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/AbstractQueryTableModel.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/AbstractQueryTablePanel.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/Adapters.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/ColorsModified.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/ColorsModified.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/DebuggerModelPlugin.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/DebuggerModelProvider.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/DisplaysModified.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui model 
