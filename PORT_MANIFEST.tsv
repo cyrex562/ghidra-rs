@@ -24,7 +24,7 @@ orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GSystemUtilities.java	DON
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/hfsplus/AttributesFileParser.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg hfsplus 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgFileReader.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg reader 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgInfoGenerator.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg reader 
-orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgInputStream.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg reader 
+orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgInputStream.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg reader
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/server/DmgServer.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg server 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/xattr/XattrConstants.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg xattr 
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/AbstractDBAnnotationValidator.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
