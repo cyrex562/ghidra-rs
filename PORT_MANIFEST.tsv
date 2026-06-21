@@ -676,7 +676,7 @@ orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/gui/th
 orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/gui/time/DebuggerTimeProviderTest.java	TODO	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug gui time 
 orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/gui/trace/DebuggerTraceTabPanelTest.java	TODO	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug gui trace 
 orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/mapping/TestDebuggerPlatformOpinion.java	TODO	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug mapping 
-orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/opinion/DebuggerOpinionsTest.java	TODO	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug opinion 
+orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/opinion/DebuggerOpinionsTest.java	DONE	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug opinion
 orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/service/MockTarget.java	TODO	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug service 
 orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/service/emulation/DebuggerEmulationServiceTest.java	TODO	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug service emulation 
 orig_src/Ghidra/Debug/Debugger/src/test/java/ghidra/app/plugin/core/debug/service/modules/DebuggerStaticMappingServiceTest.java	TODO	orig_src Ghidra Debug Debugger src test java ghidra app plugin core debug service modules 
