@@ -28,7 +28,7 @@ orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgInputStream.java	DONE	
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/server/DmgServer.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg server 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/xattr/XattrConstants.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg xattr
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/AbstractDBAnnotationValidator.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
-orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/AccessSpec.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
+orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/AccessSpec.java	DONE	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/DBAnnotatedColumnValidator.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/DBAnnotatedFieldValidator.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/DBAnnotatedObjectProcessor.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 

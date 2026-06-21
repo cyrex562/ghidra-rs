@@ -1,3 +1,4 @@
+pub mod database;
 pub mod datastruct;
 pub mod error_display;
 pub mod error_logger;
