@@ -1,3 +1,4 @@
+pub mod abstract_unioned_collection;
 pub mod algorithms;
 pub mod cache;
 pub mod complex;
