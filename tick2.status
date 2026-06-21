@@ -1,0 +1,12 @@
+state:        running
+started:      2026-06-20 21:18:48
+elapsed:      0h00m05s  / budget none
+model:        sonnet    GH:1
+current:      orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/btree/BTreeHeaderRecordAttributes.java
+ported(run):  0    parked(run): 0    ports/hr: -
+manifest DONE total: 0
+?
+spend:        $0
+consec_park:  0 / 10
+last:         porting (iter 1)
+updated:      21:18:53
