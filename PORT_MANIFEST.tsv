@@ -1024,7 +1024,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/t
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInfo.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target info
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceFactory.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target info 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceUtils.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target info 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/KeyPath.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target path 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/KeyPath.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target path
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathFilter.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target path 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathMatcher.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target path 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathPattern.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target path 
