@@ -1,4 +1,5 @@
 pub mod db;
+pub mod options;
 pub mod os;
 pub mod service;
 pub mod version;
