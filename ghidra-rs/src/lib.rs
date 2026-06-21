@@ -1,3 +1,4 @@
+pub mod debug;
 pub mod filesystem;
 pub mod framework;
 pub mod generic;
