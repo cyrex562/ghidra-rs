@@ -1118,7 +1118,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/databas
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/database/thread/DBTraceThreadManagerTest.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace database thread 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/database/time/DBTraceTimeManagerTest.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace database time 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/model/target/path/KeyPathTest.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace model target path
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/model/target/path/PathFilterTest.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace model target path 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/model/target/path/PathFilterTest.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace model target path
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/model/time/schedule/TestMachine.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace model time schedule 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/model/time/schedule/TestThread.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace model time schedule 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/trace/model/time/schedule/TraceScheduleTest.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra trace model time schedule 
