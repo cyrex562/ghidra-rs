@@ -614,7 +614,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SymPcodeExecutorState.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SymStateSpace.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/UnwindAnalysis.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/UnwindException.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/UnwindException.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/UnwindInfo.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/UnwindStackCommand.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/UnwoundFrame.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
