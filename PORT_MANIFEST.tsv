@@ -19,7 +19,7 @@ orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GDataConverterBE.java	DON
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GDataConverterLE.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GFileUtilityMethods.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg ghidra
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GRandomAccessFile.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg ghidra
-orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GStringUtilities.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
+orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GStringUtilities.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GSystemUtilities.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/hfsplus/AttributesFileParser.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg hfsplus 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/reader/DmgFileReader.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg reader 
