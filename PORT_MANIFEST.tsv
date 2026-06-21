@@ -1163,7 +1163,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/AutoO
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/AutoOptionsListener.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra framework options 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/annotation/AutoOptionConsumed.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra framework options annotation
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/annotation/AutoOptionDefined.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra framework options annotation 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/annotation/HelpInfo.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra framework options annotation 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/annotation/HelpInfo.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra framework options annotation
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/plugintool/AutoConfigState.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra framework plugintool 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/plugintool/AutoService.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra framework plugintool 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/plugintool/PluginToolUtils.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra framework plugintool 
