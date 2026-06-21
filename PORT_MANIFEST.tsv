@@ -1150,7 +1150,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/AbstractUnionedCollect
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/CatenatedCollection.java	DONE	orig_src Ghidra Debug ProposedUtils src main java generic
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/End.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/ID.java	DONE	orig_src Ghidra Debug ProposedUtils src main java generic
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/DependentService.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/DependentService.java	DONE	orig_src Ghidra Debug ProposedUtils src main java generic depends
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/DependentServiceConstructor.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/DependentServiceResolver.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/err/ServiceConstructionException.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends err 
