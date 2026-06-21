@@ -1,6 +1,7 @@
 pub mod db;
 pub mod options;
 pub mod os;
+pub mod plugintool;
 pub mod service;
 pub mod version;
 
