@@ -3,10 +3,15 @@ use std::fmt;
 use once_cell::sync::Lazy;
 
 /// Minimum interface for path filtering used by [`KeyPath::stream_matching_ancestry`].
-/// Additional methods will be added here when `PathFilter.java` is ported.
 pub trait PathFilter {
     fn matches(&self, path: &KeyPath) -> bool;
     fn ancestor_matches(&self, path: &KeyPath, strict: bool) -> bool;
+    /// Get the pattern for the previous key (right-to-left matching).
+    ///
+    /// Returns empty set if no ancestor of `path` can match this filter at the preceding position.
+    fn get_prev_keys(&self, _path: &KeyPath) -> std::collections::HashSet<String> {
+        std::collections::HashSet::new()
+    }
 }
 
 /// Returns `true` if `key` is a wildcard pattern (`""` or `"[]"`).
