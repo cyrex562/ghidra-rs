@@ -11,7 +11,7 @@ orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsCompressionTypes.
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsConstants.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsHeader.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsStates.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs
-orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GBinaryReader.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
+orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GBinaryReader.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg ghidra
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GByteProvider.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GConv.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GDataConverter.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg ghidra 
