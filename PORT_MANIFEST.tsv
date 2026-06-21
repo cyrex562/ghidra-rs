@@ -112,7 +112,7 @@ orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/app/plugin/core/datamgr/
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/app/plugin/core/datamgr/actions/ExportToIsfAction.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra app plugin core datamgr actions 
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfClientHandler.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra dbg isf 
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfConnectionHandler.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra dbg isf 
-orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfErrorException.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra dbg isf 
+orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfErrorException.java	DONE	orig_src Ghidra Debug Debugger-isf src main java ghidra dbg isf
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfServer.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra dbg isf 
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/dbg/isf/IsfServerLauncher.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra dbg isf 
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/AbstractIsfObject.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
