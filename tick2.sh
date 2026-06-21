@@ -94,7 +94,7 @@ write_status() {
   [ "$ported" -gt 0 ] && [ "$el" -gt 0 ] && rate=$(awk -v p="$ported" -v e="$el" 'BEGIN{printf "%.1f", p*3600/e}')
   local tmp="$STATUS_FILE.tmp"
   {
-    echo "state:        ${STOP:+stopping (${STOP})}${STOP:-running}"
+    echo "state:        $([ -n "$STOP" ] && echo "stopping (${STOP})" || echo running)"
     echo "started:      $(date -d @"$START_TS" '+%Y-%m-%d %H:%M:%S')"
     echo "elapsed:      $(hms "$el")${TIME_BUDGET:+  / budget $( [ "$TIME_BUDGET" -gt 0 ] && hms "$TIME_BUDGET" || echo none)}"
     echo "model:        $MODEL    GH:$GH"
@@ -165,7 +165,7 @@ for ((i = 1; i <= MAX_ITERS; i++)); do
   #    (unmapped areas would be parked by the model -- skip them without spending).
   next=$("$PY" scripts/sync_check.py --root orig_src --manifest "$MANIFEST" --port-order 2>/dev/null \
         | awk -F'\t' '$1==0{print $2}' \
-        | "$PY" scripts/portlib.py mapped \
+        | "$PY" scripts/portlib.py mapped 2>/dev/null \
         | grep -vxF -f <(sed 's#^orig_src/##' "$PARKED") \
         | head -1)
   if [ -z "$next" ]; then
@@ -221,6 +221,22 @@ PORT_RESULT: PARKED followed by a one-line reason."
   [ "$claude_rc" -eq 124 ] && echo "claude TIMED OUT after ${CLAUDE_TIMEOUT}s" >>"$log"
   # the model's own park rationale, for triage (empty on success)
   preason=$(grep -m1 'PORT_RESULT:' "$log" 2>/dev/null | sed 's/.*PORT_RESULT:[[:space:]]*//' | tr '\t' ' ' | cut -c1-200)
+
+  # API/usage failure (session limit, API error, transport error) is NOT the class's
+  # fault: don't park a portable class, and don't grind 10 more iterations -- stop the
+  # batch cleanly so it can be resumed once the limit/outage clears. (A timeout, rc=124,
+  # may be class-specific, so it falls through to the normal park path below.)
+  is_err=$("$PY" -c 'import json,sys; print(1 if json.load(open(sys.argv[1])).get("is_error") else 0)' "$jlog" 2>/dev/null || echo 1)
+  if [ "$claude_rc" -ne 124 ] && { [ "$claude_rc" -ne 0 ] || [ "$is_err" = "1" ]; }; then
+    apimsg=$(grep -m1 -iE "session limit|usage limit|rate limit|overloaded|quota|api error" "$log" 2>/dev/null | tr -d '\t' | cut -c1-120)
+    git checkout -f "$INTEGRATION" >/dev/null 2>&1
+    git branch -D "$branch" >/dev/null 2>&1 || true
+    STOP="api-error"
+    echo "API FAILURE on ${class}: ${apimsg:-claude_rc=$claude_rc is_error=$is_err}. Not parking; stopping batch."
+    record_result "$class" "API-FAIL" "tests:NA" "$(( $(date +%s) - iter_start ))" "$cost" "$srcpath" "${apimsg:-api error rc=$claude_rc}"
+    write_status "$srcpath" "API failure -- stopping (${apimsg:-error})"
+    continue
+  fi
 
   # 5. verify: manifest row DONE AND crate builds (the real gate -- not claude's say-so)
   status=$(grep -F "$srcpath"$'\t' "$MANIFEST" | head -1 | cut -f2 | tr -d '[:space:]')
