@@ -475,7 +475,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/st
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/stack/vars/VariableValueHoverPlugin.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui stack vars 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/stack/vars/VariableValueHoverService.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui stack vars 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/stack/vars/VariableValueRow.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui stack vars 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/stack/vars/VariableValueTable.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui stack vars 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/stack/vars/VariableValueTable.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui stack vars
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/stack/vars/VariableValueUtils.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui stack vars 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/thread/DebuggerThreadsPanel.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui thread 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/thread/DebuggerThreadsPlugin.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui thread 
