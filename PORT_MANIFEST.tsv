@@ -946,7 +946,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/m
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/map/TraceAddressSnapRangePropertyMapOperations.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model map 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/map/TraceAddressSnapRangePropertyMapSpace.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model map 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/RegisterValueConverter.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/RegisterValueException.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/RegisterValueException.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemory.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemoryFlag.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemoryManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
