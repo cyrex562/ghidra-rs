@@ -1153,7 +1153,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/ID.java	DONE	orig_src 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/DependentService.java	DONE	orig_src Ghidra Debug ProposedUtils src main java generic depends
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/DependentServiceConstructor.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/DependentServiceResolver.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/err/ServiceConstructionException.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends err 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/err/ServiceConstructionException.java	DONE	orig_src Ghidra Debug ProposedUtils src main java generic depends err
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/err/UnsatisfiedFieldsException.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends err 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/generic/depends/err/UnsatisfiedParameterException.java	TODO	orig_src Ghidra Debug ProposedUtils src main java generic depends err 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/base/widgets/table/AbstractDataTypeTableCellEditor.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra base widgets table 
