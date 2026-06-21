@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use super::IsfObject;
 
 /// Represents an ISF Linux program descriptor.
@@ -7,7 +9,7 @@ use super::IsfObject;
 /// Mirrors `IsfLinuxProgram` from Ghidra's Debugger-isf module. `kind` is
 /// always `"dwarf"` and `hash_type` is always `"sha256"`; `name` and
 /// `hash_value` are extracted from the supplied metadata map.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct IsfLinuxProgram {
     pub kind: String,
     pub name: Option<String>,
