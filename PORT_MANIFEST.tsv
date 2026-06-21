@@ -1177,7 +1177,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/pcode/eval/AbstractVarn
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/pcode/eval/ArithmeticVarnodeEvaluator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra pcode eval 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/pcode/eval/VarnodeEvaluator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra pcode eval 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/program/model/address/CachedAddressSetView.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra program model address 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/ByteBufferUtils.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/ByteBufferUtils.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/DistinctIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
