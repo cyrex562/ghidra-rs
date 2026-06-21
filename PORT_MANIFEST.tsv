@@ -157,7 +157,7 @@ orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiTarg
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/JdiThreadInfo.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/breakpoint/JdiBreakpointInfo.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager breakpoint
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/breakpoint/JdiBreakpointType.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager breakpoint 
-orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/impl/DebugStatus.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager impl 
+orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/impl/DebugStatus.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager impl
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/manager/impl/JdiManagerImpl.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi manager impl 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/JavaTraceRmiLaunchOffer.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/JavaTraceRmiLaunchOpinion.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi 
