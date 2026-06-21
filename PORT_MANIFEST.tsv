@@ -1042,7 +1042,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/t
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/TraceSnapshot.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/TraceTimeManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/AbstractStep.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/CompareResult.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/CompareResult.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/PatchStep.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Scheduler.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Sequence.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule 
