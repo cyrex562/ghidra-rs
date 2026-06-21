@@ -26,3 +26,10 @@ Cargo.lock
 .idea/
 .vscode/
 .agents/issue-drafts/
+
+# Porting harness operational state (must NOT be tracked: the harness runs
+# git checkout -f / reset --hard, which would revert these mid-run)
+tick2.status
+tick2_results.tsv
+PORT_PARKED.tsv
+.agents/issue-map.tsv

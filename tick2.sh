@@ -89,7 +89,7 @@ time_exceeded() { [ "$TIME_BUDGET" -gt 0 ] && [ "$(elapsed)" -ge "$TIME_BUDGET" 
 
 write_status() {
   local cur="$1" last="$2" el; el=$(elapsed)
-  local done_n; done_n=$(grep -c $'\tDONE\t' "$MANIFEST" 2>/dev/null || echo "?")
+  local done_n; done_n=$(grep -c $'\tDONE\t' "$MANIFEST" 2>/dev/null || true); done_n=${done_n:-0}
   local rate="-"
   [ "$ported" -gt 0 ] && [ "$el" -gt 0 ] && rate=$(awk -v p="$ported" -v e="$el" 'BEGIN{printf "%.1f", p*3600/e}')
   local tmp="$STATUS_FILE.tmp"
@@ -118,8 +118,9 @@ trap on_signal INT TERM
 
 finish() {
   git switch "$INTEGRATION" >/dev/null 2>&1 || true
-  local done_n park_n; done_n=$(grep -c $'\tDONE\t' "$MANIFEST" 2>/dev/null || echo 0)
-  park_n=$(sort -u "$PARKED" | grep -c . 2>/dev/null || echo 0)
+  local done_n park_n
+  done_n=$(grep -c $'\tDONE\t' "$MANIFEST" 2>/dev/null || true); done_n=${done_n:-0}
+  park_n=$(sort -u "$PARKED" 2>/dev/null | grep -c . || true); park_n=${park_n:-0}
   write_status "" "finished: ${ported} ported / ${parked} parked this run"
   echo "=================== batch done ==================="
   echo "this run:  ${ported} ported, ${parked} parked   spend: \$$spent   elapsed: $(hms "$(elapsed)")"
