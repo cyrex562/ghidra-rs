@@ -1006,7 +1006,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/s
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolWithAddressView.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolWithLifespan.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolWithLocationView.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/DuplicateKeyException.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/DuplicateKeyException.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObject.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObjectManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObjectValPath.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model target 
