@@ -1492,7 +1492,7 @@ orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeThreadExecutor.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3PcodeUseropLibrary.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RecordsExecution.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RecordsPreconditions.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RecordsPreconditions.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3RegisterMap.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3ThreadPcodeExecutorState.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/lib/SymZ3EmuUnixFileSystem.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 lib 
