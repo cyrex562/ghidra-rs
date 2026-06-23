@@ -1182,7 +1182,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/DistinctIterator.j
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LockHold.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/MergeSortingSpliterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/MergeSortingSpliterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/PairingIteratorMerger.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/StreamUtils.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/TimedMsg.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
