@@ -1622,7 +1622,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dial
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/BSimSearchSettings.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/BSimServerCache.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/BSimServerDialog.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/BSimServerManagerListener.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/BSimServerManagerListener.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/BSimServerTableModel.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/ConnectionPoolStatus.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/dialog/CreateBsimServerInfoDialog.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search dialog 
