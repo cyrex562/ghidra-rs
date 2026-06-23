@@ -1250,7 +1250,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/h
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/Abstract2DRStarTree.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/AbstractRectangle2DQuery.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/EuclideanSpace2D.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/ImmutablePoint2D.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/ImmutablePoint2D.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/ImmutableRectangle2D.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/Point2D.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/rect/Rectangle2D.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial rect 
