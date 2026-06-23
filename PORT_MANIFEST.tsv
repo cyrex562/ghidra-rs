@@ -1512,7 +1512,7 @@ orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/trace/SymZ3TraceMemorySpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 trace 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/trace/SymZ3TraceRegisterSpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 trace 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/trace/SymZ3TraceSpace.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 trace 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/trace/package-info.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 trace 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/trace/package-info.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 trace
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/gui/HtmlCellRenderer.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra symz3 gui 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/gui/MonospaceCellRenderer.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra symz3 gui 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/gui/Z3SummaryInformationPanel.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra symz3 gui 
