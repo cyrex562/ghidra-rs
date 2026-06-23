@@ -1,6 +1,7 @@
 pub mod app;
 pub mod docking;
 pub mod debug;
+pub mod feature;
 pub mod filesystem;
 pub mod framework;
 pub mod generic;
