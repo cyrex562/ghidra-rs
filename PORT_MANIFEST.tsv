@@ -1230,7 +1230,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/err/NoDef
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/AbstractConstraintsTree.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/AbstractConstraintsTreeSpatialMap.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/AbstractRStarConstraintsTree.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/BoundedShape.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/BoundedShape.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/BoundingShape.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/DBTreeDataRecord.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/DBTreeNodeRecord.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
