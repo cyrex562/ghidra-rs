@@ -1,5 +1,6 @@
 pub mod byte_buffer_utils;
 pub mod database;
+pub mod lazy_collection;
 pub mod datastruct;
 pub mod error_display;
 pub mod error_logger;
