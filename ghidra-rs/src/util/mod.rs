@@ -14,6 +14,7 @@ pub mod message_type;
 pub mod msg;
 pub mod system_utilities;
 pub mod task;
+pub mod timed_msg;
 
 pub use datastruct::{Duo, Range, Side};
 pub use lock_hold::{Lock, LockHold};
@@ -27,4 +28,5 @@ pub use io::{BoundedInputStream, HashingOutputStream, NullOutputStream};
 pub use message_type::MessageType;
 pub use msg::Msg;
 pub use system_utilities::SystemUtilities;
+pub use timed_msg::TimedMsg;
 pub use task::{DummyMonitor, TaskMonitor};
