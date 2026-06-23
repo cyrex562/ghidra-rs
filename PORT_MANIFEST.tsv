@@ -1226,7 +1226,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/Synchroni
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/annot/DBAnnotatedColumn.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database annot 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/annot/DBAnnotatedField.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database annot 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/annot/DBAnnotatedObjectInfo.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database annot 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/err/NoDefaultCodecException.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database err 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/err/NoDefaultCodecException.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database err
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/AbstractConstraintsTree.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/AbstractConstraintsTreeSpatialMap.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/AbstractRStarConstraintsTree.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
