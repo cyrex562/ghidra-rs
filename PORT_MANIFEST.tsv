@@ -1362,7 +1362,7 @@ orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/gui/SarifKeyValueWrite
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/gui/SarifLogicalLocationWriter.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa gui 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeBranch.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeCodeMemberVisitor.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode 
-orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFeatures.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode 
+orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFeatures.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFrontend.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/WorkItem.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/LongInterval.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode analyses 
