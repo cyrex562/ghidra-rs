@@ -2,6 +2,7 @@ pub mod byte_buffer_utils;
 pub mod database;
 pub mod lazy_collection;
 pub mod lock_hold;
+pub mod merge_sorting_spliterator;
 pub mod datastruct;
 pub mod error_display;
 pub mod error_logger;
@@ -15,6 +16,7 @@ pub mod task;
 
 pub use datastruct::{Duo, Range, Side};
 pub use lock_hold::{Lock, LockHold};
+pub use merge_sorting_spliterator::MergeSortingIterator;
 pub use error_display::{ConsoleErrorDisplay, ErrorDisplay};
 pub use error_logger::{DefaultErrorLogger, ErrorLogger};
 pub use exception::{AssertException, CancelledException, UsrException};
