@@ -1636,7 +1636,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/resu
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimMatchResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimMatchResultsModel.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimResultRowObjectToAddressTableRowMapper.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimResultStatus.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimResultStatus.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimSearchInfoDisplayDialog.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimSearchResultsFilterDialog.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimSearchResultsProvider.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
