@@ -1235,7 +1235,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/B
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/DBTreeDataRecord.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/DBTreeNodeRecord.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/DBTreeRecord.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/Query.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/Query.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/SpatialMap.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/AbstractHyperBoxQuery.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/AbstractHyperRStarTree.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
