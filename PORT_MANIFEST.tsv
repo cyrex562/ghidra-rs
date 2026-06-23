@@ -1242,7 +1242,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/h
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/Dimension.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/EuclideanHyperSpace.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/HyperBox.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/HyperDirection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/HyperDirection.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/HyperPoint.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/LongDimension.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/StringDimension.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database spatial hyper 
