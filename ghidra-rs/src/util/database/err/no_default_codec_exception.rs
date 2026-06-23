@@ -48,6 +48,7 @@ impl std::error::Error for NoDefaultCodecException {
 
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
     use super::*;
 
     #[derive(Debug)]
