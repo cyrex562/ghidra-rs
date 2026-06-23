@@ -1,4 +1,5 @@
 pub mod byte_buffer_utils;
+pub mod util;
 pub mod layout;
 pub mod database;
 pub mod lazy_collection;
