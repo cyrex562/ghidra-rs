@@ -1259,7 +1259,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/datastruct/Collect
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/datastruct/DefaultObservableCollection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util datastruct 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/datastruct/ObservableCollection.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util datastruct
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/datastruct/PrivatelyQueuedListener.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util datastruct
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/layout/ProportionalHorizontalLayout.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util layout 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/layout/ProportionalHorizontalLayout.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util layout
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/utilities/util/DbgMsgTracer.java	TODO	orig_src Ghidra Debug ProposedUtils src main java utilities util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/utilities/util/IDHashed.java	TODO	orig_src Ghidra Debug ProposedUtils src main java utilities util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/utilities/util/IDKeyed.java	TODO	orig_src Ghidra Debug ProposedUtils src main java utilities util 
