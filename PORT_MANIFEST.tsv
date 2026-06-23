@@ -1296,7 +1296,7 @@ orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/TaintMark.j
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/TaintSet.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/TaintVec.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/model/package-info.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint model 
-orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/package-info.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint 
+orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/taint/package-info.java	DONE	orig_src Ghidra Debug TaintAnalysis src main java ghidra taint
 orig_src/Ghidra/Debug/TaintAnalysis/src/test/java/ghidra/pcode/emu/taint/full/TaintDebuggerPcodeEmulatorTest.java	TODO	orig_src Ghidra Debug TaintAnalysis src test java ghidra pcode emu taint full 
 orig_src/Ghidra/Debug/TaintAnalysis/src/test/java/ghidra/pcode/emu/taint/plain/TaintPcodeEmulatorTest.java	TODO	orig_src Ghidra Debug TaintAnalysis src test java ghidra pcode emu taint plain 
 orig_src/Ghidra/Debug/TaintAnalysis/src/test/java/ghidra/pcode/emu/taint/trace/TaintTracePcodeEmulatorTest.java	TODO	orig_src Ghidra Debug TaintAnalysis src test java ghidra pcode emu taint trace 
