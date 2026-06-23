@@ -1405,7 +1405,7 @@ orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/expressions/Pcod
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/locations/InstLocation.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode locations 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/locations/PcodeLocation.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode locations 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeBinaryOperator.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
-orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeNop.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
+orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeNop.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeTernaryOperator.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/statements/PcodeUnaryOperator.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode statements 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/types/PcodeInferredTypes.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode types 
