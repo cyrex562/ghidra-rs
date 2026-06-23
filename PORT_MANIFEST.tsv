@@ -1365,7 +1365,7 @@ orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeCodeMemberV
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFeatures.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFrontend.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/WorkItem.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode 
-orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/LongInterval.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode analyses 
+orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/LongInterval.java	DONE	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode analyses
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeByteBasedConstantPropagation.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode analyses 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeDataflowConstantPropagation.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode analyses 
 orig_src/Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeInterval.java	TODO	orig_src Ghidra Extensions Lisa src main java ghidra lisa pcode analyses 
