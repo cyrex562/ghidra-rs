@@ -4,6 +4,7 @@ pub mod debug;
 pub mod filesystem;
 pub mod framework;
 pub mod generic;
+pub mod pcode;
 pub mod program;
 pub mod script;
 pub mod trace;
