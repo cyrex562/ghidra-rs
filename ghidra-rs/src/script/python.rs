@@ -149,6 +149,23 @@ impl PythonScriptRunner {
     }
 }
 
+/// Default port used by the PyDev remote debugger.
+///
+/// Mirrors `PyDevUtils.PYDEV_REMOTE_DEBUGGER_PORT`.
+pub const PYDEV_REMOTE_DEBUGGER_PORT: u16 = 5678;
+
+/// Returns the PyDev source directory if the `eclipse.pysrc.dir` environment
+/// variable is set to a non-blank value.
+///
+/// Mirrors `PyDevUtils.getPyDevSrcDir()`. Java reads a JVM system property;
+/// the Rust port reads the equivalent environment variable.
+pub fn get_pydev_src_dir() -> Option<PathBuf> {
+    std::env::var("eclipse.pysrc.dir")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .map(PathBuf::from)
+}
+
 /// Thread responsible for executing a Python script from a file.
 ///
 /// Mirrors `ghidra.jython.JythonScriptExecutionThread`. The `interpreter_running`
@@ -353,5 +370,34 @@ assert symbols[0].name == "python_label"
         thread.spawn().join().unwrap();
 
         assert!(!interpreter_running.load(Ordering::Acquire));
+    }
+
+    #[test]
+    fn test_pydev_remote_debugger_port() {
+        assert_eq!(PYDEV_REMOTE_DEBUGGER_PORT, 5678);
+    }
+
+    #[test]
+    fn test_get_pydev_src_dir_unset() {
+        // When the env var is absent the function returns None.
+        std::env::remove_var("eclipse.pysrc.dir");
+        assert!(get_pydev_src_dir().is_none());
+    }
+
+    #[test]
+    fn test_get_pydev_src_dir_blank() {
+        // A whitespace-only value is treated as absent.
+        std::env::set_var("eclipse.pysrc.dir", "   ");
+        let result = get_pydev_src_dir();
+        std::env::remove_var("eclipse.pysrc.dir");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_get_pydev_src_dir_set() {
+        std::env::set_var("eclipse.pysrc.dir", "/opt/pydev/src");
+        let result = get_pydev_src_dir();
+        std::env::remove_var("eclipse.pysrc.dir");
+        assert_eq!(result, Some(PathBuf::from("/opt/pydev/src")));
     }
 }
