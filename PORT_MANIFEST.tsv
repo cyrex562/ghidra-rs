@@ -2288,7 +2288,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/DisplayC
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/StructDisplayModel.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge structures
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/StructureComponentLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/StructureDescriptionLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/StructureInfoLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/StructureInfoLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge structures
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/StructureMergeDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/StructureNameLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/tool/ListingMergePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge tool 
