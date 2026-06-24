@@ -2332,7 +2332,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/Anal
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/ApplyDataArchiveAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/ArmSymbolAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AutoAnalysisManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core analysis 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AutoAnalysisManagerListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core analysis 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AutoAnalysisManagerListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core analysis
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AutoAnalysisPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/CliMetadataTokenAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/ConstantPropagationAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core analysis 
