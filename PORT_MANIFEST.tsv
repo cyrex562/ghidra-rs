@@ -1819,7 +1819,7 @@ orig_src/Ghidra/Features/BSim/src/test/java/ghidra/features/bsim/query/facade/Te
 orig_src/Ghidra/Features/BSim/src/test/java/ghidra/features/bsim/query/facade/TestSimilarityResult.java	TODO	orig_src Ghidra Features BSim src test java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSimFeatureVisualizer/src/main/java/ghidra/bsfv/BSimFeatureGraphDisplayOptions.java	TODO	orig_src Ghidra Features BSimFeatureVisualizer src main java ghidra bsfv 
 orig_src/Ghidra/Features/BSimFeatureVisualizer/src/main/java/ghidra/bsfv/BSimFeatureGraphType.java	TODO	orig_src Ghidra Features BSimFeatureVisualizer src main java ghidra bsfv 
-orig_src/Ghidra/Features/BSimFeatureVisualizer/src/main/java/ghidra/bsfv/BSimFeatureType.java	TODO	orig_src Ghidra Features BSimFeatureVisualizer src main java ghidra bsfv 
+orig_src/Ghidra/Features/BSimFeatureVisualizer/src/main/java/ghidra/bsfv/BSimFeatureType.java	DONE	orig_src Ghidra Features BSimFeatureVisualizer src main java ghidra bsfv
 orig_src/Ghidra/Features/BSimFeatureVisualizer/src/main/java/ghidra/bsfv/BSimFeatureVisualizerPlugin.java	TODO	orig_src Ghidra Features BSimFeatureVisualizer src main java ghidra bsfv 
 orig_src/Ghidra/Features/BSimFeatureVisualizer/src/main/java/ghidra/bsfv/BsfvFeatureColumnObject.java	TODO	orig_src Ghidra Features BSimFeatureVisualizer src main java ghidra bsfv 
 orig_src/Ghidra/Features/BSimFeatureVisualizer/src/main/java/ghidra/bsfv/BsfvGraphDisplayListener.java	TODO	orig_src Ghidra Features BSimFeatureVisualizer src main java ghidra bsfv 
