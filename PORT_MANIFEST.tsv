@@ -1717,7 +1717,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/R
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/DatabaseInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/DefaultSFQueryServiceFactory.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/FunctionSymbolIterator.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/QueryDatabaseException.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/QueryDatabaseException.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query facade
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFOverviewInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
