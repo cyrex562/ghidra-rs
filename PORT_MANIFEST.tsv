@@ -2278,7 +2278,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/propertylist/Confli
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/propertylist/ConflictPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge propertylist 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/propertylist/PropertyListMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge propertylist 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/propertylist/PropertyListMergePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge propertylist 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/ComparisonItem.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/ComparisonItem.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge structures
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/ComparisonItemLayout.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/ComparisonItemRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/structures/CoordinatedStructureDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge structures 
