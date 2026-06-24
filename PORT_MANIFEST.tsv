@@ -2394,7 +2394,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/Book
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/CreateBookmarkDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core bookmark 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/DeleteBookmarkAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core bookmark 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/FilterDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core bookmark 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/FilterState.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core bookmark 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/bookmark/FilterState.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core bookmark
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/calltree/CallNode.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core calltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/calltree/CallTreeOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core calltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/calltree/CallTreePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core calltree 
