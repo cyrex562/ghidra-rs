@@ -2147,7 +2147,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/AddInitialized
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/AddUninitializedMemoryBlockCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/DeleteBlockCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/DeleteBlockListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd memory
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/MoveBlockListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd memory 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/MoveBlockListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd memory
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/memory/MoveBlockTask.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd memory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/AbstractModularizationCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/ComplexityDepthModularizationCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
