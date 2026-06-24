@@ -2263,7 +2263,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/OffsetRange
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ProgramContextMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ReferenceMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/RegisterMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ResolveConflictChangeEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ResolveConflictChangeEvent.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge listing
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ScrollingListChoicesPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/SymbolMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/UserDefinedPropertyMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
