@@ -2411,7 +2411,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/CRC
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/CRC16ChecksumAlgorithm.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core checksums 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/CRC32ChecksumAlgorithm.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core checksums 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/Checksum16ChecksumAlgorithm.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core checksums
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/Checksum32ChecksumAlgorithm.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core checksums 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/Checksum32ChecksumAlgorithm.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core checksums
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/Checksum8ChecksumAlgorithm.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core checksums 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/ChecksumAlgorithm.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core checksums 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/checksums/ChecksumTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core checksums 
