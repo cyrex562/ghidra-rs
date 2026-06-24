@@ -2240,7 +2240,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/datatypes/SourceArc
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/AbstractFunctionMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/AbstractListingMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/BookmarkMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ChoiceComponent.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ChoiceComponent.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge listing
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/CodeUnitDetails.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/CodeUnitMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/CommentMerger.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge listing 
