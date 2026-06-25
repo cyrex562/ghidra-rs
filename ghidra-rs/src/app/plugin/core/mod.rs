@@ -5,3 +5,4 @@ pub mod compositeeditor;
 pub mod console;
 pub mod datamgr;
 pub mod debug;
+pub mod eclipse;
