@@ -2895,7 +2895,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/gotoquery/GoT
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/gotoquery/GoToQueryResultsTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core gotoquery 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/gotoquery/GoToServicePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core gotoquery 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/graph/AddressBasedGraphDisplayListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core graph 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/graph/GraphDisplayBrokerListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core graph 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/graph/GraphDisplayBrokerListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/graph/GraphDisplayBrokerPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/help/AboutProgramPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core help 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/highlight/SetHighlightPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core highlight 

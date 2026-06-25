@@ -7,3 +7,4 @@ pub mod datamgr;
 pub mod debug;
 pub mod eclipse;
 pub mod function;
+pub mod graph;
