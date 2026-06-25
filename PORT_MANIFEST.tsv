@@ -2536,7 +2536,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeedit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditFieldAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorActionListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorModelListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorModelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/EditorProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/FavoritesAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/FindReferencesToStructureFieldAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
