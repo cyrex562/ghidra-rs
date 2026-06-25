@@ -1,7 +1,9 @@
 pub mod component_cell_editor_listener;
 pub mod composite_change_listener;
 pub mod composite_editor_lock_listener;
+pub mod composite_model_status_listener;
 
 pub use component_cell_editor_listener::ComponentCellEditorListener;
 pub use composite_change_listener::CompositeChangeListener;
 pub use composite_editor_lock_listener::CompositeEditorLockListener;
+pub use composite_model_status_listener::CompositeModelStatusListener;
