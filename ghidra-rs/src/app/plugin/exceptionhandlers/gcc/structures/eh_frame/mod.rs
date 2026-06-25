@@ -1,0 +1,3 @@
+pub mod exception_handler_frame_exception;
+
+pub use exception_handler_frame_exception::ExceptionHandlerFrameException;

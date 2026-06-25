@@ -1,3 +1,3 @@
 pub mod gcc;
 
-pub use gcc::{DwarfEhDataApplicationMode};
+pub use gcc::{DwarfEhDataApplicationMode, ExceptionHandlerFrameException};
