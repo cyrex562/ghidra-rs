@@ -2913,7 +2913,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionse
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/InstructionTableObserver.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/MaskContainer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/MaskSettings.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/MaskSettings.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/model/OperandMetadata.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch model 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/ui/AbstractInstructionTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch ui 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/instructionsearch/ui/ControlPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core instructionsearch ui 

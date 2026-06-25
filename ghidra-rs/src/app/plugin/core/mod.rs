@@ -8,3 +8,4 @@ pub mod debug;
 pub mod eclipse;
 pub mod function;
 pub mod graph;
+pub mod instruction_search;
