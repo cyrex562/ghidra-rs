@@ -3062,7 +3062,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleSt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleStatusComponentProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleStatusTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraBundle.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraBundleActivator.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraBundleActivator.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraBundleException.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraJarBundle.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraPlaceholderBundle.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
