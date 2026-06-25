@@ -2848,7 +2848,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/edit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/FunctionEditorModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/FunctionSignatureTextField.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/FunctionVariableData.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/ModelChangeListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/ModelChangeListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/ParamInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/ParameterDataTypeCellEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/editor/ParameterTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core function editor 
