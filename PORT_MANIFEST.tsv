@@ -3600,7 +3600,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/AddressFactoryServic
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/AddressInput.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/AddressSetEditorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ByteCopier.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ClipboardType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ClipboardType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/CodeUnitInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/CodeUnitInfoTransferable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ColorAndStyle.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
