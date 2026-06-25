@@ -14,3 +14,4 @@ pub mod osgi;
 pub mod overview;
 pub mod references;
 pub mod script;
+pub mod searchtext;
