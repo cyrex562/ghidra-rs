@@ -10,3 +10,4 @@ pub mod function;
 pub mod graph;
 pub mod instruction_search;
 pub mod interpreter;
+pub mod osgi;
