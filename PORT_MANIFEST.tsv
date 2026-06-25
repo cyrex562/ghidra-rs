@@ -3507,7 +3507,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/runtimeinfo/Runtim
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/runtimeinfo/VersionInfoPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin runtimeinfo 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/AbstractPythonScriptProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/AskDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/DecoratingPrintWriter.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/DecoratingPrintWriter.java	DONE	orig_src Ghidra Features Base src main java ghidra app script
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraScript.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraScriptConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraScriptInfoManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
