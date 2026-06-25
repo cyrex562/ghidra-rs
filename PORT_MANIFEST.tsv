@@ -3305,7 +3305,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/IsAsc
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/IsNotAsciiColumnConstraint.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringDataInstanceColumnConstraint.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringInfoFeature.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringInfoFeature.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringTrigramIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/Trigram.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/TrigramStringValidator.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
