@@ -2504,7 +2504,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeedit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompEditorModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompEditorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentCellEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentCellEditorListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentCellEditorListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentProgramActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/ComponentStandAloneActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
