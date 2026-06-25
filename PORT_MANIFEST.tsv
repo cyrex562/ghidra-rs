@@ -3453,7 +3453,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/debug/propertymana
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/AbstractDwarfEHDecoder.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfDecodeContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfDecoderFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfEHDataApplicationMode.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfEHDataApplicationMode.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfEHDataDecodeFormat.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfEHDecoder.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/GccAnalysisClass.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin exceptionhandlers gcc 
