@@ -3559,7 +3559,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/FunctionComparis
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GhidraScriptService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToOverrideService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToServiceListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToServiceListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GraphDisplayBroker.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/HoverService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingMarginProviderService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
