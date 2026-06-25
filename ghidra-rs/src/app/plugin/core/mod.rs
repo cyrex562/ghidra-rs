@@ -12,3 +12,4 @@ pub mod instruction_search;
 pub mod interpreter;
 pub mod osgi;
 pub mod overview;
+pub mod references;
