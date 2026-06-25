@@ -3527,7 +3527,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/ScriptControls.jav
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/ScriptInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/ScriptMessage.java	DONE	orig_src Ghidra Features Base src main java ghidra app script
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/SelectLanguageDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/StringTransformer.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/StringTransformer.java	DONE	orig_src Ghidra Features Base src main java ghidra app script
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/UnsupportedScriptProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AbstractAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalysisPriority.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
