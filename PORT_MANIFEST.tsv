@@ -2939,7 +2939,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/A
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/AnsiRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/CodeCompletionWindow.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/CompletionWindowTrigger.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/HistoryManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/HistoryManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/HistoryManagerImpl.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/InterpreterComponentProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/InterpreterConnection.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core interpreter 
