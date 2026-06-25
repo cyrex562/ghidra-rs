@@ -3078,7 +3078,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/Over
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/addresstype/AddressType.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core overview addresstype 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/addresstype/AddressTypeOverviewColorService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview addresstype 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/addresstype/AddressTypeOverviewLegendPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview addresstype 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyChunkSize.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyChunkSize.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyKnot.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyOverviewColorService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyOverviewOptionsManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
