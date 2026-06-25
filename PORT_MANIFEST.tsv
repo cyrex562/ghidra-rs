@@ -3084,7 +3084,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entr
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyOverviewOptionsManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyRecord.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/KnotLabelPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/KnotRecord.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/KnotRecord.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/LegendPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/OverviewPalette.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/PalettePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
