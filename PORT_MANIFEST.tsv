@@ -3400,7 +3400,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/Term
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalFinder.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalLayout.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalLayoutModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core terminal
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/terminal/TerminalProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core terminal 
