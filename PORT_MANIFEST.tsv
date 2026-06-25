@@ -3293,7 +3293,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/Defin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/DefinedStringsTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/DoesNotHaveTranslationValueColumnConstraint.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/EncodedStringsDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/EncodedStringsFilterStats.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/EncodedStringsFilterStats.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/EncodedStringsOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/EncodedStringsPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/EncodedStringsRow.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core strings 
