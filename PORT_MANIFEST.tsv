@@ -3075,7 +3075,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/Over
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/OverviewColorLegendDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/OverviewColorPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/OverviewColorService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/addresstype/AddressType.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview addresstype 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/addresstype/AddressType.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core overview addresstype 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/addresstype/AddressTypeOverviewColorService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview addresstype 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/addresstype/AddressTypeOverviewLegendPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview addresstype 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/entropy/EntropyChunkSize.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview entropy 
