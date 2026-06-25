@@ -3204,7 +3204,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/SaveDi
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/SaveNewScriptDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptCategoryNode.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptGroup.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptGroup.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core script
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptList.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptSelectionDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptsModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 

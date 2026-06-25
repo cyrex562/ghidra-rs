@@ -13,3 +13,4 @@ pub mod interpreter;
 pub mod osgi;
 pub mod overview;
 pub mod references;
+pub mod script;
