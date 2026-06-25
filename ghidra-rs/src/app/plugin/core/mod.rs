@@ -16,3 +16,4 @@ pub mod references;
 pub mod script;
 pub mod searchtext;
 pub mod strings;
+pub mod terminal;
