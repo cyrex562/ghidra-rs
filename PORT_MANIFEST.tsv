@@ -3533,7 +3533,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AbstractAnalyzer
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalysisPriority.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/Analyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalyzerAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalyzerType.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalyzerType.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/BlockModelService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/BlockModelServiceListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/BookmarkService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
