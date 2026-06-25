@@ -3612,7 +3612,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/EolComments.java	TOD
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/FunctionXrefsTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/GhidraFileOpenDataFlavorHandlerService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/HelpTopics.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/HexLong.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/HexLong.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ListingHighlightProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/MemoryBlockUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/NamespaceCache.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
