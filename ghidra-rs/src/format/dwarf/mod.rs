@@ -1,4 +1,5 @@
 pub mod dwarf_accessibility;
+pub mod name_deduper;
 pub mod dwarf_children;
 pub mod dwarf_encoding;
 pub mod dwarf_endianity;
