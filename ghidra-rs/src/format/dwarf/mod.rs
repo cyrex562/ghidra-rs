@@ -4,3 +4,4 @@ pub mod dwarf_encoding;
 pub mod dwarf_endianity;
 pub mod dwarf_exception;
 pub mod dwarf_identifier_case;
+pub mod dwarf_inline;
