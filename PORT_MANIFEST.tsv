@@ -3664,7 +3664,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedFileBy
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ObfuscatedOutputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/RandomAccessByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/RandomAccessMutableByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/RandomAccessMutableByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/RangeMappedByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/StructConverter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/StructConverterUtil.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 

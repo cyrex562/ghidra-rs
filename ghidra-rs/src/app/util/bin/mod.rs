@@ -4,3 +4,4 @@ pub mod invalid_data_exception;
 pub mod mutable_byte_provider;
 pub mod obfuscated_input_stream;
 pub mod obfuscated_output_stream;
+pub mod random_access_mutable_byte_provider;
