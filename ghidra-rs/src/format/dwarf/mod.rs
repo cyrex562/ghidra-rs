@@ -1,6 +1,7 @@
 pub mod attribs;
 pub mod external;
 pub mod expression;
+pub mod line;
 pub mod dwarf_accessibility;
 pub mod name_deduper;
 pub mod dwarf_children;
