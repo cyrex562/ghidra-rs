@@ -9,3 +9,4 @@ pub mod coff_section_header_flags;
 pub mod coff_section_header_reserved;
 pub mod coff_symbol_section_number;
 pub mod coff_symbol_special;
+pub mod coff_symbol_storage_class;
