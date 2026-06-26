@@ -3853,7 +3853,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/Andro
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationOffset.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/AndroidElfRelocationTableDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfCompressedSectionHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format elf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDefaultGotPltMarkup.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDynamic.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDynamicTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
