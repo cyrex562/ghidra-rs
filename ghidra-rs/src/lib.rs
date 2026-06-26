@@ -1,4 +1,5 @@
 pub mod app;
+pub mod format;
 pub mod docking;
 pub mod debug;
 pub mod feature;
