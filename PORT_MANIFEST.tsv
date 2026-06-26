@@ -3875,7 +3875,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfSt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfSymbolNameUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfSymbolTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/GnuConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/GnuConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format elf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/GnuVerdaux.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/GnuVerdef.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/GnuVernaux.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
