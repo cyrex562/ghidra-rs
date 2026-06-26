@@ -3653,7 +3653,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FaultTolerantInp
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/FileBytesProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/GhidraRandomAccessFile.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/InputStreamByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/InputStreamByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/InvalidDataException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/LEB128Info.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/MemBufferByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
