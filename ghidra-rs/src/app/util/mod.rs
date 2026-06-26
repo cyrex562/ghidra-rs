@@ -4,3 +4,4 @@ pub mod help_topics;
 pub mod hex_long;
 pub mod option_exception;
 pub mod permissions;
+pub mod processor_info;
