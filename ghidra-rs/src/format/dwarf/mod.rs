@@ -8,3 +8,4 @@ pub mod dwarf_inline;
 pub mod dwarf_location_list_entry;
 pub mod dwarf_range_list_entry;
 pub mod dwarf_source_language;
+pub mod dwarf_unit_type;
