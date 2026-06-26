@@ -3799,7 +3799,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/ext
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugInfoProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugInfoProviderCreatorContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugInfoProviderRegistry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugInfoProviderStatus.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugInfoProviderStatus.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugStreamProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DisabledDebugInfoProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/ExternalDebugFilesService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 

@@ -1,4 +1,5 @@
 pub mod attribs;
+pub mod external;
 pub mod expression;
 pub mod dwarf_accessibility;
 pub mod name_deduper;
