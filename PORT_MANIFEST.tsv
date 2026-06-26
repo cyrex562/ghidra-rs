@@ -3767,7 +3767,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWA
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DataTypeGraphComparator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DebugInfoEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/ExternalDebugFileSymbolImporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/NameDeduper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/NameDeduper.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/NamespacePath.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/StringTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFAttribute.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf attribs 
