@@ -3706,7 +3706,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/Coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolAuxName.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolAuxSection.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolAuxTagName.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolSectionNumber.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolSectionNumber.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolSpecial.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolStorageClass.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
