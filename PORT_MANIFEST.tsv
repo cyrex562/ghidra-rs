@@ -3807,7 +3807,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/ext
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/HttpDebugInfoDProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/LocalDirDebugInfoDProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/LocalDirDebugLinkProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/ObjectType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/ObjectType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/SameDirDebugInfoProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/gui/EnumIconColumnRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external gui 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/gui/ExternalDebugFilesConfigDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf external gui 
