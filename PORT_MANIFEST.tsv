@@ -3671,7 +3671,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/StructConverterU
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/SynchronizedByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/UnlimitedByteProviderWrapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/MemoryLoadable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/RelocationException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/RelocationException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/Writeable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/AoutHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/AoutHeaderFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
