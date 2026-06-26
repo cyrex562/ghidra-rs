@@ -3710,7 +3710,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/Coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolSpecial.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolStorageClass.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSymbolType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/CoffArchiveConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/CoffArchiveConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/CoffArchiveHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/CoffArchiveMemberHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/FirstLinkerMember.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive 
