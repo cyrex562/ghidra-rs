@@ -3684,7 +3684,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/Coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeaderFlag.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeaderTargetID.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffLineNumber.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffMachineType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffMachineType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffRelocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSectionHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffSectionHeader1.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
