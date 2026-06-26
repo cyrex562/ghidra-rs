@@ -3627,7 +3627,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionsDialog.java	T
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionsEditorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/Permissions.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ProcessorInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ProgramDropProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ProgramDropProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/RefRepeatComment.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/SearchConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/SelectionTransferData.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
