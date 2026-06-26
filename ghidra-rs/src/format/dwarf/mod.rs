@@ -6,3 +6,4 @@ pub mod dwarf_exception;
 pub mod dwarf_identifier_case;
 pub mod dwarf_inline;
 pub mod dwarf_location_list_entry;
+pub mod dwarf_range_list_entry;
