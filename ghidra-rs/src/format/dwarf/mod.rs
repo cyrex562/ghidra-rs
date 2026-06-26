@@ -1,3 +1,4 @@
+pub mod attribs;
 pub mod dwarf_accessibility;
 pub mod name_deduper;
 pub mod dwarf_children;
