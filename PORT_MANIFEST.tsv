@@ -3678,7 +3678,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/Aout
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/AoutHeaderMIPS.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/AoutHeaderMagic.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/BigEndianUnitSizeByteSwapperInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/CoffFileHeaderFlag.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff 
