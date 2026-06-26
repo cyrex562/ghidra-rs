@@ -6,3 +6,4 @@ pub mod coff_file_header_flag;
 pub mod coff_file_header_target_id;
 pub mod coff_machine_type;
 pub mod coff_section_header_flags;
+pub mod coff_section_header_reserved;
