@@ -4720,7 +4720,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loader.java	
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderMap.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderOpinionException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderTier.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoaderTier.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MSCoffLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MachoLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/MachoPrelinkProgramBuilder.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 

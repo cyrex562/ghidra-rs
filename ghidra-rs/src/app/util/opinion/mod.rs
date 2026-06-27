@@ -5,3 +5,4 @@ pub mod intel_hex_record;
 pub mod intel_hex_record_reader;
 pub mod load_exception;
 pub mod loader_opinion_exception;
+pub mod loader_tier;
