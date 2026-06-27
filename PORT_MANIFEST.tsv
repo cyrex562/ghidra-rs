@@ -6400,7 +6400,7 @@ orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/DataGraphPlugin.java	
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/DataGraphProvider.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/DegContext.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/DegSatelliteContext.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph 
-orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/DegSharedConfig.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph 
+orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/DegSharedConfig.java	DONE	orig_src Ghidra Features DataGraph src main java datagraph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/CodeDegVertex.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DataDegVertex.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DataExplorationGraph.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 

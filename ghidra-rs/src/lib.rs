@@ -7,6 +7,7 @@ pub mod feature;
 pub mod filesystem;
 pub mod framework;
 pub mod generic;
+pub mod graph;
 pub mod pcode;
 pub mod program;
 pub mod script;
