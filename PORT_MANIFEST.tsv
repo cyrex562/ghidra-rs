@@ -3920,7 +3920,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/Go
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/NoteGoBuildId.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoApiSnapshot.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFuncData.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFuncDataTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFuncDataTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFuncFlag.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFunctabEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoIface.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
