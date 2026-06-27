@@ -1,18 +1,4 @@
-/// Signedness attribute of a structure-mapped field.
-///
-/// Corresponds to the `Signedness` enum in the Java struct-mapping framework.
-/// Defined here because it is a direct dependency of [`FieldMapping`] metadata;
-/// a dedicated `signedness.rs` module may supersede this once that class is ported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Signedness {
-    /// No signedness override — use the data type's natural signedness.
-    #[default]
-    Unspecified,
-    /// Force signed interpretation of the underlying numeric value.
-    Signed,
-    /// Force unsigned interpretation of the underlying numeric value.
-    Unsigned,
-}
+pub use super::signedness::Signedness;
 
 /// Metadata expressing how a Rust struct field maps to a Ghidra structure field.
 ///
