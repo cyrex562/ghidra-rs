@@ -6213,7 +6213,7 @@ orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/Close
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/ClosedPatternTableModel.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/ContextRegisterFilterInputDialog.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/ContextRegisterFilterablePanelBuilder.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
-orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/ContextRegisterPanelBuilder.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
+orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/ContextRegisterPanelBuilder.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/DataGatheringParamsDialog.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/DisassembledByteSequenceTableModel.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/ExportPatternFileActionListener.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
