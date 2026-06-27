@@ -161,16 +161,25 @@ for ((i = 1; i <= MAX_ITERS; i++)); do
 
   echo "=================== iteration $i / $MAX_ITERS  (elapsed $(hms "$(elapsed)"), spend \$$spent) ==================="
 
-  # 1. next ready, unparked class at the frontier, restricted to MAPPED areas
-  #    (unmapped areas would be parked by the model -- skip them without spending).
-  next=$("$PY" scripts/sync_check.py --root orig_src --manifest "$MANIFEST" --port-order 2>/dev/null \
+  # 1. next ready, unparked, MAPPED class at the frontier. Compute the frontier once,
+  #    then in bash skip already-parked classes AND auto-park obvious Swing/AWT UI files
+  #    (AGENTS.md says park UI) WITHOUT spending a Claude call -- these would park anyway.
+  mapfile -t _cands < <("$PY" scripts/sync_check.py --root orig_src --manifest "$MANIFEST" --port-order 2>/dev/null \
         | awk -F'\t' '$1==0{print $2}' \
-        | "$PY" scripts/portlib.py mapped 2>/dev/null \
-        | grep -vxF -f <(sed 's#^orig_src/##' "$PARKED") \
-        | head -1)
+        | "$PY" scripts/portlib.py mapped 2>/dev/null)
+  next=""
+  for _c in "${_cands[@]}"; do
+    _src="orig_src/${_c}"
+    grep -qxF "$_src" "$PARKED" && continue                              # already parked
+    if grep -qE 'javax\.swing|java\.awt|extends[[:space:]]+J[A-Z]' "$_src" 2>/dev/null; then
+      echo "$_src" >> "$PARKED"                                          # Swing/AWT -> auto-park, no spend
+      continue
+    fi
+    next="$_c"; break
+  done
   if [ -z "$next" ]; then
-    echo "no ready, unparked, mapped class at the frontier -- batch complete."
-    echo "(unmapped areas remain; run '$PY scripts/portlib.py report' to see what needs mapping.)"
+    echo "no ready, unparked, mapped, non-UI class at the frontier -- batch complete."
+    echo "(unmapped/UI areas remain; run '$PY scripts/portlib.py report' to see what needs mapping.)"
     break
   fi
 
@@ -193,24 +202,38 @@ for ((i = 1; i <= MAX_ITERS; i++)); do
   # 3. lazy-ensure the per-class issue
   iss=$("$PY" scripts/issuelib.py ensure "$srcpath" 2>>"$log")
 
-  # 4. port exactly this one class (timeout-guarded, JSON output for cost)
-  prompt="Port the single Java class located at: ${srcpath}
+  # 4. port exactly this one class (timeout-guarded, JSON output for cost).
+  #    Slim, self-contained prompt: inject the precomputed destination module and the
+  #    frontier guarantee (deps already ported) so the model needn't re-stream the whole
+  #    AGENTS.md layout table or re-verify prerequisites on every turn.
+  module=$("$PY" scripts/portlib.py module "$next" 2>/dev/null)
+  prompt="Port the single Java class at: ${srcpath}
 
-Follow AGENTS.md exactly:
-- Place the Rust code in the module given by the target-layout map.
-- Add focused unit tests; run \`cargo test\`.
-- In ${MANIFEST}, find the row whose first column is exactly '${srcpath}' and change its
-  second column from TODO to DONE.
-Port ONLY this class -- nothing else. Do not run any git commands.
-If you cannot finish within the rules (missing prereq, unmapped area, would need a stub),
-do NOT force it: leave ${MANIFEST} unchanged and end your reply with the single line
+Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in
+snake_case (Foo.java -> foo.rs); EXTEND the existing mod.rs, never create a parallel
+module. Read sibling .rs files in the destination directory first and match their
+conventions and the coding standards in AGENTS.md.
+
+All in-repo dependencies of this class are already ported (it is at the dependency
+frontier) -- reuse the existing Rust types. If you nonetheless hit a genuine missing
+prerequisite, the manifest is stale: park rather than stub.
+
+Add focused #[cfg(test)] unit tests. Verify with \`cargo build --lib\` ONLY -- do NOT
+run \`cargo test\`: the test harness cannot link in this environment, so it fails for
+reasons unrelated to your code.
+
+In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
+
+Port ONLY this class -- nothing else. Do not run any git commands. No stubs, placeholders,
+or TODO comments. If you cannot finish within these rules, leave ${MANIFEST} unchanged and
+end your reply with the single line:
 PORT_RESULT: PARKED followed by a one-line reason."
 
   echo "--- claude ($MODEL, timeout ${CLAUDE_TIMEOUT}s) ---"
   timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" \
     --model "$MODEL" \
     --permission-mode acceptEdits \
-    --allowedTools "Read,Edit,Write,Bash(cargo test*),Bash(cargo build*),Bash(${PY} scripts/sync_check.py*)" \
+    --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*),Bash(${PY} scripts/sync_check.py*)" \
     --output-format json >"$jlog" 2>>"$log"
   claude_rc=$?
 
@@ -242,7 +265,10 @@ PORT_RESULT: PARKED followed by a one-line reason."
   status=$(grep -F "$srcpath"$'\t' "$MANIFEST" | head -1 | cut -f2 | tr -d '[:space:]')
   built=0
   if [ "$status" = "DONE" ]; then
-    timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log" && built=1
+    # Pre-merge gate: cargo check (type-check only, no codegen -- cheaper). The
+    # authoritative whole-crate `cargo build --lib` still runs post-merge below, so a
+    # check-passes/build-fails case is caught and reverted there.
+    timeout "$BUILD_TIMEOUT" cargo check --lib --quiet 2>>"$log" && built=1
   fi
 
   if [ "$built" -eq 1 ]; then
