@@ -5339,7 +5339,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/data/DataTypeParser.java
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/InstructionSkipper.java	TODO	orig_src Ghidra Features Base src main java ghidra util search 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/ByteTrie.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/ByteTrieIfc.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/ByteTrieNode.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/ByteTrieNode.java	DONE	orig_src Ghidra Features Base src main java ghidra util search trie
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/ByteTrieNodeIfc.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/CaseInsensitiveByteTrie.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/CaseInsensitiveByteTrieNode.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
