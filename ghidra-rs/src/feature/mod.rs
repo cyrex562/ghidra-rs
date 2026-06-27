@@ -1,4 +1,5 @@
 pub mod base;
+pub mod bitpatterns;
 pub mod bsim;
 pub mod bsfv;
 pub mod lisa;
