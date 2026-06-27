@@ -4132,7 +4132,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragLocatorKind.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragResource.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragResourceMember.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragSymbolClass.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragSymbolClass.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragUpdateLevel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragUsage.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/cfm/CFragUsage1Union.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos cfm 
