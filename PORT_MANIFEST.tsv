@@ -4782,7 +4782,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/BytesFi
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/CollapsedCodeFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/CollapsedCodeFieldMouseHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/CommentFieldMouseHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/CommentPart.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/CommentPart.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer field
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/CommentUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/DummyFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/EolCommentFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
