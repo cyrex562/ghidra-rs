@@ -6,3 +6,4 @@ pub mod context_register_info;
 pub mod data_gathering_params;
 pub mod filtered_bytes_and_disassembly;
 pub mod pattern_match_type;
+pub mod pattern_type;
