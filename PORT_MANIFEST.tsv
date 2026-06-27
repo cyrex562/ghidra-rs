@@ -3993,7 +3993,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Mac
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFileTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFlags.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/ObsoleteException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/RelocationInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Section.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
