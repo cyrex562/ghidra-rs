@@ -4448,7 +4448,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resour
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/VS_VERSION_CHILD.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/VS_VERSION_INFO.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/CompId.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe rich 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/MSProductType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe rich 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/MSProductType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe rich 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/MSRichProductBuildNumberDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe rich 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/MSRichProductIDDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe rich 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/MSRichProductInfoDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe rich 
