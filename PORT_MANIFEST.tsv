@@ -5103,7 +5103,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSyste
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRef.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRefManager.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemService.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFile.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFile.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileHashProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileImpl.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystem.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
