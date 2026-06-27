@@ -4,4 +4,5 @@ pub mod elf;
 pub mod golang;
 pub mod macho;
 pub mod macos;
+pub mod ne;
 pub mod relocation_exception;
