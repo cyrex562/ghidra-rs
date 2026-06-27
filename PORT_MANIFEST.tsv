@@ -6514,7 +6514,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/TokenIte
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangDecompilerHighlighter.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangFieldElement.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangHighlightController.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangHighlightListener.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangHighlightListener.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangLayoutController.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangTextField.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ColorProvider.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 

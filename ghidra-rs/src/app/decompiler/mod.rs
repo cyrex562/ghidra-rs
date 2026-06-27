@@ -1,3 +1,4 @@
+pub mod component;
 pub mod decompile_exception;
 pub mod decompiled_function;
 
