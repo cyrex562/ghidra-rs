@@ -4103,7 +4103,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyl
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/MachoPrelinkConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho prelink
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/MachoPrelinkMap.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho prelink 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/MachoPrelinkParser.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho prelink 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/NoPreLinkSectionException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho prelink 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/prelink/NoPreLinkSectionException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho prelink
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/relocation/MachoRelocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho relocation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/relocation/MachoRelocationHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho relocation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/relocation/MachoRelocationHandlerFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho relocation 
