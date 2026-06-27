@@ -6411,7 +6411,7 @@ orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegLayout.
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegLayoutProvider.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/DegVertex.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/panel/DataVertexPanel.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph panel 
-orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/panel/DtComponentPathComparator.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph panel 
+orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/panel/DtComponentPathComparator.java	DONE	orig_src Ghidra Features DataGraph src main java datagraph data graph panel
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/panel/model/column/CompactDataColumnModel.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph panel model column 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/panel/model/column/ExpandedDataColumnModel.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph panel model column 
 orig_src/Ghidra/Features/DataGraph/src/main/java/datagraph/data/graph/panel/model/column/PointerColumnRenderer.java	TODO	orig_src Ghidra Features DataGraph src main java datagraph data graph panel model column 
