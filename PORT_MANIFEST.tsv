@@ -5148,7 +5148,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/data/GhidraToolStat
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/AbstractDataTreeDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/ConsoleTextPane.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/DataTreeDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/DataTreeDialogType.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/DataTreeDialogType.java	DONE	orig_src Ghidra Features Base src main java ghidra framework main 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/DialogProjectDataCollapseAction.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/DialogProjectDataExpandAction.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/main/DialogProjectDataNewFolderAction.java	TODO	orig_src Ghidra Features Base src main java ghidra framework main 

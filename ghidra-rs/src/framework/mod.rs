@@ -1,4 +1,5 @@
 pub mod db;
+pub mod main;
 pub mod options;
 pub mod os;
 pub mod plugintool;
