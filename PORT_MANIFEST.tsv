@@ -4850,7 +4850,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/Separat
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/SourceMapFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/SpaceFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/SpacerFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/StringCommentPart.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/StringCommentPart.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer field
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/SubDataFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/SymbolAnnotatedStringHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/ThunkedFunctionFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
