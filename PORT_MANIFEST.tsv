@@ -6261,7 +6261,7 @@ orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/P
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/ProjectedSequenceInfo.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/Sequence.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/SequenceDatabase.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining 
-orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/SequenceItem.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining 
+orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/SequenceItem.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/SequenceMiningParams.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining 
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/gui/FunctionBitPatternsXmlImportExportTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ByteSequenceLengthFilterTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
