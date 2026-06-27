@@ -5095,7 +5095,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRL.java
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRLRoot.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSUtilities.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileCache.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileCacheNameIndex.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileCacheNameIndex.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemEventListener.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemIndexHelper.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemInstanceManager.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
