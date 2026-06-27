@@ -4567,7 +4567,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/R
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/RTTI4DataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/RTTIDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/ThreadEnvironmentBlock.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/VersionedGuidInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/VersionedGuidInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/WEVTResourceDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/AbstractDemangledFunctionDefinitionDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/CharacterIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
