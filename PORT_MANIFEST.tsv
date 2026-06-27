@@ -3927,7 +3927,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoItab.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoModuledata.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoName.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoPcDataTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoPcDataTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoPcHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoPcValueEvaluator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoRttiMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti 
