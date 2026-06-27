@@ -4570,7 +4570,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/T
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/VersionedGuidInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/WEVTResourceDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/AbstractDemangledFunctionDefinitionDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/CharacterIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/CharacterIterator.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangled.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledAddressTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
