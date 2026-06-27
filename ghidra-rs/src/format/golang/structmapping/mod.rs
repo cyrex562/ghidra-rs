@@ -8,6 +8,7 @@ pub mod markup;
 pub mod plate_comment;
 pub mod signedness;
 pub mod structure_mapping;
+pub mod structure_reader;
 
 pub use after_structure_read::AfterStructureRead;
 pub use context_field::ContextField;
@@ -19,3 +20,4 @@ pub use markup::Markup;
 pub use plate_comment::{PlateComment, PlateCommentProvider};
 pub use signedness::Signedness;
 pub use structure_mapping::StructureMapping;
+pub use structure_reader::StructureReader;
