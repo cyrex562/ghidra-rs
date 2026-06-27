@@ -4974,7 +4974,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/lis
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingCodeComparisonView.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingComparisonActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingDiffActionManager.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingDiffChangeListener.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingDiffChangeListener.java	DONE	orig_src Ghidra Features Base src main java ghidra features base codecompare listing
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingDiffHighlightProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/codecompare/listing/ListingDisplayGoToService.java	TODO	orig_src Ghidra Features Base src main java ghidra features base codecompare listing 
