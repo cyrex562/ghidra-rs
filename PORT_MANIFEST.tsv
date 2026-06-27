@@ -4178,7 +4178,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Segmen
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/WindowsHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/AbstractOmfRecordFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/Omf2or4.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/OmfException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/OmfException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format omf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/OmfIndex.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/OmfObsoleteRecord.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/OmfRecord.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf 
