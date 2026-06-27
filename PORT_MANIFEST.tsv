@@ -4603,7 +4603,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/AsciiExport
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/BinaryExporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/CommentLineDispenser.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/Exporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/ExporterException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/ExporterException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util exporter
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/GdtExporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/GzfExporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/HtmlExporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 

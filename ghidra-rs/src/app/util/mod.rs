@@ -2,6 +2,7 @@ pub mod bin;
 pub mod clipboard_type;
 pub mod datatype;
 pub mod disassemble;
+pub mod exporter;
 pub mod help_topics;
 pub mod hex_long;
 pub mod option_exception;
