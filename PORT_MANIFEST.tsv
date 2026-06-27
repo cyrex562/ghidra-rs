@@ -4285,7 +4285,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/Separa
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/TLSDataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/TLSDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ThunkData.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ChpeRangeType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ChpeRangeType.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ImageArm64ecCodeRangeEntryPoint.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ImageArm64ecMetadata.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ImageArm64ecRedirectionEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
