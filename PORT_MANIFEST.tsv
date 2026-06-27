@@ -3990,7 +3990,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/lx/Linear
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuSubTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFileTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/MachHeaderFlags.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
