@@ -1,5 +1,6 @@
 pub mod chpe;
 pub mod resource;
+pub mod rich;
 pub mod cli;
 pub mod debug;
 pub mod constants;
