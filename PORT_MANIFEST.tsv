@@ -4955,7 +4955,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/PropertiesXmlMgr
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/RegisterValuesXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/RelocationTableXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/SymbolTableXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/XMLErrorHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/XMLErrorHandler.java	DONE	orig_src Ghidra Features Base src main java ghidra app util xml
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/XmlProgramOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/graph/CircleWithLabelVertex.java	TODO	orig_src Ghidra Features Base src main java ghidra base graph 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/base/graph/CircleWithLabelVertexShapeProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra base graph 

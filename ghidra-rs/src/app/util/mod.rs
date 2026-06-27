@@ -12,5 +12,6 @@ pub mod option_exception;
 pub mod query;
 pub mod permissions;
 pub mod viewer;
+pub mod xml;
 pub mod processor_info;
 pub mod program_drop_provider;
