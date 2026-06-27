@@ -1,1 +1,2 @@
 pub mod unknown_art_storage_mode_exception;
+pub mod unsupported_art_version_exception;
