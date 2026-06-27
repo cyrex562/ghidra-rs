@@ -3963,7 +3963,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/AfterStructureRead.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/ContextField.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapperContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/DataTypeMapperContext.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/EOLComment.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldMapping.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
