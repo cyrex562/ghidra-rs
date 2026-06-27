@@ -4639,7 +4639,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/MissingArchiveD
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/NullDataTypeHTMLRepresentation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/PlaceHolderLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/PointerDataTypeHTMLRepresentation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/TextLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/TextLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/TypeDefDataTypeHTMLRepresentation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/ValidatableLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/VariableTextLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
