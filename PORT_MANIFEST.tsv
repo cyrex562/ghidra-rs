@@ -5007,7 +5007,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/forma
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/DecimalSearchFormat.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch format 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/FloatSearchFormat.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch format 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/HexSearchFormat.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch format 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/NumberParseResult.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch format 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/NumberParseResult.java	DONE	orig_src Ghidra Features Base src main java ghidra features base memsearch format
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/RegExSearchFormat.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch format 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/SearchFormat.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch format 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/StringSearchFormat.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch format 
