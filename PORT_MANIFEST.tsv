@@ -6801,7 +6801,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/CryptoKey.
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/CryptoKeyFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file crypto 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/CryptoKeyFileTemplateWriter.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file crypto 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/CryptoKeysFSBFileHandler.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file crypto 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/CryptoUtil.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file crypto 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/CryptoUtil.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file crypto
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/DecryptedPacket.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file crypto 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/Decryptor.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file crypto 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/crypto/DecryptorFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file crypto 
