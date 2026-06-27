@@ -5344,7 +5344,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/ByteTrieNode
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/CaseInsensitiveByteTrie.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/CaseInsensitiveByteTrieNode.java	DONE	orig_src Ghidra Features Base src main java ghidra util search trie
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/Op.java	DONE	orig_src Ghidra Features Base src main java ghidra util search trie
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/SearchResult.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/SearchResult.java	DONE	orig_src Ghidra Features Base src main java ghidra util search trie
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/state/ContextState.java	TODO	orig_src Ghidra Features Base src main java ghidra util state 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/state/FunctionAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra util state 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/state/ResultsState.java	TODO	orig_src Ghidra Features Base src main java ghidra util state 
