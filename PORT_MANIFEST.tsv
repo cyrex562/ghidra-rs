@@ -5113,7 +5113,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSyst
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GIconProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/LocalFileSystem.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdFile.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdFile.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdInputStream.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/SingleFileSystemIndexHelper.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/annotations/FileSystemInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem annotations 
