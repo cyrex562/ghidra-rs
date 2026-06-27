@@ -5114,7 +5114,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GIconProv
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/LocalFileSystem.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdFile.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdInputStream.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/RefdInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/SingleFileSystemIndexHelper.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/annotations/FileSystemInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem annotations 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/CachedPasswordProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto 
