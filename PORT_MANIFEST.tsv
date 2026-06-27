@@ -3985,7 +3985,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/st
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureMarkup.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureMarkupFunction.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureReader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureVerifier.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureVerifier.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/lx/LinearExecutable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format lx 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuSubTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/CpuTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
