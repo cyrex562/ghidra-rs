@@ -6236,7 +6236,7 @@ orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/Byte
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/BytesAndDisassembly.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/ContextRegisterExtent.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/ContextRegisterFilter.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info
-orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/ContextRegisterInfo.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info 
+orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/ContextRegisterInfo.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/DataGatheringParams.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/FileBitPatternInfo.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/FileBitPatternInfoReader.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns info 
