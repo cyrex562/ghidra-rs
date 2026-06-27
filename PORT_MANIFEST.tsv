@@ -4748,7 +4748,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/XmlLoader.ja
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/parser/FunctionSignatureParser.java	TODO	orig_src Ghidra Features Base src main java ghidra app util parser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/pcode/AttributedStringPcodeFormatter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util pcode 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/pcode/StringPcodeFormatter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util pcode 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/AddressAlignmentListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app util query 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/AddressAlignmentListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app util query
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/AlignedObjectBasedPreviewTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util query 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/ProgramLocationPreviewTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util query 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/TableService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util query 
