@@ -6110,7 +6110,7 @@ orig_src/Ghidra/Features/Base/src/test/java/ghidra/features/base/replace/Program
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/features/base/replace/SearchAndReplaceDialogTest.java	TODO	orig_src Ghidra Features Base src test java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/features/base/replace/SymbolsSearchAndReplaceTest.java	TODO	orig_src Ghidra Features Base src test java ghidra features base replace 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/formats/gfilesystem/FSRLTest.java	TODO	orig_src Ghidra Features Base src test java ghidra formats gfilesystem 
-orig_src/Ghidra/Features/Base/src/test/java/ghidra/formats/gfilesystem/FSUtilitiesTest.java	TODO	orig_src Ghidra Features Base src test java ghidra formats gfilesystem 
+orig_src/Ghidra/Features/Base/src/test/java/ghidra/formats/gfilesystem/FSUtilitiesTest.java	DONE	orig_src Ghidra Features Base src test java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/formats/gfilesystem/FileCacheTest.java	TODO	orig_src Ghidra Features Base src test java ghidra formats gfilesystem 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/formats/gfilesystem/crypto/CachedPasswordProviderTest.java	TODO	orig_src Ghidra Features Base src test java ghidra formats gfilesystem crypto 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/formats/gfilesystem/crypto/CmdLinePasswordProviderTest.java	TODO	orig_src Ghidra Features Base src test java ghidra formats gfilesystem crypto 
