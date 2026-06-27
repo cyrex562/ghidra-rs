@@ -7,3 +7,4 @@ pub mod machine_constants;
 pub mod machine_name;
 pub mod offset_validator;
 pub mod optional_header_rom;
+pub mod pe_subsystem;

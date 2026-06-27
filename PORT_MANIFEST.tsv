@@ -4270,7 +4270,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/Option
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PEx64UnwindInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PEx64UnwindInfoDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PeMarkupable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PeSubsystem.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PeSubsystem.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PeUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PortableExecutable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ROMHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
