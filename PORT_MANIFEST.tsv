@@ -3998,7 +3998,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Obs
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/RelocationInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/Section.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/SectionAttributes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/SectionNames.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/SectionNames.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/SectionTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/BuildVersionCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/CodeSignatureCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
