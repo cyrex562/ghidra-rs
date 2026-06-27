@@ -4071,7 +4071,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/BindingTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/ClassicBindProcessor.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/ClassicLazyBindProcessor.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/OpcodeTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/OpcodeTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseOpcode.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/dyld/RebaseTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands dyld 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/dyld/DyldArchitecture.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho dyld 
