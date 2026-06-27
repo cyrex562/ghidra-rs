@@ -4574,7 +4574,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/CharacterI
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangled.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledAddressTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunction.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionIndirect.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionPointer.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
