@@ -9,3 +9,4 @@ pub mod omf;
 pub mod pe;
 pub mod pef;
 pub mod relocation_exception;
+pub mod som;
