@@ -4680,7 +4680,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProg
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProgramWrapperLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AddressSetPartitioner.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BinaryLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BoundedBufferedReader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BoundedBufferedReader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/CoffLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ComLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DbgLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
