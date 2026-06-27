@@ -6071,7 +6071,7 @@ orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/opinion/DefExportLin
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/opinion/IntelHexRecordReaderTest.java	DONE	orig_src Ghidra Features Base src test java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/opinion/IntelHexRecordTest.java	DONE	orig_src Ghidra Features Base src test java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/opinion/OrdinalFileSymbolLoadTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/opinion/QueryOpinionServiceTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/opinion/QueryOpinionServiceTest.java	DONE	orig_src Ghidra Features Base src test java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/template/TemplateSimplifierTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util template 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/viewer/listingpanel/ProgramBigListingModelOpenDataTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/viewer/listingpanel/ProgramBigListingModelTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util viewer listingpanel 

@@ -7,3 +7,4 @@ pub mod load_exception;
 pub mod loader_opinion_exception;
 pub mod loader_tier;
 pub mod opinion_exception;
+pub mod query_opinion_service;
