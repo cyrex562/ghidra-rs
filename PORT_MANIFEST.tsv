@@ -4689,7 +4689,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDeb
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFormatManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFunctionManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugXmlLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DefExportLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DefExportLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DefLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
