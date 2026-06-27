@@ -245,4 +245,161 @@ mod tests {
     fn invalid_forwarded_ordinal_errors() {
         assert!(DefExportLine::new("Foo=other.#notanumber").is_err());
     }
+
+    // --- Tests ported from DefExportLineTest.java ---
+
+    #[test]
+    fn test_export_line_name_only() {
+        let export = DefExportLine::new("func").unwrap();
+        assert_eq!(export.name(), "func");
+        assert!(export.internal_name().is_none());
+        assert!(export.other_module_name().is_none());
+        assert!(export.other_module_exported_name().is_none());
+        assert!(export.other_module_ordinal().is_none());
+        assert!(export.ordinal().is_none());
+        assert!(!export.is_no_name());
+        assert!(!export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_internal_name() {
+        let export = DefExportLine::new("func2=func1").unwrap();
+        assert_eq!(export.name(), "func2");
+        assert_eq!(export.internal_name(), Some("func1"));
+        assert!(export.other_module_name().is_none());
+        assert!(export.other_module_exported_name().is_none());
+        assert!(export.other_module_ordinal().is_none());
+        assert!(export.ordinal().is_none());
+        assert!(!export.is_no_name());
+        assert!(!export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_other_module_exported_name() {
+        let export = DefExportLine::new("func2=other_module.func1").unwrap();
+        assert_eq!(export.name(), "func2");
+        assert!(export.internal_name().is_none());
+        assert_eq!(export.other_module_name(), Some("other_module"));
+        assert_eq!(export.other_module_exported_name(), Some("func1"));
+        assert!(export.other_module_ordinal().is_none());
+        assert!(export.ordinal().is_none());
+        assert!(!export.is_no_name());
+        assert!(!export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_other_module_ordinal() {
+        let export = DefExportLine::new("func2=other_module.#42").unwrap();
+        assert_eq!(export.name(), "func2");
+        assert!(export.internal_name().is_none());
+        assert_eq!(export.other_module_name(), Some("other_module"));
+        assert!(export.other_module_exported_name().is_none());
+        assert_eq!(export.other_module_ordinal(), Some(42));
+        assert!(export.ordinal().is_none());
+        assert!(!export.is_no_name());
+        assert!(!export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_ordinal() {
+        let export = DefExportLine::new("func @1").unwrap();
+        assert_eq!(export.name(), "func");
+        assert!(export.internal_name().is_none());
+        assert!(export.other_module_name().is_none());
+        assert!(export.other_module_exported_name().is_none());
+        assert!(export.other_module_ordinal().is_none());
+        assert_eq!(export.ordinal(), Some(1));
+        assert!(!export.is_no_name());
+        assert!(!export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_ordinal_spaces() {
+        let export = DefExportLine::new("func @     1").unwrap();
+        assert_eq!(export.name(), "func");
+        assert!(export.internal_name().is_none());
+        assert!(export.other_module_name().is_none());
+        assert!(export.other_module_exported_name().is_none());
+        assert!(export.other_module_ordinal().is_none());
+        assert_eq!(export.ordinal(), Some(1));
+        assert!(!export.is_no_name());
+        assert!(!export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_ordinal_no_name() {
+        let export = DefExportLine::new("func @1 NONAME").unwrap();
+        assert_eq!(export.name(), "func");
+        assert!(export.internal_name().is_none());
+        assert!(export.other_module_name().is_none());
+        assert!(export.other_module_exported_name().is_none());
+        assert!(export.other_module_ordinal().is_none());
+        assert_eq!(export.ordinal(), Some(1));
+        assert!(export.is_no_name());
+        assert!(!export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_data() {
+        let export = DefExportLine::new("exported_global DATA").unwrap();
+        assert_eq!(export.name(), "exported_global");
+        assert!(export.internal_name().is_none());
+        assert!(export.other_module_name().is_none());
+        assert!(export.other_module_exported_name().is_none());
+        assert!(export.other_module_ordinal().is_none());
+        assert!(export.ordinal().is_none());
+        assert!(!export.is_no_name());
+        assert!(!export.is_private());
+        assert!(export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_private() {
+        let export = DefExportLine::new("func PRIVATE").unwrap();
+        assert_eq!(export.name(), "func");
+        assert!(export.internal_name().is_none());
+        assert!(export.other_module_name().is_none());
+        assert!(export.other_module_exported_name().is_none());
+        assert!(export.other_module_ordinal().is_none());
+        assert!(export.ordinal().is_none());
+        assert!(!export.is_no_name());
+        assert!(export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_all() {
+        let export = DefExportLine::new("func2=other_module.#42 @ 1 NONAME PRIVATE").unwrap();
+        assert_eq!(export.name(), "func2");
+        assert!(export.internal_name().is_none());
+        assert_eq!(export.other_module_name(), Some("other_module"));
+        assert!(export.other_module_exported_name().is_none());
+        assert_eq!(export.other_module_ordinal(), Some(42));
+        assert_eq!(export.ordinal(), Some(1));
+        assert!(export.is_no_name());
+        assert!(export.is_private());
+        assert!(!export.is_data());
+    }
+
+    #[test]
+    fn test_export_line_with_no_name() {
+        assert!(DefExportLine::new("   ").is_err());
+    }
+
+    #[test]
+    fn test_export_line_with_invalid_ordinal() {
+        assert!(DefExportLine::new("func @ff").is_err());
+    }
+
+    #[test]
+    fn test_export_line_with_invalid_type() {
+        assert!(DefExportLine::new("func @ 1 INVALID_TYPE").is_err());
+    }
 }
