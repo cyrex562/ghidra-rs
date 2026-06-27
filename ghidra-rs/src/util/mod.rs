@@ -1,4 +1,5 @@
 pub mod byte_buffer_utils;
+pub mod multi_comparable_array_iterator;
 pub mod util;
 pub mod layout;
 pub mod database;
@@ -21,6 +22,7 @@ pub mod timed_msg;
 pub use datastruct::{Duo, Range, Side};
 pub use lock_hold::{Lock, LockHold};
 pub use merge_sorting_spliterator::MergeSortingIterator;
+pub use multi_comparable_array_iterator::MultiComparableArrayIterator;
 pub use pairing_iterator_merger::PairingIteratorMerger;
 pub use error_display::{ConsoleErrorDisplay, ErrorDisplay};
 pub use error_logger::{DefaultErrorLogger, ErrorLogger};
