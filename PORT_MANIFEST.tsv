@@ -4711,7 +4711,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryHints
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryLookupTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryPathsDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibrarySymbolTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadResults.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadSpec.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loaded.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
