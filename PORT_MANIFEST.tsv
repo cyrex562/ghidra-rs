@@ -4408,7 +4408,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_ALIGN.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_BLOCK32.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_BPREL32_NEW.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_COMPILE.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_COMPILE.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_CONSTANT32.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_DATAREF.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/S_END.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
