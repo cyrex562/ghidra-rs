@@ -5043,7 +5043,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/match
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/mnemonic/MaskGenerator.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch mnemonic 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/mnemonic/MaskValue.java	DONE	orig_src Ghidra Features Base src main java ghidra features base memsearch mnemonic
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/mnemonic/MnemonicSearchPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch mnemonic 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/mnemonic/SLMaskControl.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch mnemonic 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/mnemonic/SLMaskControl.java	DONE	orig_src Ghidra Features Base src main java ghidra features base memsearch mnemonic
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/scan/Scanner.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch scan 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searcher/AlignmentFilter.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch searcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searcher/CodeUnitFilter.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch searcher 
