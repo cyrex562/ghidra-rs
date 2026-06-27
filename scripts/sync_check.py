@@ -12,6 +12,8 @@ class JavaDependencyAnalyzer:
         self.file_to_package = {}        # rel_path -> package.ClassName
         self.package_to_file = {}        # package.ClassName -> rel_path
         self.package_members = defaultdict(list)  # package -> [rel_path] (for wildcard imports)
+        self.package_classmap = defaultdict(dict)  # package -> {ClassName: rel_path} (same-package refs)
+        self._package_regex = {}         # package -> compiled \b(Class1|Class2|...)\b (cached)
         self.dependencies = {}           # rel_path -> set(rel_path)  (all in-repo direct deps)
         self.done = set()                # rel_paths that are already ported (status DONE)
         self.all_files = []
@@ -34,6 +36,7 @@ class JavaDependencyAnalyzer:
                         self.package_to_file[full_name] = rel_path
                         self.file_to_package[rel_path] = full_name
                         self.package_members[package_name].append(rel_path)
+                        self.package_classmap[package_name][class_name] = rel_path
 
     def _extract_package_from_file(self, file_path):
         try:
@@ -75,8 +78,25 @@ class JavaDependencyAnalyzer:
                     n += 1
         return n
 
+    def _same_package_regex(self, package_name):
+        """Cached \\b(Class1|Class2|...)\\b for a package's in-repo classes.
+
+        Longest names first so e.g. `Sequence` can't pre-empt `SequenceItem`
+        (word boundaries already prevent substring hits, but ordering is cheap
+        insurance). Returns None for packages with no members.
+        """
+        if package_name not in self._package_regex:
+            names = sorted(self.package_classmap.get(package_name, {}), key=len, reverse=True)
+            self._package_regex[package_name] = (
+                re.compile(r"\b(" + "|".join(map(re.escape, names)) + r")\b") if names else None
+            )
+        return self._package_regex[package_name]
+
     def get_dependencies(self, rel_path):
-        """All in-repo direct dependencies (explicit imports + wildcard expansion)."""
+        """All in-repo direct dependencies: explicit imports, wildcard expansion,
+        AND same-package references (Java needs no import for those, so they were
+        previously missed -- the main cause of spurious "0 remaining dep" frontier
+        entries that the porter then parks on a missing prerequisite)."""
         if rel_path in self.dependencies:
             return self.dependencies[rel_path]
 
@@ -97,6 +117,18 @@ class JavaDependencyAnalyzer:
             for pkg in re.findall(r"^import\s+(?:static\s+)?([\w\.]+)\.\*;", content, re.MULTILINE):
                 for member in self.package_members.get(pkg, ()):
                     deps.add(member)
+
+            # Same-package references: sibling class names used in the body, no import.
+            full = self.file_to_package.get(rel_path)
+            if full:
+                package_name = full.rsplit(".", 1)[0]
+                rgx = self._same_package_regex(package_name)
+                if rgx is not None:
+                    classmap = self.package_classmap[package_name]
+                    for name in set(rgx.findall(content)):
+                        sib = classmap.get(name)
+                        if sib:
+                            deps.add(sib)
         except Exception:
             pass
 
