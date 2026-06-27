@@ -5372,7 +5372,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/GhidraTableCellRen
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/GhidraTableFilterPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra util table 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/GhidraThreadedTablePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra util table 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/IncomingReferencesTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra util table 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/IntObjectCache.java	TODO	orig_src Ghidra Features Base src main java ghidra util table 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/IntObjectCache.java	DONE	orig_src Ghidra Features Base src main java ghidra util table 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/MappedProgramLocationTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/PreviewDataTableCellRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra util table 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/PreviewTableCellData.java	TODO	orig_src Ghidra Features Base src main java ghidra util table 
