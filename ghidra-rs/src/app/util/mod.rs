@@ -1,5 +1,6 @@
 pub mod bin;
 pub mod clipboard_type;
+pub mod datatype;
 pub mod disassemble;
 pub mod help_topics;
 pub mod hex_long;
