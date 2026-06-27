@@ -4277,7 +4277,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ROMHea
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ResourceDataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/RichHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/RichTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/SectionFlags.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/SectionFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/SectionHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/SecurityCertificate.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/SecurityDataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe 
