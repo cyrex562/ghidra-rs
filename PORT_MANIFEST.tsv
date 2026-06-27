@@ -5140,7 +5140,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributeType.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem fileinfo 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributeTypeGroup.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem fileinfo 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributes.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem fileinfo 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileType.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem fileinfo 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileType.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem fileinfo
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/GhidraApplicationConfiguration.java	TODO	orig_src Ghidra Features Base src main java ghidra framework 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/HeadlessGhidraApplicationConfiguration.java	TODO	orig_src Ghidra Features Base src main java ghidra framework 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/framework/cmd/BinaryAnalysisCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra framework cmd 
