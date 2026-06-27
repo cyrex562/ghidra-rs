@@ -6181,7 +6181,7 @@ orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/ascii/MultiByteCharMatch
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/bytesearch/BulkPatternSearcherTest.java	TODO	orig_src Ghidra Features Base src test java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/bytesearch/MemoryBytePatternSearcherTest.java	TODO	orig_src Ghidra Features Base src test java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/bytesearch/ProgramMemorySearcherTest.java	TODO	orig_src Ghidra Features Base src test java ghidra util bytesearch 
-orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/html/HtmlLineSplitterTest.java	TODO	orig_src Ghidra Features Base src test java ghidra util html 
+orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/html/HtmlLineSplitterTest.java	DONE	orig_src Ghidra Features Base src test java ghidra util html
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/search/trie/ByteTrieTest.java	TODO	orig_src Ghidra Features Base src test java ghidra util search trie 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/search/trie/CaseInsensitiveByteTrieTest.java	TODO	orig_src Ghidra Features Base src test java ghidra util search trie 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/util/xml/XmlUtilitiesTest.java	TODO	orig_src Ghidra Features Base src test java ghidra util xml 
