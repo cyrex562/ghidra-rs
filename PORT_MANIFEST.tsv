@@ -4896,7 +4896,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingMarginProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingModelAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingModelListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingModelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingOverviewProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/MarkerClickedListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
