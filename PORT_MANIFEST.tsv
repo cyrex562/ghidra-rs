@@ -5471,7 +5471,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/projectdata/column
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/projectdata/column/LanguageProjectDataColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table projectdata column 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/projectdata/column/Md5ProjectDataColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table projectdata column 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/projectdata/column/ProcessorProjectDataColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table projectdata column 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/xml/XmlSummary.java	TODO	orig_src Ghidra Features Base src main java ghidra util xml 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/xml/XmlSummary.java	DONE	orig_src Ghidra Features Base src main java ghidra util xml
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/xml/XmlTestHelper.java	TODO	orig_src Ghidra Features Base src main java ghidra util xml 
 orig_src/Ghidra/Features/Base/src/main/java/help/screenshot/AbstractScreenShotGenerator.java	TODO	orig_src Ghidra Features Base src main java help screenshot 
 orig_src/Ghidra/Features/Base/src/main/java/help/screenshot/GhidraScreenShotGenerator.java	TODO	orig_src Ghidra Features Base src main java help screenshot 

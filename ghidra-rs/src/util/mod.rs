@@ -1,4 +1,5 @@
 pub mod ascii;
+pub mod xml;
 pub mod table;
 pub mod bytesearch;
 pub mod search;
