@@ -6289,7 +6289,7 @@ orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/bytevie
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerBGColorModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerClipboardProvider.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerComponent.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 
-orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerComponentNamer.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 
+orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerComponentNamer.java	DONE	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerComponentProvider.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerConfigOptions.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ByteViewerHighlighter.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core byteviewer 

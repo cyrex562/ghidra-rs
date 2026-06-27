@@ -1,5 +1,6 @@
 pub mod analysis;
 pub mod bookmark;
+pub mod byteviewer;
 pub mod checksums;
 pub mod compositeeditor;
 pub mod console;
