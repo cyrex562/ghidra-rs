@@ -4008,7 +4008,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldChainedFixupsCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldExportsTrieCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommandConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldInfoCommandConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibrary.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicLibraryModule.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
