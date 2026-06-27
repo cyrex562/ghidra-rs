@@ -4487,7 +4487,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/Reloc
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/RelocationFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/RelocationState.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/SectionHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/SectionKind.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/SectionKind.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/SectionShareKind.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/SymbolClass.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/som/SomAuxHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format som 
