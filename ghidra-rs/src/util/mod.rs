@@ -23,6 +23,7 @@ pub mod msg;
 pub mod system_utilities;
 pub mod task;
 pub mod timed_msg;
+pub mod test_buffer;
 
 pub use datastruct::{Duo, Range, Side};
 pub use lock_hold::{Lock, LockHold};
