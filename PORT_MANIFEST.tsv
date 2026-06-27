@@ -5050,7 +5050,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searc
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searcher/MemoryMatch.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch searcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/searcher/MemorySearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch searcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFix.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixStatus.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixStatus.java	DONE	orig_src Ghidra Features Base src main java ghidra features base quickfix
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixStatusRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/quickfix/QuickFixTableProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra features base quickfix 
