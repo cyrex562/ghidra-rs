@@ -4554,7 +4554,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/D
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GUID.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GroupIconResourceDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GuidDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GuidInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GuidInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GuidUtil.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/HTMLResourceDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/MSDataTypeUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util datatype microsoft 
