@@ -4111,7 +4111,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/thr
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/DebugStateX86_64.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ExceptionStateX86_32.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ExceptionStateX86_64.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/FloatStateX86_32.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/FloatStateX86_32.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadState.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/threadcommand/ThreadStateARM.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho threadcommand 
