@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod dyld;
 pub mod cpu_sub_types;
 pub mod mach_constants;
 pub mod mach_exception;
