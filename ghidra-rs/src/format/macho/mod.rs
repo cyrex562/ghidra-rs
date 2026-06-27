@@ -4,3 +4,4 @@ pub mod mach_exception;
 pub mod mach_header_flags;
 pub mod obsolete_exception;
 pub mod section_attributes;
+pub mod section_names;
