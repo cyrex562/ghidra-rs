@@ -4358,7 +4358,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/ta
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/CliTableTypeDef.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/CliTableTypeRef.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/CliTableTypeSpec.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/CliTypeTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/CliTypeTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/flags/CliFlags.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables flags 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/indexes/CliCodedIndexUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables indexes 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/tables/indexes/CliIndexCustomAttributeType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli tables indexes 
