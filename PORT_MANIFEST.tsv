@@ -4533,7 +4533,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCo
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffOptionalHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSectionHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSectionHeaderFlags.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSectionHeaderNames.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSectionHeaderNames.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSymbolStorageClass.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffSymbolStorageClassCSECT.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
