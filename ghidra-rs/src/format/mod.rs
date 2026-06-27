@@ -12,3 +12,4 @@ pub mod relocation_exception;
 pub mod som;
 pub mod ubi;
 pub mod unixaout;
+pub mod xcoff;

@@ -4523,7 +4523,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutStringTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format unixaout 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format unixaout
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbolTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format unixaout 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveConstants.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveMemberHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format xcoff 
