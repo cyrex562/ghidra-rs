@@ -1,4 +1,5 @@
 pub mod chpe;
+pub mod resource;
 pub mod cli;
 pub mod debug;
 pub mod constants;

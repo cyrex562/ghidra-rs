@@ -4443,7 +4443,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resour
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectoryEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectoryString.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceDirectoryStringU.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/ResourceStringInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/VS_VERSION_CHILD.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/resource/VS_VERSION_INFO.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe resource 
