@@ -10,6 +10,7 @@ pub mod decompiler;
 pub mod eclipse;
 pub mod function;
 pub mod functiongraph;
+pub mod go;
 pub mod graph;
 pub mod instruction_search;
 pub mod interpreter;
