@@ -12,6 +12,7 @@ pub mod searchlist;
 pub mod table;
 pub mod trable;
 pub mod tree;
+pub mod values;
 
 pub use autocomplete::AutocompletionModel;
 pub use conditiontestpanel::ConditionStatus;
@@ -24,3 +25,4 @@ pub use indexedscrollpane::IndexScrollListener;
 pub use searchlist::SearchListEntry;
 pub use table::{AddRemoveListItem, AddRemoveListItemType};
 pub use trable::GTrableModeRowlListener;
+pub use values::ValuesMapParseError;

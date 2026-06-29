@@ -10724,7 +10724,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/values/IntValue.
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/values/LongValue.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets values 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/values/StringValue.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets values 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/values/ValuesMapDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets values 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/values/ValuesMapParseException.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets values 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/values/ValuesMapParseException.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets values 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/values/ValuesMapValidator.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets values 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/wizard/WizardDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking wizard 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/wizard/WizardModel.java	TODO	orig_src Ghidra Framework Docking src main java docking wizard 
