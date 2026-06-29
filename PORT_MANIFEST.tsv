@@ -7705,7 +7705,7 @@ orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/store/Reposito
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/store/RepositoryFolder.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server store 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/BlockStreamServer.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server stream 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/RemoteBlockStreamHandle.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server stream 
-orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/RemoteDeflaterOutputStream.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server stream 
+orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/RemoteDeflaterOutputStream.java	DONE	orig_src Ghidra Features GhidraServer src main java ghidra server stream 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/RemoteInputBlockStreamHandle.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server stream 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/RemoteOutputBlockStreamHandle.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server stream 
 orig_src/Ghidra/Features/GhidraServer/src/test.slow/java/ghidra/server/remote/GhidraServerAWTTest.java	TODO	orig_src Ghidra Features GhidraServer src test.slow java ghidra server remote 
