@@ -11263,7 +11263,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/MemoryPa
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/MemoryState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/UniqueMemoryBank.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/BinaryOpBehavior.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehavior.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehavior.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorBoolAnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorBoolNegate.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorBoolOr.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
