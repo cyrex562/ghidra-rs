@@ -7,3 +7,4 @@ pub mod gzip;
 pub mod ios;
 pub mod java;
 pub mod lzss;
+pub mod sparseimage;
