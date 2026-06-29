@@ -10120,7 +10120,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/HorizontalRuleActio
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/InvertableImageIcon.java	TODO	orig_src Ghidra Framework Docking src main java docking menu 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/ManagedMenuItem.java	TODO	orig_src Ghidra Framework Docking src main java docking menu 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/MenuBarManager.java	TODO	orig_src Ghidra Framework Docking src main java docking menu 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/MenuGroupListener.java	TODO	orig_src Ghidra Framework Docking src main java docking menu 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/MenuGroupListener.java	DONE	orig_src Ghidra Framework Docking src main java docking menu
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/MenuGroupMap.java	TODO	orig_src Ghidra Framework Docking src main java docking menu 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/MenuHandler.java	TODO	orig_src Ghidra Framework Docking src main java docking menu 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/MenuItemManager.java	TODO	orig_src Ghidra Framework Docking src main java docking menu 
