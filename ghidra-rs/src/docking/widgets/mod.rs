@@ -7,6 +7,7 @@ pub mod event_trigger;
 pub mod filechooser;
 pub mod fieldpanel;
 pub mod filter;
+pub mod indexedscrollpane;
 pub mod tree;
 
 pub use autocomplete::AutocompletionModel;
@@ -16,3 +17,4 @@ pub use data_to_string_converter::{DataToStringConverter, StringDataToStringConv
 pub use event_trigger::EventTrigger;
 pub use fieldpanel::FieldListener;
 pub use filter::FilterListener;
+pub use indexedscrollpane::IndexScrollListener;

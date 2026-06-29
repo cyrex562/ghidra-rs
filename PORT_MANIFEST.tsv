@@ -10409,7 +10409,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/imagepanel/actio
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/imagepanel/actions/ZoomOutAction.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets imagepanel actions 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/imagepanel/actions/ZoomResetAction.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets imagepanel actions 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/DefaultViewToIndexMapper.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/IndexScrollListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/IndexScrollListener.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/IndexedScrollPane.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/IndexedScrollable.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/PreMappedViewToIndexMapper.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
