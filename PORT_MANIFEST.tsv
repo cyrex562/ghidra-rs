@@ -10259,7 +10259,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/checkbox/GHtmlCh
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/combobox/GComboBox.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets combobox 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/combobox/GhidraComboBox.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets combobox 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionResult.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionStatus.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionStatus.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTestListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTestModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTestPanel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
