@@ -10449,7 +10449,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/search/TextCompo
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/search/TextComponentSearcher.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets search 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/searchlist/DefaultSearchListModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets searchlist 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/searchlist/SearchList.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets searchlist 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/searchlist/SearchListEntry.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets searchlist 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/searchlist/SearchListEntry.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets searchlist 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/searchlist/SearchListModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets searchlist 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/shapes/Location.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets shapes 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/shapes/PopupWindowPlacer.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets shapes 
