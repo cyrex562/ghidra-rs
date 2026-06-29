@@ -10153,7 +10153,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/FontPrope
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/GenericOptionsComponent.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/GhidraColorChooser.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/IconPropertyEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/IntEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/IntEditor.java	DONE	orig_src Ghidra Framework Docking src main java docking options editor
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/OptionsDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/OptionsEditorAlignable.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/OptionsEditorListener.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
