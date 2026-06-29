@@ -10199,7 +10199,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/AnimationUtils.java
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/GGlassPaneMessage.java	TODO	orig_src Ghidra Framework Docking src main java docking util 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/GraphicsUtils.java	TODO	orig_src Ghidra Framework Docking src main java docking util 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/MessageOverlay.java	TODO	orig_src Ghidra Framework Docking src main java docking util 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/SwingAnimationCallback.java	TODO	orig_src Ghidra Framework Docking src main java docking util 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/SwingAnimationCallback.java	DONE	orig_src Ghidra Framework Docking src main java docking util 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/TextShaper.java	TODO	orig_src Ghidra Framework Docking src main java docking util 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/image/Callout.java	TODO	orig_src Ghidra Framework Docking src main java docking util image 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/util/image/CalloutInfo.java	TODO	orig_src Ghidra Framework Docking src main java docking util image 
