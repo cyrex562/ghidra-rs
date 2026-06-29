@@ -10249,7 +10249,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/VariableHeightPa
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/autocomplete/AutocompletionCellRenderer.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets autocomplete 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/autocomplete/AutocompletionEvent.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets autocomplete 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/autocomplete/AutocompletionListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets autocomplete 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/autocomplete/AutocompletionModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets autocomplete 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/autocomplete/AutocompletionModel.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets autocomplete 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/autocomplete/TextFieldAutocompleter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets autocomplete 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/button/BrowseButton.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets button 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/button/GButton.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets button 
