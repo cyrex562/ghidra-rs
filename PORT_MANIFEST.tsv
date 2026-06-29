@@ -10219,7 +10219,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/DropDownTextFiel
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/DropDownTextFieldDataModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/DropDownWindowVisibilityListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/EmptyBorderButton.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/EventTrigger.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/EventTrigger.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/FindDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/FindDialogResultsProvider.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/GComponent.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets 
