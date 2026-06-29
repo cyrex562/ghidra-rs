@@ -7,3 +7,4 @@ pub mod oat;
 pub mod ota_update;
 pub mod util;
 pub mod vdex;
+pub mod verifier;
