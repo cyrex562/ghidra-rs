@@ -9,6 +9,7 @@ pub mod hex_long;
 pub mod importer;
 pub mod opinion;
 pub mod option_exception;
+pub mod pdb;
 pub mod query;
 pub mod permissions;
 pub mod viewer;
