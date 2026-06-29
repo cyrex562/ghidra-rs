@@ -7,6 +7,7 @@ pub mod console;
 pub mod datamgr;
 pub mod debug;
 pub mod decompiler;
+pub mod diff;
 pub mod eclipse;
 pub mod function;
 pub mod functiongraph;
