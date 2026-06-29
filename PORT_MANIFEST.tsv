@@ -8714,7 +8714,7 @@ orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VBTable
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VFTable.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VFTableEntry.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VXT.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype
-orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VXTEntry.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
+orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VXTEntry.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VirtualBaseTable.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VirtualBaseTableEntry.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/VirtualFunctionTable.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
