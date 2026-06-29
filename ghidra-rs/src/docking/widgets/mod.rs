@@ -8,6 +8,7 @@ pub mod filechooser;
 pub mod fieldpanel;
 pub mod filter;
 pub mod indexedscrollpane;
+pub mod searchlist;
 pub mod tree;
 
 pub use autocomplete::AutocompletionModel;
@@ -18,3 +19,4 @@ pub use event_trigger::EventTrigger;
 pub use fieldpanel::FieldListener;
 pub use filter::FilterListener;
 pub use indexedscrollpane::IndexScrollListener;
+pub use searchlist::SearchListEntry;
