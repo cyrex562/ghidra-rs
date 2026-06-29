@@ -6,3 +6,6 @@ pub use started_ghidra_process_exited_exception::StartedGhidraProcessExitedExcep
 
 pub mod stop_waiting_exception;
 pub use stop_waiting_exception::StopWaitingException;
+
+pub mod unable_to_get_lock_exception;
+pub use unable_to_get_lock_exception::UnableToGetLockException;
