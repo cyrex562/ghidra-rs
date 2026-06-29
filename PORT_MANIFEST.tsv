@@ -6941,7 +6941,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/d
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/MethodHandleType.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/MethodIDItem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/ModifiedUTF8.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/Modifiers.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/Modifiers.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/PackedSwitchPayload.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/ParameterAnnotationsItem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/PrototypesIDItem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex format 
