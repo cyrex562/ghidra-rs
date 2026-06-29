@@ -7401,7 +7401,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseima
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sparseimage 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashBasicDirectoryInode.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashBasicFileInode.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashDirectoryTable.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashDirectoryTableEntry.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashDirectoryTableHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
