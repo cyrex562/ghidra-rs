@@ -10165,7 +10165,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/Scrollabl
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/SettableColorSwatchChooserPanel.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/StringBasedFileEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/StringEditor.java	DONE	orig_src Ghidra Framework Docking src main java docking options editor 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/StringWithChoicesEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/StringWithChoicesEditor.java	DONE	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/resources/icons/NumberIcon.java	TODO	orig_src Ghidra Framework Docking src main java docking resources icons 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/test/AbstractDockingTest.java	TODO	orig_src Ghidra Framework Docking src main java docking test 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/test/TestFailingErrorDisplayWrapper.java	TODO	orig_src Ghidra Framework Docking src main java docking test 
