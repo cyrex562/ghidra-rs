@@ -10369,7 +10369,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GFil
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFile.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filechooser
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooser.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooserDirectoryModelIf.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooserMode.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooserMode.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooserPanel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooserPanelListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/LocalFileChooserModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
