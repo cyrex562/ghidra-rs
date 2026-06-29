@@ -7394,7 +7394,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sevenzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sevenzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/ChunkHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sparseimage 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sparseimage 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats sparseimage 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sparseimage 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageDecompressor.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sparseimage 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sparseimage/SparseImageFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sparseimage 
