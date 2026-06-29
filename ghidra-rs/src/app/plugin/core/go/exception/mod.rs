@@ -3,3 +3,6 @@ pub use failed_to_start_ghidra_exception::FailedToStartGhidraException;
 
 pub mod started_ghidra_process_exited_exception;
 pub use started_ghidra_process_exited_exception::StartedGhidraProcessExitedException;
+
+pub mod stop_waiting_exception;
+pub use stop_waiting_exception::StopWaitingException;
