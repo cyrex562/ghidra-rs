@@ -11534,7 +11534,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/JarWriter.java	TODO	o
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/NullPrintWriter.java	TODO	orig_src Ghidra Framework Generic src main java generic io 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/NullWriter.java	DONE	orig_src Ghidra Framework Generic src main java generic io 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/jar/ApplicationModule.java	TODO	orig_src Ghidra Framework Generic src main java generic jar 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/json/JSONError.java	TODO	orig_src Ghidra Framework Generic src main java generic json 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/json/JSONError.java	DONE	orig_src Ghidra Framework Generic src main java generic json 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/json/JSONParser.java	TODO	orig_src Ghidra Framework Generic src main java generic json 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/json/JSONToken.java	TODO	orig_src Ghidra Framework Generic src main java generic json 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/json/JSONType.java	TODO	orig_src Ghidra Framework Generic src main java generic json 
