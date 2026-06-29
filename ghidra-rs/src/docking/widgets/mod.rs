@@ -6,6 +6,7 @@ pub mod dialogs;
 pub mod event_trigger;
 pub mod filechooser;
 pub mod fieldpanel;
+pub mod filter;
 pub mod tree;
 
 pub use autocomplete::AutocompletionModel;
@@ -14,3 +15,4 @@ pub use cursor_position::CursorPosition;
 pub use data_to_string_converter::{DataToStringConverter, StringDataToStringConverter};
 pub use event_trigger::EventTrigger;
 pub use fieldpanel::FieldListener;
+pub use filter::FilterListener;

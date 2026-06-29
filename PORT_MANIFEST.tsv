@@ -10380,7 +10380,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/Character
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/ClearFilterLabel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/ContainsTextFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/ContainsTextFilterFactory.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterListener.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterOptions.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterOptionsEditorDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterTextField.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
