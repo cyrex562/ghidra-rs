@@ -7,6 +7,7 @@ pub mod os;
 pub mod plugintool;
 pub mod remote;
 pub mod service;
+pub mod store;
 pub mod version;
 
 pub use os::OperatingSystem;
