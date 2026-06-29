@@ -8765,7 +8765,7 @@ orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/Nes
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/NestingSymbolApplier.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/NoSymbolApplier.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/NoTypeApplier.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
-orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/ObjectOrientedClassLayout.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
+orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/ObjectOrientedClassLayout.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/OemDefinedSymbolApplier.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbAddressCalculator.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbAddressManager.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
