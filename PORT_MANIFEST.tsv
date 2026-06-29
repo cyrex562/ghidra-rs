@@ -10661,7 +10661,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableCe
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableCellRenderer.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets trable 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableColumn.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets trable 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableColumnModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets trable 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableModeRowlListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets trable 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableModeRowlListener.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets trable 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableRow.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets trable 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/GTrableRowModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets trable 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/trable/OpenCloseIcon.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets trable 
