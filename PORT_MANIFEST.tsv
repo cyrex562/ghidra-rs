@@ -10478,7 +10478,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DefaultRow
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DefaultTableCellRendererWrapper.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DefaultTableTextFilterFactory.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DiscoverableTableUtils.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DisplayStringProvider.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DisplayStringProvider.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DynamicColumnTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DynamicTableColumn.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DynamicTableColumnExtensionPoint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
