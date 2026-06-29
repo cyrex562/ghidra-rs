@@ -4,3 +4,4 @@ pub mod debug_state_machine_op_codes;
 pub mod map_item_type;
 pub mod map_item_type_codes;
 pub mod method_handle_type;
+pub mod modified_utf8;
