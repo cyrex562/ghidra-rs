@@ -7429,7 +7429,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YA
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2FileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats yaffs2 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2Header.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats yaffs2 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2OOBStruct.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats yaffs2 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2ObjectType.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats yaffs2 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2ObjectType.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats yaffs2 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemBuiltin.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
