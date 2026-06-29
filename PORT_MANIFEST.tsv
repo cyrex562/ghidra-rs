@@ -7162,7 +7162,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/DtTab
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/DtbAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/DtbUtil.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/FdtAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/FdtConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/FdtConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/FdtHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/FdtNodeHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dtb/FdtProperty.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dtb 
