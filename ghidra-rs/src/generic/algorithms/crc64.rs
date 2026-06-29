@@ -1,3 +1,7 @@
+/// CRC-64 checksum using the JONES polynomial (0xC96C5795D7870F42, reflected).
+///
+/// Initial value is all-ones; the finalisation step XORs the accumulator with all-ones
+/// before returning, which matches the Java `CRC64` class in `generic.algorithms`.
 pub struct CRC64 {
     crc: u64,
 }
@@ -24,6 +28,10 @@ impl CRC64 {
         Self { crc: !0u64 }
     }
 
+    /// Feed `buf` into the running checksum.
+    ///
+    /// Equivalent to the Java `update(byte[] buf, int off, int len)` — callers pass
+    /// the desired sub-slice directly: `crc.update(&buf[off..off + len])`.
     pub fn update(&mut self, buf: &[u8]) {
         for &b in buf {
             let index = (b ^ (self.crc as u8)) as usize;
@@ -31,6 +39,7 @@ impl CRC64 {
         }
     }
 
+    /// Return the final CRC-64 value and reset the accumulator for reuse.
     pub fn finish(&mut self) -> u64 {
         let value = !self.crc;
         self.crc = !0u64;
@@ -49,12 +58,43 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_crc64() {
+    fn empty_input_is_zero() {
+        let mut crc = CRC64::new();
+        assert_eq!(crc.finish(), 0);
+    }
+
+    #[test]
+    fn check_value_123456789() {
+        // CRC-64/JONES check value for the ASCII string "123456789".
+        // Source: CRC catalogue — reveng.sourceforge.net/crc-catalogue, CRC-64/JONES entry.
         let mut crc = CRC64::new();
         crc.update(b"123456789");
-        // This value depends on the polynomial. Ghidra uses 0xC96C5795D7870F42.
-        // Let's just verify it's consistent for now.
-        let result = crc.finish();
-        assert_ne!(result, 0);
+        assert_eq!(crc.finish(), 0xe9c6d914c4b8d9ca);
+    }
+
+    #[test]
+    fn finish_resets_accumulator() {
+        let mut crc = CRC64::new();
+        crc.update(b"hello");
+        let first = crc.finish();
+        // After reset, accumulator is fresh; a second empty finish must return 0.
+        assert_eq!(crc.finish(), 0);
+        // And feeding the same data again gives the same checksum.
+        crc.update(b"hello");
+        assert_eq!(crc.finish(), first);
+    }
+
+    #[test]
+    fn incremental_equals_single_pass() {
+        let data = b"The quick brown fox jumps over the lazy dog";
+        let mut single = CRC64::new();
+        single.update(data);
+        let expected = single.finish();
+
+        let mut incremental = CRC64::new();
+        for chunk in data.chunks(7) {
+            incremental.update(chunk);
+        }
+        assert_eq!(incremental.finish(), expected);
     }
 }
