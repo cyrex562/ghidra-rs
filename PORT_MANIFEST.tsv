@@ -10393,7 +10393,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/Multiterm
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/RegularExpressionTextFilterFactory.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/StartsWithTextFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/StartsWithTextFilterFactory.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/TermSplitter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/TermSplitter.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/TextFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/TextFilterFactory.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/TextFilterStrategy.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
