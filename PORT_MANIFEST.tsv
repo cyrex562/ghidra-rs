@@ -10543,7 +10543,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/BooleanMatchColumnConstraint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/ColumnConstraint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/ColumnConstraintProvider.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/ColumnData.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/ColumnData.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table constraint
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/ColumnTypeMapper.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/EnumColumnConstraint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/InDateRangeColumnConstraint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
