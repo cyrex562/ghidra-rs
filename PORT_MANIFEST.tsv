@@ -7098,7 +7098,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/v
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/verifier/FailureKind.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android verifier 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/verifier/HardFailLogMode.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android verifier 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/verifier/MethodType.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android verifier
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/verifier/VerifyError.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android verifier 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/verifier/VerifyError.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android verifier
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/verifier/VerifyMode.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android verifier 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/versions/AndroidVersion.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android versions 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/versions/AndroidVersionManager.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android versions 
