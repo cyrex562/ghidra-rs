@@ -9537,7 +9537,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/dua
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/duallisting/VTListingNavigator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui duallisting 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/duallisting/VTMarkupItemTransferable.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui duallisting 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/editors/AddressEditorPanel.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui editors 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/editors/AddressEditorPanelListener.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui editors 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/editors/AddressEditorPanelListener.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui editors
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/editors/AddressInputDialog.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui editors 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/editors/DisplayableAddress.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui editors 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/editors/DisplayableOffset.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui editors 
