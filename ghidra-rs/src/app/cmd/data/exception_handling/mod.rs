@@ -1,0 +1,3 @@
+pub mod eh_catch_handler_type_modifier;
+
+pub use eh_catch_handler_type_modifier::EHCatchHandlerTypeModifier;
