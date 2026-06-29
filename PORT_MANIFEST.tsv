@@ -6891,7 +6891,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/c
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/cdex/CDexHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android cdex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/cdex/FeatureFlags.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android cdex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/DexHeaderFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/DexToJarExceptionHandler.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/DexToJarExceptionHandler.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/DexToJarFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/DexToSmaliFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/analyzer/DexAnalysisState.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex analyzer 
