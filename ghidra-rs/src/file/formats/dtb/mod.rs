@@ -1,0 +1,6 @@
+pub mod dt_constants;
+
+pub use dt_constants::{
+    DT_TABLE_DEFAULT_PAGE_SIZE, DT_TABLE_DEFAULT_VERSION, DT_TABLE_MAGIC,
+    DT_TABLE_MAGIC_BYTES, DT_TABLE_MAGIC_SIZE,
+};
