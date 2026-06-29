@@ -10606,7 +10606,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/IntegerConstraintEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/IntegerRangeConstraintEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/LocalDateSpinnerModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/LongConverter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/LongConverter.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/MappedColumnConstraintEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/StringConstraintEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/UnsignedLongConstraintEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
