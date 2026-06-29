@@ -11527,7 +11527,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/FNV1a64MessageDiges
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/HashUtilities.java	TODO	orig_src Ghidra Framework Generic src main java generic hash 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/MessageDigest.java	TODO	orig_src Ghidra Framework Generic src main java generic hash 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/MessageDigestFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic hash 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/SimpleCRC32.java	TODO	orig_src Ghidra Framework Generic src main java generic hash 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/SimpleCRC32.java	DONE	orig_src Ghidra Framework Generic src main java generic hash
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/init/GenericApplicationSettings.java	TODO	orig_src Ghidra Framework Generic src main java generic init 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/init/GenericInitializer.java	TODO	orig_src Ghidra Framework Generic src main java generic init 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/JarWriter.java	TODO	orig_src Ghidra Framework Generic src main java generic io 
