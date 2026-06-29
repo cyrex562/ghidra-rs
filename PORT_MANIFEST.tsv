@@ -6978,7 +6978,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/l
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/lz4/LZ4FrameFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android lz4 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/multidex/MultiDexLinker.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android multidex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/IndexBssMappingEntry.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android oat 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/IndexBssUtilities.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android oat 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/IndexBssUtilities.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android oat
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/MethodBssMappingEntry.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android oat 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/OatConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android oat 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/OatExecAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android oat 
