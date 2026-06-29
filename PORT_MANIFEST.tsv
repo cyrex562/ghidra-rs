@@ -10840,7 +10840,7 @@ orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/A
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/CoalescingAddRemoveStrategyTest.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/TestDataKeyModel.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/TestIncrementalThreadedTableModelListener.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
-orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/TestRowObject.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
+orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/TestRowObject.java	DONE	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/TestTableData.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/TestThreadedTableModel.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/table/threaded/TestThreadedTableModelListener.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets table threaded 
