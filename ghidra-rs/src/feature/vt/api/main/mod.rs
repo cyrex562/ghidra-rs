@@ -5,3 +5,4 @@ pub mod vt_markup_item_destination_address_edit_status;
 pub mod vt_markup_item_status;
 pub mod vt_match_tag;
 pub mod vt_program_correlator_address_restriction_preference;
+pub mod vt_score;
