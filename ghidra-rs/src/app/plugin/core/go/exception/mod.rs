@@ -1,2 +1,5 @@
 pub mod failed_to_start_ghidra_exception;
 pub use failed_to_start_ghidra_exception::FailedToStartGhidraException;
+
+pub mod started_ghidra_process_exited_exception;
+pub use started_ghidra_process_exited_exception::StartedGhidraProcessExitedException;
