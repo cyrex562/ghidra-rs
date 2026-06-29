@@ -10140,7 +10140,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/keys/NumberMenuKeyH
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/keys/PageDownMenuKeyHandler.java	TODO	orig_src Ghidra Framework Docking src main java docking menu keys 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/menu/keys/PageUpMenuKeyHandler.java	TODO	orig_src Ghidra Framework Docking src main java docking menu keys 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/OptionsService.java	TODO	orig_src Ghidra Framework Docking src main java docking options 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/BooleanEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/BooleanEditor.java	DONE	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/ColorEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/ColorPropertyEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/options/editor/CustomOptionComponent.java	TODO	orig_src Ghidra Framework Docking src main java docking options editor 
