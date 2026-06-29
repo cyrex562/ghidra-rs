@@ -10484,7 +10484,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DynamicTab
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DynamicTableColumnExtensionPoint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/DynamicTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/FilterTypeConverter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/FocusableEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/FocusableEditor.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/GBooleanCellRenderer.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/GDynamicColumnTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/GFilterTable.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
