@@ -10277,7 +10277,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/NumberRa
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/ObjectChooserDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/ReadTextDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/SettingsDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/StringChoices.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/StringChoices.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/TableChooserDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/TableSelectionDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/AccessibleField.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets fieldpanel 
