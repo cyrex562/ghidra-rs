@@ -10,3 +10,4 @@ pub mod lzss;
 pub mod sparseimage;
 pub mod squashfs;
 pub mod tar;
+pub mod xar;
