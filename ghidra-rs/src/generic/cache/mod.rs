@@ -57,8 +57,44 @@ pub use weak_reference_cache::WeakReferenceCache;
 
 #[cfg(test)]
 mod tests {
-    use super::BasicFactory;
+    use super::{BasicFactory, Factory};
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    struct DoubleFactory;
+
+    impl Factory<i32, i32> for DoubleFactory {
+        fn get(&self, key: i32) -> i32 {
+            key * 2
+        }
+    }
+
+    struct EchoFactory;
+
+    impl Factory<String, String> for EchoFactory {
+        fn get(&self, key: String) -> String {
+            key
+        }
+    }
+
+    #[test]
+    fn factory_get_returns_computed_value() {
+        let f = DoubleFactory;
+        assert_eq!(f.get(3), 6);
+        assert_eq!(f.get(0), 0);
+        assert_eq!(f.get(-5), -10);
+    }
+
+    #[test]
+    fn factory_get_with_string_key() {
+        let f = EchoFactory;
+        assert_eq!(f.get("hello".to_string()), "hello");
+    }
+
+    #[test]
+    fn factory_as_trait_object() {
+        let f: Box<dyn Factory<i32, i32>> = Box::new(DoubleFactory);
+        assert_eq!(f.get(7), 14);
+    }
 
     struct SimpleFactory;
 
