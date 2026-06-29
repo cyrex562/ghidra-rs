@@ -8698,7 +8698,7 @@ orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/PdbNamespaceUtils
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/PdbProgramAttributes.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/Access.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/ClassFieldAttributes.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
-orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/ClassKey.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
+orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/ClassKey.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/ClassTypeManager.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/MsVxtManager.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/classtype/OwnerParentage.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb classtype 
