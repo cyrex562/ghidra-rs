@@ -6,3 +6,4 @@ pub mod pdb_reader_utils;
 pub mod processor;
 pub mod record_category;
 pub mod string_parse_type;
+pub mod symbol;
