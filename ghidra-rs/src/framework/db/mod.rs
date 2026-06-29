@@ -13,6 +13,7 @@ pub mod record;
 pub mod schema;
 pub mod table;
 pub mod test_speed;
+pub mod util;
 
 pub use buffer::{Buffer, DataBuffer};
 pub use buffer_mgr::BufferMgr;
