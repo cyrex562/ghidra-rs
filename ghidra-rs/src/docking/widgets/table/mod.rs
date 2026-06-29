@@ -6,6 +6,7 @@ pub mod object_selected_listener;
 pub mod selection_storage;
 pub mod table_comparators;
 pub mod table_filter;
+pub mod table_item_picked_listener;
 
 pub use add_remove_list_item::{AddRemoveListItem, AddRemoveListItemType};
 pub use column_annotation::ColumnAnnotation;
@@ -15,3 +16,4 @@ pub use object_selected_listener::ObjectSelectedListener;
 pub use selection_storage::SelectionStorage;
 pub use table_comparators::{compare_with_null_values, no_sort_comparator};
 pub use table_filter::TableFilter;
+pub use table_item_picked_listener::TableItemPickedListener;
