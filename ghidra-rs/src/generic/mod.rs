@@ -1,4 +1,5 @@
 pub mod abstract_unioned_collection;
+pub mod range_map_setter;
 pub mod catenated_collection;
 pub mod depends;
 pub mod id;

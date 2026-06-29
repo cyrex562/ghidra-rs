@@ -10856,7 +10856,7 @@ orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/task/AbstractTaskTes
 orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/task/TaskDialogTest.java	TODO	orig_src Ghidra Framework Docking src test java ghidra util task 
 orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/task/TaskLauncherTest.java	TODO	orig_src Ghidra Framework Docking src test java ghidra util task 
 orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/task/TaskMonitorSplitterTest.java	TODO	orig_src Ghidra Framework Docking src test java ghidra util task 
-orig_src/Ghidra/Framework/Emulation/src/main/java/generic/RangeMapSetter.java	TODO	orig_src Ghidra Framework Emulation src main java generic 
+orig_src/Ghidra/Framework/Emulation/src/main/java/generic/RangeMapSetter.java	DONE	orig_src Ghidra Framework Emulation src main java generic 
 orig_src/Ghidra/Framework/Emulation/src/main/java/generic/Span.java	TODO	orig_src Ghidra Framework Emulation src main java generic 
 orig_src/Ghidra/Framework/Emulation/src/main/java/generic/ULongSpan.java	TODO	orig_src Ghidra Framework Emulation src main java generic 
 orig_src/Ghidra/Framework/Emulation/src/main/java/generic/Unique.java	TODO	orig_src Ghidra Framework Emulation src main java generic 
