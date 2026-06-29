@@ -9529,7 +9529,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/act
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/SelectExistingMatchAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/SetMarkupItemConsideredAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/SetVTMatchFromOneToManyAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/TableSelectionTrackingState.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/TableSelectionTrackingState.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/UndoAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/duallisting/VTDualListingDragNDropHandler.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui duallisting 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/duallisting/VTDualListingHighlightProvider.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui duallisting 
