@@ -8175,7 +8175,7 @@ orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbre
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbReaderUtils.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/Processor.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PublicSymbolInformation.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
-orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/RecordCategory.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
+orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/RecordCategory.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/RecordNumber.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/RegisterName.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/RvaVaDebugHeader.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
