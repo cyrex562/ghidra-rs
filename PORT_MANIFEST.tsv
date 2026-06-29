@@ -11200,7 +11200,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/BreakTabl
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/BreakTableCallBack.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/Emulate.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateDisassemblerContext.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateExecutionState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateExecutionState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateInstructionStateModifier.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateMemoryStateBuffer.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/InstructionDecodeException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
