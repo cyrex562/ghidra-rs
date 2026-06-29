@@ -10570,7 +10570,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/ColumnFilterData.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/ColumnFilterDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/ColumnFilterDialogModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/ColumnFilterGridLocation.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/ColumnFilterGridLocation.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/ColumnFilterPanel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/ConstraintFilterPanel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/dialog/DialogFilterCondition.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint dialog 
