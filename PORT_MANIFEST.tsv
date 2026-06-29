@@ -7323,7 +7323,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/hfs/H
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/hfs/HFSPlusFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios hfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/hfs/HFSPlusVolumeHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios hfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ibootim/iBootImAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios ibootim 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ibootim/iBootImConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios ibootim 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ibootim/iBootImConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats ios ibootim
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ibootim/iBootImFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios ibootim 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ibootim/iBootImHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios ibootim 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ibootim/iBootImInfoHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios ibootim 
