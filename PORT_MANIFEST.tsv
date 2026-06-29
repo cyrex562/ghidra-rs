@@ -10186,7 +10186,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeFontTable
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeFontTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking theme gui 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeIconTable.java	TODO	orig_src Ghidra Framework Docking src main java docking theme gui 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeIconTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking theme gui 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeTable.java	TODO	orig_src Ghidra Framework Docking src main java docking theme gui 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeTable.java	DONE	orig_src Ghidra Framework Docking src main java docking theme gui 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeTableContext.java	TODO	orig_src Ghidra Framework Docking src main java docking theme gui 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeUtils.java	TODO	orig_src Ghidra Framework Docking src main java docking theme gui 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/theme/gui/ThemeValueEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking theme gui 
