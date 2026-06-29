@@ -10535,7 +10535,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/columnfilt
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/columnfilter/ColumnConstraintSet.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table columnfilter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/columnfilter/ColumnFilterManager.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table columnfilter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/columnfilter/ColumnFilterSaveManager.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table columnfilter 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/columnfilter/LogicOperation.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table columnfilter 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/columnfilter/LogicOperation.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table columnfilter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/AtLeastColumnConstraint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/AtLeastDateColumnConstraint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint/AtMostColumnConstraint.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constraint 
