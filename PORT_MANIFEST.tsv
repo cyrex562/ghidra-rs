@@ -7439,7 +7439,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/Zstd
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/ZstdFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zstd 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/image/GImage.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file image 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/image/GImageConverter.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file image 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/image/GImageFormat.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file image 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/image/GImageFormat.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file image 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/jad/JadFSBFileHandler.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file jad 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/jad/JadProcessController.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file jad 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/jad/JadProcessWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file jad 
