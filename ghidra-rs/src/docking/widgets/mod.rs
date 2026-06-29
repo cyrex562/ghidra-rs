@@ -9,6 +9,7 @@ pub mod fieldpanel;
 pub mod filter;
 pub mod indexedscrollpane;
 pub mod searchlist;
+pub mod table;
 pub mod tree;
 
 pub use autocomplete::AutocompletionModel;
@@ -20,3 +21,4 @@ pub use fieldpanel::FieldListener;
 pub use filter::FilterListener;
 pub use indexedscrollpane::IndexScrollListener;
 pub use searchlist::SearchListEntry;
+pub use table::{AddRemoveListItem, AddRemoveListItemType};
