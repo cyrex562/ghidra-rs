@@ -5,6 +5,7 @@ pub mod model;
 pub mod options;
 pub mod os;
 pub mod plugintool;
+pub mod remote;
 pub mod service;
 pub mod version;
 
