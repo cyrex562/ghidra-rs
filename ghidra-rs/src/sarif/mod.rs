@@ -1,4 +1,5 @@
 pub mod io;
+pub mod model;
 
 use serde::{Deserialize, Serialize};
 
