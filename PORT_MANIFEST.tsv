@@ -7373,7 +7373,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/preli
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/xattr/XattrConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats ios xattr 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/iso9660/ISO9660FileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats iso9660 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/iso9660/ISO9660FileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats iso9660 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/java/JavaClassConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats java 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/java/JavaClassConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats java
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/java/JavaClassDecompilerFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats java 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/java/JavaClassDecompilerFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats java 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzfse/LzfseCliToolWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats lzfse 
