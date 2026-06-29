@@ -9439,7 +9439,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/mai
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchSet.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchTag.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelatorAddressRestrictionPreference.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelatorAddressRestrictionPreference.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTScore.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTSession.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
