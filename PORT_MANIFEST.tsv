@@ -9093,7 +9093,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifToolResu
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/sample/SarifReturnTypeResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result sample 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/run/SarifGraphRunHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers run 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/io/SarifGsonIO.java	TODO	orig_src Ghidra Features Sarif src main java sarif io 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/io/SarifIO.java	TODO	orig_src Ghidra Features Sarif src main java sarif io 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/io/SarifIO.java	DONE	orig_src Ghidra Features Sarif src main java sarif io
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/io/SarifJacksonIO.java	TODO	orig_src Ghidra Features Sarif src main java sarif io 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/BookmarksSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/CodeSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 

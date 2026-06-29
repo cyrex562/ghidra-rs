@@ -14,4 +14,5 @@ pub mod program;
 pub mod script;
 pub mod trace;
 pub mod server;
+pub mod sarif;
 pub mod util;
