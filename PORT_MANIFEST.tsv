@@ -9846,7 +9846,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/DBListener.java	TODO	orig_src Ghid
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBLongIterator.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBParms.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBRecord.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/DBRollbackException.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/DBRollbackException.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Database.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DatabaseUtils.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Field.java	TODO	orig_src Ghidra Framework DB src main java db 
