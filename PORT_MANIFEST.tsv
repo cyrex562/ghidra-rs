@@ -10512,7 +10512,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/RowObjectT
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SelectColumnsDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SelectionManager.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SelectionManagerListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SelectionStorage.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SelectionStorage.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SortListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SortedTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableColumnDescriptor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
