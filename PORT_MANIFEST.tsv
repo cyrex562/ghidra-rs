@@ -7635,7 +7635,7 @@ orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/Messag
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/ActiveFidConfigureDialog.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/FidDebugPlugin.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/FidPlugin.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
-orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/HashLookupListMode.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
+orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/HashLookupListMode.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/IngestTask.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/PopulateFidDialog.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/TextAreaDialog.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
