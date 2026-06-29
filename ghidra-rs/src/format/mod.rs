@@ -7,6 +7,7 @@ pub mod macos;
 pub mod ne;
 pub mod objc;
 pub mod omf;
+pub mod pdb;
 pub mod pe;
 pub mod pef;
 pub mod relocation_exception;
