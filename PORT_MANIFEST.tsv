@@ -9278,7 +9278,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/linux/Em
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/linux/EmuLinuxX86SyscallUseropLibrary.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu linux 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/AnnotatedEmuSyscallUseropLibrary.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/BytesEmuFileContents.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuFileContents.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuFileContents.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuIOException.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuInvalidSystemCallException.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuProcessExitedException.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
