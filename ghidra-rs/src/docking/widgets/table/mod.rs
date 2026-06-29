@@ -1,4 +1,5 @@
 pub mod columnfilter;
+pub mod constraint;
 pub mod add_remove_list_item;
 pub mod column_annotation;
 pub mod display_string_provider;
@@ -18,3 +19,4 @@ pub use selection_storage::SelectionStorage;
 pub use table_comparators::{compare_with_null_values, no_sort_comparator};
 pub use table_filter::TableFilter;
 pub use table_item_picked_listener::TableItemPickedListener;
+pub use constraint::ColumnData;
