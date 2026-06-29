@@ -4,5 +4,6 @@ pub mod edit_listener;
 pub mod menu;
 pub mod options;
 pub mod theme;
+pub mod util;
 pub mod widgets;
 pub mod window_position;
