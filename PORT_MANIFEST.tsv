@@ -11568,7 +11568,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/MultiMapSTL.java	TOD
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/MultiSetSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/Pair.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/Quad.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackNode.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackNode.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackTree.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseListIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseMapIteratorSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
