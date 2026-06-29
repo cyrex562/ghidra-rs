@@ -8882,7 +8882,7 @@ orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/D
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffProgramManager.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffReplaceAllAction.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffServiceProvider.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
-orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffTaskListener.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
+orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/DiffTaskListener.java	DONE	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/ExecuteDiffDialog.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/NextDiffCommand.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
 orig_src/Ghidra/Features/ProgramDiff/src/main/java/ghidra/app/plugin/core/diff/ProgramDiffPlugin.java	TODO	orig_src Ghidra Features ProgramDiff src main java ghidra app plugin core diff 
