@@ -11321,7 +11321,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBeha
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/SpecialOpBehavior.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/UnaryOpBehavior.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/pcoderaw/PcodeOpRaw.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode pcoderaw 
-orig_src/Ghidra/Framework/Emulation/src/main/java/utilities/util/AnnotationUtilities.java	TODO	orig_src Ghidra Framework Emulation src main java utilities util 
+orig_src/Ghidra/Framework/Emulation/src/main/java/utilities/util/AnnotationUtilities.java	DONE	orig_src Ghidra Framework Emulation src main java utilities util
 orig_src/Ghidra/Framework/Emulation/src/test/java/generic/ULongSpanTest.java	TODO	orig_src Ghidra Framework Emulation src test java generic 
 orig_src/Ghidra/Framework/Emulation/src/test/java/ghidra/app/plugin/processors/sleigh/SleighLanguageHelper.java	TODO	orig_src Ghidra Framework Emulation src test java ghidra app plugin processors sleigh 
 orig_src/Ghidra/Framework/Emulation/src/test/java/ghidra/generic/util/datastruct/SemisparseByteArrayTest.java	TODO	orig_src Ghidra Framework Emulation src test java ghidra generic util datastruct 
