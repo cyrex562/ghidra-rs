@@ -13,4 +13,5 @@ pub mod pcode;
 pub mod program;
 pub mod script;
 pub mod trace;
+pub mod server;
 pub mod util;
