@@ -5,3 +5,4 @@ pub mod image_root_marshmallow;
 pub mod image_root_nougat;
 pub mod image_root_oreo;
 pub mod image_root_pie;
+pub mod image_root_q;
