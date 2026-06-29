@@ -3,6 +3,7 @@ pub mod bitpatterns;
 pub mod bsim;
 pub mod bsfv;
 pub mod closedpatternmining;
+pub mod fid;
 pub mod lisa;
 pub mod machine_learning;
 pub mod symz3;
