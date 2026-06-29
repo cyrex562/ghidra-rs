@@ -1,3 +1,18 @@
+/// Token type identifiers used by the JSMN JSON parser.
+///
+/// Mirrors `generic.json.JSONType` from Ghidra.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum JsonType {
+    /// A primitive value: number, boolean, or null.
+    JsmnPrimitive,
+    /// A JSON object (`{...}`).
+    JsmnObject,
+    /// A JSON array (`[...]`).
+    JsmnArray,
+    /// A JSON string.
+    JsmnString,
+}
+
 /// Error codes returned by the JSMN JSON parser.
 ///
 /// Mirrors `generic.json.JSONError` from Ghidra.
@@ -16,6 +31,39 @@ pub enum JsonError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_json_type_variants_are_distinct() {
+        assert_ne!(JsonType::JsmnPrimitive, JsonType::JsmnObject);
+        assert_ne!(JsonType::JsmnObject, JsonType::JsmnArray);
+        assert_ne!(JsonType::JsmnArray, JsonType::JsmnString);
+    }
+
+    #[test]
+    fn test_json_type_copy_and_clone() {
+        let t = JsonType::JsmnString;
+        let c = t;
+        assert_eq!(t, c);
+        assert_eq!(t.clone(), c);
+    }
+
+    #[test]
+    fn test_json_type_debug_format() {
+        assert_eq!(format!("{:?}", JsonType::JsmnPrimitive), "JsmnPrimitive");
+        assert_eq!(format!("{:?}", JsonType::JsmnObject), "JsmnObject");
+        assert_eq!(format!("{:?}", JsonType::JsmnArray), "JsmnArray");
+        assert_eq!(format!("{:?}", JsonType::JsmnString), "JsmnString");
+    }
+
+    #[test]
+    fn test_json_type_hash_consistency() {
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        set.insert(JsonType::JsmnPrimitive);
+        set.insert(JsonType::JsmnArray);
+        assert!(set.contains(&JsonType::JsmnPrimitive));
+        assert!(!set.contains(&JsonType::JsmnObject));
+    }
 
     #[test]
     fn test_variants_are_distinct() {
