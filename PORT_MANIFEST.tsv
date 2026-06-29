@@ -7664,7 +7664,7 @@ orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/Ghidra
 orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/GhidraGoSender.java	TODO	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go 
 orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/dialog/GhidraGoWaitDialog.java	TODO	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go dialog 
 orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/dialog/GhidraGoWaitForListenerDialog.java	TODO	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go dialog 
-orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/exception/FailedToStartGhidraException.java	TODO	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go exception 
+orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/exception/FailedToStartGhidraException.java	DONE	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go exception 
 orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/exception/StartedGhidraProcessExitedException.java	TODO	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go exception 
 orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/exception/StopWaitingException.java	TODO	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go exception 
 orig_src/Ghidra/Features/GhidraGo/src/main/java/ghidra/app/plugin/core/go/exception/UnableToGetLockException.java	TODO	orig_src Ghidra Features GhidraGo src main java ghidra app plugin core go exception 
