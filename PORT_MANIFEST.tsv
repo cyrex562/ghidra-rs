@@ -9988,7 +9988,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/DropCode.java	TODO	orig_
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DropDownMenuIcon.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DropTargetFactory.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DropTargetHandler.java	DONE	orig_src Ghidra Framework Docking src main java docking 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/EditListener.java	TODO	orig_src Ghidra Framework Docking src main java docking 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/EditListener.java	DONE	orig_src Ghidra Framework Docking src main java docking
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/EmptyBorderToggleButton.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/ErrLogDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/ErrLogExpandableDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking 
