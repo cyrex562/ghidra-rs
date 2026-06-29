@@ -7725,7 +7725,7 @@ orig_src/Ghidra/Features/GnuDemangler/src/test/java/ghidra/app/util/demangler/Gn
 orig_src/Ghidra/Features/GnuDemangler/src/test/java/ghidra/app/util/demangler/GnuDemanglerParserTest.java	TODO	orig_src Ghidra Features GnuDemangler src test java ghidra app util demangler 
 orig_src/Ghidra/Features/GnuDemangler/src/test/java/ghidra/app/util/demangler/gnu/GnuDemanglerOptionsTest.java	TODO	orig_src Ghidra Features GnuDemangler src test java ghidra app util demangler gnu 
 orig_src/Ghidra/Features/GnuDemangler/src/test/java/ghidra/app/util/demangler/gnu/GnuDemanglerTest.java	TODO	orig_src Ghidra Features GnuDemangler src test java ghidra app util demangler gnu 
-orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgDirection.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
+orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgDirection.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgEdge.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgLevel.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertex.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
