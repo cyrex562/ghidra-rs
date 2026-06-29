@@ -11489,7 +11489,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/cache/CountingBasicFacto
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/cache/Factory.java	DONE	orig_src Ghidra Framework Generic src main java generic cache
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/cache/FixedSizeMRUCachingFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic cache 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/cache/WeakReferenceCache.java	DONE	orig_src Ghidra Framework Generic src main java generic cache
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/complex/Complex.java	TODO	orig_src Ghidra Framework Generic src main java generic complex 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/complex/Complex.java	DONE	orig_src Ghidra Framework Generic src main java generic complex 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentGraphQ.java	TODO	orig_src Ghidra Framework Generic src main java generic concurrent 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentListenerSet.java	TODO	orig_src Ghidra Framework Generic src main java generic concurrent 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentQ.java	TODO	orig_src Ghidra Framework Generic src main java generic concurrent 
