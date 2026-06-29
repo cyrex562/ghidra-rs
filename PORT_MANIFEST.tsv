@@ -10517,7 +10517,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SortListen
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/SortedTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableColumnDescriptor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableColumnModelState.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableComparators.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableComparators.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableItemPickedListener.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableModelWrapper.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
