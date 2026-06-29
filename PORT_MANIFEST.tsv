@@ -7617,7 +7617,7 @@ orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/Function
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FunctionsTable.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/LibrariesTable.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/LibraryRecord.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
-orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/RelationType.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
+orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/RelationType.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid db
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/RelationsTable.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/StringRecord.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/StringsTable.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid db 
