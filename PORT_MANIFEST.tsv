@@ -10859,7 +10859,7 @@ orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/task/TaskMonitorSpli
 orig_src/Ghidra/Framework/Emulation/src/main/java/generic/RangeMapSetter.java	DONE	orig_src Ghidra Framework Emulation src main java generic 
 orig_src/Ghidra/Framework/Emulation/src/main/java/generic/Span.java	TODO	orig_src Ghidra Framework Emulation src main java generic 
 orig_src/Ghidra/Framework/Emulation/src/main/java/generic/ULongSpan.java	TODO	orig_src Ghidra Framework Emulation src main java generic 
-orig_src/Ghidra/Framework/Emulation/src/main/java/generic/Unique.java	TODO	orig_src Ghidra Framework Emulation src main java generic 
+orig_src/Ghidra/Framework/Emulation/src/main/java/generic/Unique.java	DONE	orig_src Ghidra Framework Emulation src main java generic
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/AdaptedEmulator.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/AdaptedMemoryState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/DefaultEmulator.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator 
