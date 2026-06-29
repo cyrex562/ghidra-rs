@@ -10953,7 +10953,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/Field
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/FieldForSpaceIndirect.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/FieldForUserop.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/FieldForVarnode.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/FieldReq.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/FieldReq.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/GenConsts.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/InstanceFieldReq.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/JitCodeGenerator.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
