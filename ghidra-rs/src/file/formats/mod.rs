@@ -6,3 +6,4 @@ pub mod dump;
 pub mod gzip;
 pub mod ios;
 pub mod java;
+pub mod lzss;
