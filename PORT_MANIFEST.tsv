@@ -10470,7 +10470,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/AddRemoveL
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/AnyObjectTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/AutoscrollAdapter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/ChooseColumnsDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/ColumnAnnotation.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/ColumnAnnotation.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/ColumnSortState.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/CombinedTableFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/ConfigurableColumnTableModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
