@@ -5,6 +5,7 @@ pub mod golang;
 pub mod macho;
 pub mod macos;
 pub mod ne;
+pub mod objc;
 pub mod omf;
 pub mod pe;
 pub mod pef;
