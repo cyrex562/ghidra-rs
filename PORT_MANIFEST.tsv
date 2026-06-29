@@ -9116,7 +9116,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/RegisterValuesSarifM
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/RelocationTableSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/SarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/SymbolTableSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/model/SarifColumnKey.java	TODO	orig_src Ghidra Features Sarif src main java sarif model 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/model/SarifColumnKey.java	DONE	orig_src Ghidra Features Sarif src main java sarif model 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/model/SarifDataFrame.java	TODO	orig_src Ghidra Features Sarif src main java sarif model 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/model/SarifResultsTableModelFactory.java	TODO	orig_src Ghidra Features Sarif src main java sarif model 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/view/ImageArtifactDisplay.java	TODO	orig_src Ghidra Features Sarif src main java sarif view 
