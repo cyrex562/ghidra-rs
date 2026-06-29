@@ -10878,7 +10878,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/Pro
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/state/DumpMiscState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator state 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/state/FilteredMemoryPageOverlay.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator state 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/state/FilteredRegisterBank.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator state 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/state/RegisterState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator state 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/state/RegisterState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra app emulator state
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/generic/util/datastruct/SemisparseByteArray.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra generic util datastruct 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/AbstractPcodeMachine.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/BytesPcodeThread.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
