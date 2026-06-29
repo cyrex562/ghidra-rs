@@ -7176,7 +7176,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/Dump
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/apport/Apport.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump apport 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/apport/ApportHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump apport 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/apport/DecodedProvider.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump apport 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/apport/MemoryInfo.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump apport 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/apport/MemoryInfo.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats dump apport 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/cmd/DumpPeShim.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump cmd 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/cmd/ModuleToPeHelper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump cmd 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/dump/cmd/ProgramInsertByteProvider.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats dump cmd 
