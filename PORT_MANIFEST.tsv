@@ -11403,7 +11403,7 @@ orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/Repos
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryItem.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryServerHandle.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SSHSignatureCallback.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
-orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SignatureCallback.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
+orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SignatureCallback.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework remote
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/User.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework remote 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/security/SSHKeyManager.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework remote security 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/CheckoutType.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework store 
