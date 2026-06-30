@@ -3,6 +3,7 @@ pub mod decoder;
 pub mod ids;
 pub mod list_linked;
 pub mod packed;
+pub mod packed_bytes;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
@@ -13,6 +14,7 @@ pub use decoder::{Decoder, DecoderError};
 pub use ids::*;
 pub use list_linked::{LinkedIter, ListLinked};
 pub use packed::PackedDecode;
+pub use packed_bytes::PackedBytes;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpCode {
