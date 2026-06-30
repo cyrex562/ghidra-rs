@@ -8,6 +8,7 @@ pub mod project_view_listener;
 pub mod runtime_io_exception;
 pub mod server_info;
 pub mod tool_set;
+pub mod transaction_info;
 
 pub use aborted_transaction_listener::AbortedTransactionListener;
 pub use change_set::ChangeSet;
@@ -19,3 +20,4 @@ pub use project_view_listener::ProjectViewListener;
 pub use runtime_io_exception::RuntimeIOException;
 pub use server_info::ServerInfo;
 pub use tool_set::ToolSet;
+pub use transaction_info::{TransactionInfo, TransactionStatus};
