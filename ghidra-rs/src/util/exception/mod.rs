@@ -273,6 +273,50 @@ mod duplicate_file_exception_tests {
     }
 }
 
+/// Indicates contention for a file that is currently in use (e.g. held by a file lock).
+///
+/// Port of `ghidra.util.exception.FileInUseException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct FileInUseException(pub String);
+
+impl FileInUseException {
+    /// Creates a `FileInUseException` with the given message.
+    pub fn new(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+#[cfg(test)]
+mod file_in_use_exception_tests {
+    use super::*;
+
+    #[test]
+    fn stores_message() {
+        let e = FileInUseException::new("file is in use");
+        assert_eq!(e.to_string(), "file is in use");
+    }
+
+    #[test]
+    fn display_matches_message() {
+        let e = FileInUseException::new("locked.db");
+        assert_eq!(format!("{}", e), "locked.db");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(FileInUseException::new("a"), FileInUseException::new("a"));
+        assert_ne!(FileInUseException::new("a"), FileInUseException::new("b"));
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &FileInUseException::new("resource");
+        assert_eq!(e.to_string(), "resource");
+        assert!(e.source().is_none());
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
