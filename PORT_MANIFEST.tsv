@@ -14402,7 +14402,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/ut
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DataTypeInfo.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DefaultIntPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DefaultPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DeletedException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DeletedException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/IntPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/LongPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/MemoryByteIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
