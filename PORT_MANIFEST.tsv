@@ -11681,7 +11681,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/security/KeyStorePassword
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/BigEndianDataConverter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/CascadedDropTarget.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/Conv.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/CountLatch.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/CountLatch.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/DataConverter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/DateUtils.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/Disposable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
