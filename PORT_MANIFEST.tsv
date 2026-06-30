@@ -11652,7 +11652,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/ShutdownHookReg
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/ShutdownPriority.java	DONE	orig_src Ghidra Framework Generic src main java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/TestApplicationUtils.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/generic/auth/Password.java	DONE	orig_src Ghidra Framework Generic src main java ghidra framework generic auth
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/main/ConsoleListener.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework main 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/main/ConsoleListener.java	DONE	orig_src Ghidra Framework Generic src main java ghidra framework main 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/AttributedSaveState.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework options 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/GProperties.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework options 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/options/JSonProperties.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework options 
