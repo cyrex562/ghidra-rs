@@ -35,6 +35,7 @@ pub mod timed_msg;
 pub mod test_buffer;
 pub mod filter_transformer;
 pub mod java_source_line;
+pub mod long_iterator;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -59,5 +60,6 @@ pub use conv::Conv;
 pub use disposable::Disposable;
 pub use filter_transformer::FilterTransformer;
 pub use java_source_line::JavaSourceLine;
+pub use long_iterator::{EmptyLongIterator, LongIterator};
 pub use timed_msg::TimedMsg;
 pub use task::{DummyMonitor, TaskMonitor};
