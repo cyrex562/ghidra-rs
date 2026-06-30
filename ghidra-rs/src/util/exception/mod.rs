@@ -317,6 +317,323 @@ mod file_in_use_exception_tests {
     }
 }
 
+/// Wrapper allowing multiple causes to be recorded in place of a single cause.
+///
+/// Use an instance as the [`source`](std::error::Error::source) of a parent error when multiple
+/// independent attempts all failed and each failure should be reported. The causes stored here
+/// apply to the "parent" error that chains to this `MultipleCauses` as its source.
+///
+/// Port of `ghidra.util.exception.MultipleCauses`.
+pub struct MultipleCauses {
+    causes: Vec<std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>>,
+}
+
+impl MultipleCauses {
+    /// Creates a new `MultipleCauses` with no causes recorded.
+    pub fn new() -> Self {
+        Self { causes: Vec::new() }
+    }
+
+    /// Creates a new `MultipleCauses` pre-populated with the given causes.
+    pub fn with_causes(
+        causes: Vec<std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>>,
+    ) -> Self {
+        Self { causes }
+    }
+
+    /// Returns a slice of all recorded causes.
+    pub fn causes(&self) -> &[std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>] {
+        &self.causes
+    }
+
+    /// Adds `cause` to the collection.
+    pub fn add_cause(
+        &mut self,
+        cause: std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>,
+    ) {
+        self.causes.push(cause);
+    }
+
+    /// If `e`'s source is a [`MultipleCauses`], flattens its causes into `self`;
+    /// otherwise adds `e` directly as a single cause.
+    pub fn add_flattened_if_multiple(
+        &mut self,
+        e: std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>,
+    ) {
+        if Self::has_multiple(&*e) {
+            if let Some(source) = e.source() {
+                if let Some(mc) = source.downcast_ref::<MultipleCauses>() {
+                    for c in &mc.causes {
+                        self.causes.push(std::sync::Arc::clone(c));
+                    }
+                }
+            }
+        } else {
+            self.causes.push(e);
+        }
+    }
+
+    /// Copies all causes from the [`MultipleCauses`] source of `e` into `self`.
+    ///
+    /// If `e`'s source is not a `MultipleCauses` this is a no-op.
+    pub fn add_all_causes_from_error(&mut self, e: &dyn std::error::Error) {
+        if let Some(source) = e.source() {
+            if let Some(mc) = source.downcast_ref::<MultipleCauses>() {
+                for c in &mc.causes {
+                    self.causes.push(std::sync::Arc::clone(c));
+                }
+            }
+        }
+    }
+
+    /// Copies all causes from `that` into `self`.
+    pub fn add_all_causes(&mut self, that: &MultipleCauses) {
+        for c in &that.causes {
+            self.causes.push(std::sync::Arc::clone(c));
+        }
+    }
+
+    /// Returns `true` if no causes have been recorded.
+    pub fn is_empty(&self) -> bool {
+        self.causes.is_empty()
+    }
+
+    /// Returns `true` if `e`'s [`source`](std::error::Error::source) is a [`MultipleCauses`].
+    pub fn has_multiple(e: &dyn std::error::Error) -> bool {
+        e.source()
+            .and_then(|s| s.downcast_ref::<MultipleCauses>())
+            .is_some()
+    }
+
+    /// Prints `e` and recursively prints each sub-cause with an increasing `>` prefix.
+    pub fn print_tree(out: &mut dyn std::io::Write, e: &dyn std::error::Error) {
+        Self::print_tree_with_prefix(out, "", e);
+    }
+
+    /// Prints `e` with `prefix`, then recursively prints each cause prefixed with `>`.
+    pub fn print_tree_with_prefix(
+        out: &mut dyn std::io::Write,
+        prefix: &str,
+        e: &dyn std::error::Error,
+    ) {
+        let _ = writeln!(out, "{}{}", prefix, e);
+        if Self::has_multiple(e) {
+            if let Some(source) = e.source() {
+                if let Some(report) = source.downcast_ref::<MultipleCauses>() {
+                    let next_prefix = format!("{}>", prefix);
+                    for t in &report.causes {
+                        Self::print_tree_with_prefix(out, &next_prefix, &**t);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Returns the causes from `exc`'s [`MultipleCauses`] source.
+    ///
+    /// If `exc`'s source is not a `MultipleCauses`, returns an empty `Vec`.
+    ///
+    /// Port of `MultipleCauses.Util.iterCauses`.
+    pub fn iter_causes(
+        exc: &dyn std::error::Error,
+    ) -> Vec<std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>> {
+        if let Some(source) = exc.source() {
+            if let Some(mc) = source.downcast_ref::<MultipleCauses>() {
+                return mc.causes.iter().map(std::sync::Arc::clone).collect();
+            }
+        }
+        vec![]
+    }
+}
+
+impl Default for MultipleCauses {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for MultipleCauses {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Multiple Causes")
+    }
+}
+
+impl fmt::Debug for MultipleCauses {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MultipleCauses")
+            .field("causes_count", &self.causes.len())
+            .finish()
+    }
+}
+
+impl std::error::Error for MultipleCauses {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
+}
+
+#[cfg(test)]
+mod multiple_causes_tests {
+    use super::*;
+    use std::sync::Arc;
+
+    fn arc_err(msg: &'static str) -> Arc<dyn std::error::Error + Send + Sync + 'static> {
+        Arc::new(UsrException::new(msg))
+    }
+
+    #[test]
+    fn new_is_empty() {
+        let mc = MultipleCauses::new();
+        assert!(mc.is_empty());
+        assert_eq!(mc.causes().len(), 0);
+    }
+
+    #[test]
+    fn with_causes_stores_them() {
+        let mc = MultipleCauses::with_causes(vec![arc_err("a"), arc_err("b")]);
+        assert!(!mc.is_empty());
+        assert_eq!(mc.causes().len(), 2);
+    }
+
+    #[test]
+    fn add_cause_appends() {
+        let mut mc = MultipleCauses::new();
+        mc.add_cause(arc_err("first"));
+        mc.add_cause(arc_err("second"));
+        assert_eq!(mc.causes().len(), 2);
+        assert_eq!(mc.causes()[0].to_string(), "first");
+        assert_eq!(mc.causes()[1].to_string(), "second");
+    }
+
+    #[test]
+    fn display_is_multiple_causes() {
+        assert_eq!(MultipleCauses::new().to_string(), "Multiple Causes");
+    }
+
+    #[test]
+    fn source_is_none() {
+        let mc = MultipleCauses::new();
+        let e: &dyn std::error::Error = &mc;
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn default_is_empty() {
+        assert!(MultipleCauses::default().is_empty());
+    }
+
+    // Helper error that chains to a MultipleCauses as its source.
+    #[derive(Debug)]
+    struct ParentError(Arc<MultipleCauses>);
+    impl fmt::Display for ParentError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "parent")
+        }
+    }
+    impl std::error::Error for ParentError {
+        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+            Some(&*self.0)
+        }
+    }
+
+    fn parent_with_causes(causes: Vec<Arc<dyn std::error::Error + Send + Sync + 'static>>) -> ParentError {
+        let mc = Arc::new(MultipleCauses::with_causes(causes));
+        ParentError(mc)
+    }
+
+    #[test]
+    fn has_multiple_true_when_source_is_multiple_causes() {
+        let parent = parent_with_causes(vec![arc_err("x")]);
+        assert!(MultipleCauses::has_multiple(&parent));
+    }
+
+    #[test]
+    fn has_multiple_false_when_no_source() {
+        let err = UsrException::new("plain");
+        assert!(!MultipleCauses::has_multiple(&err));
+    }
+
+    #[test]
+    fn has_multiple_false_when_source_is_not_multiple_causes() {
+        let inner = CryptoException::new("crypto");
+        // Create an error whose source is a plain error, not MultipleCauses
+        #[derive(Debug)]
+        struct Wrapper(CryptoException);
+        impl fmt::Display for Wrapper {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "wrap") }
+        }
+        impl std::error::Error for Wrapper {
+            fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { Some(&self.0) }
+        }
+        let w = Wrapper(inner);
+        assert!(!MultipleCauses::has_multiple(&w));
+    }
+
+    #[test]
+    fn add_all_causes_copies_from_other() {
+        let mut dest = MultipleCauses::new();
+        let src = MultipleCauses::with_causes(vec![arc_err("p"), arc_err("q")]);
+        dest.add_all_causes(&src);
+        assert_eq!(dest.causes().len(), 2);
+    }
+
+    #[test]
+    fn add_all_causes_from_error_flattens_via_source() {
+        let parent = parent_with_causes(vec![arc_err("c1"), arc_err("c2")]);
+        let mut dest = MultipleCauses::new();
+        dest.add_all_causes_from_error(&parent);
+        assert_eq!(dest.causes().len(), 2);
+    }
+
+    #[test]
+    fn add_flattened_if_multiple_flattens_when_has_multiple() {
+        let inner_mc = Arc::new(MultipleCauses::with_causes(vec![arc_err("a"), arc_err("b")]));
+        let parent: Arc<dyn std::error::Error + Send + Sync + 'static> =
+            Arc::new(ParentError(inner_mc));
+
+        let mut dest = MultipleCauses::new();
+        dest.add_flattened_if_multiple(parent);
+        assert_eq!(dest.causes().len(), 2);
+    }
+
+    #[test]
+    fn add_flattened_if_multiple_adds_directly_when_no_multiple() {
+        let plain: Arc<dyn std::error::Error + Send + Sync + 'static> = arc_err("solo");
+        let mut dest = MultipleCauses::new();
+        dest.add_flattened_if_multiple(plain);
+        assert_eq!(dest.causes().len(), 1);
+        assert_eq!(dest.causes()[0].to_string(), "solo");
+    }
+
+    #[test]
+    fn iter_causes_returns_causes_when_source_is_multiple_causes() {
+        let parent = parent_with_causes(vec![arc_err("x"), arc_err("y")]);
+        let causes = MultipleCauses::iter_causes(&parent);
+        assert_eq!(causes.len(), 2);
+        assert_eq!(causes[0].to_string(), "x");
+        assert_eq!(causes[1].to_string(), "y");
+    }
+
+    #[test]
+    fn iter_causes_returns_empty_when_no_multiple_causes() {
+        let err = UsrException::new("plain");
+        let causes = MultipleCauses::iter_causes(&err);
+        assert!(causes.is_empty());
+    }
+
+    #[test]
+    fn print_tree_writes_error_message() {
+        let parent = parent_with_causes(vec![arc_err("cause1"), arc_err("cause2")]);
+        let mut buf = Vec::<u8>::new();
+        MultipleCauses::print_tree(&mut buf, &parent);
+        let output = String::from_utf8(buf).unwrap();
+        assert!(output.contains("parent"));
+        assert!(output.contains("cause1"));
+        assert!(output.contains("cause2"));
+        assert!(output.contains('>'));
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
