@@ -13342,7 +13342,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/ConstantSpace.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort space 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/OtherSpace.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort space 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/UniqueSpace.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort space 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/spacetype.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort space 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/spacetype.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort space 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/translate/BadDataError.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort translate 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/translate/BasicSpaceProvider.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort translate 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/translate/Translate.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort translate 
