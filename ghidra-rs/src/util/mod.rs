@@ -46,6 +46,7 @@ pub mod universal_id;
 pub mod classfinder;
 pub mod graph;
 pub mod map;
+pub mod log_listener;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -82,3 +83,4 @@ pub use string_format::StringFormat;
 pub use universal_id::UniversalID;
 pub use classfinder::ClassFileInfo;
 pub use map::TypeMismatchException;
+pub use log_listener::LogListener;
