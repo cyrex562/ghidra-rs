@@ -24,6 +24,7 @@ pub mod queue_stub;
 pub mod range;
 pub mod stack;
 pub mod value_range;
+pub mod weak_store;
 
 pub use abstract_weak_value_map::{AbstractWeakValueMap, WeakRefStore};
 pub use accumulator::Accumulator;
@@ -51,3 +52,4 @@ pub use short_key_set::ShortKeySet;
 pub use short_list_indexer::ShortListIndexer;
 pub use stack::Stack;
 pub use value_range::ValueRange;
+pub use weak_store::WeakStore;
