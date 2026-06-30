@@ -6,4 +6,5 @@ pub mod custom_organization;
 pub mod packing_type;
 pub mod data_type_dependency_exception;
 pub mod data_type_display_options;
+pub mod resource;
 pub mod isf;
