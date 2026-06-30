@@ -6,6 +6,7 @@ pub mod collection_change_listener;
 pub mod counter;
 pub mod duo;
 pub mod index_range;
+pub mod int_index_manager;
 pub mod observable_collection;
 pub mod privately_queued_listener;
 pub mod range;
@@ -18,6 +19,7 @@ pub use collection_change_listener::CollectionChangeListener;
 pub use counter::Counter;
 pub use duo::{Duo, Side};
 pub use index_range::IndexRange;
+pub use int_index_manager::IntIndexManager;
 pub use observable_collection::{ChangeAggregator, ObservableCollection};
 pub use privately_queued_listener::{
     DefaultListenerErrorHandler, ListenerErrorHandler, PrivatelyQueuedListener,
