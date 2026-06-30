@@ -1,4 +1,5 @@
 pub mod conv;
+pub mod count_latch;
 pub mod async_fence;
 pub mod async_lazy_value;
 pub mod async_pairing_queue;
@@ -33,6 +34,7 @@ pub mod timed_msg;
 pub mod test_buffer;
 
 pub use async_fence::AsyncFence;
+pub use count_latch::CountLatch;
 pub use async_lazy_value::{ArcError, AsyncLazyValue, Completer};
 pub use async_pairing_queue::AsyncPairingQueue;
 pub use disposed_exception::DisposedException;
