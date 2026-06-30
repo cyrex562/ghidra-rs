@@ -12016,7 +12016,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/GraphNavigator.j
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/IterativeFindPathsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/JohnsonCircuitsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/RecursiveFindPathsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/SorterException.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/SorterException.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/TarjanStronglyConnectedAlgorthm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/event/VisualGraphChangeListener.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph event 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/featurette/VgSatelliteFeaturette.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph featurette 
