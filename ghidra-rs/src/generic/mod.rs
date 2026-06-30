@@ -15,4 +15,5 @@ pub mod hash;
 pub mod jar;
 pub mod lsh;
 pub mod stl;
+pub mod test;
 pub mod unique;
