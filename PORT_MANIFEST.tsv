@@ -13198,7 +13198,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcel
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageService.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util sourcelanguage 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageSpecExtension.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util sourcelanguage 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SpecExtensionUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util sourcelanguage 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/error/LowlevelError.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcode error 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/error/LowlevelError.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcode error
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/floatformat/BigFloat.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcode floatformat 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/floatformat/FloatFormat.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcode floatformat 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/floatformat/FloatFormatFactory.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcode floatformat 
