@@ -11637,7 +11637,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncPairingQueue.j
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncReference.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncTimer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncUtils.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/DisposedException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/DisposedException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/SwingExecutorService.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/Application.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/ApplicationConfiguration.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
