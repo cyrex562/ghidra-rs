@@ -16,6 +16,7 @@ pub mod observable_collection;
 pub mod prime;
 pub mod priority_queue;
 pub mod privately_queued_listener;
+pub mod queue_stub;
 pub mod range;
 
 pub use abstract_weak_value_map::{AbstractWeakValueMap, WeakRefStore};
@@ -36,4 +37,5 @@ pub use observable_collection::{ChangeAggregator, ObservableCollection};
 pub use prime::next_prime;
 pub use priority_queue::PriorityQueue;
 pub use privately_queued_listener::{DefaultListenerErrorHandler, PrivatelyQueuedListener};
+pub use queue_stub::QueueStub;
 pub use range::Range;
