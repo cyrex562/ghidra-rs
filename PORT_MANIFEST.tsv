@@ -11590,7 +11590,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/TestThread.java	TOD
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/TestUtils.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/category/NightlyCategory.java	DONE	orig_src Ghidra Framework Generic src main java generic test category 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/category/PortSensitiveCategory.java	DONE	orig_src Ghidra Framework Generic src main java generic test category 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/rule/IgnoreUnfinished.java	TODO	orig_src Ghidra Framework Generic src main java generic test rule 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/rule/IgnoreUnfinished.java	DONE	orig_src Ghidra Framework Generic src main java generic test rule
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/rule/IgnoreUnfinishedRule.java	TODO	orig_src Ghidra Framework Generic src main java generic test rule 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/rule/IgnoreUnfinishedStatement.java	TODO	orig_src Ghidra Framework Generic src main java generic test rule 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/rule/Repeated.java	TODO	orig_src Ghidra Framework Generic src main java generic test rule 
