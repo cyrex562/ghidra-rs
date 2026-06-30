@@ -59,6 +59,9 @@ TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"
 # behaviour
 TEST_EVERY="${TEST_EVERY:-10}"             # run cargo test every N ports (+ at end)
 POST_MERGE_BUILD="${POST_MERGE_BUILD:-1}"  # 1 = build integration after each merge, auto-revert on red
+ROUTE_HAIKU="${ROUTE_HAIKU:-1}"            # 1 = route trivial leaf classes to haiku (only when MODEL=sonnet)
+HAIKU_LOC_LEAF="${HAIKU_LOC_LEAF:-160}"    # max non-blank LOC for enum/interface/exception/package-info -> haiku
+HAIKU_LOC_CLASS="${HAIKU_LOC_CLASS:-70}"   # max non-blank LOC for a plain class -> haiku
 
 LOCK="/tmp/ghidra-tick.lock"
 LOG_DIR="${LOG_DIR:-$HOME/agents/logs/ghidra}"
@@ -207,6 +210,29 @@ for ((i = 1; i <= MAX_ITERS; i++)); do
   #    frontier guarantee (deps already ported) so the model needn't re-stream the whole
   #    AGENTS.md layout table or re-verify prerequisites on every turn.
   module=$("$PY" scripts/portlib.py module "$next" 2>/dev/null)
+
+  # Model routing: trivial leaf classes (enum/interface/annotation/exception/package-info,
+  # or a very small plain class) go to cheap haiku -> more classes per usage-limit window.
+  # Everything with real logic stays on sonnet. Only downgrades from sonnet; the unchanged
+  # build gate means a weak haiku attempt just parks (no quality risk). Frontier already
+  # guarantees 0 remaining deps, so no dep check needed here.
+  model="$MODEL"; why="default"
+  if [ "$ROUTE_HAIKU" = "1" ] && [ "$MODEL" = "sonnet" ]; then
+    loc=$(grep -cve '^[[:space:]]*$' "$srcpath" 2>/dev/null || echo 9999)
+    if [ "$class" = "package-info" ]; then kind=package-info
+    elif grep -qE '^[[:space:]]*(public[[:space:]]+)?enum[[:space:]]' "$srcpath"; then kind=enum
+    elif grep -qE '^[[:space:]]*(public[[:space:]]+)?@interface[[:space:]]' "$srcpath"; then kind=annotation
+    elif grep -qE '^[[:space:]]*(public[[:space:]]+)?interface[[:space:]]' "$srcpath"; then kind=interface
+    elif grep -qE 'class[[:space:]]+[A-Za-z0-9_]+([[:space:]]+extends[[:space:]]+[A-Za-z0-9_.]*Exception|[[:space:]]+extends[[:space:]]+[A-Za-z0-9_.]*Error)' "$srcpath"; then kind=exception
+    else kind=class; fi
+    case "$kind" in
+      package-info|enum|annotation|interface|exception)
+        [ "$loc" -lt "$HAIKU_LOC_LEAF" ] && { model=haiku; why="$kind/${loc}loc"; } ;;
+      class)
+        [ "$loc" -lt "$HAIKU_LOC_CLASS" ] && { model=haiku; why="small-class/${loc}loc"; } ;;
+    esac
+  fi
+
   prompt="Port the single Java class at: ${srcpath}
 
 Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in
@@ -229,9 +255,9 @@ or TODO comments. If you cannot finish within these rules, leave ${MANIFEST} unc
 end your reply with the single line:
 PORT_RESULT: PARKED followed by a one-line reason."
 
-  echo "--- claude ($MODEL, timeout ${CLAUDE_TIMEOUT}s) ---"
+  echo "--- claude (model=$model [$why], timeout ${CLAUDE_TIMEOUT}s) ---"
   timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" \
-    --model "$MODEL" \
+    --model "$model" \
     --permission-mode acceptEdits \
     --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*),Bash(${PY} scripts/sync_check.py*)" \
     --output-format json >"$jlog" 2>>"$log"
