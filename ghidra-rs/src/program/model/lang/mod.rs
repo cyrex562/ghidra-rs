@@ -1,3 +1,4 @@
+pub mod decompiler_language;
 pub mod sleigh;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
