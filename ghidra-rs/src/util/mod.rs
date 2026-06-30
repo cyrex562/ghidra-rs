@@ -1,3 +1,4 @@
+pub mod conv;
 pub mod async_fence;
 pub mod async_lazy_value;
 pub mod async_pairing_queue;
@@ -49,5 +50,6 @@ pub use message_type::MessageType;
 pub use msg::Msg;
 pub use naming_utilities::NamingUtilities;
 pub use system_utilities::SystemUtilities;
+pub use conv::Conv;
 pub use timed_msg::TimedMsg;
 pub use task::{DummyMonitor, TaskMonitor};
