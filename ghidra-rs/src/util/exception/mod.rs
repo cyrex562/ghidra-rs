@@ -634,6 +634,82 @@ mod multiple_causes_tests {
     }
 }
 
+/// Occurs when a link-file's expected linked content type does not match the actual content
+/// type of the linked file.
+///
+/// Port of `ghidra.util.exception.BadLinkException`.
+#[derive(Debug)]
+pub struct BadLinkException {
+    message: String,
+    source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+}
+
+impl BadLinkException {
+    /// Creates a `BadLinkException` with the given message.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into(), source: None }
+    }
+
+    /// Creates a `BadLinkException` with the given message and a chained cause.
+    pub fn with_cause<E: std::error::Error + Send + Sync + 'static>(
+        message: impl Into<String>,
+        cause: E,
+    ) -> Self {
+        Self { message: message.into(), source: Some(Box::new(cause)) }
+    }
+}
+
+impl fmt::Display for BadLinkException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for BadLinkException {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.source.as_ref().map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
+    }
+}
+
+#[cfg(test)]
+mod bad_link_exception_tests {
+    use super::*;
+
+    #[test]
+    fn message_constructor_stores_message() {
+        let e = BadLinkException::new("expected folder, got file");
+        assert_eq!(e.to_string(), "expected folder, got file");
+    }
+
+    #[test]
+    fn message_constructor_has_no_source() {
+        let e = BadLinkException::new("link type mismatch");
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn with_cause_stores_message() {
+        let cause = ClosedException::with_resource("target");
+        let e = BadLinkException::with_cause("bad link", cause);
+        assert_eq!(e.to_string(), "bad link");
+    }
+
+    #[test]
+    fn with_cause_exposes_source() {
+        let cause = ClosedException::with_resource("linked-file");
+        let e = BadLinkException::with_cause("bad link", cause);
+        assert!(e.source().is_some());
+        assert_eq!(e.source().unwrap().to_string(), "linked-file is closed");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &BadLinkException::new("mismatch");
+        assert_eq!(e.to_string(), "mismatch");
+        assert!(e.source().is_none());
+    }
+}
+
 /// Thrown when a property value does not match the expected type.
 ///
 /// Port of `ghidra.util.exception.PropertyTypeMismatchException`.
