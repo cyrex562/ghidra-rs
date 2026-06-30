@@ -48,6 +48,7 @@ pub mod graph;
 pub mod map;
 pub mod log_listener;
 pub mod quadrant;
+pub mod icons;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -86,3 +87,4 @@ pub use classfinder::ClassFileInfo;
 pub use map::TypeMismatchException;
 pub use log_listener::LogListener;
 pub use quadrant::Quadrant;
+pub use icons::FileBasedIcon;

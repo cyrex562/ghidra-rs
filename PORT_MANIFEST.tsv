@@ -12368,7 +12368,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/DerivedImageIcon.jav
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/DisabledImageIcon.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/DisabledImageIconWrapper.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/EmptyIcon.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
-orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/FileBasedIcon.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
+orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/FileBasedIcon.java	DONE	orig_src Ghidra Framework Gui src main java resources icons 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/IconWrapper.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/ImageIconWrapper.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/LazyImageIcon.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
