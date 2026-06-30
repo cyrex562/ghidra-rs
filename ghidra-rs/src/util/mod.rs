@@ -33,6 +33,7 @@ pub mod system_utilities;
 pub mod task;
 pub mod timed_msg;
 pub mod test_buffer;
+pub mod filter_transformer;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -55,5 +56,6 @@ pub use naming_utilities::NamingUtilities;
 pub use system_utilities::SystemUtilities;
 pub use conv::Conv;
 pub use disposable::Disposable;
+pub use filter_transformer::FilterTransformer;
 pub use timed_msg::TimedMsg;
 pub use task::{DummyMonitor, TaskMonitor};
