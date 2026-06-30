@@ -11694,7 +11694,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/LongIterator.java	DO
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/MathUtilities.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/MonitoredInputStream.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/NumericUtilities.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/ObjectStorage.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/ObjectStorage.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/ObjectStorageStreamAdapter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/PrivateSaveable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/ReadOnlyException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
