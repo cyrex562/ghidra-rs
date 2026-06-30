@@ -56,7 +56,7 @@ pub use pairing_iterator_merger::PairingIteratorMerger;
 pub use error_display::{ConsoleErrorDisplay, ErrorDisplay};
 pub use error_logger::{DefaultErrorLogger, ErrorLogger};
 pub use exception::{AssertException, CancelledException, UserAccessException, UsrException};
-pub use function::Callback;
+pub use function::{Callback, TriConsumer};
 pub use io::{BoundedInputStream, HashingOutputStream, NullOutputStream};
 pub use message_type::MessageType;
 pub use msg::Msg;
