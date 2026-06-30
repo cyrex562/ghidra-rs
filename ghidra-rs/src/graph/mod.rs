@@ -5,6 +5,7 @@ pub mod event;
 pub mod fcg_direction;
 pub mod g_edge;
 pub mod graph_path;
+pub mod viewer;
 
 pub use algo::{GraphAlgorithmStatusListener, SorterException, Status};
 pub use deg_shared_config::DegSharedConfig;
@@ -12,3 +13,4 @@ pub use event::VisualGraphChangeListener;
 pub use fcg_direction::FcgDirection;
 pub use g_edge::GEdge;
 pub use graph_path::GraphPath;
+pub use viewer::VisualGraphContextMarker;
