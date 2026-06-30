@@ -11675,7 +11675,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/net/DefaultSSLSocketFacto
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/net/DefaultTrustManagerFactory.java	TODO	orig_src Ghidra Framework Generic src main java ghidra net 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/net/HttpClients.java	TODO	orig_src Ghidra Framework Generic src main java ghidra net 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/net/PKIUtils.java	TODO	orig_src Ghidra Framework Generic src main java ghidra net 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/net/SignedToken.java	TODO	orig_src Ghidra Framework Generic src main java ghidra net 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/net/SignedToken.java	DONE	orig_src Ghidra Framework Generic src main java ghidra net 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/net/http/HttpUtil.java	TODO	orig_src Ghidra Framework Generic src main java ghidra net http 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/security/KeyStorePasswordProvider.java	TODO	orig_src Ghidra Framework Generic src main java ghidra security 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/BigEndianDataConverter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
