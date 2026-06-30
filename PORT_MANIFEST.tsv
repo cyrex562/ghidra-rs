@@ -12798,7 +12798,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginEventListener.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginException.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginPackage.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginPackageState.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginPackageState.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginStatus.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginUtils.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/TransientToolState.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
