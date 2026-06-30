@@ -22,6 +22,7 @@ pub mod priority_queue;
 pub mod privately_queued_listener;
 pub mod queue_stub;
 pub mod range;
+pub mod stack;
 
 pub use abstract_weak_value_map::{AbstractWeakValueMap, WeakRefStore};
 pub use accumulator::Accumulator;
@@ -47,3 +48,4 @@ pub use red_black_entry::{NodeColor, NodeRef, RedBlackEntry};
 pub use red_black_long_key_set::RedBlackLongKeySet;
 pub use short_key_set::ShortKeySet;
 pub use short_list_indexer::ShortListIndexer;
+pub use stack::Stack;
