@@ -1,4 +1,5 @@
 pub mod code;
+pub mod data;
 pub mod manager_db;
 pub mod map;
 pub mod mem;
