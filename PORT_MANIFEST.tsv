@@ -12018,7 +12018,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/JohnsonCircuitsA
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/RecursiveFindPathsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/SorterException.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/TarjanStronglyConnectedAlgorthm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/event/VisualGraphChangeListener.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph event 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/event/VisualGraphChangeListener.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph event 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/featurette/VgSatelliteFeaturette.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph featurette 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/featurette/VisualGraphFeaturette.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph featurette 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/graphs/DefaultVisualGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph graphs 
