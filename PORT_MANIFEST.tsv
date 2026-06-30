@@ -11810,7 +11810,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringInt
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringKeyIndexer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ThreadSafeListenerStorage.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ThreadUnsafeWeakSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ValueRange.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ValueRange.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/WeakDataStructureFactory.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/WeakSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/WeakStore.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
