@@ -6,6 +6,7 @@ pub mod mem;
 pub mod merge_program_generator;
 pub mod program_db;
 pub mod program_modifier_listener;
+pub mod sourcemap;
 pub mod symbol;
 pub mod util;
 
