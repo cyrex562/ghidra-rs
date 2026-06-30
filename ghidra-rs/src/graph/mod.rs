@@ -13,4 +13,4 @@ pub use event::VisualGraphChangeListener;
 pub use fcg_direction::FcgDirection;
 pub use g_edge::GEdge;
 pub use graph_path::GraphPath;
-pub use viewer::VisualGraphContextMarker;
+pub use viewer::{PathHighlightListener, VisualGraphContextMarker};
