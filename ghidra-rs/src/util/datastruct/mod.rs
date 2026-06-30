@@ -1,4 +1,5 @@
 pub mod abstract_weak_value_map;
+pub mod red_black_entry;
 pub mod accumulator;
 pub mod accumulator_size_exception;
 pub mod case_insensitive_duplicate_string_comparator;
@@ -39,3 +40,4 @@ pub use priority_queue::PriorityQueue;
 pub use privately_queued_listener::{DefaultListenerErrorHandler, PrivatelyQueuedListener};
 pub use queue_stub::QueueStub;
 pub use range::Range;
+pub use red_black_entry::{NodeColor, NodeRef, RedBlackEntry};
