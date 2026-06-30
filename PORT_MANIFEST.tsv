@@ -12549,7 +12549,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ImportGhid
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/LogPanel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/MoveImageRunner.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/PickToolDialog.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ProgramaticUseOnly.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ProgramaticUseOnly.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework main
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ProjectAccessDialog.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ProjectAccessPanel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ProjectActionManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
