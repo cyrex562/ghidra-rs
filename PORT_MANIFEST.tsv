@@ -11649,7 +11649,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/ModuleInitializ
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/OSFileNotFoundException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/Platform.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/ShutdownHookRegistry.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/ShutdownPriority.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/ShutdownPriority.java	DONE	orig_src Ghidra Framework Generic src main java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/TestApplicationUtils.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/generic/auth/Password.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework generic auth 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/framework/main/ConsoleListener.java	TODO	orig_src Ghidra Framework Generic src main java ghidra framework main 
