@@ -12925,7 +12925,7 @@ orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyChild.java	
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyEndpoint.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyFactory.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/ConPtyParent.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/Handle.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/Handle.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/HandleInputStream.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/HandleOutputStream.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/Pipe.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
