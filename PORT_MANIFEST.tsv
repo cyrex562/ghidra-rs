@@ -12149,7 +12149,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/Abstrac
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/AbstractVisualVertexRenderer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/DockingVisualVertex.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/VertexClickListener.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/VertexFocusListener.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/VertexFocusListener.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/VertexShapeProvider.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/VisualGraphVertexShapeTransformer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/VisualVertexRenderer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer vertex 
