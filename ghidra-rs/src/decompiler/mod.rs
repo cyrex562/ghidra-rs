@@ -5,3 +5,4 @@ pub mod globalcontext;
 pub mod opcodes;
 pub mod sleigh;
 pub mod slgh_compile;
+pub mod slghsymbol;
