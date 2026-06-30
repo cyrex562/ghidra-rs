@@ -44,6 +44,7 @@ pub mod signedness_format_mode;
 pub mod string_format;
 pub mod universal_id;
 pub mod classfinder;
+pub mod graph;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
