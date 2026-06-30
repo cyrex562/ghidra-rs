@@ -5,3 +5,4 @@ pub mod floatformat;
 pub mod memstate;
 pub mod opbehavior;
 pub mod r#struct;
+pub mod utils;
