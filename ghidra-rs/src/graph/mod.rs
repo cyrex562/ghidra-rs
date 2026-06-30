@@ -7,6 +7,9 @@ pub mod g_edge;
 pub mod graph_path;
 pub mod viewer;
 
+#[cfg(test)]
+mod graph_mvc_test;
+
 pub use algo::{GraphAlgorithmStatusListener, SorterException, Status};
 pub use deg_shared_config::DegSharedConfig;
 pub use event::VisualGraphChangeListener;
