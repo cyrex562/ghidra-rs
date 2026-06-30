@@ -1,5 +1,10 @@
 use crate::util::exception::CancelledException;
 
+/// Listener notified when the busy state of a component changes.
+pub trait BusyListener: Send + Sync {
+    fn set_busy(&self, busy: bool);
+}
+
 pub trait CancelledListener: Send + Sync {
     fn cancelled(&self);
 }
@@ -62,4 +67,44 @@ impl TaskMonitor for DummyMonitor {
         true
     }
     fn clear_cancelled(&self) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    struct TrackingBusyListener {
+        last: Cell<bool>,
+    }
+
+    impl BusyListener for TrackingBusyListener {
+        fn set_busy(&self, busy: bool) {
+            self.last.set(busy);
+        }
+    }
+
+    #[test]
+    fn busy_listener_set_busy_true() {
+        let l = TrackingBusyListener { last: Cell::new(false) };
+        l.set_busy(true);
+        assert!(l.last.get());
+    }
+
+    #[test]
+    fn busy_listener_set_busy_false() {
+        let l = TrackingBusyListener { last: Cell::new(true) };
+        l.set_busy(false);
+        assert!(!l.last.get());
+    }
+
+    #[test]
+    fn busy_listener_as_trait_object() {
+        let l = TrackingBusyListener { last: Cell::new(false) };
+        let obj: &dyn BusyListener = &l;
+        obj.set_busy(true);
+        assert!(l.last.get());
+        obj.set_busy(false);
+        assert!(!l.last.get());
+    }
 }
