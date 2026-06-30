@@ -13,6 +13,7 @@ pub mod net;
 pub mod pcode;
 pub mod program;
 pub mod script;
+pub mod service;
 pub mod trace;
 pub mod server;
 pub mod sarif;
