@@ -11888,7 +11888,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/worker/Worker.java	T
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/Counter.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/GenericXMLOutputter.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/SpecXmlUtils.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util xml
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlAttributeException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util xml 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlAttributeException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlAttributes.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlParserElement.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlUtilities.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util xml 
