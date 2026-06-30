@@ -12743,7 +12743,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolManag
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolServices.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolSet.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolTemplate.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/TransactionInfo.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/TransactionInfo.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/TransactionListener.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/UserData.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Workspace.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
