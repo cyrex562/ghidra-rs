@@ -634,6 +634,56 @@ mod multiple_causes_tests {
     }
 }
 
+/// Thrown when a property value does not match the expected type.
+///
+/// Port of `ghidra.util.exception.PropertyTypeMismatchException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct PropertyTypeMismatchException(pub String);
+
+impl PropertyTypeMismatchException {
+    /// Creates a `PropertyTypeMismatchException` with the given message.
+    pub fn new(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+#[cfg(test)]
+mod property_type_mismatch_exception_tests {
+    use super::*;
+
+    #[test]
+    fn stores_message() {
+        let e = PropertyTypeMismatchException::new("expected int, got string");
+        assert_eq!(e.to_string(), "expected int, got string");
+    }
+
+    #[test]
+    fn display_matches_message() {
+        let e = PropertyTypeMismatchException::new("type mismatch");
+        assert_eq!(format!("{}", e), "type mismatch");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(
+            PropertyTypeMismatchException::new("a"),
+            PropertyTypeMismatchException::new("a")
+        );
+        assert_ne!(
+            PropertyTypeMismatchException::new("a"),
+            PropertyTypeMismatchException::new("b")
+        );
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &PropertyTypeMismatchException::new("mismatch");
+        assert_eq!(e.to_string(), "mismatch");
+        assert!(e.source().is_none());
+    }
+}
+
 /// Thrown during development when a feature or method is not yet implemented.
 ///
 /// This is a development-time exception and should not appear in released code.
