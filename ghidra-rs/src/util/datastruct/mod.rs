@@ -1,6 +1,7 @@
 pub mod abstract_weak_value_map;
 pub mod accumulator;
 pub mod accumulator_size_exception;
+pub mod case_insensitive_duplicate_string_comparator;
 pub mod collection_change_listener;
 pub mod duo;
 pub mod observable_collection;
@@ -10,6 +11,7 @@ pub mod range;
 pub use abstract_weak_value_map::{AbstractWeakValueMap, WeakRefStore};
 pub use accumulator::Accumulator;
 pub use accumulator_size_exception::AccumulatorSizeException;
+pub use case_insensitive_duplicate_string_comparator::CaseInsensitiveDuplicateStringComparator;
 pub use collection_change_listener::CollectionChangeListener;
 pub use duo::{Duo, Side};
 pub use observable_collection::{ChangeAggregator, ObservableCollection};

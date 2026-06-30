@@ -11733,7 +11733,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/BooleanAr
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ByteArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ByteArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CallbackAccumulator.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CaseInsensitiveDuplicateStringComparator.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CaseInsensitiveDuplicateStringComparator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CopyOnReadWeakSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/CopyOnWriteWeakSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Counter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
