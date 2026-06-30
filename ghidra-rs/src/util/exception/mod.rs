@@ -671,6 +671,104 @@ impl std::error::Error for BadLinkException {
     }
 }
 
+/// Thrown when a transaction should be rolled back.
+///
+/// Port of `ghidra.util.exception.RollbackException`.
+#[derive(Debug)]
+pub struct RollbackException {
+    message: String,
+    source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+}
+
+impl RollbackException {
+    /// Creates a `RollbackException` with the given message.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into(), source: None }
+    }
+
+    /// Creates a `RollbackException` wrapping the given error as the cause.
+    ///
+    /// The display message is taken from the cause's `Display` output, mirroring
+    /// Java's `super(cause)` which stores `cause.toString()` as the message.
+    pub fn from_cause<E: std::error::Error + Send + Sync + 'static>(cause: E) -> Self {
+        Self { message: cause.to_string(), source: Some(Box::new(cause)) }
+    }
+
+    /// Creates a `RollbackException` with the given message and a chained cause.
+    pub fn with_cause<E: std::error::Error + Send + Sync + 'static>(
+        message: impl Into<String>,
+        cause: E,
+    ) -> Self {
+        Self { message: message.into(), source: Some(Box::new(cause)) }
+    }
+}
+
+impl fmt::Display for RollbackException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for RollbackException {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.source.as_ref().map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
+    }
+}
+
+#[cfg(test)]
+mod rollback_exception_tests {
+    use super::*;
+
+    #[test]
+    fn message_constructor_stores_message() {
+        let e = RollbackException::new("tx rolled back");
+        assert_eq!(e.to_string(), "tx rolled back");
+    }
+
+    #[test]
+    fn message_constructor_has_no_source() {
+        let e = RollbackException::new("no cause");
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn cause_constructor_uses_cause_message() {
+        let inner = ClosedException::with_resource("db");
+        let e = RollbackException::from_cause(inner);
+        assert_eq!(e.to_string(), "db is closed");
+    }
+
+    #[test]
+    fn cause_constructor_exposes_source() {
+        let inner = ClosedException::with_resource("store");
+        let e = RollbackException::from_cause(inner);
+        assert!(e.source().is_some());
+        assert_eq!(e.source().unwrap().to_string(), "store is closed");
+    }
+
+    #[test]
+    fn with_cause_stores_message() {
+        let cause = ClosedException::with_resource("target");
+        let e = RollbackException::with_cause("rollback required", cause);
+        assert_eq!(e.to_string(), "rollback required");
+    }
+
+    #[test]
+    fn with_cause_exposes_source() {
+        let cause = ClosedException::with_resource("target");
+        let e = RollbackException::with_cause("rollback required", cause);
+        assert!(e.source().is_some());
+        assert_eq!(e.source().unwrap().to_string(), "target is closed");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &RollbackException::new("oops");
+        assert_eq!(e.to_string(), "oops");
+        assert!(e.source().is_none());
+    }
+}
+
 #[cfg(test)]
 mod bad_link_exception_tests {
     use super::*;
