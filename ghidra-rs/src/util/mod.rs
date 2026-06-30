@@ -43,6 +43,7 @@ pub mod reversed_list_iterator;
 pub mod signedness_format_mode;
 pub mod string_format;
 pub mod universal_id;
+pub mod classfinder;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -77,3 +78,4 @@ pub use reversed_list_iterator::{ListIterator, ReversedListIterator};
 pub use signedness_format_mode::SignednessFormatMode;
 pub use string_format::StringFormat;
 pub use universal_id::UniversalID;
+pub use classfinder::ClassFileInfo;
