@@ -19,4 +19,5 @@ pub mod service;
 pub mod trace;
 pub mod server;
 pub mod sarif;
+pub mod sleigh;
 pub mod util;
