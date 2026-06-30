@@ -12011,7 +12011,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/ChkPostDominance
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/DepthFirstSorter.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/DijkstraShortestPathsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/FindPathsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/GraphAlgorithmStatusListener.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/GraphAlgorithmStatusListener.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/GraphNavigator.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/IterativeFindPathsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/JohnsonCircuitsAlgorithm.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph algo 
