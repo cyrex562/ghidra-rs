@@ -3,15 +3,7 @@ use std::panic::{self, AssertUnwindSafe};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 
-/// Handles errors that occur when a queued listener invocation panics.
-///
-/// Port of `ghidra.util.datastruct.ListenerErrorHandler`.
-pub trait ListenerErrorHandler: Send + 'static {
-    /// Called when a listener invocation panics.
-    ///
-    /// `payload` is the panic value captured by [`std::panic::catch_unwind`].
-    fn handle_error(&self, payload: Box<dyn Any + Send>);
-}
+pub use super::listener_error_handler::ListenerErrorHandler;
 
 /// Default error handler: logs the panic message via `tracing::error!`.
 ///
