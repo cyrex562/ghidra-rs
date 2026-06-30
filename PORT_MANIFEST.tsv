@@ -12532,7 +12532,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/URLLinkObj
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/AcceptUrlContentTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/AppInfo.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ApplicationLevelOnlyPlugin.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ApplicationLevelPlugin.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ApplicationLevelPlugin.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework main
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ApplicationLevelPluginsConfiguration.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/BrokenLinkIcon.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/EditActionManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
