@@ -11608,7 +11608,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ArchiveBuilder.java
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/Beanify.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ChannelLocker.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/DequePush.java	DONE	orig_src Ghidra Framework Generic src main java generic util
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/FileChannelLock.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/FileChannelLock.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/FileLocker.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/FlattenedIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/JarArchiveBuilder.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
