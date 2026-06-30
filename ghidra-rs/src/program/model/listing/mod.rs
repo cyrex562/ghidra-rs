@@ -1,9 +1,11 @@
 pub mod auto_parameter_type;
 pub mod domain_object_change_set;
 pub mod function_tag;
+pub mod incompatible_language_exception;
 pub mod program;
 
 pub use auto_parameter_type::AutoParameterType;
 pub use domain_object_change_set::DomainObjectChangeSet;
 pub use function_tag::FunctionTag;
+pub use incompatible_language_exception::IncompatibleLanguageException;
 pub use program::Program;
