@@ -1,3 +1,4 @@
+pub mod code;
 pub mod manager_db;
 pub mod map;
 pub mod mem;
@@ -7,6 +8,7 @@ pub mod program_modifier_listener;
 pub mod symbol;
 pub mod util;
 
+pub use code::StringDiff;
 pub use manager_db::ManagerDB;
 pub use merge_program_generator::MergeProgramGenerator;
 pub use program_db::ProgramDB;
