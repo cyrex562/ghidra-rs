@@ -1,5 +1,6 @@
 pub mod client;
 pub mod db;
+pub mod generic;
 pub mod main;
 pub mod model;
 pub mod options;
