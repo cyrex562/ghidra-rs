@@ -1,4 +1,5 @@
 pub mod async_fence;
+pub mod async_lazy_value;
 pub mod ascii;
 pub mod html;
 pub mod xml;
@@ -29,6 +30,7 @@ pub mod timed_msg;
 pub mod test_buffer;
 
 pub use async_fence::AsyncFence;
+pub use async_lazy_value::{ArcError, AsyncLazyValue, Completer};
 pub use datastruct::{Duo, Range, Side};
 pub use lock_hold::{Lock, LockHold};
 pub use merge_sorting_spliterator::MergeSortingIterator;

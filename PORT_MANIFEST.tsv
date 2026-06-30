@@ -11632,7 +11632,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/app/util/importer/Message
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncDebouncer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncFence.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncLazyMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncLazyValue.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncLazyValue.java	DONE	orig_src Ghidra Framework Generic src main java ghidra async
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncPairingQueue.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncReference.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncTimer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra async 
