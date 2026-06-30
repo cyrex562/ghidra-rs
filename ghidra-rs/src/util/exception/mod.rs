@@ -147,6 +147,81 @@ impl fmt::Display for ClosedException {
 
 impl std::error::Error for ClosedException {}
 
+/// Exception wrapping a cryptographic failure, analogous to Java's `IOException` subclass.
+///
+/// Port of `ghidra.util.exception.CryptoException`.
+#[derive(Debug)]
+pub struct CryptoException {
+    message: String,
+    source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+}
+
+impl CryptoException {
+    /// Creates a `CryptoException` with the given message.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into(), source: None }
+    }
+
+    /// Creates a `CryptoException` wrapping the given error as the cause.
+    ///
+    /// The display message is taken from the cause's `Display` output, mirroring
+    /// Java's `super(cause)` which stores `cause.toString()` as the message.
+    pub fn from_cause<E: std::error::Error + Send + Sync + 'static>(cause: E) -> Self {
+        Self { message: cause.to_string(), source: Some(Box::new(cause)) }
+    }
+}
+
+impl fmt::Display for CryptoException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for CryptoException {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.source.as_ref().map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
+    }
+}
+
+#[cfg(test)]
+mod crypto_exception_tests {
+    use super::*;
+
+    #[test]
+    fn message_constructor_stores_message() {
+        let e = CryptoException::new("decryption failed");
+        assert_eq!(e.to_string(), "decryption failed");
+    }
+
+    #[test]
+    fn message_constructor_has_no_source() {
+        let e = CryptoException::new("bad key");
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn cause_constructor_uses_cause_message() {
+        let inner = CryptoException::new("inner error");
+        let outer = CryptoException::from_cause(inner);
+        assert_eq!(outer.to_string(), "inner error");
+    }
+
+    #[test]
+    fn cause_constructor_exposes_source() {
+        let inner = ClosedException::with_resource("keystore");
+        let e = CryptoException::from_cause(inner);
+        assert!(e.source().is_some());
+        assert_eq!(e.source().unwrap().to_string(), "keystore is closed");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &CryptoException::new("oops");
+        assert_eq!(e.to_string(), "oops");
+        assert!(e.source().is_none());
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
