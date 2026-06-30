@@ -12284,7 +12284,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/SwingExceptionHandler.java	TO
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/AbstractOptions.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/ActionTrigger.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/CustomOption.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/CustomOptionsEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/CustomOptionsEditor.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EditorState.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EditorStateFactory.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EnumEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
