@@ -1,6 +1,7 @@
 pub mod byte_ingest;
 pub mod decoder;
 pub mod ids;
+pub mod list_linked;
 pub mod packed;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
@@ -10,6 +11,7 @@ use std::sync::Arc;
 pub use byte_ingest::ByteIngest;
 pub use decoder::{Decoder, DecoderError};
 pub use ids::*;
+pub use list_linked::{LinkedIter, ListLinked};
 pub use packed::PackedDecode;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
