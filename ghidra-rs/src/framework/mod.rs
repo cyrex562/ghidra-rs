@@ -7,6 +7,7 @@ pub mod model;
 pub mod options;
 pub mod os;
 pub mod plugintool;
+pub mod project;
 pub mod remote;
 pub mod service;
 pub mod shutdown_priority;
