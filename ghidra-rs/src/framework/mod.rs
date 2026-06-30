@@ -1,6 +1,7 @@
 pub mod client;
 pub mod db;
 pub mod generic;
+pub mod key_store_password_provider;
 pub mod main;
 pub mod model;
 pub mod options;
