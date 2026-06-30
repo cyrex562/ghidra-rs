@@ -11782,7 +11782,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectLon
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectRangeMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ObjectValueRange.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Prime.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PriorityQueue.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PriorityQueue.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/PropertySetIndexRangeIterator.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/QueueStub.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RangeMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
