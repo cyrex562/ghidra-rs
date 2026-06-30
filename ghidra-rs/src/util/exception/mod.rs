@@ -634,6 +634,114 @@ mod multiple_causes_tests {
     }
 }
 
+/// Thrown during development when a feature or method is not yet implemented.
+///
+/// This is a development-time exception and should not appear in released code.
+///
+/// Port of `ghidra.util.exception.NotYetImplementedException`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NotYetImplementedException {
+    message: Option<String>,
+}
+
+impl NotYetImplementedException {
+    /// Creates a `NotYetImplementedException` with no detail message.
+    pub fn new() -> Self {
+        Self { message: None }
+    }
+
+    /// Creates a `NotYetImplementedException` with the given detail message.
+    pub fn with_message(message: impl Into<String>) -> Self {
+        Self { message: Some(message.into()) }
+    }
+
+    /// Returns the detail message, or `None` if none was set.
+    pub fn message(&self) -> Option<&str> {
+        self.message.as_deref()
+    }
+}
+
+impl Default for NotYetImplementedException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for NotYetImplementedException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.message {
+            None => write!(f, "Not yet implemented"),
+            Some(msg) => write!(f, "{}", msg),
+        }
+    }
+}
+
+impl std::error::Error for NotYetImplementedException {}
+
+#[cfg(test)]
+mod not_yet_implemented_exception_tests {
+    use super::*;
+
+    #[test]
+    fn no_arg_constructor_has_no_message() {
+        let e = NotYetImplementedException::new();
+        assert_eq!(e.message(), None);
+    }
+
+    #[test]
+    fn no_arg_display_is_not_yet_implemented() {
+        let e = NotYetImplementedException::new();
+        assert_eq!(e.to_string(), "Not yet implemented");
+    }
+
+    #[test]
+    fn with_message_stores_message() {
+        let e = NotYetImplementedException::with_message("feature X");
+        assert_eq!(e.message(), Some("feature X"));
+    }
+
+    #[test]
+    fn with_message_display_matches_message() {
+        let e = NotYetImplementedException::with_message("todo: parse PE headers");
+        assert_eq!(format!("{}", e), "todo: parse PE headers");
+    }
+
+    #[test]
+    fn default_is_same_as_new() {
+        assert_eq!(NotYetImplementedException::default(), NotYetImplementedException::new());
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(NotYetImplementedException::new(), NotYetImplementedException::new());
+        assert_eq!(
+            NotYetImplementedException::with_message("a"),
+            NotYetImplementedException::with_message("a"),
+        );
+        assert_ne!(
+            NotYetImplementedException::new(),
+            NotYetImplementedException::with_message("a"),
+        );
+        assert_ne!(
+            NotYetImplementedException::with_message("a"),
+            NotYetImplementedException::with_message("b"),
+        );
+    }
+
+    #[test]
+    fn clone_is_equal() {
+        let e = NotYetImplementedException::with_message("clone me");
+        assert_eq!(e.clone(), e);
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &NotYetImplementedException::with_message("oops");
+        assert_eq!(e.to_string(), "oops");
+        assert!(e.source().is_none());
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
