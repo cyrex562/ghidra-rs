@@ -14546,7 +14546,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/F
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/HashMapPreprocessorDefinitionsAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/LexerMultiplexer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/LineArrayListWriter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/Location.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/Location.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/LocationUtil.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/Locator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/ParsingEnvironment.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
