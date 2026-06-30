@@ -5,4 +5,5 @@ pub mod lang;
 pub mod listing;
 pub mod mem;
 pub mod pcode;
+pub mod scalar;
 pub mod symbol;
