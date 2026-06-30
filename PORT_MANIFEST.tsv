@@ -12601,7 +12601,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/C
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/ClearCutAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CopyFileVersionTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CopyTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/Cuttable.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/Cuttable.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework main datatree
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/DataTree.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/DataTreeClipboardUtils.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/DataTreeDragNDropHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatree 
