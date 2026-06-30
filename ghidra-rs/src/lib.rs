@@ -1,4 +1,5 @@
 pub mod app;
+pub mod decompiler;
 pub mod demangler;
 pub mod file;
 pub mod format;
