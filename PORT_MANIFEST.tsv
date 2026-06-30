@@ -11992,7 +11992,7 @@ orig_src/Ghidra/Framework/Generic/src/test/java/utilities/util/FileUtilitiesTest
 orig_src/Ghidra/Framework/Generic/src/test/java/utilities/util/reflection/ReflectionUtilitiesTest.java	TODO	orig_src Ghidra Framework Generic src test java utilities util reflection 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/DefaultGEdge.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/GDirectedGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/GEdge.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/GEdge.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/GEdgeWeightMetric.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/GImplicitDirectedGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/GVertex.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph 
