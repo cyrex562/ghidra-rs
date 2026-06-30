@@ -1,3 +1,4 @@
+pub mod async_fence;
 pub mod ascii;
 pub mod html;
 pub mod xml;
@@ -27,6 +28,7 @@ pub mod task;
 pub mod timed_msg;
 pub mod test_buffer;
 
+pub use async_fence::AsyncFence;
 pub use datastruct::{Duo, Range, Side};
 pub use lock_hold::{Lock, LockHold};
 pub use merge_sorting_spliterator::MergeSortingIterator;
