@@ -7,4 +7,5 @@ pub mod packing_type;
 pub mod data_type_dependency_exception;
 pub mod data_type_display_options;
 pub mod resource;
+pub mod string_layout_enum;
 pub mod isf;
