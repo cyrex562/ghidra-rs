@@ -11896,7 +11896,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/xml/XmlWriter.java	T
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/NonThreadedXmlPullParserImpl.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/ThreadedXmlPullParserImpl.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlMessageLog.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlParseException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlParseException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlPullParserFactory.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlTracer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/xml/XmlTreeNode.java	TODO	orig_src Ghidra Framework Generic src main java ghidra xml 
