@@ -4,6 +4,7 @@ pub mod ids;
 pub mod list_linked;
 pub mod packed;
 pub mod packed_bytes;
+pub mod pcode_exception;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
@@ -15,6 +16,7 @@ pub use ids::*;
 pub use list_linked::{LinkedIter, ListLinked};
 pub use packed::PackedDecode;
 pub use packed_bytes::PackedBytes;
+pub use pcode_exception::PcodeException;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpCode {

@@ -14327,7 +14327,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pc
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeBlock.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeBlockBasic.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeDataTypeManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeFactory.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeOp.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeOpAST.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
