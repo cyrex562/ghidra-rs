@@ -13,6 +13,7 @@ pub mod long_comparator;
 pub mod object_cache;
 pub mod object_value_range;
 pub mod observable_collection;
+pub mod prime;
 pub mod privately_queued_listener;
 pub mod range;
 
@@ -31,5 +32,6 @@ pub use long_comparator::LongComparator;
 pub use object_cache::ObjectCache;
 pub use object_value_range::ObjectValueRange;
 pub use observable_collection::{ChangeAggregator, ObservableCollection};
+pub use prime::next_prime;
 pub use privately_queued_listener::{DefaultListenerErrorHandler, PrivatelyQueuedListener};
 pub use range::Range;
