@@ -12358,7 +12358,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/resources/IconProvider.java	TODO	ori
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/Icons.java	TODO	orig_src Ghidra Framework Gui src main java resources 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/MultiIcon.java	TODO	orig_src Ghidra Framework Gui src main java resources 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/MultiIconBuilder.java	TODO	orig_src Ghidra Framework Gui src main java resources 
-orig_src/Ghidra/Framework/Gui/src/main/java/resources/QUADRANT.java	TODO	orig_src Ghidra Framework Gui src main java resources 
+orig_src/Ghidra/Framework/Gui/src/main/java/resources/QUADRANT.java	DONE	orig_src Ghidra Framework Gui src main java resources 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/ResourceManager.java	TODO	orig_src Ghidra Framework Gui src main java resources 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/BytesImageIcon.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/icons/CenterTranslateIcon.java	TODO	orig_src Ghidra Framework Gui src main java resources icons 
