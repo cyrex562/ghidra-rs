@@ -12070,7 +12070,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/actions/Visual
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/AbstractVisualEdge.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/BasicEdgeLabelRenderer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/PathHighlightListener.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/PathHighlighterWorkPauser.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/PathHighlighterWorkPauser.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/VisualEdgeArrowRenderingSupport.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/VisualEdgeRenderer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/edge/VisualGraphEdgeSatelliteRenderer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer edge 
