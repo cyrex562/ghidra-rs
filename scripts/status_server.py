@@ -7,10 +7,14 @@ manifest, tick2_results.tsv, tick2.status, PORT_PARKED.tsv and the window-summar
 log, so the page is always current. Binds to localhost only.
 
 Run:
-    python3 scripts/status_server.py            # http://127.0.0.1:8765
+    python3 scripts/status_server.py                 # binds 0.0.0.0:8765 (LAN + Tailscale)
+    HOST=127.0.0.1 python3 scripts/status_server.py  # loopback only
+    HOST=100.x.y.z python3 scripts/status_server.py  # bind a specific (e.g. Tailscale) IP
     PORT=9000 python3 scripts/status_server.py
 
 Endpoints:  /  (HTML dashboard, auto-refresh)   /metrics.json  (raw numbers)
+
+Note: serves read-only porting metrics; 0.0.0.0 exposes it to your LAN/tailnet.
 """
 
 import html
@@ -33,6 +37,7 @@ STATUS = os.path.join(REPO, "tick2.status")
 PARKED = os.path.join(REPO, "PORT_PARKED.tsv")
 SUMMARY = os.path.join(os.path.expanduser("~"), "agents", "logs", "ghidra", "port-summary.log")
 PORT = int(os.environ.get("PORT", "8765"))
+HOST = os.environ.get("HOST", "0.0.0.0")  # all interfaces -> reachable via LAN/Tailscale IP
 
 
 def compute():
@@ -254,6 +259,6 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    srv = ThreadingHTTPServer(("127.0.0.1", PORT), H)
-    print(f"ghidra-rs status dashboard on http://127.0.0.1:{PORT}  (Ctrl-C to stop)")
+    srv = ThreadingHTTPServer((HOST, PORT), H)
+    print(f"ghidra-rs status dashboard on http://{HOST}:{PORT}  (Ctrl-C to stop)")
     srv.serve_forever()
