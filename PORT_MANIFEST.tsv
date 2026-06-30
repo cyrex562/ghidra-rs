@@ -11818,7 +11818,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/WeakValue
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/WeakValueTreeMap.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/ClosedException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/CryptoException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/DuplicateFileException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/DuplicateFileException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/DuplicateNameException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/FileInUseException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/GraphException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 

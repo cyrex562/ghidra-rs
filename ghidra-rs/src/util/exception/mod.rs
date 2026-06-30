@@ -222,6 +222,57 @@ mod crypto_exception_tests {
     }
 }
 
+/// Thrown when a file or folder cannot be created because one with that name already
+/// exists at the same location.
+///
+/// Port of `ghidra.util.exception.DuplicateFileException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct DuplicateFileException(pub String);
+
+impl DuplicateFileException {
+    /// Creates a `DuplicateFileException` with the given message.
+    pub fn new(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+#[cfg(test)]
+mod duplicate_file_exception_tests {
+    use super::*;
+
+    #[test]
+    fn stores_message() {
+        let e = DuplicateFileException::new("file already exists");
+        assert_eq!(e.to_string(), "file already exists");
+    }
+
+    #[test]
+    fn display_matches_message() {
+        let e = DuplicateFileException::new("foo.txt");
+        assert_eq!(format!("{}", e), "foo.txt");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(
+            DuplicateFileException::new("a"),
+            DuplicateFileException::new("a")
+        );
+        assert_ne!(
+            DuplicateFileException::new("a"),
+            DuplicateFileException::new("b")
+        );
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &DuplicateFileException::new("dup");
+        assert_eq!(e.to_string(), "dup");
+        assert!(e.source().is_none());
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
