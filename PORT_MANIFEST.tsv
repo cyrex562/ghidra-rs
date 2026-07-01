@@ -11578,7 +11578,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SelfComparator.java	
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SetIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SetSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/UnmodifiableListIteratorSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/VectorIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/VectorIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/VectorSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGTest.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGenericTest.java	TODO	orig_src Ghidra Framework Generic src main java generic test 
