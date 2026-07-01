@@ -2,6 +2,7 @@ pub mod coff;
 pub mod dwarf;
 pub mod elf;
 pub mod golang;
+pub mod javaclass;
 pub mod macho;
 pub mod macos;
 pub mod ne;
