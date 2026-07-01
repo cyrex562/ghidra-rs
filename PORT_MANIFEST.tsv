@@ -6270,7 +6270,7 @@ orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/Clos
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ContextRegisterExtentTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ContextRegisterFilterTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/ContextRegisterInfoTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
-orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/DataGatheringParamsTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
+orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/DataGatheringParamsTest.java	DONE	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/FileBitPatternInfoReaderTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/InstructionSequenceTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
 orig_src/Ghidra/Features/BytePatterns/src/test/java/ghidra/bitpatterns/info/PatternEvalutationStatsTest.java	TODO	orig_src Ghidra Features BytePatterns src test java ghidra bitpatterns info 
