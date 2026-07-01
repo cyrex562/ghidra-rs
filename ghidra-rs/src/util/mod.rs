@@ -55,6 +55,7 @@ pub mod quadrant;
 pub mod icons;
 pub mod user_search_utils;
 pub mod xdg_utils;
+pub mod saveable;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -100,3 +101,4 @@ pub use quadrant::Quadrant;
 pub use icons::FileBasedIcon;
 pub use user_search_utils::UserSearchUtils;
 pub use xdg_utils::XdgUtils;
+pub use saveable::{ObjectStorageFieldType, Saveable};

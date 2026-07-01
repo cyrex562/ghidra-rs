@@ -11699,7 +11699,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/ObjectStorageStreamA
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/PrivateSaveable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/ReadOnlyException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/ReversedListIterator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/Saveable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/Saveable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/SaveableColor.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/SaveablePoint.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/SignednessFormatMode.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
