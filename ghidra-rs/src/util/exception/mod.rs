@@ -39,17 +39,133 @@ pub struct AddressOverflowException(pub String);
 #[error("Address out of bounds: {0}")]
 pub struct AddressOutOfBoundsException(pub String);
 
-#[derive(Error, Debug, PartialEq)]
-#[error("Assertion failed: {0}")]
-pub struct AssertException(pub String);
+/// Exception raised when code reaches a situation the programmer believes can't happen.
+///
+/// Port of `ghidra.util.exception.AssertException`.
+#[derive(Debug)]
+pub struct AssertException {
+    message: String,
+    source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+}
 
 impl AssertException {
-    pub fn new(msg: &str) -> Self {
-        Self(msg.to_string())
+    /// Creates an `AssertException` with the default message "Unexpected Error".
+    pub fn new() -> Self {
+        Self { message: "Unexpected Error".to_string(), source: None }
     }
 
-    pub fn from_error(err: &dyn std::error::Error) -> Self {
-        Self(format!("Unexpected Error: {}", err))
+    /// Creates an `AssertException` with the given message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self { message: msg.into(), source: None }
+    }
+
+    /// Creates an `AssertException` using a throwable error.
+    ///
+    /// The message is set to "Unexpected Error: " followed by the error's message if available,
+    /// or the error's full string representation if no message is available.
+    pub fn with_cause<E: std::error::Error + Send + Sync + 'static>(cause: E) -> Self {
+        let cause_str = cause.to_string();
+        let message = format!("Unexpected Error: {}", cause_str);
+        Self { message, source: Some(Box::new(cause)) }
+    }
+
+    /// Creates an `AssertException` with the given message and a chained cause.
+    pub fn with_message_and_cause<E: std::error::Error + Send + Sync + 'static>(
+        message: impl Into<String>,
+        cause: E,
+    ) -> Self {
+        Self { message: message.into(), source: Some(Box::new(cause)) }
+    }
+}
+
+impl Default for AssertException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for AssertException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for AssertException {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.source.as_ref().map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
+    }
+}
+
+#[cfg(test)]
+mod assert_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_constructor_has_unexpected_error_message() {
+        let e = AssertException::new();
+        assert_eq!(e.to_string(), "Unexpected Error");
+    }
+
+    #[test]
+    fn default_has_no_source() {
+        let e = AssertException::new();
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn with_message_stores_custom_message() {
+        let e = AssertException::with_message("custom error");
+        assert_eq!(e.to_string(), "custom error");
+    }
+
+    #[test]
+    fn with_message_has_no_source() {
+        let e = AssertException::with_message("test");
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn with_cause_prefixes_message() {
+        let inner = ClosedException::with_resource("file.db");
+        let e = AssertException::with_cause(inner);
+        assert_eq!(e.to_string(), "Unexpected Error: file.db is closed");
+    }
+
+    #[test]
+    fn with_cause_stores_source() {
+        let inner = ClosedException::with_resource("resource");
+        let e = AssertException::with_cause(inner);
+        assert!(e.source().is_some());
+        assert_eq!(e.source().unwrap().to_string(), "resource is closed");
+    }
+
+    #[test]
+    fn with_message_and_cause_stores_both() {
+        let inner = ClosedException::with_resource("db");
+        let e = AssertException::with_message_and_cause("operation failed", inner);
+        assert_eq!(e.to_string(), "operation failed");
+        assert!(e.source().is_some());
+        assert_eq!(e.source().unwrap().to_string(), "db is closed");
+    }
+
+    #[test]
+    fn default_creates_no_source_exception() {
+        let e: &dyn std::error::Error = &AssertException::default();
+        assert_eq!(e.to_string(), "Unexpected Error");
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &AssertException::with_message("test");
+        assert_eq!(e.to_string(), "test");
+    }
+
+    #[test]
+    fn debug_format() {
+        let e = AssertException::with_message("msg");
+        let debug_str = format!("{:?}", e);
+        assert!(debug_str.contains("AssertException"));
     }
 }
 
