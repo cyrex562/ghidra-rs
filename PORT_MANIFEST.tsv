@@ -11552,7 +11552,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/VectorCompare
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/WeightFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/WeightedLSHCosineVectorFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic lsh vector 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/random/SecureRandomFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic random 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/Algorithms.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/Algorithms.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMapSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiMapSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiSetSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
