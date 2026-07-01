@@ -12163,7 +12163,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/GraphDisplayO
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/GraphDisplayOptionsBuilder.java	TODO	orig_src Ghidra Framework Graph src main java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/GraphLabelPosition.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/GraphType.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/GraphTypeBuilder.java	TODO	orig_src Ghidra Framework Graph src main java ghidra service graph 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/GraphTypeBuilder.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/LayoutAlgorithmNames.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/VertexShape.java	TODO	orig_src Ghidra Framework Graph src main java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/test.slow/java/ghidra/graph/GraphMVCTest.java	DONE	orig_src Ghidra Framework Graph src test.slow java ghidra graph 
