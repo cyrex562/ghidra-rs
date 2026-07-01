@@ -14772,7 +14772,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/task/TaskMonitor.jav
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/xml/AbstractXmlPullParser.java	TODO	orig_src Ghidra Framework Utility src main java ghidra xml 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/xml/XmlElement.java	DONE	orig_src Ghidra Framework Utility src main java ghidra xml 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/xml/XmlElementImpl.java	TODO	orig_src Ghidra Framework Utility src main java ghidra xml 
-orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/xml/XmlException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra xml 
+orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/xml/XmlException.java	DONE	orig_src Ghidra Framework Utility src main java ghidra xml
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/xml/XmlPullParser.java	TODO	orig_src Ghidra Framework Utility src main java ghidra xml 
 orig_src/Ghidra/Framework/Utility/src/main/java/utilities/util/FileResolutionResult.java	TODO	orig_src Ghidra Framework Utility src main java utilities util 
 orig_src/Ghidra/Framework/Utility/src/main/java/utilities/util/FileUtilities.java	TODO	orig_src Ghidra Framework Utility src main java utilities util 
