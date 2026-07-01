@@ -14889,7 +14889,7 @@ orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/relocation/Hexagon_ElfRelocationType.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/viewer/field/HexagonParallelInstructionHelper.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util viewer field 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonEmulateInstructionStateModifier.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra program emulation 
-orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonFp32.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra program emulation 
+orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonFp32.java	DONE	orig_src Ghidra Processors Hexagon src main java ghidra program emulation
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonFp64.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra program emulation 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonPcodeUseropLibraryFactory.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra program emulation 
 orig_src/Ghidra/Processors/Hexagon/src/test.processors/java/ghidra/test/processors/HexagonPcodeEmulatorTest.java	TODO	orig_src Ghidra Processors Hexagon src test.processors java ghidra test processors 
