@@ -14829,7 +14829,7 @@ orig_src/Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/elf/relo
 orig_src/Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/macho/relocation/ARM_MachoRelocationConstants.java	TODO	orig_src Ghidra Processors ARM src main java ghidra app util bin format macho relocation 
 orig_src/Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/macho/relocation/ARM_MachoRelocationHandler.java	TODO	orig_src Ghidra Processors ARM src main java ghidra app util bin format macho relocation 
 orig_src/Ghidra/Processors/ARM/src/main/java/ghidra/program/emulation/ARMEmulateInstructionStateModifier.java	TODO	orig_src Ghidra Processors ARM src main java ghidra program emulation 
-orig_src/Ghidra/Processors/ARM/src/main/java/ghidra/program/emulation/ArmCpuState.java	TODO	orig_src Ghidra Processors ARM src main java ghidra program emulation 
+orig_src/Ghidra/Processors/ARM/src/main/java/ghidra/program/emulation/ArmCpuState.java	DONE	orig_src Ghidra Processors ARM src main java ghidra program emulation 
 orig_src/Ghidra/Processors/ARM/src/main/java/ghidra/program/emulation/ArmPcodeUseropLibraryFactory.java	TODO	orig_src Ghidra Processors ARM src main java ghidra program emulation 
 orig_src/Ghidra/Processors/ARM/src/test.processors/java/ghidra/test/processors/ARM10e_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors ARM src test.processors java ghidra test processors 
 orig_src/Ghidra/Processors/ARM/src/test.processors/java/ghidra/test/processors/ARM10e_O3_EmulatorTest.java	TODO	orig_src Ghidra Processors ARM src test.processors java ghidra test processors 
