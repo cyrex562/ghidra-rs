@@ -14765,7 +14765,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/TimeoutExc
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/UnableToSwingException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util exception 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/UsrException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util exception 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/task/CancellableIterator.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util task 
-orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/task/CancelledListener.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util task 
+orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/task/CancelledListener.java	DONE	orig_src Ghidra Framework Utility src main java ghidra util task 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/task/IssueListener.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util task 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/task/StubTaskMonitor.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util task 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/task/TaskMonitor.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util task 

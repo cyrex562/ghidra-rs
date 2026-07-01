@@ -5,7 +5,9 @@ pub trait BusyListener: Send + Sync {
     fn set_busy(&self, busy: bool);
 }
 
+/// Listener notified when a task is cancelled.
 pub trait CancelledListener: Send + Sync {
+    /// Called when the task is cancelled.
     fn cancelled(&self);
 }
 
@@ -73,6 +75,7 @@ impl TaskMonitor for DummyMonitor {
 mod tests {
     use super::*;
     use std::cell::Cell;
+    use std::sync::{Arc, Mutex};
 
     struct TrackingBusyListener {
         last: Cell<bool>,
@@ -106,5 +109,39 @@ mod tests {
         assert!(l.last.get());
         obj.set_busy(false);
         assert!(!l.last.get());
+    }
+
+    struct CountingCancelledListener {
+        call_count: Mutex<i32>,
+    }
+
+    impl CancelledListener for CountingCancelledListener {
+        fn cancelled(&self) {
+            *self.call_count.lock().unwrap() += 1;
+        }
+    }
+
+    #[test]
+    fn cancelled_listener_called() {
+        let l = CountingCancelledListener { call_count: Mutex::new(0) };
+        l.cancelled();
+        assert_eq!(*l.call_count.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn cancelled_listener_called_multiple_times() {
+        let l = CountingCancelledListener { call_count: Mutex::new(0) };
+        l.cancelled();
+        l.cancelled();
+        l.cancelled();
+        assert_eq!(*l.call_count.lock().unwrap(), 3);
+    }
+
+    #[test]
+    fn cancelled_listener_as_trait_object() {
+        let l: Arc<dyn CancelledListener> = Arc::new(CountingCancelledListener { call_count: Mutex::new(0) });
+        l.cancelled();
+        let l2 = Arc::clone(&l);
+        l2.cancelled();
     }
 }
