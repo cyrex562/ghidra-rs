@@ -7,6 +7,7 @@ pub mod g_edge;
 pub mod g_vertex;
 pub mod g_weighted_edge;
 pub mod graph_path;
+pub mod graph_path_set;
 pub mod viewer;
 
 #[cfg(test)]
@@ -20,4 +21,5 @@ pub use g_edge::GEdge;
 pub use g_vertex::GVertex;
 pub use g_weighted_edge::GWeightedEdge;
 pub use graph_path::GraphPath;
+pub use graph_path_set::GraphPathSet;
 pub use viewer::{PathHighlightListener, VisualGraphContextMarker};
