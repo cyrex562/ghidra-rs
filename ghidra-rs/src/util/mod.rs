@@ -47,6 +47,7 @@ pub mod classfinder;
 pub mod graph;
 pub mod map;
 pub mod log_listener;
+pub mod manual_entry;
 pub mod quadrant;
 pub mod icons;
 
@@ -86,5 +87,6 @@ pub use universal_id::UniversalID;
 pub use classfinder::ClassFileInfo;
 pub use map::TypeMismatchException;
 pub use log_listener::LogListener;
+pub use manual_entry::ManualEntry;
 pub use quadrant::Quadrant;
 pub use icons::FileBasedIcon;
