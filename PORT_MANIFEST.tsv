@@ -14974,7 +14974,7 @@ orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/ClassFileAn
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/ClassFileJava.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/DescriptorDecoder.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/FieldInfoJava.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format 
-orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/JavaClassConstants.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format 
+orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/JavaClassConstants.java	DONE	orig_src Ghidra Processors JVM src main java ghidra javaclass format
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/JavaClassUtil.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/MethodInfoJava.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/attributes/AbstractAttributeInfo.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format attributes 
