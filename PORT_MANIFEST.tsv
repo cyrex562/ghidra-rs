@@ -15034,7 +15034,7 @@ orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/constantpoo
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/constantpool/ConstantPoolNameAndTypeInfo.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format constantpool 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/constantpool/ConstantPoolPackageInfo.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format constantpool 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/constantpool/ConstantPoolStringInfo.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format constantpool 
-orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/constantpool/ConstantPoolTagsJava.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format constantpool 
+orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/constantpool/ConstantPoolTagsJava.java	DONE	orig_src Ghidra Processors JVM src main java ghidra javaclass format constantpool
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/constantpool/ConstantPoolUtf8Info.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass format constantpool 
 orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/app/util/pcodeInject/InvokeMethodsTest.java	TODO	orig_src Ghidra Processors JVM src test java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/app/util/pcodeInject/LdcMethodsTest.java	TODO	orig_src Ghidra Processors JVM src test java ghidra app util pcodeInject 
