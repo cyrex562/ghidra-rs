@@ -14716,7 +14716,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/ClassModuleTree.java
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/FileResource.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/GClassLoader.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryFilter.java	DONE	orig_src Ghidra Framework Utility src main java generic jar 
-orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryNode.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
+orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryNode.java	DONE	orig_src Ghidra Framework Utility src main java generic jar
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarResource.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/Resource.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
