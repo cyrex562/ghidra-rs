@@ -5,4 +5,4 @@ pub mod util;
 
 pub use busy_tool_exception::BusyToolException;
 pub use tool_event_name::ToolEventName;
-pub use util::PluginPackageState;
+pub use util::{PluginPackageState, ServiceListener};
