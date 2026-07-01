@@ -1,5 +1,9 @@
 use thiserror::Error;
 
+pub mod value_storage_page_index;
+
+pub use value_storage_page_index::ValueStoragePageIndex;
+
 /// Exception thrown when a PropertyPage does not support a requested data type.
 ///
 /// Port of `ghidra.util.map.TypeMismatchException`.
