@@ -1,4 +1,5 @@
 pub mod abstract_weak_value_map;
+pub mod abstract_weak_value_navigable_map;
 pub mod red_black_entry;
 pub mod red_black_long_key_set;
 pub mod short_key_set;
@@ -27,6 +28,7 @@ pub mod value_range;
 pub mod weak_store;
 
 pub use abstract_weak_value_map::{AbstractWeakValueMap, WeakRefStore};
+pub use abstract_weak_value_navigable_map::{AbstractWeakValueNavigableMap, NavigableWeakRefStore};
 pub use accumulator::Accumulator;
 pub use accumulator_size_exception::AccumulatorSizeException;
 pub use case_insensitive_duplicate_string_comparator::CaseInsensitiveDuplicateStringComparator;
