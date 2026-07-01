@@ -5,6 +5,7 @@ pub mod event;
 pub mod fcg_direction;
 pub mod g_edge;
 pub mod g_vertex;
+pub mod g_weighted_edge;
 pub mod graph_path;
 pub mod viewer;
 
@@ -17,5 +18,6 @@ pub use event::VisualGraphChangeListener;
 pub use fcg_direction::FcgDirection;
 pub use g_edge::GEdge;
 pub use g_vertex::GVertex;
+pub use g_weighted_edge::GWeightedEdge;
 pub use graph_path::GraphPath;
 pub use viewer::{PathHighlightListener, VisualGraphContextMarker};
