@@ -1,3 +1,4 @@
+pub mod abstract_peekable_iterator;
 pub mod beanify;
 pub mod datastruct;
 pub mod deque_push;
