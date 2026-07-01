@@ -7,6 +7,7 @@ pub mod model;
 pub mod options;
 pub mod os;
 pub mod plugintool;
+pub mod pluggable_service_registry_exception;
 pub mod project;
 pub mod protocol;
 pub mod remote;
@@ -16,6 +17,7 @@ pub mod store;
 pub mod version;
 
 pub use os::OperatingSystem;
+pub use pluggable_service_registry_exception::PluggableServiceRegistryException;
 pub use service::{PluggableServiceRegistry, PluggableServiceRegistryError};
 pub use shutdown_priority::ShutdownPriority;
 pub use version::ApplicationVersion;
