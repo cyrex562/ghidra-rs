@@ -54,12 +54,17 @@ impl Write for NullOutputStream {
     }
 }
 
+/// [`Write`] wrapper that computes a cryptographic hash of all bytes written.
+///
+/// All writes are both hashed and forwarded to the underlying writer. The hash can be
+/// retrieved via [`finalize`](Self::finalize).
 pub struct HashingOutputStream<W: Write, D: Digest> {
     inner: W,
     digest: D,
 }
 
 impl<W: Write, D: Digest> HashingOutputStream<W, D> {
+    /// Creates a new instance, wrapping `inner` and hashing all bytes written to it.
     pub fn new(inner: W) -> Self {
         Self {
             inner,
@@ -67,6 +72,7 @@ impl<W: Write, D: Digest> HashingOutputStream<W, D> {
         }
     }
 
+    /// Consumes self and returns the computed digest as a vector of bytes.
     pub fn finalize(self) -> Vec<u8> {
         self.digest.finalize().to_vec()
     }
@@ -128,12 +134,54 @@ mod tests {
     }
 
     #[test]
-    fn test_hashing_output_stream() {
+    fn test_hashing_output_stream_basic() {
         let mut out = Vec::new();
         let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
         hashing.write_all(b"hello").unwrap();
         let digest = hashing.finalize();
         assert_eq!(out, b"hello");
-        assert!(digest.len() > 0);
+        assert_eq!(digest.len(), 32); // SHA-256 is 256 bits = 32 bytes
+    }
+
+    #[test]
+    fn test_hashing_output_stream_single_byte() {
+        let mut out = Vec::new();
+        let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        hashing.write(&[42]).unwrap();
+        let digest = hashing.finalize();
+        assert_eq!(out, vec![42]);
+        assert_eq!(digest.len(), 32);
+    }
+
+    #[test]
+    fn test_hashing_output_stream_multiple_writes() {
+        let mut out = Vec::new();
+        let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        hashing.write_all(b"hello").unwrap();
+        hashing.write_all(b" ").unwrap();
+        hashing.write_all(b"world").unwrap();
+        let digest = hashing.finalize();
+        assert_eq!(out, b"hello world");
+        assert_eq!(digest.len(), 32);
+    }
+
+    #[test]
+    fn test_hashing_output_stream_flush() {
+        let mut out = Vec::new();
+        let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        hashing.write_all(b"test").unwrap();
+        hashing.flush().unwrap();
+        let digest = hashing.finalize();
+        assert_eq!(out, b"test");
+        assert_eq!(digest.len(), 32);
+    }
+
+    #[test]
+    fn test_hashing_output_stream_empty() {
+        let mut out = Vec::new();
+        let hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        let digest = hashing.finalize();
+        assert!(out.is_empty());
+        assert_eq!(digest.len(), 32);
     }
 }
