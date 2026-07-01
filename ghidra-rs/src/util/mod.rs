@@ -50,6 +50,7 @@ pub mod log_listener;
 pub mod manual_entry;
 pub mod quadrant;
 pub mod icons;
+pub mod user_search_utils;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -90,3 +91,4 @@ pub use log_listener::LogListener;
 pub use manual_entry::ManualEntry;
 pub use quadrant::Quadrant;
 pub use icons::FileBasedIcon;
+pub use user_search_utils::UserSearchUtils;
