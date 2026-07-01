@@ -6822,7 +6822,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/a
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtImageSectionsFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtMethod.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtMethodGroup.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtStorageMode.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtStorageMode.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtUtilities.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/UnknownArtStorageModeException.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/UnsupportedArtVersionException.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
