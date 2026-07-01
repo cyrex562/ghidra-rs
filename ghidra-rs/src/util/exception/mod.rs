@@ -433,6 +433,87 @@ mod file_in_use_exception_tests {
     }
 }
 
+/// Exception raised when an IO operation is cancelled by the user.
+///
+/// Port of `ghidra.util.exception.IOCancelledException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct IOCancelledException(pub String);
+
+impl IOCancelledException {
+    /// Creates an `IOCancelledException` with the default message "IO cancelled by user".
+    pub fn new() -> Self {
+        Self("IO cancelled by user".to_string())
+    }
+
+    /// Creates an `IOCancelledException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for IOCancelledException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod io_cancelled_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = IOCancelledException::new();
+        assert_eq!(e.to_string(), "IO cancelled by user");
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(IOCancelledException::default(), IOCancelledException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = IOCancelledException::with_message("cancelled by timeout");
+        assert_eq!(e.to_string(), "cancelled by timeout");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(IOCancelledException::new(), IOCancelledException::new());
+        assert_eq!(
+            IOCancelledException::with_message("msg"),
+            IOCancelledException::with_message("msg")
+        );
+        assert_ne!(IOCancelledException::new(), IOCancelledException::with_message("custom"));
+        assert_ne!(
+            IOCancelledException::with_message("a"),
+            IOCancelledException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = IOCancelledException::with_message("user halted");
+        assert_eq!(format!("{}", e), "user halted");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &IOCancelledException::new();
+        assert_eq!(e.to_string(), "IO cancelled by user");
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn debug_format() {
+        let e = IOCancelledException::with_message("test");
+        let debug_str = format!("{:?}", e);
+        assert!(debug_str.contains("IOCancelledException"));
+    }
+}
+
 /// Wrapper allowing multiple causes to be recorded in place of a single cause.
 ///
 /// Use an instance as the [`source`](std::error::Error::source) of a parent error when multiple
