@@ -133,4 +133,80 @@ mod tests {
         assert_send_sync::<ExceptionalCallback<String>>();
         drop(callback);
     }
+
+    #[test]
+    fn exceptional_consumer_accepts_value_and_succeeds() {
+        let log: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
+        let log_clone = Arc::clone(&log);
+        let consumer: ExceptionalConsumer<i32, String> = Box::new(move |value| {
+            log_clone.lock().unwrap().push(value);
+            Ok(())
+        });
+
+        assert!(consumer(42).is_ok());
+        assert_eq!(*log.lock().unwrap(), vec![42]);
+    }
+
+    #[test]
+    fn exceptional_consumer_returns_error() {
+        let consumer: ExceptionalConsumer<i32, String> =
+            Box::new(|_| Err("error occurred".to_string()));
+        let result = consumer(42);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "error occurred");
+    }
+
+    #[test]
+    fn exceptional_consumer_with_multiple_invocations() {
+        let log: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
+        let log_clone = Arc::clone(&log);
+        let consumer: ExceptionalConsumer<i32, String> = Box::new(move |value| {
+            log_clone.lock().unwrap().push(value);
+            Ok(())
+        });
+
+        assert!(consumer(1).is_ok());
+        assert!(consumer(2).is_ok());
+        assert!(consumer(3).is_ok());
+        assert_eq!(*log.lock().unwrap(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn exceptional_consumer_with_different_types() {
+        let log: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+        let log_clone = Arc::clone(&log);
+        let consumer: ExceptionalConsumer<&str, ()> = Box::new(move |value| {
+            log_clone.lock().unwrap().push_str(value);
+            Ok(())
+        });
+
+        assert!(consumer("hello").is_ok());
+        assert!(consumer(" world").is_ok());
+        assert_eq!(*log.lock().unwrap(), "hello world");
+    }
+
+    #[test]
+    fn exceptional_consumer_can_fail_conditionally() {
+        let consumer: ExceptionalConsumer<i32, String> = Box::new(|value| {
+            if value < 0 {
+                Err("negative value".to_string())
+            } else {
+                Ok(())
+            }
+        });
+
+        assert!(consumer(42).is_ok());
+        let result = consumer(-1);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "negative value");
+    }
+
+    #[test]
+    fn exceptional_consumer_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+
+        let consumer: ExceptionalConsumer<i32, String> = Box::new(|_| Ok(()));
+        assert_send_sync::<ExceptionalConsumer<i32, String>>();
+        drop(consumer);
+    }
 }
