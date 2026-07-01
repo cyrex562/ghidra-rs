@@ -1,11 +1,12 @@
 use std::collections::HashSet;
 use std::fmt;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 
 /// A path through a graph with O(1) vertex membership testing.
 ///
 /// Vertices are stored in both insertion order (for indexed access and ordering) and
 /// a hash set (for fast `contains` checks). Each vertex may appear at most once.
+#[derive(Clone)]
 pub struct GraphPath<V> {
     path_set: HashSet<V>,
     path_list: Vec<V>,
@@ -148,6 +149,20 @@ impl<V: Eq + Hash + Clone> Default for GraphPath<V> {
 impl<V: fmt::Debug> fmt::Debug for GraphPath<V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.path_list.fmt(f)
+    }
+}
+
+impl<V: Eq + Hash + Clone> PartialEq for GraphPath<V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.path_list == other.path_list
+    }
+}
+
+impl<V: Eq + Hash + Clone> Eq for GraphPath<V> {}
+
+impl<V: Eq + Hash + Clone> Hash for GraphPath<V> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.path_list.hash(state);
     }
 }
 
