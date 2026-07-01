@@ -9560,7 +9560,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/fil
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/filters/IntegerInputVerifier.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui filters 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/filters/StatusLabel.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui filters 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/filters/TagFilter.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui filters 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/filters/TagFilterChooser.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui filters 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/filters/TagFilterChooser.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui filters
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/filters/TagFilterEditorDialog.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui filters 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/plugin/AddressCorrelatorManager.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui plugin 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/plugin/SubToolContext.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui plugin 
