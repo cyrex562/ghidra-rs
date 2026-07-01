@@ -11318,7 +11318,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBeha
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorPiece.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorPopcount.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/OpBehaviorSubpiece.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/SpecialOpBehavior.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/SpecialOpBehavior.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/opbehavior/UnaryOpBehavior.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode opbehavior 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/pcoderaw/PcodeOpRaw.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode pcoderaw 
 orig_src/Ghidra/Framework/Emulation/src/main/java/utilities/util/AnnotationUtilities.java	DONE	orig_src Ghidra Framework Emulation src main java utilities util
