@@ -9506,7 +9506,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/act
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/CreateManualMatchFromToolsAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/CreateSelectionAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/CreateVersionTrackingSessionAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/DisplayableMarkupItemAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/DisplayableMarkupItemAction.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/DontCareMarkupItemAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/DontKnowMarkupItemAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/actions/EditAllTagsAction.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui actions 
