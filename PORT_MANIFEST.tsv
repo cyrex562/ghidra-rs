@@ -11603,7 +11603,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraSwinglessTim
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraTimer.java	DONE	orig_src Ghidra Framework Generic src main java generic timer 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraTimerFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic timer 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/timer/TimerCallback.java	DONE	orig_src Ghidra Framework Generic src main java generic timer
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/AbstractPeekableIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/AbstractPeekableIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ArchiveBuilder.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/Beanify.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ChannelLocker.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
