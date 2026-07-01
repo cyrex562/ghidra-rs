@@ -14882,7 +14882,7 @@ orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/plugin/core/analysis
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/plugin/core/analysis/HexagonPrologEpilogAnalyzer.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/plugin/core/analysis/HexagonThunkAnalyzer.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/plugin/core/analysis/HexagonUnsupportSemanticAnalyzer.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app plugin core analysis 
-orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/Hexagon_ElfConstants.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf 
+orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/Hexagon_ElfConstants.java	DONE	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/extend/Hexagon_ElfExtension.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf extend 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/extend/Hexagon_ElfProgramHeaderConstants.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf extend 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/relocation/Hexagon_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf relocation 
