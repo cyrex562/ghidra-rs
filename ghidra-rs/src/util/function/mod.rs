@@ -209,4 +209,95 @@ mod tests {
         assert_send_sync::<ExceptionalConsumer<i32, String>>();
         drop(consumer);
     }
+
+    #[test]
+    fn exceptional_function_transforms_input_to_output() {
+        let func: ExceptionalFunction<i32, String, String> =
+            Box::new(|x| Ok(format!("value: {}", x)));
+        let result = func(42);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "value: 42");
+    }
+
+    #[test]
+    fn exceptional_function_returns_error() {
+        let func: ExceptionalFunction<i32, String, String> =
+            Box::new(|_| Err("computation failed".to_string()));
+        let result = func(42);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "computation failed");
+    }
+
+    #[test]
+    fn exceptional_function_with_multiple_invocations() {
+        let call_count = Arc::new(Mutex::new(0));
+        let call_count_clone = Arc::clone(&call_count);
+        let func: ExceptionalFunction<i32, i32, String> = Box::new(move |x| {
+            *call_count_clone.lock().unwrap() += 1;
+            Ok(x * 2)
+        });
+
+        assert_eq!(func(5).unwrap(), 10);
+        assert_eq!(func(10).unwrap(), 20);
+        assert_eq!(*call_count.lock().unwrap(), 2);
+    }
+
+    #[test]
+    fn exceptional_function_with_different_types() {
+        let func: ExceptionalFunction<&str, usize, ()> =
+            Box::new(|s| Ok(s.len()));
+        assert_eq!(func("hello").unwrap(), 5);
+        assert_eq!(func("world").unwrap(), 5);
+        assert_eq!(func("x").unwrap(), 1);
+    }
+
+    #[test]
+    fn exceptional_function_can_fail_conditionally() {
+        let func: ExceptionalFunction<i32, i32, String> = Box::new(|x| {
+            if x < 0 {
+                Err("negative input".to_string())
+            } else {
+                Ok(x * 2)
+            }
+        });
+
+        assert_eq!(func(5).unwrap(), 10);
+        let result = func(-1);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "negative input");
+    }
+
+    #[test]
+    fn exceptional_function_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+
+        let func: ExceptionalFunction<i32, String, String> = Box::new(|x| Ok(x.to_string()));
+        assert_send_sync::<ExceptionalFunction<i32, String, String>>();
+        drop(func);
+    }
+
+    #[test]
+    fn exceptional_function_with_complex_error_type() {
+        #[derive(Debug, PartialEq)]
+        struct CustomError {
+            code: i32,
+            msg: String,
+        }
+
+        let func: ExceptionalFunction<i32, String, CustomError> = Box::new(|x| {
+            if x >= 0 {
+                Ok(format!("processed: {}", x))
+            } else {
+                Err(CustomError {
+                    code: -1,
+                    msg: "negative".to_string(),
+                })
+            }
+        });
+
+        assert_eq!(func(42).unwrap(), "processed: 42");
+        let err = func(-1).unwrap_err();
+        assert_eq!(err.code, -1);
+        assert_eq!(err.msg, "negative");
+    }
 }
