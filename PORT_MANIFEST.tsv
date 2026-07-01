@@ -12868,7 +12868,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/gui/taskvi
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/gui/taskview/TaskViewer.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task gui taskview 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/gui/taskview/TaskViewerComponent.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task gui taskview 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/project/test/TestProjectManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra project test 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/util/Lock.java	TODO	orig_src Ghidra Framework Project src main java ghidra util 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/util/Lock.java	DONE	orig_src Ghidra Framework Project src main java ghidra util
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/util/VersionExceptionHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/util/exception/BadLinkException.java	DONE	orig_src Ghidra Framework Project src main java ghidra util exception 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/util/exception/RollbackException.java	DONE	orig_src Ghidra Framework Project src main java ghidra util exception 
