@@ -3,7 +3,12 @@ use std::any::Any;
 /// A filter that determines which rows are accepted in a table widget.
 ///
 /// Corresponds to `docking.widgets.table.TableFilter` in the Java source.
-pub trait TableFilter<R> {
+///
+/// `Any` is a supertrait so that callers holding only a type-erased `&dyn TableFilter<R>`
+/// (for example, elements of a boxed collection) can still upcast to `&dyn Any` and downcast
+/// to a concrete filter type, matching the way [`is_sub_filter_of`](Self::is_sub_filter_of)
+/// is used.
+pub trait TableFilter<R>: Any {
     /// Returns true if this filter accepts the given row object.
     fn accepts_row(&self, row_object: &R) -> bool;
 
