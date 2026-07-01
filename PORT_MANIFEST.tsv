@@ -14789,7 +14789,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalCall
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalConsumer.java	DONE	orig_src Ghidra Framework Utility src main java utility function 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalFunction.java	DONE	orig_src Ghidra Framework Utility src main java utility function
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalSupplier.java	DONE	orig_src Ghidra Framework Utility src main java utility function 
-orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/TerminatingConsumer.java	TODO	orig_src Ghidra Framework Utility src main java utility function 
+orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/TerminatingConsumer.java	DONE	orig_src Ghidra Framework Utility src main java utility function
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/module/ClasspathFilter.java	TODO	orig_src Ghidra Framework Utility src main java utility module 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/module/ModuleManifestFile.java	TODO	orig_src Ghidra Framework Utility src main java utility module 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/module/ModuleUtilities.java	TODO	orig_src Ghidra Framework Utility src main java utility module 
