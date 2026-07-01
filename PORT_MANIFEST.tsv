@@ -14746,7 +14746,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/DefaultErrorLogger.j
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/ErrorDisplay.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/ErrorLogger.java	DONE	orig_src Ghidra Framework Utility src main java ghidra util
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/Fixup.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util 
-orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/HashingOutputStream.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util 
+orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/HashingOutputStream.java	DONE	orig_src Ghidra Framework Utility src main java ghidra util 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/Issue.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/Location.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/MessageType.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util 
