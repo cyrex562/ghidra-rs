@@ -180,4 +180,54 @@ mod tests {
         assert!(!gt.contains_vertex_type("anything"));
         assert!(!gt.contains_edge_type("anything"));
     }
+
+    #[test]
+    fn test_name() {
+        let graph_type = make_gt("Test", "Test Description", &["V1", "V2", "V3"], &["E1", "E2", "E3"]);
+        assert_eq!("Test", graph_type.get_name());
+    }
+
+    #[test]
+    fn test_description() {
+        let graph_type = make_gt("Test", "Test Description", &["V1", "V2", "V3"], &["E1", "E2", "E3"]);
+        assert_eq!("Test Description", graph_type.get_description());
+    }
+
+    #[test]
+    fn test_get_vertex_types() {
+        let graph_type = make_gt("Test", "Test Description", &["V1", "V2", "V3"], &["E1", "E2", "E3"]);
+        let types = graph_type.get_vertex_types();
+        assert_eq!(3, types.len());
+        assert_eq!("V1", types.get(0).unwrap());
+        assert_eq!("V2", types.get(1).unwrap());
+        assert_eq!("V3", types.get(2).unwrap());
+    }
+
+    #[test]
+    fn test_get_edge_types() {
+        let graph_type = make_gt("Test", "Test Description", &["V1", "V2", "V3"], &["E1", "E2", "E3"]);
+        let types = graph_type.get_edge_types();
+        assert_eq!(3, types.len());
+        assert_eq!("E1", types.get(0).unwrap());
+        assert_eq!("E2", types.get(1).unwrap());
+        assert_eq!("E3", types.get(2).unwrap());
+    }
+
+    #[test]
+    fn test_contains_vertex_type() {
+        let graph_type = make_gt("Test", "Test Description", &["V1", "V2", "V3"], &["E1", "E2", "E3"]);
+        assert!(graph_type.contains_vertex_type("V1"));
+        assert!(graph_type.contains_vertex_type("V2"));
+        assert!(graph_type.contains_vertex_type("V3"));
+        assert!(!graph_type.contains_vertex_type("E1"));
+    }
+
+    #[test]
+    fn test_contains_edge_type() {
+        let graph_type = make_gt("Test", "Test Description", &["V1", "V2", "V3"], &["E1", "E2", "E3"]);
+        assert!(graph_type.contains_edge_type("E1"));
+        assert!(graph_type.contains_edge_type("E2"));
+        assert!(graph_type.contains_edge_type("E3"));
+        assert!(!graph_type.contains_edge_type("V2"));
+    }
 }
