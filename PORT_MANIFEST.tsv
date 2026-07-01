@@ -11557,7 +11557,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMapSTL.jav
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiMapSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiSetSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableSetSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/EmptyIteratorSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/EmptyIteratorSTL.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/IteratorSTL.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ListIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ListNodeSTL.java	DONE	orig_src Ghidra Framework Generic src main java generic stl
