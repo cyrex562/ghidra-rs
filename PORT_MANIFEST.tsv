@@ -163,7 +163,7 @@ orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/JavaTraceRm
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/JavaTraceRmiLaunchOpinion.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/GhidraJdiInit.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi jpda 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiArch.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi jpda 
-orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiArguments.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi jpda 
+orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiArguments.java	DONE	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi jpda
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiClientThread.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi jpda 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiCommands.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi jpda 
 orig_src/Ghidra/Debug/Debugger-jpda/src/main/java/ghidra/dbg/jdi/rmi/jpda/JdiConnector.java	TODO	orig_src Ghidra Debug Debugger-jpda src main java ghidra dbg jdi rmi jpda 
