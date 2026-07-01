@@ -9660,7 +9660,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/tas
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/CreateAndAcceptApplyManualMatchTask.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/CreateImpliedMatchesTask.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/CreateManualMatchTask.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/ErrorStatus.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/ErrorStatus.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/ForceApplyMarkupItemTask.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/RejectMatchTask.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/task/RemoveMatchTask.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui task 
