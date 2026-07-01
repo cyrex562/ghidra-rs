@@ -64,7 +64,7 @@ pub use count_latch::CountLatch;
 pub use async_lazy_value::{ArcError, AsyncLazyValue, Completer};
 pub use async_pairing_queue::AsyncPairingQueue;
 pub use disposed_exception::DisposedException;
-pub use datastruct::{Duo, Range, Side};
+pub use datastruct::{Duo, Range, Side, WeakValueHashMap};
 pub use lock_hold::{Lock, LockHold};
 pub use merge_sorting_spliterator::MergeSortingIterator;
 pub use multi_comparable_array_iterator::MultiComparableArrayIterator;
