@@ -12898,7 +12898,7 @@ orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/Pty.java	TODO	orig_src Gh
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/PtyChild.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/PtyEndpoint.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/PtyFactory.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/PtyParent.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/PtyParent.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/PtySession.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/ShellUtils.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/linux/LinuxIoctls.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty linux 
