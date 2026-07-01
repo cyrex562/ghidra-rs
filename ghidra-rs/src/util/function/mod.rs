@@ -1,7 +1,22 @@
+/// A generic functional interface that is more semantically sound than a bare `Fn`.
+///
+/// Port of `utility.function.Callback`.
 pub type Callback = Box<dyn Fn() + Send + Sync>;
 
+/// Returns a no-op callback.
+///
+/// Useful to avoid using `None` or null.
 pub fn dummy_callback() -> Callback {
     Box::new(|| {})
+}
+
+/// Returns the given callback if it is `Some`, otherwise returns a dummy callback.
+///
+/// Useful to avoid using `None` or null.
+///
+/// Port of `Callback.dummyIfNull`.
+pub fn dummy_if_none(c: Option<Callback>) -> Callback {
+    c.unwrap_or_else(dummy_callback)
 }
 
 pub type ExceptionalCallback<E> = Box<dyn Fn() -> Result<(), E> + Send + Sync>;
@@ -16,6 +31,32 @@ pub type TriConsumer<T, U, V> = Box<dyn Fn(T, U, V) + Send + Sync>;
 mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn dummy_callback_is_noop() {
+        let callback = dummy_callback();
+        callback();
+    }
+
+    #[test]
+    fn dummy_if_none_with_none_returns_dummy() {
+        let callback = dummy_if_none(None);
+        callback();
+    }
+
+    #[test]
+    fn dummy_if_none_with_some_returns_callback() {
+        let called = Arc::new(Mutex::new(false));
+        let called_clone = Arc::clone(&called);
+        let callback = Box::new(move || {
+            *called_clone.lock().unwrap() = true;
+        });
+
+        let result = dummy_if_none(Some(callback));
+        result();
+
+        assert!(*called.lock().unwrap());
+    }
 
     #[test]
     fn tri_consumer_receives_all_three_args() {
