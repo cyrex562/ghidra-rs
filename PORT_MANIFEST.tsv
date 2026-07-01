@@ -9295,7 +9295,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/Def
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixException.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFile.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileDescriptor.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileStat.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileStat.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileSystem.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixUser.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/IOStreamEmuUnixFileHandle.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
