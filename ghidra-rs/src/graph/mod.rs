@@ -4,6 +4,7 @@ pub mod deg_shared_config;
 pub mod event;
 pub mod fcg_direction;
 pub mod g_edge;
+pub mod g_vertex;
 pub mod graph_path;
 pub mod viewer;
 
@@ -15,5 +16,6 @@ pub use deg_shared_config::DegSharedConfig;
 pub use event::VisualGraphChangeListener;
 pub use fcg_direction::FcgDirection;
 pub use g_edge::GEdge;
+pub use g_vertex::GVertex;
 pub use graph_path::GraphPath;
 pub use viewer::{PathHighlightListener, VisualGraphContextMarker};
