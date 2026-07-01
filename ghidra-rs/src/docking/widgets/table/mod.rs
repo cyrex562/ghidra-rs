@@ -1,6 +1,7 @@
 pub mod columnfilter;
 pub mod constraint;
 pub mod constrainteditor;
+pub mod sort;
 pub mod threaded;
 pub mod add_remove_list_item;
 pub mod column_annotation;
@@ -27,3 +28,4 @@ pub use table_filter::TableFilter;
 pub use table_item_picked_listener::TableItemPickedListener;
 pub use constraint::ColumnData;
 pub use constrainteditor::LongConverter;
+pub use sort::DefaultColumnComparator;

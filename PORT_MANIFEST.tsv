@@ -10614,7 +10614,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constraint
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/UnsignedLongRangeConstraintEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/constrainteditor/UnsignedLongRangeEditorProvider.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table constrainteditor 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/sort/ColumnRenderedValueBackupComparator.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table sort 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/sort/DefaultColumnComparator.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table sort 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/sort/DefaultColumnComparator.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table sort 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/sort/RowBasedColumnComparator.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table sort 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/AddRemoveJob.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table threaded 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/CoalescingAddRemoveStrategy.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table threaded 
