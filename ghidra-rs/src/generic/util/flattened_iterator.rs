@@ -151,4 +151,58 @@ mod tests {
         let result: Vec<usize> = fi.collect();
         assert_eq!(result, vec![0, 0, 1, 0, 1, 2]);
     }
+
+    #[test]
+    fn empty_outer_never_invokes_factory() {
+        let outer: Vec<i32> = vec![];
+        let fi = FlattenedIterator::new(outer.into_iter(), |_| -> Option<std::vec::IntoIter<i32>> {
+            panic!("factory should not be called for an empty outer iterator")
+        });
+        let result: Vec<i32> = fi.collect();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn first_empty_second_singleton() {
+        let outer = vec![0, 1];
+        let fi = FlattenedIterator::new(outer.into_iter(), |n| {
+            Some(if n == 0 { vec![] } else { vec!["Test"] }.into_iter())
+        });
+        let result: Vec<&str> = fi.collect();
+        assert_eq!(result, vec!["Test"]);
+    }
+
+    #[test]
+    fn repeated_peek_calls_do_not_advance_state() {
+        let outer = vec![0, 1];
+        let mut fi = FlattenedIterator::new(outer.into_iter(), |n| {
+            Some(if n == 0 { vec!["T1", "T2"] } else { vec!["T3", "T4"] }.into_iter())
+        })
+        .peekable();
+
+        assert_eq!(fi.peek(), Some(&"T1"));
+        assert_eq!(fi.peek(), Some(&"T1"));
+        assert_eq!(fi.next(), Some("T1"));
+        assert_eq!(fi.peek(), Some(&"T2"));
+        assert_eq!(fi.next(), Some("T2"));
+        assert_eq!(fi.peek(), Some(&"T3"));
+        assert_eq!(fi.next(), Some("T3"));
+        assert_eq!(fi.peek(), Some(&"T4"));
+        assert_eq!(fi.next(), Some("T4"));
+        assert_eq!(fi.peek(), None);
+    }
+
+    #[test]
+    fn sequential_next_calls_without_peeking() {
+        let outer = vec![0, 1];
+        let mut fi = FlattenedIterator::new(outer.into_iter(), |n| {
+            Some(if n == 0 { vec!["T1", "T2"] } else { vec!["T3", "T4"] }.into_iter())
+        });
+        assert_eq!(fi.next(), Some("T1"));
+        assert_eq!(fi.next(), Some("T2"));
+        assert_eq!(fi.next(), Some("T3"));
+        assert_eq!(fi.next(), Some("T4"));
+        assert_eq!(fi.next(), None);
+        assert_eq!(fi.next(), None);
+    }
 }

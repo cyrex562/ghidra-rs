@@ -11921,7 +11921,7 @@ orig_src/Ghidra/Framework/Generic/src/test/java/generic/stl/MapSTLTest.java	TODO
 orig_src/Ghidra/Framework/Generic/src/test/java/generic/stl/RedBlackTreeTest.java	TODO	orig_src Ghidra Framework Generic src test java generic stl 
 orig_src/Ghidra/Framework/Generic/src/test/java/generic/stl/VectorSTLTest.java	TODO	orig_src Ghidra Framework Generic src test java generic stl 
 orig_src/Ghidra/Framework/Generic/src/test/java/generic/timer/ExpiringSwingTimerTest.java	TODO	orig_src Ghidra Framework Generic src test java generic timer 
-orig_src/Ghidra/Framework/Generic/src/test/java/generic/util/FlattenedIteratorTest.java	TODO	orig_src Ghidra Framework Generic src test java generic util 
+orig_src/Ghidra/Framework/Generic/src/test/java/generic/util/FlattenedIteratorTest.java	DONE	orig_src Ghidra Framework Generic src test java generic util 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/async/AsyncLaziesTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/async/AsyncReferenceTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/async/AsyncTestUtils.java	TODO	orig_src Ghidra Framework Generic src test java ghidra async 
