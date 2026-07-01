@@ -1053,7 +1053,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/t
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/TickStep.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/TraceSchedule.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model time schedule 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/ByteArrayUtils.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/CopyOnWrite.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/CopyOnWrite.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/DataAdapterFromDataType.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/DataAdapterFromSettings.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/DataAdapterMinimal.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
