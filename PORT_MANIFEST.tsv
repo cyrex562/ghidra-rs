@@ -12329,7 +12329,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/filechooser/GhidraFileFi
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/HTMLElement.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util html 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/HtmlLineSplitter.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util html 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/PreservingWhitespaceHandler.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util html
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/TrimmingWhitespaceHandler.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util html 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/TrimmingWhitespaceHandler.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util html
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/WhitespaceHandler.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util html
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/layout/AbstractLayoutManager.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util layout 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/layout/ColumnLayout.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util layout 
