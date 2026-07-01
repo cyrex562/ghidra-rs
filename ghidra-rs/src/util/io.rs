@@ -184,4 +184,46 @@ mod tests {
         assert!(out.is_empty());
         assert_eq!(digest.len(), 32);
     }
+
+    #[test]
+    fn test_null_output_stream_single_write() {
+        let mut null = NullOutputStream;
+        let data = [1, 2, 3, 4, 5];
+        assert_eq!(null.write(&data).unwrap(), 5);
+    }
+
+    #[test]
+    fn test_null_output_stream_empty_write() {
+        let mut null = NullOutputStream;
+        let data: &[u8] = &[];
+        assert_eq!(null.write(data).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_null_output_stream_multiple_writes() {
+        let mut null = NullOutputStream;
+        assert_eq!(null.write(&[1, 2, 3]).unwrap(), 3);
+        assert_eq!(null.write(&[4, 5]).unwrap(), 2);
+        assert_eq!(null.write(&[6]).unwrap(), 1);
+    }
+
+    #[test]
+    fn test_null_output_stream_write_all() {
+        let mut null = NullOutputStream;
+        null.write_all(b"hello world").unwrap();
+    }
+
+    #[test]
+    fn test_null_output_stream_flush() {
+        let mut null = NullOutputStream;
+        null.write_all(b"data").unwrap();
+        null.flush().unwrap();
+    }
+
+    #[test]
+    fn test_null_output_stream_large_write() {
+        let mut null = NullOutputStream;
+        let large_data = vec![0u8; 1_000_000];
+        assert_eq!(null.write(&large_data).unwrap(), 1_000_000);
+    }
 }
