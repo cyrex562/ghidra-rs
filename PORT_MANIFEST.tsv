@@ -10500,7 +10500,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/GTableMous
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/GTableTextCellEditor.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/GTableToCSV.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/GTableWidget.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/InvertedTableFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/InvertedTableFilter.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/MappedTableColumn.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/MultiTextFilterTableFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets table 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/table/ObjectSelectedListener.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets table 
