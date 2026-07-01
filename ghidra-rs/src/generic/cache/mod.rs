@@ -10,45 +10,44 @@ pub trait BasicFactory<T>: Send + Sync {
     fn dispose(&self, item: T);
 }
 
-pub struct CountingBasicFactory<T> {
-    counter: std::sync::atomic::AtomicUsize,
-    disposed_count: std::sync::atomic::AtomicUsize,
-    _marker: std::marker::PhantomData<T>,
-}
+/// Abstract factory trait for creating and disposing items with automatic item number tracking.
+///
+/// Implementers must provide `do_create` and `do_dispose` methods. The `create` and `dispose`
+/// methods are automatically provided and handle counter increments.
+pub trait CountingBasicFactory<T>: Send + Sync {
+    /// Called to create an item with the given one-based item number.
+    fn do_create(&self, item_number: usize) -> Result<T, anyhow::Error>;
 
-impl<T> CountingBasicFactory<T> {
-    pub fn new() -> Self {
-        Self {
-            counter: std::sync::atomic::AtomicUsize::new(0),
-            disposed_count: std::sync::atomic::AtomicUsize::new(0),
-            _marker: std::marker::PhantomData,
-        }
+    /// Called to dispose an item.
+    fn do_dispose(&self, item: T);
+
+    /// Returns a reference to the creation counter.
+    fn counter(&self) -> &std::sync::atomic::AtomicUsize;
+
+    /// Returns a reference to the disposal counter.
+    fn disposed_count_ref(&self) -> &std::sync::atomic::AtomicUsize;
+
+    /// Returns the number of items created.
+    fn created_count(&self) -> usize {
+        self.counter().load(std::sync::atomic::Ordering::SeqCst)
     }
 
-    pub fn increment_counter(&self) -> usize {
-        self.counter
-            .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
-            + 1
-    }
-
-    pub fn increment_disposed(&self) {
-        self.disposed_count
-            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    }
-
-    pub fn created_count(&self) -> usize {
-        self.counter.load(std::sync::atomic::Ordering::SeqCst)
-    }
-
-    pub fn disposed_count(&self) -> usize {
-        self.disposed_count
-            .load(std::sync::atomic::Ordering::SeqCst)
+    /// Returns the number of items disposed.
+    fn disposed_count(&self) -> usize {
+        self.disposed_count_ref().load(std::sync::atomic::Ordering::SeqCst)
     }
 }
 
-impl<T> Default for CountingBasicFactory<T> {
-    fn default() -> Self {
-        Self::new()
+/// Automatic implementation of BasicFactory for types implementing CountingBasicFactory.
+impl<T, F: CountingBasicFactory<T>> BasicFactory<T> for F {
+    fn create(&self) -> Result<T, anyhow::Error> {
+        let item_number = self.counter().fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+        self.do_create(item_number)
+    }
+
+    fn dispose(&self, item: T) {
+        self.disposed_count_ref().fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.do_dispose(item);
     }
 }
 
@@ -57,8 +56,9 @@ pub use weak_reference_cache::WeakReferenceCache;
 
 #[cfg(test)]
 mod tests {
-    use super::{BasicFactory, Factory};
+    use super::{BasicFactory, CountingBasicFactory, Factory};
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, Mutex};
 
     struct DoubleFactory;
 
@@ -157,5 +157,163 @@ mod tests {
         assert_eq!(factory.dispose_count.load(Ordering::SeqCst), 1);
         factory.dispose(factory.create().unwrap());
         assert_eq!(factory.dispose_count.load(Ordering::SeqCst), 2);
+    }
+
+    struct TestCountingFactory {
+        counter: AtomicUsize,
+        disposed_count: AtomicUsize,
+        created_items: Arc<Mutex<Vec<(usize, String)>>>,
+    }
+
+    impl TestCountingFactory {
+        fn new() -> Self {
+            Self {
+                counter: AtomicUsize::new(0),
+                disposed_count: AtomicUsize::new(0),
+                created_items: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+    }
+
+    impl CountingBasicFactory<String> for TestCountingFactory {
+        fn do_create(&self, item_number: usize) -> Result<String, anyhow::Error> {
+            let item = format!("item_{}", item_number);
+            self.created_items.lock().unwrap().push((item_number, item.clone()));
+            Ok(item)
+        }
+
+        fn do_dispose(&self, _item: String) {}
+
+        fn counter(&self) -> &AtomicUsize {
+            &self.counter
+        }
+
+        fn disposed_count_ref(&self) -> &AtomicUsize {
+            &self.disposed_count
+        }
+    }
+
+    #[test]
+    fn counting_factory_increments_counter() {
+        let factory = TestCountingFactory::new();
+        assert_eq!(factory.created_count(), 0);
+
+        let item1 = factory.create().unwrap();
+        assert_eq!(item1, "item_1");
+        assert_eq!(factory.created_count(), 1);
+
+        let item2 = factory.create().unwrap();
+        assert_eq!(item2, "item_2");
+        assert_eq!(factory.created_count(), 2);
+    }
+
+    #[test]
+    fn counting_factory_item_numbers_are_one_based() {
+        let factory = TestCountingFactory::new();
+        factory.create().unwrap();
+        factory.create().unwrap();
+        factory.create().unwrap();
+
+        let items = factory.created_items.lock().unwrap();
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[0].0, 1);
+        assert_eq!(items[1].0, 2);
+        assert_eq!(items[2].0, 3);
+    }
+
+    #[test]
+    fn counting_factory_increments_disposed_count() {
+        let factory = TestCountingFactory::new();
+        assert_eq!(factory.disposed_count(), 0);
+
+        let item1 = factory.create().unwrap();
+        factory.dispose(item1);
+        assert_eq!(factory.disposed_count(), 1);
+
+        let item2 = factory.create().unwrap();
+        factory.dispose(item2);
+        assert_eq!(factory.disposed_count(), 2);
+    }
+
+    #[test]
+    fn counting_factory_as_basic_factory_trait_object() {
+        let factory = TestCountingFactory::new();
+        let basic: Box<dyn BasicFactory<String>> = Box::new(factory);
+
+        let item = basic.create().unwrap();
+        assert_eq!(item, "item_1");
+    }
+
+    struct FailingCountingFactory {
+        counter: AtomicUsize,
+        disposed_count: AtomicUsize,
+    }
+
+    impl CountingBasicFactory<i32> for FailingCountingFactory {
+        fn do_create(&self, _item_number: usize) -> Result<i32, anyhow::Error> {
+            Err(anyhow::anyhow!("creation failed"))
+        }
+
+        fn do_dispose(&self, _item: i32) {}
+
+        fn counter(&self) -> &AtomicUsize {
+            &self.counter
+        }
+
+        fn disposed_count_ref(&self) -> &AtomicUsize {
+            &self.disposed_count
+        }
+    }
+
+    #[test]
+    fn counting_factory_propagates_creation_errors() {
+        let factory = FailingCountingFactory {
+            counter: AtomicUsize::new(0),
+            disposed_count: AtomicUsize::new(0),
+        };
+
+        let result = factory.create();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("creation failed"));
+        assert_eq!(factory.created_count(), 1);
+    }
+
+    #[test]
+    fn counting_factory_do_dispose_called_before_disposed_increment() {
+        struct TrackingDisposalFactory {
+            counter: AtomicUsize,
+            disposed_count: AtomicUsize,
+            disposed_items: Arc<Mutex<Vec<i32>>>,
+        }
+
+        impl CountingBasicFactory<i32> for TrackingDisposalFactory {
+            fn do_create(&self, _item_number: usize) -> Result<i32, anyhow::Error> {
+                Ok(42)
+            }
+
+            fn do_dispose(&self, item: i32) {
+                self.disposed_items.lock().unwrap().push(item);
+            }
+
+            fn counter(&self) -> &AtomicUsize {
+                &self.counter
+            }
+
+            fn disposed_count_ref(&self) -> &AtomicUsize {
+                &self.disposed_count
+            }
+        }
+
+        let factory = TrackingDisposalFactory {
+            counter: AtomicUsize::new(0),
+            disposed_count: AtomicUsize::new(0),
+            disposed_items: Arc::new(Mutex::new(Vec::new())),
+        };
+
+        factory.dispose(42);
+        let items = factory.disposed_items.lock().unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], 42);
+        assert_eq!(factory.disposed_count(), 1);
     }
 }
