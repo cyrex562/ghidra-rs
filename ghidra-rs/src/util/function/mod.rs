@@ -34,6 +34,17 @@ pub type ExceptionalSupplier<R, E> = Box<dyn Fn() -> Result<R, E> + Send + Sync>
 /// A consumer that accepts three arguments. Patterned after `BiConsumer`.
 pub type TriConsumer<T, U, V> = Box<dyn Fn(T, U, V) + Send + Sync>;
 
+/// A consumer that can request termination of the supplier once some condition is reached.
+///
+/// Port of `utility.function.TerminatingConsumer<T>`.
+pub trait TerminatingConsumer<T>: Send + Sync {
+    fn accept(&self, item: T);
+
+    fn termination_requested(&self) -> bool {
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -421,5 +432,132 @@ mod tests {
         let result = supplier();
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "no more items");
+    }
+
+    #[test]
+    fn terminating_consumer_default_termination_is_false() {
+        struct LoggingConsumer {
+            items: Mutex<Vec<i32>>,
+        }
+
+        impl TerminatingConsumer<i32> for LoggingConsumer {
+            fn accept(&self, item: i32) {
+                self.items.lock().unwrap().push(item);
+            }
+        }
+
+        let consumer = LoggingConsumer {
+            items: Mutex::new(Vec::new()),
+        };
+        consumer.accept(42);
+        assert!(!consumer.termination_requested());
+        assert_eq!(*consumer.items.lock().unwrap(), vec![42]);
+    }
+
+    #[test]
+    fn terminating_consumer_custom_termination_logic() {
+        struct CountingConsumer {
+            count: Mutex<i32>,
+            limit: i32,
+        }
+
+        impl TerminatingConsumer<i32> for CountingConsumer {
+            fn accept(&self, _item: i32) {
+                *self.count.lock().unwrap() += 1;
+            }
+
+            fn termination_requested(&self) -> bool {
+                *self.count.lock().unwrap() >= self.limit
+            }
+        }
+
+        let consumer = CountingConsumer {
+            count: Mutex::new(0),
+            limit: 3,
+        };
+
+        assert!(!consumer.termination_requested());
+        consumer.accept(1);
+        assert!(!consumer.termination_requested());
+        consumer.accept(2);
+        assert!(!consumer.termination_requested());
+        consumer.accept(3);
+        assert!(consumer.termination_requested());
+    }
+
+    #[test]
+    fn terminating_consumer_as_trait_object() {
+        struct StringConsumer {
+            values: Mutex<Vec<String>>,
+        }
+
+        impl TerminatingConsumer<String> for StringConsumer {
+            fn accept(&self, item: String) {
+                self.values.lock().unwrap().push(item);
+            }
+        }
+
+        let consumer: Box<dyn TerminatingConsumer<String>> = Box::new(StringConsumer {
+            values: Mutex::new(Vec::new()),
+        });
+
+        consumer.accept("hello".to_string());
+        consumer.accept("world".to_string());
+        assert!(!consumer.termination_requested());
+    }
+
+    #[test]
+    fn terminating_consumer_with_arc() {
+        struct SharedConsumer {
+            items: Arc<Mutex<Vec<i32>>>,
+        }
+
+        impl TerminatingConsumer<i32> for SharedConsumer {
+            fn accept(&self, item: i32) {
+                self.items.lock().unwrap().push(item);
+            }
+        }
+
+        let items = Arc::new(Mutex::new(Vec::new()));
+        let consumer = SharedConsumer {
+            items: Arc::clone(&items),
+        };
+
+        consumer.accept(1);
+        consumer.accept(2);
+        consumer.accept(3);
+
+        assert_eq!(*items.lock().unwrap(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn terminating_consumer_termination_can_change_state() {
+        struct StatefulConsumer {
+            count: Mutex<i32>,
+        }
+
+        impl TerminatingConsumer<()> for StatefulConsumer {
+            fn accept(&self, _item: ()) {
+                *self.count.lock().unwrap() += 1;
+            }
+
+            fn termination_requested(&self) -> bool {
+                *self.count.lock().unwrap() > 5
+            }
+        }
+
+        let consumer = StatefulConsumer {
+            count: Mutex::new(0),
+        };
+
+        for i in 1..=10 {
+            consumer.accept(());
+            if consumer.termination_requested() {
+                assert!(i > 5);
+                break;
+            }
+        }
+
+        assert_eq!(*consumer.count.lock().unwrap(), 6);
     }
 }
