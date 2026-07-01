@@ -12390,7 +12390,7 @@ orig_src/Ghidra/Framework/Gui/src/test/java/generic/theme/IconModifierTest.java	
 orig_src/Ghidra/Framework/Gui/src/test/java/generic/theme/IconValueTest.java	TODO	orig_src Ghidra Framework Gui src test java generic theme 
 orig_src/Ghidra/Framework/Gui/src/test/java/generic/theme/ThemeEventTest.java	TODO	orig_src Ghidra Framework Gui src test java generic theme 
 orig_src/Ghidra/Framework/Gui/src/test/java/generic/theme/ThemePropertyFileReaderTest.java	TODO	orig_src Ghidra Framework Gui src test java generic theme 
-orig_src/Ghidra/Framework/Gui/src/test/java/generic/theme/ThemeValueUtilsTest.java	TODO	orig_src Ghidra Framework Gui src test java generic theme 
+orig_src/Ghidra/Framework/Gui/src/test/java/generic/theme/ThemeValueUtilsTest.java	DONE	orig_src Ghidra Framework Gui src test java generic theme 
 orig_src/Ghidra/Framework/Gui/src/test/java/generic/theme/laf/UIDefaultsMapperTest.java	TODO	orig_src Ghidra Framework Gui src test java generic theme laf 
 orig_src/Ghidra/Framework/Gui/src/test/java/ghidra/util/HTMLUtilitiesTest.java	TODO	orig_src Ghidra Framework Gui src test java ghidra util 
 orig_src/Ghidra/Framework/Gui/src/test/java/ghidra/util/WebColorsTest.java	TODO	orig_src Ghidra Framework Gui src test java ghidra util 
