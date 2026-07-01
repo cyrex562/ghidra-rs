@@ -14760,7 +14760,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Duo.java	
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Range.java	DONE	orig_src Ghidra Framework Utility src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/AssertException.java	DONE	orig_src Ghidra Framework Utility src main java ghidra util exception
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/CancelledException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util exception 
-orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/IOCancelledException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util exception 
+orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/IOCancelledException.java	DONE	orig_src Ghidra Framework Utility src main java ghidra util exception
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/TimeoutException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util exception 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/UnableToSwingException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util exception 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/UsrException.java	TODO	orig_src Ghidra Framework Utility src main java ghidra util exception 
