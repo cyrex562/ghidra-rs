@@ -37,6 +37,7 @@ pub mod stack;
 pub mod value_range;
 pub mod weak_store;
 pub mod weak_value_hash_map;
+pub mod weak_value_tree_map;
 
 pub use abstract_weak_value_map::{AbstractWeakValueMap, WeakRefStore};
 pub use abstract_weak_value_navigable_map::{AbstractWeakValueNavigableMap, NavigableWeakRefStore};
@@ -77,3 +78,4 @@ pub use stack::Stack;
 pub use value_range::ValueRange;
 pub use weak_store::WeakStore;
 pub use weak_value_hash_map::WeakValueHashMap;
+pub use weak_value_tree_map::WeakValueTreeMap;
