@@ -1274,7 +1274,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/util/database/DBCachedO
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/util/database/DBCachedObjectStoreTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/util/database/spatial/RStarTreeMapTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java ghidra util database spatial 
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/util/datastruct/ObservableCollectionTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java ghidra util datastruct 
-orig_src/Ghidra/Debug/ProposedUtils/src/test/java/utilities/util/deeper/ProxyUtilitiesTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java utilities util deeper 
+orig_src/Ghidra/Debug/ProposedUtils/src/test/java/utilities/util/deeper/ProxyUtilitiesTest.java	DONE	orig_src Ghidra Debug ProposedUtils src test java utilities util deeper
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintEmulatorFactory.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPartsFactory.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
 orig_src/Ghidra/Debug/TaintAnalysis/src/main/java/ghidra/pcode/emu/taint/TaintPcodeArithmetic.java	TODO	orig_src Ghidra Debug TaintAnalysis src main java ghidra pcode emu taint 
