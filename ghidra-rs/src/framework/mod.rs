@@ -18,6 +18,7 @@ pub mod version;
 
 pub use os::OperatingSystem;
 pub use pluggable_service_registry_exception::PluggableServiceRegistryException;
+pub use plugintool::ServiceListener;
 pub use service::{PluggableServiceRegistry, PluggableServiceRegistryError};
 pub use shutdown_priority::ShutdownPriority;
 pub use version::ApplicationVersion;
