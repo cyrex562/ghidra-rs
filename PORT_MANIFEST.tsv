@@ -11933,7 +11933,7 @@ orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/generic/util/datastruct/T
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/net/ApplicationKeyManagerFactoryTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra net 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/net/http/HttpUtilTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra net http 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/CountLatchTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra util 
-orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/DateUtilsTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra util 
+orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/DateUtilsTest.java	DONE	orig_src Ghidra Framework Generic src test java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/NumericUtilitiesTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/SpyErrorDisplay.java	TODO	orig_src Ghidra Framework Generic src test java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/SpyErrorLogger.java	TODO	orig_src Ghidra Framework Generic src test java ghidra util 

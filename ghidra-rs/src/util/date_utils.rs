@@ -415,6 +415,14 @@ mod tests {
     }
 
     #[test]
+    fn normalize_date_matches_across_same_day_timestamps() {
+        let now = date_time(2019, 10, 4, 14, 43);
+        let future = now + 3 * MS_PER_HOUR;
+        assert_ne!(now, future);
+        assert_eq!(DateUtils::normalize_date(now), DateUtils::normalize_date(future));
+    }
+
+    #[test]
     fn get_days_between_counts_forward() {
         let start = date_time(2019, 10, 4, 14, 43);
         let end = start + 3 * MS_PER_DAY;
