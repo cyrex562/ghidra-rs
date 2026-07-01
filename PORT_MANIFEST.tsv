@@ -95,7 +95,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/Remot
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteMethod.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteMethodRegistry.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteParameter.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TerminalSession.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TerminalSession.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiAcceptor.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiConnection.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiError.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
