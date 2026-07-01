@@ -14695,7 +14695,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/ut
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/util/ReferenceState.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/sleigh/grammar/BooleanExpressionDefTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/sleigh/grammar/BooleanExpressionTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra sleigh grammar 
-orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/sleigh/grammar/FileSearcher.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra sleigh grammar 
+orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/sleigh/grammar/FileSearcher.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/sleigh/grammar/SleighEchoRun.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/sleigh/grammar/SleighPreprocessorTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/sleigh/grammar/SourceFileIndexerTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra sleigh grammar 
