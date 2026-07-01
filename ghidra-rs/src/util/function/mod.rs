@@ -300,4 +300,126 @@ mod tests {
         assert_eq!(err.code, -1);
         assert_eq!(err.msg, "negative");
     }
+
+    #[test]
+    fn exceptional_supplier_succeeds_and_returns_value() {
+        let supplier: ExceptionalSupplier<i32, String> = Box::new(|| Ok(42));
+        let result = supplier();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 42);
+    }
+
+    #[test]
+    fn exceptional_supplier_returns_error() {
+        let supplier: ExceptionalSupplier<i32, String> =
+            Box::new(|| Err("supply failed".to_string()));
+        let result = supplier();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "supply failed");
+    }
+
+    #[test]
+    fn exceptional_supplier_with_string_type() {
+        let supplier: ExceptionalSupplier<String, ()> =
+            Box::new(|| Ok("hello world".to_string()));
+        let result = supplier();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "hello world");
+    }
+
+    #[test]
+    fn exceptional_supplier_with_multiple_calls() {
+        let call_count = Arc::new(Mutex::new(0));
+        let call_count_clone = Arc::clone(&call_count);
+        let supplier: ExceptionalSupplier<i32, String> = Box::new(move || {
+            let mut count = call_count_clone.lock().unwrap();
+            *count += 1;
+            Ok(*count)
+        });
+
+        assert_eq!(supplier().unwrap(), 1);
+        assert_eq!(supplier().unwrap(), 2);
+        assert_eq!(supplier().unwrap(), 3);
+        assert_eq!(*call_count.lock().unwrap(), 3);
+    }
+
+    #[test]
+    fn exceptional_supplier_can_fail_conditionally() {
+        let invocation_count = Arc::new(Mutex::new(0));
+        let invocation_count_clone = Arc::clone(&invocation_count);
+        let supplier: ExceptionalSupplier<i32, String> = Box::new(move || {
+            let mut count = invocation_count_clone.lock().unwrap();
+            *count += 1;
+            if *count < 3 {
+                Ok(*count)
+            } else {
+                Err("limit reached".to_string())
+            }
+        });
+
+        assert_eq!(supplier().unwrap(), 1);
+        assert_eq!(supplier().unwrap(), 2);
+        let result = supplier();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "limit reached");
+    }
+
+    #[test]
+    fn exceptional_supplier_with_different_types() {
+        let supplier: ExceptionalSupplier<Vec<i32>, ()> =
+            Box::new(|| Ok(vec![1, 2, 3]));
+        let result = supplier();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn exceptional_supplier_with_complex_error_type() {
+        #[derive(Debug, PartialEq)]
+        struct SupplyError {
+            reason: String,
+        }
+
+        let supplier: ExceptionalSupplier<String, SupplyError> = Box::new(|| {
+            Err(SupplyError {
+                reason: "resource unavailable".to_string(),
+            })
+        });
+
+        let result = supplier();
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.reason, "resource unavailable");
+    }
+
+    #[test]
+    fn exceptional_supplier_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+
+        let supplier: ExceptionalSupplier<i32, String> = Box::new(|| Ok(42));
+        assert_send_sync::<ExceptionalSupplier<i32, String>>();
+        drop(supplier);
+    }
+
+    #[test]
+    fn exceptional_supplier_returns_different_values_on_successive_calls() {
+        let state = Arc::new(Mutex::new(vec![10, 20, 30, 40]));
+        let state_clone = Arc::clone(&state);
+        let supplier: ExceptionalSupplier<i32, String> = Box::new(move || {
+            let mut items = state_clone.lock().unwrap();
+            if items.is_empty() {
+                Err("no more items".to_string())
+            } else {
+                Ok(items.remove(0))
+            }
+        });
+
+        assert_eq!(supplier().unwrap(), 10);
+        assert_eq!(supplier().unwrap(), 20);
+        assert_eq!(supplier().unwrap(), 30);
+        assert_eq!(supplier().unwrap(), 40);
+        let result = supplier();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "no more items");
+    }
 }
