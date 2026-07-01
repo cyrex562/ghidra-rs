@@ -14957,7 +14957,7 @@ orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectP
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPutField.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPutStatic.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InvokeMethods.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
-orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/JavaComputationalCategory.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
+orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/JavaComputationalCategory.java	DONE	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/JavaInvocationType.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/LdcMethods.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/PcodeInjectLibraryJava.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
