@@ -12816,7 +12816,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/extensi
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/extensions/ExtensionTableModel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project extensions 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/extensions/ExtensionTablePanel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project extensions 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ConnectionDescriptor.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework project tool
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ExtensionsEnabledState.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ExtensionsEnabledState.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework project tool
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/GhidraPluginsConfiguration.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/GhidraTool.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/GhidraToolTemplate.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
