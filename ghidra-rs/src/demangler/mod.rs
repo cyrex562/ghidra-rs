@@ -6,3 +6,4 @@ pub mod gnu;
 pub mod md_character_iterator;
 pub mod microsoft;
 pub mod naming;
+pub mod swift;
