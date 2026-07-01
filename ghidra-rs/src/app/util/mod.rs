@@ -3,6 +3,7 @@ pub mod clipboard_type;
 pub mod datatype;
 pub mod disassemble;
 pub mod exporter;
+pub mod headless;
 pub mod html;
 pub mod help_topics;
 pub mod hex_long;
