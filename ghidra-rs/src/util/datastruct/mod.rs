@@ -1,6 +1,7 @@
 pub mod abstract_weak_value_map;
 pub mod abstract_weak_value_navigable_map;
 pub mod red_black_entry;
+pub mod red_black_key_set;
 pub mod red_black_long_key_set;
 pub mod short_key_set;
 pub mod short_list_indexer;
@@ -61,6 +62,7 @@ pub use privately_queued_listener::{DefaultListenerErrorHandler, PrivatelyQueued
 pub use queue_stub::QueueStub;
 pub use range::Range;
 pub use red_black_entry::{NodeColor, NodeRef, RedBlackEntry};
+pub use red_black_key_set::RedBlackKeySet;
 pub use red_black_long_key_set::RedBlackLongKeySet;
 pub use short_key_set::ShortKeySet;
 pub use short_list_indexer::ShortListIndexer;
