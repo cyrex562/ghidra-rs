@@ -12931,7 +12931,7 @@ orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/HandleOutputStrea
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/Pipe.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/PseudoConsoleHandle.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/jna/ConsoleApiNative.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows jna
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/jna/JobApiNative.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty windows jna 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/windows/jna/JobApiNative.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty windows jna
 orig_src/Ghidra/Framework/Pty/src/test/java/ghidra/pty/AbstractPtyTest.java	TODO	orig_src Ghidra Framework Pty src test java ghidra pty 
 orig_src/Ghidra/Framework/Pty/src/test/java/ghidra/pty/StreamPumper.java	DONE	orig_src Ghidra Framework Pty src test java ghidra pty 
 orig_src/Ghidra/Framework/Pty/src/test/java/ghidra/pty/linux/LinuxPtyTest.java	TODO	orig_src Ghidra Framework Pty src test java ghidra pty linux 
