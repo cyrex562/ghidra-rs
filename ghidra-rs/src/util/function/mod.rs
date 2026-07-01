@@ -19,6 +19,13 @@ pub fn dummy_if_none(c: Option<Callback>) -> Callback {
     c.unwrap_or_else(dummy_callback)
 }
 
+/// A generic functional interface that can throw an exception.
+///
+/// This is the Rust equivalent of Java's `ExceptionalCallback<E>`. It represents a
+/// callback that takes no arguments and can either succeed (returning `Ok(())`) or fail
+/// by returning an error of type `E`.
+///
+/// Port of `utility.function.ExceptionalCallback`.
 pub type ExceptionalCallback<E> = Box<dyn Fn() -> Result<(), E> + Send + Sync>;
 pub type ExceptionalConsumer<T, E> = Box<dyn Fn(T) -> Result<(), E> + Send + Sync>;
 pub type ExceptionalFunction<T, R, E> = Box<dyn Fn(T) -> Result<R, E> + Send + Sync>;
@@ -77,5 +84,53 @@ mod tests {
             Box::new(move |s, n, b| *log2.lock().unwrap() = format!("{s}{n}{b}"));
         consumer("hello", 42, true);
         assert_eq!(*log.lock().unwrap(), "hello42true");
+    }
+
+    #[test]
+    fn exceptional_callback_succeeds() {
+        let callback: ExceptionalCallback<String> = Box::new(|| Ok(()));
+        assert!(callback().is_ok());
+    }
+
+    #[test]
+    fn exceptional_callback_returns_error() {
+        let callback: ExceptionalCallback<String> = Box::new(|| Err("error".to_string()));
+        let result = callback();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "error");
+    }
+
+    #[test]
+    fn exceptional_callback_with_closure_state() {
+        let counter = Arc::new(Mutex::new(0));
+        let counter_clone = Arc::clone(&counter);
+        let callback: ExceptionalCallback<()> = Box::new(move || {
+            *counter_clone.lock().unwrap() += 1;
+            Ok(())
+        });
+
+        callback().unwrap();
+        callback().unwrap();
+        assert_eq!(*counter.lock().unwrap(), 2);
+    }
+
+    #[test]
+    fn exceptional_callback_propagates_different_error_types() {
+        #[derive(Debug, PartialEq)]
+        struct CustomError(i32);
+
+        let callback: ExceptionalCallback<CustomError> =
+            Box::new(|| Err(CustomError(42)));
+        let result = callback();
+        assert_eq!(result, Err(CustomError(42)));
+    }
+
+    #[test]
+    fn exceptional_callback_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+
+        let callback: ExceptionalCallback<String> = Box::new(|| Ok(()));
+        assert_send_sync::<ExceptionalCallback<String>>();
+        drop(callback);
     }
 }

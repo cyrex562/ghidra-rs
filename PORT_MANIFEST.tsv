@@ -14785,7 +14785,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/DummyApplica
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/XdgUtils.java	DONE	orig_src Ghidra Framework Utility src main java utility application 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/Callback.java	DONE	orig_src Ghidra Framework Utility src main java utility function 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/Dummy.java	TODO	orig_src Ghidra Framework Utility src main java utility function 
-orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalCallback.java	TODO	orig_src Ghidra Framework Utility src main java utility function 
+orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalCallback.java	DONE	orig_src Ghidra Framework Utility src main java utility function 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalConsumer.java	TODO	orig_src Ghidra Framework Utility src main java utility function 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalFunction.java	TODO	orig_src Ghidra Framework Utility src main java utility function 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/ExceptionalSupplier.java	TODO	orig_src Ghidra Framework Utility src main java utility function 
