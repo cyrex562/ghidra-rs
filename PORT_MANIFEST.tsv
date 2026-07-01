@@ -9430,7 +9430,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/mai
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTAssociationStatus.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTAssociationType.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItem.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItemApplyActionType.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItemApplyActionType.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItemConsideredStatus.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItemDestinationAddressEditStatus.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItemStatus.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api main 
