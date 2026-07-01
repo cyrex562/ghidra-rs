@@ -1,3 +1,4 @@
+pub mod abstract_pty_test;
 pub mod pty_endpoint;
 pub mod pty_parent;
 pub mod pty_session;
