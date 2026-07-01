@@ -16,6 +16,82 @@ pub enum JsonType {
     JsmnString,
 }
 
+/// A JSON token with its type and position metadata.
+///
+/// Mirrors `generic.json.JSONToken` from Ghidra. Represents a single token
+/// in a JSON parse stream, recording its type, start/end positions in the
+/// source string, and optionally a size count (useful for container tokens).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct JsonToken {
+    /// The token type (object, array, string, primitive).
+    pub token_type: JsonType,
+    /// Start position in the JSON source string.
+    pub start: i32,
+    /// End position in the JSON source string.
+    pub end: i32,
+    /// Size count (typically 0 initially, incremented for container tokens).
+    pub size: i32,
+}
+
+impl JsonToken {
+    /// Creates a new JSON token with the given type and position bounds.
+    ///
+    /// The size is initialized to 0, mirroring the Java constructor.
+    pub fn new(token_type: JsonType, start: i32, end: i32) -> Self {
+        Self {
+            token_type,
+            start,
+            end,
+            size: 0,
+        }
+    }
+
+    /// Sets the token type.
+    pub fn set_token_type(&mut self, token_type: JsonType) {
+        self.token_type = token_type;
+    }
+
+    /// Returns the token type.
+    pub fn token_type(&self) -> JsonType {
+        self.token_type
+    }
+
+    /// Sets the start position.
+    pub fn set_start(&mut self, start: i32) {
+        self.start = start;
+    }
+
+    /// Returns the start position.
+    pub fn get_start(&self) -> i32 {
+        self.start
+    }
+
+    /// Sets the end position.
+    pub fn set_end(&mut self, end: i32) {
+        self.end = end;
+    }
+
+    /// Returns the end position.
+    pub fn get_end(&self) -> i32 {
+        self.end
+    }
+
+    /// Sets the size.
+    pub fn set_size(&mut self, size: i32) {
+        self.size = size;
+    }
+
+    /// Returns the size.
+    pub fn get_size(&self) -> i32 {
+        self.size
+    }
+
+    /// Increments the size by 1.
+    pub fn inc_size(&mut self) {
+        self.size += 1;
+    }
+}
+
 /// Error codes returned by the JSMN JSON parser.
 ///
 /// Mirrors `generic.json.JSONError` from Ghidra.
@@ -320,5 +396,113 @@ mod tests {
         assert!(out.contains("\"name\""));
         assert!(out.contains("\"inner\""));
         assert!(out.contains("\"outer\""));
+    }
+
+    // --- JsonToken tests ---
+
+    #[test]
+    fn json_token_new_initializes_fields() {
+        let token = JsonToken::new(JsonType::JsmnString, 5, 10);
+        assert_eq!(token.token_type, JsonType::JsmnString);
+        assert_eq!(token.start, 5);
+        assert_eq!(token.end, 10);
+        assert_eq!(token.size, 0);
+    }
+
+    #[test]
+    fn json_token_set_and_get_type() {
+        let mut token = JsonToken::new(JsonType::JsmnString, 0, 5);
+        assert_eq!(token.token_type(), JsonType::JsmnString);
+        token.set_token_type(JsonType::JsmnObject);
+        assert_eq!(token.token_type(), JsonType::JsmnObject);
+    }
+
+    #[test]
+    fn json_token_set_and_get_start() {
+        let mut token = JsonToken::new(JsonType::JsmnArray, 0, 5);
+        assert_eq!(token.get_start(), 0);
+        token.set_start(100);
+        assert_eq!(token.get_start(), 100);
+    }
+
+    #[test]
+    fn json_token_set_and_get_end() {
+        let mut token = JsonToken::new(JsonType::JsmnArray, 0, 5);
+        assert_eq!(token.get_end(), 5);
+        token.set_end(200);
+        assert_eq!(token.get_end(), 200);
+    }
+
+    #[test]
+    fn json_token_set_and_get_size() {
+        let mut token = JsonToken::new(JsonType::JsmnObject, 0, 5);
+        assert_eq!(token.get_size(), 0);
+        token.set_size(42);
+        assert_eq!(token.get_size(), 42);
+    }
+
+    #[test]
+    fn json_token_inc_size_increments_by_one() {
+        let mut token = JsonToken::new(JsonType::JsmnArray, 0, 10);
+        assert_eq!(token.get_size(), 0);
+        token.inc_size();
+        assert_eq!(token.get_size(), 1);
+        token.inc_size();
+        assert_eq!(token.get_size(), 2);
+    }
+
+    #[test]
+    fn json_token_inc_size_multiple_times() {
+        let mut token = JsonToken::new(JsonType::JsmnObject, 0, 100);
+        for _ in 0..5 {
+            token.inc_size();
+        }
+        assert_eq!(token.get_size(), 5);
+    }
+
+    #[test]
+    fn json_token_copy_and_clone() {
+        let token1 = JsonToken::new(JsonType::JsmnString, 10, 20);
+        let token2 = token1;
+        assert_eq!(token1, token2);
+        let token3 = token1.clone();
+        assert_eq!(token1, token3);
+    }
+
+    #[test]
+    fn json_token_equality() {
+        let token1 = JsonToken::new(JsonType::JsmnArray, 5, 15);
+        let token2 = JsonToken::new(JsonType::JsmnArray, 5, 15);
+        let token3 = JsonToken::new(JsonType::JsmnObject, 5, 15);
+        assert_eq!(token1, token2);
+        assert_ne!(token1, token3);
+    }
+
+    #[test]
+    fn json_token_different_positions_not_equal() {
+        let token1 = JsonToken::new(JsonType::JsmnString, 0, 5);
+        let token2 = JsonToken::new(JsonType::JsmnString, 0, 6);
+        assert_ne!(token1, token2);
+    }
+
+    #[test]
+    fn json_token_debug_format() {
+        let token = JsonToken::new(JsonType::JsmnPrimitive, 25, 30);
+        let debug_str = format!("{:?}", token);
+        assert!(debug_str.contains("JsonToken"));
+        assert!(debug_str.contains("JsmnPrimitive"));
+    }
+
+    #[test]
+    fn json_token_matches_java_constructor_behavior() {
+        let mut token = JsonToken::new(JsonType::JsmnObject, 0, 100);
+        assert_eq!(token.token_type, JsonType::JsmnObject);
+        assert_eq!(token.start, 0);
+        assert_eq!(token.end, 100);
+        assert_eq!(token.size, 0);
+
+        token.inc_size();
+        token.inc_size();
+        assert_eq!(token.size, 2);
     }
 }
