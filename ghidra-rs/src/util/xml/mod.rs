@@ -5,3 +5,4 @@ pub(crate) mod spec_xml_utils;
 pub(crate) mod xml_attribute_exception;
 pub(crate) mod xml_parse_exception;
 pub(crate) mod xml_tracer;
+pub(crate) mod xml_element;
