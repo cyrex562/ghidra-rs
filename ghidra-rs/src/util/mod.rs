@@ -96,7 +96,7 @@ pub use signedness_format_mode::SignednessFormatMode;
 pub use string_format::StringFormat;
 pub use universal_id::UniversalID;
 pub use classfinder::{ClassFileInfo, ClassExclusionFilter};
-pub use map::TypeMismatchException;
+pub use map::{TypeMismatchException, ValueStoragePageIndex};
 pub use log_listener::LogListener;
 pub use manual_entry::ManualEntry;
 pub use quadrant::Quadrant;
