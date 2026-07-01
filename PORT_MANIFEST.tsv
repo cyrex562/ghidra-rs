@@ -10373,7 +10373,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/Ghid
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooserPanel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/GhidraFileChooserPanelListener.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/LocalFileChooserModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/RecentGhidraFile.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filechooser 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filechooser/RecentGhidraFile.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filechooser
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/AbstractPatternTextFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/AbstractRegexBasedTermSplitter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/CharacterTermSplitter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
