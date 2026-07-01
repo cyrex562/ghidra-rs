@@ -4593,7 +4593,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledT
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledUnknown.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledVariable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemanglerOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemanglerOptions.java	DONE	orig_src Ghidra Features Base src main java ghidra app util demangler
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemanglerUtil.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/MangledContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app util demangler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/dialog/AskAddrDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app util dialog 
