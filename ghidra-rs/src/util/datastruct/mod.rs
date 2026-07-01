@@ -11,6 +11,7 @@ pub mod case_insensitive_duplicate_string_comparator;
 pub mod collection_change_listener;
 pub mod counter;
 pub mod duo;
+pub mod fixed_size_stack;
 pub mod index_range;
 pub mod int_index_manager;
 pub mod int_list_indexer;
@@ -37,6 +38,7 @@ pub use case_insensitive_duplicate_string_comparator::CaseInsensitiveDuplicateSt
 pub use collection_change_listener::CollectionChangeListener;
 pub use counter::Counter;
 pub use duo::{Duo, Side};
+pub use fixed_size_stack::FixedSizeStack;
 pub use index_range::IndexRange;
 pub use int_index_manager::IntIndexManager;
 pub use int_list_indexer::IntListIndexer;
