@@ -15412,7 +15412,7 @@ orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/main/da
 orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/main/datatree/VersionControlAction1Test.java	TODO	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework main datatree 
 orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/main/datatree/VersionControlAction2Test.java	TODO	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework main datatree 
 orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/PluginManagerTest.java	TODO	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework plugintool 
-orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/TestingPlugin.java	TODO	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework plugintool 
+orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/TestingPlugin.java	DONE	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework plugintool 
 orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/CircularPluginA.java	TODO	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework plugintool testplugins 
 orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/CircularPluginB.java	TODO	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework plugintool testplugins 
 orig_src/Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/CircularServiceA.java	TODO	orig_src Ghidra Test IntegrationTest src test.slow java ghidra framework plugintool testplugins 
