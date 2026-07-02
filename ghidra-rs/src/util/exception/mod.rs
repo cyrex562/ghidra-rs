@@ -1868,3 +1868,85 @@ mod closed_exception_tests {
         assert!(e.source().is_none());
     }
 }
+
+/// Exception thrown when an object is not found.
+///
+/// Port of `ghidra.util.exception.NotFoundException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct NotFoundException(pub String);
+
+impl NotFoundException {
+    pub const DEFAULT_MESSAGE: &'static str = "Object was not found.";
+
+    /// Creates a `NotFoundException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates a `NotFoundException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for NotFoundException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod not_found_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = NotFoundException::default();
+        assert_eq!(e.to_string(), NotFoundException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(NotFoundException::default(), NotFoundException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = NotFoundException::with_message("file not found");
+        assert_eq!(e.to_string(), "file not found");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(NotFoundException::new(), NotFoundException::new());
+        assert_eq!(
+            NotFoundException::with_message("msg"),
+            NotFoundException::with_message("msg")
+        );
+        assert_ne!(NotFoundException::new(), NotFoundException::with_message("custom"));
+        assert_ne!(
+            NotFoundException::with_message("a"),
+            NotFoundException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = NotFoundException::with_message("resource not found");
+        assert_eq!(format!("{}", e), "resource not found");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &NotFoundException::new();
+        assert_eq!(e.to_string(), NotFoundException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn direct_construction() {
+        let e = NotFoundException("direct message".to_string());
+        assert_eq!(e.to_string(), "direct message");
+    }
+}
