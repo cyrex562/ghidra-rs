@@ -3099,7 +3099,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/Abstr
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/AbstractUndoRedoAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/CloseProgramAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/MultiProgramManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/MultiTabListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/MultiTabListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/MultiTabPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/ProgramCache.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/progmgr/ProgramLocator.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core progmgr 

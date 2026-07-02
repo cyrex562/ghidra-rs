@@ -17,6 +17,7 @@ pub mod instruction_search;
 pub mod interpreter;
 pub mod osgi;
 pub mod overview;
+pub mod progmgr;
 pub mod references;
 pub mod script;
 pub mod searchtext;
