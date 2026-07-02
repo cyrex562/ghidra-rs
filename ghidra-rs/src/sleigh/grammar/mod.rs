@@ -12,6 +12,7 @@ pub mod locator;
 pub mod preprocessor_exception;
 pub mod radix_big_integer;
 pub mod sleigh_recognizer_constants;
+pub mod sleigh_token;
 pub mod token_extractor;
 
 pub use antlr_util::{AntlrUtil, DebugStreamNode, DebugTreeNode};
@@ -28,4 +29,5 @@ pub use locator::Locator;
 pub use preprocessor_exception::PreprocessorException;
 pub use radix_big_integer::{RadixBigInteger, RadixBigIntegerError};
 pub use sleigh_recognizer_constants::{BASE, COMMENT, DISPLAY, PREPROC, SEMANTIC};
+pub use sleigh_token::SleighToken;
 pub use token_extractor::TokenExtractor;
