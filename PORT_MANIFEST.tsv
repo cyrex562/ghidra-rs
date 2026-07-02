@@ -11573,7 +11573,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackTree.java	TO
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseListIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseMapIteratorSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseSetIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseVectorIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseVectorIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SelfComparator.java	DONE	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SetIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/stl/SetSTL.java	TODO	orig_src Ghidra Framework Generic src main java generic stl 
