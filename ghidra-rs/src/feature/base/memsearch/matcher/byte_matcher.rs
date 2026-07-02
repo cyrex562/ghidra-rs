@@ -26,7 +26,8 @@ pub trait ByteMatcher<T> {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::util::bytesearch::{ByteArrayByteSequence, Match};
+	use crate::feature::base::memsearch::bytesequence::ByteArrayByteSequence;
+	use crate::util::bytesearch::Match;
 
 	struct TestMatcher {
 		description: String,

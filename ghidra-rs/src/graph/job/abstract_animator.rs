@@ -278,12 +278,12 @@ mod tests {
     }
 
     struct TrackingBusyListener {
-        last: Cell<Option<bool>>,
+        last: std::sync::Mutex<Option<bool>>,
     }
 
     impl BusyListener for TrackingBusyListener {
         fn set_busy(&self, busy: bool) {
-            self.last.set(Some(busy));
+            *self.last.lock().unwrap() = Some(busy);
         }
     }
 
@@ -365,22 +365,22 @@ mod tests {
         };
         let animator = AbstractAnimator::new(Box::new(behavior));
 
-        let listener = Rc::new(TrackingBusyListener { last: Cell::new(None) });
-        struct SharedListener(Rc<TrackingBusyListener>);
+        let listener = std::sync::Arc::new(TrackingBusyListener { last: std::sync::Mutex::new(None) });
+        struct SharedListener(std::sync::Arc<TrackingBusyListener>);
         impl BusyListener for SharedListener {
             fn set_busy(&self, busy: bool) {
                 self.0.set_busy(busy);
             }
         }
-        animator.borrow_mut().set_busy_listener(Box::new(SharedListener(Rc::clone(&listener))));
+        animator.borrow_mut().set_busy_listener(Box::new(SharedListener(std::sync::Arc::clone(&listener))));
 
         AbstractAnimator::start(&animator);
 
         fire_begin(&mock_state);
-        assert_eq!(listener.last.get(), Some(true));
+        assert_eq!(*listener.last.lock().unwrap(), Some(true));
 
         fire_end(&mock_state);
-        assert_eq!(listener.last.get(), Some(false));
+        assert_eq!(*listener.last.lock().unwrap(), Some(false));
     }
 
     #[test]

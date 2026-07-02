@@ -74,41 +74,41 @@ impl TaskMonitor for DummyMonitor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::Cell;
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
 
     struct TrackingBusyListener {
-        last: Cell<bool>,
+        last: AtomicBool,
     }
 
     impl BusyListener for TrackingBusyListener {
         fn set_busy(&self, busy: bool) {
-            self.last.set(busy);
+            self.last.store(busy, Ordering::SeqCst);
         }
     }
 
     #[test]
     fn busy_listener_set_busy_true() {
-        let l = TrackingBusyListener { last: Cell::new(false) };
+        let l = TrackingBusyListener { last: AtomicBool::new(false) };
         l.set_busy(true);
-        assert!(l.last.get());
+        assert!(l.last.load(Ordering::SeqCst));
     }
 
     #[test]
     fn busy_listener_set_busy_false() {
-        let l = TrackingBusyListener { last: Cell::new(true) };
+        let l = TrackingBusyListener { last: AtomicBool::new(true) };
         l.set_busy(false);
-        assert!(!l.last.get());
+        assert!(!l.last.load(Ordering::SeqCst));
     }
 
     #[test]
     fn busy_listener_as_trait_object() {
-        let l = TrackingBusyListener { last: Cell::new(false) };
+        let l = TrackingBusyListener { last: AtomicBool::new(false) };
         let obj: &dyn BusyListener = &l;
         obj.set_busy(true);
-        assert!(l.last.get());
+        assert!(l.last.load(Ordering::SeqCst));
         obj.set_busy(false);
-        assert!(!l.last.get());
+        assert!(!l.last.load(Ordering::SeqCst));
     }
 
     struct CountingCancelledListener {

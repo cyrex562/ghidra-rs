@@ -83,7 +83,7 @@ mod tests {
         let bits = 0x3F800001u32;
         assert_eq!(mask_fp32_fraction(bits), 1);
 
-        let bits = 0x3FFFFFFFU32;
+        let bits = 0x3FFFFFFFu32;
         assert_eq!(mask_fp32_fraction(bits), 0x007FFFFF);
     }
 

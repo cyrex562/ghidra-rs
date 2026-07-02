@@ -145,6 +145,8 @@ mod tests {
             }
             Ok(elem)
         }
+
+        fn dispose(&mut self) {}
     }
 
     fn start(name: &str) -> XmlElementImpl {

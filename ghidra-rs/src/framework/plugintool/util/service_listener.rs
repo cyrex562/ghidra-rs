@@ -25,18 +25,18 @@ pub trait ServiceListener: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
+    use std::sync::Mutex;
 
     struct TestListener {
-        added_calls: RefCell<Vec<(TypeId, bool)>>,
-        removed_calls: RefCell<Vec<(TypeId, bool)>>,
+        added_calls: Mutex<Vec<(TypeId, bool)>>,
+        removed_calls: Mutex<Vec<(TypeId, bool)>>,
     }
 
     impl TestListener {
         fn new() -> Self {
             TestListener {
-                added_calls: RefCell::new(Vec::new()),
-                removed_calls: RefCell::new(Vec::new()),
+                added_calls: Mutex::new(Vec::new()),
+                removed_calls: Mutex::new(Vec::new()),
             }
         }
     }
@@ -44,12 +44,12 @@ mod tests {
     impl ServiceListener for TestListener {
         fn service_added(&self, interface_class: TypeId, service: Arc<dyn Any + Send + Sync>) {
             let is_string = service.downcast_ref::<String>().is_some();
-            self.added_calls.borrow_mut().push((interface_class, is_string));
+            self.added_calls.lock().unwrap().push((interface_class, is_string));
         }
 
         fn service_removed(&self, interface_class: TypeId, service: Arc<dyn Any + Send + Sync>) {
             let is_string = service.downcast_ref::<String>().is_some();
-            self.removed_calls.borrow_mut().push((interface_class, is_string));
+            self.removed_calls.lock().unwrap().push((interface_class, is_string));
         }
     }
 
@@ -71,7 +71,7 @@ mod tests {
 
         listener.service_added(expected_type_id, service);
 
-        let calls = listener.added_calls.borrow();
+        let calls = listener.added_calls.lock().unwrap();
         assert_eq!(calls.len(), 1);
         assert_eq!(calls[0].0, expected_type_id);
         assert!(calls[0].1);
@@ -85,7 +85,7 @@ mod tests {
 
         listener.service_removed(expected_type_id, service);
 
-        let calls = listener.removed_calls.borrow();
+        let calls = listener.removed_calls.lock().unwrap();
         assert_eq!(calls.len(), 1);
         assert_eq!(calls[0].0, expected_type_id);
         assert!(calls[0].1);
@@ -98,14 +98,14 @@ mod tests {
         let service2: Arc<dyn Any + Send + Sync> = Arc::new("service2".to_string());
         let string_type_id = TypeId::of::<String>();
 
-        listener.service_added(string_type_id, service1);
+        listener.service_added(string_type_id, service1.clone());
         listener.service_added(string_type_id, service2);
         listener.service_removed(string_type_id, service1);
 
-        let added = listener.added_calls.borrow();
+        let added = listener.added_calls.lock().unwrap();
         assert_eq!(added.len(), 2);
 
-        let removed = listener.removed_calls.borrow();
+        let removed = listener.removed_calls.lock().unwrap();
         assert_eq!(removed.len(), 1);
     }
 
@@ -126,7 +126,7 @@ mod tests {
 
         listener.service_added(string_type_id, service);
 
-        let calls = listener.added_calls.borrow();
+        let calls = listener.added_calls.lock().unwrap();
         assert!(calls[0].1);
     }
 
@@ -138,7 +138,7 @@ mod tests {
 
         listener.service_added(string_type_id, service);
 
-        let calls = listener.added_calls.borrow();
+        let calls = listener.added_calls.lock().unwrap();
         assert!(!calls[0].1);
     }
 }

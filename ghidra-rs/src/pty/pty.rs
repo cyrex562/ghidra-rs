@@ -100,13 +100,24 @@ mod tests {
             Err(io::Error::new(io::ErrorKind::Unsupported, "mock"))
         }
 
-        fn session_varargs(&self, _args: &[String]) -> io::Result<Box<dyn crate::pty::PtySession>> {
+        fn session_varargs(
+            &self,
+            _args: &[String],
+            _env: &std::collections::HashMap<String, String>,
+            _working_directory: Option<&std::path::Path>,
+            _mode: &[Box<dyn crate::pty::TermMode>],
+        ) -> io::Result<Box<dyn crate::pty::PtySession>> {
             Err(io::Error::new(io::ErrorKind::Unsupported, "mock"))
         }
 
-        fn pty_name(&self) -> io::Result<std::path::PathBuf> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "mock"))
+        fn null_session(
+            &self,
+            _mode: &[Box<dyn crate::pty::TermMode>],
+        ) -> io::Result<String> {
+            Ok("/dev/pts/0".to_string())
         }
+
+        fn set_window_size(&self, _cols: u16, _rows: u16) {}
     }
 
     struct MockPty {

@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn converts_to_assembly_exception() {
         let grammar_err = AssemblyGrammarException::new("test message");
-        let assembly_err: super::super::super::AssemblyException = grammar_err.into();
+        let assembly_err: crate::app::plugin::assembler::AssemblyException = grammar_err.into();
         assert_eq!(assembly_err.message(), "test message");
     }
 
@@ -125,7 +125,7 @@ mod tests {
     fn converts_with_cause_to_assembly_exception() {
         let cause = std::io::Error::new(std::io::ErrorKind::Other, "root");
         let grammar_err = AssemblyGrammarException::with_cause("wrapper", cause);
-        let assembly_err: super::super::super::AssemblyException = grammar_err.into();
+        let assembly_err: crate::app::plugin::assembler::AssemblyException = grammar_err.into();
         assert_eq!(assembly_err.message(), "wrapper");
     }
 }

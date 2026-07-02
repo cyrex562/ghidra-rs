@@ -52,8 +52,16 @@ mod tests {
         }
     }
 
-    impl AFeatureIf for Delegate {}
-    impl BFeatureIf for Delegate {}
+    impl AFeatureIf for Delegate {
+        fn prepend_a(&self) -> String {
+            format!("A: {}", self.get_common_thing())
+        }
+    }
+    impl BFeatureIf for Delegate {
+        fn prepend_b(&self) -> String {
+            format!("B: {}", self.get_common_thing())
+        }
+    }
     impl ExtAFeatureIf for Delegate {}
     impl ExtBFeatureIf for Delegate {}
 

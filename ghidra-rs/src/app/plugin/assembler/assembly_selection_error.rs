@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn converts_to_assembly_error() {
         let selection_err = AssemblySelectionError::new("test message");
-        let assembly_err: super::AssemblyError = selection_err.into();
+        let assembly_err: crate::app::plugin::assembler::AssemblyError = selection_err.into();
         assert_eq!(assembly_err.message(), "test message");
     }
 }
