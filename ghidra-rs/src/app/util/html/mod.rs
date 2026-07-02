@@ -1,5 +1,8 @@
+pub mod data_type_diff_input;
 pub mod place_holder_line;
 pub mod text_line;
+
+pub use place_holder_line::PlaceHolderLine;
 
 /// RGBA color, mirroring `java.awt.Color` as used in the html diff utilities.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
