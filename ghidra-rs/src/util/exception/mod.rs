@@ -1147,6 +1147,82 @@ mod property_type_mismatch_exception_tests {
     }
 }
 
+/// Exception thrown if a user is not the owner of a file or data object being accessed.
+///
+/// Port of `ghidra.util.NotOwnerException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct NotOwnerException(pub String);
+
+impl NotOwnerException {
+    pub const DEFAULT_MESSAGE: &'static str = "User is not the owner";
+
+    /// Creates a `NotOwnerException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates a `NotOwnerException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for NotOwnerException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod not_owner_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = NotOwnerException::default();
+        assert_eq!(e.to_string(), NotOwnerException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(NotOwnerException::default(), NotOwnerException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = NotOwnerException::with_message("owner access denied");
+        assert_eq!(e.to_string(), "owner access denied");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(NotOwnerException::new(), NotOwnerException::new());
+        assert_eq!(
+            NotOwnerException::with_message("msg"),
+            NotOwnerException::with_message("msg")
+        );
+        assert_ne!(NotOwnerException::new(), NotOwnerException::with_message("custom"));
+        assert_ne!(
+            NotOwnerException::with_message("a"),
+            NotOwnerException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = NotOwnerException::with_message("only owner can modify");
+        assert_eq!(format!("{}", e), "only owner can modify");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &NotOwnerException::new();
+        assert_eq!(e.to_string(), NotOwnerException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+}
+
 /// Thrown during development when a feature or method is not yet implemented.
 ///
 /// This is a development-time exception and should not appear in released code.
