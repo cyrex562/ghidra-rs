@@ -6,6 +6,7 @@ pub mod operand_type;
 pub mod processor_not_found_exception;
 pub mod sleigh;
 pub mod space_names;
+pub mod storage_class;
 
 pub use endian::Endian;
 pub use input_list_type::InputListType;
@@ -13,3 +14,4 @@ pub use language_id::LanguageID;
 pub use operand_type::OperandType;
 pub use processor_not_found_exception::ProcessorNotFoundException;
 pub use space_names::SpaceNames;
+pub use storage_class::StorageClass;

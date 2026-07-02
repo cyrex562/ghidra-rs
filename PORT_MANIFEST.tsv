@@ -14145,7 +14145,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/la
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterTree.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/RegisterValue.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/SpaceNames.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/StorageClass.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/StorageClass.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/UndefinedValueException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/UnknownContextException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/UnknownDataException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
