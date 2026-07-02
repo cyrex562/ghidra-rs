@@ -5,3 +5,4 @@ pub mod avr32_elf_relocation_type;
 pub mod elf_relocation_type;
 pub mod hexagon_elf_relocation_type;
 pub mod loongarch_elf_relocation_type;
+pub mod mips_elf_relocation_type;
