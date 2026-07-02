@@ -8,3 +8,4 @@ pub mod loongarch_elf_relocation_type;
 pub mod mips_elf_relocation_type;
 pub mod nds32_elf_relocation_type;
 pub mod pic30_elf_relocation_type;
+pub mod power_pc64_elf_relocation_type;
