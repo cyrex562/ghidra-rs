@@ -6317,7 +6317,7 @@ orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteBlockAccessException.java	DONE	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteBlockInfo.java	DONE	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteBlockRange.java	DONE	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
-orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteBlockSelection.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
+orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteBlockSelection.java	DONE	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteBlockSet.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteEditInfo.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/CharacterFormatModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
