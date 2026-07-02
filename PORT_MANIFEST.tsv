@@ -15041,7 +15041,7 @@ orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/app/util/pcodeInject/LdcMeth
 orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/app/util/pcodeInject/ReferenceMethodsTest.java	TODO	orig_src Ghidra Processors JVM src test java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/app/util/pcodeInject/TestClassFileCreator.java	TODO	orig_src Ghidra Processors JVM src test java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/javaclass/test/DescriptorDecoderTest.java	TODO	orig_src Ghidra Processors JVM src test java ghidra javaclass test 
-orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/javaclass/test/MethodsInfoAccessFlagsTest.java	TODO	orig_src Ghidra Processors JVM src test java ghidra javaclass test 
+orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/javaclass/test/MethodsInfoAccessFlagsTest.java	DONE	orig_src Ghidra Processors JVM src test java ghidra javaclass test
 orig_src/Ghidra/Processors/Loongarch/src/main/java/ghidra/app/plugin/core/analysis/LoongsonAnalyzer.java	TODO	orig_src Ghidra Processors Loongarch src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/Loongarch/src/main/java/ghidra/app/util/bin/format/elf/relocation/Loongarch_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors Loongarch src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/Loongarch/src/main/java/ghidra/app/util/bin/format/elf/relocation/Loongarch_ElfRelocationType.java	TODO	orig_src Ghidra Processors Loongarch src main java ghidra app util bin format elf relocation 
