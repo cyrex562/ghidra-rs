@@ -11,3 +11,4 @@ pub mod pic30_elf_relocation_type;
 pub mod power_pc_elf_relocation_type;
 pub mod power_pc64_elf_relocation_type;
 pub mod riscv_elf_relocation_type;
+pub mod sparc_elf_relocation_type;
