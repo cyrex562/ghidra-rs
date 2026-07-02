@@ -12208,7 +12208,7 @@ orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/graph/viewer/edge/VisualEdg
 orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/graph/viewer/layout/GridLocationMapTest.java	TODO	orig_src Ghidra Framework Graph src test java ghidra graph viewer layout 
 orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/service/graph/AttributedGraphTest.java	TODO	orig_src Ghidra Framework Graph src test java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/service/graph/GraphDisplayOptionsTest.java	TODO	orig_src Ghidra Framework Graph src test java ghidra service graph 
-orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/service/graph/GraphTypeBuilderTest.java	TODO	orig_src Ghidra Framework Graph src test java ghidra service graph 
+orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/service/graph/GraphTypeBuilderTest.java	DONE	orig_src Ghidra Framework Graph src test java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/service/graph/GraphTypeTest.java	DONE	orig_src Ghidra Framework Graph src test java ghidra service graph 
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/test/AbstractGuiTest.java	TODO	orig_src Ghidra Framework Gui src main java generic test 
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/AbstractThemeReader.java	TODO	orig_src Ghidra Framework Gui src main java generic theme 
