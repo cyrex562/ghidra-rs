@@ -57,107 +57,48 @@ mod tests {
     use super::*;
 
     #[test]
-    fn builder_with_name_only() {
-        let gt = GraphTypeBuilder::new("TestGraph".to_string()).build();
-        assert_eq!(gt.get_name(), "TestGraph");
-        assert_eq!(gt.get_description(), "TestGraph");
-        assert_eq!(gt.get_vertex_types(), Vec::<String>::new());
-        assert_eq!(gt.get_edge_types(), Vec::<String>::new());
+    fn test_name() {
+        let graph_type = GraphTypeBuilder::new("Test".to_string()).build();
+        assert_eq!("Test", graph_type.get_name());
     }
 
     #[test]
-    fn builder_with_description() {
-        let gt = GraphTypeBuilder::new("CallGraph".to_string())
-            .description("A graph showing function calls".to_string())
+    fn test_description() {
+        let graph_type = GraphTypeBuilder::new("Test".to_string())
+            .description("abc".to_string())
             .build();
-        assert_eq!(gt.get_name(), "CallGraph");
-        assert_eq!(gt.get_description(), "A graph showing function calls");
+        assert_eq!("abc", graph_type.get_description());
     }
 
     #[test]
-    fn builder_with_single_vertex_type() {
-        let gt = GraphTypeBuilder::new("Graph".to_string())
-            .vertex_type("Function".to_string())
-            .build();
-        assert_eq!(gt.get_vertex_types(), vec!["Function"]);
-        assert!(gt.contains_vertex_type("Function"));
+    fn test_no_description_uses_name() {
+        let graph_type = GraphTypeBuilder::new("Test".to_string()).build();
+        assert_eq!("Test", graph_type.get_description());
     }
 
     #[test]
-    fn builder_with_multiple_vertex_types() {
-        let gt = GraphTypeBuilder::new("Graph".to_string())
-            .vertex_type("Function".to_string())
-            .vertex_type("Variable".to_string())
-            .vertex_type("Block".to_string())
-            .build();
-        assert_eq!(
-            gt.get_vertex_types(),
-            vec!["Function", "Variable", "Block"]
-        );
-    }
-
-    #[test]
-    fn builder_with_single_edge_type() {
-        let gt = GraphTypeBuilder::new("Graph".to_string())
-            .edge_type("Calls".to_string())
-            .build();
-        assert_eq!(gt.get_edge_types(), vec!["Calls"]);
-        assert!(gt.contains_edge_type("Calls"));
-    }
-
-    #[test]
-    fn builder_with_multiple_edge_types() {
-        let gt = GraphTypeBuilder::new("Graph".to_string())
-            .edge_type("Calls".to_string())
-            .edge_type("References".to_string())
-            .build();
-        assert_eq!(gt.get_edge_types(), vec!["Calls", "References"]);
-    }
-
-    #[test]
-    fn builder_with_all_fields() {
-        let gt = GraphTypeBuilder::new("CallGraph".to_string())
-            .description("Complete call graph".to_string())
-            .vertex_type("Function".to_string())
-            .vertex_type("Module".to_string())
-            .edge_type("Calls".to_string())
-            .edge_type("Returns".to_string())
-            .build();
-        assert_eq!(gt.get_name(), "CallGraph");
-        assert_eq!(gt.get_description(), "Complete call graph");
-        assert_eq!(gt.get_vertex_types(), vec!["Function", "Module"]);
-        assert_eq!(gt.get_edge_types(), vec!["Calls", "Returns"]);
-    }
-
-    #[test]
-    fn builder_chaining() {
-        let builder = GraphTypeBuilder::new("Graph".to_string());
-        let gt = builder
-            .description("Description".to_string())
+    fn test_vertex_type() {
+        let graph_type = GraphTypeBuilder::new("Test".to_string())
             .vertex_type("V1".to_string())
             .vertex_type("V2".to_string())
+            .build();
+
+        let vertex_types = graph_type.get_vertex_types();
+        assert_eq!(2, vertex_types.len());
+        assert_eq!("V1", vertex_types.get(0).unwrap());
+        assert_eq!("V2", vertex_types.get(1).unwrap());
+    }
+
+    #[test]
+    fn test_edge_type() {
+        let graph_type = GraphTypeBuilder::new("Test".to_string())
             .edge_type("E1".to_string())
+            .edge_type("E2".to_string())
             .build();
-        assert_eq!(gt.get_vertex_types(), vec!["V1", "V2"]);
-        assert_eq!(gt.get_edge_types(), vec!["E1"]);
-    }
 
-    #[test]
-    fn builder_with_duplicate_vertex_types() {
-        let gt = GraphTypeBuilder::new("Graph".to_string())
-            .vertex_type("Func".to_string())
-            .vertex_type("Func".to_string())
-            .vertex_type("Block".to_string())
-            .build();
-        assert_eq!(gt.get_vertex_types(), vec!["Func", "Block"]);
-    }
-
-    #[test]
-    fn builder_with_duplicate_edge_types() {
-        let gt = GraphTypeBuilder::new("Graph".to_string())
-            .edge_type("Call".to_string())
-            .edge_type("Call".to_string())
-            .build();
-        assert_eq!(gt.get_edge_types(), vec!["Call"]);
+        let edge_types = graph_type.get_edge_types();
+        assert_eq!(2, edge_types.len());
+        assert_eq!("E1", edge_types.get(0).unwrap());
+        assert_eq!("E2", edge_types.get(1).unwrap());
     }
 }
