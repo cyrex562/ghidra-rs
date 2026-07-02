@@ -9,6 +9,7 @@ pub mod incompatible_language_exception;
 pub mod program;
 pub mod repeatable_comment;
 pub mod symbol_change_set;
+pub mod variable_size_exception;
 
 pub use auto_parameter_type::AutoParameterType;
 pub use circular_dependency_exception::CircularDependencyException;
@@ -21,3 +22,4 @@ pub use incompatible_language_exception::IncompatibleLanguageException;
 pub use program::Program;
 pub use repeatable_comment::RepeatableComment;
 pub use symbol_change_set::SymbolChangeSet;
+pub use variable_size_exception::VariableSizeException;
