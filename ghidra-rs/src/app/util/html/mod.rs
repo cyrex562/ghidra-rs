@@ -1,3 +1,4 @@
+pub mod place_holder_line;
 pub mod text_line;
 
 /// RGBA color, mirroring `java.awt.Color` as used in the html diff utilities.
