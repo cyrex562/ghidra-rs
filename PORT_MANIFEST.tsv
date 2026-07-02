@@ -15181,7 +15181,7 @@ orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/plugin/core/analysis/eB
 orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/plugin/core/analysis/eBPFSyscallAnalyzer.java	TODO	orig_src Ghidra Processors eBPF src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/util/bin/format/elf/extend/eBPF_ElfExtension.java	TODO	orig_src Ghidra Processors eBPF src main java ghidra app util bin format elf extend 
 orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/util/bin/format/elf/relocation/eBPF_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors eBPF src main java ghidra app util bin format elf relocation 
-orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/util/bin/format/elf/relocation/eBPF_ElfRelocationType.java	TODO	orig_src Ghidra Processors eBPF src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/util/bin/format/elf/relocation/eBPF_ElfRelocationType.java	DONE	orig_src Ghidra Processors eBPF src main java ghidra app util bin format elf relocation
 orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/app/util/bin/format/elf/relocation/Tricore_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors tricore src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/app/util/bin/format/elf/relocation/Tricore_ElfRelocationType.java	TODO	orig_src Ghidra Processors tricore src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/program/emulation/TRICOREEmulateInstructionStateModifier.java	TODO	orig_src Ghidra Processors tricore src main java ghidra program emulation 

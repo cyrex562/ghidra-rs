@@ -2,6 +2,7 @@ pub mod aarch64_elf_relocation_type;
 pub mod arm_elf_relocation_type;
 pub mod avr8_elf_relocation_type;
 pub mod avr32_elf_relocation_type;
+pub mod ebpf_elf_relocation_type;
 pub mod elf_relocation_type;
 pub mod hexagon_elf_relocation_type;
 pub mod loongarch_elf_relocation_type;
