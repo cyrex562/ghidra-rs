@@ -397,4 +397,77 @@ mod tests {
     fn weight_constant_matches_java_value() {
         assert_eq!(AttributedGraph::WEIGHT, "Weight");
     }
+
+    #[test]
+    fn add_generated_vertex_is_retrievable_by_id() {
+        let mut g = AttributedGraph::new("G", empty_graph_type());
+        let id = g.add_generated_vertex().get_id().to_string();
+        assert!(g.get_vertex(&id).is_some());
+        assert_eq!(g.get_vertex_count(), 1);
+    }
+
+    #[test]
+    fn add_vertex_with_name_creates_new_vertex_with_given_name() {
+        let mut g = AttributedGraph::new("G", empty_graph_type());
+        let v = g.add_vertex_with_name("A", "Bob");
+        assert_eq!(v.get_id(), "A");
+        assert_eq!(v.get_name(), Some(&"Bob".to_string()));
+        assert_eq!(g.get_vertex_count(), 1);
+    }
+
+    #[test]
+    fn add_vertex_called_twice_with_same_id_keeps_single_vertex() {
+        let mut g = AttributedGraph::new("G", empty_graph_type());
+        g.add_vertex("A");
+        let v2 = g.add_vertex("A");
+        assert_eq!(v2.get_id(), "A");
+        assert_eq!(g.get_vertex_count(), 1);
+    }
+
+    #[test]
+    fn get_vertex_works_for_all_vertex_creation_methods() {
+        let mut g = AttributedGraph::new("G", empty_graph_type());
+        g.add_vertex("A");
+        g.add_vertex_with_name("B", "NAME");
+        let generated_id = g.add_generated_vertex().get_id().to_string();
+        g.insert_vertex(AttributedVertex::with_id("C"));
+
+        assert_eq!(g.get_vertex_count(), 4);
+        assert!(g.get_vertex("A").is_some());
+        assert!(g.get_vertex("B").is_some());
+        assert!(g.get_vertex(&generated_id).is_some());
+        assert!(g.get_vertex("C").is_some());
+    }
+
+    #[test]
+    fn insert_edge_then_add_edge_collapses_preserving_original_id() {
+        let mut g = AttributedGraph::new("G", empty_graph_type());
+        let added = g.insert_edge("a", "b", AttributedEdge::new("E1"));
+        assert!(added);
+        assert_eq!(g.get_edge_count(), 1);
+
+        let edge = g.add_edge("a", "b", "ignored");
+        assert_eq!(edge.get_id(), "E1");
+        assert_eq!(g.get_edge_count(), 1);
+    }
+
+    #[test]
+    fn collapse_duplicate_edges_with_supplied_edges_preserves_first_id() {
+        let mut g = AttributedGraph::new("G", empty_graph_type());
+        g.insert_edge("a", "b", AttributedEdge::new("1"));
+        g.insert_edge("a", "b", AttributedEdge::new("2"));
+        let edge = g.add_edge("a", "b", "3");
+
+        assert_eq!(g.get_edge_count(), 1);
+        assert_eq!(edge.get_id(), "1");
+        assert_eq!(edge.get_attribute(AttributedGraph::WEIGHT), Some(&"3".to_string()));
+    }
+
+    #[test]
+    fn reverse_direction_edges_do_not_collapse() {
+        let mut g = AttributedGraph::new("G", empty_graph_type());
+        g.add_edge("a", "b", "e1");
+        g.add_edge("b", "a", "e2");
+        assert_eq!(g.get_edge_count(), 2);
+    }
 }
