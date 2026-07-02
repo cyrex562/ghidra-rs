@@ -1,12 +1,14 @@
 pub mod annotation;
 pub mod busy_tool_exception;
 pub mod service_interface_implementation_pair;
+pub mod service_provider;
 pub mod testing_plugin;
 pub mod tool_event_name;
 pub mod util;
 
 pub use busy_tool_exception::BusyToolException;
 pub use service_interface_implementation_pair::ServiceInterfaceImplementationPair;
+pub use service_provider::ServiceProvider;
 pub use testing_plugin::TestingPlugin;
 pub use tool_event_name::ToolEventName;
 pub use util::{PluginPackageState, ServiceListener};
