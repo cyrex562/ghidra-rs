@@ -11612,7 +11612,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/FileChannelLock.jav
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/FileLocker.java	DONE	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/FlattenedIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/JarArchiveBuilder.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/LockFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/LockFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/MergeSortingIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/MultiIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/Path.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
