@@ -1,0 +1,7 @@
+# Put the unversioned libpython on the linker search path so the test binary links.
+# The crate uses pyo3 with `auto-initialize`, which embeds CPython and thus needs
+# -lpython3.14 at link time; the unversioned libpython3.14.so lives in the config dir
+# below (only the versioned .so.1 is in the default lib path). Without this, `cargo
+# test` fails to link and no tests can run. `cargo build --lib` is unaffected.
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-L", "/usr/lib/python3.14/config-3.14-x86_64-linux-gnu"]
