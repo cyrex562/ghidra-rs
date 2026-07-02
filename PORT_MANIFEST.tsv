@@ -3067,7 +3067,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraBu
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraJarBundle.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraPlaceholderBundle.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraSourceBundle.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/OSGiException.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/OSGiException.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core osgi
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/OSGiParallelLock.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/OSGiUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/overview/AbstractColorOverviewAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core overview 
