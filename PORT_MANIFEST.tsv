@@ -10384,7 +10384,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterLis
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterOptions.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterOptionsEditorDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FilterTextField.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FindsPatternTextFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/FindsPatternTextFilter.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/InvertedTextFilter.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/MatchesExactlyTextFilter.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/filter/MatchesExactlyTextFilterFactory.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets filter 
