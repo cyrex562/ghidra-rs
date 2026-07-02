@@ -2513,7 +2513,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeedit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorLockListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorModelAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorModelListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorModelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/CompositeEditorTableAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
