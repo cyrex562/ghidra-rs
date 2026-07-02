@@ -34,6 +34,141 @@ pub type ExceptionalSupplier<R, E> = Box<dyn Fn() -> Result<R, E> + Send + Sync>
 /// A consumer that accepts three arguments. Patterned after `BiConsumer`.
 pub type TriConsumer<T, U, V> = Box<dyn Fn(T, U, V) + Send + Sync>;
 
+/// A consumer function that accepts a single value and returns nothing.
+pub type Consumer<T> = Box<dyn Fn(T) + Send + Sync>;
+
+/// A consumer function that accepts two values and returns nothing.
+pub type BiConsumer<T, U> = Box<dyn Fn(T, U) + Send + Sync>;
+
+/// A function that transforms an input value into an output value. The result may be
+/// absent, mirroring Java's ability to return `null` from a `Function<T, R>`.
+pub type Function<T, R> = Box<dyn Fn(T) -> Option<R> + Send + Sync>;
+
+/// A function that supplies a value with no input. The result may be absent, mirroring
+/// Java's ability to return `null` from a `Supplier<T>`.
+pub type Supplier<T> = Box<dyn Fn() -> Option<T> + Send + Sync>;
+
+/// A function that takes no arguments and returns nothing.
+pub type Runnable = Box<dyn Fn() + Send + Sync>;
+
+/// A predicate function that tests a single value.
+pub type Predicate<T> = Box<dyn Fn(&T) -> bool + Send + Sync>;
+
+/// A predicate function that tests two values.
+pub type BiPredicate<T, U> = Box<dyn Fn(&T, &U) -> bool + Send + Sync>;
+
+/// Creates a dummy consumer that ignores its argument.
+///
+/// Port of `utility.function.Dummy.consumer`.
+pub fn dummy_consumer<T>() -> Consumer<T> {
+    Box::new(|_| {})
+}
+
+/// Creates a dummy consumer that ignores its argument and never fails.
+///
+/// Port of `utility.function.Dummy.exceptionalConsumer`.
+pub fn dummy_exceptional_consumer<T, E>() -> ExceptionalConsumer<T, E> {
+    Box::new(|_| Ok(()))
+}
+
+/// Creates a dummy consumer that ignores both of its arguments.
+///
+/// Port of `utility.function.Dummy.biConsumer`.
+pub fn dummy_bi_consumer<T, U>() -> BiConsumer<T, U> {
+    Box::new(|_, _| {})
+}
+
+/// Creates a dummy function that always returns an absent result.
+///
+/// Port of `utility.function.Dummy.function`.
+pub fn dummy_function<T, R>() -> Function<T, R> {
+    Box::new(|_| None)
+}
+
+/// Creates a dummy supplier that always returns an absent result.
+///
+/// Port of `utility.function.Dummy.supplier`.
+pub fn dummy_supplier<T>() -> Supplier<T> {
+    Box::new(|| None)
+}
+
+/// Creates a dummy runnable that does nothing.
+///
+/// Port of `utility.function.Dummy.runnable`.
+pub fn dummy_runnable() -> Runnable {
+    Box::new(|| {})
+}
+
+/// Creates a dummy predicate that always returns `true`.
+///
+/// Port of `utility.function.Dummy.predicate`.
+pub fn dummy_predicate<T>() -> Predicate<T> {
+    Box::new(|_| true)
+}
+
+/// Creates a dummy predicate that always returns `true`.
+///
+/// Port of `utility.function.Dummy.biPredicate`.
+pub fn dummy_bi_predicate<T, U>() -> BiPredicate<T, U> {
+    Box::new(|_, _| true)
+}
+
+/// Returns the given consumer if it is `Some`, otherwise a [`dummy_consumer`]. Useful to
+/// avoid using `None`.
+///
+/// Port of `utility.function.Dummy.ifNull(Consumer)`.
+pub fn consumer_if_none<T>(c: Option<Consumer<T>>) -> Consumer<T> {
+    c.unwrap_or_else(dummy_consumer)
+}
+
+/// Returns the given consumer if it is `Some`, otherwise a [`dummy_bi_consumer`]. Useful
+/// to avoid using `None`.
+///
+/// Port of `utility.function.Dummy.ifNull(BiConsumer)`.
+pub fn bi_consumer_if_none<T, U>(c: Option<BiConsumer<T, U>>) -> BiConsumer<T, U> {
+    c.unwrap_or_else(dummy_bi_consumer)
+}
+
+/// Returns the given function if it is `Some`, otherwise a [`dummy_function`]. Useful to
+/// avoid using `None`.
+///
+/// Port of `utility.function.Dummy.ifNull(Function)`.
+pub fn function_if_none<T, R>(f: Option<Function<T, R>>) -> Function<T, R> {
+    f.unwrap_or_else(dummy_function)
+}
+
+/// Returns the given supplier if it is `Some`, otherwise a [`dummy_supplier`]. Useful to
+/// avoid using `None`.
+///
+/// Port of `utility.function.Dummy.ifNull(Supplier)`.
+pub fn supplier_if_none<T>(s: Option<Supplier<T>>) -> Supplier<T> {
+    s.unwrap_or_else(dummy_supplier)
+}
+
+/// Returns the given runnable if it is `Some`, otherwise a [`dummy_runnable`]. Useful to
+/// avoid using `None`.
+///
+/// Port of `utility.function.Dummy.ifNull(Runnable)`.
+pub fn runnable_if_none(r: Option<Runnable>) -> Runnable {
+    r.unwrap_or_else(dummy_runnable)
+}
+
+/// Returns the given predicate if it is `Some`, otherwise a [`dummy_predicate`] (which
+/// always returns `true`). Useful to avoid using `None`.
+///
+/// Port of `utility.function.Dummy.ifNull(Predicate)`.
+pub fn predicate_if_none<T>(p: Option<Predicate<T>>) -> Predicate<T> {
+    p.unwrap_or_else(dummy_predicate)
+}
+
+/// Returns the given predicate if it is `Some`, otherwise a [`dummy_bi_predicate`] (which
+/// always returns `true`). Useful to avoid using `None`.
+///
+/// Port of `utility.function.Dummy.ifNull(BiPredicate)`.
+pub fn bi_predicate_if_none<T, U>(p: Option<BiPredicate<T, U>>) -> BiPredicate<T, U> {
+    p.unwrap_or_else(dummy_bi_predicate)
+}
+
 /// A consumer that can request termination of the supplier once some condition is reached.
 ///
 /// Port of `utility.function.TerminatingConsumer<T>`.
@@ -559,5 +694,150 @@ mod tests {
         }
 
         assert_eq!(*consumer.count.lock().unwrap(), 6);
+    }
+
+    #[test]
+    fn dummy_consumer_is_noop() {
+        let consumer = dummy_consumer::<i32>();
+        consumer(42);
+    }
+
+    #[test]
+    fn dummy_exceptional_consumer_is_noop_and_never_fails() {
+        let consumer = dummy_exceptional_consumer::<i32, String>();
+        assert!(consumer(42).is_ok());
+    }
+
+    #[test]
+    fn dummy_bi_consumer_is_noop() {
+        let consumer = dummy_bi_consumer::<i32, i32>();
+        consumer(1, 2);
+    }
+
+    #[test]
+    fn dummy_function_returns_none() {
+        let function = dummy_function::<i32, String>();
+        assert_eq!(function(42), None);
+    }
+
+    #[test]
+    fn dummy_supplier_returns_none() {
+        let supplier = dummy_supplier::<String>();
+        assert_eq!(supplier(), None);
+    }
+
+    #[test]
+    fn dummy_runnable_is_noop() {
+        let runnable = dummy_runnable();
+        runnable();
+    }
+
+    #[test]
+    fn dummy_predicate_always_true() {
+        let predicate = dummy_predicate::<i32>();
+        assert!(predicate(&1));
+        assert!(predicate(&-1));
+    }
+
+    #[test]
+    fn dummy_bi_predicate_always_true() {
+        let predicate = dummy_bi_predicate::<i32, i32>();
+        assert!(predicate(&1, &2));
+    }
+
+    #[test]
+    fn consumer_if_none_with_none_returns_dummy() {
+        let consumer = consumer_if_none::<i32>(None);
+        consumer(1);
+    }
+
+    #[test]
+    fn consumer_if_none_with_some_returns_given() {
+        let log: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
+        let log_clone = Arc::clone(&log);
+        let given: Consumer<i32> = Box::new(move |v| log_clone.lock().unwrap().push(v));
+
+        let consumer = consumer_if_none(Some(given));
+        consumer(7);
+
+        assert_eq!(*log.lock().unwrap(), vec![7]);
+    }
+
+    #[test]
+    fn bi_consumer_if_none_with_none_returns_dummy() {
+        let consumer = bi_consumer_if_none::<i32, i32>(None);
+        consumer(1, 2);
+    }
+
+    #[test]
+    fn function_if_none_with_none_returns_dummy() {
+        let function = function_if_none::<i32, String>(None);
+        assert_eq!(function(1), None);
+    }
+
+    #[test]
+    fn function_if_none_with_some_returns_given() {
+        let given: Function<i32, i32> = Box::new(|v| Some(v * 2));
+        let function = function_if_none(Some(given));
+        assert_eq!(function(21), Some(42));
+    }
+
+    #[test]
+    fn supplier_if_none_with_none_returns_dummy() {
+        let supplier = supplier_if_none::<i32>(None);
+        assert_eq!(supplier(), None);
+    }
+
+    #[test]
+    fn supplier_if_none_with_some_returns_given() {
+        let given: Supplier<i32> = Box::new(|| Some(42));
+        let supplier = supplier_if_none(Some(given));
+        assert_eq!(supplier(), Some(42));
+    }
+
+    #[test]
+    fn runnable_if_none_with_none_returns_dummy() {
+        let runnable = runnable_if_none(None);
+        runnable();
+    }
+
+    #[test]
+    fn runnable_if_none_with_some_returns_given() {
+        let called = Arc::new(Mutex::new(false));
+        let called_clone = Arc::clone(&called);
+        let given: Runnable = Box::new(move || *called_clone.lock().unwrap() = true);
+
+        let runnable = runnable_if_none(Some(given));
+        runnable();
+
+        assert!(*called.lock().unwrap());
+    }
+
+    #[test]
+    fn predicate_if_none_with_none_returns_dummy() {
+        let predicate = predicate_if_none::<i32>(None);
+        assert!(predicate(&1));
+    }
+
+    #[test]
+    fn predicate_if_none_with_some_returns_given() {
+        let given: Predicate<i32> = Box::new(|v| *v > 0);
+        let predicate = predicate_if_none(Some(given));
+        assert!(predicate(&1));
+        assert!(!predicate(&-1));
+    }
+
+    #[test]
+    fn bi_predicate_if_none_with_none_returns_dummy() {
+        let predicate = bi_predicate_if_none::<i32, i32>(None);
+        assert!(predicate(&1, &2));
+    }
+
+    #[test]
+    fn bi_predicate_if_none_with_some_returns_given() {
+        let given: BiPredicate<i32, i32> = Box::new(|a, b| a == b);
+        let predicate = bi_predicate_if_none(Some(given));
+        assert!(predicate(&1, &1));
+        assert!(!predicate(&1, &2));
     }
 }
