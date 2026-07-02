@@ -83,14 +83,13 @@ impl<R: Read> BoundedBufferedReader<R> {
 
         let inner = self.inner.as_mut().unwrap();
         let buf_len = self.buf.len();
-        loop {
-            let n = inner.read(&mut self.buf[dst..buf_len])?;
-            if n != 0 {
-                self.n_chars = dst + n;
-                self.next_char = dst;
-                break;
-            }
-        }
+        // NOTE: Java's fill() loops `while (n == 0)` because java.io read() returns -1 at
+        // EOF and 0 only for "no bytes available yet". Rust's Read::read returns Ok(0) FOR
+        // EOF, so looping on 0 hangs forever. Do a single read and treat 0 as EOF (leaving
+        // next_char == n_chars so callers observe no available data).
+        let n = inner.read(&mut self.buf[dst..buf_len])?;
+        self.n_chars = dst + n;
+        self.next_char = dst;
         Ok(())
     }
 
