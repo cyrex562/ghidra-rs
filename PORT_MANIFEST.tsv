@@ -6811,7 +6811,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/a
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/apk/ApkFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android apk 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtBlock.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtCompression.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtCompression.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android art
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtField.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/art/ArtFieldGroup.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android art 
