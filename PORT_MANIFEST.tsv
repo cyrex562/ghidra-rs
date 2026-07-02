@@ -14574,7 +14574,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/TwoWayBreak
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressRangeIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/UnionAddressSetView.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/XmlProgramUtilities.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfo.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfoManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/CompilerConstraint.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/ExecutableFormatConstraint.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
