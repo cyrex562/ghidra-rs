@@ -1375,6 +1375,82 @@ mod duplicate_name_exception_tests {
     }
 }
 
+/// Exception thrown whenever some container is expected to be empty and it isn't.
+///
+/// Port of `ghidra.util.exception.NotEmptyException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct NotEmptyException(pub String);
+
+impl NotEmptyException {
+    pub const DEFAULT_MESSAGE: &'static str = "Object was occupied.";
+
+    /// Creates a `NotEmptyException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates a `NotEmptyException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for NotEmptyException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod not_empty_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = NotEmptyException::default();
+        assert_eq!(e.to_string(), NotEmptyException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(NotEmptyException::default(), NotEmptyException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = NotEmptyException::with_message("container not empty");
+        assert_eq!(e.to_string(), "container not empty");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(NotEmptyException::new(), NotEmptyException::new());
+        assert_eq!(
+            NotEmptyException::with_message("msg"),
+            NotEmptyException::with_message("msg")
+        );
+        assert_ne!(NotEmptyException::new(), NotEmptyException::with_message("custom"));
+        assert_ne!(
+            NotEmptyException::with_message("a"),
+            NotEmptyException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = NotEmptyException::with_message("data structure is not empty");
+        assert_eq!(format!("{}", e), "data structure is not empty");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &NotEmptyException::new();
+        assert_eq!(e.to_string(), NotEmptyException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+}
+
 /// Thrown during development when a feature or method is not yet implemented.
 ///
 /// This is a development-time exception and should not appear in released code.
