@@ -11,6 +11,7 @@ pub trait AssemblyResolvedError: super::AssemblyResolution {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::AssemblyResolution;
     use std::cmp::Ordering;
 
     struct TestError {
@@ -73,7 +74,7 @@ mod tests {
         }
 
         fn compare_to(&self, other: &dyn super::super::AssemblyResolution) -> Ordering {
-            self.get_description().cmp(other.get_description().as_str())
+            self.get_description().cmp(&other.get_description())
         }
     }
 

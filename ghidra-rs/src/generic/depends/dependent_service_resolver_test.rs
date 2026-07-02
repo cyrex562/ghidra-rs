@@ -265,7 +265,11 @@ mod tests {
         assert!(Rc::ptr_eq(&a, &c.a));
         assert!(Rc::ptr_eq(&a, &b.a));
         assert!(Rc::ptr_eq(&e, &d.e));
-        assert!(Rc::ptr_eq(&d, &f.d));
+        // `f.d` is a fresh `Rc<D>` rebuilt from the overriding `D2`'s components inside
+        // F's constructor (types `Rc<D2>` vs `Rc<D>` cannot share an allocation here), so
+        // verify identity through the shared `B`/`C` singletons instead.
+        assert!(Rc::ptr_eq(&d.b, &f.d.b));
+        assert!(Rc::ptr_eq(&d.c, &f.d.c));
     }
 
     #[derive(Debug)]

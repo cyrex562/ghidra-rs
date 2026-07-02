@@ -52,6 +52,7 @@ impl std::error::Error for AssemblySemanticException {}
 mod tests {
     use super::*;
     use std::cmp::Ordering;
+    use std::error::Error;
 
     struct MockResolvedError {
         error_msg: String,

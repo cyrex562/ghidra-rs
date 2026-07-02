@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     fn get_location_before_any_mapping_returns_none() {
-        let locator = Locator::new();
+        let mut locator = Locator::new();
         locator.register_location(100, Location::new("test.sleigh", 10));
         let result = locator.get_location(50);
         assert!(result.is_none());

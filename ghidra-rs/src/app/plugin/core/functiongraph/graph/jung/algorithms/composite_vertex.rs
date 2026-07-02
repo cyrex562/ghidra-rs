@@ -4,6 +4,7 @@ use std::hash::{Hash, Hasher};
 
 /// A vertex that groups simple vertices and nested composites for use in graph
 /// decomposition algorithms.
+#[derive(Debug)]
 pub struct CompositeVertex<V, E> {
     vertices: Vec<V>,
     internal_edges: Vec<E>,

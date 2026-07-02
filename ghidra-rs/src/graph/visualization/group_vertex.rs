@@ -17,6 +17,7 @@ pub enum GroupableVertex {
 /// `AttributedVertex` class to represent a group of "collapsed nodes".
 ///
 /// Mirrors `ghidra.graph.visualization.GroupVertex`.
+#[derive(Debug)]
 pub struct GroupVertex {
     vertex: AttributedVertex,
     children: HashSet<AttributedVertex>,

@@ -141,11 +141,11 @@ mod tests {
 
         assert!(PluggableServiceRegistry::register_pluggable_service(svc1.clone()).is_ok());
         let retrieved1 = PluggableServiceRegistry::get_pluggable_service::<String>();
-        assert_eq!(retrieved1.as_deref(), Some("first"));
+        assert_eq!(retrieved1.as_deref().map(String::as_str), Some("first"));
 
         assert!(PluggableServiceRegistry::register_pluggable_service(svc2.clone()).is_ok());
         let retrieved2 = PluggableServiceRegistry::get_pluggable_service::<String>();
-        assert_eq!(retrieved2.as_deref(), Some("second"));
+        assert_eq!(retrieved2.as_deref().map(String::as_str), Some("second"));
     }
 
     #[test]

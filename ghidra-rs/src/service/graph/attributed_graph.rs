@@ -457,10 +457,12 @@ mod tests {
         g.insert_edge("a", "b", AttributedEdge::new("1"));
         g.insert_edge("a", "b", AttributedEdge::new("2"));
         let edge = g.add_edge("a", "b", "3");
+        let edge_id = edge.get_id().to_string();
+        let edge_weight = edge.get_attribute(AttributedGraph::WEIGHT).cloned();
 
         assert_eq!(g.get_edge_count(), 1);
-        assert_eq!(edge.get_id(), "1");
-        assert_eq!(edge.get_attribute(AttributedGraph::WEIGHT), Some(&"3".to_string()));
+        assert_eq!(edge_id, "1");
+        assert_eq!(edge_weight, Some("3".to_string()));
     }
 
     #[test]

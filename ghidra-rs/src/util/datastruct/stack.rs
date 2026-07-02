@@ -6,6 +6,7 @@ use std::fmt;
 /// from the **bottom** to the **top** of the stack.
 ///
 /// Port of `ghidra.util.datastruct.Stack`.
+#[derive(Debug)]
 pub struct Stack<T> {
     list: Vec<T>,
 }

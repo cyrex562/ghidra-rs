@@ -128,6 +128,14 @@ impl ParsingEnvironment {
     }
 }
 
+impl std::fmt::Debug for ParsingEnvironment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ParsingEnvironment")
+            .field("id", &Rc::as_ptr(&self.0))
+            .finish()
+    }
+}
+
 impl PartialEq for ParsingEnvironment {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.0, &other.0)

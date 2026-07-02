@@ -62,6 +62,15 @@ impl PartialEq for ByteBlockRange {
 
 impl Eq for ByteBlockRange {}
 
+impl std::fmt::Debug for ByteBlockRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ByteBlockRange")
+            .field("start_index", &self.start_index)
+            .field("end_index", &self.end_index)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

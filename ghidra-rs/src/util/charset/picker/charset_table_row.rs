@@ -53,7 +53,7 @@ mod tests {
 
         let row = CharsetTableRow::new(csi.clone(), scripts.clone());
 
-        assert_eq!(*row.csi(), &csi);
+        assert_eq!(*row.csi(), csi);
         assert_eq!(row.scripts(), "Latin Common");
     }
 

@@ -75,6 +75,7 @@ impl std::error::Error for DataTypeDependencyException {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn default_constructor_has_empty_message_and_no_source() {

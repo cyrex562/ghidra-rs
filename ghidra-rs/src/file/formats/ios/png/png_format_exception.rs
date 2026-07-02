@@ -64,6 +64,7 @@ impl std::error::Error for PngFormatException {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn empty_variant_has_no_source() {

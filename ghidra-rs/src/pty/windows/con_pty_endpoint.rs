@@ -133,15 +133,13 @@ mod tests {
     fn output_stream_box_implements_write() {
         let ep = null_endpoint();
         let stream = ep.get_output_stream().unwrap();
-        let stream_any = stream;
-        assert!(!format!("{:?}", stream_any).is_empty());
+        let _stream_any: Box<dyn std::io::Write> = stream;
     }
 
     #[test]
     fn input_stream_box_implements_read() {
         let ep = null_endpoint();
         let stream = ep.get_input_stream().unwrap();
-        let stream_any = stream;
-        assert!(!format!("{:?}", stream_any).is_empty());
+        let _stream_any: Box<dyn std::io::Read> = stream;
     }
 }

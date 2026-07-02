@@ -16,7 +16,7 @@ pub trait DataTypeDiffInput {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::html::{TextLine, PlaceHolderLine, Color, INVALID_COLOR};
+    use crate::app::util::html::{EmptyTextLine, TextLine, PlaceHolderLine};
 
     // Mock implementation for testing
     struct MockDiffInput {
@@ -42,7 +42,7 @@ mod tests {
         }
 
         fn create_placeholder(&self, _opposite_line: &dyn ValidatableLine) -> Box<dyn PlaceHolderLine> {
-            Box::new(TextLine::new("<placeholder>"))
+            Box::new(EmptyTextLine::new(3))
         }
     }
 
@@ -93,7 +93,7 @@ mod tests {
         let input = MockDiffInput::new(vec!["test"]);
         let opposite = TextLine::new("opposite");
         let placeholder = input.create_placeholder(&opposite);
-        assert_eq!(placeholder.get_text(), "<placeholder>");
+        assert_eq!(placeholder.get_text(), "   ");
     }
 
     #[test]

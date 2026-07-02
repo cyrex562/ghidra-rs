@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 /// Defines a graph type by specifying the set of valid vertex and edge type names.
+#[derive(Debug)]
 pub struct GraphType {
     name: String,
     description: String,

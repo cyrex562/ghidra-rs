@@ -318,6 +318,7 @@ impl std::error::Error for AssertException {
 #[cfg(test)]
 mod assert_exception_tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn default_constructor_has_unexpected_error_message() {
@@ -521,6 +522,7 @@ impl std::error::Error for CryptoException {
 #[cfg(test)]
 mod crypto_exception_tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn message_constructor_stores_message() {
@@ -1134,6 +1136,7 @@ impl std::error::Error for RollbackException {
 #[cfg(test)]
 mod rollback_exception_tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn message_constructor_stores_message() {
@@ -1188,6 +1191,7 @@ mod rollback_exception_tests {
 #[cfg(test)]
 mod bad_link_exception_tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn message_constructor_stores_message() {

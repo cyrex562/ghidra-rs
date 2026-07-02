@@ -3,7 +3,7 @@ use thiserror::Error;
 /// Exception thrown when an error occurs during the construction of a plugin.
 ///
 /// Mirrors `ghidra.framework.plugintool.util.PluginConstructionException`.
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 #[error("{0}")]
 pub struct PluginConstructionException(pub String);
 

@@ -7,6 +7,7 @@ const EDGE_TYPE_KEY: &str = "EdgeType";
 /// Generic directed graph edge implementation.
 ///
 /// Mirrors `ghidra.service.graph.AttributedEdge`.
+#[derive(Debug)]
 pub struct AttributedEdge {
     attributed: Attributed,
     id: String,

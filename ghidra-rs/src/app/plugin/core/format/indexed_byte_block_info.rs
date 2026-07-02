@@ -6,7 +6,7 @@ use super::{ByteBlock, ByteBlockInfo};
 /// A ByteBlockInfo with line index information for ordering.
 ///
 /// Port of `ghidra.app.plugin.core.format.IndexedByteBlockInfo`.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct IndexedByteBlockInfo {
     info: ByteBlockInfo,
     line_index: i128,

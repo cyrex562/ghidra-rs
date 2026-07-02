@@ -53,7 +53,7 @@ mod tests {
         handler2.handle_error(Box::new("error2"));
 
         // Both handlers should increment the same counter since they share state
-        assert_eq!(factory.call_count.lock().unwrap().len(), 0); // The field itself, but the handlers share
+        assert_eq!(*factory.call_count.lock().unwrap(), 2);
     }
 
     #[test]

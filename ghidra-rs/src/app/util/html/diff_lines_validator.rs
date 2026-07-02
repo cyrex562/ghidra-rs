@@ -176,7 +176,7 @@ impl fmt::Display for DiffLinesValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::html::TextLine;
+    use crate::app::util::html::{EmptyTextLine, TextLine};
 
     struct MockDiffInput {
         lines: Vec<&'static str>,
@@ -197,7 +197,7 @@ mod tests {
         }
 
         fn create_placeholder(&self, _opposite_line: &dyn ValidatableLine) -> Box<dyn PlaceHolderLine> {
-            Box::new(TextLine::new(""))
+            Box::new(EmptyTextLine::new(0))
         }
     }
 

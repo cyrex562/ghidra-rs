@@ -69,6 +69,15 @@ impl<T> PartialEq for VectorIterator<T> {
     }
 }
 
+impl<T> fmt::Debug for VectorIterator<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("VectorIterator")
+            .field("data", &self.data)
+            .field("index", &self.index)
+            .finish()
+    }
+}
+
 impl<T: fmt::Display> fmt::Display for VectorIterator<T> {
     /// Mirrors `toString()`.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn fmt_write_macro_discards_output() {
         let mut w = NullWriter;
-        assert!(write!(w, "value={}", 42).is_ok());
+        assert!(std::fmt::Write::write_fmt(&mut w, format_args!("value={}", 42)).is_ok());
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod tests {
     fn null_print_writer_fmt_write() {
         let mut pw = NullPrintWriter::new();
         assert!(pw.write_str("test").is_ok());
-        assert!(write!(pw, "value={}", 123).is_ok());
+        assert!(std::fmt::Write::write_fmt(&mut pw, format_args!("value={}", 123)).is_ok());
     }
 
     #[test]

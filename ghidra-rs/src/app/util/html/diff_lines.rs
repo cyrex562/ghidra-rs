@@ -138,7 +138,7 @@ impl std::fmt::Display for DiffLines {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::html::TextLine;
+    use crate::app::util::html::{EmptyTextLine, TextLine};
 
     struct MockDiffInput {
         lines: Vec<&'static str>,
@@ -159,7 +159,7 @@ mod tests {
         }
 
         fn create_placeholder(&self, _opposite_line: &dyn ValidatableLine) -> Box<dyn PlaceHolderLine> {
-            Box::new(TextLine::new(""))
+            Box::new(EmptyTextLine::new(0))
         }
     }
 
@@ -199,7 +199,7 @@ mod tests {
     #[test]
     fn install_new_lines_replaces_content() {
         let input = MockDiffInput::new(vec!["one"]);
-        let mut diff_lines = DiffLines::new(Rc::clone(&input));
+        let mut diff_lines = DiffLines::new(input);
         let mut clone = diff_lines.create_empty_clone();
         clone.insert_placeholder(diff_lines.get(0));
 

@@ -8,6 +8,7 @@ use crate::docking::widgets::table::TableFilter;
 /// all rows (accepts everything) and is never a sub-filter of any other filter.
 ///
 /// Corresponds to `docking.widgets.table.threaded.NullTableFilter` in the Java source.
+#[derive(Debug)]
 pub struct NullTableFilter<R> {
     _phantom: std::marker::PhantomData<R>,
 }

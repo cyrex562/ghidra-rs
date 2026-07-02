@@ -238,7 +238,7 @@ mod tests {
     #[test]
     fn private_saveable_is_private() {
         let obj = SimplePrivateSaveable::new("test".to_string());
-        assert!(obj.is_private());
+        assert!(PrivateSaveable::is_private(&obj));
     }
 
     #[test]
@@ -252,7 +252,7 @@ mod tests {
         restored.restore(&mut restore_storage);
 
         assert_eq!(restored.data, "hello");
-        assert!(restored.is_private());
+        assert!(PrivateSaveable::is_private(&restored));
     }
 
     #[test]
@@ -260,7 +260,7 @@ mod tests {
         let obj1 = SimplePrivateSaveable::new("obj1".to_string());
         let obj2 = SimplePrivateSaveable::new("obj2".to_string());
 
-        assert!(obj1.is_private());
-        assert!(obj2.is_private());
+        assert!(PrivateSaveable::is_private(&obj1));
+        assert!(PrivateSaveable::is_private(&obj2));
     }
 }

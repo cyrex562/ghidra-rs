@@ -8,6 +8,7 @@ use std::fmt;
 /// is automatically removed during push or add operations.
 ///
 /// Port of `ghidra.util.datastruct.FixedSizeStack`.
+#[derive(Debug)]
 pub struct FixedSizeStack<T> {
     stack: Stack<T>,
     max_size: usize,

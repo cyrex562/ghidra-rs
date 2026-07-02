@@ -242,9 +242,12 @@ mod tests {
 
     #[test]
     fn large_index_count() {
+        // The model can report a huge index count, but `get_index` maps an i32 pixel
+        // value, so exercise it with the largest index whose pixel offset fits in i32.
         let m = mapper(i128::MAX / 100, 20);
-        let large_value = (i128::MAX / 100 - 1) as i32 * 20;
-        assert_eq!(m.get_index(large_value), i128::MAX / 100 - 1);
+        let large_index = (i32::MAX / 20) as i128;
+        let large_value = (large_index as i32) * 20;
+        assert_eq!(m.get_index(large_value), large_index);
     }
 
     #[test]

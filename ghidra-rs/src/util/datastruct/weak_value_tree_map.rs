@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn new_is_empty() {
-        let map: WeakValueTreeMap<i32, String> = WeakValueTreeMap::new();
+        let mut map: WeakValueTreeMap<i32, String> = WeakValueTreeMap::new();
         assert!(map.is_empty());
         assert_eq!(map.size(), 0);
     }

@@ -88,14 +88,14 @@ mod tests {
     #[test]
     fn remote_output_stream_is_unsupported() {
         let ep = RemoteEndpoint;
-        let err = ep.get_output_stream().unwrap_err();
+        let err = ep.get_output_stream().err().unwrap();
         assert_eq!(err.kind(), ErrorKind::Unsupported);
     }
 
     #[test]
     fn remote_input_stream_is_unsupported() {
         let ep = RemoteEndpoint;
-        let err = ep.get_input_stream().unwrap_err();
+        let err = ep.get_input_stream().err().unwrap();
         assert_eq!(err.kind(), ErrorKind::Unsupported);
     }
 }

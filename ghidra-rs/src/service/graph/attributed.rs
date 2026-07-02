@@ -3,6 +3,7 @@ use std::collections::HashMap;
 const DESCRIPTION: &str = "Description";
 
 /// A base class for objects that have a map of string key/value attribute pairs.
+#[derive(Debug)]
 pub struct Attributed {
     attributes: HashMap<String, String>,
 }

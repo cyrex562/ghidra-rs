@@ -365,7 +365,7 @@ mod tests {
         I do not like them, Sam-I-am.\n\
         I do not like green eggs and ham.";
 
-    const TEST_COMPRESSED: [u8; 96] = [
+    const TEST_COMPRESSED: [u8; 104] = [
         0xff, 0x49, 0x20, 0x61, //
         0x6d, 0x20, 0x53, 0x61, //
         0x6d, 0xf3, 0x0a, 0x0a, //

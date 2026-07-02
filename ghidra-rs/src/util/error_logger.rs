@@ -115,7 +115,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     struct MockErrorLogger {
-        logs: Arc<Mutex<Vec<(String, String, bool)>>>,
+        logs: Arc<Mutex<Vec<(String, String, String)>>>,
     }
 
     impl MockErrorLogger {

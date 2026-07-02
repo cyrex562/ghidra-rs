@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn version_4_4_w_kitkat_api20() {
-        let v = AndroidVersion::Version4_4_W;
+        let v = AndroidVersion::Version4_4W;
         assert_eq!(v.api_version(), 20);
         assert_eq!(v.version_number(), "4.4W");
         assert_eq!(v.version_letter(), 'K');

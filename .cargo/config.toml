@@ -1,7 +1,13 @@
-# Put the unversioned libpython on the linker search path so the test binary links.
-# The crate uses pyo3 with `auto-initialize`, which embeds CPython and thus needs
-# -lpython3.14 at link time; the unversioned libpython3.14.so lives in the config dir
-# below (only the versioned .so.1 is in the default lib path). Without this, `cargo
-# test` fails to link and no tests can run. `cargo build --lib` is unaffected.
+# Link settings needed for the TEST binary to link (the library rlib links fine; a full
+# executable link only happens for tests). Two fixes:
+#   1) -L <libpython config dir>: pyo3 `auto-initialize` embeds CPython, so the test binary
+#      needs -lpython3.14; only the versioned .so is in the default lib path.
+#   2) -Wl,-u,__rust_probestack: the `wasmer-vm` crate references __rust_probestack, which
+#      lives in compiler_builtins but isn't pulled due to archive ordering (undefined-symbol
+#      link error). Forcing it "undefined" up front makes the linker pull its definition.
+# `cargo build --lib` is unaffected by either.
 [target.x86_64-unknown-linux-gnu]
-rustflags = ["-L", "/usr/lib/python3.14/config-3.14-x86_64-linux-gnu"]
+rustflags = [
+    "-L", "/usr/lib/python3.14/config-3.14-x86_64-linux-gnu",
+    "-C", "link-arg=-Wl,-u,__rust_probestack",
+]

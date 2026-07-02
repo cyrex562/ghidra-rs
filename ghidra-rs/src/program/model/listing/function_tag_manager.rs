@@ -89,7 +89,7 @@ mod tests {
         fn delete(&mut self) {}
 
         fn compare_to(&self, other: &dyn FunctionTag) -> std::cmp::Ordering {
-            self.name.cmp(other.name())
+            self.name.as_str().cmp(other.name())
         }
     }
 

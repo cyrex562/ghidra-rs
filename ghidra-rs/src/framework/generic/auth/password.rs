@@ -42,6 +42,18 @@ impl Password {
     }
 }
 
+impl std::fmt::Debug for Password {
+    /// Redacts the password contents to avoid leaking secrets in logs/output.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Password")
+            .field(
+                "password",
+                &self.password.as_ref().map(|_| "<redacted>"),
+            )
+            .finish()
+    }
+}
+
 impl Clone for Password {
     fn clone(&self) -> Self {
         Self {

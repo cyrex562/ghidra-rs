@@ -67,6 +67,15 @@ impl PartialEq for ByteBlockInfo {
 
 impl Eq for ByteBlockInfo {}
 
+impl std::fmt::Debug for ByteBlockInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ByteBlockInfo")
+            .field("offset", &self.offset)
+            .field("column", &self.column)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

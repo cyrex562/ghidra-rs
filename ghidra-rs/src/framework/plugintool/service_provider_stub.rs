@@ -87,7 +87,7 @@ mod tests {
 
         provider.add_service_listener(listener1);
         provider.add_service_listener(listener2);
-        provider.remove_service_listener(listener2);
+        provider.remove_service_listener(Box::new(DummyListener));
     }
 
     #[test]

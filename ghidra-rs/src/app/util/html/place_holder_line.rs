@@ -10,7 +10,7 @@ pub trait PlaceHolderLine: ValidatableLine {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::util::html::{TextLine, Color, INVALID_COLOR};
+    use crate::app::util::html::{Color, EmptyTextLine};
 
     /// Test that TextLine can be used as a PlaceHolderLine.
     struct PlaceHolder;
@@ -47,16 +47,16 @@ mod tests {
     }
 
     #[test]
-    fn text_line_can_be_used_as_placeholder() {
-        let line = TextLine::new("test");
+    fn empty_text_line_can_be_used_as_placeholder() {
+        let line = EmptyTextLine::new(4);
         let _ph: &dyn PlaceHolderLine = &line;
     }
 
     #[test]
-    fn placeholder_text_line_trait_methods_accessible() {
-        let line = TextLine::new("hello");
+    fn placeholder_line_trait_methods_accessible() {
+        let line = EmptyTextLine::new(5);
         let ph: &dyn PlaceHolderLine = &line;
-        assert_eq!(ph.get_text(), "hello");
+        assert_eq!(ph.get_text(), "     ");
         assert!(!ph.is_diff_colored());
     }
 }

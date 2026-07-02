@@ -9,7 +9,7 @@ pub use data_type_diff::DataTypeDiff;
 pub use data_type_diff_input::DataTypeDiffInput;
 pub use diff_lines::DiffLines;
 pub use place_holder_line::PlaceHolderLine;
-pub use text_line::TextLine;
+pub use text_line::{EmptyTextLine, TextLine};
 
 /// RGBA color, mirroring `java.awt.Color` as used in the html diff utilities.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

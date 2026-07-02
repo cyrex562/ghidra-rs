@@ -1,7 +1,7 @@
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use super::{Color, ValidatableLine, INVALID_COLOR};
+use super::{Color, PlaceHolderLine, ValidatableLine, INVALID_COLOR};
 
 /// A plain text line that can be diff-compared and colored against another line.
 ///
@@ -102,6 +102,72 @@ impl fmt::Display for TextLine {
             write!(f, " {color}")?;
         }
         Ok(())
+    }
+}
+
+/// A fixed-width, always-validated empty line used as a diff place holder.
+///
+/// Mirrors `ghidra.app.util.html.EmptyTextLine`, which extends `TextLine` and
+/// implements `PlaceHolderLine`.
+#[derive(Debug, Clone)]
+pub struct EmptyTextLine {
+    width_in_characters: usize,
+    text_color: Option<Color>,
+    display_text: String,
+}
+
+impl EmptyTextLine {
+    /// Creates a new `EmptyTextLine` displaying `width_in_characters` spaces.
+    pub fn new(width_in_characters: usize) -> Self {
+        Self {
+            width_in_characters,
+            text_color: None,
+            display_text: " ".repeat(width_in_characters),
+        }
+    }
+}
+
+impl ValidatableLine for EmptyTextLine {
+    fn update_color(&mut self, other_line: Option<&mut dyn ValidatableLine>, invalid_color: Color) {
+        // Since we are the empty line, the other line is entirely a mismatch.
+        if let Some(other) = other_line {
+            other.set_text_color(invalid_color);
+        }
+    }
+
+    fn is_diff_colored(&self) -> bool {
+        self.text_color.is_some()
+    }
+
+    fn matches_line(&self, _other_line: &dyn ValidatableLine) -> bool {
+        // An empty line never matches another line.
+        false
+    }
+
+    fn copy(&self) -> Box<dyn ValidatableLine> {
+        Box::new(EmptyTextLine::new(self.width_in_characters))
+    }
+
+    fn get_text(&self) -> &str {
+        &self.display_text
+    }
+
+    fn set_text_color(&mut self, color: Color) {
+        self.text_color = Some(color);
+    }
+
+    fn set_validation_line(&mut self, _line: &mut dyn ValidatableLine) {}
+
+    fn is_validated(&self) -> bool {
+        true
+    }
+}
+
+impl PlaceHolderLine for EmptyTextLine {}
+
+impl fmt::Display for EmptyTextLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "<FixedWidthEmptyTextLine>")
     }
 }
 

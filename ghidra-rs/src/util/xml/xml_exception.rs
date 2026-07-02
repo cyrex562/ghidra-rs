@@ -63,6 +63,7 @@ impl std::error::Error for XmlException {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
     fn new_creates_empty_exception() {

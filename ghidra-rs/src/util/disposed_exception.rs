@@ -48,6 +48,7 @@ impl std::error::Error for DisposedException {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
     use std::io;
 
     fn io_err(msg: &'static str) -> io::Error {

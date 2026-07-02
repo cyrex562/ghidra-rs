@@ -8,6 +8,7 @@ const VERTEX_TYPE_KEY: &str = "VertexType";
 /// Graph vertex with attributes.
 ///
 /// Mirrors `ghidra.service.graph.AttributedVertex`.
+#[derive(Debug)]
 pub struct AttributedVertex {
     attributed: Attributed,
     id: String,

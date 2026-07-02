@@ -101,6 +101,15 @@ impl<T> PartialEq for ReverseVectorIterator<T> {
     }
 }
 
+impl<T> fmt::Debug for ReverseVectorIterator<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ReverseVectorIterator")
+            .field("data", &self.data)
+            .field("index", &self.index)
+            .finish()
+    }
+}
+
 impl<T: fmt::Display> fmt::Display for ReverseVectorIterator<T> {
     /// Mirrors the inherited `VectorIterator.toString()`, which
     /// `ReverseVectorIterator` does not override in Java: it indexes `data`

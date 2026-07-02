@@ -505,6 +505,12 @@ impl<T: PartialEq> PartialEq for VectorStl<T> {
     }
 }
 
+impl<T: fmt::Debug> fmt::Debug for VectorStl<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("VectorStl").field("data", &self.data).finish()
+    }
+}
+
 impl<T: fmt::Display> fmt::Display for VectorStl<T> {
     /// Mirrors `toString()`.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

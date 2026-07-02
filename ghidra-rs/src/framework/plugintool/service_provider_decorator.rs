@@ -102,7 +102,7 @@ mod tests {
             self.services
                 .iter()
                 .find(|(name, _)| name == service_class)
-                .map(|(_, service)| Box::new(service.clone()))
+                .map(|(_, service)| Box::new(service.clone()) as Box<dyn Any + Send + Sync>)
         }
 
         fn add_service_listener(&mut self, _listener: Box<dyn ServiceListener>) {}

@@ -68,8 +68,8 @@ mod tests {
 
     #[test]
     fn get_all_known_extensions_with_data() {
-        let info1 = ClassFileInfo::new("com.example.Plugin1", "example/Plugin1.class");
-        let info2 = ClassFileInfo::new("com.example.Plugin2", "example/Plugin2.class");
+        let info1 = ClassFileInfo::new("com.example.Plugin1".to_string(), "example/Plugin1.class".to_string(), String::new(), String::new());
+        let info2 = ClassFileInfo::new("com.example.Plugin2".to_string(), "example/Plugin2.class".to_string(), String::new(), String::new());
 
         let mut plugins = HashSet::new();
         plugins.insert(info1.clone());
@@ -85,14 +85,14 @@ mod tests {
 
     #[test]
     fn remove_installed_plugins_removes_matching_plugins() {
-        let info1 = ClassFileInfo::new("com.example.Plugin1", "example/Plugin1.class");
-        let info2 = ClassFileInfo::new("com.example.Plugin2", "example/Plugin2.class");
+        let info1 = ClassFileInfo::new("com.example.Plugin1".to_string(), "example/Plugin1.class".to_string(), String::new(), String::new());
+        let info2 = ClassFileInfo::new("com.example.Plugin2".to_string(), "example/Plugin2.class".to_string(), String::new(), String::new());
 
         let state = TestExtensionsEnabledState::new().with_installed(info1.clone());
 
         let mut all = HashSet::new();
         all.insert(info1);
-        all.insert(info2);
+        all.insert(info2.clone());
 
         state.remove_installed_plugins(&mut all);
         assert_eq!(all.len(), 1);
@@ -101,8 +101,8 @@ mod tests {
 
     #[test]
     fn remove_installed_plugins_empty_installed_set() {
-        let info1 = ClassFileInfo::new("com.example.Plugin1", "example/Plugin1.class");
-        let info2 = ClassFileInfo::new("com.example.Plugin2", "example/Plugin2.class");
+        let info1 = ClassFileInfo::new("com.example.Plugin1".to_string(), "example/Plugin1.class".to_string(), String::new(), String::new());
+        let info2 = ClassFileInfo::new("com.example.Plugin2".to_string(), "example/Plugin2.class".to_string(), String::new(), String::new());
 
         let state = TestExtensionsEnabledState::new();
 
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn remove_installed_plugins_empty_all_plugins_set() {
-        let info = ClassFileInfo::new("com.example.Plugin1", "example/Plugin1.class");
+        let info = ClassFileInfo::new("com.example.Plugin1".to_string(), "example/Plugin1.class".to_string(), String::new(), String::new());
 
         let state = TestExtensionsEnabledState::new().with_installed(info);
 
@@ -127,9 +127,9 @@ mod tests {
 
     #[test]
     fn remove_installed_plugins_removes_all_matching() {
-        let info1 = ClassFileInfo::new("com.example.Plugin1", "example/Plugin1.class");
-        let info2 = ClassFileInfo::new("com.example.Plugin2", "example/Plugin2.class");
-        let info3 = ClassFileInfo::new("com.example.Plugin3", "example/Plugin3.class");
+        let info1 = ClassFileInfo::new("com.example.Plugin1".to_string(), "example/Plugin1.class".to_string(), String::new(), String::new());
+        let info2 = ClassFileInfo::new("com.example.Plugin2".to_string(), "example/Plugin2.class".to_string(), String::new(), String::new());
+        let info3 = ClassFileInfo::new("com.example.Plugin3".to_string(), "example/Plugin3.class".to_string(), String::new(), String::new());
 
         let state = TestExtensionsEnabledState::new()
             .with_installed(info1.clone())
