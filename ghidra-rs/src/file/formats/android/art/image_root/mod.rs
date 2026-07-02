@@ -6,3 +6,4 @@ pub mod image_root_nougat;
 pub mod image_root_oreo;
 pub mod image_root_pie;
 pub mod image_root_q;
+pub mod image_root_r;
