@@ -8,6 +8,7 @@ pub mod lexer_multiplexer;
 pub mod line_array_list_writer;
 pub mod location;
 pub mod location_util;
+pub mod locator;
 pub mod preprocessor_exception;
 pub mod sleigh_recognizer_constants;
 pub mod token_extractor;
@@ -22,6 +23,7 @@ pub use lexer_multiplexer::{LexerMultiplexer, Token, TokenSource, DEFAULT_CHANNE
 pub use line_array_list_writer::LineArrayListWriter;
 pub use location::{Location, INTERNALLY_DEFINED};
 pub use location_util::LocationUtil;
+pub use locator::Locator;
 pub use preprocessor_exception::PreprocessorException;
 pub use sleigh_recognizer_constants::{BASE, COMMENT, DISPLAY, PREPROC, SEMANTIC};
 pub use token_extractor::TokenExtractor;
