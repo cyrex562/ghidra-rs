@@ -61,6 +61,7 @@ pub mod xdg_utils;
 pub mod saveable;
 pub mod private_saveable;
 pub mod status_listener;
+pub mod fixup;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -113,3 +114,4 @@ pub use saveable::{ObjectStorageFieldType, Saveable};
 pub use private_saveable::PrivateSaveable;
 pub use status_listener::StatusListener;
 pub use charset::{CharsetInfo, UnicodeScript};
+pub use fixup::Fixup;
