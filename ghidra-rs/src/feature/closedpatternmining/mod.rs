@@ -1,3 +1,4 @@
+pub mod frequent_sequence;
 pub mod frequent_sequence_item;
 pub mod projected_database;
 pub mod projected_sequence_info;
