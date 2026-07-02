@@ -14335,7 +14335,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pc
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeOverride.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeSyntaxTree.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/SequenceNumber.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/StringIngest.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/StringIngest.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/SymbolEntry.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/UnionFacetSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/Varnode.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
