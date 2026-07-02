@@ -18,4 +18,5 @@ pub mod sh_elf_relocation_type;
 pub mod sparc_elf_relocation_type;
 pub mod tricore_elf_relocation_type;
 pub mod x86_32_elf_relocation_type;
+pub mod x86_64_elf_relocation_type;
 pub mod xtensa_elf_relocation_type;
