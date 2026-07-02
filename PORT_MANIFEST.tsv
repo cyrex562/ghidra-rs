@@ -11770,7 +11770,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongCompa
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongDoubleHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongIntHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongKeyIndexer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongLongHashtable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongLongHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LongObjectHashtable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ManagedDataTable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/NoSuchIndexException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
