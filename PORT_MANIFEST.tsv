@@ -1479,7 +1479,7 @@ orig_src/Ghidra/Extensions/SleighDevTools/src/main/java/ghidra/app/util/disassem
 orig_src/Ghidra/Extensions/SleighDevTools/src/main/java/ghidra/app/util/disassemble/GnuDisassembledInstruction.java	DONE	orig_src Ghidra Extensions SleighDevTools src main java ghidra app util disassemble 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/AbstractSymZ3OffsetPcodeExecutorStatePiece.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/InternalSymZ3RecordsExecution.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
-orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/InternalSymZ3RecordsPreconditions.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
+orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/InternalSymZ3RecordsPreconditions.java	DONE	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3EmulatorFactory.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
 orig_src/Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/pcode/emu/symz3/SymZ3MemoryMap.java	TODO	orig_src Ghidra Extensions SymbolicSummaryZ3 src main java ghidra pcode emu symz3 
