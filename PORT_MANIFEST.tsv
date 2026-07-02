@@ -11821,7 +11821,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/CryptoExce
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/DuplicateFileException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/DuplicateNameException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/FileInUseException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/GraphException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/GraphException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/InvalidInputException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/MultipleCauses.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NoValueException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 
