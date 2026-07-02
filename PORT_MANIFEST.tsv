@@ -3256,7 +3256,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/E
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorManagerPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorOptionManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorOptionManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackFrameDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core stackeditor 
