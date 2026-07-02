@@ -1950,3 +1950,315 @@ mod not_found_exception_tests {
         assert_eq!(e.to_string(), "direct message");
     }
 }
+
+/// Exception thrown when an object's version does not match its expected version.
+///
+/// Port of `ghidra.util.exception.VersionException`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct VersionException {
+    message: String,
+    upgradeable: bool,
+    version_indicator: i32,
+    detail_message: Option<String>,
+}
+
+impl VersionException {
+    /// Object created with unknown software version.
+    pub const UNKNOWN_VERSION: i32 = 0;
+    /// Object created with older software version.
+    pub const OLDER_VERSION: i32 = 1;
+    /// Object created with newer software version.
+    pub const NEWER_VERSION: i32 = 2;
+
+    /// Constructor - not upgradeable with no message.
+    pub fn new() -> Self {
+        Self {
+            message: String::new(),
+            upgradeable: false,
+            version_indicator: Self::UNKNOWN_VERSION,
+            detail_message: None,
+        }
+    }
+
+    /// Constructor - not upgradeable with a message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self {
+            message: msg.into(),
+            upgradeable: false,
+            version_indicator: Self::UNKNOWN_VERSION,
+            detail_message: None,
+        }
+    }
+
+    /// Constructor.
+    ///
+    /// If `upgradeable` is true, the version indicator is set to `OLDER_VERSION`,
+    /// otherwise it is set to `UNKNOWN_VERSION`.
+    pub fn with_upgradeable(upgradeable: bool) -> Self {
+        let message = if upgradeable {
+            "data created with older software and requires upgrade".to_string()
+        } else {
+            "data created with newer version and can not be read".to_string()
+        };
+        Self {
+            message,
+            upgradeable,
+            version_indicator: if upgradeable {
+                Self::OLDER_VERSION
+            } else {
+                Self::UNKNOWN_VERSION
+            },
+            detail_message: None,
+        }
+    }
+
+    /// Constructor with version indicator and upgradeable flag.
+    pub fn with_version_indicator(version_indicator: i32, upgradeable: bool) -> Self {
+        let message = if upgradeable {
+            "data created with older software and requires upgrade".to_string()
+        } else {
+            "data created with newer version and can not be read".to_string()
+        };
+        Self {
+            message,
+            upgradeable,
+            version_indicator,
+            detail_message: None,
+        }
+    }
+
+    /// Constructor with message, version indicator, and upgradeable flag.
+    pub fn with_message_and_version(
+        msg: impl Into<String>,
+        version_indicator: i32,
+        upgradeable: bool,
+    ) -> Self {
+        Self {
+            message: msg.into(),
+            upgradeable,
+            version_indicator,
+            detail_message: None,
+        }
+    }
+
+    /// Returns true if the file can be upgraded to the current version.
+    pub fn is_upgradable(&self) -> bool {
+        self.upgradeable
+    }
+
+    /// Returns a version indicator (OLDER_VERSION, NEWER_VERSION or UNKNOWN_VERSION).
+    ///
+    /// Only an OLDER_VERSION has the possibility of being upgradeable.
+    pub fn version_indicator(&self) -> i32 {
+        self.version_indicator
+    }
+
+    /// Combine another VersionException with this one.
+    pub fn combine(&mut self, ve: &VersionException) {
+        if self.version_indicator != ve.version_indicator {
+            self.version_indicator = Self::UNKNOWN_VERSION;
+        }
+        self.upgradeable = self.upgradeable && ve.upgradeable;
+        if self.detail_message.is_none() {
+            self.detail_message = ve.detail_message.clone();
+        } else if let Some(ref ve_detail) = ve.detail_message {
+            if let Some(ref mut self_detail) = self.detail_message {
+                self_detail.push('\n');
+                self_detail.push_str(ve_detail);
+            }
+        }
+    }
+
+    pub fn set_detail_message(&mut self, message: impl Into<String>) {
+        self.detail_message = Some(message.into());
+    }
+
+    pub fn detail_message(&self) -> Option<&str> {
+        self.detail_message.as_deref()
+    }
+}
+
+impl Default for VersionException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for VersionException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for VersionException {}
+
+#[cfg(test)]
+mod version_exception_tests {
+    use super::*;
+
+    #[test]
+    fn version_constants() {
+        assert_eq!(VersionException::UNKNOWN_VERSION, 0);
+        assert_eq!(VersionException::OLDER_VERSION, 1);
+        assert_eq!(VersionException::NEWER_VERSION, 2);
+    }
+
+    #[test]
+    fn new_creates_not_upgradeable() {
+        let e = VersionException::new();
+        assert!(!e.is_upgradable());
+        assert_eq!(e.version_indicator(), VersionException::UNKNOWN_VERSION);
+    }
+
+    #[test]
+    fn with_message_not_upgradeable() {
+        let e = VersionException::with_message("test message");
+        assert_eq!(e.to_string(), "test message");
+        assert!(!e.is_upgradable());
+        assert_eq!(e.version_indicator(), VersionException::UNKNOWN_VERSION);
+    }
+
+    #[test]
+    fn with_upgradeable_true_sets_default_message_and_indicator() {
+        let e = VersionException::with_upgradeable(true);
+        assert!(e.is_upgradable());
+        assert_eq!(e.version_indicator(), VersionException::OLDER_VERSION);
+        assert_eq!(e.to_string(), "data created with older software and requires upgrade");
+    }
+
+    #[test]
+    fn with_upgradeable_false_sets_default_message_and_indicator() {
+        let e = VersionException::with_upgradeable(false);
+        assert!(!e.is_upgradable());
+        assert_eq!(e.version_indicator(), VersionException::UNKNOWN_VERSION);
+        assert_eq!(e.to_string(), "data created with newer version and can not be read");
+    }
+
+    #[test]
+    fn with_version_indicator() {
+        let e = VersionException::with_version_indicator(VersionException::NEWER_VERSION, false);
+        assert!(!e.is_upgradable());
+        assert_eq!(e.version_indicator(), VersionException::NEWER_VERSION);
+    }
+
+    #[test]
+    fn with_message_and_version() {
+        let e = VersionException::with_message_and_version(
+            "custom message",
+            VersionException::OLDER_VERSION,
+            true,
+        );
+        assert_eq!(e.to_string(), "custom message");
+        assert!(e.is_upgradable());
+        assert_eq!(e.version_indicator(), VersionException::OLDER_VERSION);
+    }
+
+    #[test]
+    fn combine_same_indicator() {
+        let mut e1 = VersionException::with_version_indicator(VersionException::OLDER_VERSION, true);
+        let e2 = VersionException::with_version_indicator(VersionException::OLDER_VERSION, true);
+        e1.combine(&e2);
+        assert_eq!(e1.version_indicator(), VersionException::OLDER_VERSION);
+        assert!(e1.is_upgradable());
+    }
+
+    #[test]
+    fn combine_different_indicator_sets_unknown() {
+        let mut e1 = VersionException::with_version_indicator(VersionException::OLDER_VERSION, true);
+        let e2 = VersionException::with_version_indicator(VersionException::NEWER_VERSION, true);
+        e1.combine(&e2);
+        assert_eq!(e1.version_indicator(), VersionException::UNKNOWN_VERSION);
+    }
+
+    #[test]
+    fn combine_upgradeable_both_true_remains_true() {
+        let mut e1 = VersionException::with_upgradeable(true);
+        let e2 = VersionException::with_upgradeable(true);
+        e1.combine(&e2);
+        assert!(e1.is_upgradable());
+    }
+
+    #[test]
+    fn combine_upgradeable_one_false_becomes_false() {
+        let mut e1 = VersionException::with_upgradeable(true);
+        let e2 = VersionException::with_upgradeable(false);
+        e1.combine(&e2);
+        assert!(!e1.is_upgradable());
+    }
+
+    #[test]
+    fn combine_detail_messages_both_none() {
+        let mut e1 = VersionException::new();
+        let e2 = VersionException::new();
+        e1.combine(&e2);
+        assert!(e1.detail_message().is_none());
+    }
+
+    #[test]
+    fn combine_detail_messages_first_none_takes_second() {
+        let mut e1 = VersionException::new();
+        let mut e2 = VersionException::new();
+        e2.set_detail_message("detail from e2");
+        e1.combine(&e2);
+        assert_eq!(e1.detail_message(), Some("detail from e2"));
+    }
+
+    #[test]
+    fn combine_detail_messages_both_set_concatenates() {
+        let mut e1 = VersionException::new();
+        e1.set_detail_message("first detail");
+        let mut e2 = VersionException::new();
+        e2.set_detail_message("second detail");
+        e1.combine(&e2);
+        assert_eq!(e1.detail_message(), Some("first detail\nsecond detail"));
+    }
+
+    #[test]
+    fn set_and_get_detail_message() {
+        let mut e = VersionException::new();
+        assert!(e.detail_message().is_none());
+        e.set_detail_message("test detail");
+        assert_eq!(e.detail_message(), Some("test detail"));
+    }
+
+    #[test]
+    fn equality() {
+        let e1 = VersionException::with_message("msg");
+        let e2 = VersionException::with_message("msg");
+        assert_eq!(e1, e2);
+    }
+
+    #[test]
+    fn inequality_different_message() {
+        let e1 = VersionException::with_message("msg1");
+        let e2 = VersionException::with_message("msg2");
+        assert_ne!(e1, e2);
+    }
+
+    #[test]
+    fn inequality_different_upgradeable() {
+        let e1 = VersionException::with_upgradeable(true);
+        let e2 = VersionException::with_upgradeable(false);
+        assert_ne!(e1, e2);
+    }
+
+    #[test]
+    fn clone_is_equal() {
+        let e1 = VersionException::with_message_and_version("msg", VersionException::OLDER_VERSION, true);
+        let e2 = e1.clone();
+        assert_eq!(e1, e2);
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &VersionException::with_message("test");
+        assert_eq!(e.to_string(), "test");
+    }
+
+    #[test]
+    fn default_trait_same_as_new() {
+        let e1 = VersionException::default();
+        let e2 = VersionException::new();
+        assert_eq!(e1, e2);
+    }
+}

@@ -78,7 +78,7 @@ pub use multi_comparable_array_iterator::MultiComparableArrayIterator;
 pub use pairing_iterator_merger::PairingIteratorMerger;
 pub use error_display::{ConsoleErrorDisplay, ErrorDisplay};
 pub use error_logger::{DefaultErrorLogger, ErrorLogger};
-pub use exception::{AssertException, BadLinkException, CancelledException, ClosedException, DuplicateFileException, DuplicateNameException, GraphException, IOCancelledException, InvalidNameException, MultipleCauses, NoValueException, NotFoundException, NotOwnerException, PropertyTypeMismatchException, UserAccessException, UsrException};
+pub use exception::{AssertException, BadLinkException, CancelledException, ClosedException, DuplicateFileException, DuplicateNameException, GraphException, IOCancelledException, InvalidNameException, MultipleCauses, NoValueException, NotFoundException, NotOwnerException, PropertyTypeMismatchException, UserAccessException, UsrException, VersionException};
 pub use function::{Callback, TriConsumer, ExceptionalCallback, ExceptionalConsumer, ExceptionalFunction, ExceptionalSupplier, TerminatingConsumer};
 pub use io::{BoundedInputStream, HashingOutputStream, NullOutputStream};
 pub use message_type::MessageType;
