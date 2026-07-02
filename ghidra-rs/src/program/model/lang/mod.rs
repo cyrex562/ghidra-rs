@@ -1,5 +1,6 @@
 pub mod decompiler_language;
 pub mod endian;
+pub mod incompatible_mask_exception;
 pub mod input_list_type;
 pub mod language_id;
 pub mod operand_type;
@@ -9,6 +10,7 @@ pub mod space_names;
 pub mod storage_class;
 
 pub use endian::Endian;
+pub use incompatible_mask_exception::IncompatibleMaskException;
 pub use input_list_type::InputListType;
 pub use language_id::LanguageID;
 pub use operand_type::OperandType;
