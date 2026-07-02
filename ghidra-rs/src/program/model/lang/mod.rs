@@ -11,6 +11,7 @@ pub mod space_names;
 pub mod storage_class;
 pub mod undefined_value_exception;
 pub mod unknown_context_exception;
+pub mod unknown_data_exception;
 
 pub use endian::Endian;
 pub use incompatible_mask_exception::IncompatibleMaskException;
@@ -23,3 +24,4 @@ pub use space_names::SpaceNames;
 pub use storage_class::StorageClass;
 pub use undefined_value_exception::UndefinedValueException;
 pub use unknown_context_exception::UnknownContextException;
+pub use unknown_data_exception::UnknownDataException;
