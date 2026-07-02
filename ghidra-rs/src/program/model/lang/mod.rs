@@ -9,6 +9,7 @@ pub mod processor_not_found_exception;
 pub mod sleigh;
 pub mod space_names;
 pub mod storage_class;
+pub mod undefined_value_exception;
 
 pub use endian::Endian;
 pub use incompatible_mask_exception::IncompatibleMaskException;
@@ -19,3 +20,4 @@ pub use operand_type::OperandType;
 pub use processor_not_found_exception::ProcessorNotFoundException;
 pub use space_names::SpaceNames;
 pub use storage_class::StorageClass;
+pub use undefined_value_exception::UndefinedValueException;
