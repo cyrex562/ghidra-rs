@@ -4,8 +4,11 @@ use std::io::{BufRead, BufReader, Write as IoWrite};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use super::file_channel_lock::FileChannelLock;
+
 const LOCK_TYPE_KEY: &str = "<META> Supports File Channel Locking";
 const FILE_LOCK_TYPE: &str = "File Lock";
+const CHANNEL_LOCK_TYPE: &str = "Channel Lock";
 const PROPERTY_KEYS: &[&str] = &[
     "Username",
     "Hostname",
@@ -14,6 +17,15 @@ const PROPERTY_KEYS: &[&str] = &[
     "OS Architecture",
     "OS Version",
 ];
+
+/// Distinguishes `FileLocker`'s own locking behavior from that of `ChannelLocker`
+/// (mirrors the Java `getLockType()`/`lock()`/`createLockFile()` overrides that
+/// `generic.util.ChannelLocker` makes on top of `generic.util.FileLocker`).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum LockKind {
+    Plain,
+    Channel,
+}
 
 /// Manages a properties-style lock file recording metadata about the locking process.
 ///
@@ -27,6 +39,8 @@ pub struct FileLocker {
     /// The lock-type string from the pre-existing lock file, if any.
     pub existing_lock_type: Option<String>,
     is_locked: bool,
+    kind: LockKind,
+    channel_lock: Option<FileChannelLock>,
 }
 
 impl FileLocker {
@@ -34,6 +48,16 @@ impl FileLocker {
     ///
     /// If a lock file already exists its properties are loaded immediately.
     pub fn new(lock_file: &Path) -> Self {
+        Self::with_kind(lock_file, LockKind::Plain)
+    }
+
+    /// Create a `FileLocker` that also acquires an OS-level file channel lock
+    /// once its properties file is written (mirrors `generic.util.ChannelLocker`).
+    pub(crate) fn new_channel_locker(lock_file: &Path) -> Self {
+        Self::with_kind(lock_file, LockKind::Channel)
+    }
+
+    fn with_kind(lock_file: &Path, kind: LockKind) -> Self {
         let existing = load_lock_file(lock_file);
         let existing_lock_type = existing
             .as_ref()
@@ -44,16 +68,49 @@ impl FileLocker {
             created_lock_properties: None,
             existing_lock_type,
             is_locked: false,
+            kind,
+            channel_lock: None,
         }
     }
 
     /// Acquire the lock. Fails (returns `false`) if a lock file already exists.
     pub fn lock(&mut self) -> bool {
-        if self.existing_lock_properties.is_none() {
-            self.create_lock_file()
-        } else {
-            false
+        match self.kind {
+            LockKind::Plain => {
+                if self.existing_lock_properties.is_none() {
+                    self.create_lock_file()
+                } else {
+                    false
+                }
+            }
+            LockKind::Channel => {
+                if self.can_channel_lock() {
+                    self.create_lock_file()
+                } else {
+                    false
+                }
+            }
         }
+    }
+
+    /// `true` if no conflicting lock is held, so a channel lock may be attempted.
+    fn can_channel_lock(&self) -> bool {
+        let Some(existing_type) = &self.existing_lock_type else {
+            // if there is no existing lock type, then there is no lock.
+            return true;
+        };
+        if existing_type != CHANNEL_LOCK_TYPE {
+            // some other kind of locking mechanism already has a lock
+            return false;
+        }
+        self.is_channel_lock_available()
+    }
+
+    fn is_channel_lock_available(&self) -> bool {
+        let mut test_channel_lock = FileChannelLock::new(&self.lock_file);
+        let did_lock = test_channel_lock.lock();
+        test_channel_lock.release();
+        did_lock
     }
 
     /// Returns `true` if this instance currently holds the lock.
@@ -63,6 +120,9 @@ impl FileLocker {
 
     /// Release the lock and delete the lock file if we are the owner.
     pub fn release(&mut self) {
+        if let Some(mut channel_lock) = self.channel_lock.take() {
+            channel_lock.release();
+        }
         if self.is_lock_owner() {
             let _ = fs::remove_file(&self.lock_file);
         }
@@ -107,10 +167,16 @@ impl FileLocker {
 
     /// The lock-type string written into the properties file.
     pub fn lock_type(&self) -> &str {
-        FILE_LOCK_TYPE
+        match self.kind {
+            LockKind::Plain => FILE_LOCK_TYPE,
+            LockKind::Channel => CHANNEL_LOCK_TYPE,
+        }
     }
 
     /// Write a new lock file containing current process metadata and acquire the lock.
+    ///
+    /// For a channel locker, success also requires acquiring the underlying OS-level
+    /// file channel lock.
     pub fn create_lock_file(&mut self) -> bool {
         let mut props = HashMap::new();
         props.insert("Username".to_string(), current_username());
@@ -125,12 +191,23 @@ impl FileLocker {
             return false;
         }
 
-        if self.lock_file.exists() {
-            self.created_lock_properties = Some(props);
-            self.is_locked = true;
-            true
-        } else {
-            false
+        if !self.lock_file.exists() {
+            return false;
+        }
+        self.created_lock_properties = Some(props);
+
+        match self.kind {
+            LockKind::Plain => {
+                self.is_locked = true;
+                true
+            }
+            LockKind::Channel => {
+                let mut channel_lock = FileChannelLock::new(&self.lock_file);
+                let did_lock = channel_lock.lock();
+                self.channel_lock = Some(channel_lock);
+                self.is_locked = did_lock;
+                did_lock
+            }
         }
     }
 
@@ -149,7 +226,11 @@ impl FileLocker {
 
 impl std::fmt::Display for FileLocker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "FileLocker{}", self.lock_file.display())
+        let name = match self.kind {
+            LockKind::Plain => "FileLocker",
+            LockKind::Channel => "ChannelLocker",
+        };
+        write!(f, "{}{}", name, self.lock_file.display())
     }
 }
 
