@@ -14548,7 +14548,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/L
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/LineArrayListWriter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/Location.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/LocationUtil.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/Locator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/Locator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/ParsingEnvironment.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/PreprocessorException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/RadixBigInteger.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
