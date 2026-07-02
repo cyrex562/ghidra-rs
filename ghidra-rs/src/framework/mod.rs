@@ -21,7 +21,7 @@ pub mod version;
 pub use log4j_error_logger::Log4jErrorLogger;
 pub use os::OperatingSystem;
 pub use pluggable_service_registry_exception::PluggableServiceRegistryException;
-pub use plugintool::ServiceListener;
+pub use plugintool::{ServiceListener, ServiceProvider};
 pub use service::{PluggableServiceRegistry, PluggableServiceRegistryError};
 pub use shutdown_hook_registry::{ShutdownHook, ShutdownHookRegistry};
 pub use shutdown_priority::ShutdownPriority;
