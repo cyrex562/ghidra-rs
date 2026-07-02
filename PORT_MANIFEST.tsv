@@ -12793,7 +12793,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/mgr/
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/mgr/ServiceManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool mgr 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/mgr/ToolTaskManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool mgr 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/DefaultPluginsConfiguration.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginConstructionException.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginConstructionException.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginDescription.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginEventListener.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginException.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool util 
