@@ -1,4 +1,5 @@
 pub mod auto_parameter_type;
+pub mod circular_dependency_exception;
 pub mod domain_object_change_set;
 pub mod function_tag;
 pub mod function_tag_manager;
@@ -8,6 +9,7 @@ pub mod repeatable_comment;
 pub mod symbol_change_set;
 
 pub use auto_parameter_type::AutoParameterType;
+pub use circular_dependency_exception::CircularDependencyException;
 pub use domain_object_change_set::DomainObjectChangeSet;
 pub use function_tag::FunctionTag;
 pub use function_tag_manager::FunctionTagManager;
