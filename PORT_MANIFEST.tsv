@@ -5034,7 +5034,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/gui/S
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/gui/SearchMarkers.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch gui 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/gui/SearchSettings.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch gui 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/BulkPatternByteMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch matcher 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/ByteMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch matcher 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/ByteMatcher.java	DONE	orig_src Ghidra Features Base src main java ghidra features base memsearch matcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/InvalidByteMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch matcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/MaskedByteSequenceByteMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch matcher 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/RegExByteMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra features base memsearch matcher 
