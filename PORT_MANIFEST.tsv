@@ -14886,7 +14886,7 @@ orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/extend/Hexagon_ElfExtension.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf extend 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/extend/Hexagon_ElfProgramHeaderConstants.java	DONE	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf extend 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/relocation/Hexagon_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf relocation 
-orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/relocation/Hexagon_ElfRelocationType.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/bin/format/elf/relocation/Hexagon_ElfRelocationType.java	DONE	orig_src Ghidra Processors Hexagon src main java ghidra app util bin format elf relocation
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/app/util/viewer/field/HexagonParallelInstructionHelper.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra app util viewer field 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonEmulateInstructionStateModifier.java	TODO	orig_src Ghidra Processors Hexagon src main java ghidra program emulation 
 orig_src/Ghidra/Processors/Hexagon/src/main/java/ghidra/program/emulation/HexagonFp32.java	DONE	orig_src Ghidra Processors Hexagon src main java ghidra program emulation
