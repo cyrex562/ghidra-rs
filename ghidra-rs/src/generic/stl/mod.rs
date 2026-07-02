@@ -7,3 +7,4 @@ pub mod red_black_node;
 pub mod reverse_vector_iterator;
 pub mod self_comparator;
 pub mod vector_iterator;
+pub mod vector_stl;
