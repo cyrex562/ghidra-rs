@@ -11826,7 +11826,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/InvalidInp
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/MultipleCauses.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NoValueException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NotEmptyException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NotFoundException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util exception 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NotFoundException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NotYetImplementedException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/PropertyTypeMismatchException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/ExtensionDetails.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util extensions 
