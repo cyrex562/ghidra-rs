@@ -5334,7 +5334,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/charset/picker/CharsetIn
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/charset/picker/CharsetPickerDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra util charset picker 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/charset/picker/CharsetPickerPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra util charset picker 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/charset/picker/CharsetTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra util charset picker 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/charset/picker/CharsetTableRow.java	TODO	orig_src Ghidra Features Base src main java ghidra util charset picker 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/charset/picker/CharsetTableRow.java	DONE	orig_src Ghidra Features Base src main java ghidra util charset picker
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/data/DataTypeParser.java	TODO	orig_src Ghidra Features Base src main java ghidra util data 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/InstructionSkipper.java	TODO	orig_src Ghidra Features Base src main java ghidra util search 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/search/trie/ByteTrie.java	TODO	orig_src Ghidra Features Base src main java ghidra util search trie 
