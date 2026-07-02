@@ -6255,7 +6255,7 @@ orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/Perc
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bytepatterns/bitcluster/Face.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bytepatterns bitcluster 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bytepatterns/bitcluster/FacePatterns.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bytepatterns bitcluster 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/ClosedSequenceMiner.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining 
-orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/FrequentSequence.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining 
+orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/FrequentSequence.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/FrequentSequenceItem.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/ProjectedDatabase.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/closedpatternmining/ProjectedSequenceInfo.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra closedpatternmining
