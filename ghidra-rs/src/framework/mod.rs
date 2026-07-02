@@ -27,4 +27,5 @@ pub use plugintool::{ServiceListener, ServiceProvider};
 pub use service::{PluggableServiceRegistry, PluggableServiceRegistryError};
 pub use shutdown_hook_registry::{ShutdownHook, ShutdownHookRegistry};
 pub use shutdown_priority::ShutdownPriority;
+pub use store::LockException;
 pub use version::ApplicationVersion;
