@@ -33,7 +33,7 @@ impl AddressFormatException {
 
 impl Default for AddressFormatException {
     fn default() -> Self {
-        Self::default()
+        Self::new(Self::DEFAULT_MESSAGE)
     }
 }
 
