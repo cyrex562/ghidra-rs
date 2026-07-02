@@ -21,6 +21,7 @@ pub mod progmgr;
 pub mod references;
 pub mod script;
 pub mod searchtext;
+pub mod stackeditor;
 pub mod string;
 pub mod strings;
 pub mod terminal;
