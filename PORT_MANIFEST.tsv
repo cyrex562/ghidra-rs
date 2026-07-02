@@ -12950,7 +12950,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblyException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySelectionError.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySelector.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySemanticException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySemanticException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySyntaxException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/GenericAssembler.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/GenericAssemblerBuilder.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
