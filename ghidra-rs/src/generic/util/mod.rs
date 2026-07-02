@@ -1,5 +1,6 @@
 pub mod abstract_peekable_iterator;
 pub mod beanify;
+pub mod channel_locker;
 pub mod datastruct;
 pub mod deque_push;
 pub mod file_channel_lock;
