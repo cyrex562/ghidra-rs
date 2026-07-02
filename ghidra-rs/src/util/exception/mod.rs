@@ -123,6 +123,77 @@ impl CancelledException {
     }
 }
 
+#[cfg(test)]
+mod cancelled_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_constructor_has_default_message() {
+        let e = CancelledException::default();
+        assert_eq!(e.to_string(), "Operation cancelled: Operation cancelled");
+    }
+
+    #[test]
+    fn new_with_message_stores_message() {
+        let e = CancelledException::new("custom cancel reason");
+        assert_eq!(e.to_string(), "Operation cancelled: custom cancel reason");
+    }
+
+    #[test]
+    fn is_default_message_detects_default() {
+        let e = CancelledException::default();
+        assert!(e.is_default_message());
+    }
+
+    #[test]
+    fn is_default_message_rejects_custom() {
+        let e = CancelledException::new("custom reason");
+        assert!(!e.is_default_message());
+    }
+
+    #[test]
+    fn is_default_message_checks_exact_match() {
+        let e = CancelledException::new("Operation cancelled");
+        assert!(e.is_default_message());
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(
+            CancelledException::default(),
+            CancelledException::new("Operation cancelled")
+        );
+        assert_eq!(
+            CancelledException::new("reason A"),
+            CancelledException::new("reason A")
+        );
+        assert_ne!(
+            CancelledException::new("reason A"),
+            CancelledException::new("reason B")
+        );
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &CancelledException::default();
+        assert!(e.to_string().contains("Operation cancelled"));
+    }
+
+    #[test]
+    fn debug_format() {
+        let e = CancelledException::new("test");
+        let debug_str = format!("{:?}", e);
+        assert!(debug_str.contains("CancelledException"));
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = CancelledException::new("user stopped operation");
+        let display = format!("{}", e);
+        assert!(display.contains("user stopped operation"));
+    }
+}
+
 #[derive(Error, Debug, PartialEq)]
 #[error("Address overflow: {0}")]
 pub struct AddressOverflowException(pub String);
