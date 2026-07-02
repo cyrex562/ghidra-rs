@@ -1,3 +1,4 @@
+pub mod antlr_util;
 pub mod bailout_exception;
 pub mod conditional_helper;
 pub mod expression_environment;
@@ -9,6 +10,7 @@ pub mod preprocessor_exception;
 pub mod sleigh_recognizer_constants;
 pub mod token_extractor;
 
+pub use antlr_util::{AntlrUtil, DebugStreamNode, DebugTreeNode};
 pub use bailout_exception::BailoutException;
 pub use conditional_helper::ConditionalHelper;
 pub use expression_environment::ExpressionEnvironment;
