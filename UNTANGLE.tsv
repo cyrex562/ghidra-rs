@@ -8,7 +8,7 @@ TODO	needs-dep	ArchiveBuilder	generic	Ghidra/Framework/Generic/src/main/java/gen
 TODO	needs-dep	JarEntryRootNode	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.java	PARKED — JarEntryRootNode requires real jar/zip file parsing (Java's `java.util.
 TODO	needs-dep	SSHKeyUtil	server	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/server/remote/SSHKeyUtil.java	PARKED — SSHKeyUtil requires RSA keypair generation (java.security.KeyPairGenera
 TODO	needs-dep	MarkdownToHtml	util	GhidraBuild/MarkdownSupport/src/main/java/ghidra/markdown/MarkdownToHtml.java	PARKED — MarkdownToHtml.java requires a CommonMark markdown parser/renderer (org
-TODO	unknown	GhidraSwinglessTimer	generic	Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraSwinglessTimer.java	no recorded reason
+DONE	unknown	GhidraSwinglessTimer	generic	Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraSwinglessTimer.java	no recorded reason
 TODO	ui	Adapters	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/Adapters.java	swing/awt
 TODO	ui	CellEditorUtils	docking	Ghidra/Debug/ProposedUtils/src/main/java/docking/widgets/table/CellEditorUtils.java	swing/awt
 TODO	ui	DndTableCellRenderer	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/DndTableCellRenderer.java	swing/awt
