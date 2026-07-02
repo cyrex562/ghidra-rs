@@ -1,7 +1,14 @@
+use std::any::Any;
+
 /// A filter that operates on string text values.
 ///
 /// Corresponds to `docking.widgets.filter.TextFilter`.
-pub trait TextFilter {
+///
+/// `Any` is a supertrait so that implementors of [`is_sub_filter_of`](Self::is_sub_filter_of)
+/// can downcast a `&dyn TextFilter` to a concrete type, mirroring Java's `instanceof` checks
+/// (e.g. `FindsPatternTextFilter` only treats another `FindsPatternTextFilter` as a candidate
+/// parent filter).
+pub trait TextFilter: Any {
     /// Returns true if the given text matches this filter.
     fn matches(&self, text: &str) -> bool;
 
