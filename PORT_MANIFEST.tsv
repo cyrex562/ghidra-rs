@@ -11685,8 +11685,8 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/CountLatch.java	DONE
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/DataConverter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/DateUtils.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/Disposable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/FilterTransformer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/InvalidNameException.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/FilterTransformer.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/InvalidNameException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/JavaSourceFile.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/JavaSourceLine.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/LittleEndianDataConverter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 

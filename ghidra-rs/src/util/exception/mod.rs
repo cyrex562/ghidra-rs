@@ -1223,6 +1223,82 @@ mod not_owner_exception_tests {
     }
 }
 
+/// Exception thrown if a name has invalid characters.
+///
+/// Port of `ghidra.util.InvalidNameException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct InvalidNameException(pub String);
+
+impl InvalidNameException {
+    pub const DEFAULT_MESSAGE: &'static str = "Invalid name error.";
+
+    /// Creates an `InvalidNameException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates an `InvalidNameException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for InvalidNameException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod invalid_name_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = InvalidNameException::default();
+        assert_eq!(e.to_string(), InvalidNameException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(InvalidNameException::default(), InvalidNameException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = InvalidNameException::with_message("contains invalid character: @");
+        assert_eq!(e.to_string(), "contains invalid character: @");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(InvalidNameException::new(), InvalidNameException::new());
+        assert_eq!(
+            InvalidNameException::with_message("msg"),
+            InvalidNameException::with_message("msg")
+        );
+        assert_ne!(InvalidNameException::new(), InvalidNameException::with_message("custom"));
+        assert_ne!(
+            InvalidNameException::with_message("a"),
+            InvalidNameException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = InvalidNameException::with_message("name contains space");
+        assert_eq!(format!("{}", e), "name contains space");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &InvalidNameException::new();
+        assert_eq!(e.to_string(), InvalidNameException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+}
+
 /// Thrown during development when a feature or method is not yet implemented.
 ///
 /// This is a development-time exception and should not appear in released code.
