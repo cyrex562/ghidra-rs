@@ -13250,7 +13250,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/SleighCompileLauncher.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/SleighCompileOptions.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/SleighCompilePreprocessorDefinitionsAdapater.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/SpaceQuality.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/SpaceQuality.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/StarQuality.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Token.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Yylval.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
