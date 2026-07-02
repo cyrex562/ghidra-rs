@@ -15183,7 +15183,7 @@ orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/util/bin/format/elf/ext
 orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/util/bin/format/elf/relocation/eBPF_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors eBPF src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/eBPF/src/main/java/ghidra/app/util/bin/format/elf/relocation/eBPF_ElfRelocationType.java	DONE	orig_src Ghidra Processors eBPF src main java ghidra app util bin format elf relocation
 orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/app/util/bin/format/elf/relocation/Tricore_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors tricore src main java ghidra app util bin format elf relocation 
-orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/app/util/bin/format/elf/relocation/Tricore_ElfRelocationType.java	TODO	orig_src Ghidra Processors tricore src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/app/util/bin/format/elf/relocation/Tricore_ElfRelocationType.java	DONE	orig_src Ghidra Processors tricore src main java ghidra app util bin format elf relocation
 orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/program/emulation/TRICOREEmulateInstructionStateModifier.java	TODO	orig_src Ghidra Processors tricore src main java ghidra program emulation 
 orig_src/Ghidra/Processors/tricore/src/main/java/ghidra/program/emulation/TricorePcodeUseropLibraryFactory.java	TODO	orig_src Ghidra Processors tricore src main java ghidra program emulation 
 orig_src/Ghidra/Processors/tricore/src/test.processors/java/ghidra/test/processors/TRICORE_BE_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors tricore src test.processors java ghidra test processors 
