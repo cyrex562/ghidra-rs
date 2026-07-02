@@ -1184,7 +1184,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.jav
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LockHold.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/MergeSortingSpliterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/PairingIteratorMerger.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/StreamUtils.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/StreamUtils.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/TimedMsg.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedLongKeyIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 

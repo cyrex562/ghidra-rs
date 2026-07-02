@@ -62,6 +62,7 @@ pub mod saveable;
 pub mod private_saveable;
 pub mod status_listener;
 pub mod fixup;
+pub mod stream_utils;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -113,5 +114,6 @@ pub use xdg_utils::XdgUtils;
 pub use saveable::{ObjectStorageFieldType, Saveable};
 pub use private_saveable::PrivateSaveable;
 pub use status_listener::StatusListener;
+pub use stream_utils::StreamUtils;
 pub use charset::{CharsetInfo, UnicodeScript};
 pub use fixup::Fixup;
