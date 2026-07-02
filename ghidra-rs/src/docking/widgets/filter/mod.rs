@@ -1,5 +1,6 @@
 pub mod abstract_pattern_text_filter;
 pub mod contains_text_filter;
+pub mod contains_text_filter_factory;
 pub mod filter_listener;
 pub mod finds_pattern_text_filter;
 pub mod inverted_text_filter;
@@ -12,6 +13,7 @@ pub mod text_filter_strategy;
 
 pub use abstract_pattern_text_filter::AbstractPatternTextFilter;
 pub use contains_text_filter::ContainsTextFilter;
+pub use contains_text_filter_factory::ContainsTextFilterFactory;
 pub use filter_listener::FilterListener;
 pub use finds_pattern_text_filter::FindsPatternTextFilter;
 pub use inverted_text_filter::InvertedTextFilter;
