@@ -4637,7 +4637,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/HTMLDataTypeRep
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/HTMLDataTypeRepresentationDiffInput.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/MissingArchiveDataTypeHTMLRepresentation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/NullDataTypeHTMLRepresentation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/PlaceHolderLine.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/PlaceHolderLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/PointerDataTypeHTMLRepresentation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/TextLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/TypeDefDataTypeHTMLRepresentation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html 
