@@ -1,4 +1,5 @@
 pub mod attributed;
+pub mod attributed_edge;
 pub mod empty_graph_type;
 pub mod graph_label_position;
 pub mod graph_type;
@@ -6,6 +7,7 @@ pub mod graph_type_builder;
 pub mod layout_algorithm_names;
 
 pub use attributed::Attributed;
+pub use attributed_edge::AttributedEdge;
 pub use empty_graph_type::empty_graph_type;
 pub use graph_label_position::GraphLabelPosition;
 pub use graph_type::GraphType;
