@@ -9,7 +9,7 @@ orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/btree/BTreeTypes.java	DONE	orig_
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/btree/BTreeUserDataRecord.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg btree
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsCompressionTypes.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsConstants.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs
-orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsHeader.java	TODO	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs 
+orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsHeader.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/decmpfs/DecmpfsStates.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg decmpfs
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GBinaryReader.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg ghidra
 orig_src/GPL/DMG/src/dmg/java/mobiledevices/dmg/ghidra/GByteProvider.java	DONE	orig_src GPL DMG src dmg java mobiledevices dmg ghidra
