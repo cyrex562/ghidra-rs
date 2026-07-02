@@ -185,4 +185,22 @@ mod tests {
     fn format_empty_flags() {
         assert_eq!(format_access_flags(0), "");
     }
+
+    #[test]
+    fn test_to_string_public_static_final_synchronized() {
+        let flags = ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_SYNCHRONIZED;
+        assert_eq!(format_access_flags(flags), "public static final synchronized");
+    }
+
+    #[test]
+    fn test_to_string_protected_native() {
+        let flags = ACC_PROTECTED | ACC_NATIVE;
+        assert_eq!(format_access_flags(flags), "protected native");
+    }
+
+    #[test]
+    fn test_to_string_private_abstract() {
+        let flags = ACC_PRIVATE | ACC_ABSTRACT;
+        assert_eq!(format_access_flags(flags), "private abstract");
+    }
 }
