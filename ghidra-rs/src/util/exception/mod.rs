@@ -1483,6 +1483,100 @@ mod not_yet_implemented_exception_tests {
     }
 }
 
+/// Exception thrown if a failure occurs while generating a Graph.
+///
+/// Port of `ghidra.util.exception.GraphException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct GraphException(pub String);
+
+impl GraphException {
+    pub const DEFAULT_MESSAGE: &'static str = "Graph Error.";
+
+    /// Creates a `GraphException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates a `GraphException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+
+    /// Creates a `GraphException` with the given message and cause.
+    ///
+    /// Note: In Rust, the cause is not stored; only the message is retained.
+    /// This method is provided for API parity with Java.
+    pub fn with_cause<E: std::error::Error + Send + Sync + 'static>(
+        msg: impl Into<String>,
+        _cause: E,
+    ) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for GraphException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod graph_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = GraphException::default();
+        assert_eq!(e.to_string(), GraphException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(GraphException::default(), GraphException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = GraphException::with_message("custom error");
+        assert_eq!(e.to_string(), "custom error");
+    }
+
+    #[test]
+    fn with_cause_stores_message() {
+        let cause = ClosedException::with_resource("graph.db");
+        let e = GraphException::with_cause("graph generation failed", cause);
+        assert_eq!(e.to_string(), "graph generation failed");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(GraphException::new(), GraphException::new());
+        assert_eq!(
+            GraphException::with_message("msg"),
+            GraphException::with_message("msg")
+        );
+        assert_ne!(GraphException::new(), GraphException::with_message("custom"));
+        assert_ne!(
+            GraphException::with_message("a"),
+            GraphException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = GraphException::with_message("failed to build graph");
+        assert_eq!(format!("{}", e), "failed to build graph");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &GraphException::new();
+        assert_eq!(e.to_string(), GraphException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
