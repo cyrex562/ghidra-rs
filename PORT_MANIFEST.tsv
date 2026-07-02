@@ -1642,7 +1642,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/resu
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimSearchResultsProvider.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/BSimStatusRenderer.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/ExecutableResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/FunctionComparisonException.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/FunctionComparisonException.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/ShowNamespaceSettingsDefinition.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/apply/AbstractBSimApplyTask.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results apply 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/gui/search/results/apply/NameAndNamespaceBSimApplyTask.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim gui search results apply 
