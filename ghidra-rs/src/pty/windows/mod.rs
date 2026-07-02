@@ -1,3 +1,4 @@
+pub mod con_pty_endpoint;
 pub mod handle;
 pub mod handle_input_stream;
 pub mod handle_output_stream;
@@ -6,6 +7,7 @@ pub mod named_pipe_test;
 pub mod pipe;
 pub mod pseudo_console_handle;
 
+pub use con_pty_endpoint::ConPtyEndpoint;
 pub use handle::Handle;
 pub use handle::RawHandle;
 pub use handle_input_stream::HandleInputStream;
