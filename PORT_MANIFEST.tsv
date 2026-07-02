@@ -10412,7 +10412,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpan
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/IndexScrollListener.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/IndexedScrollPane.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/IndexedScrollable.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/PreMappedViewToIndexMapper.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/PreMappedViewToIndexMapper.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/UniformViewToIndexMapper.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/indexedscrollpane/ViewToIndexMapper.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets indexedscrollpane 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/label/AbstractHtmlLabel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets label 
