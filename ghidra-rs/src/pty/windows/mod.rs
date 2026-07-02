@@ -2,6 +2,7 @@ pub mod handle;
 pub mod handle_input_stream;
 pub mod handle_output_stream;
 pub mod jna;
+pub mod named_pipe_test;
 pub mod pipe;
 pub mod pseudo_console_handle;
 
