@@ -8,3 +8,4 @@ pub(crate) mod xml_parse_exception;
 pub(crate) mod xml_tracer;
 pub(crate) mod xml_element;
 pub(crate) mod xml_element_impl;
+pub(crate) mod xml_pull_parser;
