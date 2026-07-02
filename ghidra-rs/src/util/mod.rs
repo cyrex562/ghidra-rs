@@ -63,6 +63,7 @@ pub mod private_saveable;
 pub mod status_listener;
 pub mod fixup;
 pub mod stream_utils;
+pub mod markdown;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -117,3 +118,4 @@ pub use status_listener::StatusListener;
 pub use stream_utils::StreamUtils;
 pub use charset::{CharsetInfo, UnicodeScript};
 pub use fixup::Fixup;
+pub use markdown::MarkdownToHtml;

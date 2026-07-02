@@ -4,10 +4,10 @@ TODO	needs-dep	GhidraSSLServerSocket	server	Ghidra/Features/GhidraServer/src/mai
 TODO	needs-dep	GhidraGraphCollapser	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/GhidraGraphCollapser.java	PARKED — depends on the third-party jungrapht-visualization `VisualGraphCollapse
 TODO	needs-dep	JgtTidierTreeLayoutAlgorithm	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/layout/JgtTidierTreeLayoutAlgorithm.java	PARKED - External Java library dependencies (jungrapht, jgrapht) not ported to R
 TODO	needs-dep	SSHSignatureCallback	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SSHSignatureCallback.java	PARKED — sign() needs real RSA/DSA+SHA1 signing (BouncyCastle) but no RSA/DSA cr
-TODO	needs-dep	ArchiveBuilder	generic	Ghidra/Framework/Generic/src/main/java/generic/util/ArchiveBuilder.java	PARKED - ArchiveBuilder requires proper zip file writing capability (ZipEntry/Zi
-TODO	needs-dep	JarEntryRootNode	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.java	PARKED — JarEntryRootNode requires real jar/zip file parsing (Java's `java.util.
+DONE	needs-dep	ArchiveBuilder	generic	Ghidra/Framework/Generic/src/main/java/generic/util/ArchiveBuilder.java	PARKED - ArchiveBuilder requires proper zip file writing capability (ZipEntry/Zi
+DONE	needs-dep	JarEntryRootNode	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.java	PARKED — JarEntryRootNode requires real jar/zip file parsing (Java's `java.util.
 TODO	needs-dep	SSHKeyUtil	server	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/server/remote/SSHKeyUtil.java	PARKED — SSHKeyUtil requires RSA keypair generation (java.security.KeyPairGenera
-TODO	needs-dep	MarkdownToHtml	util	GhidraBuild/MarkdownSupport/src/main/java/ghidra/markdown/MarkdownToHtml.java	PARKED — MarkdownToHtml.java requires a CommonMark markdown parser/renderer (org
+DONE	needs-dep	MarkdownToHtml	util	GhidraBuild/MarkdownSupport/src/main/java/ghidra/markdown/MarkdownToHtml.java	PARKED — MarkdownToHtml.java requires a CommonMark markdown parser/renderer (org
 DONE	unknown	GhidraSwinglessTimer	generic	Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraSwinglessTimer.java	no recorded reason
 TODO	ui	Adapters	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/Adapters.java	swing/awt
 TODO	ui	CellEditorUtils	docking	Ghidra/Debug/ProposedUtils/src/main/java/docking/widgets/table/CellEditorUtils.java	swing/awt

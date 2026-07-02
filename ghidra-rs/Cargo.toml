@@ -29,6 +29,8 @@ rand = "0.8"
 anyhow = "1.0"
 thiserror = "1.0"
 flate2 = "1.0"
+zip = "2.2"                 # ArchiveBuilder / JarEntryRootNode (jar/zip read+write)
+pulldown-cmark = "0.12"     # MarkdownToHtml (CommonMark -> HTML)
 tokio = { version = "1.37", features = ["full"] }
 regex = "1.10"
 libc = "0.2"

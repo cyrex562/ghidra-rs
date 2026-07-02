@@ -11604,7 +11604,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraTimer.java	D
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraTimerFactory.java	TODO	orig_src Ghidra Framework Generic src main java generic timer 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/timer/TimerCallback.java	DONE	orig_src Ghidra Framework Generic src main java generic timer
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/AbstractPeekableIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic util 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ArchiveBuilder.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ArchiveBuilder.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/Beanify.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ChannelLocker.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/DequePush.java	DONE	orig_src Ghidra Framework Generic src main java generic util
@@ -14717,7 +14717,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/FileResource.java	TO
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/GClassLoader.java	DONE	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryFilter.java	DONE	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryNode.java	DONE	orig_src Ghidra Framework Utility src main java generic jar
-orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
+orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.java	DONE	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarResource.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/Resource.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/ResourceFile.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
@@ -15596,7 +15596,7 @@ orig_src/GhidraBuild/LaunchSupport/src/main/java/ghidra/launch/LinuxJavaFinder.j
 orig_src/GhidraBuild/LaunchSupport/src/main/java/ghidra/launch/MacJavaFinder.java	TODO	orig_src GhidraBuild LaunchSupport src main java ghidra launch 
 orig_src/GhidraBuild/LaunchSupport/src/main/java/ghidra/launch/OpenBSDJavaFinder.java	TODO	orig_src GhidraBuild LaunchSupport src main java ghidra launch 
 orig_src/GhidraBuild/LaunchSupport/src/main/java/ghidra/launch/WindowsJavaFinder.java	TODO	orig_src GhidraBuild LaunchSupport src main java ghidra launch 
-orig_src/GhidraBuild/MarkdownSupport/src/main/java/ghidra/markdown/MarkdownToHtml.java	TODO	orig_src GhidraBuild MarkdownSupport src main java ghidra markdown 
+orig_src/GhidraBuild/MarkdownSupport/src/main/java/ghidra/markdown/MarkdownToHtml.java	DONE	orig_src GhidraBuild MarkdownSupport src main java ghidra markdown
 orig_src/GhidraBuild/Skeleton/src/main/java/skeleton/SkeletonAnalyzer.java	TODO	orig_src GhidraBuild Skeleton src main java skeleton 
 orig_src/GhidraBuild/Skeleton/src/main/java/skeleton/SkeletonExporter.java	TODO	orig_src GhidraBuild Skeleton src main java skeleton 
 orig_src/GhidraBuild/Skeleton/src/main/java/skeleton/SkeletonFileSystem.java	TODO	orig_src GhidraBuild Skeleton src main java skeleton 
