@@ -5943,7 +5943,7 @@ orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/propert
 orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/properties/LongPropertyMapDBTest.java	TODO	orig_src Ghidra Features Base src test.slow java ghidra program database properties 
 orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/properties/ObjectPropertyMapDBTest.java	TODO	orig_src Ghidra Features Base src test.slow java ghidra program database properties 
 orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/properties/StringPropertyMapDBTest.java	TODO	orig_src Ghidra Features Base src test.slow java ghidra program database properties 
-orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/properties/TestSaveable.java	TODO	orig_src Ghidra Features Base src test.slow java ghidra program database properties 
+orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/properties/TestSaveable.java	DONE	orig_src Ghidra Features Base src test.slow java ghidra program database properties 
 orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/properties/VoidPropertyMapDBTest.java	TODO	orig_src Ghidra Features Base src test.slow java ghidra program database properties 
 orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/references/ReferenceManagerTest.java	TODO	orig_src Ghidra Features Base src test.slow java ghidra program database references 
 orig_src/Ghidra/Features/Base/src/test.slow/java/ghidra/program/database/references/RegisterVariableReferencesTest.java	TODO	orig_src Ghidra Features Base src test.slow java ghidra program database references 
