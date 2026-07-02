@@ -15100,7 +15100,7 @@ orig_src/Ghidra/Processors/PIC/src/main/java/ghidra/app/plugin/core/analysis/Pic
 orig_src/Ghidra/Processors/PIC/src/main/java/ghidra/app/util/bin/format/elf/extend/PIC30_ElfExtension.java	TODO	orig_src Ghidra Processors PIC src main java ghidra app util bin format elf extend 
 orig_src/Ghidra/Processors/PIC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PIC30_ElfRelocationContext.java	TODO	orig_src Ghidra Processors PIC src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/PIC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PIC30_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors PIC src main java ghidra app util bin format elf relocation 
-orig_src/Ghidra/Processors/PIC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PIC30_ElfRelocationType.java	TODO	orig_src Ghidra Processors PIC src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/PIC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PIC30_ElfRelocationType.java	DONE	orig_src Ghidra Processors PIC src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/PIC/src/test.processors/java/ghidra/test/processors/PIC30_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors PIC src test.processors java ghidra test processors 
 orig_src/Ghidra/Processors/PowerPC/src/main/java/ghidra/app/plugin/core/analysis/PowerPCAddressAnalyzer.java	TODO	orig_src Ghidra Processors PowerPC src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/PowerPC/src/main/java/ghidra/app/util/bin/format/coff/relocation/PowerPC_CoffRelocationHandler.java	TODO	orig_src Ghidra Processors PowerPC src main java ghidra app util bin format coff relocation 

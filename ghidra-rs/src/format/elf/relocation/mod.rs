@@ -7,3 +7,4 @@ pub mod hexagon_elf_relocation_type;
 pub mod loongarch_elf_relocation_type;
 pub mod mips_elf_relocation_type;
 pub mod nds32_elf_relocation_type;
+pub mod pic30_elf_relocation_type;
