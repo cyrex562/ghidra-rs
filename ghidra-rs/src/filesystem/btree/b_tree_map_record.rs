@@ -101,7 +101,8 @@ mod tests {
         let bitmap_size = (node_size as usize) - 256;
 
         let mut header_data = vec![0u8; 114];
-        header_data[12..14].copy_from_slice(&node_size.to_be_bytes());
+        // nodeSize lives at offset 18 in BTHeaderRec (after treeDepth i16 + four i32s).
+        header_data[18..20].copy_from_slice(&node_size.to_be_bytes());
 
         let mut full_data = header_data.clone();
         full_data.extend(vec![0x80u8; bitmap_size]);
@@ -195,7 +196,8 @@ mod tests {
         let bitmap_size = (node_size as usize) - 256;
 
         let mut header_data = vec![0u8; 114];
-        header_data[12..14].copy_from_slice(&node_size.to_be_bytes());
+        // nodeSize lives at offset 18 in BTHeaderRec (after treeDepth i16 + four i32s).
+        header_data[18..20].copy_from_slice(&node_size.to_be_bytes());
 
         let mut full_data = header_data;
         full_data.extend(vec![0x80u8; bitmap_size / 2]);

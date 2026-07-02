@@ -73,10 +73,15 @@ where
     /// Inserts `value` under `key` and returns an `Arc` to it.
     pub fn add(&self, key: K, value: V) -> Arc<V> {
         let mut inner = self.inner.lock().unwrap();
-        inner.process_stale();
         let arc_v = Arc::new(value);
+        // Inserting into the bounded hard cache may evict (and drop) an older entry,
+        // making its weak reference stale. Insert first, then purge stale entries so the
+        // just-evicted entry is cleaned up immediately (Rust drops are deterministic,
+        // unlike Java's GC-driven ReferenceQueue). The newly added value is kept alive by
+        // `arc_v` and the hard cache, so it is never purged.
         inner.hard_cache.put(key.clone(), arc_v.clone());
         inner.refs.insert(key, Arc::downgrade(&arc_v));
+        inner.process_stale();
         arc_v
     }
 
@@ -102,7 +107,8 @@ where
     pub fn delete(&self, key: &K) -> Option<Arc<V>> {
         let mut inner = self.inner.lock().unwrap();
         inner.process_stale();
-        inner.hard_cache.pop(key);
+        // Mirror Java: only remove from the ref map. The hard cache retains a strong
+        // reference to the value, so upgrade() succeeds while the entry was live.
         inner.refs.remove(key).and_then(|w| w.upgrade())
     }
 

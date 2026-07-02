@@ -255,6 +255,9 @@ mod tests {
         let root = make_root();
         let child = root.borrow_mut().create_node("child");
         let grandchild = child.borrow_mut().create_node("grandchild");
+        // `get_node` (mirroring Java) only resolves on directory nodes, so give the
+        // grandchild a child of its own to turn it into a directory before asking for "..".
+        grandchild.borrow_mut().create_node("leaf");
         let back = grandchild.borrow().get_node("..");
         assert!(Rc::ptr_eq(&back.unwrap(), &child));
     }

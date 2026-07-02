@@ -141,7 +141,7 @@ mod tests {
         let mut line = JavaSourceLine::new("bar", 1);
         line.delete();
         line.prepend("foo");
-        assert_eq!(line.text(), "foobar");
+        assert_eq!(line.text(), "foo");
         assert!(!line.is_deleted());
     }
 

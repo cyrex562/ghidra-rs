@@ -91,17 +91,16 @@ impl DiffLinesValidator {
         }
     }
 
-    pub(crate) fn get_line(&self) -> Option<&dyn ValidatableLine> {
-        let mut marker = self.marker;
-        while marker < self.my_lines.len() {
-            let entry = &self.my_lines[marker];
+    pub(crate) fn get_line(&mut self) -> Option<&dyn ValidatableLine> {
+        while self.marker < self.my_lines.len() {
+            let entry = &self.my_lines[self.marker];
             if !entry.is_place_holder {
-                return Some(entry.line.as_ref());
+                return Some(self.my_lines[self.marker].line.as_ref());
             }
             if !entry.line.is_validated() {
-                return Some(entry.line.as_ref());
+                return Some(self.my_lines[self.marker].line.as_ref());
             }
-            marker += 1; // skip over place holder lines
+            self.marker += 1; // skip over place holder lines
         }
 
         None
@@ -259,14 +258,14 @@ mod tests {
     #[test]
     fn get_line_returns_current_line() {
         let input = MockDiffInput::new(vec!["one", "two"]);
-        let validator = DiffLinesValidator::new(input, true);
+        let mut validator = DiffLinesValidator::new(input, true);
         assert_eq!(validator.get_line().unwrap().get_text(), "one");
     }
 
     #[test]
     fn get_line_returns_none_when_done() {
         let input = MockDiffInput::new(vec![]);
-        let validator = DiffLinesValidator::new(input, true);
+        let mut validator = DiffLinesValidator::new(input, true);
         assert!(validator.get_line().is_none());
     }
 
@@ -290,9 +289,11 @@ mod tests {
         let opposite = TextLine::new("opposite");
         validator.insert_mismatch_placeholder(0, &opposite);
 
-        // unvalidated placeholder at the marker position is returned as-is
-        assert_eq!(validator.get_line().unwrap().get_text(), "");
-        assert_eq!(validator.get_marker_position(), 0);
+        // The EmptyTextLine placeholder reports isValidated() == true (matching Java's
+        // EmptyTextLine.isValidated()), so get_line() skips it and advances the marker to
+        // the next real line ("one"), exactly like Java's DiffLinesValidator.getLine().
+        assert_eq!(validator.get_line().unwrap().get_text(), "one");
+        assert_eq!(validator.get_marker_position(), 1);
     }
 
     #[test]

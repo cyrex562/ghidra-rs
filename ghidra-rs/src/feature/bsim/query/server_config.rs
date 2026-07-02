@@ -847,7 +847,12 @@ mod tests {
         assert!(contents.contains("shared_buffers = 256MB"));
         assert!(contents.contains("shared_buffers = 256MB          # default"));
         assert!(contents.contains("unrelated = keepme"));
-        assert!(contents.contains("#max_connections = 50"));
+        // `max_connections` is a controlled key, so even the commented-out
+        // `#max_connections = 50` line is treated as its first occurrence and rewritten
+        // in place with the controlled value (matching Java's patchConfig, which only
+        // re-comments *subsequent* occurrences and only when status == 1). The original
+        // commented line is therefore replaced, not preserved.
+        assert!(!contents.contains("#max_connections = 50"));
         assert!(contents.contains("max_connections = 100"));
     }
 

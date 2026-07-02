@@ -203,7 +203,10 @@ mod tests {
     fn test_comparable_case_insensitive() {
         let completion1 = CodeCompletion::new("Alpha".to_string(), Some("a".to_string()), None);
         let completion2 = CodeCompletion::new("alpha".to_string(), Some("a".to_string()), None);
-        assert_eq!(completion1, completion2);
+        // Java's compareTo uses String.compareToIgnoreCase, so these compare as equal for
+        // ordering purposes even though they are not object-equal (Java does not override
+        // equals(), and the port compares descriptions case-sensitively).
+        assert_eq!(completion1.cmp(&completion2), Ordering::Equal);
     }
 
     #[test]

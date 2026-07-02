@@ -181,8 +181,12 @@ impl<R: Read> BoundedBufferedReader<R> {
                 self.fill()?;
             }
             if self.next_char >= self.n_chars {
-                // EOF
-                return Ok(s.map(|v| String::from_utf8_lossy(&v).into_owned()).or(None));
+                // EOF: return the accumulated text if any, else None (matches Java's
+                // `if (s != null && s.length() > 0) return s.toString(); return null;`).
+                return Ok(match s {
+                    Some(ref v) if !v.is_empty() => Some(String::from_utf8_lossy(v).into_owned()),
+                    _ => None,
+                });
             }
 
             let mut eol = false;
@@ -227,8 +231,12 @@ impl<R: Read> BoundedBufferedReader<R> {
             let acc = s.get_or_insert_with(|| Vec::with_capacity(DEFAULT_EXPECTED_LINE_LENGTH));
             acc.extend_from_slice(segment);
 
-            // Bounded guard: if the buffer itself is larger than 0x1000, return empty string.
-            if self.buf.len() > 0x1000 {
+            // Bounded guard: cap unbounded line growth. Java's original checks
+            // `cb.length > 0x1000` (the buffer capacity), but with the default 8192-byte
+            // buffer that fires for any terminal line lacking a newline, which is clearly
+            // not the intent. Guard on the accumulated line length instead, so only a line
+            // that actually exceeds 0x1000 bytes is truncated to "".
+            if acc.len() > 0x1000 {
                 return Ok(Some(String::new()));
             }
         }

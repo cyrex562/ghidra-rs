@@ -268,12 +268,14 @@ mod tests {
     fn compute_widths_distributes_extra_space_ten_at_a_time() {
         // col0: min=10 max=30, col1: min=20 max=50 → totalMin=30, totalMax=80
         let mut layout = make_layout_with_two_cols(10, 30, 20, 50);
-        // available=45: extra=15 — one iteration adds 10 to col0 (→20) and 5 to col1 (→25)
-        // After that totalWidth=45 == width, loop exits.
+        // available=45: extra=totalMax-totalWidth=50. addToColumnWidths iterates ALL columns
+        // adding up to 10 each until extraWidth<=0. col0 gets +10 (→20, extra 40), col1 gets
+        // +10 (→30, extra 30); remaining columns have max 0 so add nothing. Returns total=50.
+        // The while loop then sees totalWidth(50) >= width(45) and exits. Matches Java.
         layout.compute_widths(45, 2);
         let w = layout.adjusted_widths();
         assert_eq!(w[0], 20); // min 10 + 10 increment
-        assert_eq!(w[1], 25); // min 20 + 5 from remaining extra
+        assert_eq!(w[1], 30); // min 20 + 10 increment
     }
 
     #[test]

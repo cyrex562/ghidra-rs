@@ -154,7 +154,10 @@ mod tests {
 
     #[test]
     fn invalid_checksum_hex() {
-        let err = read_record(":030030000203ZZ").unwrap_err();
+        // Well-formed line length (record length 3 => 17 chars) with a non-hex
+        // checksum. This is the only way to reach the checksum-parse branch:
+        // a short line trips the length check first (matching Java's ordering).
+        let err = read_record(":0300300002337AZZ").unwrap_err();
         assert!(err.contains("checksum"));
     }
 

@@ -67,8 +67,9 @@ impl<T: 'static> TableFilter<T> for CombinedTableFilter<T> {
             return false;
         }
         for i in 0..self.filter_count() {
-            let this_filter = self.filter(i) as &dyn Any;
-            if !other.filter(i).is_sub_filter_of(this_filter) {
+            // Mirror Java: getFilter(i).isSubFilterOf(other.getFilter(i)).
+            let other_filter = other.filter(i) as &dyn Any;
+            if !self.filter(i).is_sub_filter_of(other_filter) {
                 return false;
             }
         }

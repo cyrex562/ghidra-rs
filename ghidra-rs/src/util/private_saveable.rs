@@ -34,6 +34,11 @@ mod tests {
         fn from_data(data: Vec<String>) -> Self {
             TestStorage { data, index: 0 }
         }
+
+        /// Returns the portion of a stored `"type:value"` entry after the `:`.
+        fn suffix(entry: &str) -> &str {
+            entry.split_once(':').map(|(_, v)| v).unwrap_or(entry)
+        }
     }
 
     impl ObjectStorage for TestStorage {
@@ -105,22 +110,22 @@ mod tests {
 
         fn get_int(&mut self) -> i32 {
             self.index += 1;
-            self.data[self.index - 1].parse().unwrap_or(0)
+            Self::suffix(&self.data[self.index - 1]).parse().unwrap_or(0)
         }
 
         fn get_byte(&mut self) -> i8 {
             self.index += 1;
-            self.data[self.index - 1].parse().unwrap_or(0)
+            Self::suffix(&self.data[self.index - 1]).parse().unwrap_or(0)
         }
 
         fn get_short(&mut self) -> i16 {
             self.index += 1;
-            self.data[self.index - 1].parse().unwrap_or(0)
+            Self::suffix(&self.data[self.index - 1]).parse().unwrap_or(0)
         }
 
         fn get_long(&mut self) -> i64 {
             self.index += 1;
-            self.data[self.index - 1].parse().unwrap_or(0)
+            Self::suffix(&self.data[self.index - 1]).parse().unwrap_or(0)
         }
 
         fn get_boolean(&mut self) -> bool {
@@ -130,17 +135,17 @@ mod tests {
 
         fn get_string(&mut self) -> String {
             self.index += 1;
-            String::new()
+            Self::suffix(&self.data[self.index - 1]).to_string()
         }
 
         fn get_float(&mut self) -> f32 {
             self.index += 1;
-            0.0
+            Self::suffix(&self.data[self.index - 1]).parse().unwrap_or(0.0)
         }
 
         fn get_double(&mut self) -> f64 {
             self.index += 1;
-            0.0
+            Self::suffix(&self.data[self.index - 1]).parse().unwrap_or(0.0)
         }
 
         fn get_ints(&mut self) -> Vec<i32> {

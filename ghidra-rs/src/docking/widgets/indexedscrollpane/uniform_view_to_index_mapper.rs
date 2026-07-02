@@ -29,7 +29,11 @@ impl<M: IndexedScrollable> UniformViewToIndexMapper<M> {
         if self.layout_height < 1 {
             self.layout_height = 1;
         }
-        self.view_height = (self.scrollable.get_index_count() as i32) * self.layout_height;
+        // Mirror Java `getIndexCount().intValue() * layoutHeight`: BigInteger.intValue()
+        // truncates to the low 32 bits (like `as i32`) and the int multiply overflows
+        // silently. Use wrapping arithmetic so a huge index count does not panic.
+        self.view_height =
+            (self.scrollable.get_index_count() as i32).wrapping_mul(self.layout_height);
     }
 }
 
@@ -170,13 +174,16 @@ mod tests {
 
     #[test]
     fn get_vertical_offset_returns_within_row_offset() {
+        // Java: getVerticalOffset(value) = (index * layoutHeight) - value, i.e. the negated
+        // within-row offset (0 at a row boundary, down to -(layoutHeight-1) just before the
+        // next boundary).
         let m = mapper(100, 20);
         assert_eq!(m.get_vertical_offset(0), 0);
-        assert_eq!(m.get_vertical_offset(10), 10);
-        assert_eq!(m.get_vertical_offset(19), 19);
+        assert_eq!(m.get_vertical_offset(10), -10);
+        assert_eq!(m.get_vertical_offset(19), -19);
         assert_eq!(m.get_vertical_offset(20), 0);
-        assert_eq!(m.get_vertical_offset(25), 5);
-        assert_eq!(m.get_vertical_offset(39), 19);
+        assert_eq!(m.get_vertical_offset(25), -5);
+        assert_eq!(m.get_vertical_offset(39), -19);
         assert_eq!(m.get_vertical_offset(40), 0);
     }
 

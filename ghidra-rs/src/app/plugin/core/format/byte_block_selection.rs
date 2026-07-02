@@ -147,8 +147,12 @@ mod tests {
     #[test]
     fn add_appends_range() {
         let mut selection = ByteBlockSelection::default();
-        selection.add(make_range(0, 5));
+        // ByteBlockRange equality uses reference identity for the underlying block
+        // (Java: `block == r.block`), so we must compare against the same range instance
+        // rather than a freshly-built one that would hold a different block reference.
+        let range = make_range(0, 5);
+        selection.add(range.clone());
         assert_eq!(selection.number_of_ranges(), 1);
-        assert_eq!(selection.range(0), &make_range(0, 5));
+        assert_eq!(selection.range(0), &range);
     }
 }

@@ -140,8 +140,11 @@ mod tests {
 
     #[test]
     fn is_sub_filter_of_false_when_extra_chars_are_not_simple() {
+        // Per Java's areAllCharactersSimpleEnough, "simple" chars are 0x20..=0x5A and
+        // 0x5F..=0x7A. '[' (0x5B) falls in the excluded 0x5B..=0x5E gap, so it is NOT simple
+        // and disqualifies the child from being a sub-filter.
         let parent = FindsPatternTextFilter::new("cat");
-        let child = FindsPatternTextFilter::new("cat(dog)");
+        let child = FindsPatternTextFilter::new("cat[dog]");
         assert!(!child.is_sub_filter_of(&parent));
     }
 

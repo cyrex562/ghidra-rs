@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn all_variants_present() {
-        assert_eq!(VtRelatedMatchType::VALUES.len(), 44);
+        assert_eq!(VtRelatedMatchType::VALUES.len(), 45);
     }
 
     #[test]

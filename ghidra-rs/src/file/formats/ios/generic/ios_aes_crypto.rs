@@ -405,10 +405,15 @@ mod tests {
         let plain = crypto.decrypt(&cipher_text).unwrap();
 
         assert_eq!(&plain[..BLOCK_SIZE], &PT[..BLOCK_SIZE]);
-        let mut expected_second_block = [0u8; BLOCK_SIZE];
+        // The repeated block (block 3) decrypts to invCipher(CT[0]) XORed against the
+        // previous ciphertext block (CT[1] = CT128[16..32]), not against the IV. Since
+        // block 1 gave PT[0..16] = invCipher(CT[0]) XOR IV, we have
+        // invCipher(CT[0]) = PT[0..16] XOR IV, so the expected third block is
+        // PT[0..16] XOR IV XOR CT128[16..32].
+        let mut expected_third_block = [0u8; BLOCK_SIZE];
         for i in 0..BLOCK_SIZE {
-            expected_second_block[i] = PT[i] ^ CT128[i];
+            expected_third_block[i] = PT[i] ^ IV[i] ^ CT128[BLOCK_SIZE + i];
         }
-        assert_eq!(&plain[BLOCK_SIZE..], &expected_second_block[..]);
+        assert_eq!(&plain[BLOCK_SIZE * 2..], &expected_third_block[..]);
     }
 }

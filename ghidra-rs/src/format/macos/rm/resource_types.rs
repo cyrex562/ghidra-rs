@@ -25,8 +25,8 @@ mod tests {
     #[test]
     fn fourcc_bytes_match_ascii() {
         assert_eq!(&TYPE_CFRG.to_be_bytes(), b"cfrg");
-        assert_eq!(&TYPE_STR_SPACE.to_be_bytes(), b"str ");
-        assert_eq!(&TYPE_STR_POUND.to_be_bytes(), b"str#");
+        assert_eq!(&TYPE_STR_SPACE.to_be_bytes(), b"STR ");
+        assert_eq!(&TYPE_STR_POUND.to_be_bytes(), b"STR#");
         assert_eq!(&TYPE_ICON.to_be_bytes(), b"ICN#");
     }
 

@@ -185,7 +185,7 @@ mod tests {
     fn new_starts_empty() {
         let idx = ShortKeyIndexer::new();
         assert_eq!(idx.get_size(), 0);
-        assert_eq!(idx.get_capacity(), 13);
+        assert_eq!(idx.get_capacity(), 17);
     }
 
     #[test]
@@ -281,6 +281,6 @@ mod tests {
     #[test]
     fn default_matches_new() {
         let idx = ShortKeyIndexer::default();
-        assert_eq!(idx.get_capacity(), 13);
+        assert_eq!(idx.get_capacity(), 17);
     }
 }

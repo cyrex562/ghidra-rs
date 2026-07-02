@@ -527,8 +527,8 @@ mod tests {
 
     #[test]
     fn equal_sequences_are_equal_and_hash_equal() {
-        let a = DittedBitSequence::from_ditted_string("1.0.");
-        let b = DittedBitSequence::from_ditted_string("1.0.");
+        let a = DittedBitSequence::from_ditted_string("1.0.1.0.");
+        let b = DittedBitSequence::from_ditted_string("1.0.1.0.");
         assert_eq!(a, b);
 
         use std::collections::hash_map::DefaultHasher;
@@ -542,8 +542,8 @@ mod tests {
 
     #[test]
     fn different_sequences_are_not_equal() {
-        let a = DittedBitSequence::from_ditted_string("1111");
-        let b = DittedBitSequence::from_ditted_string("0000");
+        let a = DittedBitSequence::from_ditted_string("11111111");
+        let b = DittedBitSequence::from_ditted_string("00000000");
         assert_ne!(a, b);
     }
 

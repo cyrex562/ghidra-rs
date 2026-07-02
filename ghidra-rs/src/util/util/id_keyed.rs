@@ -11,26 +11,30 @@ use std::hash::{Hash, Hasher};
 pub struct IdKeyed<T> {
     /// The wrapped object.
     pub obj: T,
-    hash_code: u64,
 }
 
 impl<T> IdKeyed<T> {
-    /// Wraps `obj`, capturing its current address as the identity hash code.
+    /// Wraps `obj`.
     pub fn new(obj: T) -> Self {
-        let hash_code = &obj as *const T as u64;
-        Self { obj, hash_code }
+        Self { obj }
     }
 }
 
 impl<T> Hash for IdKeyed<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.hash_code.hash(state);
+        // Identity hash: use this wrapper's own address, which is stable for the
+        // lifetime of the instance and consistent with reference-identity equality.
+        (self as *const Self as usize).hash(state);
     }
 }
 
 impl<T> PartialEq for IdKeyed<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.hash_code == other.hash_code
+        // Java's IDKeyed compares wrapped objects by reference identity
+        // (`this.obj == that.obj`). Since an `IdKeyed` owns its `obj`, two
+        // distinct instances can never share the same object; only an instance
+        // is identity-equal to itself.
+        std::ptr::eq(self, other)
     }
 }
 

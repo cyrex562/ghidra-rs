@@ -50,7 +50,16 @@ impl AbstractPatternTextFilter for ContainsTextFilter {
             UserSearchUtils::CASE_INSENSITIVE
         };
 
-        UserSearchUtils::create_contains_pattern(&self.filter_text, self.allow_globbing, options)
+        // Java's ContainsTextFilter compiles with Pattern.DOTALL so the `.*` padding
+        // produced by createContainsPattern can span newlines. UserSearchUtils does not
+        // expose DOTALL, so rebuild the compiled pattern's source with
+        // `dot_matches_new_line(true)` (preserving any inline case-insensitivity flag).
+        let base =
+            UserSearchUtils::create_contains_pattern(&self.filter_text, self.allow_globbing, options)
+                .ok()?;
+        RegexBuilder::new(base.as_str())
+            .dot_matches_new_line(true)
+            .build()
             .ok()
     }
 
@@ -130,8 +139,11 @@ mod tests {
 
     #[test]
     fn matches_across_newlines() {
-        let filter = ContainsTextFilter::new("a.b", true, false);
-        assert!(filter.matches("x\na\nb\ny"));
+        // The literal filter text "ab" appears after a newline. Java compiles the contains
+        // pattern with DOTALL, so the surrounding `.*` padding spans the newlines. (The '.'
+        // in filter text is escaped to a literal, so it is not usable for newline spanning.)
+        let filter = ContainsTextFilter::new("ab", true, false);
+        assert!(filter.matches("x\nab\ny"));
     }
 
     #[test]

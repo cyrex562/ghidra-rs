@@ -111,7 +111,7 @@ mod tests {
             hex(&compute(
                 b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
             )),
-            "204a8fc6dda82f0a0cad7793fc691ae603431ceb0d60e7674e3b8f1e81aa1c3d3d28b93e8797ba3e58fe3b962476ec1d68fc4c8b9b8d3ea14d6adf5e1e0bb996"
+            "204a8fc6dda82f0a0ced7beb8e08a41657c16ef468b228a8279be331a703c33596fd15c13b1b07f9aa1d3bea57789ca031ad85c7a71dd70354ec631238ca3445"
         );
     }
 
@@ -119,7 +119,7 @@ mod tests {
     fn test_single_char_a() {
         assert_eq!(
             hex(&compute(b"a")),
-            "1f40fc92da241694750979ee6cf582f2d5d7d28e18335de05abc54d0560e0f5353891bd3bbb2cebacd63b8d34330b5ade708c72c19c9a84b6e76876340635c9"
+            "1f40fc92da241694750979ee6cf582f2d5d7d28e18335de05abc54d0560e0f5302860c652bf08d560252aa5e74210546f369fbbbce8c12cfc7957b2652fe9a75"
         );
     }
 
@@ -127,7 +127,7 @@ mod tests {
     fn test_message_digest() {
         assert_eq!(
             hex(&compute(b"message digest")),
-            "107dbf389d9e9f71a3a95f6c055fb67107d86d7335d3b0b222e646f215785512ef18d6f6e0c8e3d0e5aed5d7f2cc1fce87b6a7e3c6ccf9e6eb1b2f7b0f92ece5"
+            "107dbf389d9e9f71a3a95f6c055b9251bc5268c2be16d6c13492ea45b0199f3309e16455ab1e96118e8a905d5597b72038ddb372a89826046de66687bb420e7c"
         );
     }
 
@@ -135,7 +135,7 @@ mod tests {
     fn test_alphabet() {
         assert_eq!(
             hex(&compute(b"abcdefghijklmnopqrstuvwxyz")),
-            "4dbff86cc2ca1d3fe4413cc340b88ed4a7f86d5bcc8f9bda4fb6d44ad7395c0e42f0fb6b65f2eae6c265f0b49e4b46ac49f5e7a2854f8ef7dd2ae3ef6fb6c3f"
+            "4dbff86cc2ca1bae1e16468a05cb9881c97f1753bce3619034898faa1aabe429955a1bf8ec483d7421fe3c1646613a59ed5441fb0f321389f77f48a879c7b1f1"
         );
     }
 
@@ -145,7 +145,7 @@ mod tests {
             hex(&compute(
                 b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
             )),
-            "1e07be23c26bccf3af47d13f93f659c8477f84ab415ead6b0bb69bfb1da5634d6bc2fb88a1a27f8969e239c2b10e9fe51b1843a14e0fc44fb3e5c2270b0a7b8f"
+            "1e07be23c26a86ea37ea810c8ec7809352515a970e9253c26f536cfc7a9996c45c8370583e0a78fa4a90041d71a4ceab7423f19c71b9d5a3e01249f0bebd5894"
         );
     }
 

@@ -392,7 +392,7 @@ mod tests {
             XtensaElfRelocationType::R_XTENSA_NDIFF32,
         ];
 
-        let mut ids = [0; 62];
+        let mut ids = [0; 61];
         for (i, v) in variants.iter().enumerate() {
             ids[i] = v.type_id();
         }

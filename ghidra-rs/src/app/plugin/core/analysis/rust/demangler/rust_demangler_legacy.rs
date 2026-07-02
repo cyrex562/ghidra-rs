@@ -210,7 +210,7 @@ mod tests {
 
     #[test]
     fn rf_escape_expanded() {
-        assert_eq!(demangle("_ZN3foo3$RF$E"), Some("foo::&".into()));
+        assert_eq!(demangle("_ZN3foo4$RF$E"), Some("foo::&".into()));
     }
 
     #[test]

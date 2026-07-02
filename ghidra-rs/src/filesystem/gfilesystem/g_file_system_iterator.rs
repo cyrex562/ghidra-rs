@@ -303,7 +303,11 @@ mod tests {
         //     inner/
         //       file_inner.txt
         //     file_a.txt
-        // Depth-first alphabetical: file_inner.txt, file_a.txt, file_b.txt
+        // queueNextFiles stops as soon as the file deque is non-empty, so once dir "a"
+        // is expanded its own file (file_a.txt) is yielded before descending into the
+        // freshly-queued "inner" subdir. This matches Java's GFileSystemIterator, which
+        // pushes newly found subdirs to the front of the dir deque but only descends
+        // when the file deque runs dry: file_a.txt, file_inner.txt, file_b.txt.
         let root = MockFile::boxed(MockFile::dir(
             "root",
             vec![
@@ -320,7 +324,7 @@ mod tests {
         let iter = GFileSystemIterator::new(root).unwrap();
         assert_eq!(
             collect_names(iter).unwrap(),
-            vec!["file_inner.txt", "file_a.txt", "file_b.txt"]
+            vec!["file_a.txt", "file_inner.txt", "file_b.txt"]
         );
     }
 

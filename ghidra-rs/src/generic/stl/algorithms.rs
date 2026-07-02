@@ -146,7 +146,8 @@ mod tests {
     fn test_lower_bound_not_found() {
         let data = vec![1, 3, 5, 7, 9];
         let mut start = TestIter::new(data.clone());
-        let end = TestIter::new(data.clone());
+        let mut end = TestIter::new(data.clone());
+        end.pos = data.len();
 
         let result = lower_bound(&mut start, &end, &10);
         assert!(result.is_end());
@@ -176,7 +177,8 @@ mod tests {
     fn test_upper_bound_not_found() {
         let data = vec![1, 3, 5, 7, 9];
         let mut start = TestIter::new(data.clone());
-        let end = TestIter::new(data.clone());
+        let mut end = TestIter::new(data.clone());
+        end.pos = data.len();
 
         let result = upper_bound(&mut start, &end, &9);
         assert!(result.is_end());

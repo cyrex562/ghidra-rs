@@ -216,7 +216,7 @@ mod tests {
 
     #[test]
     fn is_left_child_and_right_child() {
-        let (_, left, right, ll, lr) = build_tree();
+        let (_root, left, right, ll, lr) = build_tree();
         assert!(RedBlackEntry::is_left_child(&left));
         assert!(!RedBlackEntry::is_left_child(&right));
         assert!(RedBlackEntry::is_right_child(&right));
@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn in_order_predecessor_traversal() {
-        let (_, _, right, _, _) = build_tree();
+        let (_root, _, right, _, _) = build_tree();
         // Reverse in-order from right(7): 7, 5, 4, 3, 1
         let mut keys = Vec::new();
         let mut cur = Some(right);
@@ -321,3 +321,4 @@ mod tests {
         assert_eq!(keys, vec![7, 5, 4, 3, 1]);
     }
 }
+

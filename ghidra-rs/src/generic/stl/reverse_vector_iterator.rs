@@ -336,12 +336,15 @@ mod tests {
 
     #[test]
     fn test_insert_shifts_elements() {
+        // `insert` is inherited verbatim from VectorIterator (`data.add(index, value)`),
+        // so it inserts at the raw cursor index, shifting the current element and those
+        // after it to the right -- it does NOT account for reverse traversal order.
         let mut v = vec![10, 30];
         let ptr = NonNull::from(&mut v);
         let mut it = unsafe { ReverseVectorIterator::new(ptr, 0) };
         it.insert(20);
         assert_eq!(*it.get(), 20);
-        assert_eq!(v, vec![10, 20, 30]);
+        assert_eq!(v, vec![20, 10, 30]);
     }
 
     #[test]

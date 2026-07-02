@@ -1229,7 +1229,7 @@ mod tests {
         assert_demangle_alternate("_RNvCsL39EUhRVRM_5tests6test_1", "tests::test_1");
         assert_demangle_alternate(
             "_RNvMCsL39EUhRVRM_5testsNtB2_10TestStruct8method_1",
-            "<tests::tests::TestStruct>::method_1",
+            "<tests::TestStruct>::method_1",
         );
         assert_demangle_alternate(
             "_RNvNtNtCsL39EUhRVRM_5tests5stuff6stuff26test_3",

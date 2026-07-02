@@ -388,7 +388,11 @@ mod tests {
         let mut cursor = Cursor::new(vec![0u8; BUFFER_SIZE - 1]);
         buf.ingest_stream(&mut cursor).unwrap();
 
-        let pos = buf.get_start_position();
+        // Move to the last byte of the (now full) page so that a plus-1 lookahead must
+        // fetch a following page. With no linked next page and no as-needed stream, that
+        // fetch fails with "Unexpected end of stream".
+        let mut pos = buf.get_start_position();
+        pos.advance_position(BUFFER_SIZE - 1).unwrap();
         assert!(pos.get_byte_plus1().is_err());
     }
 

@@ -137,7 +137,8 @@ mod tests {
     fn test_color_to_argb() {
         let color = Color::new(255, 128, 64, 200);
         let argb = color.to_argb();
-        assert_eq!(argb, 0xC8FF4040);
+        // Java Color.getRGB() packs as 0xAARRGGBB: a=200(0xC8) r=255(0xFF) g=128(0x80) b=64(0x40)
+        assert_eq!(argb, 0xC8FF8040);
     }
 
     #[test]

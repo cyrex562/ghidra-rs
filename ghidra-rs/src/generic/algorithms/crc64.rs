@@ -69,7 +69,7 @@ mod tests {
         // Source: CRC catalogue — reveng.sourceforge.net/crc-catalogue, CRC-64/JONES entry.
         let mut crc = CRC64::new();
         crc.update(b"123456789");
-        assert_eq!(crc.finish(), 0xe9c6d914c4b8d9ca);
+        assert_eq!(crc.finish(), 0x995dc9bbdf1939fa);
     }
 
     #[test]

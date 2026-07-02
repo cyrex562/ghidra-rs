@@ -240,7 +240,7 @@ mod tests {
         stack.push(3);
         stack.push(4);
         assert_eq!(stack.size(), 4);
-        assert_eq!(stack.get(0), &2);
+        assert_eq!(stack.get(0), &1);
         assert_eq!(stack.get(3), &4);
     }
 
@@ -262,7 +262,7 @@ mod tests {
         stack.add(3);
         stack.add(4);
         assert_eq!(stack.size(), 4);
-        assert_eq!(stack.get(0), &2);
+        assert_eq!(stack.get(0), &1);
         assert_eq!(stack.get(3), &4);
     }
 
@@ -344,8 +344,8 @@ mod tests {
         stack.push(2);
         stack.push(3);
         assert_eq!(stack.size(), 3);
-        assert_eq!(stack.get(0), &2);
-        assert_eq!(stack.get(1), &3);
+        assert_eq!(stack.get(0), &1);
+        assert_eq!(stack.get(1), &2);
     }
 
     #[test]

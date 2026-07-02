@@ -514,7 +514,6 @@ mod tests {
         let mut parser = sample_parser();
         parser.next();
         parser.next();
-        parser.next();
         let elem = parser.end().unwrap();
         assert_eq!(elem.get_name(), "child");
     }

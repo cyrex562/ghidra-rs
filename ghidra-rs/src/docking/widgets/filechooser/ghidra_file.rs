@@ -87,6 +87,12 @@ impl GhidraFile {
     /// translated to use the custom separator.
     pub fn get_parent(&self) -> Option<String> {
         let parent = self.path.parent()?;
+        // Mirror java.io.File.getParent(): a bare filename with no directory
+        // component has no parent. PathBuf::parent() returns Some("") in that case,
+        // so treat an empty parent as None.
+        if parent.as_os_str().is_empty() {
+            return None;
+        }
         let s = parent.to_string_lossy().into_owned();
         if self.uses_native_separator() {
             Some(s)
@@ -98,7 +104,12 @@ impl GhidraFile {
     /// Returns the parent directory as a `GhidraFile`, or `None` for a root path.
     pub fn get_parent_file(&self) -> Option<GhidraFile> {
         if self.uses_native_separator() {
-            self.path.parent().map(|p| GhidraFile { path: p.to_path_buf(), separator: self.separator })
+            // Mirror java.io.File.getParentFile(): a bare filename has no parent.
+            let parent = self.path.parent()?;
+            if parent.as_os_str().is_empty() {
+                return None;
+            }
+            Some(GhidraFile { path: parent.to_path_buf(), separator: self.separator })
         } else {
             self.get_parent().map(|s| GhidraFile::from_path(&s, self.separator))
         }

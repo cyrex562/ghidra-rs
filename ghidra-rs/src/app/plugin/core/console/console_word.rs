@@ -154,9 +154,11 @@ mod tests {
     fn test_get_word_without_special_characters_only_special() {
         let word = ConsoleWord::new(".,[".to_string(), 0, 3);
         let trimmed = word.get_word_without_special_characters();
+        // Java trims the back first: end 3→2→1→0 as each special char is removed. Once the
+        // buffer is empty the front-trim loop never runs, so start stays 0. Result: ("", 0, 0).
         assert_eq!(trimmed.word(), "");
-        assert_eq!(trimmed.start_position(), 3);
-        assert_eq!(trimmed.end_position(), 3);
+        assert_eq!(trimmed.start_position(), 0);
+        assert_eq!(trimmed.end_position(), 0);
     }
 
     #[test]

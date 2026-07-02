@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn test_get_location_representation() {
-        let block = MockByteBlock::new(vec![0x01, 0x02]);
+        let block = MockByteBlock::new(vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);
         let repr = block.get_location_representation(5).unwrap();
         assert_eq!(repr, "0x5");
     }

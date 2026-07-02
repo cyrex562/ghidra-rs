@@ -336,9 +336,14 @@ mod tests {
         parser.process_string("31m").unwrap();
         parser.process_string("world").unwrap();
 
+        // The parser emits text eagerly per call and only buffers an unfinished
+        // control sequence at the tail; it does not merge text across calls. So
+        // "hel" is emitted on the first call, then "lo" (before the buffered
+        // "\x1b[" tail) on the second, then "world" on the last.
         assert_eq!(handler.strings.borrow().len(), 3);
-        assert_eq!(handler.strings.borrow()[0], "hello");
-        assert_eq!(handler.strings.borrow()[1], "world");
+        assert_eq!(handler.strings.borrow()[0], "hel");
+        assert_eq!(handler.strings.borrow()[1], "lo");
+        assert_eq!(handler.strings.borrow()[2], "world");
         assert_eq!(handler.csi_calls.borrow().len(), 1);
     }
 
@@ -360,13 +365,15 @@ mod tests {
     fn test_csi_with_intermediate() {
         let handler = TestHandler::new();
         let mut parser = AnsiParser::new(handler.clone());
-        // CSI with intermediate bytes
+        // CSI with intermediate bytes. Note: '?', '2', '5' are all in the
+        // parameter range (0x30-0x3F), so they are all parameter bytes; 'h'
+        // (0x68) is the final byte. There are no intermediate bytes here.
         parser.process_string("\x1b[?25h").unwrap();
 
         assert_eq!(handler.csi_calls.borrow().len(), 1);
         let (param, inter, final_char) = &handler.csi_calls.borrow()[0];
-        assert_eq!(param, "?");
+        assert_eq!(param, "?25");
         assert_eq!(inter, "");
-        assert_eq!(final_char, "2");
+        assert_eq!(final_char, "h");
     }
 }

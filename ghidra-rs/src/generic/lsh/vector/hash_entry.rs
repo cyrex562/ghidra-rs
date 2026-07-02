@@ -311,9 +311,14 @@ mod tests {
         original.save_sql(&mut buf);
         assert_eq!(buf, "4:dead");
 
+        // `restore_sql` requires a non-hex terminator after the hash (in the real
+        // LSHCosineVector SQL format entries are separated by ',' and terminated by ')').
+        // Append one so parsing has an end delimiter, mirroring the vector encoding.
+        buf.push(')');
+
         let mut restored = HashEntry::new();
         let end = restored.restore_sql(&buf, 0, &w, &lookup).unwrap();
-        assert_eq!(end, buf.len());
+        assert_eq!(end, buf.len() - 1); // stops at the ')' terminator
         assert_eq!(restored.get_hash(), 0xdead);
         assert_eq!(restored.get_tf(), 4);
     }

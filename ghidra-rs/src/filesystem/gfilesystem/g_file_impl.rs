@@ -482,8 +482,12 @@ mod tests {
         let share = f.get_parent_file().expect("share parent");
         assert_eq!(share.get_name(), "share");
 
+        // The UNC "//" prefix is restored onto the server path element while building the
+        // parentage, but the file's name is derived from its FSRL, and FSRL.getName()
+        // returns everything after the last '/', so the reported name is "server"
+        // (matching Java's GFileImpl.getName() -> FSRL.getName() behaviour).
         let server = share.get_parent_file().expect("server parent");
-        assert_eq!(server.get_name(), "//server");
+        assert_eq!(server.get_name(), "server");
     }
 
     #[test]

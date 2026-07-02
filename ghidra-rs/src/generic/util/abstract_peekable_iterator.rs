@@ -102,7 +102,8 @@ mod tests {
 
     #[test]
     fn test_next_after_exhaustion_returns_none() {
-        let mut iter = AbstractPeekableIterator::new(|| Some(1));
+        let mut values_iter = vec![1].into_iter();
+        let mut iter = AbstractPeekableIterator::new(|| values_iter.next());
         assert_eq!(iter.next(), Some(1));
         assert_eq!(iter.next(), None);
     }
@@ -116,7 +117,8 @@ mod tests {
 
     #[test]
     fn test_peek_then_next() {
-        let mut iter = AbstractPeekableIterator::new(|| Some(42));
+        let mut values_iter = vec![42].into_iter();
+        let mut iter = AbstractPeekableIterator::new(|| values_iter.next());
         assert_eq!(iter.peek(), Some(&42));
         assert_eq!(iter.next(), Some(42));
         assert_eq!(iter.peek(), None);

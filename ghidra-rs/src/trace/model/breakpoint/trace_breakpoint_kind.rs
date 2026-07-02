@@ -417,7 +417,10 @@ mod tests {
 
     #[test]
     fn decode_encode_roundtrip() {
-        let original = "RWXx";
+        // The flag encoding deliberately cannot represent all 4 flags at once (see the
+        // Java `decode` note: a 4+ character string is treated as comma-separated names,
+        // not flags), so round-trip is only defined for up to 3 flags.
+        let original = "RWX";
         let set = TraceBreakpointKindSet::decode(original, false).unwrap();
         assert_eq!(set.to_string(), original);
     }

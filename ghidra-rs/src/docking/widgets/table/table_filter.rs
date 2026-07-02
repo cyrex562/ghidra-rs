@@ -49,8 +49,10 @@ mod tests {
         }
 
         fn is_sub_filter_of(&self, table_filter: &dyn Any) -> bool {
+            // A strictly higher minimum is a strictly more specific ("sub") filter; an
+            // equal minimum is the same filter and therefore not a sub-filter.
             match table_filter.downcast_ref::<MinFilter>() {
-                Some(other) => self.0 >= other.0,
+                Some(other) => self.0 > other.0,
                 None => false,
             }
         }

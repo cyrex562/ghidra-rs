@@ -93,7 +93,7 @@ mod tests {
     struct MockScrollable {
         index_count: i128,
         uniform: bool,
-        heights: Vec<i32>,
+        row_height: i32,
         listeners_added: usize,
         listeners_removed: usize,
         last_show_index: Option<(i128, i32)>,
@@ -103,10 +103,12 @@ mod tests {
 
     impl MockScrollable {
         fn new(index_count: i128, uniform: bool) -> Self {
+            // Note: heights are computed on demand rather than pre-allocated so the mock
+            // can model a huge index_count (e.g. i128::MAX) without allocating.
             Self {
                 index_count,
                 uniform,
-                heights: vec![20; index_count as usize],
+                row_height: 20,
                 listeners_added: 0,
                 listeners_removed: 0,
                 last_show_index: None,
@@ -133,8 +135,8 @@ mod tests {
         }
 
         fn get_height(&self, index: i128) -> i32 {
-            if index >= 0 && (index as usize) < self.heights.len() {
-                self.heights[index as usize]
+            if index >= 0 && index < self.index_count {
+                self.row_height
             } else {
                 0
             }

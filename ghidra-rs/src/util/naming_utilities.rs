@@ -189,7 +189,9 @@ mod tests {
         assert!(!NamingUtilities::is_valid_project_name("file*name"));
         assert!(!NamingUtilities::is_valid_project_name("file?name"));
         assert!(!NamingUtilities::is_valid_project_name("file\tname"));
-        assert!(!NamingUtilities::is_valid_project_name("naïve")); // non-ASCII
+        // Non-ASCII letters are accepted: Java uses Character.isLetterOrDigit,
+        // which treats accented letters like 'ï' as letters, so "naïve" is valid.
+        assert!(NamingUtilities::is_valid_project_name("naïve"));
     }
 
     #[test]

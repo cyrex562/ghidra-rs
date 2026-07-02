@@ -264,6 +264,11 @@ mod tests {
         });
 
         let handle = run_exit_check(0, session);
-        handle.join().unwrap();
+        // The assertion fails inside the spawned thread, so `join` returns the panic
+        // payload as an `Err`. Re-raise it in this thread so `#[should_panic]` can match
+        // the original message rather than a generic "unwrap on Err" message.
+        if let Err(payload) = handle.join() {
+            std::panic::resume_unwind(payload);
+        }
     }
 }
