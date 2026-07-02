@@ -11928,7 +11928,7 @@ orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/async/AsyncTestUtils.java
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/async/AsyncTimerTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra async 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/framework/ApplicationIdentifierTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra framework 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/framework/ApplicationVersionTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra framework 
-orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/framework/plugintool/TestDummyServiceProvider.java	TODO	orig_src Ghidra Framework Generic src test java ghidra framework plugintool 
+orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/framework/plugintool/TestDummyServiceProvider.java	DONE	orig_src Ghidra Framework Generic src test java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/generic/util/datastruct/TreeValueSortedMapTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra generic util datastruct 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/net/ApplicationKeyManagerFactoryTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra net 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/net/http/HttpUtilTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra net http 
