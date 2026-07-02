@@ -8989,7 +8989,7 @@ orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/demangler/RustDemanglerLegacy.java	DONE	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust demangler
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/demangler/RustDemanglerOptions.java	DONE	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust demangler
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/demangler/RustDemanglerParser.java	TODO	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust demangler 
-orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/demangler/RustDemanglerV0.java	TODO	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust demangler 
+orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/demangler/RustDemanglerV0.java	DONE	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust demangler
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/util/bin/format/dwarf/funcfixup/RustDWARFFunctionFixup.java	TODO	orig_src Ghidra Features Rust src main java ghidra app util bin format dwarf funcfixup 
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/util/sourcelanguage/ElfRustSourceLanguage.java	TODO	orig_src Ghidra Features Rust src main java ghidra app util sourcelanguage 
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/util/sourcelanguage/MachoRustSourceLanguage.java	TODO	orig_src Ghidra Features Rust src main java ghidra app util sourcelanguage 
