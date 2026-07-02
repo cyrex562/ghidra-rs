@@ -6,6 +6,7 @@ pub mod custom_organization;
 pub mod data_type_dependency_exception;
 pub mod data_type_display_options;
 pub mod enum_value_partitioner;
+pub mod illegal_rename_exception;
 pub mod leb128;
 pub mod packing_type;
 pub mod resource;
