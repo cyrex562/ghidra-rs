@@ -12156,7 +12156,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/vertex/VisualV
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/Attributed.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/AttributedEdge.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/AttributedGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra service graph 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/AttributedVertex.java	TODO	orig_src Ghidra Framework Graph src main java ghidra service graph 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/AttributedVertex.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/DefaultGraphDisplayOptions.java	TODO	orig_src Ghidra Framework Graph src main java ghidra service graph 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/EmptyGraphType.java	DONE	orig_src Ghidra Framework Graph src main java ghidra service graph
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/service/graph/GraphDisplayOptions.java	TODO	orig_src Ghidra Framework Graph src main java ghidra service graph 
