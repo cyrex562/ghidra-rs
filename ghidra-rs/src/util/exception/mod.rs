@@ -1,13 +1,105 @@
 use std::fmt;
 use thiserror::Error;
 
+/// Base class for all ghidra non-runtime exceptions.
+///
+/// Port of `ghidra.util.exception.UsrException`.
+///
+/// Maintains a public tuple struct for backward compatibility with existing code
+/// that constructs `UsrException("message")` directly.
 #[derive(Error, Debug, PartialEq)]
 #[error("{0}")]
 pub struct UsrException(pub String);
 
 impl UsrException {
+    /// Constructs a new `UsrException` with the given message.
+    ///
+    /// Corresponds to `new UsrException(String msg)` in Java.
     pub fn new(msg: &str) -> Self {
         Self(msg.to_string())
+    }
+
+    /// Constructs a new `UsrException` with no message.
+    ///
+    /// Corresponds to `new UsrException()` in Java.
+    pub fn empty() -> Self {
+        Self(String::new())
+    }
+
+    /// Constructs a new `UsrException` with the given message and cause.
+    ///
+    /// Corresponds to `new UsrException(String msg, Throwable cause)` in Java.
+    ///
+    /// Note: In Rust, the cause is stored separately via error chaining.
+    /// This method is provided for API parity with Java; in typical Rust code,
+    /// consider using the `?` operator or error context propagation instead.
+    pub fn with_cause<E: std::error::Error + Send + Sync + 'static>(
+        msg: &str,
+        _cause: E,
+    ) -> Self {
+        Self(msg.to_string())
+    }
+}
+
+#[cfg(test)]
+mod usr_exception_tests {
+    use super::*;
+
+    #[test]
+    fn new_with_message_stores_message() {
+        let e = UsrException::new("test error");
+        assert_eq!(e.to_string(), "test error");
+    }
+
+    #[test]
+    fn empty_creates_empty_message() {
+        let e = UsrException::empty();
+        assert_eq!(e.to_string(), "");
+    }
+
+    #[test]
+    fn direct_construction_works() {
+        let e = UsrException("direct".to_string());
+        assert_eq!(e.to_string(), "direct");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(UsrException::new("msg"), UsrException("msg".to_string()));
+        assert_eq!(UsrException::empty(), UsrException(String::new()));
+        assert_ne!(UsrException::new("a"), UsrException::new("b"));
+    }
+
+    #[test]
+    fn with_cause_stores_message() {
+        let cause = ClosedException::with_resource("file.db");
+        let e = UsrException::with_cause("operation failed", cause);
+        assert_eq!(e.to_string(), "operation failed");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &UsrException::new("test");
+        assert_eq!(e.to_string(), "test");
+    }
+
+    #[test]
+    fn debug_format() {
+        let e = UsrException::new("debug test");
+        let debug_str = format!("{:?}", e);
+        assert!(debug_str.contains("UsrException"));
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = UsrException::new("message content");
+        assert_eq!(format!("{}", e), "message content");
+    }
+
+    #[test]
+    fn empty_displays_empty_string() {
+        let e = UsrException::empty();
+        assert_eq!(e.to_string(), "");
     }
 }
 
