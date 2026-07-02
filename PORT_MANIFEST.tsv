@@ -1664,7 +1664,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/LSHExcept
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/MinimalErrorLogger.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ParallelDecompileTask.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/SQLFunctionDatabase.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ServerConfig.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ServerConfig.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/AbstractSQLFunctionDatabase.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/BSimSqlClause.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/CancelledSQLException.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client
