@@ -10,6 +10,7 @@ pub mod g_weighted_edge;
 pub mod graph_path;
 pub mod graph_path_set;
 pub mod viewer;
+pub mod visualization;
 
 #[cfg(test)]
 mod graph_mvc_test;
@@ -27,3 +28,4 @@ pub use g_weighted_edge::GWeightedEdge;
 pub use graph_path::GraphPath;
 pub use graph_path_set::GraphPathSet;
 pub use viewer::{PathHighlightListener, VisualGraphContextMarker};
+pub use visualization::{GroupVertex, GroupableVertex};
