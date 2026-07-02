@@ -14854,7 +14854,7 @@ orig_src/Ghidra/Processors/ARM/src/test.slow/java/ghidra/app/plugin/core/analysi
 orig_src/Ghidra/Processors/Atmel/ghidra_scripts/CreateAVR8GDTArchiveScript.java	TODO	orig_src Ghidra Processors Atmel ghidra_scripts 
 orig_src/Ghidra/Processors/Atmel/src/main/java/ghidra/app/util/bin/format/elf/extend/AVR8_ElfExtension.java	TODO	orig_src Ghidra Processors Atmel src main java ghidra app util bin format elf extend 
 orig_src/Ghidra/Processors/Atmel/src/main/java/ghidra/app/util/bin/format/elf/relocation/AVR32_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors Atmel src main java ghidra app util bin format elf relocation 
-orig_src/Ghidra/Processors/Atmel/src/main/java/ghidra/app/util/bin/format/elf/relocation/AVR32_ElfRelocationType.java	TODO	orig_src Ghidra Processors Atmel src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/Atmel/src/main/java/ghidra/app/util/bin/format/elf/relocation/AVR32_ElfRelocationType.java	DONE	orig_src Ghidra Processors Atmel src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/Atmel/src/main/java/ghidra/app/util/bin/format/elf/relocation/AVR8_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors Atmel src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/Atmel/src/main/java/ghidra/app/util/bin/format/elf/relocation/AVR8_ElfRelocationType.java	TODO	orig_src Ghidra Processors Atmel src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/Atmel/src/test.processors/java/ghidra/test/processors/AVR32_BE_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors Atmel src test.processors java ghidra test processors 
