@@ -11750,7 +11750,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IndexRang
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IndexRangeIterator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArrayArray.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArrayList.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntArrayList.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntIndexManager.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util datastruct
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntIntHashtable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntKeyIndexer.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util datastruct 
