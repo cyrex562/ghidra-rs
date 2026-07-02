@@ -4,6 +4,7 @@ pub mod field_quality;
 pub mod optimize_record;
 pub mod regression;
 pub mod space_class;
+pub mod space_quality;
 
 pub use directory_visitor::DirectoryVisitor;
 pub use error_warning_reporter::ErrorWarningReporter;
@@ -11,3 +12,4 @@ pub use field_quality::FieldQuality;
 pub use optimize_record::OptimizeRecord;
 pub use regression::PushbackEntireLine;
 pub use space_class::SpaceClass;
+pub use space_quality::SpaceQuality;
