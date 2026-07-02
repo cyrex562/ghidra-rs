@@ -1577,6 +1577,82 @@ mod graph_exception_tests {
     }
 }
 
+/// Exception thrown if input is invalid.
+///
+/// Port of `ghidra.util.exception.InvalidInputException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct InvalidInputException(pub String);
+
+impl InvalidInputException {
+    pub const DEFAULT_MESSAGE: &'static str = "Invalid Input";
+
+    /// Creates an `InvalidInputException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates an `InvalidInputException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for InvalidInputException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod invalid_input_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = InvalidInputException::default();
+        assert_eq!(e.to_string(), InvalidInputException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(InvalidInputException::default(), InvalidInputException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = InvalidInputException::with_message("value out of range");
+        assert_eq!(e.to_string(), "value out of range");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(InvalidInputException::new(), InvalidInputException::new());
+        assert_eq!(
+            InvalidInputException::with_message("msg"),
+            InvalidInputException::with_message("msg")
+        );
+        assert_ne!(InvalidInputException::new(), InvalidInputException::with_message("custom"));
+        assert_ne!(
+            InvalidInputException::with_message("a"),
+            InvalidInputException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = InvalidInputException::with_message("input validation failed");
+        assert_eq!(format!("{}", e), "input validation failed");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &InvalidInputException::new();
+        assert_eq!(e.to_string(), InvalidInputException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
