@@ -12488,7 +12488,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/CompoundBac
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/CompoundCmd.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework cmd 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/MergeableBackgroundCommand.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework cmd 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/AbstractTransactionManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/CheckinHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/CheckinHandler.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ContentHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ConvertFileSystem.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DBContentHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 

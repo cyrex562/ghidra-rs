@@ -1,4 +1,5 @@
 pub mod client;
+pub mod data;
 pub mod db;
 pub mod generic;
 pub mod key_store_password_provider;
@@ -18,6 +19,7 @@ pub mod shutdown_priority;
 pub mod store;
 pub mod version;
 
+pub use data::CheckinHandler;
 pub use log4j_error_logger::Log4jErrorLogger;
 pub use os::OperatingSystem;
 pub use pluggable_service_registry_exception::PluggableServiceRegistryException;
