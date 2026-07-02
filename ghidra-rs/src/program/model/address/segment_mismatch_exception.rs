@@ -13,11 +13,6 @@ impl SegmentMismatchException {
     /// Java-compatible default message.
     pub const DEFAULT_MESSAGE: &'static str = "The segments of the addresses do not match.";
 
-    /// Constructs a segment mismatch exception with the Java default message.
-    pub fn default() -> Self {
-        Self::new(Self::DEFAULT_MESSAGE)
-    }
-
     /// Constructs a segment mismatch exception with a detail message.
     pub fn new(message: impl Into<String>) -> Self {
         Self {
@@ -33,7 +28,7 @@ impl SegmentMismatchException {
 
 impl Default for SegmentMismatchException {
     fn default() -> Self {
-        Self::default()
+        Self::new(Self::DEFAULT_MESSAGE)
     }
 }
 
