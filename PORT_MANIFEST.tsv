@@ -1208,7 +1208,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedO
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueCollection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueSubCollection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBObjectColumn.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedCollection.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedCollection.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedIterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedSpliterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DebuggerFactoryAdapter.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
