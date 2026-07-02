@@ -15044,7 +15044,7 @@ orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/javaclass/test/DescriptorDec
 orig_src/Ghidra/Processors/JVM/src/test/java/ghidra/javaclass/test/MethodsInfoAccessFlagsTest.java	DONE	orig_src Ghidra Processors JVM src test java ghidra javaclass test
 orig_src/Ghidra/Processors/Loongarch/src/main/java/ghidra/app/plugin/core/analysis/LoongsonAnalyzer.java	TODO	orig_src Ghidra Processors Loongarch src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/Loongarch/src/main/java/ghidra/app/util/bin/format/elf/relocation/Loongarch_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors Loongarch src main java ghidra app util bin format elf relocation 
-orig_src/Ghidra/Processors/Loongarch/src/main/java/ghidra/app/util/bin/format/elf/relocation/Loongarch_ElfRelocationType.java	TODO	orig_src Ghidra Processors Loongarch src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/Loongarch/src/main/java/ghidra/app/util/bin/format/elf/relocation/Loongarch_ElfRelocationType.java	DONE	orig_src Ghidra Processors Loongarch src main java ghidra app util bin format elf relocation
 orig_src/Ghidra/Processors/Loongarch/src/test.processors/java/ghidra/test/processors/Loongarch64_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors Loongarch src test.processors java ghidra test processors 
 orig_src/Ghidra/Processors/Loongarch/src/test.processors/java/ghidra/test/processors/Loongarch64_O3_EmulatorTest.java	TODO	orig_src Ghidra Processors Loongarch src test.processors java ghidra test processors 
 orig_src/Ghidra/Processors/Loongarch/src/test.processors/java/ghidra/test/processors/Loongarch64f_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors Loongarch src test.processors java ghidra test processors 
