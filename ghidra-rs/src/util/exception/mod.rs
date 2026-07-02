@@ -194,6 +194,62 @@ mod cancelled_exception_tests {
     }
 }
 
+/// Indicates that a cancellation happened due to a timeout.
+///
+/// Port of `ghidra.util.exception.TimeoutException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("Operation timeout: {0}")]
+pub struct TimeoutException(pub String);
+
+impl TimeoutException {
+    pub fn new(msg: &str) -> Self {
+        Self(msg.to_string())
+    }
+}
+
+#[cfg(test)]
+mod timeout_exception_tests {
+    use super::*;
+
+    #[test]
+    fn new_with_message_stores_message() {
+        let e = TimeoutException::new("operation exceeded time limit");
+        assert_eq!(e.to_string(), "Operation timeout: operation exceeded time limit");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(
+            TimeoutException::new("timeout reason A"),
+            TimeoutException::new("timeout reason A")
+        );
+        assert_ne!(
+            TimeoutException::new("timeout reason A"),
+            TimeoutException::new("timeout reason B")
+        );
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &TimeoutException::new("test timeout");
+        assert!(e.to_string().contains("timeout"));
+    }
+
+    #[test]
+    fn debug_format() {
+        let e = TimeoutException::new("test");
+        let debug_str = format!("{:?}", e);
+        assert!(debug_str.contains("TimeoutException"));
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = TimeoutException::new("request timed out");
+        let display = format!("{}", e);
+        assert!(display.contains("request timed out"));
+    }
+}
+
 #[derive(Error, Debug, PartialEq)]
 #[error("Address overflow: {0}")]
 pub struct AddressOverflowException(pub String);
