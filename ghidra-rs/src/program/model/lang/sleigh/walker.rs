@@ -44,7 +44,7 @@ impl ParserContext {
         let mut bytes = vec![0u8; byte_size as usize];
         let read_size = self.mem_buffer.get_bytes(&mut bytes, byte_offset);
         if byte_offset == 0 && read_size == 0 {
-            return Err(MemoryAccessException("invalid memory".to_string()));
+            return Err(MemoryAccessException::new("invalid memory"));
         }
 
         let mut res = 0u32;

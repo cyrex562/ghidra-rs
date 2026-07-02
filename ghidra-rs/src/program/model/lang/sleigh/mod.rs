@@ -345,7 +345,7 @@ mod tests {
             self.data
                 .get(offset as usize)
                 .cloned()
-                .ok_or_else(|| MemoryAccessException("out of bounds".to_string()))
+                .ok_or_else(|| MemoryAccessException::new("out of bounds"))
         }
         fn get_bytes(&self, buf: &mut [u8], offset: i32) -> usize {
             let start = offset as usize;

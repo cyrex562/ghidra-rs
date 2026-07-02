@@ -1,5 +1,6 @@
 pub mod invalid_address_exception;
 pub mod memory;
+pub mod memory_access_exception;
 pub mod memory_block;
 pub mod memory_block_exception;
 pub mod memory_block_impl;
@@ -9,13 +10,8 @@ pub mod memory_block_type;
 pub mod memory_conflict_exception;
 pub mod memory_constants;
 
-use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq)]
-#[error("Memory access error: {0}")]
-pub struct MemoryAccessException(pub String);
-
 pub use invalid_address_exception::InvalidAddressException;
+pub use memory_access_exception::MemoryAccessException;
 pub use memory::Memory;
 pub use memory_block::MemoryBlock;
 pub use memory_block_exception::MemoryBlockException;
