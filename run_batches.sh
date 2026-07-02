@@ -24,6 +24,7 @@ REPO_DIR="${REPO_DIR:-$HOME/Projects/ghidra-rs}"
 cd "$REPO_DIR" || { echo "no repo at $REPO_DIR"; exit 1; }
 MANIFEST="PORT_MANIFEST.tsv"
 RESULTS="${RESULTS_FILE:-tick2_results.tsv}"
+PARKED_FILE="PORT_PARKED.tsv"
 LOG_DIR="${LOG_DIR:-$HOME/agents/logs/ghidra}"
 mkdir -p "$LOG_DIR"
 SUP_LOG="$LOG_DIR/supervisor.$(date +%s).log"
@@ -56,6 +57,7 @@ over_cost() { awk -v s="$1" -v b="$2" -v c="$OVERALL_COST" 'BEGIN{exit !(c>0 && 
 start_ts=$(date +%s)
 base_cost=$(spent_total)
 noprog=0
+unparked=0   # self-heal: un-park accumulated parks once when the frontier looks dry
 trap 'log "supervisor interrupted; exiting (tick2 may still be finishing its batch)."; exit 130' INT TERM
 
 log "supervisor start: MODEL=$MODEL  per-batch TIME_BUDGET=${TIME_BUDGET}s COST_BUDGET=\$$COST_BUDGET"
@@ -87,10 +89,21 @@ for ((run = 1; run <= MAX_RUNS; run++)); do
     log "preflight failed: integration does not build. fix it, then restart the supervisor. stopping."; break
   fi
   if grep -q "batch complete" "$runlog" && [ "$ported" -eq 0 ]; then
-    log "mapped frontier exhausted — all queued work is ported. DONE.";  break
+    # Frontier looks dry -- but classes parked earlier (when their deps were still
+    # TODO) may be portable now that those deps are ported. Un-park all once and retry;
+    # only repeat after an intervening progress batch, so truly-unportable work can't spin.
+    parked_n=$(sort -u "$PARKED_FILE" 2>/dev/null | grep -c . || true); parked_n=${parked_n:-0}
+    if [ "$parked_n" -gt 0 ] && [ "$unparked" -eq 0 ]; then
+      cp "$PARKED_FILE" "$LOG_DIR/PORT_PARKED.$(date +%s).bak" 2>/dev/null || true
+      : > "$PARKED_FILE"
+      unparked=1
+      log "frontier dry but $parked_n parked -> un-parked all and retrying (deps may now be ported)."
+      continue
+    fi
+    log "mapped frontier exhausted — all queued work ported or genuinely blocked. DONE.";  break
   fi
 
-  [ "$ported" -gt 0 ] && noprog=0 || noprog=$(( noprog + 1 ))
+  if [ "$ported" -gt 0 ]; then noprog=0; unparked=0; else noprog=$(( noprog + 1 )); fi
 
   # usage limit: wait for the reported reset, then resume
   if [ "$reason" = "api-error" ]; then
