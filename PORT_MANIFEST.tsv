@@ -6225,7 +6225,7 @@ orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/Instr
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/MineSequenceTask.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/PatternEvalTabelModel.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/PatternEvalTableProvider.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
-orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/PatternInfoRowObject.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
+orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/PatternInfoRowObject.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/PatternInfoTableModel.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/PatternMiningAnalyzerProvider.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/RegisterValueWrapper.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
