@@ -1266,7 +1266,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/utilities/util/IDKeyed.java	DO
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/utilities/util/ProxyUtilities.java	DONE	orig_src Ghidra Debug ProposedUtils src main java utilities util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/utilities/util/SuppressableCallback.java	DONE	orig_src Ghidra Debug ProposedUtils src main java utilities util
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/docking/widgets/table/DemoSpanCellRendererTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java docking widgets table 
-orig_src/Ghidra/Debug/ProposedUtils/src/test/java/generic/depends/DependentServiceResolverTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java generic depends 
+orig_src/Ghidra/Debug/ProposedUtils/src/test/java/generic/depends/DependentServiceResolverTest.java	DONE	orig_src Ghidra Debug ProposedUtils src test java generic depends 
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/framework/options/AutoOptionsTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java ghidra framework options 
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/framework/plugintool/AutoServiceTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java ghidra framework plugintool 
 orig_src/Ghidra/Debug/ProposedUtils/src/test/java/ghidra/generic/util/datastruct/DynamicSortedTreeSetTest.java	TODO	orig_src Ghidra Debug ProposedUtils src test java ghidra generic util datastruct 
