@@ -15154,7 +15154,7 @@ orig_src/Ghidra/Processors/SuperH4/src/main/java/ghidra/app/plugin/core/analysis
 orig_src/Ghidra/Processors/SuperH4/src/main/java/ghidra/app/plugin/core/analysis/SH4EarlyAddressAnalyzer.java	TODO	orig_src Ghidra Processors SuperH4 src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/SuperH4/src/main/java/ghidra/app/util/bin/format/elf/relocation/ElfSH4RelocationFixupHandler.java	TODO	orig_src Ghidra Processors SuperH4 src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/SuperH4/src/main/java/ghidra/app/util/bin/format/elf/relocation/SH_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors SuperH4 src main java ghidra app util bin format elf relocation 
-orig_src/Ghidra/Processors/SuperH4/src/main/java/ghidra/app/util/bin/format/elf/relocation/SH_ElfRelocationType.java	TODO	orig_src Ghidra Processors SuperH4 src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/SuperH4/src/main/java/ghidra/app/util/bin/format/elf/relocation/SH_ElfRelocationType.java	DONE	orig_src Ghidra Processors SuperH4 src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/SuperH4/src/test.processors/java/ghidra/test/processors/SuperH4_BE_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors SuperH4 src test.processors java ghidra test processors 
 orig_src/Ghidra/Processors/SuperH4/src/test.processors/java/ghidra/test/processors/SuperH4_BE_O3_EmulatorTest.java	TODO	orig_src Ghidra Processors SuperH4 src test.processors java ghidra test processors 
 orig_src/Ghidra/Processors/SuperH4/src/test.processors/java/ghidra/test/processors/SuperH4_O0_EmulatorTest.java	TODO	orig_src Ghidra Processors SuperH4 src test.processors java ghidra test processors 
