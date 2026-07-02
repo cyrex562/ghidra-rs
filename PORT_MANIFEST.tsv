@@ -5316,7 +5316,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AlignRule.jav
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/BulkPatternSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/BytePattern.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/ByteSequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/DittedBitSequence.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/DittedBitSequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/DummyMatchAction.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/ExtendedByteSequence.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/GenericByteSequencePattern.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
