@@ -4646,7 +4646,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/VariableTextLin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DataTypeDiff.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html diff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DataTypeDiffBuilder.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html diff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DataTypeDiffInput.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html diff
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DiffLines.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html diff 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DiffLines.java	DONE	orig_src Ghidra Features Base src main java ghidra app util html diff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/html/diff/DiffLinesValidator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util html diff 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/importer/AutoImporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util importer 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/importer/CsHintLoadSpecChooser.java	TODO	orig_src Ghidra Features Base src main java ghidra app util importer 
