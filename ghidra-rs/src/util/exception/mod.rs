@@ -1299,6 +1299,82 @@ mod invalid_name_exception_tests {
     }
 }
 
+/// Exception thrown when a method tries to give something a name and that name is already used.
+///
+/// Port of `ghidra.util.exception.DuplicateNameException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct DuplicateNameException(pub String);
+
+impl DuplicateNameException {
+    pub const DEFAULT_MESSAGE: &'static str = "That name is already in use.";
+
+    /// Creates a `DuplicateNameException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates a `DuplicateNameException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for DuplicateNameException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod duplicate_name_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = DuplicateNameException::default();
+        assert_eq!(e.to_string(), DuplicateNameException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(DuplicateNameException::default(), DuplicateNameException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = DuplicateNameException::with_message("variable 'x' already exists");
+        assert_eq!(e.to_string(), "variable 'x' already exists");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(DuplicateNameException::new(), DuplicateNameException::new());
+        assert_eq!(
+            DuplicateNameException::with_message("msg"),
+            DuplicateNameException::with_message("msg")
+        );
+        assert_ne!(DuplicateNameException::new(), DuplicateNameException::with_message("custom"));
+        assert_ne!(
+            DuplicateNameException::with_message("a"),
+            DuplicateNameException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = DuplicateNameException::with_message("name 'foo' is already in use");
+        assert_eq!(format!("{}", e), "name 'foo' is already in use");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &DuplicateNameException::new();
+        assert_eq!(e.to_string(), DuplicateNameException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+}
+
 /// Thrown during development when a feature or method is not yet implemented.
 ///
 /// This is a development-time exception and should not appear in released code.
