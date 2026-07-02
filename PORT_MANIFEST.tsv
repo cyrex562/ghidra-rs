@@ -12025,7 +12025,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/graphs/DefaultVisualG
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/graphs/FilteringVisualGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph graphs 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/graphs/GroupingVisualGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph graphs 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/graphs/JungDirectedVisualGraph.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph graphs 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/AbstractAnimator.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph job 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/AbstractAnimator.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph job 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/AbstractAnimatorJob.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph job 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/AbstractGraphTransitionJob.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph job 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/job/AbstractGraphVisibilityTransitionJob.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph job 
