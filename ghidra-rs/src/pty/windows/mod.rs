@@ -1,4 +1,5 @@
 pub mod con_pty_endpoint;
+pub mod con_pty_parent;
 pub mod handle;
 pub mod handle_input_stream;
 pub mod handle_output_stream;
@@ -8,6 +9,7 @@ pub mod pipe;
 pub mod pseudo_console_handle;
 
 pub use con_pty_endpoint::ConPtyEndpoint;
+pub use con_pty_parent::ConPtyParent;
 pub use handle::Handle;
 pub use handle::RawHandle;
 pub use handle_input_stream::HandleInputStream;
