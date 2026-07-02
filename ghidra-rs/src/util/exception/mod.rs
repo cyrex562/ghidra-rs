@@ -1653,6 +1653,88 @@ mod invalid_input_exception_tests {
     }
 }
 
+/// Exception thrown if there is no value at a requested index.
+///
+/// Port of `ghidra.util.exception.NoValueException`.
+#[derive(Error, Debug, PartialEq)]
+#[error("{0}")]
+pub struct NoValueException(pub String);
+
+impl NoValueException {
+    pub const DEFAULT_MESSAGE: &'static str = "There is no value for the given index.";
+
+    /// Creates a `NoValueException` with the default message.
+    pub fn new() -> Self {
+        Self(Self::DEFAULT_MESSAGE.to_string())
+    }
+
+    /// Creates a `NoValueException` with a custom message.
+    pub fn with_message(msg: impl Into<String>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for NoValueException {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod no_value_exception_tests {
+    use super::*;
+
+    #[test]
+    fn default_message() {
+        let e = NoValueException::default();
+        assert_eq!(e.to_string(), NoValueException::DEFAULT_MESSAGE);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        assert_eq!(NoValueException::default(), NoValueException::new());
+    }
+
+    #[test]
+    fn custom_message() {
+        let e = NoValueException::with_message("index 42 has no value");
+        assert_eq!(e.to_string(), "index 42 has no value");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(NoValueException::new(), NoValueException::new());
+        assert_eq!(
+            NoValueException::with_message("msg"),
+            NoValueException::with_message("msg")
+        );
+        assert_ne!(NoValueException::new(), NoValueException::with_message("custom"));
+        assert_ne!(
+            NoValueException::with_message("a"),
+            NoValueException::with_message("b")
+        );
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let e = NoValueException::with_message("position out of range");
+        assert_eq!(format!("{}", e), "position out of range");
+    }
+
+    #[test]
+    fn implements_std_error() {
+        let e: &dyn std::error::Error = &NoValueException::new();
+        assert_eq!(e.to_string(), NoValueException::DEFAULT_MESSAGE);
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn direct_construction() {
+        let e = NoValueException("direct message".to_string());
+        assert_eq!(e.to_string(), "direct message");
+    }
+}
+
 #[cfg(test)]
 mod closed_exception_tests {
     use super::*;
