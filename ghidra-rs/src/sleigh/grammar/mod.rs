@@ -1,5 +1,6 @@
 pub mod antlr_util;
 pub mod bailout_exception;
+pub mod base_recognizer_override;
 pub mod conditional_helper;
 pub mod expression_environment;
 pub mod fake_line_array_list_writer;
@@ -18,6 +19,9 @@ pub mod token_extractor;
 
 pub use antlr_util::{AntlrUtil, DebugStreamNode, DebugTreeNode};
 pub use bailout_exception::BailoutException;
+pub use base_recognizer_override::{
+    BaseRecognizerOverride, RecognitionException, RecognitionExceptionKind, RecognizerToken, EOF,
+};
 pub use conditional_helper::ConditionalHelper;
 pub use expression_environment::ExpressionEnvironment;
 pub use fake_line_array_list_writer::FakeLineArrayListWriter;
