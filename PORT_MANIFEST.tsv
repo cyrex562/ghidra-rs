@@ -3957,7 +3957,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoStructType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoTypeBridge.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoTypeDetector.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoTypeDetector.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoTypeFlag.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoUncommonType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang rtti types 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/AfterStructureRead.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang structmapping
