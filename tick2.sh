@@ -45,6 +45,8 @@ MANIFEST="PORT_MANIFEST.tsv"
 PARKED="PORT_PARKED.tsv"
 INTEGRATION="${INTEGRATION:-integration}"
 GH="${GH:-1}"
+PUSH="${PUSH:-1}"                       # 1 = auto-push integration to the remote after each batch
+PUSH_REMOTE="${PUSH_REMOTE:-origin}"    # branch is pushed as-is (fast-forward); never force-pushed
 
 # stop conditions (0 = disabled)
 TIME_BUDGET="${TIME_BUDGET:-0}"            # seconds of wall-clock
@@ -121,6 +123,17 @@ trap on_signal INT TERM
 
 finish() {
   git switch "$INTEGRATION" >/dev/null 2>&1 || true
+  # Auto-push this batch's merged work to the remote (fast-forward only; no PR workflow --
+  # integration goes straight to main once porting is complete). Best-effort: a push
+  # failure (e.g. SSH auth unavailable under cron, or origin diverged) is logged, never
+  # fatal to the run. The next batch's push carries the accumulated commits.
+  if [ "$PUSH" = "1" ]; then
+    if git push "$PUSH_REMOTE" "$INTEGRATION" >/dev/null 2>&1; then
+      echo "pushed:    $PUSH_REMOTE/$INTEGRATION up to date"
+    else
+      echo "push FAILED (non-fatal) -- run 'git push $PUSH_REMOTE $INTEGRATION' manually; check SSH auth if under cron"
+    fi
+  fi
   local done_n park_n
   done_n=$(grep -c $'\tDONE\t' "$MANIFEST" 2>/dev/null || true); done_n=${done_n:-0}
   park_n=$(sort -u "$PARKED" 2>/dev/null | grep -c . || true); park_n=${park_n:-0}
