@@ -152,6 +152,17 @@ def compute():
         except OSError:
             pass
     m["summaries"] = summary
+
+    # dependency-frontier snapshot (periodic, from dep_stats.json; too heavy per request)
+    dep = None
+    dsp = os.path.join(REPO, "dep_stats.json")
+    if os.path.exists(dsp):
+        try:
+            dep = json.load(open(dsp, encoding="utf-8"))
+            dep["_age_min"] = int((time.time() - os.path.getmtime(dsp)) / 60)
+        except (OSError, ValueError):
+            dep = None
+    m["dep"] = dep
     return m
 
 
@@ -196,6 +207,26 @@ def render(m):
 
     sums = "".join(f"<div class=sumline>{e(s)}</div>" for s in m["summaries"]) or "<div class=kv>none yet</div>"
 
+    # dependency frontier panel (from dep_stats.json snapshot)
+    dep_html = ""
+    dp = m.get("dep")
+    if dp:
+        rows = "".join(
+            f"<tr><td>{e(b)}</td><td class=num>{dp['buckets'][b]['nonUI']:,}</td>"
+            f"<td class=num>{dp['buckets'][b]['UI']:,}</td>"
+            f"<td class=num>{dp['buckets'][b]['nonUI']+dp['buckets'][b]['UI']:,}</td></tr>"
+            for b in dp["bucket_order"])
+        seam_pct = (100*dp['seam_done']/dp['seam_total']) if dp.get('seam_total') else 0
+        dep_html = f"""
+        <h2>Dependency frontier <span style='color:#6b7480;font-weight:400'>(snapshot {dp.get('_age_min','?')}m ago)</span></h2>
+        <div class=cards>
+          <div class=card><div class=big>{dp['nonui']:,}</div><div class=lbl>non-UI remaining</div></div>
+          <div class=card><div class=big>{dp['ui']:,}</div><div class=lbl>UI remaining</div></div>
+          <div class=card><div class=big>{dp['keystone_scc']:,}</div><div class=lbl>keystone SCC (cyclic cluster)</div></div>
+          <div class=card><div class=big>{dp['seam_done']}/{dp['seam_total']}</div><div class=lbl>seam traits done ({seam_pct:.0f}%)</div></div>
+        </div>
+        <table><tr><th>remaining deps</th><th class=num>non-UI</th><th class=num>UI</th><th class=num>total</th></tr>{rows}</table>"""
+
     return f"""<!doctype html><html><head><meta charset=utf-8>
 <meta http-equiv=refresh content=60>
 <title>ghidra-rs porting status</title>
@@ -226,6 +257,7 @@ code{{background:#1b212b;padding:1px 5px;border-radius:4px;font-size:12px}}
 {bar}
 {run_html}
 {cards}
+{dep_html}
 <h2>Progress by module</h2>
 <table><tr><th>module</th><th class=num>done</th><th class=num>total</th><th>progress</th><th class=num>%</th></tr>{mod_rows}</table>
 <h2>Recent ports</h2>
