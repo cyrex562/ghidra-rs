@@ -106,16 +106,19 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
     if git merge --no-ff "$branch" -m "merge seam: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
       git branch -D "$branch" >/dev/null 2>&1||true
       sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${seampath//\//\\/}\)$/s//DONE\1/" "$SEAM"
+      git add "$SEAM" >/dev/null 2>&1; git commit -q -m "seam: mark $class DONE" >/dev/null 2>&1||true
       ported=$((ported+1)); log "OK seam: $class (trait) merged"
     else
       git merge --abort >/dev/null 2>&1||true; git reset --hard >/dev/null 2>&1||true
       sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${seampath//\//\\/}\)\$#PARK\1#" "$SEAM"
+      git add "$SEAM" >/dev/null 2>&1; git commit -q -m "seam: park $class" >/dev/null 2>&1||true
       parked=$((parked+1)); log "PARK seam: $class (post-merge build failed)"
     fi
   else
     git add -A>/dev/null 2>&1||true; git commit -q -m "WIP seam park: $class" >/dev/null 2>&1||true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${seampath//\//\\/}\)\$#PARK\1#" "$SEAM"
+    git add "$SEAM" >/dev/null 2>&1; git commit -q -m "seam: park $class" >/dev/null 2>&1||true
     parked=$((parked+1)); log "PARK seam: $class (status=$status / build red). log: $log"
   fi
 done
