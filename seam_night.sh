@@ -38,17 +38,29 @@ git pull --ff-only >/dev/null 2>&1 || true
 log "seam preflight: cargo build --lib"
 timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>/dev/null || { log "integration not green -- abort"; exit 1; }
 
-ported=0; parked=0
+ported=0; parked=0; reconciled=0
 seam_done_before=$(grep -cP '^DONE\t' "$SEAM" 2>/dev/null || true)
 log "seam start: MODEL=$MODEL SEAM_MAX=$SEAM_MAX (seam done so far: ${seam_done_before:-0})"
 
 for ((i=1;i<=SEAM_MAX;i++)); do
-  next=$(awk -F'\t' '$1=="TODO"{print $6; exit}' "$SEAM")
+  # pick the TODO seam interface with the FEWEST remaining unported deps (col4) -> fewest stubs
+  next=$(awk -F'\t' '$1=="TODO"{print $4"\t"$6}' "$SEAM" | sort -n -k1,1 | head -1 | cut -f2)
   [ -z "$next" ] && { log "no TODO seam classes left."; break; }
   seampath="$next"; srcpath="orig_src/$next"; class=$(basename "$next" .java)
   hash=$(printf '%s' "$srcpath" | cksum | cut -d' ' -f1); branch="seam/${class}-${hash}"
   log="$LOG_DIR/seam.${class}.${hash}.$(date +%s).log"; jlog="${log%.log}.json"
   module=$("$PY" scripts/portlib.py module "${srcpath#orig_src/}" 2>/dev/null)
+
+  # reconcile-skip: if a Rust impl already exists for this interface, it is effectively ported
+  # (some keystones were ported early as concrete types). Mark DONE without an LLM turn.
+  if grep -rqE "\b(pub +)?(struct|trait|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
+    esc=$(printf '%s' "$srcpath" | sed 's/[.[\*^$]/\\&/g')
+    sed -i "s#^${esc}\tTODO\t#${esc}\tDONE\t#" "$MANIFEST"
+    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${seampath//\//\\/}\)\$#DONE\1#" "$SEAM"
+    git add "$MANIFEST" "$SEAM" >/dev/null 2>&1
+    git commit -q -m "seam reconcile: $class already ported -> DONE" >/dev/null 2>&1 || true
+    reconciled=$((reconciled+1)); log "reconciled (already ported): $class -> DONE (no LLM turn)"; ((i--)); continue
+  fi
   log "seam ${i}/${SEAM_MAX}: $class -> ${module}/ (trait)"
 
   git checkout -f "$INTEGRATION" >/dev/null 2>&1
@@ -109,10 +121,10 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
 done
 
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || true
-if [ "$PUSH" = "1" ] && [ "$ported" -gt 0 ]; then
+if [ "$PUSH" = "1" ] && [ $((ported+reconciled)) -gt 0 ]; then
   git push "$PUSH_REMOTE" "$INTEGRATION" >/dev/null 2>&1 && log "pushed $PUSH_REMOTE/$INTEGRATION" || log "push FAILED (non-fatal; check SSH under cron)"
 fi
 "$PY" scripts/dep_stats.py >/dev/null 2>&1 || true
-line="[$(date '+%Y-%m-%d %H:%M')] seam run: +${ported} traits, ${parked} parked  (DONE $(grep -c $'\tDONE\t' "$MANIFEST"))"
+line="[$(date '+%Y-%m-%d %H:%M')] seam run: +${ported} traits, ${reconciled} reconciled, ${parked} parked  (DONE $(grep -c $'\tDONE\t' "$MANIFEST"))"
 echo "$line" | tee -a "$LOG_DIR/port-summary.log"
 command -v notify-send >/dev/null 2>&1 && notify-send "ghidra-rs seam" "$line" 2>/dev/null || true
