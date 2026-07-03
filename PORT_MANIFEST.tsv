@@ -11620,7 +11620,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterator.ja
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterators.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/WindowUtilities.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/WrappingPeekableIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ZipArchiveBuilder.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ZipArchiveBuilder.java	DONE	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/action/BeginningOfLineAction.java	TODO	orig_src Ghidra Framework Generic src main java generic util action 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/action/DeleteToEndOfWordAction.java	TODO	orig_src Ghidra Framework Generic src main java generic util action 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/action/DeleteToStartOfWordAction.java	TODO	orig_src Ghidra Framework Generic src main java generic util action 
