@@ -31,6 +31,9 @@ thiserror = "1.0"
 flate2 = "1.0"
 zip = "2.2"                 # ArchiveBuilder / JarEntryRootNode (jar/zip read+write)
 pulldown-cmark = "0.12"     # MarkdownToHtml (CommonMark -> HTML)
+rsa = { version = "0.9", features = ["sha1", "sha2"] }   # SSH RSA signing / keygen
+dsa = "0.6"                 # SSHSignatureCallback DSA signing
+ssh-key = { version = "0.6", features = ["rsa", "dsa", "std"] }  # OpenSSH/PEM key format
 tokio = { version = "1.37", features = ["full"] }
 regex = "1.10"
 libc = "0.2"

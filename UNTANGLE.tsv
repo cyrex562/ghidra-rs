@@ -1,12 +1,12 @@
 status	category	class	module	path	blocker
 TODO	needs-prereq	IgnoreUnfinishedStatement	generic	Ghidra/Framework/Generic/src/main/java/generic/test/rule/IgnoreUnfinishedStatement.java	PARKED** — JUnit TestRule scaffolding should not be ported per todo.md; native R
-TODO	needs-dep	GhidraSSLServerSocket	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/GhidraSSLServerSocket.java	PARKED This class requires TLS/SSL support which needs an external crate (rustls
+DEFER	needs-dep	GhidraSSLServerSocket	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/GhidraSSLServerSocket.java	PARKED This class requires TLS/SSL support which needs an external crate (rustls
 TODO	needs-dep	GhidraGraphCollapser	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/GhidraGraphCollapser.java	PARKED — depends on the third-party jungrapht-visualization `VisualGraphCollapse
 TODO	needs-dep	JgtTidierTreeLayoutAlgorithm	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/layout/JgtTidierTreeLayoutAlgorithm.java	PARKED - External Java library dependencies (jungrapht, jgrapht) not ported to R
-TODO	needs-dep	SSHSignatureCallback	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SSHSignatureCallback.java	PARKED — sign() needs real RSA/DSA+SHA1 signing (BouncyCastle) but no RSA/DSA cr
+DONE	needs-dep	SSHSignatureCallback	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/SSHSignatureCallback.java	PARKED — sign() needs real RSA/DSA+SHA1 signing (BouncyCastle) but no RSA/DSA cr
 DONE	needs-dep	ArchiveBuilder	generic	Ghidra/Framework/Generic/src/main/java/generic/util/ArchiveBuilder.java	PARKED - ArchiveBuilder requires proper zip file writing capability (ZipEntry/Zi
 DONE	needs-dep	JarEntryRootNode	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.java	PARKED — JarEntryRootNode requires real jar/zip file parsing (Java's `java.util.
-TODO	needs-dep	SSHKeyUtil	server	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/server/remote/SSHKeyUtil.java	PARKED — SSHKeyUtil requires RSA keypair generation (java.security.KeyPairGenera
+DONE	needs-dep	SSHKeyUtil	server	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/server/remote/SSHKeyUtil.java	PARKED — SSHKeyUtil requires RSA keypair generation (java.security.KeyPairGenera
 DONE	needs-dep	MarkdownToHtml	util	GhidraBuild/MarkdownSupport/src/main/java/ghidra/markdown/MarkdownToHtml.java	PARKED — MarkdownToHtml.java requires a CommonMark markdown parser/renderer (org
 DONE	unknown	GhidraSwinglessTimer	generic	Ghidra/Framework/Generic/src/main/java/generic/timer/GhidraSwinglessTimer.java	no recorded reason
 TODO	ui	Adapters	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/model/Adapters.java	swing/awt
