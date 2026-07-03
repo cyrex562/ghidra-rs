@@ -9,6 +9,7 @@ pub mod enum_value_partitioner;
 pub mod illegal_rename_exception;
 pub mod leb128;
 pub mod packing_type;
+pub mod playable;
 pub mod resource;
 pub mod string_layout_enum;
 pub mod isf;
