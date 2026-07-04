@@ -40,7 +40,7 @@ TODO	interface	1201	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 TODO	interface	1201	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DomainFileBasedDataTypeManager.java
 DONE	interface	1201	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileBasedDataTypeManager.java
 DONE	interface	1200	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileArchiveBasedDataTypeManager.java
-TODO	interface	1200	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/UnionInternal.java
+DONE	interface	1200	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/UnionInternal.java
 TODO	interface	1199	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ICategory.java
 DONE	interface	1199	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ProjectArchiveBasedDataTypeManager.java
 TODO	interface	1199	18	program	Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/IntegerDataTypeTest.java
