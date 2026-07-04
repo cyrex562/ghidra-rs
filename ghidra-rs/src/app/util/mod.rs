@@ -15,6 +15,7 @@ pub mod pcode_inject;
 pub mod pdb;
 pub mod query;
 pub mod permissions;
+pub mod ref_repeat_comment;
 pub mod viewer;
 pub mod xml;
 pub mod processor_info;
