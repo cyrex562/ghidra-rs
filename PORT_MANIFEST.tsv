@@ -14343,7 +14343,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pc
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/VarnodeBank.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/VarnodeTranslator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/XmlEncode.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/Relocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/Relocation.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationHandler.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationResult.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
