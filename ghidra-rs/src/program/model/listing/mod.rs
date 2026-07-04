@@ -1,4 +1,5 @@
 pub mod auto_parameter_type;
+pub mod bookmark;
 pub mod circular_dependency_exception;
 pub mod context_change_exception;
 pub mod domain_object_change_set;
@@ -12,6 +13,7 @@ pub mod symbol_change_set;
 pub mod variable_size_exception;
 
 pub use auto_parameter_type::AutoParameterType;
+pub use bookmark::Bookmark;
 pub use circular_dependency_exception::CircularDependencyException;
 pub use context_change_exception::ContextChangeException;
 pub use domain_object_change_set::DomainObjectChangeSet;
