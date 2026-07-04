@@ -3209,7 +3209,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/Script
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptSelectionDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/script/ScriptsModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/AbstractSearchTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/ListingDisplaySearchAddressIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/ListingDisplaySearchAddressIterator.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/ListingDisplaySearchTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/ListingDisplaySearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/searchtext/SearchOptions.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core searchtext 
