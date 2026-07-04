@@ -5245,7 +5245,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MarkerLocation.j
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MemoryBlockDiff.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MemoryDiff.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MemoryRangeDiff.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MultiAddressIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MultiAddressIterator.java	DONE	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MultiAddressRangeIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/MultiCodeUnitIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramConflictException.java	DONE	orig_src Ghidra Features Base src main java ghidra program util
