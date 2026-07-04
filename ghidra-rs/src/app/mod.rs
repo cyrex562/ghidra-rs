@@ -4,4 +4,5 @@ pub mod emulator;
 pub mod merge;
 pub mod plugin;
 pub mod services;
+pub mod tablechooser;
 pub mod util;
