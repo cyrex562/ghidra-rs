@@ -2,6 +2,7 @@ pub mod analysis;
 pub mod bookmark;
 pub mod byteviewer;
 pub mod checksums;
+pub mod clear;
 pub mod compositeeditor;
 pub mod console;
 pub mod datamgr;
