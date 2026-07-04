@@ -35,6 +35,10 @@ mod tests {
         fn get_language_id(&self) -> &str {
             "x86:LE:64:default"
         }
+
+        fn get_address_factory(&self) -> Option<std::sync::Arc<dyn crate::program::model::address::AddressFactory>> {
+            None
+        }
     }
 
     struct MockCoordinatedListingPanelListener {

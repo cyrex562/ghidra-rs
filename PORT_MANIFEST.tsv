@@ -6887,7 +6887,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/b
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderImageInfo.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/cdex/CDexCodeItem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android cdex 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/cdex/CDexConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android cdex 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/cdex/CDexConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android cdex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/cdex/CDexHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android cdex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/cdex/FeatureFlags.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android cdex 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/DexHeaderFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android dex 
