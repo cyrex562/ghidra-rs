@@ -4768,7 +4768,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/Address
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotatedMouseHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotatedStringFieldMouseHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotatedStringHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/Annotation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/Annotation.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotationCommentPart.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotationException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/ArrayElementFieldLocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
