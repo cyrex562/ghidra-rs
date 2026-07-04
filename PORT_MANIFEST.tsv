@@ -13682,7 +13682,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/NamespaceSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/OldVariableStorageDBAdapterV0V1.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/OldVariableStorageManagerDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/OverlappingNamespaceException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/OverlappingNamespaceException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDatabaseAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDatabaseAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
