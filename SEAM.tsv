@@ -16,7 +16,7 @@ TODO	interface	1240	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 TODO	interface	1240	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Dynamic.java
 TODO	interface	1235	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Array.java
 TODO	interface	1233	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Enum.java
-TODO	interface	1231	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SourceArchive.java
+DONE	interface	1231	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SourceArchive.java
 TODO	interface	1224	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Union.java
 TODO	interface	1222	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Category.java
 TODO	interface	1221	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TypeDefSettingsDefinition.java
