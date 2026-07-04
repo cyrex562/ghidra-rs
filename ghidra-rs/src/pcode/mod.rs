@@ -8,4 +8,4 @@ pub mod opbehavior;
 pub mod r#struct;
 pub mod utils;
 
-pub use load_image::LoadImage;
+pub use load_image::{LoadImage, LoadImageFunc};

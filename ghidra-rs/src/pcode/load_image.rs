@@ -1,5 +1,16 @@
 use crate::program::model::address::Address;
 
+/// Metadata for a function within a load image.
+///
+/// Corresponds to `ghidra.pcode.loadimage.LoadImageFunc`.
+#[deprecated(since = "12.1", note = "for removal")]
+pub struct LoadImageFunc {
+    /// Start address of the function.
+    pub address: Address,
+    /// Name of the function.
+    pub name: String,
+}
+
 /// API for accessing a binary load image using different methods behind the scenes.
 ///
 /// Corresponds to `ghidra.pcode.loadimage.LoadImage`.
@@ -105,5 +116,51 @@ mod tests {
         assert_eq!(buf[1..3], [0x11, 0x22]);
         assert_eq!(buf[3..], [0, 0, 0, 0, 0, 0, 0]);
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn load_image_func_creation() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
+        let addr = Address::new(ram, 0x1000);
+        let func = LoadImageFunc {
+            address: addr.clone(),
+            name: "main".to_string(),
+        };
+
+        assert_eq!(func.address, addr);
+        assert_eq!(func.name, "main");
+    }
+
+    #[test]
+    fn load_image_func_with_various_names() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
+        let addr = Address::new(ram, 0x2000);
+        let func = LoadImageFunc {
+            address: addr.clone(),
+            name: "entry_point".to_string(),
+        };
+
+        assert_eq!(func.address, addr);
+        assert_eq!(func.name, "entry_point");
+    }
+
+    #[test]
+    fn load_image_func_with_different_addresses() {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
+        let addr1 = Address::new(ram.clone(), 0x1000);
+        let addr2 = Address::new(ram, 0x2000);
+
+        let func1 = LoadImageFunc {
+            address: addr1.clone(),
+            name: "func1".to_string(),
+        };
+        let func2 = LoadImageFunc {
+            address: addr2.clone(),
+            name: "func2".to_string(),
+        };
+
+        assert_eq!(func1.address, addr1);
+        assert_eq!(func2.address, addr2);
+        assert_ne!(func1.address, func2.address);
     }
 }
