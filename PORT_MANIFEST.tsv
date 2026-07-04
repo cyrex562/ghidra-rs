@@ -4929,7 +4929,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/AddressI
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/DataOpenCloseManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/FieldNavigator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/InMemoryOpenCloseManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/OpenCloseManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/OpenCloseManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/PersistentOpenCloseManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/ProgramOpenCloseManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/ScrollpaneAlignedHorizontalLayout.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
