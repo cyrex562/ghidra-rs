@@ -11251,7 +11251,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighProgra
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighUtils.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SuspendedPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ValueLocation.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/loadimage/LoadImage.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode loadimage 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/loadimage/LoadImage.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode loadimage
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/loadimage/LoadImageFunc.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode loadimage 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/AbstractMemoryState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/DefaultMemoryState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode memstate 
