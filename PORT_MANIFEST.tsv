@@ -3274,7 +3274,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/String
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringEventsTask.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core string 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringModel.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core string 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core string 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringTableOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core string 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringTableOptions.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core string 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringTablePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core string 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringTableProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core string 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/StringsAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core string 
