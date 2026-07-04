@@ -11203,7 +11203,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateDi
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateExecutionState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateInstructionStateModifier.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateMemoryStateBuffer.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/InstructionDecodeException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/InstructionDecodeException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/UnimplementedCallOtherException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/UnimplementedInstructionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/callother/OpBehaviorOther.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emulate callother 
