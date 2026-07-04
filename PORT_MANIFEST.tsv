@@ -4202,7 +4202,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf/O
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf/OmfRecordFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf/OmfRecordTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf/OmfSegmentHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf/OmfSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf/OmfSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf/OmfSymbolRecord.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf166/Omf166DepList.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf166 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/omf/omf166/Omf166RecordTypes.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format omf omf166 
