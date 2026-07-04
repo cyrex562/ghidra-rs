@@ -19,6 +19,7 @@ pub mod interpreter;
 pub mod osgi;
 pub mod overview;
 pub mod progmgr;
+pub mod programtree;
 pub mod references;
 pub mod script;
 pub mod searchtext;

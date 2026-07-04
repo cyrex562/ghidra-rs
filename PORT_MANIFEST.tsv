@@ -3132,7 +3132,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/R
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/TreeDragSrcAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core programtree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/TreeListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core programtree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/TreeViewProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core programtree 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/ViewChangeListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core programtree 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/ViewChangeListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core programtree
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/ViewManagerComponentProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core programtree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/ViewPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core programtree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/programtree/ViewProviderService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core programtree 
