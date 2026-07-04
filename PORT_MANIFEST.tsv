@@ -11477,7 +11477,7 @@ orig_src/Ghidra/Framework/FileSystem/src/test/java/ghidra/util/PropertyFileTest.
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/DominantPair.java	TODO	orig_src Ghidra Framework Generic src main java generic 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/FilteredIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/CRC64.java	DONE	orig_src Ghidra Framework Generic src main java generic algorithms 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/Lcs.java	TODO	orig_src Ghidra Framework Generic src main java generic algorithms 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/Lcs.java	DONE	orig_src Ghidra Framework Generic src main java generic algorithms 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/ReducingLcs.java	TODO	orig_src Ghidra Framework Generic src main java generic algorithms 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/ReducingListBasedLcs.java	TODO	orig_src Ghidra Framework Generic src main java generic algorithms 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/StringReducingLcs.java	TODO	orig_src Ghidra Framework Generic src main java generic algorithms 
