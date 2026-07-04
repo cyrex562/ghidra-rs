@@ -60,3 +60,8 @@ pub trait Union {}
 /// [`Bookmark`](crate::program::model::listing::bookmark::Bookmark)
 /// before the real interface is ported.
 pub trait BookmarkType {}
+
+/// Placeholder for `ghidra.program.model.listing.Variable`, referenced by
+/// [`Parameter`](crate::program::model::listing::parameter::Parameter)
+/// before the real interface is ported.
+pub trait Variable {}
