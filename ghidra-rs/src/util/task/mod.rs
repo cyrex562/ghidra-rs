@@ -1,5 +1,9 @@
 use crate::util::exception::CancelledException;
 
+pub mod monitored_runnable;
+
+pub use monitored_runnable::MonitoredRunnable;
+
 /// Listener notified when the busy state of a component changes.
 pub trait BusyListener: Send + Sync {
     fn set_busy(&self, busy: bool);

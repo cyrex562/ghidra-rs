@@ -11870,7 +11870,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ValueStoragePage
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/BusyListener.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util task 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/CancelOnlyWrappingTaskMonitor.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util task 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/ConsoleTaskMonitor.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util task 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/MonitoredRunnable.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util task 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/MonitoredRunnable.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util task 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/PreserveStateWrappingTaskMonitor.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util task 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/TaskMonitorAdapter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util task 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/task/TaskMonitorSplitter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util task 
