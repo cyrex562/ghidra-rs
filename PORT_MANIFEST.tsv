@@ -9069,7 +9069,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ref/ExtStackReference.
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ref/SarifEquateRefWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export ref 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ref/SarifEquateWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export ref 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ref/SarifReferenceWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export ref 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/registers/ExtRegisterValue.java	TODO	orig_src Ghidra Features Sarif src main java sarif export registers 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/registers/ExtRegisterValue.java	DONE	orig_src Ghidra Features Sarif src main java sarif export registers
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/registers/SarifRegisterValueWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export registers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/relocs/ExtRelocation.java	DONE	orig_src Ghidra Features Sarif src main java sarif export relocs
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/relocs/SarifRelocationWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export relocs 
