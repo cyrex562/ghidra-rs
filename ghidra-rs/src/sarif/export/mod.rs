@@ -1,3 +1,4 @@
+pub mod abstract_ext_writer;
 pub mod bkmk;
 pub mod code;
 pub mod ep;
@@ -6,6 +7,7 @@ pub mod registers;
 pub mod relocs;
 pub mod trees;
 
+pub use abstract_ext_writer::{AbstractExtWriter, new_ext_writer_state};
 pub use bkmk::ExtBookmark;
 pub use code::ExtCodeBlock;
 pub use ep::ExtEntryPoint;
