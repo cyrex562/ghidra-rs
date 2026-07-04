@@ -5310,7 +5310,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/MinLengthCharSeque
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/MultiByteCharMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra util ascii 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/ascii/Sequence.java	TODO	orig_src Ghidra Features Base src main java ghidra util ascii 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bean/field/AnnotatedTextFieldElement.java	TODO	orig_src Ghidra Features Base src main java ghidra util bean field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AddressMatch.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AddressMatch.java	DONE	orig_src Ghidra Features Base src main java ghidra util bytesearch
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AddressableByteSequence.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/AlignRule.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/BulkPatternSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra util bytesearch 
