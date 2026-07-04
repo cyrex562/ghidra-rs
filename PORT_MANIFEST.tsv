@@ -53,7 +53,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/ActionS
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoMapSpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoReadMemorySpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/AutoReadMemorySpecFactory.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/GoToInput.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/GoToInput.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/InstanceUtils.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTracker.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
