@@ -4889,7 +4889,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/format/action
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/format/actions/ResetAllFormatsAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer format actions 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/format/actions/ResetFormatAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer format actions 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/format/actions/SetSpacerTextAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer format actions 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/AddressSetDisplayListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/AddressSetDisplayListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/EmptyListingModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingBackgroundColorModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingHoverProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer listingpanel 
