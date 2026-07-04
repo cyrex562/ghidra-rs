@@ -9,3 +9,4 @@ pub mod util;
 pub mod vdex;
 pub mod verifier;
 pub mod versions;
+pub mod wdex;
