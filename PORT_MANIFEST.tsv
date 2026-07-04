@@ -6793,7 +6793,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/app/util/opinion/Macho
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/analyzers/FileFormatAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file analyzers 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/analyzers/FileFormatAnalyzerFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file analyzers 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/cliwrapper/AbstractCliToolWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file cliwrapper 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/cliwrapper/ArchiverCliToolWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file cliwrapper 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/cliwrapper/ArchiverCliToolWrapper.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file cliwrapper
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/cliwrapper/CliToolWrapper.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file cliwrapper
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/cliwrapper/SemVer.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file cliwrapper
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/cliwrapper/StreamDecompressorCliToolWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file cliwrapper 
