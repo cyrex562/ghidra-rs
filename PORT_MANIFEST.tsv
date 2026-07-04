@@ -2225,7 +2225,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/MergeManager.java	T
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/MergeManagerPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/MergeManagerProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/MergeProgressPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/MergeResolver.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/MergeResolver.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/PhaseProgressPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/ProgramMergeManagerPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/ProgramMultiUserMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
