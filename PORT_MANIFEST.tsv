@@ -2229,7 +2229,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/MergeResolver.java	
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/PhaseProgressPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/ProgramMergeManagerPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/ProgramMultiUserMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/ProgramSpecificAddressTranslator.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/ProgramSpecificAddressTranslator.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/datatypes/CategoryConflictPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge datatypes 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/datatypes/CategoryMergePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge datatypes 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/datatypes/DataTypeMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge datatypes 
