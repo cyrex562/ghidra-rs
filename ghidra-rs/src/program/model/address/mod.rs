@@ -1,5 +1,6 @@
 pub mod address_collectors;
 pub mod address_format_exception;
+pub mod address_iterator_test_stub;
 pub mod address_map_impl;
 pub mod address_object_map;
 pub mod address_out_of_bounds_exception;
@@ -26,6 +27,7 @@ use std::fmt;
 use std::sync::Arc;
 
 pub use address_format_exception::AddressFormatException;
+pub use address_iterator_test_stub::AddressIteratorTestStub;
 pub use address_map_impl::AddressMapImpl;
 pub use address_object_map::AddressObjectMap;
 pub use address_out_of_bounds_exception::AddressOutOfBoundsException;
