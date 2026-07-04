@@ -461,7 +461,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/pc
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/pcode/UniqueRow.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui pcode 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/platform/DebuggerPlatformPlugin.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui platform 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/platform/DebuggerSelectPlatformOfferDialog.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui platform 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/register/AvailableRegisterRow.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui register 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/register/AvailableRegisterRow.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui register 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/register/DebuggerAvailableRegistersActionContext.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui register 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/register/DebuggerAvailableRegistersDialog.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui register 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/register/DebuggerRegisterActionContext.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui register 
