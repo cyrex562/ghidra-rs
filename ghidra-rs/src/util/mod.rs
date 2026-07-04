@@ -64,6 +64,7 @@ pub mod status_listener;
 pub mod fixup;
 pub mod stream_utils;
 pub mod markdown;
+pub mod monitored_input_stream;
 
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
@@ -119,3 +120,4 @@ pub use stream_utils::StreamUtils;
 pub use charset::{CharsetInfo, UnicodeScript};
 pub use fixup::Fixup;
 pub use markdown::MarkdownToHtml;
+pub use monitored_input_stream::MonitoredInputStream;
