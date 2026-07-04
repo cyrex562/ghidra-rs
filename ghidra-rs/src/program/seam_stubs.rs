@@ -50,3 +50,8 @@ pub trait Structure {}
 /// [`StructureInternal`](crate::program::model::data::structure_internal::StructureInternal)
 /// before the real interface is ported.
 pub trait CompositeInternal {}
+
+/// Placeholder for `ghidra.program.model.data.Union`, referenced by
+/// [`UnionInternal`](crate::program::model::data::union_internal::UnionInternal)
+/// before the real interface is ported.
+pub trait Union {}
