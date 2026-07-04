@@ -10264,7 +10264,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpan
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTestModel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTestPanel.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTestState.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTester.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/conditiontestpanel/ConditionTester.java	DONE	orig_src Ghidra Framework Docking src main java docking widgets conditiontestpanel 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/AbstractNumberInputDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/BigIntegerNumberInputDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/widgets/dialogs/InputDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking widgets dialogs 
