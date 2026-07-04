@@ -7,3 +7,8 @@
 /// [`FileBasedDataTypeManager`](crate::program::model::data::file_based_data_type_manager::FileBasedDataTypeManager)
 /// before the real interface is ported.
 pub trait DataTypeManager {}
+
+/// Placeholder for `ghidra.program.model.data.DataType`, referenced by
+/// [`DataOrganization`](crate::program::model::data::data_organization::DataOrganization)
+/// before the real interface is ported.
+pub trait DataType {}
