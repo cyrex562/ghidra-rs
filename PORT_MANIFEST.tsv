@@ -2430,7 +2430,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clear/ClearCm
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clear/ClearDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core clear 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clear/ClearFlowAndRepairCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core clear 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clear/ClearFlowDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core clear 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clear/ClearOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core clear 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clear/ClearOptions.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core clear
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clear/ClearPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core clear 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clipboard/ClipboardPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core clipboard 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/clipboard/CodeBrowserClipboardProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core clipboard 
