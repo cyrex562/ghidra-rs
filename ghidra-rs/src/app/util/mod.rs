@@ -1,3 +1,4 @@
+pub mod address_factory_service;
 pub mod bin;
 pub mod clipboard_type;
 pub mod datatype;
