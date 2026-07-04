@@ -13941,7 +13941,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/IntegerDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/InternalDataTypeComponent.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/InvalidDataTypeException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/InvalidatedListener.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/InvalidatedListener.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/JPEGDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/LongDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/LongDoubleComplexDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
