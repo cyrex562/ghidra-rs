@@ -3493,7 +3493,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchFunctio
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchSet.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchedData.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/SubroutineMatch.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/SubroutineMatch.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin match
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/SubroutineMatchSet.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/processors/generic/PcodeFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin processors generic 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/prototype/analysis/AggressiveInstructionFinderAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin prototype analysis 
