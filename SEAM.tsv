@@ -8,7 +8,7 @@ TODO	interface	1338	58	program	Ghidra/Framework/SoftwareModeling/src/main/java/g
 DONE	interface	1328	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetView.java
 DONE	interface	1315	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSpace.java
 TODO	interface	1297	9	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Structure.java
-TODO	interface	1270	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataOrganization.java
+DONE	interface	1270	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataOrganization.java
 TODO	interface	1264	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeComponent.java
 TODO	interface	1251	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Pointer.java
 TODO	interface	1241	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TypeDef.java
