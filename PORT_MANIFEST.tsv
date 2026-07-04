@@ -83,7 +83,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/Region
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/SectionMapProposal.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api modules 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/platform/DebuggerPlatformMapper.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api platform 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/platform/DisassemblyResult.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api platform 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/CloseableTaskMonitor.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api progress 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/CloseableTaskMonitor.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api progress
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/MonitorReceiver.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api progress 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/ProgressListener.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api progress 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/target/ActionName.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api target 
