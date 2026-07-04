@@ -11986,7 +11986,7 @@ orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/prop/ObjectValueMapT
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/timer/GTimerCacheTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra util timer 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/util/timer/WatchdogTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra util timer 
 orig_src/Ghidra/Framework/Generic/src/test/java/ghidra/xml/ThreadedXmlParserTest.java	TODO	orig_src Ghidra Framework Generic src test java ghidra xml 
-orig_src/Ghidra/Framework/Generic/src/test/java/util/CollectionUtilsTest.java	TODO	orig_src Ghidra Framework Generic src test java util 
+orig_src/Ghidra/Framework/Generic/src/test/java/util/CollectionUtilsTest.java	DONE	orig_src Ghidra Framework Generic src test java util 
 orig_src/Ghidra/Framework/Generic/src/test/java/util/HistoryListTest.java	TODO	orig_src Ghidra Framework Generic src test java util 
 orig_src/Ghidra/Framework/Generic/src/test/java/utilities/util/FileUtilitiesTest.java	TODO	orig_src Ghidra Framework Generic src test java utilities util 
 orig_src/Ghidra/Framework/Generic/src/test/java/utilities/util/reflection/ReflectionUtilitiesTest.java	TODO	orig_src Ghidra Framework Generic src test java utilities util reflection 

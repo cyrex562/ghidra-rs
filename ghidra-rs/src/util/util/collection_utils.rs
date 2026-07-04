@@ -211,6 +211,12 @@ mod tests {
         assert_eq!(list, vec![42]);
     }
 
+    #[test]
+    fn as_list_from_iterator() {
+        let list = CollectionUtils::as_list(vec![1, 2, 3].into_iter());
+        assert_eq!(list, vec![1, 2, 3]);
+    }
+
     // --- non_null ---
 
     #[test]
@@ -304,6 +310,16 @@ mod tests {
     fn combine_iterables_empty_input_yields_empty() {
         let combined: Vec<i32> = CollectionUtils::combine_iterables(vec![]).collect();
         assert!(combined.is_empty());
+    }
+
+    #[test]
+    fn combine_iterables_skips_an_empty_iterable_in_the_middle() {
+        let a: Box<dyn Iterator<Item = i32>> = Box::new(vec![1, 2].into_iter());
+        let b: Box<dyn Iterator<Item = i32>> = Box::new(vec![3].into_iter());
+        let empty: Box<dyn Iterator<Item = i32>> = Box::new(Vec::new().into_iter());
+        let d: Box<dyn Iterator<Item = i32>> = Box::new(vec![4].into_iter());
+        let combined: Vec<i32> = CollectionUtils::combine_iterables(vec![a, b, empty, d]).collect();
+        assert_eq!(combined, vec![1, 2, 3, 4]);
     }
 
     // --- combine_cancellable_iterables ---
