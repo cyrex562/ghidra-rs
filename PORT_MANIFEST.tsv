@@ -599,7 +599,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/servic
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/tracemgr/SaveTraceTask.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug service tracemgr 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/AbstractUnwoundFrame.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/AnalysisUnwoundFrame.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/DynamicMappingException.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/DynamicMappingException.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/EvaluationException.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/FakeUnwoundFrame.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/FrameStructureBuilder.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
