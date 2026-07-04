@@ -40,3 +40,13 @@ pub trait DomainFileBasedDataTypeManager:
     /// Gets the domain file backing this data type manager.
     fn get_domain_file(&self) -> Box<dyn DomainFile>;
 }
+
+/// Placeholder for `ghidra.program.model.data.Structure`, referenced by
+/// [`StructureInternal`](crate::program::model::data::structure_internal::StructureInternal)
+/// before the real interface is ported.
+pub trait Structure {}
+
+/// Placeholder for `ghidra.program.model.data.CompositeInternal`, referenced by
+/// [`StructureInternal`](crate::program::model::data::structure_internal::StructureInternal)
+/// before the real interface is ported.
+pub trait CompositeInternal {}
