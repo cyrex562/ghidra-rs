@@ -2954,7 +2954,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/EditLab
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core label 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core label 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryInputDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core label 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core label 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core label
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core label 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core label 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/label/LabelHistoryTask.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core label 

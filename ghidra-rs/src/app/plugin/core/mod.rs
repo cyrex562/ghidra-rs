@@ -17,6 +17,7 @@ pub mod go;
 pub mod graph;
 pub mod instruction_search;
 pub mod interpreter;
+pub mod label;
 pub mod osgi;
 pub mod overview;
 pub mod progmgr;
