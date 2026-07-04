@@ -9388,7 +9388,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/cor
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/correlator/program/VTAbstractReferenceProgramCorrelatorFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api correlator program 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/AddressCorrelatorDB.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/AssociationDatabaseManager.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/DeletedMatch.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/DeletedMatch.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/MarkupItemStorageDB.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/TableColumn.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/TableDescriptor.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
