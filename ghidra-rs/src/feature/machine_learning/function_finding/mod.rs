@@ -1,1 +1,2 @@
 pub mod function_start_alignment_row_object;
+pub mod similar_start_row_object;
