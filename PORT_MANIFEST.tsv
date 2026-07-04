@@ -13732,7 +13732,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/ad
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressFactory.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressFormatException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressIteratorAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressIteratorAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressMapImpl.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressObjectMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressOutOfBoundsException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address

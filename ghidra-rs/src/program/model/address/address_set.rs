@@ -259,7 +259,7 @@ impl AddressSetView for AddressSet {
         if addresses.is_empty() {
             Box::new(EmptyAddressIterator)
         } else {
-            Box::new(AddressIteratorAdapter::new(addresses))
+            Box::new(AddressIteratorAdapter::from_vec(addresses))
         }
     }
 
@@ -282,7 +282,7 @@ impl AddressSetView for AddressSet {
         if addresses.is_empty() {
             Box::new(EmptyAddressIterator)
         } else {
-            Box::new(AddressIteratorAdapter::new(addresses))
+            Box::new(AddressIteratorAdapter::from_vec(addresses))
         }
     }
 

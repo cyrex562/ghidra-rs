@@ -159,7 +159,7 @@ impl EquateTable for SimpleEquateTable {
     }
 
     fn equate_addresses(&self) -> Box<dyn AddressIterator> {
-        Box::new(AddressIteratorAdapter::new(self.referenced_addresses()))
+        Box::new(AddressIteratorAdapter::from_vec(self.referenced_addresses()))
     }
 
     fn equates_for_value(&self, value: i64) -> Vec<&SimpleEquate> {
@@ -179,7 +179,7 @@ impl EquateTable for SimpleEquateTable {
             .into_iter()
             .filter(|address| address >= start)
             .collect();
-        Box::new(AddressIteratorAdapter::new(addresses))
+        Box::new(AddressIteratorAdapter::from_vec(addresses))
     }
 
     fn equate_addresses_in(&self, set: &dyn AddressSetView) -> Box<dyn AddressIterator> {
@@ -188,7 +188,7 @@ impl EquateTable for SimpleEquateTable {
             .into_iter()
             .filter(|address| set.contains(address))
             .collect();
-        Box::new(AddressIteratorAdapter::new(addresses))
+        Box::new(AddressIteratorAdapter::from_vec(addresses))
     }
 }
 
