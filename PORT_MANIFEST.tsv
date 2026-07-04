@@ -10748,7 +10748,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/table/column/Default
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/table/column/GColumnRenderer.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util table column 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/task/BackgroundThreadTaskLauncher.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util task 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/task/BasicTaskMonitor.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util task 
-orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/task/CachingLoader.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util task 
+orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/task/CachingLoader.java	DONE	orig_src Ghidra Framework Docking src main java ghidra util task
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/task/CachingSwingWorker.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util task 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/task/ChompingBitsAnimationPanel.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util task 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/task/HourglassAnimationPanel.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util task 
