@@ -58,4 +58,4 @@ TODO	interface	991	53	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 TODO	interface	986	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/ProgramModule.java
 TODO	interface	980	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Parameter.java
 TODO	interface	979	42	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Library.java
-TODO	interface	977	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Bookmark.java
+DONE	interface	977	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Bookmark.java
