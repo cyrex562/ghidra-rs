@@ -14385,7 +14385,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sy
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceListener.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ShiftedReference.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SourceType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SourceType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/StackReference.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Symbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
