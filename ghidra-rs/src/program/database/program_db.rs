@@ -61,6 +61,10 @@ impl ProgramDB {
     pub fn get_symbol_table(&self) -> Arc<RwLock<SymbolManagerDB>> {
         self.symbol_mgr.clone()
     }
+
+    pub fn get_language(&self) -> &Arc<SleighLanguage> {
+        &self.language
+    }
 }
 
 impl Program for ProgramDB {
@@ -70,6 +74,10 @@ impl Program for ProgramDB {
 
     fn get_language_id(&self) -> &str {
         self.language.get_id()
+    }
+
+    fn get_address_factory(&self) -> Option<std::sync::Arc<dyn crate::program::model::address::AddressFactory>> {
+        Some(self.language.get_address_factory())
     }
 }
 
