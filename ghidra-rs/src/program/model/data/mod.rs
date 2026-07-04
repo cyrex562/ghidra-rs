@@ -13,5 +13,6 @@ pub mod leb128;
 pub mod packing_type;
 pub mod playable;
 pub mod resource;
+pub mod source_archive;
 pub mod string_layout_enum;
 pub mod isf;
