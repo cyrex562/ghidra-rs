@@ -71,6 +71,11 @@ pub trait Variable {}
 /// before the real interface is ported.
 pub trait Settings {}
 
+/// Placeholder for `ghidra.docking.settings.SettingsDefinition`, referenced by
+/// [`TypeDefSettingsDefinition`](crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition)
+/// before the real interface is ported.
+pub trait SettingsDefinition {}
+
 /// Placeholder for `ghidra.program.model.data.PointerTypedefBuilder`, referenced by
 /// [`Pointer`](crate::program::model::data::pointer::Pointer)
 /// before the real class is ported.
