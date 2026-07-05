@@ -1,3 +1,4 @@
+pub mod closed_sequence_miner;
 pub mod frequent_sequence;
 pub mod frequent_sequence_item;
 pub mod projected_database;
