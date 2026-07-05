@@ -17,6 +17,7 @@ pub mod leb128;
 pub mod packing_type;
 pub mod parameter_definition;
 pub mod playable;
+pub mod pointer;
 pub mod project_archive_based_data_type_manager;
 pub mod resource;
 pub mod source_archive;
