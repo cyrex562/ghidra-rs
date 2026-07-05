@@ -13751,7 +13751,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/ad
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSpace.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/DefaultAddressFactory.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/EmptyAddressIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/EmptyAddressRangeIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/EmptyAddressRangeIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GenericAddress.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GenericAddressSpace.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GlobalNamespace.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
