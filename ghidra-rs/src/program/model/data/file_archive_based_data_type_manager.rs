@@ -8,7 +8,7 @@ pub trait FileArchiveBasedDataTypeManager: FileBasedDataTypeManager {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::seam_stubs::DataTypeManager;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
 
     struct MockFileArchive {
         path: String,

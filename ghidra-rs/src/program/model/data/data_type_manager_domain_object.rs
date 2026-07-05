@@ -8,7 +8,7 @@ pub trait DataTypeManagerDomainObject: DomainObject + DataTypeManagerOwner {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::seam_stubs::DataTypeManager;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
 
     struct MockDataTypeManager;
 

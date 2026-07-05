@@ -100,7 +100,10 @@ mod tests {
         fn get_minimum_possible_length(&self) -> i32 {
             1
         }
-        fn clone_enum(&self, _dtm: &dyn crate::program::seam_stubs::DataTypeManager) -> Box<dyn Enum> {
+        fn clone_enum(
+            &self,
+            _dtm: &dyn crate::program::model::data::data_type_manager::DataTypeManager,
+        ) -> Box<dyn Enum> {
             Box::new(MockEnum)
         }
     }

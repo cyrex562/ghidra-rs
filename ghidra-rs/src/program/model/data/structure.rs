@@ -1,7 +1,7 @@
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
-use crate::program::seam_stubs::DataTypeManager;
+use crate::program::model::data::data_type_manager::DataTypeManager;
 
 /// The structure interface.
 ///

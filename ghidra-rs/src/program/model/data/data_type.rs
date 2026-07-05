@@ -6,11 +6,10 @@ use crate::program::model::data::category_path::{CategoryPath, ROOT};
 use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
+use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
-use crate::program::seam_stubs::{
-    DataTypeManager, DataTypePath, MemBuffer, Settings, SettingsDefinition,
-};
+use crate::program::seam_stubs::{DataTypePath, MemBuffer, Settings, SettingsDefinition};
 use crate::util::exception::{DuplicateNameException, InvalidNameException};
 use crate::util::UniversalID;
 

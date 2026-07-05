@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::DataTypeManager;
+use crate::program::model::data::data_type_manager::DataTypeManager;
 
 /// Notified when a [`DataTypeManager`]'s cache has been invalidated.
 ///
