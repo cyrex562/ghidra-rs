@@ -2302,7 +2302,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/tree/ProgramTreeMer
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/tree/TreeChangePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge tree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/util/ConflictCountPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/util/ConflictUtility.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/util/MergeUtilities.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/util/MergeUtilities.java	DONE	orig_src Ghidra Features Base src main java ghidra app merge util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/nav/DecoratorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app nav 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/nav/ListingPanelContainer.java	TODO	orig_src Ghidra Features Base src main java ghidra app nav 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/nav/LocationMemento.java	TODO	orig_src Ghidra Features Base src main java ghidra app nav 
