@@ -10,3 +10,4 @@ ts	stub_class	referenced_by
 2026-07-04T00:11:39+00:00	Union	UnionInternal
 2026-07-03T00:00:00+00:00	BookmarkType	Bookmark
 2026-07-04T00:15:32+00:00	Variable	Parameter
+2026-07-04T00:20:00+00:00	Settings	Enum

@@ -65,3 +65,8 @@ pub trait BookmarkType {}
 /// [`Parameter`](crate::program::model::listing::parameter::Parameter)
 /// before the real interface is ported.
 pub trait Variable {}
+
+/// Placeholder for `ghidra.docking.settings.Settings`, referenced by
+/// [`Enum`](crate::program::model::data::enum_::Enum)
+/// before the real interface is ported.
+pub trait Settings {}
