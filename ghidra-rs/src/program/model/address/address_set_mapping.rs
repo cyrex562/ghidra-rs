@@ -67,7 +67,7 @@ impl AddressSetMapping {
         } else {
             self.current_range_index = match self.indexes.binary_search(&index) {
                 Ok(i) => i as isize,
-                Err(i) => i as isize - 2,
+                Err(i) => i as isize - 1,
             };
         }
 
@@ -101,6 +101,19 @@ mod tests {
         assert_eq!(mapping.address(5), Some(addr(90)));
         assert_eq!(mapping.address(9), Some(addr(94)));
         assert_eq!(mapping.address(10), None);
+    }
+
+    #[test]
+    fn maps_index_via_binary_search_without_sequential_walk() {
+        let mut set = AddressSet::new();
+        set.add_range(&addr(0), &addr(4));
+        set.add_range(&addr(90), &addr(94));
+        let mut mapping = AddressSetMapping::new(&set).unwrap();
+
+        // Jump straight to an index in the second range without visiting the
+        // indexes before it, forcing the binary-search fallback path.
+        assert_eq!(mapping.address(6), Some(addr(91)));
+        assert_eq!(mapping.address(8), Some(addr(93)));
     }
 
     #[test]
