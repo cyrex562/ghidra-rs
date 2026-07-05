@@ -1,8 +1,9 @@
 use super::{Address, AddressOverflowException, AddressSpace};
 use std::cmp::Ordering;
+use std::fmt;
 use std::sync::Arc;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AddressRange {
     min: Address,
     max: Address,
@@ -56,6 +57,12 @@ impl AddressRange {
         (self.max.offset() as u64)
             .wrapping_sub(self.min.offset() as u64)
             .wrapping_add(1)
+    }
+
+    /// Corresponds to Java's `AddressRangeImpl.getBigLength()`; this crate
+    /// represents `BigInteger` values as `i128`.
+    pub fn big_length(&self) -> i128 {
+        self.max.unsigned_offset() as i128 - self.min.unsigned_offset() as i128 + 1
     }
 
     pub fn contains(&self, addr: &Address) -> bool {
@@ -140,6 +147,12 @@ impl Ord for AddressRange {
     }
 }
 
+impl fmt::Display for AddressRange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}, {}]", self.min, self.max)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -185,6 +198,21 @@ mod tests {
         assert_eq!(range.compare_to_address(&addr(0x1080)), Ordering::Equal);
         assert_eq!(range.compare_to_address(&addr(0x10ff)), Ordering::Equal);
         assert_eq!(range.compare_to_address(&addr(0x1100)), Ordering::Less);
+    }
+
+    #[test]
+    fn big_length_matches_inclusive_span() {
+        let range = AddressRange::new(addr(0x1000), addr(0x1002));
+        assert_eq!(range.big_length(), 3);
+
+        let single = AddressRange::new(addr(0x1000), addr(0x1000));
+        assert_eq!(single.big_length(), 1);
+    }
+
+    #[test]
+    fn display_formats_as_bracketed_pair() {
+        let range = AddressRange::new(addr(0x1000), addr(0x1002));
+        assert_eq!(range.to_string(), format!("[{}, {}]", addr(0x1000), addr(0x1002)));
     }
 
     #[test]
