@@ -1,4 +1,6 @@
-use crate::program::seam_stubs::{CompositeInternal, Union};
+use crate::program::model::data::data_type_component::DataTypeComponent;
+use crate::program::model::data::union::Union;
+use crate::program::seam_stubs::{Composite, CompositeInternal, DataType, DataTypeManager};
 
 /// Marker trait for `Union` implementations that are internal to the data type
 /// manager (as opposed to externally-supplied implementations).
@@ -10,9 +12,31 @@ pub trait UnionInternal: Union + CompositeInternal {}
 mod tests {
     use super::*;
 
+    struct MockDataType;
+    impl DataType for MockDataType {}
+
+    struct MockDataTypeComponent;
+    impl DataTypeComponent for MockDataTypeComponent {}
+
     struct MockUnion;
 
-    impl Union for MockUnion {}
+    impl Composite for MockUnion {}
+    impl Union for MockUnion {
+        fn clone_union(&self, _dtm: &dyn DataTypeManager) -> Box<dyn Union> {
+            Box::new(MockUnion)
+        }
+
+        fn insert_bit_field(
+            &mut self,
+            _ordinal: i32,
+            _base_data_type: Box<dyn DataType>,
+            _bit_size: i32,
+            _component_name: Option<String>,
+            _comment: Option<String>,
+        ) -> Result<Box<dyn DataTypeComponent>, String> {
+            Ok(Box::new(MockDataTypeComponent))
+        }
+    }
     impl CompositeInternal for MockUnion {}
     impl UnionInternal for MockUnion {}
 
