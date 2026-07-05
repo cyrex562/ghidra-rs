@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::DataTypeManager;
+use crate::program::model::data::data_type_manager::DataTypeManager;
 
 /// A [`DataTypeManager`] whose contents are backed by a file on disk (e.g. a standalone
 /// archive), exposing the path to that file.

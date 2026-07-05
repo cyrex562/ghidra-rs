@@ -1,5 +1,4 @@
 ts	stub_class	referenced_by
-2026-07-03T00:00:00+00:00	DataTypeManager	FileBasedDataTypeManager
 2026-07-03T00:00:00+00:00	DomainObject	DataTypeManagerDomainObject
 2026-07-03T00:00:00+00:00	DataTypeManagerOwner	DataTypeManagerDomainObject
 2026-07-03T00:00:00+00:00	DomainFile	ProjectArchiveBasedDataTypeManager
@@ -16,3 +15,9 @@ ts	stub_class	referenced_by
 2026-07-05T11:59:50Z	RefType	Data
 2026-07-05T11:59:50Z	Reference	Data
 2026-07-05T12:10:00Z	DataTypePath	DataType
+2026-07-05T12:20:00Z	FunctionDefinition	DataTypeManager
+2026-07-05T12:20:00Z	PrototypeModel	DataTypeManager
+2026-07-05T12:20:00Z	ProgramArchitecture	DataTypeManager
+2026-07-05T12:20:00Z	AddressMap	DataTypeManager
+2026-07-05T12:20:00Z	DataTypeManagerChangeListener	DataTypeManager
+2026-07-05T12:20:00Z	Transaction	DataTypeManager

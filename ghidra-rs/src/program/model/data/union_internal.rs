@@ -1,8 +1,9 @@
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
+use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::union::Union;
-use crate::program::seam_stubs::{CompositeInternal, DataTypeManager};
+use crate::program::seam_stubs::CompositeInternal;
 
 /// Marker trait for `Union` implementations that are internal to the data type
 /// manager (as opposed to externally-supplied implementations).
