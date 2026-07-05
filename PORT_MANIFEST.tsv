@@ -2970,7 +2970,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/Marker
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/MarkerOverviewProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core marker 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/MarkerPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core marker 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/MarkerSetImpl.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core marker 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/ModifiableAddressSetCollection.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core marker 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/ModifiableAddressSetCollection.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core marker 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/NavigationPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core marker 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/marker/PointMarkerSet.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core marker 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/memory/AddBlockDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core memory 
