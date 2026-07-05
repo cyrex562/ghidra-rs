@@ -59,11 +59,6 @@ pub trait DataType {
     }
 }
 
-/// Placeholder for `ghidra.program.model.data.BuiltInDataType`, referenced by
-/// [`FactoryDataType`](crate::program::model::data::factory_data_type::FactoryDataType)
-/// before the real interface is ported.
-pub trait BuiltInDataType: DataType {}
-
 /// Placeholder for `ghidra.framework.model.DomainObject`, referenced by
 /// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)
 /// before the real interface is ported.
