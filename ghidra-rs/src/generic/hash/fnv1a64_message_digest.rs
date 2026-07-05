@@ -103,6 +103,8 @@ mod tests {
     use super::*;
     use crate::generic::hash::AbstractMessageDigest;
     use crate::generic::hash::MessageDigest;
+    use crate::util::task::DummyMonitor;
+    use rand::RngCore;
 
     fn new_digest() -> AbstractMessageDigest {
         AbstractMessageDigest::new("FNV-1a", 8, Box::new(FNV1a64MessageDigest::new()))
@@ -192,5 +194,79 @@ mod tests {
         digest.update_bytes(b"hello");
         digest.reset();
         assert_eq!(digest.digest_long(), FNV1a64MessageDigest::FNV_64_OFFSET_BASIS);
+    }
+
+    /// Port of `FNV1a64MessageDigestTest.testBasicValues`.
+    ///
+    /// This particular byte sequence was chosen because it FNV-1a hashes to an all-zero digest.
+    #[test]
+    fn test_basic_values() {
+        let mut digest = new_digest();
+
+        let input = [0xd5, 0x6b, 0xb9, 0x53, 0x42, 0x87, 0x08, 0x36];
+        let target = [0u8; 8];
+        digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+        assert_eq!(digest.digest(), target);
+    }
+
+    /// Port of `FNV1a64MessageDigestTest.testLongEquivalence`.
+    #[test]
+    fn test_long_equivalence() {
+        let mut digest = new_digest();
+        let mut rng = rand::thread_rng();
+        for _ in 0..10 {
+            let mut input = [0u8; 20];
+            rng.fill_bytes(&mut input);
+
+            digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+            let bytes = digest.digest();
+            digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+            let as_long = digest.digest_long();
+
+            let mut acc: i64 = 0;
+            for b in bytes {
+                acc <<= 8;
+                acc |= b as i64 & 0xff;
+            }
+            assert_eq!(as_long, acc);
+        }
+    }
+
+    /// Port of `FNV1a64MessageDigestTest.testLongerRequests`.
+    #[test]
+    fn test_longer_requests() {
+        const MARKER: u8 = 0x42;
+
+        let mut digest = new_digest();
+        let input = [b'F', b'o', b'o', b'b', b'a', b'r'];
+        digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+        let reference = digest.digest();
+
+        let digest_length = digest.get_digest_length();
+        for before_length in 0..digest_length {
+            for request_length in 0..digest_length * 2 {
+                for after_length in 0..digest_length {
+                    let actual_request_length =
+                        if request_length < digest_length { request_length } else { digest_length };
+                    let mut output =
+                        vec![MARKER; before_length + actual_request_length + after_length];
+
+                    digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+                    digest.digest_into_buf(&mut output, before_length, request_length);
+
+                    for b in &output[..before_length] {
+                        assert_eq!(*b, MARKER, "failed before");
+                    }
+                    assert_eq!(
+                        &output[before_length..before_length + actual_request_length],
+                        &reference[..actual_request_length],
+                        "failed digest (middle)"
+                    );
+                    for b in &output[before_length + actual_request_length..] {
+                        assert_eq!(*b, MARKER, "failed after");
+                    }
+                }
+            }
+        }
     }
 }
