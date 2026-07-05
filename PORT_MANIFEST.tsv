@@ -13743,7 +13743,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/ad
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeSplitter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeToAddressComparator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSet.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSet.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetCollection.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetMapping.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetView.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model address 
