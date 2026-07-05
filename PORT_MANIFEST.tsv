@@ -2545,7 +2545,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeedit
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/InsertUndefinedAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/MoveDownAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/MoveUpAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/OriginalCompositeListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/OriginalCompositeListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/PointerAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/RedoChangeAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/compositeeditor/SearchControlPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core compositeeditor 
