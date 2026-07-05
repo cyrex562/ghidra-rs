@@ -1,6 +1,7 @@
+use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
-use crate::program::seam_stubs::{Composite, DataTypeManager};
+use crate::program::seam_stubs::DataTypeManager;
 
 /// The union interface.
 ///
@@ -64,6 +65,7 @@ mod tests {
         components: Vec<i32>,
     }
 
+    impl DataType for MockUnion {}
     impl Composite for MockUnion {}
 
     impl Union for MockUnion {

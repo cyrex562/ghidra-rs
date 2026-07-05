@@ -1,6 +1,7 @@
+use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
-use crate::program::seam_stubs::{Composite, DataTypeManager};
+use crate::program::seam_stubs::DataTypeManager;
 
 /// The structure interface.
 ///
@@ -81,7 +82,7 @@ pub trait Structure: Composite {
                 break;
             }
             let next_ordinal = dtc.as_ref().unwrap().get_ordinal() + 1;
-            dtc = self.get_component(next_ordinal).ok();
+            dtc = Structure::get_component(self, next_ordinal).ok();
         }
         match dtc {
             Some(d) if d.get_offset() == offset => Some(d),
@@ -307,6 +308,7 @@ pub trait Structure: Composite {
 
 /// Trivial fallback used by [`Structure::clone_structure`]'s default implementation.
 struct EmptyStructure;
+impl DataType for EmptyStructure {}
 impl Composite for EmptyStructure {}
 impl Structure for EmptyStructure {}
 
@@ -382,6 +384,8 @@ mod tests {
         components: Vec<(i32, i32)>,
     }
 
+    impl DataType for MockStructure {}
+
     impl Composite for MockStructure {
         fn get_num_components(&self) -> i32 {
             self.components.len() as i32
@@ -441,6 +445,7 @@ mod tests {
     #[test]
     fn bare_impl_stays_object_safe() {
         struct BareStructure;
+        impl DataType for BareStructure {}
         impl Composite for BareStructure {}
         impl Structure for BareStructure {}
 
