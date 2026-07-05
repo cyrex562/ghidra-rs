@@ -2,9 +2,10 @@ use thiserror::Error;
 
 use crate::program::model::data::category::Category;
 use crate::program::model::data::category_path::CategoryPath;
+use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_dependency_exception::DataTypeDependencyException;
 pub use crate::program::model::data::category_path::{DELIMITER_CHAR, DELIMITER_STRING};
-use crate::program::seam_stubs::{DataType, DataTypeConflictHandler, DataTypeManager};
+use crate::program::seam_stubs::{DataTypeConflictHandler, DataTypeManager};
 use crate::util::exception::{DuplicateNameException, InvalidNameException};
 use crate::util::task::TaskMonitor;
 

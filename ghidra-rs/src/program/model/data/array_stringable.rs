@@ -1,5 +1,6 @@
+use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-use crate::program::seam_stubs::{DataType, MemBuffer, Settings, StringDataInstance};
+use crate::program::seam_stubs::{MemBuffer, Settings, StringDataInstance};
 
 /// Identifies those data types which, when formed into an array, can be interpreted as a
 /// string (e.g. a character array). [`Array`](super) implementations leverage this trait as

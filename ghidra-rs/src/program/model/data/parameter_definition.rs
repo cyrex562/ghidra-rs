@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
-use crate::program::seam_stubs::{DataType, Variable};
+use crate::program::model::data::data_type::DataType;
+use crate::program::seam_stubs::Variable;
 
 /// Specifies a parameter which can be used to specify a function definition.
 ///

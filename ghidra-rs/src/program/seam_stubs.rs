@@ -8,75 +8,12 @@
 /// before the real interface is ported.
 pub trait DataTypeManager {}
 
-/// Placeholder for `ghidra.program.model.data.DataType`, referenced by
-/// [`DataOrganization`](crate::program::model::data::data_organization::DataOrganization),
-/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset),
-/// and [`DataTypeComponent`](crate::program::model::data::data_type_component::DataTypeComponent)
-/// before the real interface is ported.
-///
-/// The `is_structure`/`is_typedef`/`is_array` predicates and `typedef_base_data_type` stand in
-/// for `DataTypeComponent`'s `instanceof Structure`/`instanceof TypeDef`/`instanceof Array`
-/// checks and `TypeDef.getBaseDataType()` cast, since Rust trait objects cannot be downcast to
-/// another trait object without extra machinery. `typedef_base_data_type` is only meaningful
-/// when `is_typedef()` is `true`. All methods default so existing implementations of this trait
-/// keep compiling as the stub grows.
-pub trait DataType {
-    /// Get the length of this DataType as a number of 8-bit bytes.
-    fn get_length(&self) -> i32 {
-        0
-    }
-    /// Whether this dataType is (or wraps) a zero-length component (e.g. a zero-element array).
-    fn is_zero_length(&self) -> bool {
-        false
-    }
-    /// Whether this dataType has not yet had its internal composition specified.
-    fn is_not_yet_defined(&self) -> bool {
-        false
-    }
-    /// Stands in for `instanceof Structure`.
-    fn is_structure(&self) -> bool {
-        false
-    }
-    /// Stands in for `instanceof TypeDef`.
-    fn is_typedef(&self) -> bool {
-        false
-    }
-    /// Stands in for `((TypeDef) dataType).getBaseDataType()`; only meaningful when
-    /// `is_typedef()` is `true`.
-    fn typedef_base_data_type(&self) -> Option<Box<dyn DataType>> {
-        None
-    }
-    /// Stands in for `instanceof Array`.
-    fn is_array(&self) -> bool {
-        false
-    }
-    /// Stands in for `dt instanceof ArrayStringable ? (ArrayStringable) dt : null`, used by
-    /// [`get_array_stringable`](crate::program::model::data::array_stringable::get_array_stringable).
-    fn into_array_stringable(
-        self: Box<Self>,
-    ) -> Option<Box<dyn crate::program::model::data::array_stringable::ArrayStringable>> {
-        None
-    }
-    /// Stands in for `instanceof Pointer`, used by
-    /// [`TypeDef::is_pointer`](crate::program::model::data::typedef::TypeDef::is_pointer).
-    fn is_pointer(&self) -> bool {
-        false
-    }
-    /// Get all settings definitions provided by this datatype. Real abstract method on
-    /// `ghidra.program.model.data.DataType`.
-    fn get_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
-        Vec::new()
-    }
-    /// Get the default settings for this datatype. Real abstract method on
-    /// `ghidra.program.model.data.DataType`.
-    fn get_default_settings(&self) -> Box<dyn Settings> {
-        Box::new(EmptySettings)
-    }
-}
-
-/// Trivial fallback used by [`DataType::get_default_settings`].
-struct EmptySettings;
-impl Settings for EmptySettings {}
+/// Placeholder for `ghidra.program.model.data.DataTypePath`, referenced by
+/// [`DataType`](crate::program::model::data::data_type::DataType)
+/// before the real class is ported. The real class is a simple `(CategoryPath, String)` value
+/// holder, but `DataType` never calls methods on the path it returns, so no members are needed
+/// yet.
+pub trait DataTypePath {}
 
 /// Placeholder for `ghidra.framework.model.DomainObject`, referenced by
 /// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)

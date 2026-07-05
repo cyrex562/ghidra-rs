@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::DataType;
+use crate::program::model::data::data_type::DataType;
 
 /// Port of `ghidra.program.model.data.TypeDef`.
 ///

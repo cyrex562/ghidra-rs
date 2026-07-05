@@ -1,5 +1,6 @@
 use crate::program::database::data::EnumSignedState;
-use crate::program::seam_stubs::{DataType, DataTypeManager, Settings};
+use crate::program::model::data::data_type::DataType;
+use crate::program::seam_stubs::{DataTypeManager, Settings};
 
 /// An enumerated data type: a fixed set of name/value pairs (each with an optional
 /// per-entry comment) sharing a signed/unsigned/none state.
@@ -8,10 +9,19 @@ use crate::program::seam_stubs::{DataType, DataTypeManager, Settings};
 pub trait Enum: DataType {
     /// Get the value for the given name, or `None` if `name` does not exist in this
     /// Enum (mirrors the Java `NoSuchElementException`).
-    fn get_value(&self, name: &str) -> Option<i64>;
+    ///
+    /// Named `get_value_for_name` rather than `get_value` (the Java method name) since
+    /// [`DataType::get_value`] already claims that name for an unrelated overload
+    /// (`DataType.getValue(MemBuffer, Settings, int)`), and Rust traits cannot overload by
+    /// parameter list the way Java can.
+    fn get_value_for_name(&self, name: &str) -> Option<i64>;
 
     /// Get the name for the given value, or `None` if no entry has that value.
-    fn get_name(&self, value: i64) -> Option<String>;
+    ///
+    /// Named `get_name_for_value` rather than `get_name` (the Java method name) since
+    /// [`DataType::get_name`] already claims that name for an unrelated overload
+    /// (`DataType.getName()`).
+    fn get_name_for_value(&self, value: i64) -> Option<String>;
 
     /// Returns all names that map to the given value, or `None` if there is no name
     /// for the given value.
@@ -43,7 +53,11 @@ pub trait Enum: DataType {
     fn set_description(&mut self, description: &str);
 
     /// Get the enum representation of the big-endian value.
-    fn get_representation(
+    ///
+    /// Named `get_enum_representation` rather than `get_representation` (the Java method name)
+    /// since [`DataType::get_representation`] already claims that name for an unrelated overload
+    /// (`DataType.getRepresentation(MemBuffer, Settings, int)`).
+    fn get_enum_representation(
         &self,
         big_int: i128,
         settings: &dyn Settings,
@@ -104,14 +118,14 @@ mod tests {
     impl DataType for MockEnum {}
 
     impl Enum for MockEnum {
-        fn get_value(&self, name: &str) -> Option<i64> {
+        fn get_value_for_name(&self, name: &str) -> Option<i64> {
             self.entries
                 .iter()
                 .find(|(n, _, _)| n == name)
                 .map(|(_, v, _)| *v)
         }
 
-        fn get_name(&self, value: i64) -> Option<String> {
+        fn get_name_for_value(&self, value: i64) -> Option<String> {
             self.entries
                 .iter()
                 .find(|(_, v, _)| *v == value)
@@ -175,7 +189,7 @@ mod tests {
 
         fn set_description(&mut self, _description: &str) {}
 
-        fn get_representation(
+        fn get_enum_representation(
             &self,
             big_int: i128,
             _settings: &dyn Settings,
@@ -240,10 +254,10 @@ mod tests {
     #[test]
     fn get_value_and_name_roundtrip() {
         let e = sample();
-        assert_eq!(e.get_value("RED"), Some(0));
-        assert_eq!(e.get_value("MISSING"), None);
-        assert_eq!(e.get_name(1), Some("GREEN".to_string()));
-        assert_eq!(e.get_name(42), None);
+        assert_eq!(e.get_value_for_name("RED"), Some(0));
+        assert_eq!(e.get_value_for_name("MISSING"), None);
+        assert_eq!(e.get_name_for_value(1), Some("GREEN".to_string()));
+        assert_eq!(e.get_name_for_value(42), None);
     }
 
     #[test]
@@ -284,6 +298,6 @@ mod tests {
     fn get_representation_uses_settings() {
         let e = sample();
         let settings = MockSettings;
-        assert_eq!(e.get_representation(255, &settings, 8), "255");
+        assert_eq!(e.get_enum_representation(255, &settings, 8), "255");
     }
 }

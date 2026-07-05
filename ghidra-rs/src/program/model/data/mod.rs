@@ -9,6 +9,7 @@ pub mod category;
 pub mod category_path;
 pub mod custom_organization;
 pub mod data_organization;
+pub mod data_type;
 pub mod data_type_component;
 pub mod data_type_dependency_exception;
 pub mod data_type_display_options;

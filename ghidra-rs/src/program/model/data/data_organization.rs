@@ -1,5 +1,5 @@
 use crate::program::model::data::bit_field_packing::BitFieldPacking;
-use crate::program::seam_stubs::DataType;
+use crate::program::model::data::data_type::DataType;
 
 /// Value returned by [`DataOrganization::get_absolute_max_alignment`] when the data
 /// organization does not specifically limit the maximum alignment.

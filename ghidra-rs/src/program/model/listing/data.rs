@@ -1,8 +1,9 @@
 use std::any::{Any, TypeId};
 
 use crate::program::model::address::Address;
+use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-use crate::program::seam_stubs::{CodeUnit, DataType, RefType, Reference, Settings};
+use crate::program::seam_stubs::{CodeUnit, RefType, Reference, Settings};
 
 /// Interface for interacting with data at an address in a program.
 ///
