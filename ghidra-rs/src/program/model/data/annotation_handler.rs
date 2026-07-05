@@ -1,5 +1,6 @@
+use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::enum_::Enum;
-use crate::program::seam_stubs::{Composite, DataTypeComponent};
+use crate::program::seam_stubs::Composite;
 
 /// NOTE: all `AnnotationHandler` implementations must have names ending in
 /// "AnnotationHandler" so that the (Java) `ClassSearcher` can find them; this

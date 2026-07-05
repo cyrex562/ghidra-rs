@@ -12,8 +12,6 @@ ts	stub_class	referenced_by
 2026-07-04T00:20:00+00:00	Settings	Enum
 2026-07-04T00:25:00+00:00	PointerTypedefBuilder	Pointer
 2026-07-05T00:07:17+00:00	Composite	AnnotationHandler
-2026-07-05T00:07:17+00:00	DataTypeComponent	AnnotationHandler
-2026-07-05T00:11:09+00:00	DataTypeComponent	InternalDataTypeComponent
 2026-07-05T00:13:20+00:00	SettingsDefinition	TypeDefSettingsDefinition
 2026-07-05T00:15:47Z	DataTypeConflictHandler	Category
 2026-07-04T00:30:00Z	MemBuffer	DataTypeWithCharset
