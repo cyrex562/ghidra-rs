@@ -2,9 +2,11 @@ use crate::util::exception::CancelledException;
 
 pub mod monitored_runnable;
 pub mod cancellable_iterator;
+pub mod task_monitor_splitter;
 
 pub use monitored_runnable::MonitoredRunnable;
 pub use cancellable_iterator::CancellableIterator;
+pub use task_monitor_splitter::{split_task_monitor, MONITOR_SIZE};
 
 /// Listener notified when the busy state of a component changes.
 pub trait BusyListener: Send + Sync {
