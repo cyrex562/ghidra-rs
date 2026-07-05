@@ -20,3 +20,4 @@ ts	stub_class	referenced_by
 2026-07-05T00:15:47Z	DataTypeConflictHandler	Category
 2026-07-04T00:30:00Z	MemBuffer	DataTypeWithCharset
 2026-07-04T00:30:00Z	StringDataInstance	DataTypeWithCharset
+2026-07-04T00:00:00Z	BuiltInDataType	FactoryDataType
