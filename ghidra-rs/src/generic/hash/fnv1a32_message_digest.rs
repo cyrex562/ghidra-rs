@@ -91,6 +91,8 @@ mod tests {
     use super::*;
     use crate::generic::hash::AbstractMessageDigest;
     use crate::generic::hash::MessageDigest;
+    use crate::util::task::DummyMonitor;
+    use rand::RngCore;
 
     fn new_digest() -> AbstractMessageDigest {
         AbstractMessageDigest::new("FNV-1a", 4, Box::new(FNV1a32MessageDigest::new()))
@@ -189,5 +191,89 @@ mod tests {
             digest.digest_long(),
             (FNV1a32MessageDigest::FNV_32_OFFSET_BASIS as u32) as i64
         );
+    }
+
+    /// Port of `FNV1a32MessageDigestTest.testBasicValues`.
+    ///
+    /// These particular byte sequences were chosen because they FNV-1a hash to all-zero digests.
+    #[test]
+    fn test_basic_values() {
+        let mut digest = new_digest();
+
+        let input = [0xcc, 0x24, 0x31, 0xc4];
+        let target = [0, 0, 0, 0];
+        digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+        assert_eq!(digest.digest(), target);
+
+        let input = [0xe0, 0x4d, 0x9f, 0xcb];
+        let target = [0, 0, 0, 0];
+        digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+        assert_eq!(digest.digest(), target);
+
+        let input = [b'+', b'!', b'=', b'y', b'G'];
+        let target = [0, 0, 0, 0];
+        digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+        assert_eq!(digest.digest(), target);
+    }
+
+    /// Port of `FNV1a32MessageDigestTest.testLongEquivalence`.
+    #[test]
+    fn test_long_equivalence() {
+        let mut digest = new_digest();
+        let mut rng = rand::thread_rng();
+        for _ in 0..10 {
+            let mut input = [0u8; 20];
+            rng.fill_bytes(&mut input);
+
+            digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+            let bytes = digest.digest();
+            digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+            let as_long = digest.digest_long();
+
+            let mut acc: i64 = 0;
+            for b in bytes {
+                acc <<= 8;
+                acc |= b as i64 & 0xff;
+            }
+            assert_eq!(as_long, acc);
+        }
+    }
+
+    /// Port of `FNV1a32MessageDigestTest.testLongerRequests`.
+    #[test]
+    fn test_longer_requests() {
+        const MARKER: u8 = 0x42;
+
+        let mut digest = new_digest();
+        let input = [b'F', b'o', b'o', b'b', b'a', b'r'];
+        digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+        let reference = digest.digest();
+
+        let digest_length = digest.get_digest_length();
+        for before_length in 0..digest_length {
+            for request_length in 0..digest_length * 2 {
+                for after_length in 0..digest_length {
+                    let actual_request_length =
+                        if request_length < digest_length { request_length } else { digest_length };
+                    let mut output =
+                        vec![MARKER; before_length + actual_request_length + after_length];
+
+                    digest.update_bytes_monitored(&input, &DummyMonitor).unwrap();
+                    digest.digest_into_buf(&mut output, before_length, request_length);
+
+                    for b in &output[..before_length] {
+                        assert_eq!(*b, MARKER, "failed before");
+                    }
+                    assert_eq!(
+                        &output[before_length..before_length + actual_request_length],
+                        &reference[..actual_request_length],
+                        "failed digest (middle)"
+                    );
+                    for b in &output[before_length + actual_request_length..] {
+                        assert_eq!(*b, MARKER, "failed after");
+                    }
+                }
+            }
+        }
     }
 }
