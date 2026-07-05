@@ -8981,7 +8981,7 @@ orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/Xa
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/YbsRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/ZlibRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/sitxRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
-orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/RustConstants.java	TODO	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust 
+orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/RustConstants.java	DONE	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/RustDemanglerAnalyzer.java	TODO	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust 
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/RustStringAnalyzer.java	TODO	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust 
 orig_src/Ghidra/Features/Rust/src/main/java/ghidra/app/plugin/core/analysis/rust/demangler/RustDemangler.java	TODO	orig_src Ghidra Features Rust src main java ghidra app plugin core analysis rust demangler 
