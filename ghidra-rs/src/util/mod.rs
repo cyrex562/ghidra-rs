@@ -1,3 +1,4 @@
+pub mod address_range_comparators;
 pub mod conv;
 pub mod date_utils;
 pub mod disposable;
@@ -67,6 +68,7 @@ pub mod markdown;
 pub mod monitored_input_stream;
 pub mod monitored_output_stream;
 
+pub use address_range_comparators::AddressRangeComparators;
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
 pub use async_lazy_value::{ArcError, AsyncLazyValue, Completer};
