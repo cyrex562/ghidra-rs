@@ -36,7 +36,7 @@ TODO	interface	1203	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	interface	1202	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AnnotationHandler.java
 DONE	interface	1202	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/InvalidatedListener.java
 DONE	interface	1202	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureInternal.java
-TODO	interface	1201	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeTransferable.java
+DONE	interface	1201	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeTransferable.java
 DONE	interface	1201	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DomainFileBasedDataTypeManager.java
 DONE	interface	1201	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileBasedDataTypeManager.java
 DONE	interface	1200	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileArchiveBasedDataTypeManager.java
