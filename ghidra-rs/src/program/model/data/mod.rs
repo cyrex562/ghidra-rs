@@ -1,6 +1,7 @@
 pub mod alignment_type;
 pub mod annotation_handler;
 pub mod archive_type;
+pub mod array_stringable;
 pub mod bit_field_packing;
 pub mod bit_group;
 pub mod category;
