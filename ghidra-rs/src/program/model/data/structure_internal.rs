@@ -1,4 +1,5 @@
-use crate::program::seam_stubs::{CompositeInternal, Structure};
+use crate::program::model::data::structure::Structure;
+use crate::program::seam_stubs::{Composite, CompositeInternal};
 
 /// Marker trait for `Structure` implementations that are internal to the data type
 /// manager (as opposed to externally-supplied implementations).
@@ -12,6 +13,7 @@ mod tests {
 
     struct MockStructure;
 
+    impl Composite for MockStructure {}
     impl Structure for MockStructure {}
     impl CompositeInternal for MockStructure {}
     impl StructureInternal for MockStructure {}

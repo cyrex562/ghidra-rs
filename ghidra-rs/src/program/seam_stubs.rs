@@ -33,11 +33,6 @@ pub trait DataTypeManagerOwner {
 /// before the real interface is ported.
 pub trait DomainFile {}
 
-/// Placeholder for `ghidra.program.model.data.Structure`, referenced by
-/// [`StructureInternal`](crate::program::model::data::structure_internal::StructureInternal)
-/// before the real interface is ported.
-pub trait Structure {}
-
 /// Placeholder for `ghidra.program.model.data.CompositeInternal`, referenced by
 /// [`StructureInternal`](crate::program::model::data::structure_internal::StructureInternal)
 /// before the real interface is ported.
@@ -96,8 +91,18 @@ pub trait PointerTypedefBuilder {}
 
 /// Placeholder for `ghidra.program.model.data.Composite`, referenced by
 /// [`AnnotationHandler`](crate::program::model::data::annotation_handler::AnnotationHandler)
+/// and as a supertrait of
+/// [`Structure`](crate::program::model::data::structure::Structure) and
+/// [`Union`](crate::program::model::data::union::Union)
 /// before the real interface is ported.
-pub trait Composite {}
+pub trait Composite {
+    /// Stands in for `Composite.getNumComponents()`, needed by
+    /// [`Structure`](crate::program::model::data::structure::Structure)'s default
+    /// `get_component_at` method.
+    fn get_num_components(&self) -> i32 {
+        0
+    }
+}
 
 /// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
 /// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
