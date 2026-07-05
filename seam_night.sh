@@ -42,9 +42,19 @@ ported=0; parked=0; reconciled=0
 seam_done_before=$(grep -cP '^DONE\t' "$SEAM" 2>/dev/null || true)
 log "seam start: MODEL=$MODEL SEAM_MAX=$SEAM_MAX (seam done so far: ${seam_done_before:-0})"
 
+SEAM_ONLY="${SEAM_ONLY:-}"   # optional: space-separated class names; processed IN THE GIVEN ORDER
 for ((i=1;i<=SEAM_MAX;i++)); do
-  # pick the TODO seam interface with the FEWEST remaining unported deps (col4) -> fewest stubs
-  next=$(awk -F'\t' '$1=="TODO"{print $4"\t"$6}' "$SEAM" | sort -n -k1,1 | head -1 | cut -f2)
+  if [ -n "$SEAM_ONLY" ]; then
+    # targeted mode: first still-TODO class in the requested order
+    next=""
+    for want in $SEAM_ONLY; do
+      cand=$(awk -F'\t' -v w="$want" '$1=="TODO"{n=split($6,a,"/"); c=a[n]; sub(/\.java$/,"",c); if(c==w){print $6; exit}}' "$SEAM")
+      [ -n "$cand" ] && { next="$cand"; break; }
+    done
+  else
+    # pick the TODO seam interface with the FEWEST remaining unported deps (col4) -> fewest stubs
+    next=$(awk -F'\t' '$1=="TODO"{print $4"\t"$6}' "$SEAM" | sort -n -k1,1 | head -1 | cut -f2)
+  fi
   [ -z "$next" ] && { log "no TODO seam classes left."; break; }
   seampath="$next"; srcpath="orig_src/$next"; class=$(basename "$next" .java)
   hash=$(printf '%s' "$srcpath" | cksum | cut -d' ' -f1); branch="seam/${class}-${hash}"
