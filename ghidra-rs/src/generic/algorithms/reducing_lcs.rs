@@ -81,6 +81,7 @@ pub struct ReducingLcs<I, T, O> {
     y: I,
     startn: usize,
     endn: usize,
+    size_limit: usize,
     _marker: PhantomData<T>,
 }
 
@@ -99,8 +100,14 @@ impl<I, T, O: ReducingLcsOps<I, T>> ReducingLcs<I, T, O> {
             y,
             startn,
             endn,
+            size_limit: 1_000_000,
             _marker: PhantomData,
         }
+    }
+
+    /// Changes the size limit of this LCS, past which no calculations will be performed.
+    pub fn set_size_limit(&mut self, new_limit: usize) {
+        self.size_limit = new_limit;
     }
 
     /// Returns the longest common subsequence, re-attaching the shared prefix/suffix that
@@ -135,6 +142,10 @@ impl<I, T, O: ReducingLcsOps<I, T>> ReducingLcs<I, T, O> {
 }
 
 impl<I, T, O: ReducingLcsOps<I, T>> LcsTrait<T> for ReducingLcs<I, T, O> {
+    fn get_size_limit(&self) -> usize {
+        self.size_limit
+    }
+
     fn length_of_x(&self) -> usize {
         self.ops.length_of(&self.x)
     }
@@ -200,6 +211,12 @@ mod tests {
     #[test]
     fn test_similar() {
         assert_eq!(lcs_of("DEADBEEF", "DEEDBEAD"), "DEDBE");
+
+        let x = "Some really long string that might complicate things.\
+                 Hooray for really long strings that span multiple lines!";
+        let y = "Some other really long string that might complicate things.\
+                 Hooray for really loooooong strings that span multiple lines in java!";
+        assert_eq!(lcs_of(x, y), x);
     }
 
     #[test]
@@ -224,5 +241,24 @@ mod tests {
         let x = "Line not modified";
         let y = "Line modified";
         assert_eq!(lcs_of(x, y), y);
+    }
+
+    #[test]
+    fn test_size_limit() {
+        let x = "This is a line that has not been modified";
+        let y = "This is a line that has been modified";
+
+        let mut reducing = ReducingLcs::new(CharOps, x.to_string(), y.to_string());
+        reducing.set_size_limit(10);
+        let actual: String = reducing.get_lcs(&DummyMonitor).unwrap().into_iter().collect();
+        // 'y' is common, since it is 'x', with only a delete
+        assert_eq!(actual, y);
+
+        // same as 'x', but with different start/end
+        let z = format!("Start Mod {} End Mod", x);
+        let mut reducing = ReducingLcs::new(CharOps, x.to_string(), z);
+        reducing.set_size_limit(10);
+        let actual = reducing.get_lcs(&DummyMonitor).unwrap();
+        assert!(actual.is_empty());
     }
 }
