@@ -11717,7 +11717,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassExc
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassFileInfo.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util classfinder
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassFilter.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util classfinder 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassJar.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util classfinder 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassLocation.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util classfinder 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassLocation.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util classfinder 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassPackage.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util classfinder 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassSearcher.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util classfinder 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ClassTranslator.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util classfinder 
