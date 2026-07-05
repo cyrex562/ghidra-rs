@@ -14561,7 +14561,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/S
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/TokenExtractor.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AbstractAddressSetView.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressIteratorAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeComparators.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeComparators.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeIterators.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/DifferenceAddressSetView.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/GhidraBigEndianDataConverter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util 
