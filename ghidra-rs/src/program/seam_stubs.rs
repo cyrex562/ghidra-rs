@@ -83,5 +83,47 @@ pub trait Composite {}
 
 /// Placeholder for `ghidra.program.model.data.DataTypeComponent`, referenced by
 /// [`AnnotationHandler`](crate::program::model::data::annotation_handler::AnnotationHandler)
+/// and [`InternalDataTypeComponent`](crate::program::model::data::internal_data_type_component::InternalDataTypeComponent)
 /// before the real interface is ported.
-pub trait DataTypeComponent {}
+///
+/// The accessors below give `InternalDataTypeComponent`'s `to_string` helper enough to
+/// reproduce the Java interface's static `toString(DataTypeComponent)`. `bit_field_bit_offset`
+/// stands in for that code's `((BitFieldDataType) c.getDataType()).getBitOffset()` cast, since
+/// `BitFieldDataType` is not yet ported; callers should only trust its value when
+/// `is_bit_field_component()` is `true`. All methods default so existing implementations of
+/// this trait keep compiling as the stub grows.
+pub trait DataTypeComponent {
+    /// Ordinal position of this component within its parent.
+    fn get_ordinal(&self) -> i32 {
+        0
+    }
+    /// Byte offset of this component within its parent.
+    fn get_offset(&self) -> i32 {
+        0
+    }
+    /// Byte length of this component.
+    fn get_length(&self) -> i32 {
+        0
+    }
+    /// Name of this component's data type.
+    fn get_data_type_name(&self) -> String {
+        String::new()
+    }
+    /// Whether this component represents a bit field.
+    fn is_bit_field_component(&self) -> bool {
+        false
+    }
+    /// Bit offset within the containing byte(s); only meaningful when
+    /// `is_bit_field_component()` is `true`.
+    fn bit_field_bit_offset(&self) -> i32 {
+        0
+    }
+    /// This component's field name, or `None` to indicate the default field name is used.
+    fn get_field_name(&self) -> Option<String> {
+        None
+    }
+    /// This component's comment, if any.
+    fn get_comment(&self) -> Option<String> {
+        None
+    }
+}
