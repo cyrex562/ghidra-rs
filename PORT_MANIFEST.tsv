@@ -11481,7 +11481,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/Lcs.java	DONE
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/ReducingLcs.java	DONE	orig_src Ghidra Framework Generic src main java generic algorithms
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/ReducingListBasedLcs.java	DONE	orig_src Ghidra Framework Generic src main java generic algorithms 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/StringReducingLcs.java	DONE	orig_src Ghidra Framework Generic src main java generic algorithms
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/WordDiffer.java	TODO	orig_src Ghidra Framework Generic src main java generic algorithms 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/algorithms/WordDiffer.java	DONE	orig_src Ghidra Framework Generic src main java generic algorithms 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/application/GenericApplicationLayout.java	TODO	orig_src Ghidra Framework Generic src main java generic application 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/cache/BasicFactory.java	DONE	orig_src Ghidra Framework Generic src main java generic cache
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/cache/CachingPool.java	TODO	orig_src Ghidra Framework Generic src main java generic cache 
