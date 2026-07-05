@@ -1,5 +1,6 @@
+use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::AutoParameterType;
-use crate::program::seam_stubs::{DataType, Variable};
+use crate::program::seam_stubs::Variable;
 
 /// The name Ghidra assigns to the synthetic return-storage parameter.
 pub const RETURN_NAME: &str = "<RETURN>";

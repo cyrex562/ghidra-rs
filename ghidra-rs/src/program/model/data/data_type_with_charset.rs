@@ -1,4 +1,5 @@
-use crate::program::seam_stubs::{DataType, MemBuffer, Settings, StringDataInstance, DEFAULT_CHARSET_NAME};
+use crate::program::model::data::data_type::DataType;
+use crate::program::seam_stubs::{MemBuffer, Settings, StringDataInstance, DEFAULT_CHARSET_NAME};
 
 /// A character value to encode, standing in for the `Object value` parameter of
 /// `DataTypeWithCharset.encodeCharacterValue`, which Java accepts as either a `Character` or a

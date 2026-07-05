@@ -44,12 +44,12 @@ mod tests {
     use super::*;
 
     struct MockEnum;
-    impl crate::program::seam_stubs::DataType for MockEnum {}
+    impl crate::program::model::data::data_type::DataType for MockEnum {}
     impl Enum for MockEnum {
-        fn get_value(&self, _name: &str) -> Option<i64> {
+        fn get_value_for_name(&self, _name: &str) -> Option<i64> {
             None
         }
-        fn get_name(&self, _value: i64) -> Option<String> {
+        fn get_name_for_value(&self, _value: i64) -> Option<String> {
             None
         }
         fn get_names_for_value(&self, _value: i64) -> Option<Vec<String>> {
@@ -71,7 +71,7 @@ mod tests {
         fn add_with_comment(&mut self, _name: &str, _value: i64, _comment: &str) {}
         fn remove(&mut self, _name: &str) {}
         fn set_description(&mut self, _description: &str) {}
-        fn get_representation(
+        fn get_enum_representation(
             &self,
             big_int: i128,
             _settings: &dyn crate::program::seam_stubs::Settings,

@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::DataType;
+use crate::program::model::data::data_type::DataType;
 
 /// Identifies a flavor of data offered by a [`DataTypeTransferable`], standing in for
 /// `java.awt.datatransfer.DataFlavor`. Ghidra's local flavors are always the MIME type

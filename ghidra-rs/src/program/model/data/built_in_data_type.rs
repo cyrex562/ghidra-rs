@@ -1,5 +1,6 @@
 use crate::program::model::data::data_organization::DataOrganization;
-use crate::program::seam_stubs::{DataType, Settings};
+use crate::program::model::data::data_type::DataType;
+use crate::program::seam_stubs::Settings;
 
 /// NOTE: ALL DATATYPE CLASSES MUST END IN "DataType". If not, the (Java) `ClassSearcher`
 /// will not find them; this naming convention is not enforced by the Rust trait.

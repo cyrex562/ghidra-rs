@@ -1,5 +1,6 @@
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
-use crate::program::seam_stubs::{DataType, MemBuffer};
+use crate::program::model::data::data_type::DataType;
+use crate::program::seam_stubs::MemBuffer;
 
 /// A [`DataType`] class that creates data types dynamically should implement this trait.
 /// This prevents them being directly referred to by a data instance within the listing
