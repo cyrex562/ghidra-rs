@@ -50,6 +50,13 @@ pub trait DataType {
     fn is_array(&self) -> bool {
         false
     }
+    /// Stands in for `dt instanceof ArrayStringable ? (ArrayStringable) dt : null`, used by
+    /// [`get_array_stringable`](crate::program::model::data::array_stringable::get_array_stringable).
+    fn into_array_stringable(
+        self: Box<Self>,
+    ) -> Option<Box<dyn crate::program::model::data::array_stringable::ArrayStringable>> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.program.model.data.BuiltInDataType`, referenced by
@@ -127,15 +134,23 @@ pub trait Composite {}
 
 /// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
 /// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
+/// and [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable)
 /// before the real interface is ported.
-pub trait MemBuffer {}
+pub trait MemBuffer {
+    /// Stands in for `MemBuffer.isInitializedMemory()`.
+    fn is_initialized_memory(&self) -> bool {
+        false
+    }
+}
 
 /// Placeholder for `ghidra.program.model.data.StringDataInstance`, referenced by
 /// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
+/// and [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable)
 /// before the real class is ported.
 ///
-/// Models just the two instance methods that `DataTypeWithCharset`'s default methods delegate
-/// to once a `StringDataInstance` has been built for a given data type/settings/buffer/length.
+/// Models just the instance methods that `DataTypeWithCharset`'s and `ArrayStringable`'s default
+/// methods delegate to once a `StringDataInstance` has been built for a given data
+/// type/settings/buffer/length.
 pub trait StringDataInstance {
     /// Encode a normalized character value (one code point, as one or two UTF-16 style chars)
     /// as replacement bytes.
@@ -143,6 +158,11 @@ pub trait StringDataInstance {
 
     /// Encode a single-character string representation as replacement bytes.
     fn encode_replacement_from_char_representation(&self, repr: &str) -> Result<Vec<u8>, String>;
+
+    /// Stands in for `StringDataInstance.getStringValue()`.
+    fn get_string_value(&self) -> Option<String> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.program.model.data.StringDataInstance.DEFAULT_CHARSET_NAME`.
