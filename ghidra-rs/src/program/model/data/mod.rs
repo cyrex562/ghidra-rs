@@ -15,6 +15,7 @@ pub mod illegal_rename_exception;
 pub mod invalidated_listener;
 pub mod leb128;
 pub mod packing_type;
+pub mod parameter_definition;
 pub mod playable;
 pub mod project_archive_based_data_type_manager;
 pub mod resource;
