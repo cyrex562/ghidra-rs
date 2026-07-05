@@ -38,19 +38,9 @@ pub trait DataTypeManagerOwner {
 }
 
 /// Placeholder for `ghidra.framework.model.DomainFile`, referenced by
-/// [`DomainFileBasedDataTypeManager`](crate::program::seam_stubs::DomainFileBasedDataTypeManager)
+/// [`DomainFileBasedDataTypeManager`](crate::program::model::data::domain_file_based_data_type_manager::DomainFileBasedDataTypeManager)
 /// before the real interface is ported.
 pub trait DomainFile {}
-
-/// Placeholder for `ghidra.program.model.data.DomainFileBasedDataTypeManager`, referenced by
-/// [`ProjectArchiveBasedDataTypeManager`](crate::program::model::data::project_archive_based_data_type_manager::ProjectArchiveBasedDataTypeManager)
-/// before the real interface is ported.
-pub trait DomainFileBasedDataTypeManager:
-    crate::program::model::data::file_based_data_type_manager::FileBasedDataTypeManager
-{
-    /// Gets the domain file backing this data type manager.
-    fn get_domain_file(&self) -> Box<dyn DomainFile>;
-}
 
 /// Placeholder for `ghidra.program.model.data.Structure`, referenced by
 /// [`StructureInternal`](crate::program::model::data::structure_internal::StructureInternal)

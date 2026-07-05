@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::DomainFileBasedDataTypeManager;
+use crate::program::model::data::domain_file_based_data_type_manager::DomainFileBasedDataTypeManager;
 
 /// A [`DomainFileBasedDataTypeManager`] specific to project data type archives.
 ///
