@@ -2,8 +2,9 @@ use std::cmp::Ordering;
 
 use thiserror::Error;
 
+use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type_dependency_exception::DataTypeDependencyException;
-use crate::program::seam_stubs::{CategoryPath, DataType, DataTypeConflictHandler, DataTypeManager};
+use crate::program::seam_stubs::{DataType, DataTypeConflictHandler, DataTypeManager};
 use crate::util::exception::{DuplicateNameException, InvalidNameException};
 use crate::util::task::TaskMonitor;
 
@@ -57,7 +58,7 @@ pub trait Category {
     fn get_category(&self, name: &str) -> Option<Box<dyn Category>>;
 
     /// Return the full [`CategoryPath`] for this category.
-    fn get_category_path(&self) -> Box<dyn CategoryPath>;
+    fn get_category_path(&self) -> CategoryPath;
 
     /// Get a data type with the given name, or `None` if there is no data type by this name.
     fn get_data_type(&self, name: &str) -> Option<Box<dyn DataType>>;
@@ -173,10 +174,8 @@ mod tests {
             None
         }
 
-        fn get_category_path(&self) -> Box<dyn CategoryPath> {
-            struct MockPath;
-            impl CategoryPath for MockPath {}
-            Box::new(MockPath)
+        fn get_category_path(&self) -> CategoryPath {
+            CategoryPath::parse(&format!("/{}", self.name)).unwrap()
         }
 
         fn get_data_type(&self, _name: &str) -> Option<Box<dyn DataType>> {

@@ -77,11 +77,6 @@ pub trait BookmarkType {}
 /// before the real interface is ported.
 pub trait Variable {}
 
-/// Placeholder for `ghidra.program.model.data.CategoryPath`, referenced by
-/// [`Category`](crate::program::model::data::category::Category)
-/// before the real class is ported.
-pub trait CategoryPath {}
-
 /// Placeholder for `ghidra.program.model.data.DataTypeConflictHandler`, referenced by
 /// [`Category`](crate::program::model::data::category::Category)
 /// before the real class is ported.
