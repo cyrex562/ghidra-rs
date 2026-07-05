@@ -2,6 +2,7 @@ use crate::program::model::address::{
     Address, AddressIterator, AddressIteratorAdapter, AddressRange, AddressRangeIterator,
     AddressRangeIteratorAdapter, EmptyAddressIterator, EmptyAddressRangeIterator,
 };
+use crate::program::model::listing::Program;
 
 /// Read-only view of an address set.
 ///
@@ -64,6 +65,14 @@ impl AddressSet {
         Self::from_start_end(address.clone(), address)
     }
 
+    /// Creates a new address set containing a single range, resolving spans across
+    /// address spaces using the program's [`AddressFactory`](crate::program::model::address::AddressFactory).
+    pub fn from_program_range(program: &dyn Program, start: &Address, end: &Address) -> Self {
+        let mut set = Self::new();
+        set.add_range_for_program(program, start, end);
+        set
+    }
+
     pub fn from_set(set: &dyn AddressSetView) -> Self {
         let mut new_set = Self::new();
         new_set.add_set(set);
@@ -82,6 +91,18 @@ impl AddressSet {
         let range = AddressRange::new(start.clone(), end.clone());
         self.ranges.push(range);
         self.normalize();
+    }
+
+    /// Adds a range of addresses to this set, resolving spans across address spaces using
+    /// the program's [`AddressFactory`](crate::program::model::address::AddressFactory).
+    pub fn add_range_for_program(&mut self, program: &dyn Program, start: &Address, end: &Address) {
+        if start.space() == end.space() {
+            self.add_range(start, end);
+            return;
+        }
+        if let Some(factory) = program.get_address_factory() {
+            self.add_set(&factory.get_address_set_range(start, end));
+        }
     }
 
     pub fn add_set(&mut self, set: &dyn AddressSetView) {
@@ -382,7 +403,10 @@ fn can_merge(left: &AddressRange, right: &AddressRange) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{AddressSpace, AddressSpaceType};
+    use crate::program::model::address::{
+        AddressFactory, AddressSpace, AddressSpaceType, DefaultAddressFactory,
+    };
+    use std::sync::Arc;
 
     #[test]
     fn add_merges_overlapping_and_adjacent_ranges() {
@@ -469,5 +493,47 @@ mod tests {
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         Address::new(space, offset)
+    }
+
+    struct TestProgram {
+        factory: Arc<DefaultAddressFactory>,
+    }
+
+    impl Program for TestProgram {
+        fn get_name(&self) -> &str {
+            "test"
+        }
+
+        fn get_language_id(&self) -> &str {
+            "test:LE:32:default"
+        }
+
+        fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {
+            Some(self.factory.clone())
+        }
+    }
+
+    #[test]
+    fn add_range_for_program_resolves_cross_space_ranges() {
+        let ram = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        let other = AddressSpace::new("other", 32, 1, AddressSpaceType::Ram, 2);
+        let factory = DefaultAddressFactory::new(vec![ram.clone(), other.clone()]);
+        let program = TestProgram {
+            factory: Arc::new(factory),
+        };
+
+        let start = Address::new(ram.clone(), 0x10);
+        let end = Address::new(other.clone(), 0x5);
+
+        let set = AddressSet::from_program_range(&program, &start, &end);
+
+        assert!(set.contains_range(&start, &ram.max_address()));
+        assert!(set.contains_range(&other.min_address(), &end));
+
+        let mut same_space_set = AddressSet::new();
+        let same_space_end = Address::new(ram.clone(), 0x20);
+        same_space_set.add_range_for_program(&program, &start, &same_space_end);
+        assert_eq!(same_space_set.num_address_ranges(), 1);
+        assert!(same_space_set.contains_range(&start, &same_space_end));
     }
 }
