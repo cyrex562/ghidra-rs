@@ -70,3 +70,8 @@ pub trait Variable {}
 /// [`Enum`](crate::program::model::data::enum_::Enum)
 /// before the real interface is ported.
 pub trait Settings {}
+
+/// Placeholder for `ghidra.program.model.data.PointerTypedefBuilder`, referenced by
+/// [`Pointer`](crate::program::model::data::pointer::Pointer)
+/// before the real class is ported.
+pub trait PointerTypedefBuilder {}
