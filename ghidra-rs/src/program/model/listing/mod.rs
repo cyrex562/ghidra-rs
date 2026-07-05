@@ -1,3 +1,4 @@
+pub mod address_change_set;
 pub mod auto_parameter_type;
 pub mod bookmark;
 pub mod bookmark_comparator;
@@ -15,6 +16,7 @@ pub mod repeatable_comment;
 pub mod symbol_change_set;
 pub mod variable_size_exception;
 
+pub use address_change_set::AddressChangeSet;
 pub use auto_parameter_type::AutoParameterType;
 pub use bookmark::Bookmark;
 pub use bookmark_comparator::BookmarkComparator;
