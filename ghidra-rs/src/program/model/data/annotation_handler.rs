@@ -1,6 +1,6 @@
+use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::enum_::Enum;
-use crate::program::seam_stubs::Composite;
 
 /// NOTE: all `AnnotationHandler` implementations must have names ending in
 /// "AnnotationHandler" so that the (Java) `ClassSearcher` can find them; this
@@ -106,6 +106,7 @@ mod tests {
     }
 
     struct MockComposite;
+    impl crate::program::model::data::data_type::DataType for MockComposite {}
     impl Composite for MockComposite {}
 
     struct MockDataTypeComponent;

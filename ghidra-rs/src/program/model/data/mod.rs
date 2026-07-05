@@ -7,6 +7,7 @@ pub mod bit_group;
 pub mod built_in_data_type;
 pub mod category;
 pub mod category_path;
+pub mod composite;
 pub mod custom_organization;
 pub mod data_organization;
 pub mod data_type;

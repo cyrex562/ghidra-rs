@@ -13853,7 +13853,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Complex32DataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Complex8DataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ComponentOffsetSettingsDefinition.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Composite.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Composite.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CompositeAlignmentHelper.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CompositeDataTypeImpl.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CompositeInternal.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
