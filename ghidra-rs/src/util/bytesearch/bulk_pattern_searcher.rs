@@ -359,11 +359,7 @@ impl<T: BytePattern + Clone> SearchState<T> {
         for pattern in completed {
             let actual_start = start + pattern.pre_sequence_length() as isize;
             if actual_start >= min && actual_start <= max {
-                let match_start = if start >= 0 {
-                    stream_offset + start as u64
-                } else {
-                    stream_offset - (-start) as u64
-                };
+                let match_start = (stream_offset as i64).wrapping_add(start as i64) as u64;
                 results.push(Match::new(pattern.clone(), match_start, pattern.size()));
             }
         }
@@ -724,6 +720,311 @@ mod tests {
         let monitor = CancelledMonitor;
         searcher.search_stream(&mut cursor, &mut results, &monitor).unwrap();
 
+        assert!(results.is_empty());
+    }
+
+    // Port of `ghidra.util.bytesearch.BulkPatternSearcherTest`.
+
+    use crate::feature::base::memsearch::bytesequence::ByteArrayByteSequence;
+    use crate::util::bytesearch::DittedBitSequence;
+
+    /// Port of the Java test's `TestPattern`, a `DittedBitSequence` where `.` in the input
+    /// string is a wildcard byte, with an optional required pre-sequence.
+    #[derive(Debug, Clone)]
+    struct TestPattern {
+        sequence: DittedBitSequence,
+        pre_sequence_length: usize,
+    }
+
+    impl TestPattern {
+        fn new(match_sequence: &str) -> Self {
+            Self::with_pre_sequence("", match_sequence)
+        }
+
+        fn with_pre_sequence(pre_sequence: &str, match_sequence: &str) -> Self {
+            let combined = format!("{pre_sequence}{match_sequence}");
+            let bits: Vec<u8> =
+                combined.chars().map(|c| if c == '.' { 0 } else { c as u8 }).collect();
+            let mask: Vec<u8> =
+                combined.chars().map(|c| if c == '.' { 0 } else { 0xff }).collect();
+            Self {
+                sequence: DittedBitSequence::from_bytes_and_mask(bits, mask),
+                pre_sequence_length: pre_sequence.len(),
+            }
+        }
+    }
+
+    impl BytePattern for TestPattern {
+        fn size(&self) -> usize {
+            self.sequence.size()
+        }
+
+        fn is_match(&self, pattern_offset: usize, byte_value: u8) -> bool {
+            self.sequence.is_match(pattern_offset, byte_value)
+        }
+
+        fn pre_sequence_length(&self) -> usize {
+            self.pre_sequence_length
+        }
+    }
+
+    impl PartialEq for TestPattern {
+        fn eq(&self, other: &Self) -> bool {
+            self.sequence == other.sequence && self.pre_sequence_length == other.pre_sequence_length
+        }
+    }
+
+    impl Eq for TestPattern {}
+
+    impl std::hash::Hash for TestPattern {
+        fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+            self.sequence.hash(state);
+            self.pre_sequence_length.hash(state);
+        }
+    }
+
+    fn assert_match(actual: &Match<TestPattern>, expected_pattern: &TestPattern, start: i64) {
+        assert_eq!(
+            *actual,
+            Match::new(expected_pattern.clone(), start as u64, expected_pattern.size())
+        );
+    }
+
+    struct BaseFixture {
+        data: String,
+        a: TestPattern,
+        ab: TestPattern,
+        cab: TestPattern,
+        bcc: TestPattern,
+        searcher: BulkPatternSearcher<TestPattern>,
+    }
+
+    fn base_fixture() -> BaseFixture {
+        let data = "abbcabaaabbbcccba".to_string();
+        let a = TestPattern::new("a");
+        let ab = TestPattern::new("ab");
+        let abc = TestPattern::new("abc");
+        let cab = TestPattern::new("cab");
+        let bcc = TestPattern::new("bcc");
+        let searcher =
+            BulkPatternSearcher::new(vec![a.clone(), ab.clone(), abc, cab.clone(), bcc.clone()]);
+        BaseFixture { data, a, ab, cab, bcc, searcher }
+    }
+
+    /// Port of the Java test's private `search(preData, mainData, postData, pattern)` helper.
+    fn search_pre_main_post(
+        pre_data: &str,
+        main_data: &str,
+        post_data: &str,
+        pattern: &TestPattern,
+    ) -> Vec<Match<TestPattern>> {
+        let pre: Box<dyn ByteSequence> = Box::new(ByteArrayByteSequence::from_string(pre_data));
+        let main: Box<dyn ByteSequence> = Box::new(ByteArrayByteSequence::from_string(main_data));
+        let post: Box<dyn ByteSequence> = Box::new(ByteArrayByteSequence::from_string(post_data));
+        let sequence = ExtendedByteSequence::new(main, Some(pre), Some(post), 10);
+
+        let pattern_searcher = BulkPatternSearcher::new(vec![pattern.clone()]);
+        let mut results = Vec::new();
+        pattern_searcher.search_extended(&sequence, &mut results);
+        results
+    }
+
+    #[test]
+    fn ported_match_with_into_list() {
+        let f = base_fixture();
+        let mut results = Vec::new();
+        f.searcher.search(f.data.as_bytes(), &mut results);
+        let mut it = results.iter();
+        assert_match(it.next().unwrap(), &f.a, 0);
+        assert_match(it.next().unwrap(), &f.ab, 0);
+        assert_match(it.next().unwrap(), &f.cab, 3);
+        assert_match(it.next().unwrap(), &f.a, 4);
+        assert_match(it.next().unwrap(), &f.ab, 4);
+        assert_match(it.next().unwrap(), &f.a, 6);
+        assert_match(it.next().unwrap(), &f.a, 7);
+        assert_match(it.next().unwrap(), &f.a, 8);
+        assert_match(it.next().unwrap(), &f.ab, 8);
+        assert_match(it.next().unwrap(), &f.bcc, 11);
+        assert_match(it.next().unwrap(), &f.a, 16);
+        assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn ported_match_with_into_list_with_buffer_limit() {
+        let f = base_fixture();
+        let mut results = Vec::new();
+        f.searcher.search_len(f.data.as_bytes(), 5, &mut results);
+        let mut it = results.iter();
+        assert_match(it.next().unwrap(), &f.a, 0);
+        assert_match(it.next().unwrap(), &f.ab, 0);
+        assert_match(it.next().unwrap(), &f.a, 4);
+        assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn ported_match_with_iterator() {
+        let f = base_fixture();
+        let mut it = f.searcher.search_iter(f.data.as_bytes());
+        assert_match(&it.next().unwrap(), &f.a, 0);
+        assert_match(&it.next().unwrap(), &f.ab, 0);
+        assert_match(&it.next().unwrap(), &f.cab, 3);
+        assert_match(&it.next().unwrap(), &f.a, 4);
+        assert_match(&it.next().unwrap(), &f.ab, 4);
+        assert_match(&it.next().unwrap(), &f.a, 6);
+        assert_match(&it.next().unwrap(), &f.a, 7);
+        assert_match(&it.next().unwrap(), &f.a, 8);
+        assert_match(&it.next().unwrap(), &f.ab, 8);
+        assert_match(&it.next().unwrap(), &f.bcc, 11);
+        assert_match(&it.next().unwrap(), &f.a, 16);
+        assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn ported_match_with_iterator_and_buffer_limit() {
+        let f = base_fixture();
+        let mut it = f.searcher.search_iter_len(f.data.as_bytes(), 5);
+        assert_match(&it.next().unwrap(), &f.a, 0);
+        assert_match(&it.next().unwrap(), &f.ab, 0);
+        assert_match(&it.next().unwrap(), &f.a, 4);
+        assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn ported_input_stream_search() {
+        let t = TestPattern::new("test");
+        let i = TestPattern::new("input stream");
+        let s = TestPattern::new("stream");
+        let matcher = BulkPatternSearcher::new(vec![t.clone(), i.clone(), s.clone()]);
+
+        let input = "This is a test of the input stream";
+        let mut cursor = Cursor::new(input.as_bytes().to_vec());
+        let mut results = Vec::new();
+        let monitor = DummyMonitor;
+        matcher.search_stream(&mut cursor, &mut results, &monitor).unwrap();
+
+        assert_eq!(results.len(), 3);
+        assert_match(&results[0], &t, 10);
+        assert_match(&results[1], &i, 22);
+        assert_match(&results[2], &s, 28);
+    }
+
+    #[test]
+    fn ported_input_stream_with_match_that_spans_buffer() {
+        let p1 = TestPattern::new("test");
+        let p2 = TestPattern::new("test of the");
+        let p3 = TestPattern::new("stream");
+        let mut matcher = BulkPatternSearcher::new(vec![p1.clone(), p2.clone(), p3.clone()]);
+        matcher.set_buffer_size(15); // test with buffer so a pattern crosses the buffer boundary
+
+        let input = "This is a test of the input stream";
+        let mut cursor = Cursor::new(input.as_bytes().to_vec());
+        let mut results = Vec::new();
+        let monitor = DummyMonitor;
+        matcher.search_stream_max(&mut cursor, None, &mut results, &monitor).unwrap();
+
+        assert_eq!(results.len(), 3);
+        assert_match(&results[0], &p1, 10);
+        assert_match(&results[1], &p2, 10);
+        assert_match(&results[2], &p3, 28);
+    }
+
+    #[test]
+    fn ported_input_stream_with_max_read_set() {
+        let t = TestPattern::new("test");
+        let i = TestPattern::new("input stream");
+        let s = TestPattern::new("stream");
+        let matcher = BulkPatternSearcher::new(vec![t.clone(), i.clone(), s.clone()]);
+
+        let input = "This is a test of the input stream";
+        let mut cursor = Cursor::new(input.as_bytes().to_vec());
+        let mut results = Vec::new();
+        let monitor = DummyMonitor;
+        matcher.search_stream_max(&mut cursor, Some(24), &mut results, &monitor).unwrap();
+
+        assert_eq!(results.len(), 2);
+        assert_match(&results[0], &t, 10);
+        assert_match(&results[1], &i, 22);
+    }
+
+    #[test]
+    fn ported_ditted_pattern_search() {
+        let p1 = TestPattern::new("b.t");
+        let p2 = TestPattern::new("t..t");
+        let p3 = TestPattern::new(".ba.");
+        let searcher = BulkPatternSearcher::new(vec![p1.clone(), p2.clone(), p3.clone()]);
+
+        let input = "bat baat bt abbt";
+        let mut it = searcher.search_iter(input.as_bytes());
+        assert_match(&it.next().unwrap(), &p1, 0);
+        assert_match(&it.next().unwrap(), &p3, 3);
+        assert_match(&it.next().unwrap(), &p2, 7);
+        assert_match(&it.next().unwrap(), &p1, 13);
+        assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn ported_states_fully_dedup() {
+        let p1 = TestPattern::new("..ab");
+        let p2 = TestPattern::new("..ac");
+        let p3 = TestPattern::new("axad");
+        let searcher = BulkPatternSearcher::new(vec![p1, p2, p3]);
+
+        assert_eq!(searcher.get_unique_state_count(), 10);
+    }
+
+    #[test]
+    fn ported_search_beginning_only() {
+        let f = base_fixture();
+        let mut results = Vec::new();
+        f.searcher.matches(f.data.as_bytes(), f.data.len(), &mut results);
+        let mut it = results.iter();
+        assert_match(it.next().unwrap(), &f.a, 0);
+        assert_match(it.next().unwrap(), &f.ab, 0);
+        assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn ported_byte_sequence_starts_in_main_ends_in_post() {
+        let p = TestPattern::new("joebob");
+        let results = search_pre_main_post("xxxxjoexbob", "xxxjoe", "bob", &p);
+        assert_eq!(results.len(), 1);
+        assert_match(&results[0], &p, 3);
+    }
+
+    #[test]
+    fn ported_pre_sequence_pattern_starts_in_pre_effectively_start_in_pre() {
+        let p = TestPattern::with_pre_sequence("joe", "bob");
+        // pre-pattern and effective start are both in the pre sequence, so no match
+        let results = search_pre_main_post("xxjoeb", "obxxx", "xxxx", &p);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn ported_pre_sequence_pattern_start_in_pre_effectively_starts_in_main() {
+        let p = TestPattern::with_pre_sequence("joe", "bob");
+        // pre-pattern starts in the pre sequence, effective match start is in main, so this
+        // is a match
+        let results = search_pre_main_post("xxxxjoe", "bobxxx", "xxxx", &p);
+        assert_eq!(results.len(), 1);
+        assert_match(&results[0], &p, -3);
+    }
+
+    #[test]
+    fn ported_pre_sequence_patterns_starts_in_main_ends_in_post() {
+        let p = TestPattern::with_pre_sequence("joe", "bob");
+        // pre-sequence and main sequence start in main, but pattern ends in post sequence, so
+        // this is a match
+        let results = search_pre_main_post("xxx", "xxjoeb", "obxx", &p);
+        assert_eq!(results.len(), 1);
+        assert_match(&results[0], &p, 2);
+    }
+
+    #[test]
+    fn ported_pre_sequence_pattern_starts_in_main_effect_start_in_post() {
+        let p = TestPattern::with_pre_sequence("joe", "bob");
+        // pre-sequence starts in main, but the actual pattern match start is in the post
+        // sequence, so this is not a match
+        let results = search_pre_main_post("xxx", "xxxjoe", "bob", &p);
         assert!(results.is_empty());
     }
 }
