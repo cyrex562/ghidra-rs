@@ -37,6 +37,60 @@ mod tests {
         assert!(set.contains(&addr(0x2000)));
     }
 
+    #[test]
+    fn collects_empty_iterator() {
+        let empty: Vec<AddressRange> = vec![];
+        let set = AddressCollectors::to_address_set(empty);
+        assert!(set.is_empty());
+        assert_eq!(set.num_address_ranges(), 0);
+    }
+
+    #[test]
+    fn collects_single_range() {
+        let set = AddressCollectors::to_address_set(vec![
+            AddressRange::new(addr(0x1000), addr(0x1010)),
+        ]);
+
+        assert_eq!(set.num_address_ranges(), 1);
+        assert!(set.contains(&addr(0x1000)));
+        assert!(set.contains(&addr(0x1010)));
+        assert!(!set.contains(&addr(0x0fff)));
+        assert!(!set.contains(&addr(0x1011)));
+    }
+
+    #[test]
+    fn collects_overlapping_ranges_into_single_merged_range() {
+        let set = AddressCollectors::to_address_set(vec![
+            AddressRange::new(addr(0x1000), addr(0x1010)),
+            AddressRange::new(addr(0x100f), addr(0x1020)),
+        ]);
+
+        assert_eq!(set.num_address_ranges(), 1);
+        assert!(set.contains_range(&addr(0x1000), &addr(0x1020)));
+    }
+
+    #[test]
+    fn collects_adjacent_ranges() {
+        let set = AddressCollectors::to_address_set(vec![
+            AddressRange::new(addr(0x1000), addr(0x1010)),
+            AddressRange::new(addr(0x1011), addr(0x1020)),
+        ]);
+
+        assert_eq!(set.num_address_ranges(), 1);
+        assert!(set.contains_range(&addr(0x1000), &addr(0x1020)));
+    }
+
+    #[test]
+    fn collects_duplicate_ranges() {
+        let set = AddressCollectors::to_address_set(vec![
+            AddressRange::new(addr(0x1000), addr(0x1010)),
+            AddressRange::new(addr(0x1000), addr(0x1010)),
+        ]);
+
+        assert_eq!(set.num_address_ranges(), 1);
+        assert!(set.contains_range(&addr(0x1000), &addr(0x1010)));
+    }
+
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         Address::new(space, offset)
