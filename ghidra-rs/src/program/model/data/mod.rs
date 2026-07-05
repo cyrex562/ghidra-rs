@@ -9,6 +9,7 @@ pub mod data_organization;
 pub mod data_type_dependency_exception;
 pub mod data_type_display_options;
 pub mod data_type_manager_domain_object;
+pub mod data_type_transferable;
 pub mod enum_;
 pub mod enum_value_partitioner;
 pub mod file_archive_based_data_type_manager;
