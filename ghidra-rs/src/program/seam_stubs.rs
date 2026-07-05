@@ -75,3 +75,13 @@ pub trait Settings {}
 /// [`Pointer`](crate::program::model::data::pointer::Pointer)
 /// before the real class is ported.
 pub trait PointerTypedefBuilder {}
+
+/// Placeholder for `ghidra.program.model.data.Composite`, referenced by
+/// [`AnnotationHandler`](crate::program::model::data::annotation_handler::AnnotationHandler)
+/// before the real interface is ported.
+pub trait Composite {}
+
+/// Placeholder for `ghidra.program.model.data.DataTypeComponent`, referenced by
+/// [`AnnotationHandler`](crate::program::model::data::annotation_handler::AnnotationHandler)
+/// before the real interface is ported.
+pub trait DataTypeComponent {}
