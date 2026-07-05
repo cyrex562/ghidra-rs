@@ -1,4 +1,5 @@
-use crate::program::seam_stubs::{BuiltInDataType, DataType, MemBuffer};
+use crate::program::model::data::built_in_data_type::BuiltInDataType;
+use crate::program::seam_stubs::{DataType, MemBuffer};
 
 /// A [`DataType`] class that creates data types dynamically should implement this trait.
 /// This prevents them being directly referred to by a data instance within the listing
@@ -31,7 +32,16 @@ mod tests {
         }
     }
 
-    impl BuiltInDataType for MockFactoryDataType {}
+    impl BuiltInDataType for MockFactoryDataType {
+        fn get_c_type_declaration(
+            &self,
+            _data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+        ) -> Option<String> {
+            None
+        }
+
+        fn set_default_settings(&mut self, _settings: &dyn crate::program::seam_stubs::Settings) {}
+    }
 
     impl FactoryDataType for MockFactoryDataType {
         fn get_data_type(&self, _buf: &dyn MemBuffer) -> Box<dyn DataType> {
