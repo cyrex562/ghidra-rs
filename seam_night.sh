@@ -66,9 +66,21 @@ for ((i=1;i<=SEAM_MAX;i++)); do
   git checkout -f "$INTEGRATION" >/dev/null 2>&1
   git branch -D "$branch" >/dev/null 2>&1 || true; git switch -c "$branch" >/dev/null 2>&1
 
+  # is this class currently a PLACEHOLDER in a seam_stubs.rs? if so, this is a PROMOTE (replace it)
+  promote=""
+  if grep -rqE --include='seam_stubs.rs' "\b(pub +)?trait +${class}\b" ghidra-rs/src 2>/dev/null; then
+    promote="PROMOTE MODE: a minimal placeholder 'trait ${class}' currently exists in a seam_stubs.rs.
+You are REPLACING that placeholder with the real port. After creating the real trait: (1) update EVERY
+importer -- replace each 'use ...seam_stubs::${class}' (and any 'seam_stubs::${class}' path) with the
+real trait's path; if the placeholder had methods, the real trait must still provide them (keep them as
+a superset) so existing impls/callers compile. (2) DELETE the placeholder 'trait ${class}' (and any
+${class}-specific consts) from seam_stubs.rs. (3) Remove ${class}'s line(s) from STUBS.tsv. Then proceed
+with the normal rules below.
+"
+  fi
   prompt="You are breaking a dependency CYCLE in a Java->Rust port. Port the Java INTERFACE at
 ${srcpath} to a Rust TRAIT.
-
+${promote}
 Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in snake_case;
 create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.
 
