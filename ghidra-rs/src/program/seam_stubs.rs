@@ -197,3 +197,18 @@ pub trait StringDataInstance {
 
 /// Placeholder for `ghidra.program.model.data.StringDataInstance.DEFAULT_CHARSET_NAME`.
 pub const DEFAULT_CHARSET_NAME: &str = "US-ASCII";
+
+/// Placeholder for `ghidra.program.model.listing.CodeUnit`, referenced by
+/// [`Data`](crate::program::model::listing::data::Data) as a supertrait before the real
+/// interface is ported.
+pub trait CodeUnit {}
+
+/// Placeholder for `ghidra.program.model.symbol.RefType`, referenced by
+/// [`Data`](crate::program::model::listing::data::Data)
+/// before the real class is ported.
+pub trait RefType {}
+
+/// Placeholder for `ghidra.program.model.symbol.Reference`, referenced by
+/// [`Data`](crate::program::model::listing::data::Data)
+/// before the real interface is ported.
+pub trait Reference {}

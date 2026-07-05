@@ -15,3 +15,6 @@ ts	stub_class	referenced_by
 2026-07-05T00:15:47Z	DataTypeConflictHandler	Category
 2026-07-04T00:30:00Z	MemBuffer	DataTypeWithCharset
 2026-07-04T00:30:00Z	StringDataInstance	DataTypeWithCharset
+2026-07-05T11:59:50Z	CodeUnit	Data
+2026-07-05T11:59:50Z	RefType	Data
+2026-07-05T11:59:50Z	Reference	Data
