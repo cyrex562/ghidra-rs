@@ -35,6 +35,7 @@ pub mod resource;
 pub mod source_archive;
 pub mod string_layout_enum;
 pub mod structure_internal;
+pub mod typedef;
 pub mod typedef_settings_definition;
 pub mod union_internal;
 pub mod isf;
