@@ -1,4 +1,5 @@
-use crate::program::seam_stubs::{DataType, DataTypeComponent};
+use crate::program::model::data::data_type_component::DataTypeComponent;
+use crate::program::seam_stubs::DataType;
 
 /// Port of `ghidra.program.model.data.InternalDataTypeComponent`.
 ///

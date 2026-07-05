@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::DataTypeComponent;
+use crate::program::model::data::data_type_component::DataTypeComponent;
 
 /// Interface for objects that can provide new instances of dataTypes.
 ///
