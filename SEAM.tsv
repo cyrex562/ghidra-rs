@@ -9,7 +9,7 @@ DONE	interface	1328	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	interface	1315	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSpace.java
 TODO	interface	1297	9	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Structure.java
 DONE	interface	1270	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataOrganization.java
-DONE	interface	1264	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeComponent.java
+TODO	interface	1264	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeComponent.java
 DONE	interface	1251	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Pointer.java
 TODO	interface	1241	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TypeDef.java
 TODO	interface	1240	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Composite.java
@@ -37,7 +37,7 @@ DONE	interface	1202	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	interface	1202	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/InvalidatedListener.java
 DONE	interface	1202	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureInternal.java
 DONE	interface	1201	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeTransferable.java
-DONE	interface	1201	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DomainFileBasedDataTypeManager.java
+TODO	interface	1201	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DomainFileBasedDataTypeManager.java
 DONE	interface	1201	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileBasedDataTypeManager.java
 DONE	interface	1200	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileArchiveBasedDataTypeManager.java
 DONE	interface	1200	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/UnionInternal.java

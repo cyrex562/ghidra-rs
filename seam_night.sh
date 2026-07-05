@@ -53,7 +53,7 @@ for ((i=1;i<=SEAM_MAX;i++)); do
 
   # reconcile-skip: if a Rust impl already exists for this interface, it is effectively ported
   # (some keystones were ported early as concrete types). Mark DONE without an LLM turn.
-  if grep -rqE "\b(pub +)?(struct|trait|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
+  if grep -rqE --include='*.rs' --exclude='seam_stubs.rs' "\b(pub +)?(struct|trait|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
     esc=$(printf '%s' "$srcpath" | sed 's/[.[\*^$]/\\&/g')
     sed -i "s#^${esc}\tTODO\t#${esc}\tDONE\t#" "$MANIFEST"
     sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${seampath//\//\\/}\)\$#DONE\1#" "$SEAM"
