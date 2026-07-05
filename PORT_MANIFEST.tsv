@@ -10868,7 +10868,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/EmulatorCo
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/EmulatorHelper.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/FilteredMemoryState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/MemoryAccessFilter.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/CompositeLoadImage.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator memory 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/CompositeLoadImage.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra app emulator memory 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/EmulatorLoadData.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra app emulator memory
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/MemoryImage.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra app emulator memory 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/memory/MemoryLoadImage.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra app emulator memory
