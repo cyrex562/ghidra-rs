@@ -10,8 +10,14 @@ pub trait DataTypeManager {}
 
 /// Placeholder for `ghidra.program.model.data.DataType`, referenced by
 /// [`DataOrganization`](crate::program::model::data::data_organization::DataOrganization)
+/// and [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
 /// before the real interface is ported.
-pub trait DataType {}
+pub trait DataType {
+    /// Get the length of this DataType as a number of 8-bit bytes.
+    fn get_length(&self) -> i32 {
+        0
+    }
+}
 
 /// Placeholder for `ghidra.framework.model.DomainObject`, referenced by
 /// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)
@@ -142,3 +148,26 @@ pub trait DataTypeComponent {
         None
     }
 }
+
+/// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
+/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
+/// before the real interface is ported.
+pub trait MemBuffer {}
+
+/// Placeholder for `ghidra.program.model.data.StringDataInstance`, referenced by
+/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
+/// before the real class is ported.
+///
+/// Models just the two instance methods that `DataTypeWithCharset`'s default methods delegate
+/// to once a `StringDataInstance` has been built for a given data type/settings/buffer/length.
+pub trait StringDataInstance {
+    /// Encode a normalized character value (one code point, as one or two UTF-16 style chars)
+    /// as replacement bytes.
+    fn encode_replacement_from_char_value(&self, value: &[char]) -> Result<Vec<u8>, String>;
+
+    /// Encode a single-character string representation as replacement bytes.
+    fn encode_replacement_from_char_representation(&self, repr: &str) -> Result<Vec<u8>, String>;
+}
+
+/// Placeholder for `ghidra.program.model.data.StringDataInstance.DEFAULT_CHARSET_NAME`.
+pub const DEFAULT_CHARSET_NAME: &str = "US-ASCII";
