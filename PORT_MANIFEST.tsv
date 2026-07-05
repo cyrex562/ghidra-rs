@@ -7301,7 +7301,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/D
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgHeaderV2.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dmg 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgHeaderV2_old.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dmg 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgServerProcessManager.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dmg 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgUtil.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dmg 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/DmgUtil.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dmg 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dmg/UDIFHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dmg 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dyldcache/DyldCacheAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dyldcache 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dyldcache/DyldCacheEntry.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats ios dyldcache 
