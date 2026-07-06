@@ -428,6 +428,11 @@ pub trait DataType {
         false
     }
 
+    /// Stands in for `instanceof Union`.
+    fn is_union(&self) -> bool {
+        false
+    }
+
     /// Stands in for `instanceof TypeDef`.
     fn is_typedef(&self) -> bool {
         false
