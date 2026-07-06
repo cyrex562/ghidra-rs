@@ -1,6 +1,7 @@
 pub mod address_factory_service;
 pub mod bin;
 pub mod clipboard_type;
+pub mod comment_types;
 pub mod datatype;
 pub mod disassemble;
 pub mod exporter;
