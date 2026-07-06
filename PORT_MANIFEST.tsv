@@ -14235,7 +14235,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/li
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/RegisterChangeSet.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/RepeatableComment.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/ReturnParameterImpl.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/StackFrame.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/StackFrame.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/StackVariableComparator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/StubListing.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/SymbolChangeSet.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing

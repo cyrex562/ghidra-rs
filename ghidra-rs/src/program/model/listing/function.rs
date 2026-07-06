@@ -592,7 +592,57 @@ mod tests {
 
         fn get_stack_frame(&self) -> Box<dyn StackFrame> {
             struct MockStackFrame;
-            impl StackFrame for MockStackFrame {}
+            impl StackFrame for MockStackFrame {
+                fn get_function(&self) -> Option<Box<dyn Function>> {
+                    None
+                }
+                fn get_frame_size(&self) -> i32 {
+                    0
+                }
+                fn get_local_size(&self) -> i32 {
+                    0
+                }
+                fn get_parameter_size(&self) -> i32 {
+                    0
+                }
+                fn get_parameter_offset(&self) -> i32 {
+                    0
+                }
+                fn is_parameter_offset(&self, _offset: i32) -> bool {
+                    false
+                }
+                fn set_local_size(&mut self, _size: i32) {}
+                fn set_return_address_offset(&mut self, _offset: i32) {}
+                fn get_return_address_offset(&self) -> i32 {
+                    0
+                }
+                fn get_variable_containing(&self, _offset: i32) -> Option<Box<dyn Variable>> {
+                    None
+                }
+                fn create_variable(
+                    &mut self,
+                    _name: &str,
+                    _offset: i32,
+                    _data_type: Box<dyn DataType>,
+                    _source: SourceType,
+                ) -> Result<Box<dyn Variable>, crate::program::model::listing::CreateStackVariableError>
+                {
+                    unimplemented!()
+                }
+                fn clear_variable(&mut self, _offset: i32) {}
+                fn get_stack_variables(&self) -> Vec<Box<dyn Variable>> {
+                    vec![]
+                }
+                fn get_parameters(&self) -> Vec<Box<dyn Variable>> {
+                    vec![]
+                }
+                fn get_locals(&self) -> Vec<Box<dyn Variable>> {
+                    vec![]
+                }
+                fn grows_negative(&self) -> bool {
+                    true
+                }
+            }
             Box::new(MockStackFrame)
         }
 
