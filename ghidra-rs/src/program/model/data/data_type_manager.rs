@@ -13,9 +13,10 @@ use crate::program::model::data::data_type_manager_change_listener::DataTypeMana
 use crate::program::model::data::invalidated_listener::InvalidatedListener;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::source_archive::SourceArchive;
+use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::data::structure::Structure;
 use crate::program::seam_stubs::{
-    AddressMap, DataTypeConflictHandler, DataTypePath, FunctionDefinition, PointerTypedefBuilder,
+    AddressMap, DataTypeConflictHandler, DataTypePath, PointerTypedefBuilder,
     ProgramArchitecture, PrototypeModel, Transaction,
 };
 use crate::util::exception::{CancelledException, InvalidNameException};

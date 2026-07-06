@@ -140,10 +140,15 @@ pub trait RefType {}
 /// before the real interface is ported.
 pub trait Reference {}
 
-/// Placeholder for `ghidra.program.model.data.FunctionDefinition`, referenced by
-/// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
-/// before the real interface is ported.
-pub trait FunctionDefinition {}
+/// Placeholder for `ghidra.program.model.listing.FunctionSignature`, referenced by
+/// [`FunctionDefinition`](crate::program::model::data::function_definition::FunctionDefinition)
+/// as a supertrait before the real interface is ported.
+pub trait FunctionSignature {}
+
+/// Placeholder for `ghidra.program.model.data.GenericCallingConvention`, referenced by
+/// [`FunctionDefinition`](crate::program::model::data::function_definition::FunctionDefinition)
+/// before the real enum is ported.
+pub trait GenericCallingConvention {}
 
 /// Placeholder for `ghidra.program.model.lang.PrototypeModel`, referenced by
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)

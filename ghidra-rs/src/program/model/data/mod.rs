@@ -28,6 +28,7 @@ pub mod enum_value_partitioner;
 pub mod factory_data_type;
 pub mod file_archive_based_data_type_manager;
 pub mod file_based_data_type_manager;
+pub mod function_definition;
 pub mod icategory;
 pub mod illegal_rename_exception;
 pub mod internal_data_type_component;
