@@ -1,3 +1,4 @@
+pub mod analyzers;
 pub mod cmd;
 pub mod decompiler;
 pub mod emulator;
