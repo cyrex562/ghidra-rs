@@ -21,6 +21,7 @@ pub mod data_type_encode_exception;
 pub mod data_type_display_options;
 pub mod data_type_manager;
 pub mod data_type_manager_change_listener;
+pub mod data_type_manager_change_listener_adapter;
 pub mod data_type_manager_domain_object;
 pub mod data_type_path;
 pub mod data_type_transferable;
