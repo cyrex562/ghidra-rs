@@ -13801,7 +13801,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/co
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/DisambiguateByParentWithOrder.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/DisambiguateStrategy.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/Hash.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/HashCalculator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/HashCalculator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/HashEntry.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/HashStore.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/correlate/HashedFunctionAddressCorrelation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model correlate 
