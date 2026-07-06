@@ -2487,7 +2487,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/comments/Comm
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/comments/CommentsActionFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core comments 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/comments/CommentsDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core comments 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/comments/CommentsPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core comments 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/commentwindow/CommentRowObject.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core commentwindow 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/commentwindow/CommentRowObject.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core commentwindow 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/commentwindow/CommentRowObjectToAddressTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core commentwindow 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/commentwindow/CommentRowObjectToProgramLocationTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core commentwindow 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/commentwindow/CommentTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core commentwindow 
