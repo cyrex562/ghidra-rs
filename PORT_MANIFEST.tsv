@@ -14670,7 +14670,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/EnumDataTypeTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/EnumValuePartitionerTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/Float10DataTypeTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/IntegerDataTypeTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/IntegerDataTypeTest.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/LEB128DataTypeTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/LEB128Test.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/NoisyStructureBuilderTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
