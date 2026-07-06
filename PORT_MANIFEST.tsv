@@ -4168,7 +4168,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Reloca
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/RelocationOSFixup.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResidentNameTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Resource.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceName.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceName.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceStringTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 

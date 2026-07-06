@@ -8,6 +8,7 @@ pub mod relocation_imported_ordinal;
 pub mod relocation_internal_ref;
 pub mod relocation_os_fixup;
 pub mod resident_name_table;
+pub mod resource_name;
 
 pub use imported_name_table::ImportedNameTable;
 pub use invalid_windows_header_exception::InvalidWindowsHeaderException;
@@ -19,3 +20,4 @@ pub use relocation_imported_ordinal::RelocationImportedOrdinal;
 pub use relocation_internal_ref::RelocationInternalRef;
 pub use relocation_os_fixup::RelocationOSFixup;
 pub use resident_name_table::ResidentNameTable;
+pub use resource_name::ResourceName;
