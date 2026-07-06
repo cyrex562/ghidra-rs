@@ -245,6 +245,12 @@ impl NamespaceType {
     }
 }
 
+/// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
+/// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext)
+/// before the real class is ported. `ProgramContext` only ever passes this type through (it
+/// never inspects or constructs one directly), so no members are needed yet.
+pub trait RegisterValue {}
+
 /// Placeholder for `ghidra.program.model.symbol.Namespace`, referenced by
 /// [`Library`](crate::program::model::listing::library::Library) as a supertrait before the
 /// real interface is ported.
