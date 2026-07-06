@@ -36,6 +36,7 @@ pub mod register_change_set;
 pub mod repeatable_comment;
 pub mod stack_variable_comparator;
 pub mod symbol_change_set;
+pub mod thunk_function;
 pub mod variable;
 pub mod variable_size_exception;
 
@@ -77,5 +78,6 @@ pub use register_change_set::RegisterChangeSet;
 pub use repeatable_comment::RepeatableComment;
 pub use stack_variable_comparator::{StackVariableComparator, StackVariableOperand};
 pub use symbol_change_set::SymbolChangeSet;
+pub use thunk_function::ThunkFunction;
 pub use variable::Variable;
 pub use variable_size_exception::VariableSizeException;
