@@ -24,6 +24,7 @@ pub mod data_type_manager_domain_object;
 pub mod data_type_path;
 pub mod data_type_transferable;
 pub mod data_type_with_charset;
+pub mod default_annotation_handler;
 pub mod domain_file_based_data_type_manager;
 pub mod dynamic;
 pub mod dynamic_data_type;
