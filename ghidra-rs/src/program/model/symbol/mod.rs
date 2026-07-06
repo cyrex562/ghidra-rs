@@ -1,4 +1,5 @@
 use crate::program::model::address::Address;
+use crate::program::seam_stubs::Namespace;
 use std::io;
 use std::sync::Arc;
 
@@ -60,6 +61,26 @@ pub trait Symbol: Send + Sync {
     fn is_primary(&self) -> bool;
     fn get_id(&self) -> i64;
     fn get_parent_id(&self) -> i64;
+
+    /// Returns true if this symbol is external (i.e. associated with a
+    /// [`Library`](crate::program::model::listing::library::Library) rather than program
+    /// memory). Real abstract method on `Symbol`.
+    ///
+    /// Defaults to `false` so existing implementors are unaffected; concrete implementations
+    /// should override once external-symbol support is ported.
+    fn is_external(&self) -> bool {
+        false
+    }
+
+    /// The namespace this symbol represents, when its [`SymbolType`] is `Namespace`, `Class`,
+    /// `Library`, or `Function`. Stands in for `Symbol.getObject()` narrowed to the `Namespace`
+    /// case, since Rust trait objects cannot be downcast to another trait object without extra
+    /// machinery.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected.
+    fn as_namespace(&self) -> Option<Arc<dyn Namespace>> {
+        None
+    }
 }
 
 pub trait SymbolTable: Send + Sync {
