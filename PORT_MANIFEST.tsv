@@ -6189,7 +6189,7 @@ orig_src/Ghidra/Features/BytePatterns/ghidra_scripts/DumpFunctionBitPatternInfoF
 orig_src/Ghidra/Features/BytePatterns/ghidra_scripts/DumpFunctionPatternInfoScript.java	TODO	orig_src Ghidra Features BytePatterns ghidra_scripts 
 orig_src/Ghidra/Features/BytePatterns/ghidra_scripts/DumpMissedStarts.java	TODO	orig_src Ghidra Features BytePatterns ghidra_scripts 
 orig_src/Ghidra/Features/BytePatterns/ghidra_scripts/PatternStats.java	TODO	orig_src Ghidra Features BytePatterns ghidra_scripts 
-orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FuncDB.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
+orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FuncDB.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FuncDBsmall.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FuncRecord.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FunctionStartAnalyzer.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
