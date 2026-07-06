@@ -5,6 +5,7 @@ pub mod expression;
 pub mod line;
 pub mod dwarf_accessibility;
 pub mod name_deduper;
+pub mod string_table;
 pub mod dwarf_children;
 pub mod dwarf_encoding;
 pub mod dwarf_endianity;
