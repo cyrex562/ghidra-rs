@@ -7641,7 +7641,7 @@ orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/Popu
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/TextAreaDialog.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/DefaultFidPopulateResultReporter.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FIDFixedSizeMRUCachingFactory.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
-orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidHasherFactory.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
+orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidHasherFactory.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid service
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatch.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatchImpl.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatchScore.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid service 
