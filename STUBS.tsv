@@ -20,10 +20,12 @@ ts	stub_class	referenced_by
 2026-07-06T00:02:19Z	ProgramFragment	ProgramModule
 2026-07-06T00:10:00Z	FunctionSignature	FunctionDefinition
 2026-07-06T00:10:00Z	GenericCallingConvention	FunctionDefinition
-2026-07-06T00:20:00Z	Function	Variable
 2026-07-06T00:20:00Z	VariableStorage	Variable
 2026-07-05T00:00:00Z	Namespace	Library
 2026-07-06T00:30:00Z	PropertySet	CodeUnit
 2026-07-06T00:30:00Z	CommentType	CodeUnit
 2026-07-06T00:30:00Z	ExternalReference	CodeUnit
 2026-07-06T00:59:57Z	RegisterValue	ProgramContext
+2026-07-06T01:10:00Z	StackFrame	Function
+2026-07-06T01:10:00Z	ExternalLocation	Function
+2026-07-06T01:10:00Z	VariableFilter	Function
