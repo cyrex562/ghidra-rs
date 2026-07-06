@@ -4,7 +4,7 @@ DONE	interface	2963	490	program	Ghidra/Framework/SoftwareModeling/src/main/java/
 DONE	interface	2259	1	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/task/TaskMonitor.java
 DONE	interface	2003	22	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataType.java
 DONE	interface	1471	113	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeManager.java
-TODO	interface	1338	58	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Function.java
+DONE	interface	1338	58	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Function.java
 DONE	interface	1328	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetView.java
 DONE	interface	1315	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSpace.java
 DONE	interface	1297	9	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Structure.java
