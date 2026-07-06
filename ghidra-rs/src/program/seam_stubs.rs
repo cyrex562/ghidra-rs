@@ -30,11 +30,6 @@ pub trait DataTypeManagerOwner {
 /// before the real interface is ported.
 pub trait DomainFile {}
 
-/// Placeholder for `ghidra.program.model.data.CompositeInternal`, referenced by
-/// [`StructureInternal`](crate::program::model::data::structure_internal::StructureInternal)
-/// before the real interface is ported.
-pub trait CompositeInternal {}
-
 /// Placeholder for `ghidra.program.model.listing.BookmarkType`, referenced by
 /// [`Bookmark`](crate::program::model::listing::bookmark::Bookmark)
 /// before the real interface is ported.

@@ -1,6 +1,6 @@
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::structure::Structure;
-use crate::program::seam_stubs::CompositeInternal;
+use crate::program::model::data::composite_internal::CompositeInternal;
 
 /// Marker trait for `Structure` implementations that are internal to the data type
 /// manager (as opposed to externally-supplied implementations).
