@@ -14219,7 +14219,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/li
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/LabelString.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Library.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Listing.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/LocalVariable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/LocalVariable.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/LocalVariableImpl.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/OperandRepresentationList.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Parameter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
