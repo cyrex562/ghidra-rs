@@ -123,8 +123,8 @@ pub trait DataType {
     }
 
     /// Returns the dataTypePath for this datatype.
-    fn get_data_type_path(&self) -> Box<dyn DataTypePath> {
-        Box::new(EmptyDataTypePath)
+    fn get_data_type_path(&self) -> DataTypePath {
+        DataTypePath::new(self.get_category_path(), self.get_name())
     }
 
     /// Set the categoryPath associated with this datatype.
@@ -468,10 +468,6 @@ pub trait DataType {
 /// meaningful zero-value to fall back on.
 struct EmptyDataType;
 impl DataType for EmptyDataType {}
-
-/// Trivial fallback used by [`DataType::get_data_type_path`].
-struct EmptyDataTypePath;
-impl DataTypePath for EmptyDataTypePath {}
 
 /// Trivial fallback used by [`DataType::get_default_settings`].
 struct EmptyDataTypeSettings;

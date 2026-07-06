@@ -33,41 +33,41 @@ pub trait DataTypeManagerChangeListener {
     );
 
     /// Notification when a data type is added to a category.
-    fn data_type_added(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+    fn data_type_added(&self, dtm: &dyn DataTypeManager, path: &DataTypePath);
 
     /// Notification when a data type is removed.
-    fn data_type_removed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+    fn data_type_removed(&self, dtm: &dyn DataTypeManager, path: &DataTypePath);
 
     /// Notification when a data type is renamed.
     fn data_type_renamed(
         &self,
         dtm: &dyn DataTypeManager,
-        old_path: &dyn DataTypePath,
-        new_path: &dyn DataTypePath,
+        old_path: &DataTypePath,
+        new_path: &DataTypePath,
     );
 
     /// Notification when a data type is moved.
     fn data_type_moved(
         &self,
         dtm: &dyn DataTypeManager,
-        old_path: &dyn DataTypePath,
-        new_path: &dyn DataTypePath,
+        old_path: &DataTypePath,
+        new_path: &DataTypePath,
     );
 
     /// Notification when a data type is changed.
-    fn data_type_changed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+    fn data_type_changed(&self, dtm: &dyn DataTypeManager, path: &DataTypePath);
 
     /// Notification when a data type has been replaced.
     fn data_type_replaced(
         &self,
         dtm: &dyn DataTypeManager,
-        old_path: &dyn DataTypePath,
-        new_path: &dyn DataTypePath,
+        old_path: &DataTypePath,
+        new_path: &DataTypePath,
         new_data_type: &dyn DataType,
     );
 
     /// Notification that the favorite status of a datatype has changed.
-    fn favorites_changed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath, is_favorite: bool);
+    fn favorites_changed(&self, dtm: &dyn DataTypeManager, path: &DataTypePath, is_favorite: bool);
 
     /// Notification that the information for a particular source archive has changed.
     /// Typically, this would be because it was renamed or moved.
@@ -133,19 +133,19 @@ mod tests {
             self.events.fetch_add(1, Ordering::SeqCst);
         }
 
-        fn data_type_added(&self, _dtm: &dyn DataTypeManager, _path: &dyn DataTypePath) {
+        fn data_type_added(&self, _dtm: &dyn DataTypeManager, _path: &DataTypePath) {
             self.events.fetch_add(1, Ordering::SeqCst);
         }
 
-        fn data_type_removed(&self, _dtm: &dyn DataTypeManager, _path: &dyn DataTypePath) {
+        fn data_type_removed(&self, _dtm: &dyn DataTypeManager, _path: &DataTypePath) {
             self.events.fetch_add(1, Ordering::SeqCst);
         }
 
         fn data_type_renamed(
             &self,
             _dtm: &dyn DataTypeManager,
-            _old_path: &dyn DataTypePath,
-            _new_path: &dyn DataTypePath,
+            _old_path: &DataTypePath,
+            _new_path: &DataTypePath,
         ) {
             self.events.fetch_add(1, Ordering::SeqCst);
         }
@@ -153,21 +153,21 @@ mod tests {
         fn data_type_moved(
             &self,
             _dtm: &dyn DataTypeManager,
-            _old_path: &dyn DataTypePath,
-            _new_path: &dyn DataTypePath,
+            _old_path: &DataTypePath,
+            _new_path: &DataTypePath,
         ) {
             self.events.fetch_add(1, Ordering::SeqCst);
         }
 
-        fn data_type_changed(&self, _dtm: &dyn DataTypeManager, _path: &dyn DataTypePath) {
+        fn data_type_changed(&self, _dtm: &dyn DataTypeManager, _path: &DataTypePath) {
             self.events.fetch_add(1, Ordering::SeqCst);
         }
 
         fn data_type_replaced(
             &self,
             _dtm: &dyn DataTypeManager,
-            _old_path: &dyn DataTypePath,
-            _new_path: &dyn DataTypePath,
+            _old_path: &DataTypePath,
+            _new_path: &DataTypePath,
             _new_data_type: &dyn DataType,
         ) {
             self.events.fetch_add(1, Ordering::SeqCst);
@@ -176,7 +176,7 @@ mod tests {
         fn favorites_changed(
             &self,
             _dtm: &dyn DataTypeManager,
-            _path: &dyn DataTypePath,
+            _path: &DataTypePath,
             _is_favorite: bool,
         ) {
             self.events.fetch_add(1, Ordering::SeqCst);
