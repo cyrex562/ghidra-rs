@@ -13,7 +13,7 @@ DONE	interface	1264	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	interface	1251	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Pointer.java
 DONE	interface	1241	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/TypeDef.java
 DONE	interface	1240	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Composite.java
-TODO	interface	1240	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Dynamic.java
+DONE	interface	1240	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Dynamic.java
 DONE	interface	1235	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Array.java
 DONE	interface	1233	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Enum.java
 DONE	interface	1231	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/SourceArchive.java
