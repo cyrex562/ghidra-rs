@@ -9,12 +9,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::listing::library::Library;
 use crate::program::model::symbol::Symbol;
 
-/// Placeholder for `ghidra.program.model.data.DataTypePath`, referenced by
-/// [`DataType`](crate::program::model::data::data_type::DataType)
-/// before the real class is ported. The real class is a simple `(CategoryPath, String)` value
-/// holder, but `DataType` never calls methods on the path it returns, so no members are needed
-/// yet.
-pub trait DataTypePath {}
+pub use crate::program::model::data::data_type_path::DataTypePath;
 
 /// Placeholder for `ghidra.framework.model.DomainObject`, referenced by
 /// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)

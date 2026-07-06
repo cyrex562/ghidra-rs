@@ -229,7 +229,7 @@ pub trait DataTypeManager {
     }
 
     /// Find the dataType for the given dataTypePath.
-    fn get_data_type_at_path(&self, data_type_path: &dyn DataTypePath) -> Option<Box<dyn DataType>> {
+    fn get_data_type_at_path(&self, data_type_path: &DataTypePath) -> Option<Box<dyn DataType>> {
         let _ = data_type_path;
         None
     }
