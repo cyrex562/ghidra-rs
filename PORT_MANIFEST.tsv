@@ -4146,7 +4146,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/rm/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/rm/ResourceType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos rm 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/rm/ResourceTypeFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos rm 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/rm/ResourceTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macos rm 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/rm/SingleResourceData.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macos rm 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macos/rm/SingleResourceData.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macos rm
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/mz/DOSHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format mz 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/mz/MzExecutable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format mz 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/mz/MzRelocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format mz 
