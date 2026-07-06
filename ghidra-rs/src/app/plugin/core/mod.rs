@@ -26,6 +26,7 @@ pub mod overview;
 pub mod progmgr;
 pub mod programtree;
 pub mod references;
+pub mod scalartable;
 pub mod script;
 pub mod searchtext;
 pub mod stackeditor;
