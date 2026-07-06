@@ -1,3 +1,4 @@
+pub mod omf51;
 pub mod omf_exception;
 pub mod omf_symbol;
 
