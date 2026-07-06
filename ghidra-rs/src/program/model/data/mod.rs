@@ -17,6 +17,7 @@ pub mod data_type_component;
 pub mod data_type_dependency_exception;
 pub mod data_type_display_options;
 pub mod data_type_manager;
+pub mod data_type_manager_change_listener;
 pub mod data_type_manager_domain_object;
 pub mod data_type_transferable;
 pub mod data_type_with_charset;
