@@ -1,70 +1,42 @@
-use std::sync::Arc;
-use crate::program::model::listing::CodeUnit;
-use std::fmt;
+use crate::generic::algorithms::LcsTrait;
+use crate::program::util::CodeUnitContainer;
 
-/// Container holding a CodeUnit along with cached mnemonic and arity information.
-///
-/// Port of `ghidra.program.util.CodeUnitContainer`.
-pub struct CodeUnitContainer {
-    code_unit: Arc<dyn CodeUnit>,
-    mnemonic: String,
-    arity: i32,
+pub struct CodeUnitLcs<'a> {
+    x_list: &'a [CodeUnitContainer],
+    y_list: &'a [CodeUnitContainer],
 }
 
-impl Clone for CodeUnitContainer {
-    fn clone(&self) -> Self {
-        Self {
-            code_unit: Arc::clone(&self.code_unit),
-            mnemonic: self.mnemonic.clone(),
-            arity: self.arity,
-        }
+impl<'a> CodeUnitLcs<'a> {
+    pub fn new(x_list: &'a [CodeUnitContainer], y_list: &'a [CodeUnitContainer]) -> Self {
+        Self { x_list, y_list }
     }
 }
 
-impl CodeUnitContainer {
-    /// Constructs a new `CodeUnitContainer` from a `CodeUnit`.
-    ///
-    /// The mnemonic string and arity (number of operands) are cached during construction.
-    pub fn new(code_unit: Arc<dyn CodeUnit>) -> Self {
-        let mnemonic = code_unit.get_mnemonic_string();
-        let arity = code_unit.get_num_operands();
-        Self {
-            code_unit,
-            mnemonic,
-            arity,
-        }
+impl<'a> LcsTrait<CodeUnitContainer> for CodeUnitLcs<'a> {
+    fn length_of_x(&self) -> usize {
+        self.x_list.len()
     }
 
-    /// Returns a reference to the underlying `CodeUnit`.
-    pub fn get_code_unit(&self) -> &Arc<dyn CodeUnit> {
-        &self.code_unit
+    fn length_of_y(&self) -> usize {
+        self.y_list.len()
     }
 
-    /// Returns the cached mnemonic string for this code unit.
-    pub fn get_mnemonic(&self) -> &str {
-        &self.mnemonic
+    fn value_of_x(&self, index: usize) -> CodeUnitContainer
+    where
+        CodeUnitContainer: Clone,
+    {
+        self.x_list[index].clone()
     }
 
-    /// Returns the cached arity (number of operands) for this code unit.
-    pub fn get_arity(&self) -> i32 {
-        self.arity
+    fn value_of_y(&self, index: usize) -> CodeUnitContainer
+    where
+        CodeUnitContainer: Clone,
+    {
+        self.y_list[index].clone()
     }
-}
 
-impl fmt::Display for CodeUnitContainer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let address_str = self.code_unit.get_address_string(false, true);
-        write!(f, "{} @ {}", self.mnemonic, address_str)
-    }
-}
-
-impl fmt::Debug for CodeUnitContainer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CodeUnitContainer")
-            .field("mnemonic", &self.mnemonic)
-            .field("arity", &self.arity)
-            .field("address", &self.code_unit.get_address_string(false, true))
-            .finish()
+    fn matches(&self, x: &CodeUnitContainer, y: &CodeUnitContainer) -> bool {
+        x.get_arity() == y.get_arity() && x.get_mnemonic() == y.get_mnemonic()
     }
 }
 
@@ -74,6 +46,9 @@ mod tests {
     use crate::program::model::listing::{CodeUnit as _, MNEMONIC};
     use crate::program::model::address::Address;
     use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet};
+    use crate::util::task::DummyMonitor;
+    use std::fmt;
+    use std::sync::Arc;
 
     struct MockCodeUnit {
         mnemonic: String,
@@ -98,7 +73,11 @@ mod tests {
     }
 
     impl MemBuffer for MockCodeUnit {
-        fn get_bytes(&self, _offset: i32, _length: i32) -> Result<Vec<u8>, crate::program::model::mem::MemoryAccessException> {
+        fn get_bytes(
+            &self,
+            _offset: i32,
+            _length: i32,
+        ) -> Result<Vec<u8>, crate::program::model::mem::MemoryAccessException> {
             Ok(vec![])
         }
     }
@@ -261,71 +240,98 @@ mod tests {
         }
     }
 
-    #[test]
-    fn construction_caches_mnemonic_and_arity() {
-        let addr = Address::new_default_space(0x1000);
-        let code_unit = MockCodeUnit::new("MOV", 2, addr.clone());
-        let container = CodeUnitContainer::new(code_unit);
+    use crate::program::model::listing::CodeUnit;
 
-        assert_eq!(container.get_mnemonic(), "MOV");
-        assert_eq!(container.get_arity(), 2);
+    #[test]
+    fn empty_lists() {
+        let lcs = CodeUnitLcs::new(&[], &[]);
+        assert_eq!(lcs.length_of_x(), 0);
+        assert_eq!(lcs.length_of_y(), 0);
     }
 
     #[test]
-    fn get_code_unit_returns_reference() {
-        let addr = Address::new_default_space(0x2000);
-        let code_unit = MockCodeUnit::new("JMP", 1, addr.clone());
-        let container = CodeUnitContainer::new(code_unit.clone());
+    fn single_element_lists_match() {
+        let addr1 = Address::new_default_space(0x1000);
+        let addr2 = Address::new_default_space(0x2000);
+        let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
+        let code_unit2 = MockCodeUnit::new("MOV", 2, addr2);
+        let container1 = CodeUnitContainer::new(code_unit1);
+        let container2 = CodeUnitContainer::new(code_unit2);
 
-        assert!(Arc::ptr_eq(container.get_code_unit(), &code_unit));
+        let lcs = CodeUnitLcs::new(&[container1.clone()], &[container2]);
+        let monitor = DummyMonitor;
+        let result = lcs.get_lcs(&monitor).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].get_mnemonic(), "MOV");
+        assert_eq!(result[0].get_arity(), 2);
     }
 
     #[test]
-    fn display_includes_mnemonic_and_address() {
-        let addr = Address::new_default_space(0x3000);
-        let code_unit = MockCodeUnit::new("ADD", 3, addr.clone());
-        let container = CodeUnitContainer::new(code_unit);
+    fn matching_mnemonics_and_arity() {
+        let addr1 = Address::new_default_space(0x1000);
+        let addr2 = Address::new_default_space(0x2000);
+        let addr3 = Address::new_default_space(0x3000);
+        let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
+        let code_unit2 = MockCodeUnit::new("MOV", 2, addr2);
+        let code_unit3 = MockCodeUnit::new("MOV", 2, addr3);
+        let container1 = CodeUnitContainer::new(code_unit1);
+        let container2 = CodeUnitContainer::new(code_unit2);
+        let container3 = CodeUnitContainer::new(code_unit3);
 
-        let output = container.to_string();
-        assert!(output.contains("ADD"));
-        assert!(output.contains("3000"));
-    }
-
-    #[test]
-    fn zero_operands() {
-        let addr = Address::new_default_space(0x4000);
-        let code_unit = MockCodeUnit::new("NOP", 0, addr.clone());
-        let container = CodeUnitContainer::new(code_unit);
-
-        assert_eq!(container.get_arity(), 0);
-    }
-
-    #[test]
-    fn multiple_operands() {
-        let addr = Address::new_default_space(0x5000);
-        let code_unit = MockCodeUnit::new("IMUL", 3, addr.clone());
-        let container = CodeUnitContainer::new(code_unit);
-
-        assert_eq!(container.get_arity(), 3);
+        let lcs = CodeUnitLcs::new(&[container1], &[container2, container3]);
+        let monitor = DummyMonitor;
+        let result = lcs.get_lcs(&monitor).unwrap();
+        assert_eq!(result.len(), 1);
     }
 
     #[test]
     fn different_mnemonics() {
-        let addr = Address::new_default_space(0x6000);
-        let code_unit = MockCodeUnit::new("PUSH", 1, addr.clone());
-        let container = CodeUnitContainer::new(code_unit);
+        let addr1 = Address::new_default_space(0x1000);
+        let addr2 = Address::new_default_space(0x2000);
+        let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
+        let code_unit2 = MockCodeUnit::new("JMP", 1, addr2);
+        let container1 = CodeUnitContainer::new(code_unit1);
+        let container2 = CodeUnitContainer::new(code_unit2);
 
-        assert_eq!(container.get_mnemonic(), "PUSH");
+        let lcs = CodeUnitLcs::new(&[container1], &[container2]);
+        assert!(!lcs.matches(&lcs.x_list[0], &lcs.y_list[0]));
     }
 
     #[test]
-    fn debug_display() {
-        let addr = Address::new_default_space(0x7000);
-        let code_unit = MockCodeUnit::new("XOR", 2, addr.clone());
-        let container = CodeUnitContainer::new(code_unit);
+    fn different_arity() {
+        let addr1 = Address::new_default_space(0x1000);
+        let addr2 = Address::new_default_space(0x2000);
+        let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
+        let code_unit2 = MockCodeUnit::new("MOV", 3, addr2);
+        let container1 = CodeUnitContainer::new(code_unit1);
+        let container2 = CodeUnitContainer::new(code_unit2);
 
-        let debug_str = format!("{:?}", container);
-        assert!(debug_str.contains("XOR"));
-        assert!(debug_str.contains("2"));
+        let lcs = CodeUnitLcs::new(&[container1], &[container2]);
+        assert!(!lcs.matches(&lcs.x_list[0], &lcs.y_list[0]));
+    }
+
+    #[test]
+    fn partial_sequence_match() {
+        let addr1 = Address::new_default_space(0x1000);
+        let addr2 = Address::new_default_space(0x1001);
+        let addr3 = Address::new_default_space(0x1002);
+        let addr4 = Address::new_default_space(0x2000);
+        let addr5 = Address::new_default_space(0x2001);
+        let addr6 = Address::new_default_space(0x2002);
+
+        let c1 = CodeUnitContainer::new(MockCodeUnit::new("MOV", 2, addr1));
+        let c2 = CodeUnitContainer::new(MockCodeUnit::new("ADD", 3, addr2));
+        let c3 = CodeUnitContainer::new(MockCodeUnit::new("JMP", 1, addr3));
+
+        let c4 = CodeUnitContainer::new(MockCodeUnit::new("MOV", 2, addr4));
+        let c5 = CodeUnitContainer::new(MockCodeUnit::new("XOR", 2, addr5));
+        let c6 = CodeUnitContainer::new(MockCodeUnit::new("JMP", 1, addr6));
+
+        let lcs = CodeUnitLcs::new(&[c1, c2, c3], &[c4, c5, c6]);
+        let monitor = DummyMonitor;
+        let result = lcs.get_lcs(&monitor).unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].get_mnemonic(), "MOV");
+        assert_eq!(result[1].get_mnemonic(), "JMP");
     }
 }
