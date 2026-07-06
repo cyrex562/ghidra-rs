@@ -35,10 +35,15 @@ pub trait DomainFile {}
 /// before the real interface is ported.
 pub trait BookmarkType {}
 
-/// Placeholder for `ghidra.program.model.listing.Variable`, referenced by
-/// [`Parameter`](crate::program::model::listing::parameter::Parameter)
+/// Placeholder for `ghidra.program.model.listing.Function`, referenced by
+/// [`Variable`](crate::program::model::listing::variable::Variable)
 /// before the real interface is ported.
-pub trait Variable {}
+pub trait Function {}
+
+/// Placeholder for `ghidra.program.model.listing.VariableStorage`, referenced by
+/// [`Variable`](crate::program::model::listing::variable::Variable)
+/// before the real class is ported.
+pub trait VariableStorage {}
 
 /// Placeholder for `ghidra.program.model.data.DataTypeConflictHandler`, referenced by
 /// [`Category`](crate::program::model::data::category::Category)
