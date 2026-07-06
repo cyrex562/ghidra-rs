@@ -87,12 +87,20 @@ pub trait SettingsDefinition {
 pub trait PointerTypedefBuilder {}
 
 /// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
-/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
-/// and [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable)
+/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset),
+/// [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable), and
+/// [`Array`](crate::program::model::data::array::Array)
 /// before the real interface is ported.
 pub trait MemBuffer {
     /// Stands in for `MemBuffer.isInitializedMemory()`.
     fn is_initialized_memory(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `buf.getMemory().getAllInitializedAddressSet().contains(buf.getAddress())`,
+    /// used by [`Array::get_array_value`](crate::program::model::data::array::Array::get_array_value)
+    /// until `Memory`'s address-set queries and `MemBuffer.getAddress()` are ported.
+    fn is_at_initialized_memory_address(&self) -> bool {
         false
     }
 }
