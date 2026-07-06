@@ -35,6 +35,7 @@ pub mod program_module;
 pub mod program_tree_change_set;
 pub mod register_change_set;
 pub mod repeatable_comment;
+pub mod stack_frame;
 pub mod stack_variable_comparator;
 pub mod symbol_change_set;
 pub mod thunk_function;
@@ -79,6 +80,9 @@ pub use program_module::{AddModuleError, ProgramModule};
 pub use program_tree_change_set::ProgramTreeChangeSet;
 pub use register_change_set::RegisterChangeSet;
 pub use repeatable_comment::RepeatableComment;
+pub use stack_frame::{
+    CreateStackVariableError, StackFrame, GROWS_NEGATIVE, GROWS_POSITIVE, UNKNOWN_PARAM_OFFSET,
+};
 pub use stack_variable_comparator::{StackVariableComparator, StackVariableOperand};
 pub use symbol_change_set::SymbolChangeSet;
 pub use thunk_function::ThunkFunction;
