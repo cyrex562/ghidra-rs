@@ -223,6 +223,16 @@ mod tests {
 
     impl_mock_variable!(MockVariable);
 
+    impl Variable for MockVariable {
+        fn is_parameter(&self) -> bool {
+            false
+        }
+
+        fn is_auto_parameter(&self) -> bool {
+            false
+        }
+    }
+
     struct MockParameter {
         ordinal: i32,
         auto_parameter_type: Option<AutoParameterType>,
@@ -230,6 +240,16 @@ mod tests {
     }
 
     impl_mock_variable!(MockParameter);
+
+    impl Variable for MockParameter {
+        fn is_parameter(&self) -> bool {
+            true
+        }
+
+        fn is_auto_parameter(&self) -> bool {
+            self.auto_parameter_type.is_some()
+        }
+    }
 
     impl Parameter for MockParameter {
         fn get_ordinal(&self) -> i32 {

@@ -14241,7 +14241,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/li
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/SymbolChangeSet.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/ThunkFunction.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Variable.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableFilter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableFilter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableImpl.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableOffset.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableSizeException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
