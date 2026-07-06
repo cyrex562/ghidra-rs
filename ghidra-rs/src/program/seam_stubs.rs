@@ -161,11 +161,6 @@ pub trait ProgramArchitecture {}
 /// exists.
 pub trait AddressMap {}
 
-/// Placeholder for `ghidra.program.model.data.DataTypeManagerChangeListener`, referenced by
-/// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
-/// before the real interface is ported.
-pub trait DataTypeManagerChangeListener {}
-
 /// Placeholder for `db.Transaction`, referenced by
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
 /// before the real class is ported.

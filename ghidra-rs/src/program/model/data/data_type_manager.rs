@@ -9,13 +9,14 @@ use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_dependency_exception::DataTypeDependencyException;
+use crate::program::model::data::data_type_manager_change_listener::DataTypeManagerChangeListener;
 use crate::program::model::data::invalidated_listener::InvalidatedListener;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::structure::Structure;
 use crate::program::seam_stubs::{
-    AddressMap, DataTypeConflictHandler, DataTypeManagerChangeListener, DataTypePath,
-    FunctionDefinition, PointerTypedefBuilder, ProgramArchitecture, PrototypeModel, Transaction,
+    AddressMap, DataTypeConflictHandler, DataTypePath, FunctionDefinition, PointerTypedefBuilder,
+    ProgramArchitecture, PrototypeModel, Transaction,
 };
 use crate::util::exception::{CancelledException, InvalidNameException};
 use crate::util::function::{ExceptionalCallback, ExceptionalSupplier};
