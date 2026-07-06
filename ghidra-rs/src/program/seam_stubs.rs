@@ -311,11 +311,7 @@ pub trait InstructionIterator {}
 /// needed yet.
 pub trait DataIterator {}
 
-/// Placeholder for `ghidra.program.model.listing.FunctionIterator`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported. `Listing` only ever returns this type, so no members are
-/// needed yet.
-pub trait FunctionIterator {}
+pub use crate::program::model::listing::function_iterator::FunctionIterator;
 
 /// Placeholder for `ghidra.program.model.listing.InstructionSet`, referenced by
 /// [`Listing::add_instructions`](crate::program::model::listing::listing::Listing::add_instructions)

@@ -14202,7 +14202,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/li
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DuplicateGroupException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FlowOverride.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Function.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionOverlapException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionSignature.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model listing 
