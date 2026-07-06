@@ -167,3 +167,13 @@ pub trait DataTypeManagerChangeListener {}
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
 /// before the real class is ported.
 pub trait Transaction {}
+
+/// Placeholder for `ghidra.program.model.listing.Group`, referenced by
+/// [`ProgramModule`](crate::program::model::listing::program_module::ProgramModule)
+/// as a supertrait before the real interface is ported.
+pub trait Group {}
+
+/// Placeholder for `ghidra.program.model.listing.ProgramFragment`, referenced by
+/// [`ProgramModule`](crate::program::model::listing::program_module::ProgramModule)
+/// before the real interface is ported.
+pub trait ProgramFragment {}
