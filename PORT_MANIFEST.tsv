@@ -3155,7 +3155,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/Ed
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/EditStackReferencePanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core references 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/ExternalReferencesProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core references 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/InstructionPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core references 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/InstructionPanelListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core references 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/InstructionPanelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core references
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/OffsetTableDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core references 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/OffsetTablePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core references 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/references/ParameterConflictException.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core references 
