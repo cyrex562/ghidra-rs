@@ -10,6 +10,7 @@ pub mod category;
 pub mod category_path;
 pub mod composite;
 pub mod composite_internal;
+pub mod custom_format;
 pub mod custom_organization;
 pub mod data_organization;
 pub mod data_type;
