@@ -3492,7 +3492,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchData.ja
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchFunctions.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchSet.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin match
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchedData.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchedData.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/SubroutineMatch.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin match
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/SubroutineMatchSet.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/processors/generic/PcodeFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin processors generic 
