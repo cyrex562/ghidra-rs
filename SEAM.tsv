@@ -25,7 +25,7 @@ DONE	interface	1214	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	interface	1212	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltInDataType.java
 TODO	interface	1209	13	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DynamicDataType.java
 DONE	interface	1208	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ParameterDefinition.java
-TODO	interface	1207	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CompositeInternal.java
+DONE	interface	1207	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CompositeInternal.java
 DONE	interface	1207	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/InternalDataTypeComponent.java
 DONE	interface	1206	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ArrayStringable.java
 TODO	interface	1205	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeManagerChangeListener.java
