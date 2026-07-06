@@ -90,9 +90,26 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
     use crate::program::model::data::data_type_manager::DataTypeManager;
+    use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::file_based_data_type_manager::FileBasedDataTypeManager;
-    use crate::program::seam_stubs::{CodeUnit, DomainFile, RefType, Reference, Settings};
+    use crate::program::model::lang::register::Register;
+    use crate::program::model::listing::code_unit::CodeUnit;
+    use crate::program::model::mem::MemoryAccessException;
+    use crate::program::model::scalar::Scalar;
+    use crate::program::model::symbol::{
+        RefType as SymRefType, Reference as SymReference, ReferenceIterator, SourceType,
+        Symbol as SymSymbol,
+    };
+    use crate::program::seam_stubs::{
+        CommentType, DomainFile, ExternalReference, MemBuffer, PropertySet, RefType, Reference,
+        Settings,
+    };
     use std::any::TypeId;
+
+    fn mock_address(offset: i64) -> Address {
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
 
     struct MockProgram;
     impl Program for MockProgram {
@@ -114,7 +131,125 @@ mod tests {
     impl DataType for MockDataType {}
 
     struct MockData;
-    impl CodeUnit for MockData {}
+
+    impl MemBuffer for MockData {}
+    impl PropertySet for MockData {}
+
+    impl CodeUnit for MockData {
+        fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {
+            "00000000".to_string()
+        }
+        fn get_label(&self) -> Option<String> {
+            None
+        }
+        fn get_symbols(&self) -> Vec<Arc<dyn SymSymbol>> {
+            Vec::new()
+        }
+        fn get_primary_symbol(&self) -> Option<Arc<dyn SymSymbol>> {
+            None
+        }
+        fn get_min_address(&self) -> Address {
+            mock_address(0)
+        }
+        fn get_max_address(&self) -> Address {
+            mock_address(0)
+        }
+        fn get_mnemonic_string(&self) -> String {
+            String::new()
+        }
+        fn get_comment(&self, _comment_type: CommentType) -> Option<String> {
+            None
+        }
+        fn get_comment_as_array(&self, _comment_type: CommentType) -> Vec<String> {
+            Vec::new()
+        }
+        fn set_comment(&mut self, _comment_type: CommentType, _comment: Option<String>) {}
+        fn set_comment_as_array(&mut self, _comment_type: CommentType, _comment: &[String]) {}
+        fn get_length(&self) -> i32 {
+            1
+        }
+        fn get_bytes(&self) -> Result<Vec<u8>, MemoryAccessException> {
+            Ok(Vec::new())
+        }
+        fn get_bytes_in_code_unit(
+            &self,
+            _buffer: &mut [u8],
+            _buffer_offset: i32,
+        ) -> Result<(), MemoryAccessException> {
+            Ok(())
+        }
+        fn contains(&self, _test_addr: &Address) -> bool {
+            false
+        }
+        fn compare_to(&self, _addr: &Address) -> i32 {
+            0
+        }
+        fn add_mnemonic_reference(
+            &mut self,
+            _ref_addr: Address,
+            _ref_type: SymRefType,
+            _source_type: SourceType,
+        ) {
+        }
+        fn remove_mnemonic_reference(&mut self, _ref_addr: &Address) {}
+        fn get_mnemonic_references(&self) -> Vec<Arc<dyn SymReference>> {
+            Vec::new()
+        }
+        fn get_operand_references(&self, _index: i32) -> Vec<Arc<dyn SymReference>> {
+            Vec::new()
+        }
+        fn get_primary_reference(&self, _index: i32) -> Option<Arc<dyn SymReference>> {
+            None
+        }
+        fn add_operand_reference(
+            &mut self,
+            _index: i32,
+            _ref_addr: Address,
+            _ref_type: SymRefType,
+            _source_type: SourceType,
+        ) {
+        }
+        fn remove_operand_reference(&mut self, _index: i32, _ref_addr: &Address) {}
+        fn get_references_from(&self) -> Vec<Arc<dyn SymReference>> {
+            Vec::new()
+        }
+        fn get_reference_iterator_to(&self) -> Box<dyn ReferenceIterator> {
+            Box::new(crate::program::model::symbol::EmptyReferenceIterator)
+        }
+        fn get_program(&self) -> Arc<dyn Program> {
+            Arc::new(MockProgram)
+        }
+        fn get_external_reference(&self, _op_index: i32) -> Option<Arc<dyn ExternalReference>> {
+            None
+        }
+        fn remove_external_reference(&mut self, _op_index: i32) {}
+        fn set_primary_memory_reference(&mut self, _reference: Arc<dyn SymReference>) {}
+        fn set_stack_reference(
+            &mut self,
+            _op_index: i32,
+            _offset: i32,
+            _source_type: SourceType,
+            _ref_type: SymRefType,
+        ) {
+        }
+        fn set_register_reference(
+            &mut self,
+            _op_index: i32,
+            _reg: &Register,
+            _source_type: SourceType,
+            _ref_type: SymRefType,
+        ) {
+        }
+        fn get_num_operands(&self) -> i32 {
+            1
+        }
+        fn get_address(&self, _op_index: i32) -> Option<Address> {
+            None
+        }
+        fn get_scalar(&self, _op_index: i32) -> Option<Scalar> {
+            None
+        }
+    }
     impl Settings for MockData {}
     impl Data for MockData {
         fn get_value(&self) -> Option<Box<dyn Any>> {

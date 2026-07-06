@@ -9,7 +9,6 @@ ts	stub_class	referenced_by
 2026-07-05T00:15:47Z	DataTypeConflictHandler	Category
 2026-07-04T00:30:00Z	MemBuffer	DataTypeWithCharset
 2026-07-04T00:30:00Z	StringDataInstance	DataTypeWithCharset
-2026-07-05T11:59:50Z	CodeUnit	Data
 2026-07-05T11:59:50Z	RefType	Data
 2026-07-05T11:59:50Z	Reference	Data
 2026-07-05T12:10:00Z	DataTypePath	DataType
@@ -24,3 +23,6 @@ ts	stub_class	referenced_by
 2026-07-06T00:20:00Z	Function	Variable
 2026-07-06T00:20:00Z	VariableStorage	Variable
 2026-07-05T00:00:00Z	Namespace	Library
+2026-07-06T00:30:00Z	PropertySet	CodeUnit
+2026-07-06T00:30:00Z	CommentType	CodeUnit
+2026-07-06T00:30:00Z	ExternalReference	CodeUnit
