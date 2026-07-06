@@ -23,6 +23,7 @@ pub mod data_type_transferable;
 pub mod data_type_with_charset;
 pub mod domain_file_based_data_type_manager;
 pub mod dynamic;
+pub mod dynamic_data_type;
 pub mod enum_;
 pub mod enum_value_partitioner;
 pub mod factory_data_type;
