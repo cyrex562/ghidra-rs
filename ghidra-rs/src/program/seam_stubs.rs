@@ -39,11 +39,6 @@ pub trait DomainFile {}
 /// before the real interface is ported.
 pub trait BookmarkType {}
 
-/// Placeholder for `ghidra.program.model.listing.Function`, referenced by
-/// [`Variable`](crate::program::model::listing::variable::Variable)
-/// before the real interface is ported.
-pub trait Function {}
-
 /// Placeholder for `ghidra.program.model.listing.VariableStorage`, referenced by
 /// [`Variable`](crate::program::model::listing::variable::Variable)
 /// before the real class is ported.
@@ -244,6 +239,21 @@ impl NamespaceType {
         }
     }
 }
+
+/// Placeholder for `ghidra.program.model.listing.StackFrame`, referenced by
+/// [`Function`](crate::program::model::listing::function::Function)
+/// before the real interface is ported.
+pub trait StackFrame {}
+
+/// Placeholder for `ghidra.program.model.symbol.ExternalLocation`, referenced by
+/// [`Function`](crate::program::model::listing::function::Function)
+/// before the real interface is ported.
+pub trait ExternalLocation {}
+
+/// Placeholder for `ghidra.program.model.listing.VariableFilter`, referenced by
+/// [`Function`](crate::program::model::listing::function::Function)
+/// before the real interface is ported.
+pub trait VariableFilter {}
 
 /// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
 /// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext)

@@ -50,10 +50,10 @@ mod tests {
     use crate::program::model::address::Address;
     use crate::program::model::lang::RegisterRef;
     use crate::program::model::listing::variable::{SetVariableNameError, UnsupportedOperationError};
-    use crate::program::model::listing::Program;
+    use crate::program::model::listing::{Function, Program};
     use crate::program::model::pcode::Varnode;
     use crate::program::model::symbol::{SourceType, Symbol};
-    use crate::program::seam_stubs::{Function, VariableStorage};
+    use crate::program::seam_stubs::VariableStorage;
     use crate::util::exception::InvalidInputException;
 
     struct MockDataType;
