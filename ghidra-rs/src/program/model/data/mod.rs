@@ -15,6 +15,7 @@ pub mod custom_organization;
 pub mod data_organization;
 pub mod data_type;
 pub mod data_type_component;
+pub mod data_type_conflict_handler;
 pub mod data_type_dependency_exception;
 pub mod data_type_encode_exception;
 pub mod data_type_display_options;

@@ -8,6 +8,7 @@ use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_conflict_handler::DataTypeConflictHandler;
 use crate::program::model::data::data_type_dependency_exception::DataTypeDependencyException;
 use crate::program::model::data::data_type_manager_change_listener::DataTypeManagerChangeListener;
 use crate::program::model::data::invalidated_listener::InvalidatedListener;
@@ -16,8 +17,8 @@ use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::data::structure::Structure;
 use crate::program::seam_stubs::{
-    AddressMap, DataTypeConflictHandler, DataTypePath, PointerTypedefBuilder,
-    ProgramArchitecture, PrototypeModel, Transaction,
+    AddressMap, DataTypePath, PointerTypedefBuilder, ProgramArchitecture, PrototypeModel,
+    Transaction,
 };
 use crate::util::exception::{CancelledException, InvalidNameException};
 use crate::util::function::{ExceptionalCallback, ExceptionalSupplier};
