@@ -34,6 +34,7 @@ pub mod file_based_data_type_manager;
 pub mod function_definition;
 pub mod icategory;
 pub mod illegal_rename_exception;
+pub mod invalid_data_type_exception;
 pub mod integer_data_type_test;
 pub mod internal_data_type_component;
 pub mod invalidated_listener;
