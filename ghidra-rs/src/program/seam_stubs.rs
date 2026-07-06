@@ -134,10 +134,42 @@ pub trait StringDataInstance {
 /// Placeholder for `ghidra.program.model.data.StringDataInstance.DEFAULT_CHARSET_NAME`.
 pub const DEFAULT_CHARSET_NAME: &str = "US-ASCII";
 
-/// Placeholder for `ghidra.program.model.listing.CodeUnit`, referenced by
-/// [`Data`](crate::program::model::listing::data::Data) as a supertrait before the real
-/// interface is ported.
-pub trait CodeUnit {}
+/// Placeholder for `ghidra.program.model.util.PropertySet`, referenced by
+/// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit) as a supertrait before the
+/// real interface is ported.
+pub trait PropertySet {}
+
+/// Placeholder for `ghidra.program.model.listing.CommentType`, referenced by
+/// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit)
+/// before the real enum is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CommentType {
+    Eol,
+    Pre,
+    Post,
+    Plate,
+    Repeatable,
+}
+
+impl CommentType {
+    /// Get the comment type which corresponds to the specified ordinal value. Stands in for
+    /// `CommentType.valueOf(int)`.
+    pub fn from_ordinal(ordinal: i32) -> Option<Self> {
+        match ordinal {
+            0 => Some(CommentType::Eol),
+            1 => Some(CommentType::Pre),
+            2 => Some(CommentType::Post),
+            3 => Some(CommentType::Plate),
+            4 => Some(CommentType::Repeatable),
+            _ => None,
+        }
+    }
+}
+
+/// Placeholder for `ghidra.program.model.symbol.ExternalReference`, referenced by
+/// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit)
+/// before the real interface is ported.
+pub trait ExternalReference: crate::program::model::symbol::Reference {}
 
 /// Placeholder for `ghidra.program.model.symbol.RefType`, referenced by
 /// [`Data`](crate::program::model::listing::data::Data)
