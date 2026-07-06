@@ -7630,7 +7630,7 @@ orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/FidHas
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/FidHashQuadImpl.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid hash 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/FidHasher.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid hash 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/FunctionBodyFunctionExtentGenerator.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid hash 
-orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/FunctionExtentGenerator.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid hash 
+orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/FunctionExtentGenerator.java	DONE	orig_src Ghidra Features FunctionID src main java ghidra feature fid hash
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/hash/MessageDigestFidHasher.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid hash 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/ActiveFidConfigureDialog.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
 orig_src/Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/plugin/FidDebugPlugin.java	TODO	orig_src Ghidra Features FunctionID src main java ghidra feature fid plugin 
