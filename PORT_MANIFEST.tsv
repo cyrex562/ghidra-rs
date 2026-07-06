@@ -1657,7 +1657,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/BSimServe
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/BsimPluginPackage.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ChildMatchRecord.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/CompareSignatures.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/DecompileFunctionTask.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/DecompileFunctionTask.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/FunctionDatabase.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/GenSignatures.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/LSHException.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query
