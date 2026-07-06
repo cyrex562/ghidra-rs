@@ -3182,7 +3182,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/reloc/Relocat
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/resources/ResourceActionsPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core resources 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/scalartable/RangeFilterTextField.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core scalartable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/scalartable/ScalarColumnConstraintProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core scalartable 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/scalartable/ScalarRowObject.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core scalartable 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/scalartable/ScalarRowObject.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core scalartable
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/scalartable/ScalarRowObjectToAddressTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core scalartable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/scalartable/ScalarRowObjectToProgramLocationTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core scalartable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/scalartable/ScalarSearchContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core scalartable 
