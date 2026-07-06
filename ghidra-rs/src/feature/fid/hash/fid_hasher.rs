@@ -9,7 +9,7 @@ use super::fid_hash_quad::FidHashQuad;
 /// a function for inclusion in a FID library, or for searching the libraries for a match.
 ///
 /// Port of `ghidra.feature.fid.hash.FidHasher`.
-pub trait FidHasher {
+pub trait FidHasher: Send + Sync {
     /// Computes the hash for a given function.
     ///
     /// # Arguments
