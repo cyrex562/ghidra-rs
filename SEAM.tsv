@@ -47,7 +47,7 @@ DONE	interface	1199	18	program	Ghidra/Framework/SoftwareModeling/src/test/java/g
 DONE	interface	1134	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Data.java
 DONE	interface	1097	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRange.java
 DONE	interface	1071	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressFactory.java
-TODO	interface	1061	51	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CodeUnit.java
+DONE	interface	1061	51	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CodeUnit.java
 TODO	interface	1053	93	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Instruction.java
 TODO	interface	1031	73	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/BinaryReader.java
 DONE	interface	1010	10	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Variable.java
