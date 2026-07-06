@@ -3485,7 +3485,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/AbstractFunc
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/ExactBytesFunctionHasher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/ExactInstructionsFunctionHasher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/ExactMnemonicsFunctionHasher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/FunctionHasher.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/FunctionHasher.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin match
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/FunctionMatchSet.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/Match.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin match 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/match/MatchData.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin match 
