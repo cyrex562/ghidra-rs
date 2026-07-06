@@ -13,6 +13,7 @@ pub mod eclipse;
 pub mod format;
 pub mod function;
 pub mod functiongraph;
+pub mod function_window;
 pub mod go;
 pub mod graph;
 pub mod instruction_search;
