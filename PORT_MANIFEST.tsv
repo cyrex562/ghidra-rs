@@ -4159,7 +4159,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Inform
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/InvalidWindowsHeaderException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/LengthStringOrdinalSet.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/LengthStringSet.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ModuleReferenceTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ModuleReferenceTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/NewExecutable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/NonResidentNameTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/RelocationImportedName.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
