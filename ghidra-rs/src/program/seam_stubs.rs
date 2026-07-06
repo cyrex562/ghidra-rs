@@ -293,6 +293,60 @@ pub enum FlowOverride {
     Return,
 }
 
+/// Placeholder for `ghidra.program.model.listing.CodeUnitIterator`, referenced by
+/// [`Listing`](crate::program::model::listing::listing::Listing)
+/// before the real interface is ported. `Listing` only ever returns this type (never calls
+/// `hasNext`/`next` on it itself), so no members are needed yet.
+pub trait CodeUnitIterator {}
+
+/// Placeholder for `ghidra.program.model.listing.InstructionIterator`, referenced by
+/// [`Listing`](crate::program::model::listing::listing::Listing)
+/// before the real interface is ported. `Listing` only ever returns this type, so no members are
+/// needed yet.
+pub trait InstructionIterator {}
+
+/// Placeholder for `ghidra.program.model.listing.DataIterator`, referenced by
+/// [`Listing`](crate::program::model::listing::listing::Listing)
+/// before the real interface is ported. `Listing` only ever returns this type, so no members are
+/// needed yet.
+pub trait DataIterator {}
+
+/// Placeholder for `ghidra.program.model.listing.FunctionIterator`, referenced by
+/// [`Listing`](crate::program::model::listing::listing::Listing)
+/// before the real interface is ported. `Listing` only ever returns this type, so no members are
+/// needed yet.
+pub trait FunctionIterator {}
+
+/// Placeholder for `ghidra.program.model.listing.InstructionSet`, referenced by
+/// [`Listing::add_instructions`](crate::program::model::listing::listing::Listing::add_instructions)
+/// before the real class is ported. `Listing` only ever passes this type through, so no members
+/// are needed yet.
+pub trait InstructionSet {}
+
+/// Placeholder for `ghidra.program.model.lang.ProcessorContextView`, referenced by
+/// [`Listing::create_instruction`](crate::program::model::listing::listing::Listing::create_instruction)
+/// before the real interface is ported. `Listing` only ever passes this type through, so no
+/// members are needed yet.
+pub trait ProcessorContextView {}
+
+/// Placeholder for `ghidra.program.model.util.PropertyMap`, referenced by
+/// [`Listing`](crate::program::model::listing::listing::Listing)
+/// before the real (generic) interface is ported. `Listing` only ever returns this type, so no
+/// members are needed yet.
+pub trait PropertyMap {}
+
+/// Placeholder for `ghidra.program.model.listing.CommentHistory`, referenced by
+/// [`Listing`](crate::program::model::listing::listing::Listing)
+/// before the real class is ported. `Listing` only ever returns this type, so no members are
+/// needed yet.
+pub trait CommentHistory {}
+
+/// Placeholder for `ghidra.program.model.listing.CodeUnitComments`, referenced by
+/// [`Listing::get_all_comments`](crate::program::model::listing::listing::Listing::get_all_comments)
+/// before the real class is ported. `Listing` only ever returns this type, so no members are
+/// needed yet.
+pub trait CodeUnitComments {}
+
 /// Placeholder for `ghidra.program.model.symbol.Namespace`, referenced by
 /// [`Library`](crate::program::model::listing::library::Library) as a supertrait before the
 /// real interface is ported.
