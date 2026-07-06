@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use crate::program::model::data::data_type::DataType;
-use crate::program::seam_stubs::Variable;
+use crate::program::model::listing::Variable;
 
 /// Specifies a parameter which can be used to specify a function definition.
 ///
@@ -60,7 +60,18 @@ pub trait ParameterDefinition {
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Ordering as StdOrdering;
+    use std::sync::Arc;
+
     use super::*;
+    use crate::program::model::address::Address;
+    use crate::program::model::lang::RegisterRef;
+    use crate::program::model::listing::variable::{SetVariableNameError, UnsupportedOperationError};
+    use crate::program::model::listing::Program;
+    use crate::program::model::pcode::Varnode;
+    use crate::program::model::symbol::{SourceType, Symbol};
+    use crate::program::seam_stubs::{Function, VariableStorage};
+    use crate::util::exception::InvalidInputException;
 
     struct MockDataType;
 
@@ -68,7 +79,156 @@ mod tests {
 
     struct MockVariable;
 
-    impl Variable for MockVariable {}
+    impl Variable for MockVariable {
+        fn get_data_type(&self) -> Box<dyn DataType> {
+            Box::new(MockDataType)
+        }
+
+        fn set_data_type_with_storage(
+            &mut self,
+            _data_type: Box<dyn DataType>,
+            _storage: Box<dyn VariableStorage>,
+            _force: bool,
+            _source: SourceType,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
+
+        fn set_data_type(
+            &mut self,
+            _data_type: Box<dyn DataType>,
+            _source: SourceType,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
+
+        fn set_data_type_aligned(
+            &mut self,
+            _data_type: Box<dyn DataType>,
+            _align_stack: bool,
+            _force: bool,
+            _source: SourceType,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
+
+        fn get_name(&self) -> Option<String> {
+            None
+        }
+
+        fn get_length(&self) -> i32 {
+            0
+        }
+
+        fn is_valid(&self) -> bool {
+            true
+        }
+
+        fn get_function(&self) -> Option<Box<dyn Function>> {
+            None
+        }
+
+        fn get_program(&self) -> Arc<dyn Program> {
+            struct MockProgram;
+            impl Program for MockProgram {
+                fn get_name(&self) -> &str {
+                    "mock"
+                }
+                fn get_language_id(&self) -> &str {
+                    "mock:LE:32:default"
+                }
+            }
+            Arc::new(MockProgram)
+        }
+
+        fn get_source(&self) -> SourceType {
+            SourceType::UserDefined
+        }
+
+        fn set_name(&mut self, _name: &str, _source: SourceType) -> Result<(), SetVariableNameError> {
+            Ok(())
+        }
+
+        fn get_comment(&self) -> Option<String> {
+            None
+        }
+
+        fn set_comment(&mut self, _comment: Option<String>) {}
+
+        fn get_variable_storage(&self) -> Option<Box<dyn VariableStorage>> {
+            None
+        }
+
+        fn get_first_storage_varnode(&self) -> Option<Varnode> {
+            None
+        }
+
+        fn get_last_storage_varnode(&self) -> Option<Varnode> {
+            None
+        }
+
+        fn is_stack_variable(&self) -> bool {
+            false
+        }
+
+        fn has_stack_storage(&self) -> bool {
+            false
+        }
+
+        fn is_register_variable(&self) -> bool {
+            false
+        }
+
+        fn get_register(&self) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_registers(&self) -> Option<Vec<RegisterRef>> {
+            None
+        }
+
+        fn get_min_address(&self) -> Option<Address> {
+            None
+        }
+
+        fn get_stack_offset(&self) -> Result<i32, UnsupportedOperationError> {
+            Err(UnsupportedOperationError(
+                "not a simple stack variable".to_string(),
+            ))
+        }
+
+        fn is_memory_variable(&self) -> bool {
+            false
+        }
+
+        fn is_unique_variable(&self) -> bool {
+            false
+        }
+
+        fn is_compound_variable(&self) -> bool {
+            false
+        }
+
+        fn has_assigned_storage(&self) -> bool {
+            false
+        }
+
+        fn get_first_use_offset(&self) -> i32 {
+            0
+        }
+
+        fn get_symbol(&self) -> Option<Arc<dyn Symbol>> {
+            None
+        }
+
+        fn is_equivalent(&self, _variable: &dyn Variable) -> bool {
+            false
+        }
+
+        fn compare_to(&self, _other: &dyn Variable) -> StdOrdering {
+            StdOrdering::Equal
+        }
+    }
 
     struct MockParameterDefinition {
         ordinal: i32,

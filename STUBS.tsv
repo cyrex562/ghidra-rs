@@ -3,7 +3,6 @@ ts	stub_class	referenced_by
 2026-07-03T00:00:00+00:00	DataTypeManagerOwner	DataTypeManagerDomainObject
 2026-07-03T00:00:00+00:00	DomainFile	ProjectArchiveBasedDataTypeManager
 2026-07-03T00:00:00+00:00	BookmarkType	Bookmark
-2026-07-04T00:15:32+00:00	Variable	Parameter
 2026-07-04T00:20:00+00:00	Settings	Enum
 2026-07-04T00:25:00+00:00	PointerTypedefBuilder	Pointer
 2026-07-05T00:13:20+00:00	SettingsDefinition	TypeDefSettingsDefinition
@@ -22,3 +21,5 @@ ts	stub_class	referenced_by
 2026-07-06T00:02:19Z	ProgramFragment	ProgramModule
 2026-07-06T00:10:00Z	FunctionSignature	FunctionDefinition
 2026-07-06T00:10:00Z	GenericCallingConvention	FunctionDefinition
+2026-07-06T00:20:00Z	Function	Variable
+2026-07-06T00:20:00Z	VariableStorage	Variable

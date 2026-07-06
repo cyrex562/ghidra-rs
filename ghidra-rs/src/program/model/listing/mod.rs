@@ -17,6 +17,7 @@ pub mod program_tree_change_set;
 pub mod register_change_set;
 pub mod repeatable_comment;
 pub mod symbol_change_set;
+pub mod variable;
 pub mod variable_size_exception;
 
 pub use address_change_set::AddressChangeSet;
@@ -38,4 +39,5 @@ pub use program_tree_change_set::ProgramTreeChangeSet;
 pub use register_change_set::RegisterChangeSet;
 pub use repeatable_comment::RepeatableComment;
 pub use symbol_change_set::SymbolChangeSet;
+pub use variable::Variable;
 pub use variable_size_exception::VariableSizeException;
