@@ -7749,7 +7749,7 @@ orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/F
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FcgProvider.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FunctionCallGraphPlugin.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FunctionEdge.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
-orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FunctionEdgeCache.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
+orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/FunctionEdgeCache.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/ValidFcgData.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/context/FcgActionContext.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin context 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/context/FcgVertexActionContext.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls plugin context 
