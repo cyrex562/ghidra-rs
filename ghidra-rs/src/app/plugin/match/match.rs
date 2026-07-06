@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use crate::program::model::address::Address;
@@ -52,6 +53,7 @@ fn byte_hex(b: u8) -> String {
 /// of either bytes or code units.
 ///
 /// Port of `ghidra.app.plugin.match.Match`.
+#[derive(Clone)]
 pub struct Match {
     this_beginning: Address,
     other_beginning: Address,
@@ -231,6 +233,14 @@ impl Ord for Match {
             .cmp(&other.this_beginning)
             .then_with(|| self.other_beginning.cmp(&other.other_beginning))
             .then_with(|| self.length().cmp(&other.length()))
+    }
+}
+
+impl Hash for Match {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.this_beginning.offset().hash(state);
+        self.other_beginning.offset().hash(state);
+        self.total_length.hash(state);
     }
 }
 

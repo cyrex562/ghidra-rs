@@ -1,5 +1,7 @@
 pub mod r#match;
+pub mod match_set;
 pub mod subroutine_match;
 
 pub use r#match::{Match, MatchItem};
+pub use match_set::MatchSet;
 pub use subroutine_match::SubroutineMatch;
