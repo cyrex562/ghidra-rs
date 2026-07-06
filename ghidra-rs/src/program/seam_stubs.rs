@@ -261,6 +261,38 @@ pub trait VariableFilter {}
 /// never inspects or constructs one directly), so no members are needed yet.
 pub trait RegisterValue {}
 
+/// Placeholder for `ghidra.program.model.lang.ProcessorContext`, referenced by
+/// [`Instruction`](crate::program::model::listing::instruction::Instruction) as a supertrait
+/// before the real interface is ported. `Instruction` itself never calls any of
+/// `ProcessorContext`'s register-state accessors, so no members are needed yet.
+pub trait ProcessorContext {}
+
+/// Placeholder for `ghidra.program.model.lang.InstructionPrototype`, referenced by
+/// [`Instruction`](crate::program::model::listing::instruction::Instruction)
+/// before the real class is ported. `Instruction` only ever passes this type through (via
+/// `get_prototype`), so no members are needed yet.
+pub trait InstructionPrototype {}
+
+/// Placeholder for `ghidra.program.model.lang.InstructionContext`, referenced by
+/// [`Instruction`](crate::program::model::listing::instruction::Instruction)
+/// before the real interface is ported. `Instruction` only ever passes this type through (via
+/// `get_instruction_context`), so no members are needed yet.
+pub trait InstructionContext {}
+
+/// Placeholder for `ghidra.program.model.listing.FlowOverride`, referenced by
+/// [`Instruction`](crate::program::model::listing::instruction::Instruction)
+/// before the real enum is ported. `Instruction` only gets/sets this value, so the static
+/// `FlowOverride.getModifiedFlowType`/`getFlowOverride` helper logic is omitted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum FlowOverride {
+    #[default]
+    None,
+    Branch,
+    Call,
+    CallReturn,
+    Return,
+}
+
 /// Placeholder for `ghidra.program.model.symbol.Namespace`, referenced by
 /// [`Library`](crate::program::model::listing::library::Library) as a supertrait before the
 /// real interface is ported.
