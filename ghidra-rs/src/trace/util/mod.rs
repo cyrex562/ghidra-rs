@@ -6,3 +6,4 @@ pub mod method_protector;
 pub mod wrapping_code_unit_iterator;
 pub mod wrapping_data_iterator;
 pub mod wrapping_function_iterator;
+pub mod wrapping_instruction_iterator;
