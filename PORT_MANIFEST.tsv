@@ -1074,7 +1074,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/Ty
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingCodeUnitIterator.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingDataIterator.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingFunctionIterator.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingInstructionIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingInstructionIterator.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/docking/widgets/model/DemoFieldsTest.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java docking widgets model 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/experiments/ToArrayTest.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java experiments 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/test/java/ghidra/dbg/target/schema/XmlTargetObjectSchemaTest.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src test java ghidra dbg target schema 
