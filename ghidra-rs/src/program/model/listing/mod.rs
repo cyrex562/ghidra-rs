@@ -38,6 +38,7 @@ pub mod stack_variable_comparator;
 pub mod symbol_change_set;
 pub mod thunk_function;
 pub mod variable;
+pub mod variable_filter;
 pub mod variable_size_exception;
 
 pub use address_change_set::AddressChangeSet;
@@ -80,4 +81,8 @@ pub use stack_variable_comparator::{StackVariableComparator, StackVariableOperan
 pub use symbol_change_set::SymbolChangeSet;
 pub use thunk_function::ThunkFunction;
 pub use variable::Variable;
+pub use variable_filter::{
+    CompoundStackVariableFilter, LocalVariableFilter, MemoryVariableFilter, ParameterFilter,
+    RegisterVariableFilter, StackVariableFilter, UniqueVariableFilter, VariableFilter,
+};
 pub use variable_size_exception::VariableSizeException;

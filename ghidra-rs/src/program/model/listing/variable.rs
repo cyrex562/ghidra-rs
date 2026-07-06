@@ -205,6 +205,17 @@ pub trait Variable {
 
     /// Compares this variable with `other` for ordering.
     fn compare_to(&self, other: &dyn Variable) -> Ordering;
+
+    /// Returns `true` if this variable is a parameter.
+    fn is_parameter(&self) -> bool {
+        false
+    }
+
+    /// Returns `true` if this is an auto-generated parameter (e.g., `__return_storage_ptr__`).
+    /// This only returns `true` if `is_parameter()` also returns `true`.
+    fn is_auto_parameter(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
