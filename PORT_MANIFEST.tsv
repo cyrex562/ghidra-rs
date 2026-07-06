@@ -1071,7 +1071,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/Tr
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceSpaceMixin.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceViewportSpanIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TypedEventDispatcher.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingCodeUnitIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingCodeUnitIterator.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingDataIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingFunctionIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/WrappingInstructionIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
