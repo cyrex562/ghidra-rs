@@ -33,3 +33,12 @@ ts	stub_class	referenced_by
 2026-07-05T12:30:00Z	InstructionPrototype	Instruction
 2026-07-05T12:30:00Z	InstructionContext	Instruction
 2026-07-05T12:30:00Z	FlowOverride	Instruction
+2026-07-06T01:30:57Z	CodeUnitIterator	Listing
+2026-07-06T01:30:57Z	InstructionIterator	Listing
+2026-07-06T01:30:57Z	DataIterator	Listing
+2026-07-06T01:30:57Z	FunctionIterator	Listing
+2026-07-06T01:30:57Z	InstructionSet	Listing
+2026-07-06T01:30:57Z	ProcessorContextView	Listing
+2026-07-06T01:30:57Z	PropertyMap	Listing
+2026-07-06T01:30:57Z	CommentHistory	Listing
+2026-07-06T01:30:57Z	CodeUnitComments	Listing
