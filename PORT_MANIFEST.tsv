@@ -4018,7 +4018,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DynamicSymbolTableConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/EncryptedInformationCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/EntryPointCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/ExportTrie.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/ExportTrie.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FileSetEntryCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FixedVirtualMemoryFileCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/FixedVirtualMemorySharedLibraryCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
