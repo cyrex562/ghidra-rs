@@ -12704,7 +12704,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/AbstractD
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ChangeSet.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DefaultDomainFileFilter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DefaultLaunchMode.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFile.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFile.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFileFilter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolder.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderChangeListener.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 

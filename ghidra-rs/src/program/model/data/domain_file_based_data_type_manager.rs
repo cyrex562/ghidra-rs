@@ -1,5 +1,5 @@
+use crate::framework::model::DomainFile;
 use crate::program::model::data::file_based_data_type_manager::FileBasedDataTypeManager;
-use crate::program::seam_stubs::DomainFile;
 
 /// Extends [`FileBasedDataTypeManager`] to provide methods specific to a data type manager
 /// stored as a domain file.
