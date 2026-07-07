@@ -13,7 +13,6 @@ ts	stub_class	referenced_by
 2026-07-05T12:20:00Z	ProgramArchitecture	DataTypeManager
 2026-07-05T12:20:00Z	AddressMap	DataTypeManager
 2026-07-05T12:20:00Z	Transaction	DataTypeManager
-2026-07-06T00:02:19Z	Group	ProgramModule
 2026-07-06T00:02:19Z	ProgramFragment	ProgramModule
 2026-07-06T00:10:00Z	GenericCallingConvention	FunctionDefinition
 2026-07-06T00:20:00Z	VariableStorage	Variable
@@ -37,3 +36,4 @@ ts	stub_class	referenced_by
 2026-07-06T01:30:57Z	PropertyMap	Listing
 2026-07-06T01:30:57Z	CommentHistory	Listing
 2026-07-06T01:30:57Z	CodeUnitComments	Listing
+2026-07-06T00:02:19Z	GroupPath	Group

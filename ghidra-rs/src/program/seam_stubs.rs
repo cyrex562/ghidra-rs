@@ -162,10 +162,27 @@ pub trait AddressMap {}
 /// before the real class is ported.
 pub trait Transaction {}
 
-/// Placeholder for `ghidra.program.model.listing.Group`, referenced by
-/// [`ProgramModule`](crate::program::model::listing::program_module::ProgramModule)
-/// as a supertrait before the real interface is ported.
-pub trait Group {}
+/// Placeholder for `ghidra.program.util.GroupPath`, referenced by
+/// [`Group::get_group_path`](crate::program::model::listing::group::Group::get_group_path)
+/// before the real class is ported. Only the construction and access needed by that default
+/// method are provided.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupPath {
+    group_names: Vec<String>,
+}
+
+impl GroupPath {
+    /// Construct a new `GroupPath` with the given names, the first being the oldest ancestor and
+    /// the last being the youngest descendant in the path.
+    pub fn new(group_names: Vec<String>) -> Self {
+        GroupPath { group_names }
+    }
+
+    /// Returns the array of names that make up this group's path.
+    pub fn get_path(&self) -> &[String] {
+        &self.group_names
+    }
+}
 
 /// Placeholder for `ghidra.program.model.listing.ProgramFragment`, referenced by
 /// [`ProgramModule`](crate::program::model::listing::program_module::ProgramModule)
