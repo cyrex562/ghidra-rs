@@ -18,6 +18,7 @@ pub mod data_iterator;
 pub mod data_type_archive;
 pub mod data_type_archive_change_set;
 pub mod data_type_change_set;
+pub mod default_program_context;
 pub mod domain_object_change_set;
 pub mod duplicate_group_exception;
 pub mod function;
@@ -77,6 +78,7 @@ pub use data_type_archive::{
 };
 pub use data_type_archive_change_set::DataTypeArchiveChangeSet;
 pub use data_type_change_set::DataTypeChangeSet;
+pub use default_program_context::DefaultProgramContext;
 pub use domain_object_change_set::DomainObjectChangeSet;
 pub use duplicate_group_exception::DuplicateGroupException;
 pub use function::{Function, FunctionUpdateType};
