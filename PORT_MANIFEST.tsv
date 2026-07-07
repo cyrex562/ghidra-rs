@@ -10731,7 +10731,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/wizard/WizardModel.java	
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/wizard/WizardStep.java	TODO	orig_src Ghidra Framework Docking src main java docking wizard 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/BooleanSettingsDefinition.java	DONE	orig_src Ghidra Framework Docking src main java ghidra docking settings
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/EnumSettingsDefinition.java	DONE	orig_src Ghidra Framework Docking src main java ghidra docking settings
-orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/FloatingPointPrecisionSettingsDefinition.java	TODO	orig_src Ghidra Framework Docking src main java ghidra docking settings 
+orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/FloatingPointPrecisionSettingsDefinition.java	DONE	orig_src Ghidra Framework Docking src main java ghidra docking settings 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/FormatSettingsDefinition.java	DONE	orig_src Ghidra Framework Docking src main java ghidra docking settings 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/IntegerSignednessFormattingModeSettingsDefinition.java	TODO	orig_src Ghidra Framework Docking src main java ghidra docking settings 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/JavaEnumSettingsDefinition.java	TODO	orig_src Ghidra Framework Docking src main java ghidra docking settings 
