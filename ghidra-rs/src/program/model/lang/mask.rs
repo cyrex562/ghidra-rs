@@ -27,7 +27,11 @@ pub trait Mask: Send + Sync {
     ///
     /// # Errors
     /// Returns `IncompatibleMaskException` if byte arrays are not of the correct size
-    fn apply_mask(&self, cde: &[u8], results: &mut [u8]) -> Result<&mut [u8], IncompatibleMaskException>;
+    fn apply_mask<'a>(
+        &self,
+        cde: &[u8],
+        results: &'a mut [u8],
+    ) -> Result<&'a mut [u8], IncompatibleMaskException>;
 
     /// Apply the mask to a byte array with offsets.
     ///
@@ -121,7 +125,11 @@ mod tests {
             self.bytes == mask
         }
 
-        fn apply_mask(&self, cde: &[u8], results: &mut [u8]) -> Result<&mut [u8], IncompatibleMaskException> {
+        fn apply_mask<'a>(
+            &self,
+            cde: &[u8],
+            results: &'a mut [u8],
+        ) -> Result<&'a mut [u8], IncompatibleMaskException> {
             if cde.len() != self.bytes.len() || results.len() != self.bytes.len() {
                 return Err(IncompatibleMaskException::with_message("mask size mismatch"));
             }
