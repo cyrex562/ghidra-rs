@@ -3,6 +3,7 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language_id::LanguageID;
@@ -32,10 +33,14 @@ pub trait PointerTypedefBuilder {}
 
 /// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
 /// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset),
-/// [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable), and
-/// [`Array`](crate::program::model::data::array::Array)
+/// [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable),
+/// [`Array`](crate::program::model::data::array::Array), and
+/// [`Label`](crate::app::plugin::processors::generic::label::Label)
 /// before the real interface is ported.
 pub trait MemBuffer {
+    /// Stands in for `MemBuffer.getAddress()`.
+    fn get_address(&self) -> Address;
+
     /// Stands in for `MemBuffer.isInitializedMemory()`.
     fn is_initialized_memory(&self) -> bool {
         false
