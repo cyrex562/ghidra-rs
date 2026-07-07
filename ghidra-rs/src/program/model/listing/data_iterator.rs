@@ -66,7 +66,8 @@ mod tests {
     use crate::program::model::scalar::Scalar;
     use crate::program::model::symbol::{ExternalReference, Symbol};
     use crate::docking::settings::settings::Settings;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet, RefType, Reference};
+    use crate::program::model::util::PropertySet;
+    use crate::program::seam_stubs::{CommentType, MemBuffer, RefType, Reference};
     use std::any::{Any, TypeId};
     use std::sync::Arc;
 

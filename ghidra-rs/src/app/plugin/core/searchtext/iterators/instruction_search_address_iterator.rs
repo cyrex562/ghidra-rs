@@ -98,7 +98,7 @@ mod tests {
 
     impl crate::program::seam_stubs::MemBuffer for MockInstruction {}
 
-    impl crate::program::seam_stubs::PropertySet for MockInstruction {}
+    impl crate::program::model::util::PropertySet for MockInstruction {}
 
     impl crate::program::model::listing::CodeUnit for MockInstruction {
         fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {

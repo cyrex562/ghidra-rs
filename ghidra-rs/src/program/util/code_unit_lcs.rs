@@ -45,7 +45,8 @@ mod tests {
     use super::*;
     use crate::program::model::listing::{CodeUnit as _, MNEMONIC};
     use crate::program::model::address::Address;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet};
+    use crate::program::model::util::PropertySet;
+    use crate::program::seam_stubs::{CommentType, MemBuffer};
     use crate::util::task::DummyMonitor;
     use std::fmt;
     use std::sync::Arc;
@@ -82,13 +83,7 @@ mod tests {
         }
     }
 
-    impl PropertySet for MockCodeUnit {
-        fn get_property(&self, _name: &str) -> Option<String> {
-            None
-        }
-
-        fn set_property(&mut self, _name: &str, _value: Option<String>) {}
-    }
+    impl PropertySet for MockCodeUnit {}
 
     impl CodeUnit for MockCodeUnit {
         fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {

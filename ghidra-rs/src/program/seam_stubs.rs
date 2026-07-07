@@ -82,11 +82,6 @@ pub trait StringDataInstance {
 /// Placeholder for `ghidra.program.model.data.StringDataInstance.DEFAULT_CHARSET_NAME`.
 pub const DEFAULT_CHARSET_NAME: &str = "US-ASCII";
 
-/// Placeholder for `ghidra.program.model.util.PropertySet`, referenced by
-/// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit) as a supertrait before the
-/// real interface is ported.
-pub trait PropertySet {}
-
 /// Placeholder for `ghidra.program.model.listing.CommentType`, referenced by
 /// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit)
 /// before the real enum is ported.

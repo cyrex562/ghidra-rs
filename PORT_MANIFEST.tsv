@@ -14411,7 +14411,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/ut
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/ProcessorSymbolType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertyMapManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertySet.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertySet.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/SettingsPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/StringPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/VoidPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
