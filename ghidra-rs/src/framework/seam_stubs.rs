@@ -14,11 +14,16 @@ pub trait DomainObjectListener {}
 /// `DomainObject` only ever registers/unregisters this listener, so no members are needed yet.
 pub trait TransactionListener {}
 
-/// Placeholder for `ghidra.framework.model.DomainFolder`, referenced by
-/// [`DomainFile`](crate::framework::model::DomainFile) before the real interface is ported.
-/// `DomainFile` only ever passes this type through (as a parent or move/copy destination), so no
-/// members are needed yet.
-pub trait DomainFolder {}
+/// Placeholder for `ghidra.framework.model.ProjectData`, referenced by
+/// [`DomainFolder`](crate::framework::model::DomainFolder) before the real class is ported.
+/// `DomainFolder` only ever returns this type, so no members are needed yet.
+pub trait ProjectData {}
+
+/// Placeholder for `ghidra.framework.data.LinkHandler`, referenced by
+/// [`DomainFolder`](crate::framework::model::DomainFolder) before the real class is ported.
+/// `DomainFolder` only ever passes this type through as an opaque value, so no members are needed
+/// yet.
+pub trait LinkHandler {}
 
 /// Placeholder for `ghidra.framework.model.ProjectLocator`, referenced by
 /// [`DomainFile`](crate::framework::model::DomainFile) before the real class is ported.
