@@ -14408,7 +14408,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/ut
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/IntPropertyMap.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/LongPropertyMap.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/MemoryByteIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/ObjectPropertyMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/ObjectPropertyMap.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/ProcessorSymbolType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertyMap.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertyMapManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model util 
