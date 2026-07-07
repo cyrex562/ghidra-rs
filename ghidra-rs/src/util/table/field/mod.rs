@@ -1,0 +1,3 @@
+pub mod function_inline_settings_definition;
+
+pub use function_inline_settings_definition::FunctionInlineSettingsDefinition;
