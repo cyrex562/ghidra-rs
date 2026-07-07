@@ -8,6 +8,7 @@ pub mod isf_win_pdb;
 pub mod isf_win_pe;
 pub mod abstract_isf_writer;
 pub mod isf_producer;
+pub mod abstract_isf_object;
 
 pub use isf_object::IsfObject;
 pub use isf_data_type_null::IsfDataTypeNull;
@@ -19,3 +20,4 @@ pub use isf_win_pdb::IsfWinPDB;
 pub use isf_win_pe::IsfWinPE;
 pub use abstract_isf_writer::{IsfWriterImpl, AbstractIsfWriterState};
 pub use isf_producer::IsfProducer;
+pub use abstract_isf_object::AbstractIsfObject;
