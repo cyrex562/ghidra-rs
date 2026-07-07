@@ -126,7 +126,7 @@ orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/I
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDataTypeNull.java	DONE	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDataTypeTypeDef.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDataTypeWriter.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
-orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDynamicComponent.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
+orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDynamicComponent.java	DONE	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfEnum.java	DONE	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfFunction.java	DONE	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF
 orig_src/Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfFunctionPointer.java	TODO	orig_src Ghidra Debug Debugger-isf src main java ghidra program model data ISF 
