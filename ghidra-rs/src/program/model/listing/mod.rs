@@ -23,6 +23,7 @@ pub mod domain_object_change_set;
 pub mod duplicate_group_exception;
 pub mod function;
 pub mod function_iterator;
+pub mod function_manager;
 pub mod function_overlap_exception;
 pub mod function_signature;
 pub mod function_tag;
@@ -83,6 +84,7 @@ pub use domain_object_change_set::DomainObjectChangeSet;
 pub use duplicate_group_exception::DuplicateGroupException;
 pub use function::{Function, FunctionUpdateType};
 pub use function_iterator::{EmptyFunctionIterator, FunctionIterator, ListFunctionIterator};
+pub use function_manager::FunctionManager;
 pub use function_overlap_exception::FunctionOverlapException;
 pub use function_signature::{
     FunctionSignature, NORETURN_DISPLAY_STRING, VAR_ARGS_DISPLAY_STRING, VOID_PARAM_DISPLAY_STRING,
