@@ -14640,7 +14640,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/database/register/AddressRangeObjectMapTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program database register 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/AddressIteratorTestStub.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/FunctionTestDouble.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model 
-orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/ReferenceIteratorTestStub.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model 
+orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/ReferenceIteratorTestStub.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/ReferenceManagerTestDouble.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/StubFunctionManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/StubProgram.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model 
