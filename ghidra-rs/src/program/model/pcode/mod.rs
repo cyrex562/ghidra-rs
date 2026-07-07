@@ -1,14 +1,28 @@
+pub mod byte_ingest;
 pub mod decoder;
+pub mod decoder_exception;
 pub mod ids;
+pub mod linked_byte_buffer;
+pub mod list_linked;
 pub mod packed;
+pub mod packed_bytes;
+pub mod pcode_exception;
+pub mod string_ingest;
 
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
 use std::sync::Arc;
 
+pub use byte_ingest::ByteIngest;
 pub use decoder::{Decoder, DecoderError};
+pub use decoder_exception::DecoderException;
 pub use ids::*;
+pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition};
+pub use list_linked::{LinkedIter, ListLinked};
 pub use packed::PackedDecode;
+pub use packed_bytes::PackedBytes;
+pub use pcode_exception::PcodeException;
+pub use string_ingest::StringIngest;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpCode {

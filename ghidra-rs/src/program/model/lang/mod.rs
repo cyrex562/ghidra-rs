@@ -1,20 +1,55 @@
+pub mod data_type_provider_context;
+pub mod decompiler_language;
+pub mod endian;
+pub mod incompatible_mask_exception;
+pub mod input_list_type;
+pub mod instruction_context;
+pub mod instruction_prototype;
+pub mod insufficient_bytes_exception;
+pub mod language_id;
+pub mod mask;
+pub mod mask_impl;
+pub mod nested_delay_slot_exception;
+pub mod operand_type;
+pub mod parser_context;
+pub mod processor_context;
+pub mod processor_context_view;
+pub mod processor_not_found_exception;
+pub mod program_architecture;
+pub mod register;
+pub mod register_tree;
 pub mod sleigh;
+pub mod space_names;
+pub mod storage_class;
+pub mod undefined_value_exception;
+pub mod unknown_context_exception;
+pub mod unknown_data_exception;
+pub mod unknown_instruction_exception;
+pub mod unknown_register;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Endian {
-    Big,
-    Little,
-}
-
-impl Endian {
-    pub fn is_big_endian(&self) -> bool {
-        matches!(self, Self::Big)
-    }
-
-    pub fn to_str(&self) -> &'static str {
-        match self {
-            Self::Big => "big",
-            Self::Little => "little",
-        }
-    }
-}
+pub use data_type_provider_context::DataTypeProviderContext;
+pub use endian::Endian;
+pub use incompatible_mask_exception::IncompatibleMaskException;
+pub use input_list_type::InputListType;
+pub use instruction_context::{InstructionContext, InstructionContextError};
+pub use instruction_prototype::InstructionPrototype;
+pub use insufficient_bytes_exception::InsufficientBytesException;
+pub use language_id::LanguageID;
+pub use mask::Mask;
+pub use mask_impl::MaskImpl;
+pub use nested_delay_slot_exception::NestedDelaySlotException;
+pub use operand_type::OperandType;
+pub use parser_context::ParserContext;
+pub use processor_context::ProcessorContext;
+pub use processor_context_view::ProcessorContextView;
+pub use processor_not_found_exception::ProcessorNotFoundException;
+pub use program_architecture::ProgramArchitecture;
+pub use register::{Register, RegisterRef, WeakRegisterRef};
+pub use register_tree::{RegisterTree, RegisterTreeRef, WeakRegisterTreeRef};
+pub use space_names::SpaceNames;
+pub use storage_class::StorageClass;
+pub use undefined_value_exception::UndefinedValueException;
+pub use unknown_context_exception::UnknownContextException;
+pub use unknown_data_exception::UnknownDataException;
+pub use unknown_instruction_exception::UnknownInstructionException;
+pub use unknown_register::UnknownRegister;

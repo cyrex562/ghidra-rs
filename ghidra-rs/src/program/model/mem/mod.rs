@@ -1,5 +1,8 @@
 pub mod invalid_address_exception;
+pub mod mem_buffer_input_stream;
+pub mod mem_buffer_mixin;
 pub mod memory;
+pub mod memory_access_exception;
 pub mod memory_block;
 pub mod memory_block_exception;
 pub mod memory_block_impl;
@@ -8,14 +11,12 @@ pub mod memory_block_stub;
 pub mod memory_block_type;
 pub mod memory_conflict_exception;
 pub mod memory_constants;
-
-use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq)]
-#[error("Memory access error: {0}")]
-pub struct MemoryAccessException(pub String);
+pub mod mutable_mem_buffer;
 
 pub use invalid_address_exception::InvalidAddressException;
+pub use mem_buffer_input_stream::MemBufferInputStream;
+pub use mem_buffer_mixin::MemBufferMixin;
+pub use memory_access_exception::MemoryAccessException;
 pub use memory::Memory;
 pub use memory_block::MemoryBlock;
 pub use memory_block_exception::MemoryBlockException;
@@ -25,3 +26,4 @@ pub use memory_block_stub::MemoryBlockStub;
 pub use memory_block_type::MemoryBlockType;
 pub use memory_conflict_exception::MemoryConflictException;
 pub use memory_constants::HEAP_BLOCK_NAME;
+pub use mutable_mem_buffer::MutableMemBuffer;

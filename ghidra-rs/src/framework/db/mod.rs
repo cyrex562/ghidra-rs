@@ -4,12 +4,16 @@ pub mod buffers;
 pub mod chained_buffer;
 pub mod db_handle;
 pub mod db_parms;
+pub mod db_rollback_exception;
 pub mod field;
+pub mod illegal_field_access_exception;
 pub mod master_table;
 pub mod nodes;
 pub mod record;
 pub mod schema;
 pub mod table;
+pub mod test_speed;
+pub mod util;
 
 pub use buffer::{Buffer, DataBuffer};
 pub use buffer_mgr::BufferMgr;
@@ -17,7 +21,9 @@ pub use buffers::{BufferFile, LocalBufferFile};
 pub use chained_buffer::ChainedBuffer;
 pub use db_handle::DBHandle;
 pub use db_parms::DBParms;
+pub use db_rollback_exception::DBRollbackException;
 pub use field::{Field, FieldType};
+pub use illegal_field_access_exception::IllegalFieldAccessException;
 pub use record::DBRecord;
 pub use schema::Schema;
 pub use table::Table;
@@ -25,6 +31,34 @@ pub use table::Table;
 pub trait RecordIterator {
     fn next(&mut self) -> std::io::Result<Option<DBRecord>>;
     fn has_next(&self) -> bool;
+}
+
+/// Bidirectional iterator over `i64` key values within a database table.
+///
+/// All methods may return `Err` if an I/O error occurs. `next` and `previous`
+/// additionally return `Err` when no further value is available (analogous to
+/// Java's `NoSuchElementException`).
+pub trait DBLongIterator {
+    /// Return `true` if a value is available in the forward direction.
+    fn has_next(&mut self) -> std::io::Result<bool>;
+
+    /// Return `true` if a value is available in the reverse direction.
+    fn has_previous(&mut self) -> std::io::Result<bool>;
+
+    /// Return the next `i64` value.
+    ///
+    /// Returns `Err(ErrorKind::Other)` if no next value is available.
+    fn next(&mut self) -> std::io::Result<i64>;
+
+    /// Return the previous `i64` value.
+    ///
+    /// Returns `Err(ErrorKind::Other)` if no previous value is available.
+    fn previous(&mut self) -> std::io::Result<i64>;
+
+    /// Delete the last record(s) associated with the last value read via `next` or `previous`.
+    ///
+    /// Returns `true` if the record(s) were successfully deleted.
+    fn delete(&mut self) -> std::io::Result<bool>;
 }
 
 #[cfg(test)]
@@ -225,5 +259,119 @@ mod tests {
         let mut read2 = vec![0u8; 50];
         cb.get(0, &mut read2);
         assert_eq!(read2, vec![0xAAu8; 50]);
+    }
+
+    // --- DBLongIterator tests ---
+
+    struct VecLongIterator {
+        values: Vec<i64>,
+        pos: isize,
+        last_dir: Option<bool>, // true = forward, false = backward
+        deleted: Vec<bool>,
+    }
+
+    impl VecLongIterator {
+        fn new(values: Vec<i64>) -> Self {
+            let len = values.len();
+            Self { values, pos: -1, last_dir: None, deleted: vec![false; len] }
+        }
+    }
+
+    impl DBLongIterator for VecLongIterator {
+        fn has_next(&mut self) -> std::io::Result<bool> {
+            let next = self.pos + 1;
+            Ok(next < self.values.len() as isize)
+        }
+
+        fn has_previous(&mut self) -> std::io::Result<bool> {
+            Ok(self.pos >= 0)
+        }
+
+        fn next(&mut self) -> std::io::Result<i64> {
+            let next = self.pos + 1;
+            if next >= self.values.len() as isize {
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, "no next element"));
+            }
+            self.pos = next;
+            self.last_dir = Some(true);
+            Ok(self.values[self.pos as usize])
+        }
+
+        fn previous(&mut self) -> std::io::Result<i64> {
+            if self.pos < 0 {
+                return Err(std::io::Error::new(std::io::ErrorKind::Other, "no previous element"));
+            }
+            let val = self.values[self.pos as usize];
+            self.last_dir = Some(false);
+            self.pos -= 1;
+            Ok(val)
+        }
+
+        fn delete(&mut self) -> std::io::Result<bool> {
+            let idx = match self.last_dir {
+                Some(true) => self.pos as usize,
+                Some(false) => (self.pos + 1) as usize,
+                None => return Ok(false),
+            };
+            if idx < self.deleted.len() && !self.deleted[idx] {
+                self.deleted[idx] = true;
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        }
+    }
+
+    #[test]
+    fn test_db_long_iterator_forward() {
+        let mut it = VecLongIterator::new(vec![10, 20, 30]);
+        assert!(it.has_next().unwrap());
+        assert!(!it.has_previous().unwrap());
+        assert_eq!(it.next().unwrap(), 10);
+        assert_eq!(it.next().unwrap(), 20);
+        assert_eq!(it.next().unwrap(), 30);
+        assert!(!it.has_next().unwrap());
+    }
+
+    #[test]
+    fn test_db_long_iterator_backward() {
+        let mut it = VecLongIterator::new(vec![10, 20, 30]);
+        it.next().unwrap();
+        it.next().unwrap();
+        it.next().unwrap();
+        assert_eq!(it.previous().unwrap(), 30);
+        assert_eq!(it.previous().unwrap(), 20);
+        assert_eq!(it.previous().unwrap(), 10);
+        assert!(!it.has_previous().unwrap());
+    }
+
+    #[test]
+    fn test_db_long_iterator_next_exhausted_returns_err() {
+        let mut it = VecLongIterator::new(vec![1]);
+        it.next().unwrap();
+        assert!(it.next().is_err());
+    }
+
+    #[test]
+    fn test_db_long_iterator_previous_exhausted_returns_err() {
+        let mut it = VecLongIterator::new(vec![1]);
+        assert!(it.previous().is_err());
+    }
+
+    #[test]
+    fn test_db_long_iterator_delete() {
+        let mut it = VecLongIterator::new(vec![10, 20, 30]);
+        it.next().unwrap();
+        assert!(it.delete().unwrap());
+        assert!(!it.delete().unwrap()); // already deleted
+    }
+
+    #[test]
+    fn test_db_long_iterator_empty() {
+        let mut it = VecLongIterator::new(vec![]);
+        assert!(!it.has_next().unwrap());
+        assert!(!it.has_previous().unwrap());
+        assert!(it.next().is_err());
+        assert!(it.previous().is_err());
     }
 }

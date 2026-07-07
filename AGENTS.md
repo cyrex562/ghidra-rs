@@ -148,18 +148,82 @@ tree; do not reproduce Java's package structure verbatim.
 
 1. Find the Java package: strip `orig_src/<module>/src/<sourceset>/java/` from the source
    path. e.g. `.../java/mobiledevices/dmg/btree/BTreeTypes.java` → `mobiledevices.dmg.btree`.
-2. Map the TOP-LEVEL area using this table:
+2. Map the package using the table below — the **LONGEST matching prefix wins**
+   (the table is ordered most-specific first, so take the first row whose prefix is
+   `pkg` or a `pkg.` ancestor). e.g. `ghidra.app.util.bin.format.elf` → `format/`,
+   but `ghidra.app.plugin.core` → `app/`.
 
-    | Java top-level                                                      | Rust module (src/) |
-    | ------------------------------------------------------------------- | ------------------ |
-    | ghidra.framework.\*                                                 | framework/         |
-    | ghidra.program.\*                                                   | program/           |
-    | ghidra.util.\*                                                      | util/              |
-    | generic._ , ghidra.generic._                                        | generic/           |
-    | ghidra.app.script.\* , jython, plugin loaders                       | script/            |
-    | ghidra.app.util.bin.format.\* (COFF, ELF, MachO, PE, DWARF, PDB, …) | format/            |
-    | GPL filesystem modules (mobiledevices.dmg.\*, ext4, squashfs, …)    | filesystem/        |
-    | ghidra.app.util.demangler.\*                                        | demangler/         |
+   This table is generated from `scripts/port_layout.tsv` — edit that file and run
+   `python scripts/portlib.py gen-agents` to regenerate; the harness reads the same
+   file, so the two never drift.
+
+    | Java package prefix        | Rust module (src/) |
+    | -------------------------- | ------------------ |
+    | ghidra.app.util.bin.format | format/            |
+    | ghidra.app.util.demangler  | demangler/         |
+    | ghidra.app.script          | script/            |
+    | ghidra.closedpatternmining | feature/           |
+    | ghidra.machinelearning     | feature/           |
+    | ghidra.bytepatterns        | feature/           |
+    | ghidra.bitpatterns         | feature/           |
+    | ghidra.pcodeCPort          | decompiler/        |
+    | mobiledevices.dmg          | filesystem/        |
+    | ghidra.framework           | framework/         |
+    | ghidra.javaclass           | format/            |
+    | ghidra.language            | program/           |
+    | ghidra.security            | framework/         |
+    | ghidra.markdown            | util/              |
+    | ghidra.features            | feature/           |
+    | ghidra.pyghidra            | script/            |
+    | ghidra.program             | program/           |
+    | ghidra.generic             | generic/           |
+    | ghidra.feature             | feature/           |
+    | ghidra.service             | service/           |
+    | ghidra.formats             | filesystem/        |
+    | ghidra.plugins             | app/               |
+    | ghidra.docking             | docking/           |
+    | ghidra.sleigh              | sleigh/            |
+    | ghidra.dalvik              | format/            |
+    | ghidra.jython              | script/            |
+    | ghidra.server             | server/            |
+    | ghidra.plugin              | app/               |
+    | ghidra.async               | util/              |
+    | ghidra.pcode               | pcode/             |
+    | ghidra.trace               | trace/             |
+    | ghidra.symz3               | feature/           |
+    | ghidra.taint               | feature/           |
+    | ghidra.graph               | graph/             |
+    | ghidra.debug               | debug/             |
+    | ghidra.util                | util/              |
+    | ghidra.base                | util/              |
+    | ghidra.file                | file/              |
+    | ghidra.bsfv                | feature/           |
+    | ghidra.lisa                | feature/           |
+    | ghidra.app                 | app/               |
+    | ghidra.xml                 | util/              |
+    | ghidra.asm                 | asm/               |
+    | ghidra.net                 | net/               |
+    | ghidra.pty                 | pty/               |
+    | ghidra.dbg                 | debug/             |
+    | functioncalls              | graph/             |
+    | decompiler                 | decompiler/        |
+    | mdemangler                 | demangler/         |
+    | foundation                 | util/              |
+    | datagraph                  | graph/             |
+    | resources                  | util/              |
+    | utilities                  | util/              |
+    | squashfs                   | filesystem/        |
+    | generic                    | generic/           |
+    | docking                    | docking/           |
+    | utility                    | util/              |
+    | sarif                      | sarif/             |
+    | agent                      | debug/             |
+    | ext4                       | filesystem/        |
+    | util                       | util/              |
+    | pdb                        | format/            |
+    | gui                        | docking/           |
+    | log                        | util/              |
+    | db                         | framework/         |
 
 3. Within that area, mirror the remaining package path in snake_case; convert the class to a
    snake_case file (`BTreeTypes` → `b_tree_types.rs`); ensure each dir has a wired `mod.rs`.
@@ -168,7 +232,12 @@ tree; do not reproduce Java's package structure verbatim.
 5. Scripting: Jython/Python ports target `script/python.rs` (this crate uses pyo3, not
    Jython); WASM targets `script/wasm.rs`.
 
-### If the area is NOT in the table above → STOP and park (needs-attention).
+### If the package is NOT in the table above → STOP and park (needs-attention).
 
-Do NOT invent a new top-level module. Comment asking which top-level module the new area
-belongs under. Once answered, the table grows and porting resumes.
+The table is comprehensive: areas deliberately left out (test, examples, demo
+`ghidra_scripts`, dev-tooling, doclets, help) are **not** to be ported — they are
+tracked in `todo.md` under "Post-Port" as native-Rust equivalents to build later.
+The harness already filters these out, so you should rarely see one; if you do, park
+it. Do NOT invent a new top-level module — comment asking which module the new area
+belongs under; once answered, add a row to `scripts/port_layout.tsv`, regenerate this
+table, and porting resumes.

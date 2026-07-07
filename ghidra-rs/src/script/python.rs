@@ -6,7 +6,10 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::ffi::CString;
 use std::fs;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
+use std::thread;
 
 #[pyclass(from_py_object)]
 #[derive(Clone)]
@@ -146,6 +149,86 @@ impl PythonScriptRunner {
     }
 }
 
+/// Default port used by the PyDev remote debugger.
+///
+/// Mirrors `PyDevUtils.PYDEV_REMOTE_DEBUGGER_PORT`.
+pub const PYDEV_REMOTE_DEBUGGER_PORT: u16 = 5678;
+
+/// Returns the PyDev source directory if the `eclipse.pysrc.dir` environment
+/// variable is set to a non-blank value.
+///
+/// Mirrors `PyDevUtils.getPyDevSrcDir()`. Java reads a JVM system property;
+/// the Rust port reads the equivalent environment variable.
+pub fn get_pydev_src_dir() -> Option<PathBuf> {
+    std::env::var("eclipse.pysrc.dir")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .map(PathBuf::from)
+}
+
+/// Thread responsible for executing a Python script from a file.
+///
+/// Mirrors `ghidra.jython.JythonScriptExecutionThread`. The `interpreter_running`
+/// flag is always set to `false` when the thread finishes — whether execution
+/// succeeded, raised a Python error, or encountered an I/O problem — so callers
+/// can observe completion without joining the thread directly.
+pub struct ScriptExecutionThread {
+    script_path: PathBuf,
+    program: Arc<RwLock<ProgramDB>>,
+    current_address: Option<Address>,
+    interpreter_running: Arc<AtomicBool>,
+}
+
+impl ScriptExecutionThread {
+    /// Creates a new script execution thread.
+    ///
+    /// # Arguments
+    ///
+    /// * `script_path` - Path to the Python script file to execute.
+    /// * `program` - Program context exposed to the script.
+    /// * `current_address` - Optional address context exposed to the script.
+    /// * `interpreter_running` - Set to `false` when execution ends (success or failure).
+    pub fn new(
+        script_path: PathBuf,
+        program: Arc<RwLock<ProgramDB>>,
+        current_address: Option<Address>,
+        interpreter_running: Arc<AtomicBool>,
+    ) -> Self {
+        Self {
+            script_path,
+            program,
+            current_address,
+            interpreter_running,
+        }
+    }
+
+    /// Spawns the script on a named OS thread and returns the join handle.
+    pub fn spawn(self) -> thread::JoinHandle<()> {
+        thread::Builder::new()
+            .name("Python script execution thread".to_string())
+            .spawn(move || self.run())
+            .expect("failed to spawn script execution thread")
+    }
+
+    fn run(self) {
+        let result = PythonScriptRunner::run_script(
+            self.script_path.to_str().unwrap_or(""),
+            self.program,
+            self.current_address,
+        );
+
+        if let Err(e) = result {
+            if e.contains("SystemExit") {
+                eprintln!("SystemExit");
+            } else {
+                eprintln!("{}", e);
+            }
+        }
+
+        self.interpreter_running.store(false, Ordering::Release);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,5 +304,100 @@ assert symbols[0].name == "python_label"
         let symbols = symbol_table.get_symbols(&addr).unwrap();
         assert_eq!(symbols.len(), 1);
         assert_eq!(symbols[0].get_name(), "python_label");
+    }
+
+    fn make_test_program() -> (Arc<RwLock<ProgramDB>>, Address) {
+        let mut data = vec![];
+        data.extend_from_slice(&[0x60, 0xA1, 0xE0, 0xA2, 0x21, 4, 0xE0, 0xA3, 0x10]);
+        data.extend_from_slice(&[0x60, 0xA2, 0xE0, 0xA9, 0x71, 3, b'r', b'a', b'm']);
+        data.extend_from_slice(&[0x60, 0xAD, 0xA0, 0xAD]);
+        data.extend_from_slice(&[
+            0x60, 0xA5, 0xCC, 0x71, 3, b'r', b'a', b'm', 0xCF, 0x21, 4, 0xC9, 0x21, 1, 0xE0, 0xAA,
+            0x21, 1, 0xA0, 0xA5,
+        ]);
+        data.extend_from_slice(&[0xA0, 0x80 | 34]);
+        data.extend_from_slice(&[0x60, 0xA6, 0xE0, 0xAD, 0x21, 1, 0xE0, 0xAE, 0x21, 0]);
+        data.extend_from_slice(&[0x56, 0xC3, 0x41, 0, 0xD6, 0x41, 0, 0x96]);
+        data.extend_from_slice(&[0xA0, 0x80 | 38]);
+        data.extend_from_slice(&[0xA0, 0x80 | 33]);
+
+        let factory = Arc::new(DefaultAddressFactory::new(vec![]));
+        let decoder = PackedDecode::new(factory, data);
+        let language = Arc::new(SleighLanguage::decode(&decoder, "test".to_string()).unwrap());
+        let space = language
+            .get_address_factory()
+            .get_address_space_by_name("ram")
+            .unwrap();
+        let addr = Address::new(space, 0x1000);
+        let program = Arc::new(RwLock::new(
+            ProgramDB::new("test_prog".to_string(), language).unwrap(),
+        ));
+        (program, addr)
+    }
+
+    #[test]
+    fn test_execution_thread_sets_flag_on_success() {
+        let (program, addr) = make_test_program();
+
+        let mut tmp_file = NamedTempFile::new().unwrap();
+        write!(tmp_file, "pass\n").unwrap();
+
+        let interpreter_running = Arc::new(AtomicBool::new(true));
+        let thread = ScriptExecutionThread::new(
+            tmp_file.path().to_path_buf(),
+            program,
+            Some(addr),
+            Arc::clone(&interpreter_running),
+        );
+
+        thread.spawn().join().unwrap();
+
+        assert!(!interpreter_running.load(Ordering::Acquire));
+    }
+
+    #[test]
+    fn test_execution_thread_sets_flag_on_error() {
+        let (program, _addr) = make_test_program();
+
+        let interpreter_running = Arc::new(AtomicBool::new(true));
+        let thread = ScriptExecutionThread::new(
+            PathBuf::from("/nonexistent/__no_such_script__.py"),
+            program,
+            None,
+            Arc::clone(&interpreter_running),
+        );
+
+        thread.spawn().join().unwrap();
+
+        assert!(!interpreter_running.load(Ordering::Acquire));
+    }
+
+    #[test]
+    fn test_pydev_remote_debugger_port() {
+        assert_eq!(PYDEV_REMOTE_DEBUGGER_PORT, 5678);
+    }
+
+    #[test]
+    fn test_get_pydev_src_dir_unset() {
+        // When the env var is absent the function returns None.
+        std::env::remove_var("eclipse.pysrc.dir");
+        assert!(get_pydev_src_dir().is_none());
+    }
+
+    #[test]
+    fn test_get_pydev_src_dir_blank() {
+        // A whitespace-only value is treated as absent.
+        std::env::set_var("eclipse.pysrc.dir", "   ");
+        let result = get_pydev_src_dir();
+        std::env::remove_var("eclipse.pysrc.dir");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_get_pydev_src_dir_set() {
+        std::env::set_var("eclipse.pysrc.dir", "/opt/pydev/src");
+        let result = get_pydev_src_dir();
+        std::env::remove_var("eclipse.pysrc.dir");
+        assert_eq!(result, Some(PathBuf::from("/opt/pydev/src")));
     }
 }

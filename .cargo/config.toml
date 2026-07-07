@@ -1,0 +1,17 @@
+# Link settings the TEST binary needs (the library rlib links fine; a full executable link
+# only happens for tests). Two fixes, neither affects `cargo build --lib`:
+#
+#   1) -L <libpython config dir>: pyo3 `auto-initialize` embeds CPython, so the test binary
+#      needs -lpython3.14; only the versioned .so is in the default lib path.
+#
+#   2) --defsym __rust_probestack=...: wasmer-vm 4.4 references the plain `__rust_probestack`,
+#      but Rust 1.96 renamed it to the v0-mangled internal symbol below (still defined in
+#      compiler_builtins). Alias the old name to the real implementation so wasmer links.
+#      NOTE: the mangled name embeds a toolchain-version hash; if a Rust upgrade breaks the
+#      test link with "undefined symbol: __rust_probestack", refresh it with:
+#        nm $(rustc --print sysroot)/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-*.rlib | grep probestack
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-L", "/usr/lib/python3.14/config-3.14-x86_64-linux-gnu",
+    "-C", "link-arg=-Wl,--defsym=__rust_probestack=_RNvCsGIExRX8pES_7___rustc17___rust_probestack",
+]

@@ -1,0 +1,3 @@
+pub mod db_trace_snap_selected_reference_space;
+
+pub use db_trace_snap_selected_reference_space::DBTraceSnapSelectedReferenceSpace;

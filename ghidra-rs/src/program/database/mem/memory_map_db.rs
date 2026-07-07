@@ -142,7 +142,7 @@ impl Memory for MemoryMapDB {
                 return b.get_byte(addr);
             }
         }
-        Err(MemoryAccessException(format!(
+        Err(MemoryAccessException::new(format!(
             "Address out of bounds: {:?}",
             addr
         )))
@@ -180,7 +180,7 @@ impl Memory for MemoryMapDB {
                 return Ok(());
             }
         }
-        Err(MemoryAccessException(format!(
+        Err(MemoryAccessException::new(format!(
             "Address out of bounds: {:?}",
             addr
         )))

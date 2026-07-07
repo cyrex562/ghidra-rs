@@ -71,7 +71,10 @@ impl Error for MemoryBlockException {
 
 impl From<MemoryBlockException> for MemoryAccessException {
     fn from(value: MemoryBlockException) -> Self {
-        Self(value.message.unwrap_or_default())
+        match value.message() {
+            Some(msg) => MemoryAccessException::new(msg),
+            None => MemoryAccessException::default(),
+        }
     }
 }
 
@@ -112,6 +115,6 @@ mod tests {
     fn converts_to_memory_access_exception() {
         let error: MemoryAccessException = MemoryBlockException::new("bad block").into();
 
-        assert_eq!(error, MemoryAccessException("bad block".to_string()));
+        assert_eq!(error, MemoryAccessException::new("bad block"));
     }
 }

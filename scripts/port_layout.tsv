@@ -1,0 +1,99 @@
+# Target-layout map: Java package prefix -> Rust module (under ghidra-rs/src/).
+# Single source of truth for BOTH the harness area-filter (scripts/portlib.py)
+# and the AGENTS.md "Target layout" table (regenerate with: portlib.py gen-agents).
+#
+# Matching is by Java PACKAGE (not file location). Rules:
+#   * A class is in the work queue iff its package matches some prefix here.
+#   * For PLACEMENT, the LONGEST matching prefix wins (most-specific first below).
+#   * Areas deliberately NOT ported (test, examples, scripts, dev-tooling, help,
+#     doclets) are intentionally absent -> they stay out of the queue. See
+#     todo.md "Post-Port" for the native-Rust equivalents to build later.
+#
+# format: <java.package.prefix><TAB><rust_module>
+
+# --- ghidra.app.* : specific subtrees before the general catch-all ---
+ghidra.app.script	script
+ghidra.app.util.bin.format	format
+ghidra.app.util.demangler	demangler
+ghidra.app	app
+
+# --- core framework / program / language ---
+ghidra.framework	framework
+ghidra.program	program
+ghidra.language	program
+ghidra.security	framework
+ghidra.util	util
+ghidra.generic	generic
+generic	generic
+ghidra.async	util
+ghidra.xml	util
+ghidra.markdown	util
+ghidra.base	util
+db	framework
+
+# --- analysis / runtime ---
+ghidra.pcode	pcode
+ghidra.pcodeCPort	decompiler
+decompiler	decompiler
+ghidra.sleigh	sleigh
+ghidra.asm	asm
+ghidra.trace	trace
+ghidra.file	file
+ghidra.feature	feature
+ghidra.features	feature
+ghidra.machinelearning	feature
+ghidra.bitpatterns	feature
+ghidra.bytepatterns	feature
+ghidra.closedpatternmining	feature
+ghidra.bsfv	feature
+ghidra.lisa	feature
+ghidra.symz3	feature
+ghidra.taint	feature
+ghidra.graph	graph
+ghidra.service	service
+ghidra.javaclass	format
+ghidra.dalvik	format
+pdb	format
+sarif	sarif
+
+# --- filesystem (GPL + gfilesystem) ---
+ghidra.formats	filesystem
+mobiledevices.dmg	filesystem
+ext4	filesystem
+squashfs	filesystem
+
+# --- demangler ---
+mdemangler	demangler
+
+# --- scripting (pyo3 / wasm; jython retired) ---
+ghidra.pyghidra	script
+ghidra.jython	script
+
+# --- networking / process / server ---
+ghidra.net	net
+ghidra.pty	pty
+ghidra.server	server
+
+# --- debugger ---
+ghidra.dbg	debug
+ghidra.debug	debug
+agent	debug
+
+# --- plugins ---
+ghidra.plugins	app
+ghidra.plugin	app
+
+# --- UI / Swing (included per scope decision) ---
+docking	docking
+ghidra.docking	docking
+gui	docking
+datagraph	graph
+functioncalls	graph
+resources	util
+
+# --- misc utility roots ---
+utility	util
+utilities	util
+util	util
+foundation	util
+log	util

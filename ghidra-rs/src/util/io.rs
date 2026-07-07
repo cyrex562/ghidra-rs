@@ -1,6 +1,7 @@
 use sha2::Digest;
 use std::io::{self, Read, Write};
 
+/// [`Read`] wrapper that limits itself to a portion of the wrapped stream.
 pub struct BoundedInputStream<R: Read> {
     inner: R,
     limit: u64,
@@ -8,12 +9,25 @@ pub struct BoundedInputStream<R: Read> {
 }
 
 impl<R: Read> BoundedInputStream<R> {
+    /// Creates a new instance, wrapping `inner` (already positioned to the desired starting
+    /// position) and allowing at most `size` bytes to be read from it.
     pub fn new(inner: R, size: u64) -> Self {
         Self {
             inner,
             limit: size,
             position: 0,
         }
+    }
+
+    /// Skips up to `n` bytes, limited to the number of bytes remaining within the bound.
+    /// Returns the number of bytes actually skipped.
+    pub fn skip(&mut self, n: u64) -> io::Result<u64> {
+        let bytes_left = self.limit.saturating_sub(self.position);
+        let to_skip = bytes_left.min(n);
+        let mut limited = (&mut self.inner).take(to_skip);
+        let skipped = io::copy(&mut limited, &mut io::sink())?;
+        self.position += skipped;
+        Ok(skipped)
     }
 }
 
@@ -40,12 +54,17 @@ impl Write for NullOutputStream {
     }
 }
 
+/// [`Write`] wrapper that computes a cryptographic hash of all bytes written.
+///
+/// All writes are both hashed and forwarded to the underlying writer. The hash can be
+/// retrieved via [`finalize`](Self::finalize).
 pub struct HashingOutputStream<W: Write, D: Digest> {
     inner: W,
     digest: D,
 }
 
 impl<W: Write, D: Digest> HashingOutputStream<W, D> {
+    /// Creates a new instance, wrapping `inner` and hashing all bytes written to it.
     pub fn new(inner: W) -> Self {
         Self {
             inner,
@@ -53,6 +72,7 @@ impl<W: Write, D: Digest> HashingOutputStream<W, D> {
         }
     }
 
+    /// Consumes self and returns the computed digest as a vector of bytes.
     pub fn finalize(self) -> Vec<u8> {
         self.digest.finalize().to_vec()
     }
@@ -83,12 +103,127 @@ mod tests {
     }
 
     #[test]
-    fn test_hashing_output_stream() {
+    fn test_bounded_input_stream_single_byte_reads() {
+        let data = vec![10, 20, 30];
+        let mut bounded = BoundedInputStream::new(Cursor::new(data), 2);
+        let mut byte = [0u8; 1];
+        assert_eq!(bounded.read(&mut byte).unwrap(), 1);
+        assert_eq!(byte[0], 10);
+        assert_eq!(bounded.read(&mut byte).unwrap(), 1);
+        assert_eq!(byte[0], 20);
+        assert_eq!(bounded.read(&mut byte).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_bounded_input_stream_skip_clamped_to_limit() {
+        let data = vec![1, 2, 3, 4, 5];
+        let mut bounded = BoundedInputStream::new(Cursor::new(data), 3);
+        assert_eq!(bounded.skip(10).unwrap(), 3);
+        let mut buf = Vec::new();
+        assert_eq!(bounded.read_to_end(&mut buf).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_bounded_input_stream_skip_then_read() {
+        let data = vec![1, 2, 3, 4, 5];
+        let mut bounded = BoundedInputStream::new(Cursor::new(data), 4);
+        assert_eq!(bounded.skip(2).unwrap(), 2);
+        let mut buf = Vec::new();
+        bounded.read_to_end(&mut buf).unwrap();
+        assert_eq!(buf, vec![3, 4]);
+    }
+
+    #[test]
+    fn test_hashing_output_stream_basic() {
         let mut out = Vec::new();
         let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
         hashing.write_all(b"hello").unwrap();
         let digest = hashing.finalize();
         assert_eq!(out, b"hello");
-        assert!(digest.len() > 0);
+        assert_eq!(digest.len(), 32); // SHA-256 is 256 bits = 32 bytes
+    }
+
+    #[test]
+    fn test_hashing_output_stream_single_byte() {
+        let mut out = Vec::new();
+        let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        hashing.write(&[42]).unwrap();
+        let digest = hashing.finalize();
+        assert_eq!(out, vec![42]);
+        assert_eq!(digest.len(), 32);
+    }
+
+    #[test]
+    fn test_hashing_output_stream_multiple_writes() {
+        let mut out = Vec::new();
+        let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        hashing.write_all(b"hello").unwrap();
+        hashing.write_all(b" ").unwrap();
+        hashing.write_all(b"world").unwrap();
+        let digest = hashing.finalize();
+        assert_eq!(out, b"hello world");
+        assert_eq!(digest.len(), 32);
+    }
+
+    #[test]
+    fn test_hashing_output_stream_flush() {
+        let mut out = Vec::new();
+        let mut hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        hashing.write_all(b"test").unwrap();
+        hashing.flush().unwrap();
+        let digest = hashing.finalize();
+        assert_eq!(out, b"test");
+        assert_eq!(digest.len(), 32);
+    }
+
+    #[test]
+    fn test_hashing_output_stream_empty() {
+        let mut out = Vec::new();
+        let hashing = HashingOutputStream::<_, sha2::Sha256>::new(&mut out);
+        let digest = hashing.finalize();
+        assert!(out.is_empty());
+        assert_eq!(digest.len(), 32);
+    }
+
+    #[test]
+    fn test_null_output_stream_single_write() {
+        let mut null = NullOutputStream;
+        let data = [1, 2, 3, 4, 5];
+        assert_eq!(null.write(&data).unwrap(), 5);
+    }
+
+    #[test]
+    fn test_null_output_stream_empty_write() {
+        let mut null = NullOutputStream;
+        let data: &[u8] = &[];
+        assert_eq!(null.write(data).unwrap(), 0);
+    }
+
+    #[test]
+    fn test_null_output_stream_multiple_writes() {
+        let mut null = NullOutputStream;
+        assert_eq!(null.write(&[1, 2, 3]).unwrap(), 3);
+        assert_eq!(null.write(&[4, 5]).unwrap(), 2);
+        assert_eq!(null.write(&[6]).unwrap(), 1);
+    }
+
+    #[test]
+    fn test_null_output_stream_write_all() {
+        let mut null = NullOutputStream;
+        null.write_all(b"hello world").unwrap();
+    }
+
+    #[test]
+    fn test_null_output_stream_flush() {
+        let mut null = NullOutputStream;
+        null.write_all(b"data").unwrap();
+        null.flush().unwrap();
+    }
+
+    #[test]
+    fn test_null_output_stream_large_write() {
+        let mut null = NullOutputStream;
+        let large_data = vec![0u8; 1_000_000];
+        assert_eq!(null.write(&large_data).unwrap(), 1_000_000);
     }
 }

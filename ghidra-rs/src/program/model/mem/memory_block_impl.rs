@@ -47,15 +47,15 @@ impl MemoryBlock for MemoryBlockImpl {
 
     fn get_byte(&self, addr: &Address) -> Result<u8, MemoryAccessException> {
         if !self.is_initialized() {
-            return Err(MemoryAccessException("Block is uninitialized".to_string()));
+            return Err(MemoryAccessException::new("Block is uninitialized"));
         }
         let diff = (addr.offset() - self.start.offset()) as usize;
         let data = self.data.read().unwrap();
         if diff < data.len() {
             Ok(data[diff])
         } else {
-            Err(MemoryAccessException(
-                "Address out of bounds for block".to_string(),
+            Err(MemoryAccessException::new(
+                "Address out of bounds for block",
             ))
         }
     }
@@ -77,7 +77,7 @@ impl MemoryBlock for MemoryBlockImpl {
 
     fn set_bytes(&mut self, addr: &Address, source: &[u8]) -> Result<(), MemoryAccessException> {
         if !self.is_initialized() {
-            return Err(MemoryAccessException("Block is uninitialized".to_string()));
+            return Err(MemoryAccessException::new("Block is uninitialized"));
         }
         let diff = (addr.offset() - self.start.offset()) as usize;
         let mut data = self.data.write().unwrap();
@@ -86,8 +86,8 @@ impl MemoryBlock for MemoryBlockImpl {
             data[diff..diff + len].copy_from_slice(&source[..len]);
             Ok(())
         } else {
-            Err(MemoryAccessException(
-                "Address out of bounds for block".to_string(),
+            Err(MemoryAccessException::new(
+                "Address out of bounds for block",
             ))
         }
     }

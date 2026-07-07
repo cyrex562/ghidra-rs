@@ -158,3 +158,20 @@
 - [ ] MCP support?
 - [ ] Simplification
 - [ ] Reduce/Eliminate use of Unwrap
+
+## Post-Port: native Rust equivalents (NOT direct ports)
+
+These Java areas are intentionally excluded from the automated porting queue (absent
+from `scripts/port_layout.tsv`). Rather than translating them, build Rust-native
+equivalents once the core port is complete. Each is a topic, not a 1:1 port.
+
+- [ ] **Test infrastructure** — a Rust-native test harness/fixtures replacing
+  `ghidra.test`, `ghidra.project.test` (don't port JUnit scaffolding).
+- [ ] **Example programs & scripts** — re-create representative samples for
+  `ghidra.examples`/`examples2`, `skeleton`, `ghidraclass`, `experiments`, and the
+  demo `ghidra_scripts/*.java` as idiomatic Rust/Python examples.
+- [ ] **Developer tooling / launchers** — Rust-appropriate replacements for
+  `ghidradev` (Eclipse plugin), `ghidra.launch`, `ghidra.macosx`, `ghidra.lifecycle`.
+- [ ] **Docs & help system** — regenerate `help` / screenshots from Rust docs
+  tooling instead of porting the Java help framework.
+- [ ] **Javadoc doclets** — replace `ghidra.doclets` with rustdoc-based generation.
