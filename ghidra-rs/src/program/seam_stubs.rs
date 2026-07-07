@@ -4,9 +4,11 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use std::fmt;
+use std::sync::Arc;
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
 
@@ -173,11 +175,31 @@ pub trait RegisterValue {
     fn get_unsigned_value_ignore_mask(&self) -> u128;
 }
 
-/// Placeholder for `ghidra.program.model.lang.InstructionPrototype`, referenced by
-/// [`Instruction`](crate::program::model::listing::instruction::Instruction)
-/// before the real class is ported. `Instruction` only ever passes this type through (via
-/// `get_prototype`), so no members are needed yet.
-pub trait InstructionPrototype {}
+/// Placeholder for `ghidra.program.model.lang.ParserContext`, referenced by
+/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
+/// before the real interface is ported.
+pub trait ParserContext {
+    /// Stands in for `ParserContext.getPrototype()`.
+    fn get_prototype(&self) -> Arc<dyn InstructionPrototype>;
+}
+
+/// Placeholder for `ghidra.program.model.lang.Mask`, referenced by
+/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
+/// before the real interface is ported. `InstructionPrototype` only ever returns this type
+/// opaquely, so no members are needed yet.
+pub trait Mask {}
+
+/// Placeholder for `ghidra.program.model.pcode.PcodeOverride`, referenced by
+/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
+/// before the real interface is ported. `InstructionPrototype` only ever passes this type
+/// through, so no members are needed yet.
+pub trait PcodeOverride {}
+
+/// Placeholder for `ghidra.program.model.pcode.PatchEncoder`, referenced by
+/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
+/// before the real interface is ported. `InstructionPrototype` only ever passes this type
+/// through, so no members are needed yet.
+pub trait PatchEncoder {}
 
 /// Placeholder for `ghidra.program.model.lang.InstructionContext`, referenced by
 /// [`Instruction`](crate::program::model::listing::instruction::Instruction)
