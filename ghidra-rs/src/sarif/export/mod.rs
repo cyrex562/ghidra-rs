@@ -10,6 +10,7 @@ pub mod r#ref;
 pub mod registers;
 pub mod relocs;
 pub mod trees;
+pub mod wrapped_logical_location;
 
 pub use abstract_ext_writer::{AbstractExtWriter, new_ext_writer_state};
 pub use bkmk::ExtBookmark;
@@ -23,3 +24,4 @@ pub use r#ref::{ExtReference, ExtRegisterReference};
 pub use registers::ExtRegisterValue;
 pub use relocs::ExtRelocation;
 pub use trees::ExtFragmentRange;
+pub use wrapped_logical_location::WrappedLogicalLocation;
