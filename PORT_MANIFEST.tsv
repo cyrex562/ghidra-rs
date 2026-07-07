@@ -14361,7 +14361,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/so
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/AddressLabelPair.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/DataRefType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/DynamicReference.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EntryPointReference.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EntryPointReference.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Equate.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateReference.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
