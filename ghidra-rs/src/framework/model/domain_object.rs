@@ -7,11 +7,11 @@ use thiserror::Error;
 
 use crate::framework::model::aborted_transaction_listener::AbortedTransactionListener;
 use crate::framework::model::domain_file::DomainFile;
+use crate::framework::model::domain_object_closed_listener::DomainObjectClosedListener;
 use crate::framework::model::event_queue_id::EventQueueID;
 use crate::framework::model::transaction_info::TransactionInfo;
 use crate::framework::seam_stubs::{
-    DomainObjectClosedListener, DomainObjectFileListener, DomainObjectListener, Options,
-    TransactionListener,
+    DomainObjectFileListener, DomainObjectListener, Options, TransactionListener,
 };
 use crate::framework::store::LockException;
 use crate::program::seam_stubs::Transaction;
