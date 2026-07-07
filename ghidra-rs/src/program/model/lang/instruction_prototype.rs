@@ -6,7 +6,7 @@ use thiserror::Error;
 use crate::program::model::address::Address;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::{
-    InsufficientBytesException, ProcessorContextView, UnknownContextException,
+    InsufficientBytesException, InstructionContext, ProcessorContextView, UnknownContextException,
     UnknownInstructionException,
 };
 use crate::program::model::listing::instruction::OperandValue;
@@ -16,7 +16,7 @@ use crate::program::model::scalar::Scalar;
 use crate::program::model::lang::Mask;
 use crate::program::model::symbol::RefType;
 use crate::program::seam_stubs::{
-    InstructionContext, Language, MemBuffer, ParserContext, PatchEncoder, PcodeOverride,
+    Language, MemBuffer, ParserContext, PatchEncoder, PcodeOverride,
 };
 
 /// Sentinel value to indicate an invalid depth change.
