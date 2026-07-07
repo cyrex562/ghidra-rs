@@ -116,11 +116,6 @@ impl CommentType {
     }
 }
 
-/// Placeholder for `ghidra.program.model.symbol.ExternalReference`, referenced by
-/// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit)
-/// before the real interface is ported.
-pub trait ExternalReference: crate::program::model::symbol::Reference {}
-
 /// Placeholder for `ghidra.program.model.symbol.RefType`, referenced by
 /// [`Data`](crate::program::model::listing::data::Data)
 /// before the real class is ported.

@@ -5,8 +5,10 @@ use crate::program::model::lang::register::Register;
 use crate::program::model::listing::program::Program;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::scalar::Scalar;
-use crate::program::model::symbol::{RefType, Reference, ReferenceIterator, SourceType, Symbol};
-use crate::program::seam_stubs::{CommentType, ExternalReference, MemBuffer, PropertySet};
+use crate::program::model::symbol::{
+    ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
+};
+use crate::program::seam_stubs::{CommentType, ExternalLocation, MemBuffer, PropertySet};
 
 /// Indicator for a mnemonic (versus an operand).
 pub const MNEMONIC: i32 = -1;
@@ -395,7 +397,22 @@ mod tests {
             SourceType::Analysis
         }
     }
-    impl ExternalReference for MockExternalReference {}
+    struct MockExternalLocation;
+    impl ExternalLocation for MockExternalLocation {}
+
+    impl ExternalReference for MockExternalReference {
+        fn get_external_location(&self) -> Box<dyn ExternalLocation> {
+            Box::new(MockExternalLocation)
+        }
+
+        fn get_library_name(&self) -> String {
+            "mock_lib".to_string()
+        }
+
+        fn get_label(&self) -> Option<String> {
+            None
+        }
+    }
 
     struct MockProgram;
     impl Program for MockProgram {

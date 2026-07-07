@@ -202,8 +202,8 @@ mod tests {
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::listing::program::Program;
     use crate::program::model::listing::ContextChangeException;
-    use crate::program::model::symbol::{Reference, ReferenceIterator, SourceType, Symbol};
-    use crate::program::seam_stubs::{CommentType, ExternalReference, MemBuffer, PropertySet, RegisterValue};
+    use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
+    use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet, RegisterValue};
 
     struct MockInstruction {
         address: Address,

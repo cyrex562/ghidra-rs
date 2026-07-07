@@ -28,9 +28,9 @@ mod tests {
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::RefType;
-    use crate::program::seam_stubs::{CommentType, ExternalReference, FlowOverride, InstructionContext, InstructionPrototype, MemBuffer, PropertySet, RegisterValue};
+    use crate::program::seam_stubs::{CommentType, FlowOverride, InstructionContext, InstructionPrototype, MemBuffer, PropertySet, RegisterValue};
     use crate::program::model::listing::{OperandValue, program::Program};
-    use crate::program::model::symbol::{Reference, ReferenceIterator, SourceType, Symbol};
+    use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::pcode::PcodeOp;
     use crate::program::model::scalar::Scalar;
     use std::sync::Arc;
