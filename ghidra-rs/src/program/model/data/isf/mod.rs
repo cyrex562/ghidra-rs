@@ -10,6 +10,7 @@ pub mod abstract_isf_writer;
 pub mod isf_producer;
 pub mod abstract_isf_object;
 pub mod isf_enum;
+pub mod isf_function;
 
 pub use isf_object::IsfObject;
 pub use isf_data_type_null::IsfDataTypeNull;
@@ -23,3 +24,4 @@ pub use abstract_isf_writer::{IsfWriterImpl, AbstractIsfWriterState};
 pub use isf_producer::IsfProducer;
 pub use abstract_isf_object::AbstractIsfObject;
 pub use isf_enum::IsfEnum;
+pub use isf_function::IsfFunction;
