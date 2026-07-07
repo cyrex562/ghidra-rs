@@ -124,12 +124,6 @@ pub trait GenericCallingConvention {}
 /// before the real class is ported.
 pub trait PrototypeModel {}
 
-/// Placeholder for `ghidra.program.database.map.AddressMap`, referenced by
-/// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
-/// before a unifying trait for the existing concrete `AddressMapDB`/`AddressMapImpl` ports
-/// exists.
-pub trait AddressMap {}
-
 /// Placeholder for `db.Transaction`, referenced by
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
 /// before the real class is ported.
