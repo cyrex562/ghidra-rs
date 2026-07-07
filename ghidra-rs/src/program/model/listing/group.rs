@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::program::model::address::Address;
 use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::seam_stubs::GroupPath;
@@ -7,7 +9,7 @@ use crate::util::exception::DuplicateNameException;
 /// comments.
 ///
 /// Port of `ghidra.program.model.listing.Group`.
-pub trait Group {
+pub trait Group: Any {
     /// Obtains the comment that has been associated with this fragment or module, or `None`.
     fn get_comment(&self) -> Option<String>;
 
