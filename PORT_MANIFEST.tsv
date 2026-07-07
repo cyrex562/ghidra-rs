@@ -2121,7 +2121,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/NewFunctionS
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/RemoveFunctionTagCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/RemoveStackDepthChangeCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/SetFunctionNameCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd function 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/SetFunctionPurgeCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd function 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/SetFunctionPurgeCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd function
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/SetFunctionRepeatableCommentCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd function
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/SetFunctionVarArgsCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/SetReturnDataTypeCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd function 
