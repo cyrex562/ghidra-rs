@@ -23,10 +23,12 @@ impl HashCalculator for AllBytesHashCalculator {
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::lang::register::RegisterRef;
+    use crate::program::model::lang::register::{Register, RegisterRef};
+    use crate::program::model::lang::{ProcessorContext, ProcessorContextView};
     use crate::program::model::listing::code_unit::CodeUnit;
+    use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::RefType;
-    use crate::program::seam_stubs::{CommentType, ExternalReference, FlowOverride, InstructionContext, InstructionPrototype, MemBuffer, ProcessorContext, PropertySet};
+    use crate::program::seam_stubs::{CommentType, ExternalReference, FlowOverride, InstructionContext, InstructionPrototype, MemBuffer, PropertySet, RegisterValue};
     use crate::program::model::listing::{OperandValue, program::Program};
     use crate::program::model::symbol::{Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::pcode::PcodeOp;
@@ -39,7 +41,49 @@ mod tests {
 
     impl MemBuffer for TestInstruction {}
     impl PropertySet for TestInstruction {}
-    impl ProcessorContext for TestInstruction {}
+
+    impl ProcessorContextView for TestInstruction {
+        fn get_base_context_register(&self) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register(&self, _name: &str) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
+            None
+        }
+
+        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+            None
+        }
+
+        fn has_value(&self, _register: &Register) -> bool {
+            false
+        }
+    }
+
+    impl ProcessorContext for TestInstruction {
+        fn set_value(&mut self, _register: &Register, _value: i128) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+
+        fn set_register_value(
+            &mut self,
+            _value: Box<dyn RegisterValue>,
+        ) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+
+        fn clear_register(&mut self, _register: &Register) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+    }
 
     impl CodeUnit for TestInstruction {
         fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {

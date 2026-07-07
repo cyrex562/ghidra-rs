@@ -2,14 +2,13 @@ use std::sync::Arc;
 
 use crate::program::model::address::Address;
 use crate::program::model::lang::register::RegisterRef;
+use crate::program::model::lang::ProcessorContext;
 use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::PcodeOp;
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{
-    FlowOverride, InstructionContext, InstructionPrototype, ProcessorContext,
-};
+use crate::program::seam_stubs::{FlowOverride, InstructionContext, InstructionPrototype};
 use crate::program::util::CodeUnitInsertionException;
 
 /// Stands in for `InstructionPrototype.INVALID_DEPTH_CHANGE` (2^24), which is not yet ported.
@@ -198,10 +197,13 @@ pub trait Instruction: CodeUnit + ProcessorContext {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::model::lang::register::Register;
+    use crate::program::model::lang::ProcessorContextView;
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::listing::program::Program;
+    use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::{Reference, ReferenceIterator, SourceType, Symbol};
-    use crate::program::seam_stubs::{CommentType, ExternalReference, MemBuffer, PropertySet};
+    use crate::program::seam_stubs::{CommentType, ExternalReference, MemBuffer, PropertySet, RegisterValue};
 
     struct MockInstruction {
         address: Address,
@@ -211,7 +213,49 @@ mod tests {
 
     impl MemBuffer for MockInstruction {}
     impl PropertySet for MockInstruction {}
-    impl ProcessorContext for MockInstruction {}
+
+    impl ProcessorContextView for MockInstruction {
+        fn get_base_context_register(&self) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register(&self, _name: &str) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
+            None
+        }
+
+        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+            None
+        }
+
+        fn has_value(&self, _register: &Register) -> bool {
+            false
+        }
+    }
+
+    impl ProcessorContext for MockInstruction {
+        fn set_value(&mut self, _register: &Register, _value: i128) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+
+        fn set_register_value(
+            &mut self,
+            _value: Box<dyn RegisterValue>,
+        ) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+
+        fn clear_register(&mut self, _register: &Register) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+    }
 
     impl CodeUnit for MockInstruction {
         fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {

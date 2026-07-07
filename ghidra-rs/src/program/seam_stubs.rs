@@ -234,12 +234,6 @@ pub trait RegisterValue {
     fn get_unsigned_value_ignore_mask(&self) -> u128;
 }
 
-/// Placeholder for `ghidra.program.model.lang.ProcessorContext`, referenced by
-/// [`Instruction`](crate::program::model::listing::instruction::Instruction) as a supertrait
-/// before the real interface is ported. `Instruction` itself never calls any of
-/// `ProcessorContext`'s register-state accessors, so no members are needed yet.
-pub trait ProcessorContext {}
-
 /// Placeholder for `ghidra.program.model.lang.InstructionPrototype`, referenced by
 /// [`Instruction`](crate::program::model::listing::instruction::Instruction)
 /// before the real class is ported. `Instruction` only ever passes this type through (via
