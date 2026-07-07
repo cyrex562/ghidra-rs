@@ -12,7 +12,7 @@ pub use abstract_ext_writer::{AbstractExtWriter, new_ext_writer_state};
 pub use bkmk::ExtBookmark;
 pub use code::ExtCodeBlock;
 pub use ep::ExtEntryPoint;
-pub use extlib::ExtLibrary;
+pub use extlib::{ExtLibrary, ExtLibraryLocation};
 pub use func::ExtFunctionWriter;
 pub use registers::ExtRegisterValue;
 pub use relocs::ExtRelocation;
