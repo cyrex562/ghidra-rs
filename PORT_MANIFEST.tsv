@@ -7779,7 +7779,7 @@ orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/DefaultGraphRenderer.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/EdgeComparator.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/FilterDialog.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
-orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/GhidraGraphCollapser.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
+orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/GhidraGraphCollapser.java	DONE	orig_src Ghidra Features GraphServices src main java ghidra graph visualization
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/GraphRenderer.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/GroupVertex.java	DONE	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/LayoutFunction.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
