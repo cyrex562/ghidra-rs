@@ -12483,7 +12483,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/util/FileOpenDropHand
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/util/GenericHelpTopics.java	TODO	orig_src Ghidra Framework Project src main java ghidra app util 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/ToolUtils.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/BackgroundCommand.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework cmd 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/Command.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework cmd 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/Command.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework cmd
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/CompoundBackgroundCommand.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework cmd 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/CompoundCmd.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework cmd 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/cmd/MergeableBackgroundCommand.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework cmd 
