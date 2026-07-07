@@ -57,6 +57,7 @@ pub mod source_archive;
 pub mod string_layout_enum;
 pub mod structure;
 pub mod structure_internal;
+pub mod terminated_settings_definition;
 pub mod typedef;
 pub mod typedef_settings_definition;
 pub mod union;
