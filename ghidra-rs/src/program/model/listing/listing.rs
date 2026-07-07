@@ -14,10 +14,10 @@ use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::listing::program_fragment::ProgramFragment;
 use crate::program::model::listing::program_module::ProgramModule;
 use crate::program::model::symbol::Namespace;
+use crate::program::model::util::PropertyMap;
 use crate::program::seam_stubs::{
     CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
     FunctionIterator, InstructionIterator, InstructionPrototype, InstructionSet, MemBuffer,
-    PropertyMap,
 };
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::{CancelledException, DuplicateNameException, InvalidInputException};
