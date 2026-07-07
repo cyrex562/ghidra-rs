@@ -194,7 +194,8 @@ mod tests {
         ExternalReference, RefType as SymRefType, Reference as SymReference, ReferenceIterator,
         SourceType, Symbol,
     };
-    use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet};
+    use crate::program::model::util::PropertySet;
+    use crate::program::seam_stubs::{CommentType, MemBuffer};
     use std::sync::Arc;
 
     struct MockDataType;

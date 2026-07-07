@@ -102,8 +102,9 @@ mod tests {
     };
     use crate::docking::settings::settings::Settings;
     use crate::program::model::symbol::ExternalReference;
+    use crate::program::model::util::PropertySet;
     use crate::program::seam_stubs::{
-        CommentType, DomainFile, MemBuffer, PropertySet, RefType, Reference,
+        CommentType, DomainFile, MemBuffer, RefType, Reference,
     };
     use std::any::TypeId;
 

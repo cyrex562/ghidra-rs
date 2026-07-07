@@ -90,7 +90,7 @@ mod tests {
             0
         }
     }
-    impl crate::program::seam_stubs::PropertySet for FakeCodeUnit {}
+    impl crate::program::model::util::PropertySet for FakeCodeUnit {}
     impl CodeUnit for FakeCodeUnit {
         fn get_address_string(
             &self,

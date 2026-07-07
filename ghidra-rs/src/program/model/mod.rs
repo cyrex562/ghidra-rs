@@ -8,3 +8,4 @@ pub mod pcode;
 pub mod reloc;
 pub mod scalar;
 pub mod symbol;
+pub mod util;
