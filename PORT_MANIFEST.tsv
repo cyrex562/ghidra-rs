@@ -1215,7 +1215,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DebuggerF
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedLongKeyIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DomainObjectLockHold.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DomainObjectLockHold.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/FieldSpan.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ForwardLongKeyIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/ForwardRecordIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util database 
