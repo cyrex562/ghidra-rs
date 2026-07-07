@@ -5419,7 +5419,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/IsFunctionIn
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/IsFunctionNonReturningTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/IsFunctionVarargsTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/LabelTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/MemoryOffsetSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/MemoryOffsetSettingsDefinition.java	DONE	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/MemorySectionProgramLocationBasedTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/MemorySourceProgramLocationBasedTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/MemoryTypeProgramLocationBasedTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 

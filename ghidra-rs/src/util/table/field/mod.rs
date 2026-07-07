@@ -4,6 +4,7 @@ pub mod code_unit_offset_settings_definition;
 pub mod function_inline_settings_definition;
 pub mod function_no_return_settings_definition;
 pub mod function_thunk_settings_definition;
+pub mod memory_offset_settings_definition;
 
 pub use byte_count_settings_definition::ByteCountSettingsDefinition;
 pub use code_unit_count_settings_definition::CodeUnitCountSettingsDefinition;
@@ -11,3 +12,4 @@ pub use code_unit_offset_settings_definition::CodeUnitOffsetSettingsDefinition;
 pub use function_inline_settings_definition::FunctionInlineSettingsDefinition;
 pub use function_no_return_settings_definition::FunctionNoReturnSettingsDefinition;
 pub use function_thunk_settings_definition::FunctionThunkSettingsDefinition;
+pub use memory_offset_settings_definition::MemoryOffsetSettingsDefinition;
