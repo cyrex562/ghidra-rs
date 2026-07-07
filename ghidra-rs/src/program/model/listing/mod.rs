@@ -2,6 +2,7 @@ pub mod address_change_set;
 pub mod auto_parameter_type;
 pub mod bookmark;
 pub mod bookmark_comparator;
+pub mod bookmark_manager;
 pub mod bookmark_type;
 pub mod bookmark_type_comparator;
 pub mod circular_dependency_exception;
@@ -54,6 +55,9 @@ pub use address_change_set::AddressChangeSet;
 pub use auto_parameter_type::AutoParameterType;
 pub use bookmark::Bookmark;
 pub use bookmark_comparator::BookmarkComparator;
+pub use bookmark_manager::{
+    BookmarkManager, OLD_BOOKMARK_PROPERTY_OBJECT_CLASS1, OLD_BOOKMARK_PROPERTY_OBJECT_CLASS2,
+};
 pub use bookmark_type::{BookmarkType, MarkerColor, ANALYSIS, ERROR, INFO, NOTE, WARNING};
 pub use bookmark_type_comparator::BookmarkTypeComparator;
 pub use circular_dependency_exception::CircularDependencyException;
