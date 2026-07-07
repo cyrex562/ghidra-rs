@@ -31,6 +31,7 @@ pub mod default_annotation_handler;
 pub mod domain_file_based_data_type_manager;
 pub mod dynamic;
 pub mod dynamic_data_type;
+pub mod endian_settings_definition;
 pub mod enum_;
 pub mod enum_value_partitioner;
 pub mod factory_data_type;
