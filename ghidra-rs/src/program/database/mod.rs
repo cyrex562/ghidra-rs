@@ -1,3 +1,4 @@
+pub mod bookmark;
 pub mod code;
 pub mod data;
 pub mod function;
@@ -13,6 +14,7 @@ pub mod sourcemap;
 pub mod symbol;
 pub mod util;
 
+pub use bookmark::OldBookmark;
 pub use code::StringDiff;
 pub use function::OverlappingFunctionException;
 pub use manager_db::ManagerDB;
