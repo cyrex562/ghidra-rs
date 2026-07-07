@@ -2171,7 +2171,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/AddShiftedMemRef
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/AddStackRefCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/AssociateSymbolCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/ClearExternalPathCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/ClearFallThroughCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/ClearFallThroughCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd refs
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/EditRefTypeCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/RemoveAllReferencesCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/RemoveExternalNameCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
