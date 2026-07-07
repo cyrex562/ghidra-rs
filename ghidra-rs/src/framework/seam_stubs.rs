@@ -9,11 +9,6 @@
 /// `domainObjectChanged` on it, so no members are needed yet.
 pub trait DomainObjectListener {}
 
-/// Placeholder for `ghidra.framework.data.DomainObjectFileListener`, referenced by
-/// [`DomainObject`](crate::framework::model::DomainObject) before the real interface is ported.
-/// `DomainObject` only ever registers/unregisters this listener, so no members are needed yet.
-pub trait DomainObjectFileListener {}
-
 /// Placeholder for `ghidra.framework.options.Options`, referenced by
 /// [`DomainObject`](crate::framework::model::DomainObject) before the real interface is ported.
 /// `DomainObject` only ever returns this type, so no members are needed yet.
