@@ -1,5 +1,4 @@
-use crate::program::model::symbol::Reference;
-use crate::program::seam_stubs::ExternalLocation;
+use crate::program::model::symbol::{ExternalLocation, Reference};
 
 /// Reference to an external location (a symbol in another program/library).
 ///

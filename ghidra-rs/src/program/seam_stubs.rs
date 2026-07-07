@@ -172,11 +172,6 @@ impl GroupPath {
 
 pub use crate::program::model::listing::stack_frame::StackFrame;
 
-/// Placeholder for `ghidra.program.model.symbol.ExternalLocation`, referenced by
-/// [`Function`](crate::program::model::listing::function::Function)
-/// before the real interface is ported.
-pub trait ExternalLocation {}
-
 /// Placeholder for `ghidra.program.model.listing.VariableFilter`, referenced by
 /// [`Function`](crate::program::model::listing::function::Function)
 /// before the real interface is ported.

@@ -143,7 +143,9 @@ mod tests {
             false
         }
 
-        fn get_external_location(&self) -> Option<crate::program::seam_stubs::ExternalLocation> {
+        fn get_external_location(
+            &self,
+        ) -> Option<Box<dyn crate::program::model::symbol::ExternalLocation>> {
             None
         }
 
