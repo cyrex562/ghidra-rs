@@ -1,3 +1,4 @@
+pub mod compiler_spec;
 pub mod data_type_provider_context;
 pub mod decompiler_language;
 pub mod endian;
@@ -28,6 +29,7 @@ pub mod unknown_data_exception;
 pub mod unknown_instruction_exception;
 pub mod unknown_register;
 
+pub use compiler_spec::{CompilerSpec, EvaluationModelType};
 pub use data_type_provider_context::DataTypeProviderContext;
 pub use endian::Endian;
 pub use incompatible_mask_exception::IncompatibleMaskException;

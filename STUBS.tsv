@@ -26,7 +26,6 @@ ts	stub_class	referenced_by
 2026-07-06T00:02:19Z	GroupPath	Group
 2026-07-06T02:00:00Z	StringSettingsDefinition	Settings
 2026-07-06T03:00:00Z	Language	ProgramArchitecture
-2026-07-06T03:00:00Z	CompilerSpec	ProgramArchitecture
 2026-07-06T03:00:00Z	CompilerSpecID	ProgramArchitecture
 2026-07-06T03:00:00Z	LanguageCompilerSpecPair	ProgramArchitecture
 2026-07-06T04:00:00Z	DomainObjectListener	DomainObject
@@ -52,3 +51,5 @@ ts	stub_class	referenced_by
 2026-07-07T00:00:00Z	InjectContext	InjectPayload
 2026-07-07T00:00:00Z	PcodeEmit	InjectPayload
 2026-07-07T00:00:00Z	Encoder	InjectPayload
+2026-07-07T00:00:00Z	CompilerSpecDescription	CompilerSpec
+2026-07-07T00:00:00Z	PcodeInjectLibrary	CompilerSpec
