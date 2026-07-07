@@ -15,7 +15,7 @@ pub use code::ExtCodeBlock;
 pub use ep::ExtEntryPoint;
 pub use extlib::{ExtLibrary, ExtLibraryLocation};
 pub use func::ExtFunctionWriter;
-pub use r#ref::ExtReference;
+pub use r#ref::{ExtReference, ExtRegisterReference};
 pub use registers::ExtRegisterValue;
 pub use relocs::ExtRelocation;
 pub use trees::ExtFragmentRange;
