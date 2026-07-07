@@ -24,6 +24,7 @@ pub mod function_signature;
 pub mod function_tag;
 pub mod function_tag_change_set;
 pub mod function_tag_manager;
+pub mod group;
 pub mod incompatible_language_exception;
 pub mod instruction;
 pub mod instruction_iterator;
@@ -74,6 +75,7 @@ pub use function_signature::{
 pub use function_tag::FunctionTag;
 pub use function_tag_change_set::FunctionTagChangeSet;
 pub use function_tag_manager::FunctionTagManager;
+pub use group::Group;
 pub use incompatible_language_exception::IncompatibleLanguageException;
 pub use instruction::{Instruction, OperandValue, INVALID_DEPTH_CHANGE, MAX_LENGTH_OVERRIDE};
 pub use instruction_iterator::{EmptyInstructionIterator, InstructionIterator, ListInstructionIterator};

@@ -3,8 +3,9 @@ use std::any::Any;
 use thiserror::Error;
 
 use crate::program::model::address::{Address, AddressSetView};
+use crate::program::model::listing::group::Group;
 use crate::program::model::listing::{CircularDependencyException, DuplicateGroupException};
-use crate::program::seam_stubs::{Group, ProgramFragment};
+use crate::program::seam_stubs::ProgramFragment;
 use crate::util::exception::{DuplicateNameException, NotEmptyException, NotFoundException};
 
 /// Error produced when adding a module as a child of another module fails.
@@ -29,9 +30,8 @@ pub enum AddModuleError {
 ///
 /// Port of `ghidra.program.model.listing.ProgramModule`.
 ///
-/// The Java interface extends `Group`; since `Group` has not been ported yet, it is carried here
-/// as a supertrait placeholder (see [`Group`](crate::program::seam_stubs::Group)) rather than
-/// duplicating its members on this trait.
+/// The Java interface extends `Group`, carried here as a supertrait (see
+/// [`Group`](crate::program::model::listing::group::Group)).
 pub trait ProgramModule: Group {
     /// Returns whether this module directly contains the given fragment as a child.
     fn contains_fragment(&self, fragment: &dyn ProgramFragment) -> bool;
@@ -147,7 +147,53 @@ mod tests {
         tree_id: i64,
     }
 
-    impl Group for MockProgramModule {}
+    impl Group for MockProgramModule {
+        fn get_comment(&self) -> Option<String> {
+            None
+        }
+
+        fn set_comment(&mut self, _comment: Option<&str>) {}
+
+        fn get_name(&self) -> String {
+            format!("module-{}", self.tree_id)
+        }
+
+        fn set_name(&mut self, _name: &str) -> Result<(), DuplicateNameException> {
+            Ok(())
+        }
+
+        fn contains(&self, _code_unit: &dyn crate::program::model::listing::code_unit::CodeUnit) -> bool {
+            false
+        }
+
+        fn get_num_parents(&self) -> i32 {
+            0
+        }
+
+        fn get_parents(&self) -> Vec<Box<dyn Group>> {
+            Vec::new()
+        }
+
+        fn get_parent_names(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn get_tree_name(&self) -> String {
+            format!("tree-{}", self.tree_id)
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+
+        fn get_min_address(&self) -> Option<Address> {
+            None
+        }
+
+        fn get_max_address(&self) -> Option<Address> {
+            None
+        }
+    }
 
     impl ProgramModule for MockProgramModule {
         fn contains_fragment(&self, _fragment: &dyn ProgramFragment) -> bool {
