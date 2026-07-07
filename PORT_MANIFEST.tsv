@@ -9009,7 +9009,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/SarifProgramOptions.java	TODO
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/SarifService.java	TODO	orig_src Ghidra Features Sarif src main java sarif 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/SarifUtils.java	TODO	orig_src Ghidra Features Sarif src main java sarif 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/AbstractExtWriter.java	DONE	orig_src Ghidra Features Sarif src main java sarif export 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ExtLogicalLocation.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ExtLogicalLocation.java	DONE	orig_src Ghidra Features Sarif src main java sarif export 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/SarifExporter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/SarifObject.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/SarifWriterTask.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
