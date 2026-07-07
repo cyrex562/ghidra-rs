@@ -12,6 +12,7 @@ pub mod object_property_map;
 pub mod processor_symbol_type;
 pub mod program_conflict_exception;
 pub mod program_diff_filter;
+pub mod string_property_map;
 pub mod void_property_map;
 
 pub use code_unit_container::CodeUnitContainer;
@@ -28,4 +29,5 @@ pub use object_property_map::ObjectPropertyMap;
 pub use processor_symbol_type::ProcessorSymbolType;
 pub use program_conflict_exception::ProgramConflictException;
 pub use program_diff_filter::ProgramDiffFilter;
+pub use string_property_map::StringPropertyMap;
 pub use void_property_map::VoidPropertyMap;
