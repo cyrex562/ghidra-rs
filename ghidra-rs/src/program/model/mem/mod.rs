@@ -11,6 +11,7 @@ pub mod memory_block_stub;
 pub mod memory_block_type;
 pub mod memory_conflict_exception;
 pub mod memory_constants;
+pub mod mutable_mem_buffer;
 
 pub use invalid_address_exception::InvalidAddressException;
 pub use mem_buffer_input_stream::MemBufferInputStream;
@@ -25,3 +26,4 @@ pub use memory_block_stub::MemoryBlockStub;
 pub use memory_block_type::MemoryBlockType;
 pub use memory_conflict_exception::MemoryConflictException;
 pub use memory_constants::HEAP_BLOCK_NAME;
+pub use mutable_mem_buffer::MutableMemBuffer;
