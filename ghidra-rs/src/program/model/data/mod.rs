@@ -56,6 +56,7 @@ pub mod program_based_data_type_manager;
 pub mod project_archive_based_data_type_manager;
 pub mod render_unicode_settings_definition;
 pub mod resource;
+pub mod rgb16_encoding_settings_definition;
 pub mod source_archive;
 pub mod string_layout_enum;
 pub mod structure;
