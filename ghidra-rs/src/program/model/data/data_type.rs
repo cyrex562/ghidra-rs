@@ -9,7 +9,8 @@ use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
-use crate::program::seam_stubs::{DataTypePath, MemBuffer, Settings, SettingsDefinition};
+use crate::program::seam_stubs::{DataTypePath, MemBuffer, Settings};
+use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::util::exception::{DuplicateNameException, InvalidNameException};
 use crate::util::UniversalID;
 

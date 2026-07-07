@@ -5,7 +5,7 @@ use crate::program::model::address::Address;
 use crate::program::model::data::domain_file_based_data_type_manager::DomainFileBasedDataTypeManager;
 use crate::program::model::listing::data::Data;
 use crate::program::model::listing::program::Program;
-use crate::program::seam_stubs::SettingsDefinition;
+use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
