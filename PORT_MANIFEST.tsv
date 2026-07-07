@@ -5389,7 +5389,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractProg
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractReferenceBytesTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractReferencePreviewTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressBasedLocation.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressRangeEndpointSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressRangeEndpointSettingsDefinition.java	DONE	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressTableDataTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressTableLengthTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 

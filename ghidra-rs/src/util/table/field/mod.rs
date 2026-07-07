@@ -1,3 +1,4 @@
+pub mod address_range_endpoint_settings_definition;
 pub mod byte_count_settings_definition;
 pub mod code_unit_count_settings_definition;
 pub mod code_unit_offset_settings_definition;
@@ -6,6 +7,7 @@ pub mod function_no_return_settings_definition;
 pub mod function_thunk_settings_definition;
 pub mod memory_offset_settings_definition;
 
+pub use address_range_endpoint_settings_definition::AddressRangeEndpointSettingsDefinition;
 pub use byte_count_settings_definition::ByteCountSettingsDefinition;
 pub use code_unit_count_settings_definition::CodeUnitCountSettingsDefinition;
 pub use code_unit_offset_settings_definition::CodeUnitOffsetSettingsDefinition;
