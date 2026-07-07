@@ -11,11 +11,12 @@ use crate::program::model::listing::data::Data;
 use crate::program::model::listing::function::Function;
 use crate::program::model::lang::ProcessorContextView;
 use crate::program::model::listing::instruction::Instruction;
+use crate::program::model::listing::program_fragment::ProgramFragment;
 use crate::program::model::listing::program_module::ProgramModule;
 use crate::program::seam_stubs::{
     CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
     FunctionIterator, InstructionIterator, InstructionPrototype, InstructionSet, MemBuffer,
-    Namespace, ProgramFragment, PropertyMap,
+    Namespace, PropertyMap,
 };
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::{CancelledException, DuplicateNameException, InvalidInputException};

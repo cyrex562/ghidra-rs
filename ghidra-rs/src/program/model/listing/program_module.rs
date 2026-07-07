@@ -4,8 +4,8 @@ use thiserror::Error;
 
 use crate::program::model::address::{Address, AddressSetView};
 use crate::program::model::listing::group::Group;
+use crate::program::model::listing::program_fragment::ProgramFragment;
 use crate::program::model::listing::{CircularDependencyException, DuplicateGroupException};
-use crate::program::seam_stubs::ProgramFragment;
 use crate::util::exception::{DuplicateNameException, NotEmptyException, NotFoundException};
 
 /// Error produced when adding a module as a child of another module fails.

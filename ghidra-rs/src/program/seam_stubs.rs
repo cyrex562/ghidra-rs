@@ -184,11 +184,6 @@ impl GroupPath {
     }
 }
 
-/// Placeholder for `ghidra.program.model.listing.ProgramFragment`, referenced by
-/// [`ProgramModule`](crate::program::model::listing::program_module::ProgramModule)
-/// before the real interface is ported.
-pub trait ProgramFragment {}
-
 /// Placeholder for `ghidra.program.model.symbol.Namespace.Type`, referenced by
 /// [`Namespace`] and [`Library`](crate::program::model::listing::library::Library)
 /// before the real interface is ported.
