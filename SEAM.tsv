@@ -69,7 +69,7 @@ TODO	interface	150	29	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 TODO	interface	139	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Group.java
 TODO	interface	136	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalLocation.java
 DONE	interface	109	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/BookmarkType.java
-TODO	interface	99	1	docking	Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/SettingsDefinition.java
+DONE	interface	99	1	docking	Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/SettingsDefinition.java
 TODO	interface	82	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/ProgramFragment.java
 TODO	interface	47	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionSignature.java
 TODO	interface	44	83	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionPrototype.java
