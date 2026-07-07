@@ -4,3 +4,17 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 pub use crate::docking::settings::string_settings_definition::StringSettingsDefinition;
+
+/// Placeholder for `docking.ComponentProvider`, referenced by [`crate::docking::action_context`].
+pub trait ComponentProvider {}
+
+/// Placeholder for `docking.action.ActionContextProvider`, referenced by
+/// [`crate::docking::action_context`].
+pub trait ActionContextProvider {}
+
+/// Placeholder for `java.awt.event.MouseEvent`, referenced by
+/// [`crate::docking::action_context`].
+pub trait MouseEvent {}
+
+/// Placeholder for `java.awt.Component`, referenced by [`crate::docking::action_context`].
+pub trait Component {}
