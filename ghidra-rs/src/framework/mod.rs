@@ -1,4 +1,5 @@
 pub mod client;
+pub mod cmd;
 pub mod data;
 pub mod db;
 pub mod generic;
@@ -20,6 +21,7 @@ pub mod shutdown_priority;
 pub mod store;
 pub mod version;
 
+pub use cmd::Command;
 pub use data::CheckinHandler;
 pub use log4j_error_logger::Log4jErrorLogger;
 pub use os::OperatingSystem;
