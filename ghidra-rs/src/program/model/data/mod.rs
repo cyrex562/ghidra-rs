@@ -50,6 +50,7 @@ pub mod packing_type;
 pub mod padding_settings_definition;
 pub mod parameter_definition;
 pub mod playable;
+pub mod png_resource;
 pub mod pointer;
 pub mod program_based_data_type_manager;
 pub mod project_archive_based_data_type_manager;
