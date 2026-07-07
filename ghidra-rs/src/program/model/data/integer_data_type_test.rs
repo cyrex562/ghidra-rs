@@ -1,6 +1,7 @@
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
-use crate::program::seam_stubs::{MemBuffer, Settings};
+use crate::docking::settings::settings::Settings;
+use crate::program::seam_stubs::MemBuffer;
 
 /// Port of `ghidra.program.model.data.IntegerDataTypeTest`.
 ///

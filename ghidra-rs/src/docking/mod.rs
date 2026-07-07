@@ -3,6 +3,7 @@ pub mod drop_target_handler;
 pub mod edit_listener;
 pub mod menu;
 pub mod options;
+pub mod seam_stubs;
 pub mod settings;
 pub mod theme;
 pub mod util;

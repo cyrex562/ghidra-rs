@@ -41,7 +41,7 @@ mod tests {
             None
         }
 
-        fn set_default_settings(&mut self, _settings: &dyn crate::program::seam_stubs::Settings) {}
+        fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {}
     }
 
     impl FactoryDataType for MockFactoryDataType {

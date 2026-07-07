@@ -62,7 +62,7 @@ pub trait TypeDef: DataType {
 mod tests {
     use super::*;
     use crate::docking::settings::settings_definition::SettingsDefinition;
-    use crate::program::seam_stubs::Settings;
+    use crate::docking::settings::settings::Settings;
 
     #[derive(Default)]
     struct MockDataType {

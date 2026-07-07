@@ -3,7 +3,8 @@ use std::any::{Any, TypeId};
 use crate::program::model::data::array_stringable::get_array_stringable;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-use crate::program::seam_stubs::{MemBuffer, Settings};
+use crate::docking::settings::settings::Settings;
+use crate::program::seam_stubs::MemBuffer;
 
 /// Label prefix used for array data, standing in for `Array.ARRAY_LABEL_PREFIX`.
 pub const ARRAY_LABEL_PREFIX: &str = "ARRAY";

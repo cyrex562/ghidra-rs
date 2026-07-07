@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::Settings;
+use crate::docking::settings::settings::Settings;
 
 /// Generic interface for defining display options on data and dataTypes. Uses [`Settings`]
 /// objects to store values which are interpreted by `SettingsDefinition` objects.
@@ -18,9 +18,6 @@ use crate::program::seam_stubs::Settings;
 /// unaffected by this promotion. Concrete implementations (`FormatSettingsDefinition`,
 /// `BooleanSettingsDefinition`, etc.) will override these with real behavior once they are ported.
 ///
-/// [`Settings`] itself is still a placeholder (see `program::seam_stubs`); it is referenced from
-/// here rather than re-stubbed so that existing callers built against that placeholder keep
-/// compiling unchanged.
 pub trait SettingsDefinition {
     /// Determine if a setting value has been stored.
     fn has_value(&self, settings: &dyn Settings) -> bool {

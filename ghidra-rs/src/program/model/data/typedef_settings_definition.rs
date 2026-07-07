@@ -1,5 +1,5 @@
 use crate::docking::settings::settings_definition::SettingsDefinition;
-use crate::program::seam_stubs::Settings;
+use crate::docking::settings::settings::Settings;
 
 /// Port of `ghidra.program.model.data.TypeDefSettingsDefinition`.
 ///
