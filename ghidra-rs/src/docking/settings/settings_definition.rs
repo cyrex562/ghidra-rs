@@ -48,13 +48,13 @@ pub trait SettingsDefinition {
     }
 
     /// Removes any values in the given settings object associated with this settings definition.
-    fn clear(&self, settings: &dyn Settings) {
+    fn clear(&self, settings: &mut dyn Settings) {
         let _ = settings;
     }
 
     /// Copies any setting value associated with this settings definition from `src_settings` to
     /// `dest_settings`.
-    fn copy_setting(&self, src_settings: &dyn Settings, dest_settings: &dyn Settings) {
+    fn copy_setting(&self, src_settings: &dyn Settings, dest_settings: &mut dyn Settings) {
         let _ = (src_settings, dest_settings);
     }
 
