@@ -230,12 +230,6 @@ pub use crate::program::model::listing::function_iterator::FunctionIterator;
 /// are needed yet.
 pub trait InstructionSet {}
 
-/// Placeholder for `ghidra.program.model.util.PropertyMap`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real (generic) interface is ported. `Listing` only ever returns this type, so no
-/// members are needed yet.
-pub trait PropertyMap {}
-
 /// Placeholder for `ghidra.program.model.listing.CommentHistory`, referenced by
 /// [`Listing`](crate::program::model::listing::listing::Listing)
 /// before the real class is ported. `Listing` only ever returns this type, so no members are
