@@ -6,9 +6,9 @@ use crate::program::model::listing::program::Program;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::{
-    ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
+    ExternalLocation, ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
 };
-use crate::program::seam_stubs::{CommentType, ExternalLocation, MemBuffer, PropertySet};
+use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet};
 
 /// Indicator for a mnemonic (versus an operand).
 pub const MNEMONIC: i32 = -1;
