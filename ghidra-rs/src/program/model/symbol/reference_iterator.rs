@@ -58,6 +58,39 @@ impl ReferenceIterator for ReferenceIteratorAdapter {
     }
 }
 
+/// Adapter that wraps any iterator of references.
+///
+/// This is the Rust equivalent of Java's `ReferenceIteratorAdapter`, providing
+/// a convenient way to wrap a boxed iterator to implement the `ReferenceIterator` trait.
+pub struct ReferenceAdapter {
+    iter: Box<dyn Iterator<Item = Arc<dyn Reference>>>,
+    current: Option<Arc<dyn Reference>>,
+}
+
+impl ReferenceAdapter {
+    /// Creates an adapter from a boxed iterator of references.
+    ///
+    /// # Arguments
+    ///
+    /// * `iter` - A boxed iterator that yields references
+    pub fn new(mut iter: Box<dyn Iterator<Item = Arc<dyn Reference>>>) -> Self {
+        let current = iter.next();
+        Self { iter, current }
+    }
+}
+
+impl ReferenceIterator for ReferenceAdapter {
+    fn has_next(&self) -> bool {
+        self.current.is_some()
+    }
+
+    fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+        let result = self.current.take();
+        self.current = self.iter.next();
+        result
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -73,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn adapter_iterates_references_and_then_returns_none() {
+    fn vector_adapter_iterates_references_and_then_returns_none() {
         let references: Vec<Arc<dyn Reference>> = vec![
             Arc::new(TestReference::new(0x1000)),
             Arc::new(TestReference::new(0x1001)),
@@ -92,6 +125,47 @@ mod tests {
         );
         assert!(!iterator.has_next());
         assert!(iterator.next_reference().is_none());
+    }
+
+    #[test]
+    fn boxed_adapter_iterates_from_boxed_iterator() {
+        let references: Vec<Arc<dyn Reference>> = vec![
+            Arc::new(TestReference::new(0x1000)),
+            Arc::new(TestReference::new(0x1001)),
+            Arc::new(TestReference::new(0x1002)),
+        ];
+        let boxed_iter: Box<dyn Iterator<Item = Arc<dyn Reference>>> =
+            Box::new(references.into_iter());
+        let mut adapter = ReferenceAdapter::new(boxed_iter);
+
+        assert!(adapter.has_next());
+        assert_eq!(
+            adapter.next_reference().unwrap().from_address(),
+            addr(0x1000)
+        );
+        assert!(adapter.has_next());
+        assert_eq!(
+            adapter.next_reference().unwrap().from_address(),
+            addr(0x1001)
+        );
+        assert!(adapter.has_next());
+        assert_eq!(
+            adapter.next_reference().unwrap().from_address(),
+            addr(0x1002)
+        );
+        assert!(!adapter.has_next());
+        assert!(adapter.next_reference().is_none());
+    }
+
+    #[test]
+    fn boxed_adapter_with_empty_iterator_returns_none() {
+        let references: Vec<Arc<dyn Reference>> = vec![];
+        let boxed_iter: Box<dyn Iterator<Item = Arc<dyn Reference>>> =
+            Box::new(references.into_iter());
+        let mut adapter = ReferenceAdapter::new(boxed_iter);
+
+        assert!(!adapter.has_next());
+        assert!(adapter.next_reference().is_none());
     }
 
     fn addr(offset: i64) -> Address {
