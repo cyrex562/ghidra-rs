@@ -9,6 +9,7 @@ pub mod equate_reference;
 pub mod equate_table;
 pub mod external_location;
 pub mod external_location_iterator;
+pub mod external_manager;
 pub mod external_path;
 pub mod external_reference;
 pub mod illegal_char_cpp_transformer;
@@ -41,6 +42,10 @@ pub use external_location::{ExternalLocation, SetExternalLocationError};
 pub use external_location_iterator::{
     EmptyExternalLocationIterator, ExternalLocationAdapter, ExternalLocationIterator,
     ExternalLocationIteratorAdapter,
+};
+pub use external_manager::{
+    AddExternalLibraryNameError, AddExternalLocationInLibraryError, ExternalManager,
+    UpdateExternalLibraryNameError,
 };
 pub use external_path::{ExternalPath, ExternalPathError, EXTERNAL_PATH_DELIMITER};
 pub use external_reference::ExternalReference;
