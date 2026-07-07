@@ -107,5 +107,5 @@ DONE	interface	356	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/Dat
 DONE	interface	343	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/Lifespan.java
 TODO	interface	336	10	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolder.java
 TODO	interface	328	57	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/Trace.java
-TODO	interface	320	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ProgramManager.java
+DONE	interface	320	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ProgramManager.java
 TODO	interface	318	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayload.java
