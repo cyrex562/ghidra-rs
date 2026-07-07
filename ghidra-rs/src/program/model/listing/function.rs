@@ -5,11 +5,11 @@ use thiserror::Error;
 use crate::program::database::function::OverlappingFunctionException;
 use crate::program::model::address::{Address, AddressSetView};
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::listing::{FunctionTag, Parameter, Program, Variable};
+use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};
 use crate::program::model::symbol::SourceType;
 use crate::program::seam_stubs::{
-    ExternalLocation, FunctionSignature, Namespace, NamespaceType, PrototypeModel, StackFrame,
-    VariableFilter, VariableStorage,
+    ExternalLocation, Namespace, NamespaceType, PrototypeModel, StackFrame, VariableFilter,
+    VariableStorage,
 };
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::util::task::TaskMonitor;
@@ -572,7 +572,53 @@ mod tests {
 
         fn get_signature_formal(&self, _formal_signature: bool) -> Box<dyn FunctionSignature> {
             struct MockSignature;
-            impl FunctionSignature for MockSignature {}
+            impl FunctionSignature for MockSignature {
+                fn get_name(&self) -> String {
+                    String::new()
+                }
+
+                fn get_prototype_string_with_calling_convention(
+                    &self,
+                    _include_calling_convention: bool,
+                ) -> String {
+                    String::new()
+                }
+
+                fn get_arguments(
+                    &self,
+                ) -> Vec<Box<dyn crate::program::model::data::parameter_definition::ParameterDefinition>>
+                {
+                    Vec::new()
+                }
+
+                fn get_return_type(&self) -> Box<dyn DataType> {
+                    unimplemented!("not needed for this smoke test")
+                }
+
+                fn get_comment(&self) -> Option<String> {
+                    None
+                }
+
+                fn has_var_args(&self) -> bool {
+                    false
+                }
+
+                fn has_no_return(&self) -> bool {
+                    false
+                }
+
+                fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+                    None
+                }
+
+                fn get_calling_convention_name(&self) -> String {
+                    String::new()
+                }
+
+                fn is_equivalent_signature(&self, _signature: &dyn FunctionSignature) -> bool {
+                    false
+                }
+            }
             Box::new(MockSignature)
         }
 

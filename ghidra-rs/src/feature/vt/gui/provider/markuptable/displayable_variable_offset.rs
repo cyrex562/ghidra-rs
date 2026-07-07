@@ -234,9 +234,60 @@ mod tests {
         fn get_signature_formal(
             &self,
             _formal_signature: bool,
-        ) -> Box<dyn crate::program::seam_stubs::FunctionSignature> {
+        ) -> Box<dyn crate::program::model::listing::FunctionSignature> {
             struct MockSignature;
-            impl crate::program::seam_stubs::FunctionSignature for MockSignature {}
+            impl crate::program::model::listing::FunctionSignature for MockSignature {
+                fn get_name(&self) -> String {
+                    String::new()
+                }
+
+                fn get_prototype_string_with_calling_convention(
+                    &self,
+                    _include_calling_convention: bool,
+                ) -> String {
+                    String::new()
+                }
+
+                fn get_arguments(
+                    &self,
+                ) -> Vec<Box<dyn crate::program::model::data::parameter_definition::ParameterDefinition>>
+                {
+                    Vec::new()
+                }
+
+                fn get_return_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType> {
+                    unimplemented!()
+                }
+
+                fn get_comment(&self) -> Option<String> {
+                    None
+                }
+
+                fn has_var_args(&self) -> bool {
+                    false
+                }
+
+                fn has_no_return(&self) -> bool {
+                    false
+                }
+
+                fn get_calling_convention(
+                    &self,
+                ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+                    None
+                }
+
+                fn get_calling_convention_name(&self) -> String {
+                    String::new()
+                }
+
+                fn is_equivalent_signature(
+                    &self,
+                    _signature: &dyn crate::program::model::listing::FunctionSignature,
+                ) -> bool {
+                    false
+                }
+            }
             Box::new(MockSignature)
         }
 

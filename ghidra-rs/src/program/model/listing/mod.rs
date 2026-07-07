@@ -20,6 +20,7 @@ pub mod duplicate_group_exception;
 pub mod function;
 pub mod function_iterator;
 pub mod function_overlap_exception;
+pub mod function_signature;
 pub mod function_tag;
 pub mod function_tag_change_set;
 pub mod function_tag_manager;
@@ -67,6 +68,9 @@ pub use duplicate_group_exception::DuplicateGroupException;
 pub use function::{Function, FunctionUpdateType};
 pub use function_iterator::{EmptyFunctionIterator, FunctionIterator, ListFunctionIterator};
 pub use function_overlap_exception::FunctionOverlapException;
+pub use function_signature::{
+    FunctionSignature, NORETURN_DISPLAY_STRING, VAR_ARGS_DISPLAY_STRING, VOID_PARAM_DISPLAY_STRING,
+};
 pub use function_tag::FunctionTag;
 pub use function_tag_change_set::FunctionTagChangeSet;
 pub use function_tag_manager::FunctionTagManager;
