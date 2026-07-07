@@ -34,3 +34,4 @@ tick2_results.tsv
 PORT_PARKED.tsv
 .agents/issue-map.tsv
 dep_stats.json
+port_history.tsv
