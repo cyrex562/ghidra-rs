@@ -54,7 +54,9 @@ pub use offset_reference::OffsetReference;
 pub use ref_type::RefType;
 pub use ref_type_factory::RefTypeFactory;
 pub use reference::{DynamicReference, Reference, MNEMONIC, OTHER};
-pub use reference_iterator::{EmptyReferenceIterator, ReferenceIterator, ReferenceIteratorAdapter};
+pub use reference_iterator::{
+    EmptyReferenceIterator, ReferenceAdapter, ReferenceIterator, ReferenceIteratorAdapter,
+};
 pub use reference_listener::ReferenceListener;
 pub use shifted_reference::ShiftedReference;
 pub use source_type::SourceType;
