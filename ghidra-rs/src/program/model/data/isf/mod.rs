@@ -13,6 +13,7 @@ pub mod isf_enum;
 pub mod isf_function;
 pub mod isf_typedef_integral;
 pub mod isf_dynamic_component;
+pub mod isf_component;
 
 pub use isf_object::IsfObject;
 pub use isf_data_type_null::IsfDataTypeNull;
@@ -29,3 +30,4 @@ pub use isf_enum::IsfEnum;
 pub use isf_function::IsfFunction;
 pub use isf_typedef_integral::IsfTypedefIntegral;
 pub use isf_dynamic_component::IsfDynamicComponent;
+pub use isf_component::IsfComponent;
