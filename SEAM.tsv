@@ -95,7 +95,7 @@ TODO	interface	593	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 TODO	interface	587	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateReference.java
 TODO	interface	586	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/OffsetReference.java
 TODO	interface	541	39	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Language.java
-TODO	interface	476	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/TPI.java
+DONE	interface	476	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/TPI.java
 TODO	interface	469	235	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/StructConverter.java
 TODO	interface	462	10	docking	Ghidra/Framework/Docking/src/main/java/docking/action/DockingActionIf.java
 TODO	interface	436	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProvider.java
