@@ -23,6 +23,7 @@ pub mod data_type_manager;
 pub mod data_type_manager_change_listener;
 pub mod data_type_manager_change_listener_adapter;
 pub mod data_type_manager_domain_object;
+pub mod data_type_mnemonic_settings_definition;
 pub mod data_type_path;
 pub mod data_type_transferable;
 pub mod data_type_with_charset;
