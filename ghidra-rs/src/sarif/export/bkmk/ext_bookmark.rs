@@ -48,11 +48,35 @@ impl IsfObject for ExtBookmark {}
 mod tests {
     use super::*;
     use crate::program::model::address::AddressSpace;
-    use crate::program::seam_stubs::BookmarkType;
+    use crate::program::model::listing::bookmark_type::BookmarkType;
     use std::cmp::Ordering;
 
     struct MockBookmarkType;
-    impl BookmarkType for MockBookmarkType {}
+    impl BookmarkType for MockBookmarkType {
+        fn get_type_string(&self) -> &str {
+            "Mock"
+        }
+
+        fn get_icon(&self) -> Option<Box<dyn crate::program::model::data::playable::Icon>> {
+            None
+        }
+
+        fn get_marker_color(&self) -> Option<crate::program::model::listing::bookmark_type::MarkerColor> {
+            None
+        }
+
+        fn get_marker_priority(&self) -> i32 {
+            -1
+        }
+
+        fn has_bookmarks(&self) -> bool {
+            false
+        }
+
+        fn get_type_id(&self) -> i32 {
+            0
+        }
+    }
 
     struct MockBookmark {
         category: String,
