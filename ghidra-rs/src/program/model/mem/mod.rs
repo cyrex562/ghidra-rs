@@ -1,5 +1,6 @@
 pub mod invalid_address_exception;
 pub mod mem_buffer_input_stream;
+pub mod mem_buffer_mixin;
 pub mod memory;
 pub mod memory_access_exception;
 pub mod memory_block;
@@ -13,6 +14,7 @@ pub mod memory_constants;
 
 pub use invalid_address_exception::InvalidAddressException;
 pub use mem_buffer_input_stream::MemBufferInputStream;
+pub use mem_buffer_mixin::MemBufferMixin;
 pub use memory_access_exception::MemoryAccessException;
 pub use memory::Memory;
 pub use memory_block::MemoryBlock;
