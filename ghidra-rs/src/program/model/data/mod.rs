@@ -43,6 +43,7 @@ pub mod integer_data_type_test;
 pub mod internal_data_type_component;
 pub mod invalidated_listener;
 pub mod leb128;
+pub mod mem_buffer_image_input_stream;
 pub mod packing_type;
 pub mod parameter_definition;
 pub mod playable;
