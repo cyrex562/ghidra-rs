@@ -12579,7 +12579,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ViewProjec
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/WorkspacePanel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ZoomImageRunner.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ZoomedImagePainter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatable/DomainFileContext.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatable 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatable/DomainFileContext.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework main datatable 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatable/DomainFileInfo.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatable 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatable/DomainFileProviderContextAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatable 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatable/DomainFileType.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main datatable 
