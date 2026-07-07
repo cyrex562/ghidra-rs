@@ -1,5 +1,4 @@
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::Namespace;
 use std::io;
 use std::sync::Arc;
 
@@ -14,6 +13,7 @@ pub mod illegal_char_cpp_transformer;
 pub mod label_history;
 pub mod mem_reference_impl;
 pub mod name_transformer;
+pub mod namespace;
 pub mod offset_reference;
 pub mod ref_type;
 pub mod ref_type_factory;
@@ -40,6 +40,9 @@ pub use illegal_char_cpp_transformer::IllegalCharCppTransformer;
 pub use label_history::{LabelHistory, LabelHistoryAction};
 pub use mem_reference_impl::MemReferenceImpl;
 pub use name_transformer::{IdentityNameTransformer, NameTransformer};
+#[allow(deprecated)]
+pub use namespace::NAMESPACE_DELIMITER;
+pub use namespace::{Namespace, NamespaceType, SetParentNamespaceError, DELIMITER, GLOBAL_NAMESPACE_ID};
 pub use offset_reference::OffsetReference;
 pub use ref_type::RefType;
 pub use ref_type_factory::RefTypeFactory;

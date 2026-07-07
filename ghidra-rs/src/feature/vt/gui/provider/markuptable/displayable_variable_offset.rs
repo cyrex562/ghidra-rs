@@ -103,8 +103,7 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::Program;
-    use crate::program::seam_stubs::Namespace;
-    use crate::program::model::symbol::Symbol;
+    use crate::program::model::symbol::{Namespace, Symbol};
 
     struct MockSymbol;
 

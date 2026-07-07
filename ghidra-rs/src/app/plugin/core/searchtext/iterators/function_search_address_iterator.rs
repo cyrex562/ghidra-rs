@@ -97,12 +97,12 @@ mod tests {
         entry_point: Address,
     }
 
-    impl crate::program::seam_stubs::Namespace for MockFunction {
+    impl crate::program::model::symbol::Namespace for MockFunction {
         fn get_symbol(&self) -> Arc<dyn crate::program::model::symbol::Symbol> {
             unimplemented!("not needed for this test")
         }
 
-        fn get_parent_namespace(&self) -> Option<Arc<dyn crate::program::seam_stubs::Namespace>> {
+        fn get_parent_namespace(&self) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
             None
         }
     }

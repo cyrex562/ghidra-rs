@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use crate::program::model::symbol::{Symbol, SymbolType};
-use crate::program::seam_stubs::{Namespace, NamespaceType};
+use crate::program::model::symbol::{Namespace, NamespaceType, Symbol, SymbolType};
 use crate::util::exception::InvalidInputException;
 
 /// Symbol name used for a [`Library`] whose associated program path is unknown.
@@ -12,7 +11,7 @@ pub const UNKNOWN: &str = "<EXTERNAL>";
 /// Port of `ghidra.program.model.listing.Library`.
 pub trait Library: Namespace {
     /// The type of namespace this represents. Overrides the
-    /// [`Namespace`](crate::program::seam_stubs::Namespace) default.
+    /// [`Namespace`](crate::program::model::symbol::Namespace) default.
     fn get_type(&self) -> NamespaceType {
         NamespaceType::Library
     }

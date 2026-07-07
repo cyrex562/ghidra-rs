@@ -24,7 +24,7 @@ pub trait ThunkFunction: Function {
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
-    use crate::program::seam_stubs::Namespace;
+    use crate::program::model::symbol::Namespace;
     use std::cmp::Ordering;
 
     struct MockFunction {
