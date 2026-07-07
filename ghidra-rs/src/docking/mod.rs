@@ -1,3 +1,4 @@
+pub mod action;
 pub mod action_context;
 pub mod actions;
 pub mod drop_target_handler;
