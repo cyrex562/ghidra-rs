@@ -49,3 +49,6 @@ ts	stub_class	referenced_by
 2026-07-07T00:00:00Z	ActionContextProvider	ActionContext
 2026-07-07T00:00:00Z	MouseEvent	ActionContext
 2026-07-07T00:00:00Z	Component	ActionContext
+2026-07-07T00:00:00Z	InjectContext	InjectPayload
+2026-07-07T00:00:00Z	PcodeEmit	InjectPayload
+2026-07-07T00:00:00Z	Encoder	InjectPayload

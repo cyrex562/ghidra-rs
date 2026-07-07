@@ -314,6 +314,24 @@ impl fmt::Display for CompilerSpecID {
     }
 }
 
+/// Placeholder for `ghidra.program.model.lang.InjectContext`, referenced by
+/// [`InjectPayload`](crate::program::model::lang::inject_payload::InjectPayload)
+/// before the real class is ported. `InjectPayload` only ever passes this type through, so no
+/// members are needed yet.
+pub trait InjectContext {}
+
+/// Placeholder for `ghidra.app.plugin.processors.sleigh.PcodeEmit`, referenced by
+/// [`InjectPayload`](crate::program::model::lang::inject_payload::InjectPayload)
+/// before the real class is ported. `InjectPayload::inject` only ever passes this type through
+/// to accumulate p-code, so no members are needed yet.
+pub trait PcodeEmit {}
+
+/// Placeholder for `ghidra.program.model.pcode.Encoder`, referenced by
+/// [`InjectPayload`](crate::program::model::lang::inject_payload::InjectPayload)
+/// before the real interface is ported. `InjectPayload::encode` only ever passes this type
+/// through to the underlying stream encoder, so no members are needed yet.
+pub trait Encoder {}
+
 /// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecPair`, referenced by
 /// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)'s
 /// `get_language_compiler_spec_pair` default method, before the real class is ported.
