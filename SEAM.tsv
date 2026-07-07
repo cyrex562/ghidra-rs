@@ -103,7 +103,7 @@ TODO	interface	422	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 TODO	interface	418	59	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/Memory.java
 TODO	interface	386	8	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/Options.java
 TODO	interface	376	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/CompilerSpec.java
-TODO	interface	356	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/DataConverter.java
+DONE	interface	356	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/DataConverter.java
 DONE	interface	343	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/Lifespan.java
 TODO	interface	336	10	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolder.java
 TODO	interface	328	57	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/Trace.java
