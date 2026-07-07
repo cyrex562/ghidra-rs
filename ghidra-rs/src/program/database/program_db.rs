@@ -1,4 +1,5 @@
 use crate::framework::db::DBHandle;
+use crate::framework::model::DomainObject;
 use crate::program::database::map::AddressMapDB;
 use crate::program::database::mem::MemoryMapDB;
 use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
@@ -67,13 +68,15 @@ impl ProgramDB {
     }
 }
 
+impl DomainObject for ProgramDB {}
+
 impl Program for ProgramDB {
-    fn get_name(&self) -> &str {
-        &self.name
+    fn get_name(&self) -> String {
+        self.name.clone()
     }
 
-    fn get_language_id(&self) -> &str {
-        self.language.get_id()
+    fn get_language_id(&self) -> String {
+        self.language.get_id().to_string()
     }
 
     fn get_address_factory(&self) -> Option<std::sync::Arc<dyn crate::program::model::address::AddressFactory>> {
