@@ -77,5 +77,5 @@ DONE	interface	43	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 TODO	interface	41	29	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertyMap.java
 DONE	interface	33	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ProcessorContext.java
 DONE	interface	25	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ProcessorContextView.java
-TODO	interface	20	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ProgramArchitecture.java
+DONE	interface	20	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ProgramArchitecture.java
 TODO	interface	2	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertySet.java
