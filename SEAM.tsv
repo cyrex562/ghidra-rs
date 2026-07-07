@@ -60,7 +60,7 @@ DONE	interface	980	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	interface	979	42	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Library.java
 DONE	interface	977	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Bookmark.java
 TODO	interface	504	6	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Reference.java
-TODO	interface	489	2	docking	Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/Settings.java
+DONE	interface	489	2	docking	Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/Settings.java
 TODO	interface	370	75	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFile.java
 TODO	interface	370	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Namespace.java
 TODO	interface	249	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/MemBuffer.java
