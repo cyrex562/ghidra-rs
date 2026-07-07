@@ -8,6 +8,7 @@ pub mod merge_program_generator;
 pub mod program_db;
 pub mod program_modifier_listener;
 pub mod properties;
+pub mod references;
 pub mod sourcemap;
 pub mod symbol;
 pub mod util;
