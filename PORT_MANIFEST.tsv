@@ -5394,7 +5394,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressTable
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressTableDataTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressTableLengthTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ByteCountProgramLocationBasedTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ByteCountSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ByteCountSettingsDefinition.java	DONE	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/BytesTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/CodeUnitCountSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/CodeUnitOffsetSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
