@@ -9013,7 +9013,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ExtLogicalLocation.jav
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/SarifExporter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/SarifObject.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/SarifWriterTask.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/WrappedLogicalLocation.java	TODO	orig_src Ghidra Features Sarif src main java sarif export 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/WrappedLogicalLocation.java	DONE	orig_src Ghidra Features Sarif src main java sarif export 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/bkmk/ExtBookmark.java	DONE	orig_src Ghidra Features Sarif src main java sarif export bkmk 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/bkmk/SarifBookmarkWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export bkmk 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/code/ExtCodeBlock.java	DONE	orig_src Ghidra Features Sarif src main java sarif export code

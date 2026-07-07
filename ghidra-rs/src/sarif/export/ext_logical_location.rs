@@ -6,6 +6,7 @@ use crate::program::model::listing::Function;
 /// Mirrors `ExtLogicalLocation` from Ghidra's `sarif.export` package.
 /// Encapsulates location information including name, kind, decorated name,
 /// fully qualified name, and URI derived from a function's program.
+#[derive(Debug, Clone)]
 pub struct ExtLogicalLocation {
     pub name: String,
     pub kind: String,
