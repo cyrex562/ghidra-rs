@@ -10,11 +10,6 @@ use std::fmt;
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
 
-/// Placeholder for `ghidra.framework.model.DomainObject`, referenced by
-/// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)
-/// before the real interface is ported.
-pub trait DomainObject {}
-
 /// Placeholder for `ghidra.app.merge.DataTypeManagerOwner`, referenced by
 /// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)
 /// before the real interface is ported.

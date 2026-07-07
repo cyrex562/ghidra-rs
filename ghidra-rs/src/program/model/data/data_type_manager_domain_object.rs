@@ -1,4 +1,5 @@
-use crate::program::seam_stubs::{DataTypeManagerOwner, DomainObject};
+use crate::framework::model::DomainObject;
+use crate::program::seam_stubs::DataTypeManagerOwner;
 
 /// Marker trait for a domain object that also owns a data type manager.
 ///

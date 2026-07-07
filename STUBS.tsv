@@ -1,5 +1,4 @@
 ts	stub_class	referenced_by
-2026-07-03T00:00:00+00:00	DomainObject	DataTypeManagerDomainObject
 2026-07-03T00:00:00+00:00	DataTypeManagerOwner	DataTypeManagerDomainObject
 2026-07-03T00:00:00+00:00	DomainFile	ProjectArchiveBasedDataTypeManager
 2026-07-04T00:25:00+00:00	PointerTypedefBuilder	Pointer
@@ -34,3 +33,8 @@ ts	stub_class	referenced_by
 2026-07-06T03:00:00Z	CompilerSpec	ProgramArchitecture
 2026-07-06T03:00:00Z	CompilerSpecID	ProgramArchitecture
 2026-07-06T03:00:00Z	LanguageCompilerSpecPair	ProgramArchitecture
+2026-07-06T04:00:00Z	DomainObjectListener	DomainObject
+2026-07-06T04:00:00Z	DomainObjectClosedListener	DomainObject
+2026-07-06T04:00:00Z	DomainObjectFileListener	DomainObject
+2026-07-06T04:00:00Z	Options	DomainObject
+2026-07-06T04:00:00Z	TransactionListener	DomainObject
