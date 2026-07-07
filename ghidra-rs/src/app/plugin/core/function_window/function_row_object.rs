@@ -78,8 +78,7 @@ mod tests {
     use std::sync::Arc;
 
     use crate::program::model::listing::Function;
-    use crate::program::model::symbol::Symbol;
-    use crate::program::seam_stubs::Namespace;
+    use crate::program::model::symbol::{Namespace, Symbol};
 
     struct MockSymbol {
         id: i64,

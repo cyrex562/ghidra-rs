@@ -6,10 +6,9 @@ use crate::program::database::function::OverlappingFunctionException;
 use crate::program::model::address::{Address, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};
-use crate::program::model::symbol::SourceType;
+use crate::program::model::symbol::{Namespace, NamespaceType, SourceType};
 use crate::program::seam_stubs::{
-    ExternalLocation, Namespace, NamespaceType, PrototypeModel, StackFrame, VariableFilter,
-    VariableStorage,
+    ExternalLocation, PrototypeModel, StackFrame, VariableFilter, VariableStorage,
 };
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::util::task::TaskMonitor;
@@ -95,7 +94,7 @@ pub enum FunctionEditError {
 /// Port of `ghidra.program.model.listing.Function`.
 pub trait Function: Namespace {
     /// The type of namespace this represents. Overrides the
-    /// [`Namespace`](crate::program::seam_stubs::Namespace) default.
+    /// [`Namespace`](crate::program::model::symbol::Namespace) default.
     fn get_type(&self) -> NamespaceType {
         NamespaceType::Function
     }

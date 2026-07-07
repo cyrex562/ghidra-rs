@@ -327,16 +327,16 @@ mod tests {
 
         fn set_signature_source_type(&mut self, _source: crate::program::model::symbol::SourceType) {}
 
-        fn get_namespace(&self) -> Option<Box<dyn crate::program::seam_stubs::Namespace>> {
+        fn get_namespace(&self) -> Option<Box<dyn crate::program::model::symbol::Namespace>> {
             None
         }
 
-        fn set_namespace(&mut self, _namespace: Box<dyn crate::program::seam_stubs::Namespace>) -> Result<(), crate::util::exception::InvalidInputException> {
+        fn set_namespace(&mut self, _namespace: Box<dyn crate::program::model::symbol::Namespace>) -> Result<(), crate::util::exception::InvalidInputException> {
             Ok(())
         }
     }
 
-    impl crate::program::seam_stubs::Namespace for MockFunction {
+    impl crate::program::model::symbol::Namespace for MockFunction {
         fn get_name(&self) -> String {
             self.name.clone()
         }
@@ -353,15 +353,15 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_type(&self) -> crate::program::seam_stubs::NamespaceType {
-            crate::program::seam_stubs::NamespaceType::Function
+        fn get_type(&self) -> crate::program::model::symbol::NamespaceType {
+            crate::program::model::symbol::NamespaceType::Function
         }
 
-        fn get_parent_namespace(&self) -> Option<Box<dyn crate::program::seam_stubs::Namespace>> {
+        fn get_parent_namespace(&self) -> Option<Box<dyn crate::program::model::symbol::Namespace>> {
             None
         }
 
-        fn set_parent_namespace(&mut self, _namespace: Box<dyn crate::program::seam_stubs::Namespace>) -> Result<(), crate::util::exception::InvalidInputException> {
+        fn set_parent_namespace(&mut self, _namespace: Box<dyn crate::program::model::symbol::Namespace>) -> Result<(), crate::util::exception::InvalidInputException> {
             Ok(())
         }
     }

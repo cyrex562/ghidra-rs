@@ -64,7 +64,7 @@ mod tests {
 
     struct MockFunction;
 
-    impl crate::program::seam_stubs::Namespace for MockFunction {}
+    impl crate::program::model::symbol::Namespace for MockFunction {}
 
     impl Function for MockFunction {}
 

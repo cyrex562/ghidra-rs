@@ -3,12 +3,8 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
-use std::sync::Arc;
-
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::register::{Register, RegisterRef};
-use crate::program::model::listing::library::Library;
-use crate::program::model::symbol::Symbol;
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
 
@@ -174,29 +170,6 @@ impl GroupPath {
     }
 }
 
-/// Placeholder for `ghidra.program.model.symbol.Namespace.Type`, referenced by
-/// [`Namespace`] and [`Library`](crate::program::model::listing::library::Library)
-/// before the real interface is ported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum NamespaceType {
-    Namespace,
-    Library,
-    Class,
-    Function,
-}
-
-impl NamespaceType {
-    /// A friendly name for use in messages.
-    pub fn friendly_name(&self) -> &'static str {
-        match self {
-            NamespaceType::Namespace => "Namespace",
-            NamespaceType::Library => "Library",
-            NamespaceType::Class => "Class",
-            NamespaceType::Function => "Function",
-        }
-    }
-}
-
 pub use crate::program::model::listing::stack_frame::StackFrame;
 
 /// Placeholder for `ghidra.program.model.symbol.ExternalLocation`, referenced by
@@ -299,26 +272,3 @@ pub trait CommentHistory {}
 /// needed yet.
 pub trait CodeUnitComments {}
 
-/// Placeholder for `ghidra.program.model.symbol.Namespace`, referenced by
-/// [`Library`](crate::program::model::listing::library::Library) as a supertrait before the
-/// real interface is ported.
-pub trait Namespace {
-    /// Get the symbol for this namespace. Real abstract method on `Namespace`.
-    fn get_symbol(&self) -> Arc<dyn Symbol>;
-
-    /// Get the parent scope, or `None` if this is the global scope. Real abstract method on
-    /// `Namespace`.
-    fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>>;
-
-    /// The type of namespace this represents. Defaults to `Namespace`.
-    fn get_type(&self) -> NamespaceType {
-        NamespaceType::Namespace
-    }
-
-    /// Narrows this namespace to a [`Library`](crate::program::model::listing::library::Library)
-    /// when it is one. Stands in for `instanceof Library`, since Rust trait objects cannot be
-    /// downcast to another trait object without extra machinery.
-    fn as_library(&self) -> Option<Arc<dyn Library>> {
-        None
-    }
-}
