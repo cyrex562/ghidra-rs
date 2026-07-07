@@ -3644,7 +3644,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SetEquateTableM
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/BinaryReader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteArrayConverter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteArrayProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderInputStream.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderPaddedInputStream.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProviderWrapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin 
