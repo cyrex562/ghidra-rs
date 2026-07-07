@@ -61,3 +61,12 @@ ts	stub_class	referenced_by
 2026-07-07T01:00:00Z	Color	Options
 2026-07-07T01:00:00Z	Font	Options
 2026-07-07T01:00:00Z	KeyStroke	Options
+2026-07-07T02:00:00Z	HelpDescriptor	DockingActionIf
+2026-07-07T02:00:00Z	PropertyChangeListener	DockingActionIf
+2026-07-07T02:00:00Z	MenuData	DockingActionIf
+2026-07-07T02:00:00Z	ToolBarData	DockingActionIf
+2026-07-07T02:00:00Z	KeyBindingData	DockingActionIf
+2026-07-07T02:00:00Z	KeyBindingType	DockingActionIf
+2026-07-07T02:00:00Z	JButton	DockingActionIf
+2026-07-07T02:00:00Z	JMenuItem	DockingActionIf
+2026-07-07T02:00:00Z	KeyStroke	DockingActionIf
