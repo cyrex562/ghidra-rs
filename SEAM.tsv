@@ -92,7 +92,7 @@ TODO	interface	611	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 TODO	interface	605	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateTable.java
 TODO	interface	594	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIterator.java
 TODO	interface	593	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalManager.java
-TODO	interface	587	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateReference.java
+DONE	interface	587	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateReference.java
 TODO	interface	586	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/OffsetReference.java
 TODO	interface	541	39	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Language.java
 DONE	interface	476	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/TPI.java
