@@ -2159,7 +2159,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/DominanceModul
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/MergeFolderCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/ModuleAlgorithmCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/RenameCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/RenameTreeCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/RenameTreeCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd module
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/ReorderModuleCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/module/SubroutineModelCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd module 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/AddExternalNameCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
