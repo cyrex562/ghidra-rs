@@ -12518,7 +12518,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/LinkedGhid
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/LockingTaskMonitor.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/MetadataManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/NullFolderDomainObject.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/OpenMode.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/OpenMode.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/OptionsDB.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ProjectLock.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/RootGhidraFolder.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
