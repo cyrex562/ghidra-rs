@@ -7785,7 +7785,7 @@ orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/LayoutFunction.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/LayoutTransitionManager.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/SetLayoutTask.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization 
-orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/layout/JgtTidierTreeLayoutAlgorithm.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization layout 
+orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/layout/JgtTidierTreeLayoutAlgorithm.java	DONE	orig_src Ghidra Features GraphServices src main java ghidra graph visualization layout
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/mouse/AbstractJgtGraphMousePlugin.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization mouse 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/mouse/JgtCursorRestoringPlugin.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization mouse 
 orig_src/Ghidra/Features/GraphServices/src/main/java/ghidra/graph/visualization/mouse/JgtEdgeNavigationPlugin.java	TODO	orig_src Ghidra Features GraphServices src main java ghidra graph visualization mouse 
