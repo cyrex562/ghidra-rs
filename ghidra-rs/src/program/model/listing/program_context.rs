@@ -172,7 +172,23 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType, EmptyAddressRangeIterator};
 
     struct MockRegisterValue;
-    impl RegisterValue for MockRegisterValue {}
+    impl RegisterValue for MockRegisterValue {
+        fn get_register(&self) -> RegisterRef {
+            mock_register()
+        }
+
+        fn get_register_value(&self, _register: &Register) -> Box<dyn RegisterValue> {
+            Box::new(MockRegisterValue)
+        }
+
+        fn has_any_value(&self) -> bool {
+            false
+        }
+
+        fn get_unsigned_value_ignore_mask(&self) -> u128 {
+            0
+        }
+    }
 
     struct MockProgramContext;
 

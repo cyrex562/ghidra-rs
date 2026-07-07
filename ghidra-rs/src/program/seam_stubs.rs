@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::library::Library;
 use crate::program::model::symbol::Symbol;
 
@@ -212,10 +213,24 @@ pub trait ExternalLocation {}
 pub trait VariableFilter {}
 
 /// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
-/// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext)
-/// before the real class is ported. `ProgramContext` only ever passes this type through (it
-/// never inspects or constructs one directly), so no members are needed yet.
-pub trait RegisterValue {}
+/// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext) (which
+/// only ever passes this type through) and by
+/// [`ProcessorContextView`](crate::program::model::lang::processor_context_view::ProcessorContextView)
+/// and its `dump_context_value` helper, before the real class is ported.
+pub trait RegisterValue {
+    /// The base register this value is associated with.
+    fn get_register(&self) -> RegisterRef;
+
+    /// The value associated with a child register of [`RegisterValue::get_register`]'s base
+    /// register.
+    fn get_register_value(&self, register: &Register) -> Box<dyn RegisterValue>;
+
+    /// True if this value (or mask) has any bits set.
+    fn has_any_value(&self) -> bool;
+
+    /// The unsigned value of this register value, ignoring any mask bits.
+    fn get_unsigned_value_ignore_mask(&self) -> u128;
+}
 
 /// Placeholder for `ghidra.program.model.lang.ProcessorContext`, referenced by
 /// [`Instruction`](crate::program::model::listing::instruction::Instruction) as a supertrait
@@ -274,12 +289,6 @@ pub use crate::program::model::listing::function_iterator::FunctionIterator;
 /// before the real class is ported. `Listing` only ever passes this type through, so no members
 /// are needed yet.
 pub trait InstructionSet {}
-
-/// Placeholder for `ghidra.program.model.lang.ProcessorContextView`, referenced by
-/// [`Listing::create_instruction`](crate::program::model::listing::listing::Listing::create_instruction)
-/// before the real interface is ported. `Listing` only ever passes this type through, so no
-/// members are needed yet.
-pub trait ProcessorContextView {}
 
 /// Placeholder for `ghidra.program.model.util.PropertyMap`, referenced by
 /// [`Listing`](crate::program::model::listing::listing::Listing)

@@ -9,12 +9,13 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::model::listing::data::Data;
 use crate::program::model::listing::function::Function;
+use crate::program::model::lang::ProcessorContextView;
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::listing::program_module::ProgramModule;
 use crate::program::seam_stubs::{
     CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
     FunctionIterator, InstructionIterator, InstructionPrototype, InstructionSet, MemBuffer,
-    Namespace, ProcessorContextView, ProgramFragment, PropertyMap,
+    Namespace, ProgramFragment, PropertyMap,
 };
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::{CancelledException, DuplicateNameException, InvalidInputException};
