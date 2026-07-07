@@ -65,7 +65,7 @@ TODO	interface	370	75	framework	Ghidra/Framework/Project/src/main/java/ghidra/fr
 DONE	interface	370	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Namespace.java
 DONE	interface	249	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/MemBuffer.java
 DONE	interface	234	10	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObject.java
-TODO	interface	150	29	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressMap.java
+DONE	interface	150	29	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressMap.java
 DONE	interface	139	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Group.java
 DONE	interface	136	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalLocation.java
 DONE	interface	109	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/BookmarkType.java
