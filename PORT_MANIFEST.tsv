@@ -9025,7 +9025,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtDataTypeWriter
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfComponent.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfComposite.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfDataTypeWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfDynamicComponent.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfDynamicComponent.java	DONE	orig_src Ghidra Features Sarif src main java sarif export data 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfFunction.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfTypedObject.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/data/ExtIsfTypedefBase.java	TODO	orig_src Ghidra Features Sarif src main java sarif export data 
