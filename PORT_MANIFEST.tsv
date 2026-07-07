@@ -5412,7 +5412,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionPara
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionPurgeTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionSignatureTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionTagTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionThunkSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionThunkSettingsDefinition.java	DONE	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/IncomingReferenceEndpoint.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/IsFunctionCustomStorageTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/IsFunctionInlineTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
