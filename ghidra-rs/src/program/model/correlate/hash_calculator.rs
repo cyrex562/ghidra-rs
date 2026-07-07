@@ -24,8 +24,9 @@ mod tests {
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::symbol::RefType;
+    use crate::program::model::lang::instruction_prototype::InstructionPrototype;
     use crate::program::model::lang::ProcessorContext;
-    use crate::program::seam_stubs::{FlowOverride, InstructionContext, InstructionPrototype};
+    use crate::program::seam_stubs::{FlowOverride, InstructionContext};
     use std::sync::Arc;
 
     struct MockInstruction;

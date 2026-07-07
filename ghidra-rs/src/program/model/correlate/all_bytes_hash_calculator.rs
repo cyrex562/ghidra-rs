@@ -24,12 +24,13 @@ mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::register::{Register, RegisterRef};
+    use crate::program::model::lang::instruction_prototype::InstructionPrototype;
     use crate::program::model::lang::{ProcessorContext, ProcessorContextView};
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::RefType;
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, FlowOverride, InstructionContext, InstructionPrototype, MemBuffer, RegisterValue};
+    use crate::program::seam_stubs::{CommentType, FlowOverride, InstructionContext, MemBuffer, RegisterValue};
     use crate::program::model::listing::{OperandValue, program::Program};
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::pcode::PcodeOp;

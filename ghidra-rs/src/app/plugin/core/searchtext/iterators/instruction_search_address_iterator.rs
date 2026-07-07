@@ -144,7 +144,7 @@ mod tests {
     impl crate::program::model::lang::ProcessorContext for MockInstruction {}
 
     impl crate::program::model::listing::Instruction for MockInstruction {
-        fn get_prototype(&self) -> Arc<dyn crate::program::seam_stubs::InstructionPrototype> {
+        fn get_prototype(&self) -> Arc<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype> {
             unimplemented!()
         }
 

@@ -5,14 +5,16 @@ use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::ProcessorContext;
 use crate::program::model::listing::code_unit::CodeUnit;
 use crate::program::model::mem::MemoryAccessException;
+use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::pcode::PcodeOp;
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{FlowOverride, InstructionContext, InstructionPrototype};
+use crate::program::seam_stubs::{FlowOverride, InstructionContext};
 use crate::program::util::CodeUnitInsertionException;
 
-/// Stands in for `InstructionPrototype.INVALID_DEPTH_CHANGE` (2^24), which is not yet ported.
-pub const INVALID_DEPTH_CHANGE: i32 = 1 << 24;
+/// Port of `InstructionPrototype.INVALID_DEPTH_CHANGE` (2^24).
+pub const INVALID_DEPTH_CHANGE: i32 =
+    crate::program::model::lang::instruction_prototype::INVALID_DEPTH_CHANGE;
 /// Maximum value accepted by [`Instruction::set_length_override`].
 pub const MAX_LENGTH_OVERRIDE: i32 = 7;
 
