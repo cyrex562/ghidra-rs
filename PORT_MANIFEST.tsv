@@ -633,7 +633,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/utils/
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/utils/MiscellaneousUtils.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug utils 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/utils/ProgramLocationUtils.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug utils 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/utils/ProgramURLUtils.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug utils 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/utils/TransactionCoalescer.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug utils 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/utils/TransactionCoalescer.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug utils
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/pcode/exec/DebuggerPcodeUtils.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra pcode exec 
 orig_src/Ghidra/Debug/Debugger/src/screen/java/ghidra/app/plugin/core/debug/gui/CheckImagesTest.java	DONE	orig_src Ghidra Debug Debugger src screen java ghidra app plugin core debug gui
 orig_src/Ghidra/Debug/Debugger/src/screen/java/ghidra/app/plugin/core/debug/gui/console/DebuggerConsolePluginScreenShots.java	TODO	orig_src Ghidra Debug Debugger src screen java ghidra app plugin core debug gui console 
