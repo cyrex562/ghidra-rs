@@ -8,6 +8,7 @@ pub mod equate;
 pub mod equate_reference;
 pub mod equate_table;
 pub mod external_location;
+pub mod external_location_iterator;
 pub mod external_path;
 pub mod external_reference;
 pub mod illegal_char_cpp_transformer;
@@ -36,6 +37,9 @@ pub use equate::{Equate, SimpleEquate, UniversalId};
 pub use equate_reference::{EquateReference, SimpleEquateReference};
 pub use equate_table::{EquateTable, SimpleEquateTable};
 pub use external_location::{ExternalLocation, SetExternalLocationError};
+pub use external_location_iterator::{
+    EmptyExternalLocationIterator, ExternalLocationIterator, ExternalLocationIteratorAdapter,
+};
 pub use external_path::{ExternalPath, ExternalPathError, EXTERNAL_PATH_DELIMITER};
 pub use external_reference::ExternalReference;
 pub use illegal_char_cpp_transformer::IllegalCharCppTransformer;
