@@ -1,5 +1,6 @@
 use crate::program::model::address::AddressFactory;
-use crate::program::seam_stubs::{CompilerSpec, Language, LanguageCompilerSpecPair};
+use crate::program::model::lang::compiler_spec::CompilerSpec;
+use crate::program::seam_stubs::{Language, LanguageCompilerSpecPair};
 
 /// Identifies program architecture details required to utilize language/compiler-specific memory
 /// and variable storage specifications.
@@ -32,9 +33,18 @@ pub trait ProgramArchitecture {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSet, AddressSpace};
+    use crate::program::model::address::{Address, AddressSet, AddressSpace, AddressSpaceType};
+    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::lang::decompiler_language::DecompilerLanguage;
     use crate::program::model::lang::language_id::LanguageID;
-    use crate::program::seam_stubs::CompilerSpecID;
+    use crate::program::model::lang::register::RegisterRef;
+    use crate::program::model::listing::default_program_context::DefaultProgramContext;
+    use crate::program::model::listing::parameter::Parameter;
+    use crate::program::model::lang::compiler_spec::EvaluationModelType;
+    use crate::program::seam_stubs::{
+        CompilerSpecDescription, CompilerSpecID, Encoder, PcodeInjectLibrary, PrototypeModel,
+    };
+    use std::collections::HashSet;
     use std::sync::Arc;
 
     struct MockLanguage;
@@ -45,11 +55,140 @@ mod tests {
         }
     }
 
+    struct MockCompilerSpecDescription;
+    impl CompilerSpecDescription for MockCompilerSpecDescription {}
+
+    struct MockPcodeInjectLibrary;
+    impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
+
+    struct MockPrototypeModel;
+    impl PrototypeModel for MockPrototypeModel {}
+
     struct MockCompilerSpec;
 
     impl CompilerSpec for MockCompilerSpec {
+        fn get_language(&self) -> Box<dyn Language> {
+            Box::new(MockLanguage)
+        }
+
+        fn get_compiler_spec_description(&self) -> Box<dyn CompilerSpecDescription> {
+            Box::new(MockCompilerSpecDescription)
+        }
+
         fn get_compiler_spec_id(&self) -> CompilerSpecID {
             CompilerSpecID::new(Some("gcc"))
+        }
+
+        fn get_stack_pointer(&self) -> Option<RegisterRef> {
+            None
+        }
+
+        fn is_stack_right_justified(&self) -> bool {
+            false
+        }
+
+        fn get_address_space(&self, _space_name: &str) -> Option<Arc<AddressSpace>> {
+            None
+        }
+
+        fn get_stack_space(&self) -> Arc<AddressSpace> {
+            AddressSpace::new("stack", 32, 1, AddressSpaceType::Stack, 0)
+        }
+
+        fn get_stack_base_space(&self) -> Arc<AddressSpace> {
+            self.get_stack_space()
+        }
+
+        fn stack_grows_negative(&self) -> bool {
+            true
+        }
+
+        fn apply_context_settings(&self, _ctx: &mut dyn DefaultProgramContext) {}
+
+        fn get_calling_conventions(&self) -> Vec<Box<dyn PrototypeModel>> {
+            Vec::new()
+        }
+
+        fn get_calling_convention(&self, _name: &str) -> Option<Box<dyn PrototypeModel>> {
+            None
+        }
+
+        fn get_all_models(&self) -> Vec<Box<dyn PrototypeModel>> {
+            Vec::new()
+        }
+
+        fn get_default_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+            None
+        }
+
+        fn get_decompiler_output_language(&self) -> DecompilerLanguage {
+            DecompilerLanguage::CLanguage
+        }
+
+        fn get_prototype_evaluation_model(
+            &self,
+            _model_type: EvaluationModelType,
+        ) -> Box<dyn PrototypeModel> {
+            Box::new(MockPrototypeModel)
+        }
+
+        fn is_global(&self, _addr: &Address) -> bool {
+            false
+        }
+
+        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_pcode_inject_library(&self) -> Box<dyn PcodeInjectLibrary> {
+            Box::new(MockPcodeInjectLibrary)
+        }
+
+        fn match_convention(&self, _convention_name: &str) -> Box<dyn PrototypeModel> {
+            Box::new(MockPrototypeModel)
+        }
+
+        fn find_best_calling_convention(
+            &self,
+            _params: &[&dyn Parameter],
+        ) -> Box<dyn PrototypeModel> {
+            Box::new(MockPrototypeModel)
+        }
+
+        fn has_property(&self, _key: &str) -> bool {
+            false
+        }
+
+        fn does_c_data_type_conversions(&self) -> bool {
+            true
+        }
+
+        fn get_property_as_int(&self, _key: &str, default_int: i32) -> i32 {
+            default_int
+        }
+
+        fn get_property_as_boolean(&self, _key: &str, default_boolean: bool) -> bool {
+            default_boolean
+        }
+
+        fn get_property_or(&self, _key: &str, default_string: &str) -> String {
+            default_string.to_string()
+        }
+
+        fn get_property(&self, _key: &str) -> Option<String> {
+            None
+        }
+
+        fn get_property_keys(&self) -> HashSet<String> {
+            HashSet::new()
+        }
+
+        fn encode(&self, _encoder: &mut dyn Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+
+        fn is_equivalent(&self, other: &dyn CompilerSpec) -> bool {
+            self.get_compiler_spec_id() == other.get_compiler_spec_id()
         }
     }
 

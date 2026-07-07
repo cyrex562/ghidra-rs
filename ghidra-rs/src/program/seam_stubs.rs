@@ -279,17 +279,21 @@ pub trait Language {
     fn get_language_id(&self) -> LanguageID;
 }
 
-/// Placeholder for `ghidra.program.model.lang.CompilerSpec`, referenced by
-/// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)
-/// before the real interface is ported. Only the accessor needed by
-/// `ProgramArchitecture::get_language_compiler_spec_pair`'s default implementation is provided.
-pub trait CompilerSpec {
-    /// Stands in for `CompilerSpec.getCompilerSpecID()`.
-    fn get_compiler_spec_id(&self) -> CompilerSpecID;
-}
+/// Placeholder for `ghidra.program.model.lang.CompilerSpecDescription`, referenced by
+/// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
+/// before the real interface is ported. `CompilerSpec` only ever returns this type opaquely, so
+/// no members are needed yet.
+pub trait CompilerSpecDescription {}
+
+/// Placeholder for `ghidra.program.model.lang.PcodeInjectLibrary`, referenced by
+/// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
+/// before the real class is ported. `CompilerSpec` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait PcodeInjectLibrary {}
 
 /// Placeholder for `ghidra.program.model.lang.CompilerSpecID`, referenced by
-/// [`CompilerSpec`] and [`LanguageCompilerSpecPair`], before the real class is ported.
+/// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec) and
+/// [`LanguageCompilerSpecPair`], before the real class is ported.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CompilerSpecID(String);
 
