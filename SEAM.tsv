@@ -97,7 +97,7 @@ DONE	interface	586	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 TODO	interface	541	39	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Language.java
 DONE	interface	476	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/TPI.java
 TODO	interface	469	235	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/StructConverter.java
-TODO	interface	462	10	docking	Ghidra/Framework/Docking/src/main/java/docking/action/DockingActionIf.java
+DONE	interface	462	10	docking	Ghidra/Framework/Docking/src/main/java/docking/action/DockingActionIf.java
 DONE	interface	436	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProvider.java
 TODO	interface	422	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/MemoryBlock.java
 TODO	interface	418	59	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/Memory.java
