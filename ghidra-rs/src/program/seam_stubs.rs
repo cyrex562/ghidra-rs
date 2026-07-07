@@ -26,6 +26,12 @@ pub trait DataTypeManagerOwner {
 /// before the real class is ported.
 pub trait VariableStorage {}
 
+/// Placeholder for `ghidra.program.model.data.StandAloneDataTypeManager`, referenced by
+/// [`DataTypeArchive`](crate::program::model::listing::data_type_archive::DataTypeArchive)
+/// before the real class is ported. `DataTypeArchive` only ever returns this type opaquely, so
+/// no members are needed yet.
+pub trait StandAloneDataTypeManager {}
+
 /// Placeholder for `ghidra.program.model.data.PointerTypedefBuilder`, referenced by
 /// [`Pointer`](crate::program::model::data::pointer::Pointer)
 /// before the real class is ported.

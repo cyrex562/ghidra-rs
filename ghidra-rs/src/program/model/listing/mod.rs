@@ -15,6 +15,7 @@ pub mod context_change_exception;
 pub mod data;
 pub mod data_buffer;
 pub mod data_iterator;
+pub mod data_type_archive;
 pub mod data_type_archive_change_set;
 pub mod data_type_change_set;
 pub mod domain_object_change_set;
@@ -70,6 +71,10 @@ pub use context_change_exception::ContextChangeException;
 pub use data::Data;
 pub use data_buffer::DataBuffer;
 pub use data_iterator::{DataIterator, EmptyDataIterator, ListDataIterator};
+pub use data_type_archive::{
+    DataTypeArchive, CREATED_WITH_GHIDRA_VERSION, DATA_TYPE_ARCHIVE_INFO,
+    DATA_TYPE_ARCHIVE_SETTINGS, DATE_CREATED, JANUARY_1_1970,
+};
 pub use data_type_archive_change_set::DataTypeArchiveChangeSet;
 pub use data_type_change_set::DataTypeChangeSet;
 pub use domain_object_change_set::DomainObjectChangeSet;
