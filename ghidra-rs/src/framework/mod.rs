@@ -22,7 +22,7 @@ pub mod store;
 pub mod version;
 
 pub use cmd::Command;
-pub use data::{CheckinHandler, OpenMode};
+pub use data::{CheckinHandler, DomainObjectFileListener, OpenMode};
 pub use log4j_error_logger::Log4jErrorLogger;
 pub use os::OperatingSystem;
 pub use pluggable_service_registry_exception::PluggableServiceRegistryException;

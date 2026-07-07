@@ -85,9 +85,10 @@ mod tests {
     use std::collections::HashMap;
     use std::path::Path;
 
+    use crate::framework::data::DomainObjectFileListener;
     use crate::framework::model::{SaveError, DomainObjectConsumer, DomainFile};
     use crate::framework::seam_stubs::{
-        DomainObjectFileListener, DomainObjectListener, Options, TransactionListener,
+        DomainObjectListener, Options, TransactionListener,
     };
     use crate::framework::model::event_queue_id::EventQueueID;
     use crate::program::seam_stubs::Transaction;
