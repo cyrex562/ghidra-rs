@@ -216,7 +216,7 @@ mod tests {
 
         fn remove_operand_reference(&mut self, _index: i32, _ref_addr: &Address) {}
 
-        fn get_external_reference(&self, _index: i32) -> Option<Arc<dyn crate::program::seam_stubs::ExternalReference>> {
+        fn get_external_reference(&self, _index: i32) -> Option<Arc<dyn crate::program::model::symbol::ExternalReference>> {
             None
         }
 

@@ -191,9 +191,10 @@ mod tests {
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::scalar::Scalar;
     use crate::program::model::symbol::{
-        RefType as SymRefType, Reference as SymReference, ReferenceIterator, SourceType, Symbol,
+        ExternalReference, RefType as SymRefType, Reference as SymReference, ReferenceIterator,
+        SourceType, Symbol,
     };
-    use crate::program::seam_stubs::{CommentType, ExternalReference, MemBuffer, PropertySet};
+    use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet};
     use std::sync::Arc;
 
     struct MockDataType;

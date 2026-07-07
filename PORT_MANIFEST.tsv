@@ -14369,7 +14369,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sy
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalLocationIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalPath.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalReference.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalReference.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/FlowType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/IdentityNameTransformer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/IllegalCharCppTransformer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 

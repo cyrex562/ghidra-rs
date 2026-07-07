@@ -70,8 +70,8 @@ mod tests {
     use crate::program::model::listing::CodeUnit;
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::scalar::Scalar;
-    use crate::program::model::symbol::{RefType, Reference, ReferenceIterator, SourceType, Symbol};
-    use crate::program::seam_stubs::{CommentType, ExternalReference, MemBuffer, PropertySet};
+    use crate::program::model::symbol::{ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol};
+    use crate::program::seam_stubs::{CommentType, MemBuffer, PropertySet};
     use crate::program::model::lang::register::Register;
     use crate::program::model::listing::program::Program;
     use std::sync::Arc;

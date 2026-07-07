@@ -101,8 +101,9 @@ mod tests {
         Symbol as SymSymbol,
     };
     use crate::docking::settings::settings::Settings;
+    use crate::program::model::symbol::ExternalReference;
     use crate::program::seam_stubs::{
-        CommentType, DomainFile, ExternalReference, MemBuffer, PropertySet, RefType, Reference,
+        CommentType, DomainFile, MemBuffer, PropertySet, RefType, Reference,
     };
     use std::any::TypeId;
 
