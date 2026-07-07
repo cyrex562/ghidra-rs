@@ -10739,7 +10739,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/NumberSe
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/Settings.java	DONE	orig_src Ghidra Framework Docking src main java ghidra docking settings
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/SettingsDefinition.java	DONE	orig_src Ghidra Framework Docking src main java ghidra docking settings
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/SettingsImpl.java	TODO	orig_src Ghidra Framework Docking src main java ghidra docking settings 
-orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/StringSettingsDefinition.java	TODO	orig_src Ghidra Framework Docking src main java ghidra docking settings 
+orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/settings/StringSettingsDefinition.java	DONE	orig_src Ghidra Framework Docking src main java ghidra docking settings 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/util/ComponentInfoDialog.java	TODO	orig_src Ghidra Framework Docking src main java ghidra docking util 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/docking/util/LookAndFeelUtils.java	TODO	orig_src Ghidra Framework Docking src main java ghidra docking util 
 orig_src/Ghidra/Framework/Docking/src/main/java/ghidra/util/table/column/AbstractGColumnRenderer.java	TODO	orig_src Ghidra Framework Docking src main java ghidra util table column 
