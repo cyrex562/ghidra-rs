@@ -4,7 +4,6 @@ ts	stub_class	referenced_by
 2026-07-03T00:00:00+00:00	DomainFile	ProjectArchiveBasedDataTypeManager
 2026-07-04T00:20:00+00:00	Settings	Enum
 2026-07-04T00:25:00+00:00	PointerTypedefBuilder	Pointer
-2026-07-05T00:13:20+00:00	SettingsDefinition	TypeDefSettingsDefinition
 2026-07-04T00:30:00Z	MemBuffer	DataTypeWithCharset
 2026-07-04T00:30:00Z	StringDataInstance	DataTypeWithCharset
 2026-07-05T11:59:50Z	RefType	Data

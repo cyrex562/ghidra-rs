@@ -39,32 +39,6 @@ pub trait VariableStorage {}
 /// before the real interface is ported.
 pub trait Settings {}
 
-/// Placeholder for `ghidra.docking.settings.SettingsDefinition`, referenced by
-/// [`TypeDefSettingsDefinition`](crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition)
-/// and [`TypeDef`](crate::program::model::data::typedef::TypeDef) before the real interface is
-/// ported.
-pub trait SettingsDefinition {
-    /// Stands in for `getClass().equals(other.getClass())`, used by
-    /// [`TypeDef::has_same_type_def_settings`](crate::program::model::data::typedef::TypeDef::has_same_type_def_settings)
-    /// to confirm two settings-definition arrays declare definitions of the same kind in the
-    /// same order.
-    fn is_same_kind(&self, other: &dyn SettingsDefinition) -> bool {
-        let _ = other;
-        false
-    }
-    /// Stands in for `instanceof TypeDefSettingsDefinition`.
-    fn is_type_def_settings_definition(&self) -> bool {
-        false
-    }
-    /// Determine if this and another settings definition, when read from the given settings
-    /// objects, currently hold the same value. Real abstract method on
-    /// `ghidra.docking.settings.SettingsDefinition`.
-    fn has_same_value(&self, settings1: &dyn Settings, settings2: &dyn Settings) -> bool {
-        let (_, _) = (settings1, settings2);
-        false
-    }
-}
-
 /// Placeholder for `ghidra.program.model.data.PointerTypedefBuilder`, referenced by
 /// [`Pointer`](crate::program::model::data::pointer::Pointer)
 /// before the real class is ported.
