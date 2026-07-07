@@ -34,4 +34,7 @@ pub use graph_path::GraphPath;
 pub use graph_path_set::GraphPathSet;
 pub use job::{AbstractAnimator, Animator, AnimatorBehavior, TimingTarget};
 pub use viewer::{PathHighlightListener, VisualGraphContextMarker};
-pub use visualization::{GhidraGraphCollapser, GraphSelectionView, GroupVertex, GroupableVertex};
+pub use visualization::{
+    Dimension, GhidraGraphCollapser, GraphSelectionView, GroupVertex, GroupableVertex,
+    JgtTidierTreeLayoutAlgorithm,
+};
