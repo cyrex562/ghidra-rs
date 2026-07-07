@@ -100,9 +100,9 @@ mod tests {
         RefType as SymRefType, Reference as SymReference, ReferenceIterator, SourceType,
         Symbol as SymSymbol,
     };
+    use crate::docking::settings::settings::Settings;
     use crate::program::seam_stubs::{
         CommentType, DomainFile, ExternalReference, MemBuffer, PropertySet, RefType, Reference,
-        Settings,
     };
     use std::any::TypeId;
 

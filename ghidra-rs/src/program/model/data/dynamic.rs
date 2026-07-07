@@ -39,7 +39,7 @@ pub trait Dynamic: BuiltInDataType {
 mod tests {
     use super::*;
     use crate::program::model::data::data_organization::DataOrganization;
-    use crate::program::seam_stubs::Settings;
+    use crate::docking::settings::settings::Settings;
 
     struct MockMemBuffer;
     impl MemBuffer for MockMemBuffer {}

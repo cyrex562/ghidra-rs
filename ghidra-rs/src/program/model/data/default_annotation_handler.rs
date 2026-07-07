@@ -163,7 +163,7 @@ mod tests {
         fn get_enum_representation(
             &self,
             big_int: i128,
-            _settings: &dyn crate::program::seam_stubs::Settings,
+            _settings: &dyn crate::docking::settings::settings::Settings,
             _bit_length: i32,
         ) -> String {
             big_int.to_string()

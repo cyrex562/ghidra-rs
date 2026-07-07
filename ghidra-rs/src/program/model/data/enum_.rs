@@ -1,7 +1,7 @@
 use crate::program::database::data::EnumSignedState;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::seam_stubs::Settings;
+use crate::docking::settings::settings::Settings;
 
 /// An enumerated data type: a fixed set of name/value pairs (each with an optional
 /// per-entry comment) sharing a signed/unsigned/none state.

@@ -1,5 +1,5 @@
 use crate::program::model::data::data_type::DataType;
-use crate::program::seam_stubs::Settings;
+use crate::docking::settings::settings::Settings;
 
 /// Port of `ghidra.program.model.data.DataTypeComponent.DEFAULT_FIELD_NAME_PREFIX`.
 pub const DEFAULT_FIELD_NAME_PREFIX: &str = "field";

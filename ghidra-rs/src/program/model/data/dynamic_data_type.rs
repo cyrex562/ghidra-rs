@@ -156,7 +156,7 @@ mod tests {
     use super::*;
     use crate::program::model::data::built_in_data_type::BuiltInDataType;
     use crate::program::model::data::data_organization::DataOrganization;
-    use crate::program::seam_stubs::Settings;
+    use crate::docking::settings::settings::Settings;
 
     struct MockMemBuffer;
     impl MemBuffer for MockMemBuffer {}
