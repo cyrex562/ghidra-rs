@@ -18,11 +18,6 @@ pub trait DataTypeManagerOwner {
     fn get_data_type_manager(&self) -> Box<dyn DataTypeManager>;
 }
 
-/// Placeholder for `ghidra.framework.model.DomainFile`, referenced by
-/// [`DomainFileBasedDataTypeManager`](crate::program::model::data::domain_file_based_data_type_manager::DomainFileBasedDataTypeManager)
-/// before the real interface is ported.
-pub trait DomainFile {}
-
 /// Placeholder for `ghidra.program.model.listing.VariableStorage`, referenced by
 /// [`Variable`](crate::program::model::listing::variable::Variable)
 /// before the real class is ported.

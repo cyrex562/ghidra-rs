@@ -8,9 +8,9 @@ pub trait ProjectArchiveBasedDataTypeManager: DomainFileBasedDataTypeManager {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::DomainFile;
     use crate::program::model::data::file_based_data_type_manager::FileBasedDataTypeManager;
     use crate::program::model::data::data_type_manager::DataTypeManager;
-    use crate::program::seam_stubs::DomainFile;
 
     struct MockDomainFile;
 
