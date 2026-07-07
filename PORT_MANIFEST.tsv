@@ -5403,7 +5403,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/CodeUnitTabl
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/EOLCommentTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionBodySizeTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionCallingConventionTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionInlineSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionInlineSettingsDefinition.java	DONE	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionLocalStackSizeColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionNameTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/FunctionNoReturnSettingsDefinition.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
