@@ -4,7 +4,9 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
+use std::fmt;
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
 
@@ -131,11 +133,6 @@ pub trait GenericCallingConvention {}
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
 /// before the real class is ported.
 pub trait PrototypeModel {}
-
-/// Placeholder for `ghidra.program.model.lang.ProgramArchitecture`, referenced by
-/// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
-/// before the real class is ported.
-pub trait ProgramArchitecture {}
 
 /// Placeholder for `ghidra.program.database.map.AddressMap`, referenced by
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
@@ -266,4 +263,77 @@ pub trait CommentHistory {}
 /// before the real class is ported. `Listing` only ever returns this type, so no members are
 /// needed yet.
 pub trait CodeUnitComments {}
+
+/// Placeholder for `ghidra.program.model.lang.Language`, referenced by
+/// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)
+/// before the real interface is ported. Only the accessor needed by
+/// `ProgramArchitecture::get_language_compiler_spec_pair`'s default implementation is provided.
+pub trait Language {
+    /// Stands in for `Language.getLanguageID()`.
+    fn get_language_id(&self) -> LanguageID;
+}
+
+/// Placeholder for `ghidra.program.model.lang.CompilerSpec`, referenced by
+/// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)
+/// before the real interface is ported. Only the accessor needed by
+/// `ProgramArchitecture::get_language_compiler_spec_pair`'s default implementation is provided.
+pub trait CompilerSpec {
+    /// Stands in for `CompilerSpec.getCompilerSpecID()`.
+    fn get_compiler_spec_id(&self) -> CompilerSpecID;
+}
+
+/// Placeholder for `ghidra.program.model.lang.CompilerSpecID`, referenced by
+/// [`CompilerSpec`] and [`LanguageCompilerSpecPair`], before the real class is ported.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CompilerSpecID(String);
+
+impl CompilerSpecID {
+    /// Stands in for `CompilerSpecID.DEFAULT_ID`.
+    pub const DEFAULT_ID: &'static str = "default";
+
+    /// Creates a new compiler spec ID, defaulting to [`Self::DEFAULT_ID`] when `id` is `None`.
+    pub fn new(id: Option<&str>) -> Self {
+        CompilerSpecID(id.unwrap_or(Self::DEFAULT_ID).to_string())
+    }
+
+    /// Returns the compiler spec ID as a string.
+    pub fn get_id_as_string(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for CompilerSpecID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecPair`, referenced by
+/// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)'s
+/// `get_language_compiler_spec_pair` default method, before the real class is ported.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LanguageCompilerSpecPair {
+    language_id: LanguageID,
+    compiler_spec_id: CompilerSpecID,
+}
+
+impl LanguageCompilerSpecPair {
+    /// Creates a new language and compiler pair.
+    pub fn new(language_id: LanguageID, compiler_spec_id: CompilerSpecID) -> Self {
+        LanguageCompilerSpecPair {
+            language_id,
+            compiler_spec_id,
+        }
+    }
+
+    /// Get the language ID.
+    pub fn get_language_id(&self) -> &LanguageID {
+        &self.language_id
+    }
+
+    /// Get the compiler spec ID.
+    pub fn get_compiler_spec_id(&self) -> &CompilerSpecID {
+        &self.compiler_spec_id
+    }
+}
 

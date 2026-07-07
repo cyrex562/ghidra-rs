@@ -16,9 +16,9 @@ use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::data::structure::Structure;
+use crate::program::model::lang::ProgramArchitecture;
 use crate::program::seam_stubs::{
-    AddressMap, DataTypePath, PointerTypedefBuilder, ProgramArchitecture, PrototypeModel,
-    Transaction,
+    AddressMap, DataTypePath, PointerTypedefBuilder, PrototypeModel, Transaction,
 };
 use crate::util::exception::{CancelledException, InvalidNameException};
 use crate::util::function::{ExceptionalCallback, ExceptionalSupplier};
