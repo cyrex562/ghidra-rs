@@ -1,6 +1,7 @@
 //! Iterator for external locations.
 //!
-//! Port of `ghidra.program.model.symbol.ExternalLocationIterator`.
+//! Port of `ghidra.program.model.symbol.ExternalLocationIterator` and
+//! `ghidra.program.model.symbol.ExternalLocationAdapter`.
 
 use crate::program::model::symbol::ExternalLocation;
 use std::sync::Arc;
@@ -59,9 +60,46 @@ impl ExternalLocationIterator for ExternalLocationIteratorAdapter {
     }
 }
 
+/// Adapter that wraps any iterator of external locations.
+///
+/// This is the Rust equivalent of Java's `ExternalLocationAdapter`, providing
+/// a convenient way to wrap a boxed iterator to implement the `ExternalLocationIterator` trait.
+pub struct ExternalLocationAdapter {
+    iter: Box<dyn Iterator<Item = Arc<dyn ExternalLocation>>>,
+    current: Option<Arc<dyn ExternalLocation>>,
+}
+
+impl ExternalLocationAdapter {
+    /// Creates an adapter from a boxed iterator of external locations.
+    ///
+    /// # Arguments
+    ///
+    /// * `iter` - A boxed iterator that yields external locations
+    pub fn new(mut iter: Box<dyn Iterator<Item = Arc<dyn ExternalLocation>>>) -> Self {
+        let current = iter.next();
+        Self { iter, current }
+    }
+}
+
+impl ExternalLocationIterator for ExternalLocationAdapter {
+    fn has_next(&self) -> bool {
+        self.current.is_some()
+    }
+
+    fn next_external_location(&mut self) -> Option<Arc<dyn ExternalLocation>> {
+        let result = self.current.take();
+        self.current = self.iter.next();
+        result
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct MockExternalLocation;
+
+    impl ExternalLocation for MockExternalLocation {}
 
     #[test]
     fn empty_iterator_has_no_locations() {
@@ -72,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn adapter_iterates_locations_and_then_returns_none() {
+    fn vector_adapter_iterates_locations_and_then_returns_none() {
         let locations: Vec<Arc<dyn ExternalLocation>> = vec![
             Arc::new(MockExternalLocation),
             Arc::new(MockExternalLocation),
@@ -87,7 +125,35 @@ mod tests {
         assert!(iterator.next_external_location().is_none());
     }
 
-    struct MockExternalLocation;
+    #[test]
+    fn boxed_adapter_iterates_from_boxed_iterator() {
+        let locations: Vec<Arc<dyn ExternalLocation>> = vec![
+            Arc::new(MockExternalLocation),
+            Arc::new(MockExternalLocation),
+            Arc::new(MockExternalLocation),
+        ];
+        let boxed_iter: Box<dyn Iterator<Item = Arc<dyn ExternalLocation>>> =
+            Box::new(locations.into_iter());
+        let mut adapter = ExternalLocationAdapter::new(boxed_iter);
 
-    impl ExternalLocation for MockExternalLocation {}
+        assert!(adapter.has_next());
+        assert!(adapter.next_external_location().is_some());
+        assert!(adapter.has_next());
+        assert!(adapter.next_external_location().is_some());
+        assert!(adapter.has_next());
+        assert!(adapter.next_external_location().is_some());
+        assert!(!adapter.has_next());
+        assert!(adapter.next_external_location().is_none());
+    }
+
+    #[test]
+    fn boxed_adapter_with_empty_iterator_returns_none() {
+        let locations: Vec<Arc<dyn ExternalLocation>> = vec![];
+        let boxed_iter: Box<dyn Iterator<Item = Arc<dyn ExternalLocation>>> =
+            Box::new(locations.into_iter());
+        let mut adapter = ExternalLocationAdapter::new(boxed_iter);
+
+        assert!(!adapter.has_next());
+        assert!(adapter.next_external_location().is_none());
+    }
 }
