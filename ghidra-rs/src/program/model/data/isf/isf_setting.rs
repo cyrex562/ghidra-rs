@@ -15,6 +15,7 @@ pub enum IsfSettingValue {
 /// Mirrors `IsfSetting` from Ghidra's `Debugger-isf` module. The `kind` field
 /// is `"string"` when the supplied value is textual, or `"long"` when it is
 /// numeric, matching the Java `instanceof String` check.
+#[derive(Debug, Clone)]
 pub struct IsfSetting {
     pub name: String,
     pub kind: String,
