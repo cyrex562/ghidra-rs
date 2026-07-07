@@ -11,9 +11,8 @@ use crate::framework::model::domain_file::DomainFile;
 use crate::framework::model::domain_object_closed_listener::DomainObjectClosedListener;
 use crate::framework::model::event_queue_id::EventQueueID;
 use crate::framework::model::transaction_info::TransactionInfo;
-use crate::framework::seam_stubs::{
-    DomainObjectListener, Options, TransactionListener,
-};
+use crate::framework::options::Options;
+use crate::framework::seam_stubs::{DomainObjectListener, TransactionListener};
 use crate::framework::store::LockException;
 use crate::program::seam_stubs::Transaction;
 use crate::util::exception::CancelledException;

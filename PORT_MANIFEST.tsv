@@ -12293,7 +12293,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/FileOptions
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/NoRegisteredEditorPropertyEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/Option.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/OptionType.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/Options.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/Options.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/OptionsChangeListener.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/OptionsEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/PreferenceState.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 

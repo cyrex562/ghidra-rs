@@ -9,11 +9,6 @@
 /// `domainObjectChanged` on it, so no members are needed yet.
 pub trait DomainObjectListener {}
 
-/// Placeholder for `ghidra.framework.options.Options`, referenced by
-/// [`DomainObject`](crate::framework::model::DomainObject) before the real interface is ported.
-/// `DomainObject` only ever returns this type, so no members are needed yet.
-pub trait Options {}
-
 /// Placeholder for `ghidra.framework.model.TransactionListener`, referenced by
 /// [`DomainObject`](crate::framework::model::DomainObject) before the real interface is ported.
 /// `DomainObject` only ever registers/unregisters this listener, so no members are needed yet.
@@ -44,3 +39,48 @@ pub trait ItemCheckoutStatus {}
 /// [`DomainFile`](crate::framework::model::DomainFile) before the real interface is ported.
 /// `DomainFile` only ever returns this type, so no members are needed yet.
 pub trait LinkFileInfo {}
+
+/// Placeholder for `ghidra.framework.options.OptionType`, referenced by
+/// [`Options`](crate::framework::options::Options) before the real (Java `enum`) type is ported.
+/// `Options` only ever passes this type through as an opaque value, so no members are needed yet.
+pub trait OptionType {}
+
+/// Placeholder for `java.beans.PropertyEditor`, referenced by
+/// [`Options`](crate::framework::options::Options) before a Rust equivalent exists. `Options`
+/// only ever passes this type through as an opaque value, so no members are needed yet.
+pub trait PropertyEditor {}
+
+/// Placeholder for `ghidra.framework.options.OptionsEditor`, referenced by
+/// [`Options`](crate::framework::options::Options) before the real interface is ported. `Options`
+/// only ever passes this type through as an opaque value, so no members are needed yet.
+pub trait OptionsEditor {}
+
+/// Placeholder for `ghidra.util.HelpLocation`, referenced by
+/// [`Options`](crate::framework::options::Options) before the real class is ported. `Options`
+/// only ever passes this type through as an opaque value, so no members are needed yet.
+pub trait HelpLocation {}
+
+/// Placeholder for `ghidra.framework.options.CustomOption`, referenced by
+/// [`Options`](crate::framework::options::Options) before the real interface is ported. `Options`
+/// only ever passes this type through as an opaque value, so no members are needed yet.
+pub trait CustomOption {}
+
+/// Placeholder for `ghidra.framework.options.ActionTrigger`, referenced by
+/// [`Options`](crate::framework::options::Options) before the real class is ported. `Options`
+/// only ever passes this type through as an opaque value, so no members are needed yet.
+pub trait ActionTrigger {}
+
+/// Placeholder for `java.awt.Color`, referenced by [`Options`](crate::framework::options::Options)
+/// before a Rust equivalent exists. `Options` only ever passes this type through as an opaque
+/// value, so no members are needed yet.
+pub trait Color {}
+
+/// Placeholder for `java.awt.Font`, referenced by [`Options`](crate::framework::options::Options)
+/// before a Rust equivalent exists. `Options` only ever passes this type through as an opaque
+/// value, so no members are needed yet.
+pub trait Font {}
+
+/// Placeholder for `javax.swing.KeyStroke`, referenced by
+/// [`Options`](crate::framework::options::Options) before a Rust equivalent exists. `Options`
+/// only ever passes this type through as an opaque value, so no members are needed yet.
+pub trait KeyStroke {}

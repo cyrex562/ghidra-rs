@@ -31,7 +31,6 @@ ts	stub_class	referenced_by
 2026-07-06T04:00:00Z	DomainObjectListener	DomainObject
 2026-07-06T04:00:00Z	DomainObjectClosedListener	DomainObject
 2026-07-06T04:00:00Z	DomainObjectFileListener	DomainObject
-2026-07-06T04:00:00Z	Options	DomainObject
 2026-07-06T04:00:00Z	TransactionListener	DomainObject
 2026-07-06T05:00:00Z	DomainFolder	DomainFile
 2026-07-06T05:00:00Z	ProjectLocator	DomainFile
@@ -53,3 +52,12 @@ ts	stub_class	referenced_by
 2026-07-07T00:00:00Z	Encoder	InjectPayload
 2026-07-07T00:00:00Z	CompilerSpecDescription	CompilerSpec
 2026-07-07T00:00:00Z	PcodeInjectLibrary	CompilerSpec
+2026-07-07T01:00:00Z	OptionType	Options
+2026-07-07T01:00:00Z	PropertyEditor	Options
+2026-07-07T01:00:00Z	OptionsEditor	Options
+2026-07-07T01:00:00Z	HelpLocation	Options
+2026-07-07T01:00:00Z	CustomOption	Options
+2026-07-07T01:00:00Z	ActionTrigger	Options
+2026-07-07T01:00:00Z	Color	Options
+2026-07-07T01:00:00Z	Font	Options
+2026-07-07T01:00:00Z	KeyStroke	Options
