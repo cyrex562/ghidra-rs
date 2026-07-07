@@ -11,6 +11,7 @@ pub mod isf_producer;
 pub mod abstract_isf_object;
 pub mod isf_enum;
 pub mod isf_function;
+pub mod isf_typedef_integral;
 
 pub use isf_object::IsfObject;
 pub use isf_data_type_null::IsfDataTypeNull;
@@ -25,3 +26,4 @@ pub use isf_producer::IsfProducer;
 pub use abstract_isf_object::AbstractIsfObject;
 pub use isf_enum::IsfEnum;
 pub use isf_function::IsfFunction;
+pub use isf_typedef_integral::IsfTypedefIntegral;
