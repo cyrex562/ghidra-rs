@@ -12493,7 +12493,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ContentHan
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/ConvertFileSystem.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DBContentHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DBWithUserDataContentHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DefaultCheckinHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DefaultCheckinHandler.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DefaultProjectData.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainFileIndex.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainFileProxy.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
