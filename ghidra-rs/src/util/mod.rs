@@ -67,6 +67,7 @@ pub mod stream_utils;
 pub mod markdown;
 pub mod monitored_input_stream;
 pub mod monitored_output_stream;
+pub mod domain_object_lock_hold;
 
 pub use address_range_comparators::AddressRangeComparators;
 pub use async_fence::AsyncFence;
@@ -125,3 +126,4 @@ pub use fixup::Fixup;
 pub use markdown::MarkdownToHtml;
 pub use monitored_input_stream::MonitoredInputStream;
 pub use monitored_output_stream::MonitoredOutputStream;
+pub use domain_object_lock_hold::DomainObjectLockHold;
