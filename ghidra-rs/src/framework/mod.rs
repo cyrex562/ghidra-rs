@@ -13,6 +13,7 @@ pub mod pluggable_service_registry_exception;
 pub mod project;
 pub mod protocol;
 pub mod remote;
+pub mod seam_stubs;
 pub mod service;
 pub mod shutdown_hook_registry;
 pub mod shutdown_priority;
