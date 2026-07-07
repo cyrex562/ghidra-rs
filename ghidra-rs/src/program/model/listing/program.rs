@@ -14,4 +14,11 @@ pub trait Program: DomainObject + Send + Sync {
     fn get_listing(&mut self) -> Option<&mut dyn Listing> {
         None
     }
+
+    /// Get the path to the program's executable file.
+    ///
+    /// Returns an empty string if the executable path is not set or unknown.
+    fn get_executable_path(&self) -> String {
+        String::new()
+    }
 }
