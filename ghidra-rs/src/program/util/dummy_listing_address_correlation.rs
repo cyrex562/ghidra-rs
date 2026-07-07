@@ -1,3 +1,4 @@
+use crate::framework::model::DomainObject;
 use crate::program::model::address::{Address, AddressSet, AddressSetView};
 use crate::program::model::listing::{Function, Program};
 use crate::util::datastruct::duo::Side;
@@ -13,13 +14,15 @@ pub struct DummyListingAddressCorrelation;
 
 struct DummyProgram;
 
+impl DomainObject for DummyProgram {}
+
 impl Program for DummyProgram {
-    fn get_name(&self) -> &str {
-        "dummy"
+    fn get_name(&self) -> String {
+        "dummy".to_string()
     }
 
-    fn get_language_id(&self) -> &str {
-        "unknown"
+    fn get_language_id(&self) -> String {
+        "unknown".to_string()
     }
 }
 
@@ -165,8 +168,8 @@ mod tests {
         let corr = DummyListingAddressCorrelation;
         let prog_left = corr.get_program(Side::Left);
         let prog_right = corr.get_program(Side::Right);
-        assert_eq!(prog_left.get_name(), "dummy");
-        assert_eq!(prog_right.get_name(), "dummy");
+        assert_eq!(prog_left.get_name(), "dummy".to_string());
+        assert_eq!(prog_right.get_name(), "dummy".to_string());
     }
 
     #[test]
