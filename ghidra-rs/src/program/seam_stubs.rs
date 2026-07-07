@@ -136,11 +136,6 @@ pub trait RefType {}
 /// before the real interface is ported.
 pub trait Reference {}
 
-/// Placeholder for `ghidra.program.model.listing.FunctionSignature`, referenced by
-/// [`FunctionDefinition`](crate::program::model::data::function_definition::FunctionDefinition)
-/// as a supertrait before the real interface is ported.
-pub trait FunctionSignature {}
-
 /// Placeholder for `ghidra.program.model.data.GenericCallingConvention`, referenced by
 /// [`FunctionDefinition`](crate::program::model::data::function_definition::FunctionDefinition)
 /// before the real enum is ported.

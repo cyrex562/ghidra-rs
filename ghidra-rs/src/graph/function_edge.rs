@@ -149,7 +149,7 @@ mod tests {
             Ok(())
         }
 
-        fn get_signature_formal(&self, _formal_signature: bool) -> Box<dyn crate::program::seam_stubs::FunctionSignature> {
+        fn get_signature_formal(&self, _formal_signature: bool) -> Box<dyn crate::program::model::listing::FunctionSignature> {
             unimplemented!()
         }
 

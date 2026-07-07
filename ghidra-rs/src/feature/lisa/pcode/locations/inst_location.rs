@@ -151,7 +151,7 @@ mod tests {
             false
         }
 
-        fn get_signature(&self) -> Arc<dyn crate::program::seam_stubs::FunctionSignature> {
+        fn get_signature(&self) -> Arc<dyn crate::program::model::listing::FunctionSignature> {
             unimplemented!()
         }
 

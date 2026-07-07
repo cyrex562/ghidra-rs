@@ -1,15 +1,15 @@
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::parameter_definition::ParameterDefinition;
+use crate::program::model::listing::FunctionSignature;
 use crate::program::model::symbol::source_type::SourceType;
-use crate::program::seam_stubs::{FunctionSignature, GenericCallingConvention};
+use crate::program::seam_stubs::GenericCallingConvention;
 use crate::util::exception::InvalidInputException;
 
 /// Defines a function signature for things like function pointers.
 ///
 /// Port of `ghidra.program.model.data.FunctionDefinition`.
 ///
-/// This trait was promoted from a minimal placeholder (see `seam_stubs.rs`) that carried no
-/// members; it is retained as `DataType + FunctionSignature` so existing callers (e.g.
+/// Extends `DataType + FunctionSignature` so existing callers (e.g.
 /// [`DataTypeManager::get_all_function_definitions`](crate::program::model::data::data_type_manager::DataTypeManager::get_all_function_definitions))
 /// keep compiling unchanged.
 pub trait FunctionDefinition: DataType + FunctionSignature {
@@ -85,7 +85,52 @@ mod tests {
 
     impl DataType for MockFunctionDefinition {}
 
-    impl FunctionSignature for MockFunctionDefinition {}
+    impl FunctionSignature for MockFunctionDefinition {
+        fn get_name(&self) -> String {
+            String::new()
+        }
+
+        fn get_prototype_string_with_calling_convention(
+            &self,
+            _include_calling_convention: bool,
+        ) -> String {
+            String::new()
+        }
+
+        fn get_arguments(&self) -> Vec<Box<dyn ParameterDefinition>> {
+            Vec::new()
+        }
+
+        fn get_return_type(&self) -> Box<dyn DataType> {
+            Box::new(MockFunctionDefinition)
+        }
+
+        fn get_comment(&self) -> Option<String> {
+            None
+        }
+
+        fn has_var_args(&self) -> bool {
+            false
+        }
+
+        fn has_no_return(&self) -> bool {
+            false
+        }
+
+        fn get_calling_convention(
+            &self,
+        ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+            None
+        }
+
+        fn get_calling_convention_name(&self) -> String {
+            String::new()
+        }
+
+        fn is_equivalent_signature(&self, _signature: &dyn FunctionSignature) -> bool {
+            false
+        }
+    }
 
     impl FunctionDefinition for MockFunctionDefinition {
         fn set_arguments(&mut self, _args: Vec<Box<dyn ParameterDefinition>>) {}
