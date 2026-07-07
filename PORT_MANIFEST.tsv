@@ -3606,7 +3606,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/CodeUnitInfoTransfer
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/ColorAndStyle.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/CommentTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/DataTypeNamingUtil.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/DomainObjectService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/DomainObjectService.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/EditFieldNameDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/EolComments.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/FunctionXrefsTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 

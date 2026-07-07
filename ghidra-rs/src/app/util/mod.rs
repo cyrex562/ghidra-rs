@@ -4,6 +4,7 @@ pub mod clipboard_type;
 pub mod comment_types;
 pub mod datatype;
 pub mod disassemble;
+pub mod domain_object_service;
 pub mod exporter;
 pub mod headless;
 pub mod html;
