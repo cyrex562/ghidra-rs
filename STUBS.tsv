@@ -43,3 +43,4 @@ ts	stub_class	referenced_by
 2026-07-06T06:00:00Z	Mask	InstructionPrototype
 2026-07-06T06:00:00Z	PcodeOverride	InstructionPrototype
 2026-07-06T06:00:00Z	PatchEncoder	InstructionPrototype
+2026-07-07T00:00:00Z	AbstractMsType	TPI

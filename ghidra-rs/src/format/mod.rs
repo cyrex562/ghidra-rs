@@ -13,6 +13,7 @@ pub mod pdb2;
 pub mod pe;
 pub mod pef;
 pub mod relocation_exception;
+pub mod seam_stubs;
 pub mod som;
 pub mod swift;
 pub mod ubi;
