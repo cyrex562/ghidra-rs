@@ -21,6 +21,7 @@ pub mod ref_type;
 pub mod ref_type_factory;
 pub mod reference;
 pub mod reference_iterator;
+pub mod reference_iterator_test_stub;
 pub mod reference_listener;
 pub mod shifted_reference;
 pub mod source_type;
@@ -57,6 +58,7 @@ pub use reference::{DynamicReference, Reference, MNEMONIC, OTHER};
 pub use reference_iterator::{
     EmptyReferenceIterator, ReferenceAdapter, ReferenceIterator, ReferenceIteratorAdapter,
 };
+pub use reference_iterator_test_stub::ReferenceIteratorTestStub;
 pub use reference_listener::ReferenceListener;
 pub use shifted_reference::ShiftedReference;
 pub use source_type::SourceType;
