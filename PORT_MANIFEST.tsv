@@ -2763,7 +2763,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/eclipse/Eclip
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/eclipse/EclipseConnectorTask.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core eclipse 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/eclipse/EclipseIntegrationOptionsPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core eclipse 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/eclipse/EclipseIntegrationPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core eclipse 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/entropy/EntropyCalculate.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core entropy 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/entropy/EntropyCalculate.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core entropy 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/AbstractConvertAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/ConvertCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/ConvertToBinaryAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 

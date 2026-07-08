@@ -12,6 +12,7 @@ pub mod debug;
 pub mod decompiler;
 pub mod diff;
 pub mod eclipse;
+pub mod entropy;
 pub mod format;
 pub mod function;
 pub mod functiongraph;
