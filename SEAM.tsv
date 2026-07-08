@@ -131,7 +131,7 @@ TODO	interface	284	10	framework	Ghidra/Framework/Project/src/main/java/ghidra/fr
 TODO	interface	280	6	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectData.java
 DONE	interface	272	1	framework	Ghidra/Framework/DB/src/main/java/db/RecordIterator.java
 DONE	interface	269	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginInfo.java
-TODO	interface	264	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolTemplate.java
+DONE	interface	264	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolTemplate.java
 TODO	interface	259	236	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeManagerService.java
 DONE	interface	258	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/EventType.java
 DONE	interface	255	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFileFilter.java
