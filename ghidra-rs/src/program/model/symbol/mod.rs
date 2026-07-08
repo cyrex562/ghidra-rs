@@ -129,4 +129,22 @@ pub trait SymbolTable: Send + Sync {
         let _ = (symbol_id, pinned);
         Ok(())
     }
+
+    /// Mark an address as an external entry point.
+    fn add_external_entry_point(&mut self, addr: &Address) -> io::Result<()> {
+        let _ = addr;
+        Ok(())
+    }
+
+    /// Remove an address from external entry points.
+    fn remove_external_entry_point(&mut self, addr: &Address) -> io::Result<()> {
+        let _ = addr;
+        Ok(())
+    }
+
+    /// Check if an address is marked as an external entry point.
+    fn is_external_entry_point(&self, addr: &Address) -> io::Result<bool> {
+        let _ = addr;
+        Ok(false)
+    }
 }
