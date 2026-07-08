@@ -9689,7 +9689,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/uti
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/util/VTMatchDestinationAddressToProgramLocationTableRowMapper.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/util/VTMatchSourceAddressToAddressTableRowMapper.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/util/VTMatchSourceAddressToProgramLocationTableRowMapper.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui util 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/util/VTOptionDefines.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui util 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/util/VTOptionDefines.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/util/VTSymbolRenderer.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/validator/MemoryBlocksValidator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui validator 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/gui/validator/NoReturnsFunctionsValidator.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt gui validator 
