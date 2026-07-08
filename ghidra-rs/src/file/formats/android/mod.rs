@@ -5,6 +5,7 @@ pub mod cdex;
 pub mod dex;
 pub mod fbpk;
 pub mod oat;
+pub mod odex;
 pub mod ota_update;
 pub mod util;
 pub mod vdex;
