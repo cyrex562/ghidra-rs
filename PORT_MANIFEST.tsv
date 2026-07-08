@@ -2181,7 +2181,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/SetExternalNameC
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/SetExternalRefCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/SetFallThroughCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd refs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/SetPrimaryRefCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd refs
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/UpdateExternalNameCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd refs 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/refs/UpdateExternalNameCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd refs
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/register/SetRegisterCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd register 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/DataLocationListContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/FunctionSupplierContext.java	DONE	orig_src Ghidra Features Base src main java ghidra app context 
