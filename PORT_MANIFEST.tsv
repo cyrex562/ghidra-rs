@@ -10057,7 +10057,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/ShowFocusCycleAct
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/ShowFocusInfoAction.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/SystemKeyBindingAction.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/ToggleDockingAction.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/ToggleDockingActionIf.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/ToggleDockingActionIf.java	DONE	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/ToolBarData.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/builder/AbstractActionBuilder.java	TODO	orig_src Ghidra Framework Docking src main java docking action builder 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/builder/ActionBuilder.java	TODO	orig_src Ghidra Framework Docking src main java docking action builder 
