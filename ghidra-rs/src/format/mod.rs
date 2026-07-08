@@ -18,4 +18,5 @@ pub mod som;
 pub mod swift;
 pub mod ubi;
 pub mod unixaout;
+pub mod writeable;
 pub mod xcoff;
