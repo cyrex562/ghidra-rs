@@ -193,7 +193,7 @@ mod tests {
 
         fn get_language_description(
             &self,
-        ) -> Box<dyn crate::program::seam_stubs::LanguageDescription> {
+        ) -> Box<dyn crate::program::model::lang::language_description::LanguageDescription> {
             unimplemented!("not exercised by this smoke test")
         }
 

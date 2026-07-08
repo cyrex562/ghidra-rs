@@ -1,6 +1,7 @@
 use crate::program::model::lang::language::Language;
+use crate::program::model::lang::language_description::LanguageDescription;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::seam_stubs::{LanguageDescription, LanguageNotFoundException};
+use crate::program::seam_stubs::LanguageNotFoundException;
 use crate::util::task::{DummyMonitor, TaskMonitor};
 
 /// NOTE: ALL LanguageProvider CLASSES MUST END IN "LanguageProvider". If not,
@@ -48,8 +49,91 @@ pub trait LanguageProvider {
 mod tests {
     use super::*;
 
+    struct MockProcessor;
+    impl crate::program::seam_stubs::Processor for MockProcessor {}
+
+    struct MockCompilerSpecDescription;
+    impl crate::program::model::lang::compiler_spec_description::CompilerSpecDescription for MockCompilerSpecDescription {
+        fn get_compiler_spec_id(&self) -> crate::program::seam_stubs::CompilerSpecID {
+            crate::program::seam_stubs::CompilerSpecID::new(Some("gcc"))
+        }
+
+        fn get_compiler_spec_name(&self) -> String {
+            "GCC".to_string()
+        }
+
+        fn get_source(&self) -> String {
+            "gcc.cspec".to_string()
+        }
+    }
+
     struct MockLanguageDescription;
-    impl LanguageDescription for MockLanguageDescription {}
+    impl LanguageDescription for MockLanguageDescription {
+        fn get_language_id(&self) -> LanguageID {
+            LanguageID::new("x86:LE:32:default").unwrap()
+        }
+
+        fn get_processor(&self) -> Box<dyn crate::program::seam_stubs::Processor> {
+            Box::new(MockProcessor)
+        }
+
+        fn get_endian(&self) -> crate::program::model::lang::endian::Endian {
+            crate::program::model::lang::endian::Endian::Little
+        }
+
+        fn get_instruction_endian(&self) -> crate::program::model::lang::endian::Endian {
+            crate::program::model::lang::endian::Endian::Little
+        }
+
+        fn get_size(&self) -> i32 {
+            32
+        }
+
+        fn get_variant(&self) -> String {
+            "default".to_string()
+        }
+
+        fn get_version(&self) -> i32 {
+            1
+        }
+
+        fn get_minor_version(&self) -> i32 {
+            0
+        }
+
+        fn get_description(&self) -> String {
+            "Mock x86 32-bit little endian".to_string()
+        }
+
+        fn is_deprecated(&self) -> bool {
+            false
+        }
+
+        fn get_compatible_compiler_spec_descriptions(
+            &self,
+        ) -> Vec<Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>> {
+            vec![Box::new(MockCompilerSpecDescription)]
+        }
+
+        fn get_compiler_spec_description_by_id(
+            &self,
+            compiler_spec_id: &crate::program::seam_stubs::CompilerSpecID,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>,
+            crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,
+        > {
+            Err(
+                crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException::new(
+                    &self.get_language_id(),
+                    compiler_spec_id,
+                ),
+            )
+        }
+
+        fn get_external_names(&self, _external_tool: &str) -> Option<Vec<String>> {
+            None
+        }
+    }
 
     struct MockLanguageProvider {
         loaded: bool,

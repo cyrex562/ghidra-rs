@@ -9,6 +9,7 @@ use crate::program::model::lang::compiler_spec_description::CompilerSpecDescript
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
 use crate::program::model::lang::insufficient_bytes_exception::InsufficientBytesException;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
+use crate::program::model::lang::language_description::LanguageDescription;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::processor_context::ProcessorContext;
 use crate::program::model::lang::register::RegisterRef;
@@ -16,8 +17,7 @@ use crate::program::model::lang::parallel_instruction_language_helper::ParallelI
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::seam_stubs::{
-    AddressLabelInfo, CompilerSpecID, LanguageDescription, MemBuffer, MemoryBlockDefinition,
-    Processor,
+    AddressLabelInfo, CompilerSpecID, MemBuffer, MemoryBlockDefinition, Processor,
 };
 use crate::util::task::TaskMonitor;
 
@@ -244,11 +244,66 @@ mod tests {
     use crate::program::seam_stubs::RegisterValue;
     use std::collections::HashSet;
 
-    struct MockLanguageDescription;
-    impl LanguageDescription for MockLanguageDescription {}
-
     struct MockProcessor;
     impl Processor for MockProcessor {}
+
+    struct MockLanguageDescription;
+    impl LanguageDescription for MockLanguageDescription {
+        fn get_language_id(&self) -> LanguageID {
+            LanguageID::new("x86:LE:32:default").unwrap()
+        }
+
+        fn get_processor(&self) -> Box<dyn Processor> {
+            Box::new(MockProcessor)
+        }
+
+        fn get_endian(&self) -> crate::program::model::lang::endian::Endian {
+            crate::program::model::lang::endian::Endian::Little
+        }
+
+        fn get_instruction_endian(&self) -> crate::program::model::lang::endian::Endian {
+            crate::program::model::lang::endian::Endian::Little
+        }
+
+        fn get_size(&self) -> i32 {
+            32
+        }
+
+        fn get_variant(&self) -> String {
+            "default".to_string()
+        }
+
+        fn get_version(&self) -> i32 {
+            1
+        }
+
+        fn get_minor_version(&self) -> i32 {
+            0
+        }
+
+        fn get_description(&self) -> String {
+            "Mock x86 32-bit little endian".to_string()
+        }
+
+        fn is_deprecated(&self) -> bool {
+            false
+        }
+
+        fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
+            vec![Box::new(MockCompilerSpecDescription)]
+        }
+
+        fn get_compiler_spec_description_by_id(
+            &self,
+            compiler_spec_id: &CompilerSpecID,
+        ) -> Result<Box<dyn CompilerSpecDescription>, CompilerSpecNotFoundException> {
+            Err(CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id))
+        }
+
+        fn get_external_names(&self, _external_tool: &str) -> Option<Vec<String>> {
+            None
+        }
+    }
 
     struct MockCompilerSpecDescription;
     impl CompilerSpecDescription for MockCompilerSpecDescription {
