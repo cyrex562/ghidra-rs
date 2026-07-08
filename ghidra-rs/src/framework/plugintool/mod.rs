@@ -1,5 +1,6 @@
 pub mod annotation;
 pub mod busy_tool_exception;
+pub mod plugin_info;
 pub mod service_interface_implementation_pair;
 pub mod service_provider;
 pub mod service_provider_decorator;
@@ -10,6 +11,7 @@ pub mod tool_event_name;
 pub mod util;
 
 pub use busy_tool_exception::BusyToolException;
+pub use plugin_info::PluginInfo;
 pub use service_interface_implementation_pair::ServiceInterfaceImplementationPair;
 pub use service_provider::ServiceProvider;
 pub use service_provider_decorator::ServiceProviderDecorator;
