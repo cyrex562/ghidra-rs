@@ -2082,7 +2082,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/disassemble/ReDisasse
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/disassemble/SetFlowOverrideCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd disassemble 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/disassemble/X86_64DisassembleCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd disassemble 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/equate/ClearEquateCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd equate 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/equate/SetEquateCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd equate 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/equate/SetEquateCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/formats/AppleSingleDoubleBinaryAnalysisCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd formats 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/formats/CoffArchiveBinaryAnalysisCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd formats 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/formats/CoffBinaryAnalysisCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd formats 
