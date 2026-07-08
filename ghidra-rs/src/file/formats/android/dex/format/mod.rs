@@ -3,6 +3,7 @@ pub mod debug_info_opcodes;
 pub(crate) mod debug_info_state_machine_reader;
 pub mod debug_state_machine_op_codes;
 pub mod dex_constants;
+pub mod dex_header_quick_methods;
 pub mod map_item_type;
 pub mod map_item_type_codes;
 pub mod method_handle_type;
