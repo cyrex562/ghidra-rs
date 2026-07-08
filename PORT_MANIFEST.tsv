@@ -14120,7 +14120,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/la
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/OperandType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParallelInstructionLanguageHelper.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamEntry.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamList.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamList.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamListRegisterOut.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamListStandard.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamListStandardOut.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
