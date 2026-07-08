@@ -7109,7 +7109,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/Bi
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/BinaryPropertyListConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/BinaryPropertyListHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/BinaryPropertyListTrailer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/BinaryPropertyListUtil.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/BinaryPropertyListUtil.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/ImmutableMemoryRangeByteProvider.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/NSArray.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/bplist/NSData.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats bplist 
