@@ -95,3 +95,4 @@ ts	stub_class	referenced_by
 2026-07-08T00:00:00Z	Task	TrackedTaskListener
 2026-07-08T00:00:00Z	DomainObjectChangedEvent	DomainObjectListener
 2026-07-08T19:15:00Z	Location	Issue
+2026-07-08T20:00:00Z	DomainFolderFilter	DomainFileFilter
