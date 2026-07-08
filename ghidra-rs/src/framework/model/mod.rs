@@ -1,5 +1,6 @@
 pub mod aborted_transaction_listener;
 pub mod change_set;
+pub mod default_launch_mode;
 pub mod domain_file;
 pub mod domain_folder;
 pub mod domain_object;
@@ -17,6 +18,7 @@ pub mod user_data;
 
 pub use aborted_transaction_listener::AbortedTransactionListener;
 pub use change_set::ChangeSet;
+pub use default_launch_mode::DefaultLaunchMode;
 pub use domain_file::DomainFile;
 pub use domain_folder::DomainFolder;
 pub use domain_object::{DomainObject, DomainObjectConsumer, SaveError};
