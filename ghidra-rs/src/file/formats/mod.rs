@@ -8,6 +8,7 @@ pub mod gzip;
 pub mod ios;
 pub mod java;
 pub mod lzss;
+pub mod sevenzip;
 pub mod sparseimage;
 pub mod squashfs;
 pub mod tar;
