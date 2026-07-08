@@ -95,7 +95,7 @@ DONE	interface	593	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	interface	587	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateReference.java
 DONE	interface	586	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/OffsetReference.java
 DONE	interface	541	39	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Language.java
-DONE	interface	476	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/TPI.java
+TODO	interface	476	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/TPI.java
 DONE	interface	469	235	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/StructConverter.java
 DONE	interface	462	10	docking	Ghidra/Framework/Docking/src/main/java/docking/action/DockingActionIf.java
 DONE	interface	436	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/ByteProvider.java
