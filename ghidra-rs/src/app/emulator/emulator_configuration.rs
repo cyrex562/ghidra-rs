@@ -201,7 +201,7 @@ mod tests {
 
         fn get_parallel_instruction_helper(
             &self,
-        ) -> Option<Box<dyn crate::program::seam_stubs::ParallelInstructionLanguageHelper>> {
+        ) -> Option<Box<dyn crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper>> {
             None
         }
 

@@ -12,11 +12,12 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::processor_context::ProcessorContext;
 use crate::program::model::lang::register::RegisterRef;
+use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::seam_stubs::{
     AddressLabelInfo, CompilerSpecID, LanguageDescription, MemBuffer, MemoryBlockDefinition,
-    ParallelInstructionLanguageHelper, Processor,
+    Processor,
 };
 use crate::util::task::TaskMonitor;
 
