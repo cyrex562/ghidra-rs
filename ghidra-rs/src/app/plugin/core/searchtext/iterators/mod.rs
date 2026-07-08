@@ -2,8 +2,10 @@ pub mod search_address_iterator;
 pub mod comment_search_address_iterator;
 pub mod function_search_address_iterator;
 pub mod instruction_search_address_iterator;
+pub mod label_search_address_iterator;
 
 pub use search_address_iterator::SearchAddressIterator;
 pub use comment_search_address_iterator::CommentSearchAddressIterator;
 pub use function_search_address_iterator::FunctionSearchAddressIterator;
 pub use instruction_search_address_iterator::InstructionSearchAddressIterator;
+pub use label_search_address_iterator::LabelSearchAddressIterator;
