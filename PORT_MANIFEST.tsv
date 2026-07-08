@@ -12314,7 +12314,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedKeyS
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedOption.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/test/ScriptTaskListener.java	TODO	orig_src Ghidra Framework Gui src main java ghidra test 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/ColorUtils.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/DynamicHelpLocation.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/DynamicHelpLocation.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/HTMLUtilities.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/HelpLocation.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/TaskUtilities.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
