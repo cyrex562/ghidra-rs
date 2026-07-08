@@ -9039,7 +9039,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/dd/ExtData.java	TODO	o
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/dd/SarifDataWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export dd 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ep/ExtEntryPoint.java	DONE	orig_src Ghidra Features Sarif src main java sarif export ep
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/ep/SarifEntryPointWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export ep 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/equates/ExtEquate.java	TODO	orig_src Ghidra Features Sarif src main java sarif export equates 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/equates/ExtEquate.java	DONE	orig_src Ghidra Features Sarif src main java sarif export equates
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/equates/SarifEquateWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export equates 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/extlib/ExtLibrary.java	DONE	orig_src Ghidra Features Sarif src main java sarif export extlib
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/extlib/ExtLibraryLocation.java	DONE	orig_src Ghidra Features Sarif src main java sarif export extlib
