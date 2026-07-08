@@ -4,5 +4,6 @@ pub mod go_constants;
 pub mod go_module_info;
 pub mod go_ver;
 pub mod go_ver_range;
+pub mod go_ver_set;
 pub mod rtti;
 pub mod structmapping;
