@@ -1,7 +1,7 @@
 use crate::framework::model::DomainObject;
 use crate::program::model::address::AddressFactory;
 use crate::program::model::listing::Listing;
-use crate::program::model::symbol::{EquateTable, ExternalManager, ReferenceManager};
+use crate::program::model::symbol::{EquateTable, ExternalManager, ReferenceManager, SymbolTable};
 use std::sync::Arc;
 
 /// Name of the properties list holding general program information.
@@ -28,6 +28,11 @@ pub trait Program: DomainObject + Send + Sync {
 
     /// Get the equate table for this program.
     fn get_equate_table(&mut self) -> Option<&mut dyn EquateTable> {
+        None
+    }
+
+    /// Get the symbol table for this program.
+    fn get_symbol_table(&mut self) -> Option<&mut dyn SymbolTable> {
         None
     }
 

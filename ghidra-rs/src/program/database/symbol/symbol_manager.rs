@@ -224,6 +224,23 @@ impl SymbolTable for SymbolManagerDB {
         }
         Ok(results)
     }
+
+    fn set_symbol_pinned(&mut self, symbol_id: i64, pinned: bool) -> io::Result<()> {
+        let handle = self.db_handle.read().unwrap();
+        if let Some(table) = handle.get_table(Self::SYMBOL_TABLE_NAME) {
+            if let Some(mut rec) = table.read().unwrap().get_record(&Field::Long(Some(symbol_id)))? {
+                let mut flags = rec.get_byte(Self::SYMBOL_FLAGS_COL).unwrap_or(0) as u8;
+                if pinned {
+                    flags |= Self::SYMBOL_PINNED_FLAG;
+                } else {
+                    flags &= !Self::SYMBOL_PINNED_FLAG;
+                }
+                rec.set_byte(Self::SYMBOL_FLAGS_COL, flags as i8);
+                table.write().unwrap().put_record(rec)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 impl ManagerDB for SymbolManagerDB {

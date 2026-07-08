@@ -117,4 +117,16 @@ pub trait SymbolTable: Send + Sync {
     fn get_symbol(&self, id: i64) -> io::Result<Option<Arc<dyn Symbol>>>;
 
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>>;
+
+    /// Get a global symbol by name and address.
+    fn get_global_symbol(&self, name: &str, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
+        let symbols = self.get_symbols(addr)?;
+        Ok(symbols.into_iter().find(|s| s.get_name() == name))
+    }
+
+    /// Set the pinned status of a symbol by its ID.
+    fn set_symbol_pinned(&mut self, symbol_id: i64, pinned: bool) -> io::Result<()> {
+        let _ = (symbol_id, pinned);
+        Ok(())
+    }
 }
