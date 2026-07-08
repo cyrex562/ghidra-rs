@@ -135,7 +135,7 @@ DONE	interface	264	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/fra
 TODO	interface	259	236	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeManagerService.java
 DONE	interface	258	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/EventType.java
 DONE	interface	255	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFileFilter.java
-TODO	interface	255	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectManager.java
+DONE	interface	255	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectManager.java
 TODO	interface	255	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolServices.java
 TODO	interface	254	53	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/LinkFileInfo.java
 DONE	interface	253	1	framework	Ghidra/Framework/DB/src/main/java/db/DBFieldIterator.java
