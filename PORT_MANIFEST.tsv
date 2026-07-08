@@ -4930,7 +4930,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/DataOpen
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/FieldNavigator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/InMemoryOpenCloseManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/OpenCloseManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/PersistentOpenCloseManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/PersistentOpenCloseManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/ProgramOpenCloseManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/ScrollpaneAlignedHorizontalLayout.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/util/ScrollpanelResizeablePanelLayout.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer util 
