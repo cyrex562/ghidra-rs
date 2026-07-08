@@ -9,6 +9,7 @@ pub mod bit_group;
 pub mod built_in_data_type;
 pub mod category;
 pub mod category_path;
+pub mod component_offset_settings_definition;
 pub mod composite;
 pub mod composite_internal;
 pub mod custom_format;
