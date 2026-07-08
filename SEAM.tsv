@@ -86,7 +86,7 @@ DONE	interface	1073	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	interface	1073	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DefaultProgramContext.java
 DONE	interface	790	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Symbol.java
 DONE	interface	660	5	docking	Ghidra/Framework/Docking/src/main/java/docking/ActionContext.java
-TODO	interface	642	102	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTable.java
+DONE	interface	642	102	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTable.java
 DONE	interface	614	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Equate.java
 DONE	interface	611	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceManager.java
 DONE	interface	605	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateTable.java

@@ -14392,7 +14392,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sy
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Symbol.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIterator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIteratorAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTable.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTableListener.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolUtilities.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model symbol 
