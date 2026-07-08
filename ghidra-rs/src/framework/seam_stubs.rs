@@ -112,3 +112,32 @@ pub trait DomainFolderFilter {
         true
     }
 }
+
+/// Placeholder for `docking.util.image.ToolIconURL`, referenced by
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real class is ported.
+/// `ToolTemplate` only ever returns this type, so no members are needed yet.
+pub trait ToolIconURL {}
+
+/// Placeholder for `javax.swing.ImageIcon`, referenced by
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) before a Rust equivalent exists.
+/// `ToolTemplate` only ever returns this type, so no members are needed yet.
+pub trait ImageIcon {}
+
+/// Placeholder for `org.jdom2.Element`, referenced by
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) before a Rust equivalent exists.
+/// Distinct from [`crate::util::xml::XmlElement`], which mirrors the unrelated
+/// `ghidra.xml.XmlElement` pull-parser interface; `org.jdom2.Element` is a DOM-style tree node.
+/// `ToolTemplate` only ever passes this type through as an opaque value, so no members are needed
+/// yet.
+pub trait JdomElement {}
+
+/// Placeholder for `ghidra.framework.plugintool.PluginTool`, referenced by
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real class is ported.
+/// `ToolTemplate` only ever returns this type, so no members are needed yet.
+pub trait PluginTool {}
+
+/// Placeholder for `ghidra.framework.model.Project`, referenced by
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real interface is ported.
+/// `ToolTemplate` only ever passes this type through as an opaque value, so no members are needed
+/// yet.
+pub trait Project {}
