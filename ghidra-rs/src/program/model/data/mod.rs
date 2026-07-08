@@ -51,6 +51,7 @@ pub mod leb128;
 pub mod mem_buffer_image_input_stream;
 pub mod mutability_settings_definition;
 pub mod offset_mask_settings_definition;
+pub mod offset_shift_settings_definition;
 pub mod packing_type;
 pub mod padding_settings_definition;
 pub mod parameter_definition;
