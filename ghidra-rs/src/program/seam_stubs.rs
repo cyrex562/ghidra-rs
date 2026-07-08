@@ -270,16 +270,11 @@ pub trait CommentHistory {}
 /// needed yet.
 pub trait CodeUnitComments {}
 
-/// Placeholder for `ghidra.program.model.lang.LanguageDescription`, referenced by
-/// [`Language`](crate::program::model::lang::language::Language)
-/// before the real interface is ported. `Language` only ever returns this type opaquely, so no
-/// members are needed yet.
-pub trait LanguageDescription {}
-
 /// Placeholder for `ghidra.program.model.lang.Processor`, referenced by
 /// [`Language`](crate::program::model::lang::language::Language) and
-/// [`LanguageDescription`] before the real class is ported. `Language` only ever returns this
-/// type opaquely, so no members are needed yet.
+/// [`LanguageDescription`](crate::program::model::lang::language_description::LanguageDescription)
+/// before the real class is ported. `Language` only ever returns this type opaquely, so no
+/// members are needed yet.
 pub trait Processor {}
 
 /// Placeholder for `ghidra.program.model.lang.AddressLabelInfo`, referenced by
