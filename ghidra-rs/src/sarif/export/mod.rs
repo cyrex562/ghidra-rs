@@ -22,7 +22,7 @@ pub use equates::ExtEquate;
 pub use ext_logical_location::ExtLogicalLocation;
 pub use extlib::{ExtLibrary, ExtLibraryLocation};
 pub use func::ExtFunctionWriter;
-pub use r#ref::{ExtReference, ExtRegisterReference};
+pub use r#ref::{ExtMemoryReference, ExtReference, ExtRegisterReference};
 pub use registers::ExtRegisterValue;
 pub use relocs::ExtRelocation;
 pub use trees::ExtFragmentRange;

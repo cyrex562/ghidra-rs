@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::program::model::address::Address;
 use crate::program::model::symbol::{RefType, SourceType};
 
@@ -10,7 +11,7 @@ pub const OTHER: i32 = RefType::OTHER;
 ///
 /// This mirrors Ghidra's `Reference` contract while using Rust naming
 /// conventions.
-pub trait Reference: Send + Sync {
+pub trait Reference: Send + Sync + Any {
     /// Gets the address of the code unit making the reference.
     fn from_address(&self) -> Address;
 
@@ -58,6 +59,9 @@ pub trait Reference: Send + Sync {
 
     /// Gets the source of this reference.
     fn source(&self) -> SourceType;
+
+    /// Returns a reference to self as Any for downcasting.
+    fn as_any(&self) -> &dyn Any;
 }
 
 /// Marker trait for dynamically determined references that may not be
