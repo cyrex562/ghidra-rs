@@ -3,6 +3,7 @@ pub mod dwarf;
 pub mod elf;
 pub mod golang;
 pub mod javaclass;
+pub mod lx;
 pub mod macho;
 pub mod macos;
 pub mod ne;
