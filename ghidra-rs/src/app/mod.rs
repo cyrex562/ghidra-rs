@@ -1,5 +1,6 @@
 pub mod analyzers;
 pub mod cmd;
+pub mod context;
 pub mod decompiler;
 pub mod emulator;
 pub mod merge;
