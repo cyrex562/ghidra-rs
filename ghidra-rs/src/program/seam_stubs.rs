@@ -300,12 +300,6 @@ pub trait AddressLabelInfo {}
 /// members are needed yet.
 pub trait MemoryBlockDefinition {}
 
-/// Placeholder for `ghidra.program.model.lang.CompilerSpecDescription`, referenced by
-/// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
-/// before the real interface is ported. `CompilerSpec` only ever returns this type opaquely, so
-/// no members are needed yet.
-pub trait CompilerSpecDescription {}
-
 /// Placeholder for `ghidra.program.model.lang.PcodeInjectLibrary`, referenced by
 /// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
 /// before the real class is ported. `CompilerSpec` only ever returns this type opaquely, so no
