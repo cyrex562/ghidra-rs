@@ -390,3 +390,17 @@ impl std::error::Error for LanguageNotFoundException {}
 /// itself rely on any `LanguageService` methods, so this is a marker with no members yet.
 pub trait LanguageService {}
 
+/// Placeholder for `ghidra.program.model.lang.PrototypePieces`, referenced by
+/// [`ParamList`](crate::program::model::lang::param_list::ParamList)
+/// before the real class is ported. `ParamList::assign_map` only ever passes this type through,
+/// so no members are needed yet.
+#[derive(Debug, Default, Clone)]
+pub struct PrototypePieces;
+
+/// Placeholder for `ghidra.program.model.lang.ParameterPieces`, referenced by
+/// [`ParamList`](crate::program::model::lang::param_list::ParamList)
+/// before the real class is ported. `ParamList::assign_map` only ever appends this type to its
+/// result list, so no members are needed yet.
+#[derive(Debug, Default, Clone)]
+pub struct ParameterPieces;
+
