@@ -70,7 +70,7 @@ pub use reference_manager::{AddExternalReferenceError, ReferenceManager};
 pub use shifted_reference::ShiftedReference;
 pub use source_type::SourceType;
 pub use stack_reference::StackReference;
-pub use symbol_iterator::{EmptySymbolIterator, SymbolIterator, SymbolIteratorAdapter};
+pub use symbol_iterator::{EmptySymbolIterator, SymbolAdapter, SymbolIterator, SymbolIteratorAdapter};
 pub use symbol_table_listener::SymbolTableListener;
 pub use symbol_type::SymbolType;
 pub use symbol_utilities::*;
