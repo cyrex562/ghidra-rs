@@ -2724,7 +2724,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/util/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datapreview/DataTypeComponentPreview.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datapreview 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datapreview/DataTypePreview.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datapreview 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datapreview/DataTypePreviewPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datapreview 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datapreview/Preview.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datapreview 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datapreview/Preview.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core datapreview
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datawindow/DataRowObject.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datawindow 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datawindow/DataRowObjectToAddressTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datawindow 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datawindow/DataRowObjectToProgramLocationTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datawindow 

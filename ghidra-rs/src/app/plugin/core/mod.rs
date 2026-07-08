@@ -6,6 +6,7 @@ pub mod clear;
 pub mod commentwindow;
 pub mod compositeeditor;
 pub mod console;
+pub mod data_preview;
 pub mod datamgr;
 pub mod debug;
 pub mod decompiler;
