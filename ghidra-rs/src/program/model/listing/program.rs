@@ -3,6 +3,11 @@ use crate::program::model::address::AddressFactory;
 use crate::program::model::listing::Listing;
 use std::sync::Arc;
 
+/// Name of the properties list holding general program information.
+///
+/// Stands in for `Program.PROGRAM_INFO`.
+pub const PROGRAM_INFO: &str = "Program Information";
+
 pub trait Program: DomainObject + Send + Sync {
     fn get_name(&self) -> String;
     fn get_language_id(&self) -> String;
