@@ -1,6 +1,7 @@
 pub mod apex;
 pub mod art;
 pub mod bootimg;
+pub mod bootldr;
 pub mod cdex;
 pub mod dex;
 pub mod fbpk;
