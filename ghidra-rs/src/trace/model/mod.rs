@@ -3,6 +3,7 @@ pub mod breakpoint;
 pub mod default_address_snap;
 pub mod lifespan;
 pub mod memory;
+pub mod program;
 pub mod target;
 pub mod time;
 pub mod trace;
