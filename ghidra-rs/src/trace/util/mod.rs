@@ -4,6 +4,7 @@ pub mod data_adapter_from_settings;
 pub mod data_adapter_minimal;
 pub mod empty_function_iterator;
 pub mod enumerating_iterator;
+pub mod memory_adapter;
 pub mod method_protector;
 pub mod wrapping_code_unit_iterator;
 pub mod wrapping_data_iterator;
