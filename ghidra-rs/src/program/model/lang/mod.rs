@@ -36,6 +36,7 @@ pub mod unknown_context_exception;
 pub mod unknown_data_exception;
 pub mod unknown_instruction_exception;
 pub mod unknown_register;
+pub mod versioned_language_service;
 
 pub use compiler_spec::{CompilerSpec, EvaluationModelType};
 pub use compiler_spec_description::CompilerSpecDescription;
@@ -73,3 +74,4 @@ pub use unknown_context_exception::UnknownContextException;
 pub use unknown_data_exception::UnknownDataException;
 pub use unknown_instruction_exception::UnknownInstructionException;
 pub use unknown_register::UnknownRegister;
+pub use versioned_language_service::VersionedLanguageService;

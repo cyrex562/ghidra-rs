@@ -389,3 +389,9 @@ impl fmt::Display for LanguageNotFoundException {
 
 impl std::error::Error for LanguageNotFoundException {}
 
+/// Placeholder for `ghidra.program.model.lang.LanguageService`, referenced by
+/// [`VersionedLanguageService`](crate::program::model::lang::versioned_language_service::VersionedLanguageService)
+/// (as a supertrait) before the real interface is ported. `VersionedLanguageService` does not
+/// itself rely on any `LanguageService` methods, so this is a marker with no members yet.
+pub trait LanguageService {}
+
