@@ -214,4 +214,45 @@ mod tests {
     fn as_list_errors_on_wildcard() {
         assert!(GoVerRange::ALL.as_list().is_err());
     }
+
+    #[test]
+    fn parse_range_compare_wildcard_patch() {
+        let range = GoVerRange::parse("1.1-1.55");
+        assert!(range.contains(GoVer::parse("1.2.55")));
+        assert!(range.contains(GoVer::parse("1.55")));
+        assert!(range.contains(GoVer::parse("1.55.1")));
+        assert!(!range.contains(GoVer::parse("1.56")));
+    }
+
+    #[test]
+    fn parse_range_various_forms_display() {
+        let mut range = GoVerRange::parse("1.1-1.55");
+        assert_eq!(range.start.to_string(), "1.1");
+        assert_eq!(range.end.to_string(), "1.55");
+
+        range = GoVerRange::parse("1.1-");
+        assert_eq!(range.start.to_string(), "1.1");
+        assert!(range.end.is_wildcard());
+
+        range = GoVerRange::parse("-1.55");
+        assert!(range.start.is_wildcard());
+        assert_eq!(range.end.to_string(), "1.55");
+
+        range = GoVerRange::parse("1.55");
+        assert_eq!(range.start.to_string(), "1.55");
+        assert_eq!(range.end.to_string(), "1.55");
+        assert!(range.contains(GoVer::parse("1.55")));
+    }
+
+    #[test]
+    fn parse_bad_range_variants() {
+        assert!(GoVerRange::parse("1.1-xx").is_empty());
+        assert!(GoVerRange::parse("xx").is_empty());
+        assert!(GoVerRange::parse("-").is_empty());
+    }
+
+    #[test]
+    fn parse_empty_string_is_empty() {
+        assert!(GoVerRange::parse("").is_empty());
+    }
 }

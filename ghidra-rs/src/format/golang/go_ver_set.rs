@@ -146,4 +146,73 @@ mod tests {
     fn contains_all_matches_anything_valid() {
         assert!(GoVerSet::all().contains(GoVer::new(1, 22, 8)));
     }
+
+    #[test]
+    fn parse_all_contains_arbitrary_versions() {
+        let all = GoVerSet::parse("all").unwrap();
+        assert!(all.contains(GoVer::parse("1.1")));
+        assert!(all.contains(GoVer::parse("99.44")));
+    }
+
+    #[test]
+    fn parse_empty_string_is_empty() {
+        assert!(GoVerSet::parse("").unwrap().is_empty());
+    }
+
+    #[test]
+    fn parse_dash_only_is_empty() {
+        assert!(GoVerSet::parse("-").unwrap().is_empty());
+    }
+
+    #[test]
+    fn parse_multirange_respects_patch_boundaries() {
+        let vers = GoVerSet::parse("1.2-1.22.3,1.55,1.77.0").unwrap();
+
+        assert!(!vers.contains(GoVer::parse("1.1")));
+
+        assert!(vers.contains(GoVer::parse("1.2")));
+        assert!(vers.contains(GoVer::parse("1.22.3")));
+        assert!(!vers.contains(GoVer::parse("1.22.4")));
+
+        assert!(vers.contains(GoVer::parse("1.55.0")));
+        assert!(vers.contains(GoVer::parse("1.55.1")));
+
+        assert!(vers.contains(GoVer::parse("1.77.0")));
+        assert!(!vers.contains(GoVer::parse("1.77.1")));
+    }
+
+    #[test]
+    fn parse_wildcard_ranges_variants() {
+        let mut vers = GoVerSet::parse("1.2-").unwrap();
+        assert!(!vers.contains(GoVer::parse("1.1")));
+        assert!(vers.contains(GoVer::parse("1.2")));
+        assert!(vers.contains(GoVer::parse("1.99")));
+        assert!(vers.contains(GoVer::parse("99.99")));
+
+        vers = GoVerSet::parse("-1.2,1.5,1.9-").unwrap();
+        assert!(vers.contains(GoVer::parse("1.1")));
+        assert!(vers.contains(GoVer::parse("1.2")));
+        assert!(!vers.contains(GoVer::parse("1.3")));
+        assert!(vers.contains(GoVer::parse("1.5.1")));
+        assert!(!vers.contains(GoVer::parse("1.8")));
+        assert!(vers.contains(GoVer::parse("1.9")));
+        assert!(vers.contains(GoVer::parse("99.99")));
+
+        vers = GoVerSet::parse("-1.2.1").unwrap();
+        assert!(vers.contains(GoVer::parse("1.1")));
+        assert!(vers.contains(GoVer::parse("1.2.0")));
+        assert!(vers.contains(GoVer::parse("1.2.1")));
+        assert!(!vers.contains(GoVer::parse("1.2.3")));
+        assert!(vers.contains(GoVer::parse("1.2")));
+    }
+
+    #[test]
+    fn parse_wildcard_ranges_bad_leading_errors() {
+        assert!(GoVerSet::parse("1.2-1.3,-1.5").is_err());
+    }
+
+    #[test]
+    fn parse_wildcard_ranges_bad_trailing_errors() {
+        assert!(GoVerSet::parse("1.2-1.3,1.5-,1.8").is_err());
+    }
 }

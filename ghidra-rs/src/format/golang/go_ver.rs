@@ -243,4 +243,12 @@ mod tests {
     fn display_omits_wildcard_patch() {
         assert_eq!(GoVer::new(1, 22, -1).to_string(), "1.22");
     }
+
+    #[test]
+    fn parse_ver_major_minor_patch() {
+        assert_eq!(GoVer::parse("1.2").major, 1);
+        assert_eq!(GoVer::parse("1.2").minor, 2);
+        assert_eq!(GoVer::parse("1.2.0").patch, 0);
+        assert_eq!(GoVer::parse("1.2.3").patch, 3);
+    }
 }
