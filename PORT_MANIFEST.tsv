@@ -10047,7 +10047,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/KeyBindingType.ja
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/KeyBindingsManager.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/MenuBarData.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/MenuData.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/MultiActionDockingActionIf.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/MultiActionDockingActionIf.java	DONE	orig_src Ghidra Framework Docking src main java docking action
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/MultipleKeyAction.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/NextPreviousWindowAction.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/action/PopupMenuData.java	TODO	orig_src Ghidra Framework Docking src main java docking action 
