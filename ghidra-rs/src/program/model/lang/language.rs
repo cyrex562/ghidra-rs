@@ -5,6 +5,7 @@ use thiserror::Error;
 
 use crate::program::model::address::{Address, AddressFactory, AddressSetView, AddressSpace};
 use crate::program::model::lang::compiler_spec::CompilerSpec;
+use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
 use crate::program::model::lang::insufficient_bytes_exception::InsufficientBytesException;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
@@ -14,8 +15,8 @@ use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::seam_stubs::{
-    AddressLabelInfo, CompilerSpecDescription, CompilerSpecID, LanguageDescription, MemBuffer,
-    MemoryBlockDefinition, ParallelInstructionLanguageHelper, Processor,
+    AddressLabelInfo, CompilerSpecID, LanguageDescription, MemBuffer, MemoryBlockDefinition,
+    ParallelInstructionLanguageHelper, Processor,
 };
 use crate::util::task::TaskMonitor;
 
@@ -249,7 +250,19 @@ mod tests {
     impl Processor for MockProcessor {}
 
     struct MockCompilerSpecDescription;
-    impl CompilerSpecDescription for MockCompilerSpecDescription {}
+    impl CompilerSpecDescription for MockCompilerSpecDescription {
+        fn get_compiler_spec_id(&self) -> CompilerSpecID {
+            CompilerSpecID::new(Some("gcc"))
+        }
+
+        fn get_compiler_spec_name(&self) -> String {
+            "GCC".to_string()
+        }
+
+        fn get_source(&self) -> String {
+            "gcc.cspec".to_string()
+        }
+    }
 
     struct MockAddressLabelInfo;
     impl AddressLabelInfo for MockAddressLabelInfo {}

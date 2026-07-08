@@ -254,7 +254,8 @@ mod tests {
 
         fn get_compatible_compiler_spec_descriptions(
             &self,
-        ) -> Vec<Box<dyn crate::program::seam_stubs::CompilerSpecDescription>> {
+        ) -> Vec<Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>>
+        {
             Vec::new()
         }
 

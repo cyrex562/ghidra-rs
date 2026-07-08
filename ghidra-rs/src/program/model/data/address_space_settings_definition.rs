@@ -122,15 +122,14 @@ mod tests {
     use crate::program::model::address::{Address, AddressFactory, AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_organization::DataOrganization;
     use crate::program::model::lang::compiler_spec::EvaluationModelType;
+    use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
     use crate::program::model::lang::decompiler_language::DecompilerLanguage;
     use crate::program::model::lang::language_id::LanguageID;
     use crate::program::model::lang::register::RegisterRef;
     use crate::program::model::lang::{CompilerSpec, Language, ProgramArchitecture};
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::listing::parameter::Parameter;
-    use crate::program::seam_stubs::{
-        CompilerSpecDescription, CompilerSpecID, Encoder, PcodeInjectLibrary, PrototypeModel,
-    };
+    use crate::program::seam_stubs::{CompilerSpecID, Encoder, PcodeInjectLibrary, PrototypeModel};
     use std::cell::RefCell;
     use std::collections::{HashMap, HashSet};
     use std::sync::Arc;
@@ -332,7 +331,8 @@ mod tests {
 
         fn get_compatible_compiler_spec_descriptions(
             &self,
-        ) -> Vec<Box<dyn crate::program::seam_stubs::CompilerSpecDescription>> {
+        ) -> Vec<Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>>
+        {
             Vec::new()
         }
 
@@ -411,7 +411,19 @@ mod tests {
     }
 
     struct MockCompilerSpecDescription;
-    impl CompilerSpecDescription for MockCompilerSpecDescription {}
+    impl CompilerSpecDescription for MockCompilerSpecDescription {
+        fn get_compiler_spec_id(&self) -> CompilerSpecID {
+            CompilerSpecID::new(Some("gcc"))
+        }
+
+        fn get_compiler_spec_name(&self) -> String {
+            "GCC".to_string()
+        }
+
+        fn get_source(&self) -> String {
+            "gcc.cspec".to_string()
+        }
+    }
 
     struct MockPcodeInjectLibrary;
     impl PcodeInjectLibrary for MockPcodeInjectLibrary {}
