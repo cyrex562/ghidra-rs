@@ -192,7 +192,7 @@ mod tests {
             Vec::new()
         }
 
-        fn get_language(&self) -> Arc<dyn crate::program::seam_stubs::Language> {
+        fn get_language(&self) -> Arc<dyn crate::program::model::lang::language::Language> {
             unimplemented!()
         }
     }
