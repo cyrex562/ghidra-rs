@@ -966,7 +966,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/m
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceSection.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceStaticMapping.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceStaticMappingManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/program/TickSpecificTraceView.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model program 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/program/TickSpecificTraceView.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model program
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/program/TraceProgramView.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model program 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/program/TraceProgramViewBookmarkManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model program 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/program/TraceProgramViewListing.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model program 
