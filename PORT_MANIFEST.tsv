@@ -12318,7 +12318,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/DynamicHelpLocation.java
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/HTMLUtilities.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/HelpLocation.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/TaskUtilities.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/TrackedTaskListener.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/TrackedTaskListener.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/WebColors.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/bean/GGlassPane.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util bean 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/bean/GGlassPanePainter.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util bean 

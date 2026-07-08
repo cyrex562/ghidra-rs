@@ -95,3 +95,4 @@ ts	stub_class	referenced_by
 2026-07-07T05:00:00Z	TraceProgramView	Trace
 2026-07-07T05:00:00Z	TraceVariableSnapProgramView	Trace
 2026-07-07T05:00:00Z	TraceTimeViewport	Trace
+2026-07-08T00:00:00Z	Task	TrackedTaskListener
