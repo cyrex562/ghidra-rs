@@ -9106,7 +9106,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/ExtEntryPointSarifMg
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/ExternalLibSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/FunctionsSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/MarkupSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/MemoryMapBytesFile.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/MemoryMapBytesFile.java	DONE	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/MemoryMapSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/ProgramInfo.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/ProgramSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 

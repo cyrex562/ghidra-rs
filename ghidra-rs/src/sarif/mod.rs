@@ -1,5 +1,6 @@
 pub mod export;
 pub mod io;
+pub mod managers;
 pub mod model;
 
 use serde::{Deserialize, Serialize};
