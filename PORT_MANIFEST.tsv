@@ -3373,7 +3373,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/Refe
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/ReferenceProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symtable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/ReferenceTableContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symtable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/SymbolEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symtable 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/SymbolFilter.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symtable 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/SymbolFilter.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core symtable
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/SymbolPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symtable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/SymbolProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symtable 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symtable/SymbolReferenceModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symtable 

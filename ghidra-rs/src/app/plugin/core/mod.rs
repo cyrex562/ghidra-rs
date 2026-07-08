@@ -33,4 +33,5 @@ pub mod stackeditor;
 pub mod string;
 pub mod strings;
 pub mod symbol_tree;
+pub mod symtable;
 pub mod terminal;
