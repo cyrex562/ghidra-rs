@@ -11689,7 +11689,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/FilterTransformer.ja
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/InvalidNameException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/JavaSourceFile.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/JavaSourceLine.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/LittleEndianDataConverter.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/LittleEndianDataConverter.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/LongIterator.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/MathUtilities.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/MonitoredInputStream.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util
