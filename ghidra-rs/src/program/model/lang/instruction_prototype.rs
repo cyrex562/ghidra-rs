@@ -13,11 +13,10 @@ use crate::program::model::listing::instruction::OperandValue;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::PcodeOp;
 use crate::program::model::scalar::Scalar;
+use crate::program::model::lang::language::Language;
 use crate::program::model::lang::Mask;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{
-    Language, MemBuffer, ParserContext, PatchEncoder, PcodeOverride,
-};
+use crate::program::seam_stubs::{MemBuffer, ParserContext, PatchEncoder, PcodeOverride};
 
 /// Sentinel value to indicate an invalid depth change.
 ///

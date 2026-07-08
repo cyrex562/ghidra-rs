@@ -270,14 +270,35 @@ pub trait CommentHistory {}
 /// needed yet.
 pub trait CodeUnitComments {}
 
-/// Placeholder for `ghidra.program.model.lang.Language`, referenced by
-/// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)
-/// before the real interface is ported. Only the accessor needed by
-/// `ProgramArchitecture::get_language_compiler_spec_pair`'s default implementation is provided.
-pub trait Language {
-    /// Stands in for `Language.getLanguageID()`.
-    fn get_language_id(&self) -> LanguageID;
-}
+/// Placeholder for `ghidra.program.model.lang.LanguageDescription`, referenced by
+/// [`Language`](crate::program::model::lang::language::Language)
+/// before the real interface is ported. `Language` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait LanguageDescription {}
+
+/// Placeholder for `ghidra.program.model.lang.ParallelInstructionLanguageHelper`, referenced by
+/// [`Language`](crate::program::model::lang::language::Language)
+/// before the real interface is ported. `Language` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait ParallelInstructionLanguageHelper {}
+
+/// Placeholder for `ghidra.program.model.lang.Processor`, referenced by
+/// [`Language`](crate::program::model::lang::language::Language) and
+/// [`LanguageDescription`] before the real class is ported. `Language` only ever returns this
+/// type opaquely, so no members are needed yet.
+pub trait Processor {}
+
+/// Placeholder for `ghidra.program.model.lang.AddressLabelInfo`, referenced by
+/// [`Language`](crate::program::model::lang::language::Language)
+/// before the real class is ported. `Language` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait AddressLabelInfo {}
+
+/// Placeholder for `ghidra.app.plugin.processors.generic.MemoryBlockDefinition`, referenced by
+/// [`Language`](crate::program::model::lang::language::Language)
+/// before the real class is ported. `Language` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait MemoryBlockDefinition {}
 
 /// Placeholder for `ghidra.program.model.lang.CompilerSpecDescription`, referenced by
 /// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
