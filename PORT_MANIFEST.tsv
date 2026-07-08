@@ -13648,7 +13648,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/reloc/RelocationDBAdapterV5.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/reloc/RelocationDBAdapterV6.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/reloc/RelocationManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database reloc 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFile.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database sourcemap 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFile.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database sourcemap 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFileAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database sourcemap 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFileAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database sourcemap 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFileIdType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database sourcemap 
