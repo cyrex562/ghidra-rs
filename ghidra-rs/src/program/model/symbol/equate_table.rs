@@ -22,6 +22,9 @@ pub trait EquateTable {
     /// Returns the equate with the given name.
     fn equate(&self, name: &str) -> Option<&SimpleEquate>;
 
+    /// Returns a mutable reference to the equate with the given name.
+    fn equate_mut(&mut self, name: &str) -> Option<&mut SimpleEquate>;
+
     /// Returns the first equate for the address, operand position, and value.
     fn equate_at_value(
         &self,
@@ -62,11 +65,6 @@ impl SimpleEquateTable {
     /// Creates an empty equate table.
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Returns a mutable equate by name.
-    pub fn equate_mut(&mut self, name: &str) -> Option<&mut SimpleEquate> {
-        self.equates.get_mut(name)
     }
 
     fn referenced_addresses(&self) -> Vec<Address> {
@@ -122,6 +120,10 @@ impl EquateTable for SimpleEquateTable {
 
     fn equate(&self, name: &str) -> Option<&SimpleEquate> {
         self.equates.get(name)
+    }
+
+    fn equate_mut(&mut self, name: &str) -> Option<&mut SimpleEquate> {
+        self.equates.get_mut(name)
     }
 
     fn equate_at_value(
