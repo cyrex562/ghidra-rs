@@ -89,3 +89,26 @@ pub trait Font {}
 /// [`Options`](crate::framework::options::Options) before a Rust equivalent exists. `Options`
 /// only ever passes this type through as an opaque value, so no members are needed yet.
 pub trait KeyStroke {}
+
+/// Placeholder for `ghidra.framework.model.DomainFolderFilter`, referenced by
+/// [`DomainFileFilter`](crate::framework::model::DomainFileFilter) before the real interface is
+/// ported (`DomainFileFilter extends DomainFolderFilter` in Java). `DomainFileFilter`'s default
+/// `followExternallyLinkedFolders()` implementation calls back into `ignoreExternalLinks()` and
+/// `ignoreFolderLinks()`, so those default methods are reproduced here to match
+/// `ghidra.framework.model.DomainFolderFilter`'s documented Java defaults.
+pub trait DomainFolderFilter {
+    /// Check if folder-links should be ignored (includes internal and external).
+    fn ignore_folder_links(&self) -> bool {
+        false
+    }
+
+    /// Check if link-files should be ignored if the link is external (i.e., Ghidra-URL).
+    fn ignore_external_links(&self) -> bool {
+        true
+    }
+
+    /// Check if link-files should be ignored if the link is broken.
+    fn ignore_broken_links(&self) -> bool {
+        true
+    }
+}
