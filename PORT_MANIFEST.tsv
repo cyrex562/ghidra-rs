@@ -3912,7 +3912,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/Go
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoParamStorageAllocator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoRegisterInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoRegisterInfoManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoVer.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoVer.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format golang
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoVerRange.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GoVerSet.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/GolangDWARFFunctionFixup.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format golang 

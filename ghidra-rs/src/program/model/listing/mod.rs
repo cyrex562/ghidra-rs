@@ -104,7 +104,7 @@ pub use library::{Library, UNKNOWN as UNKNOWN_LIBRARY_NAME};
 pub use listing::{CreateFunctionError, Listing, DEFAULT_TREE_NAME};
 pub use local_variable::LocalVariable;
 pub use parameter::Parameter;
-pub use program::Program;
+pub use program::{Program, PROGRAM_INFO};
 pub use program_change_set::ProgramChangeSet;
 pub use program_context::ProgramContext;
 pub use program_fragment::ProgramFragment;
