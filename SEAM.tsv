@@ -121,7 +121,7 @@ TODO	interface	304	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 TODO	interface	304	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/LanguageProvider.java
 TODO	interface	304	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/VersionedLanguageService.java
 DONE	interface	302	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/TrackedTaskListener.java
-TODO	interface	302	1	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Issue.java
+DONE	interface	302	1	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Issue.java
 DONE	interface	301	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/DynamicHelpLocation.java
 TODO	interface	301	1	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Location.java
 TODO	interface	300	71	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java
