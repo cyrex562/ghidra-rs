@@ -7,6 +7,7 @@ pub mod fbpk;
 pub mod oat;
 pub mod odex;
 pub mod ota_update;
+pub mod prof;
 pub mod util;
 pub mod vdex;
 pub mod verifier;
