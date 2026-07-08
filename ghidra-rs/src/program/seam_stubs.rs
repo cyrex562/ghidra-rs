@@ -374,3 +374,18 @@ impl LanguageCompilerSpecPair {
     }
 }
 
+/// Placeholder for `ghidra.program.model.lang.LanguageNotFoundException`, referenced by
+/// [`LanguageProvider`](crate::program::model::lang::language_provider::LanguageProvider)
+/// before the real exception class is ported. Carries only the formatted message; the real
+/// port should retain the `LanguageID`/`Throwable` cause fields from the Java constructors.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LanguageNotFoundException(pub String);
+
+impl fmt::Display for LanguageNotFoundException {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for LanguageNotFoundException {}
+
