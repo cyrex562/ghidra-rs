@@ -8,6 +8,7 @@ pub mod program_manager;
 pub mod query_data;
 pub mod string_validity_score;
 pub mod terminal;
+pub mod test_dummy_program_manager;
 
 pub use analysis_priority::AnalysisPriority;
 pub use analyzer_type::AnalyzerType;
@@ -19,3 +20,4 @@ pub use program_manager::{ProgramManager, OPEN_CURRENT, OPEN_HIDDEN, OPEN_VISIBL
 pub use query_data::QueryData;
 pub use string_validity_score::StringValidityScore;
 pub use terminal::Terminal;
+pub use test_dummy_program_manager::TestDummyProgramManager;
