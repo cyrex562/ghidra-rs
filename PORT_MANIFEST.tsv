@@ -6057,7 +6057,7 @@ orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/bin/format/dwarf/mac
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/bin/format/golang/rtti/GoApiSnapshotGeneratorTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/bin/format/golang/rtti/GoApiSnapshotTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/bin/format/golang/rtti/GoSymbolNameTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util bin format golang rtti 
-orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/bin/format/golang/rtti/GoVerTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util bin format golang rtti 
+orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/bin/format/golang/rtti/GoVerTest.java	DONE	orig_src Ghidra Features Base src test java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/bin/format/golang/rtti/JsonPatchApplierTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util bin format golang rtti 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/cparser/C/CParserUtilsTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util cparser C 
 orig_src/Ghidra/Features/Base/src/test/java/ghidra/app/util/cparser/CParserTest.java	TODO	orig_src Ghidra Features Base src test java ghidra app util cparser 
