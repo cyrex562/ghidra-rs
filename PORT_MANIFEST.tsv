@@ -3320,7 +3320,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/Sy
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolTreeActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolTreePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolTreeProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolTreeService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/SymbolTreeService.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/actions/ClearPinSymbolAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree actions 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/actions/CloneSymbolTreeAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree actions 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/actions/ConvertToClassAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core symboltree actions 
