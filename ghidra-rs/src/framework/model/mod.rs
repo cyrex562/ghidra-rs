@@ -16,6 +16,7 @@ pub mod project_manager;
 pub mod project_view_listener;
 pub mod runtime_io_exception;
 pub mod server_info;
+pub mod tool_services;
 pub mod tool_set;
 pub mod tool_template;
 pub mod transaction_info;
@@ -44,6 +45,7 @@ pub use project_manager::{
 pub use project_view_listener::ProjectViewListener;
 pub use runtime_io_exception::RuntimeIOException;
 pub use server_info::ServerInfo;
+pub use tool_services::{ToolServices, DEFAULT_TOOLNAME};
 pub use tool_set::ToolSet;
 pub use tool_template::{
     ToolTemplate, TOOL_INSTANCE_NAME_XML_NAME, TOOL_NAME_XML_NAME, TOOL_XML_NAME,

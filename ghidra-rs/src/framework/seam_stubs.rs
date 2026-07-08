@@ -157,3 +157,9 @@ pub trait RepositoryServerAdapter {}
 /// [`ProjectManager`](crate::framework::model::ProjectManager) before the real interface is
 /// ported. `ProjectManager` only ever returns this type, so no members are needed yet.
 pub trait ToolChest {}
+
+/// Placeholder for `ghidra.framework.model.ToolAssociationInfo`, referenced by
+/// [`ToolServices`](crate::framework::model::ToolServices) before the real class is ported.
+/// `ToolServices` only ever passes this type through as an opaque value, so no members are
+/// needed yet.
+pub trait ToolAssociationInfo {}

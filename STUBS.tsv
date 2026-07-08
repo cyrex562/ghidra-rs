@@ -105,3 +105,4 @@ ts	stub_class	referenced_by
 2026-07-08T23:30:00Z	RepositoryAdapter	ProjectManager
 2026-07-08T23:30:00Z	RepositoryServerAdapter	ProjectManager
 2026-07-08T23:30:00Z	ToolChest	ProjectManager
+2026-07-08T23:45:00Z	ToolAssociationInfo	ToolServices
