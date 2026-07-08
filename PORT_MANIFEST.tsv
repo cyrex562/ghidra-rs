@@ -7388,7 +7388,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/omf/OmfAr
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/omf/OmfArchiveFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats omf 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/omf51/Omf51ArchiveFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats omf51 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/omf51/Omf51ArchiveFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats omf51 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SZByteProviderStream.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sevenzip 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SZByteProviderStream.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats sevenzip
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipCliToolWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sevenzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipCustomInitializer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sevenzip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats sevenzip 
