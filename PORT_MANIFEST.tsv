@@ -7146,7 +7146,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/complzss/
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cpio/CpioFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cpio 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cpio/CpioFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cpio 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cramfs 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsBlock.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cramfs 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsBlock.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats cramfs
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsBlockFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cramfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsBlockReader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cramfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cramfs/CramFsConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats cramfs 
