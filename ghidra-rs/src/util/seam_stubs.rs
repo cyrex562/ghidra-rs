@@ -3,3 +3,6 @@
 
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}
+
+/// Placeholder for `ghidra.util.Location`, needed by [`crate::util::Issue`].
+pub trait Location: Send + Sync {}
