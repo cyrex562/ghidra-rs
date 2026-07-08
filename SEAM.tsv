@@ -118,7 +118,7 @@ DONE	interface	307	2	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 DONE	interface	307	0	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/ErrorDisplay.java
 DONE	interface	305	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/DisassemblerContext.java
 DONE	interface	304	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/DisassemblerContextAdapter.java
-TODO	interface	304	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/LanguageProvider.java
+DONE	interface	304	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/LanguageProvider.java
 TODO	interface	304	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/VersionedLanguageService.java
 DONE	interface	302	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/TrackedTaskListener.java
 DONE	interface	302	1	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Issue.java
