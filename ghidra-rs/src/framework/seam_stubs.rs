@@ -137,7 +137,23 @@ pub trait JdomElement {}
 pub trait PluginTool {}
 
 /// Placeholder for `ghidra.framework.model.Project`, referenced by
-/// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real interface is ported.
-/// `ToolTemplate` only ever passes this type through as an opaque value, so no members are needed
-/// yet.
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) and
+/// [`ProjectManager`](crate::framework::model::ProjectManager) before the real interface is
+/// ported. Only ever returned/passed through as an opaque value, so no members are needed yet.
 pub trait Project {}
+
+/// Placeholder for `ghidra.framework.client.RepositoryAdapter`, referenced by
+/// [`ProjectManager`](crate::framework::model::ProjectManager) before the real class is ported.
+/// `ProjectManager` only ever passes this type through as an opaque value, so no members are
+/// needed yet.
+pub trait RepositoryAdapter {}
+
+/// Placeholder for `ghidra.framework.client.RepositoryServerAdapter`, referenced by
+/// [`ProjectManager`](crate::framework::model::ProjectManager) before the real class is ported.
+/// `ProjectManager` only ever returns this type, so no members are needed yet.
+pub trait RepositoryServerAdapter {}
+
+/// Placeholder for `ghidra.framework.model.ToolChest`, referenced by
+/// [`ProjectManager`](crate::framework::model::ProjectManager) before the real interface is
+/// ported. `ProjectManager` only ever returns this type, so no members are needed yet.
+pub trait ToolChest {}
