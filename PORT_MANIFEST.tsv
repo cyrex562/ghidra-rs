@@ -3859,7 +3859,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDy
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDynamicTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfDynamicType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format elf
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfFileSection.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfFileSection.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format elf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfLoadHelper.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfProgramHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format elf 
