@@ -9972,7 +9972,7 @@ orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingActionInputBindin
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingActionPerformer.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingActionProxy.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingCheckBoxMenuItem.java	TODO	orig_src Ghidra Framework Docking src main java docking 
-orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingContextListener.java	TODO	orig_src Ghidra Framework Docking src main java docking 
+orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingContextListener.java	DONE	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingDialog.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingErrorDisplay.java	TODO	orig_src Ghidra Framework Docking src main java docking 
 orig_src/Ghidra/Framework/Docking/src/main/java/docking/DockingFrame.java	TODO	orig_src Ghidra Framework Docking src main java docking 
