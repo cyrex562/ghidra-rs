@@ -89,7 +89,7 @@ DONE	interface	660	5	docking	Ghidra/Framework/Docking/src/main/java/docking/Acti
 TODO	interface	642	102	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTable.java
 DONE	interface	614	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Equate.java
 TODO	interface	611	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceManager.java
-TODO	interface	605	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateTable.java
+DONE	interface	605	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateTable.java
 DONE	interface	594	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIterator.java
 DONE	interface	593	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalManager.java
 DONE	interface	587	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateReference.java
