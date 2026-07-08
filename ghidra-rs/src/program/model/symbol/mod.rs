@@ -24,6 +24,7 @@ pub mod reference;
 pub mod reference_iterator;
 pub mod reference_iterator_test_stub;
 pub mod reference_listener;
+pub mod reference_manager;
 pub mod shifted_reference;
 pub mod source_type;
 pub mod stack_reference;
@@ -65,6 +66,7 @@ pub use reference_iterator::{
 };
 pub use reference_iterator_test_stub::ReferenceIteratorTestStub;
 pub use reference_listener::ReferenceListener;
+pub use reference_manager::{AddExternalReferenceError, ReferenceManager};
 pub use shifted_reference::ShiftedReference;
 pub use source_type::SourceType;
 pub use stack_reference::StackReference;
