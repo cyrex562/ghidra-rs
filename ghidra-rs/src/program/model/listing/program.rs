@@ -1,6 +1,7 @@
 use crate::framework::model::DomainObject;
 use crate::program::model::address::AddressFactory;
 use crate::program::model::listing::Listing;
+use crate::program::model::symbol::ReferenceManager;
 use std::sync::Arc;
 
 /// Name of the properties list holding general program information.
@@ -17,6 +18,11 @@ pub trait Program: DomainObject + Send + Sync {
     }
 
     fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        None
+    }
+
+    /// Get the reference manager for this program.
+    fn get_reference_manager(&mut self) -> Option<&mut dyn ReferenceManager> {
         None
     }
 
