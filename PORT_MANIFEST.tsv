@@ -6882,7 +6882,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/b
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/VendorBootImageHeaderV4.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootimg 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/VendorRamdiskTableEntryV4.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootimg 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderAnalyzer.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderConstants.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderConstants.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderHeader.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderImageInfo.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats android bootldr 
