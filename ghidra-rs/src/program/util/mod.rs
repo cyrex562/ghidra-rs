@@ -1,3 +1,4 @@
+pub mod change_manager;
 pub mod code_unit_container;
 pub mod code_unit_insertion_exception;
 pub mod code_unit_lcs;
@@ -24,6 +25,7 @@ pub mod string_property_map;
 pub mod user_data_change_record;
 pub mod void_property_map;
 
+pub use change_manager::ChangeManager;
 pub use code_unit_container::CodeUnitContainer;
 pub use code_unit_insertion_exception::CodeUnitInsertionException;
 pub use code_unit_lcs::CodeUnitLcs;
