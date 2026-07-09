@@ -13,6 +13,7 @@ pub mod memory_block_type;
 pub mod memory_conflict_exception;
 pub mod memory_constants;
 pub mod mutable_mem_buffer;
+pub mod wrapped_mem_buffer;
 
 pub use byte_mem_buffer_impl::ByteMemBufferImpl;
 pub use invalid_address_exception::InvalidAddressException;
@@ -29,3 +30,4 @@ pub use memory_block_type::MemoryBlockType;
 pub use memory_conflict_exception::MemoryConflictException;
 pub use memory_constants::HEAP_BLOCK_NAME;
 pub use mutable_mem_buffer::MutableMemBuffer;
+pub use wrapped_mem_buffer::WrappedMemBuffer;
