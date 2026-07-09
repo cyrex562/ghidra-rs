@@ -1,4 +1,4 @@
-use crate::framework::seam_stubs::DomainObjectChangedEvent;
+use crate::framework::model::domain_object_changed_event::DomainObjectChangedEvent;
 
 /// The interface an object must support to be registered with a
 /// [`DomainObject`](crate::framework::model::DomainObject) and thus be informed of changes to the
@@ -18,22 +18,23 @@ use crate::framework::seam_stubs::DomainObjectChangedEvent;
 /// in Rust.
 pub trait DomainObjectListener {
     /// Method called when a change is made to the domain object.
-    fn domain_object_changed(&mut self, ev: &dyn DomainObjectChangedEvent);
+    fn domain_object_changed(&mut self, ev: &DomainObjectChangedEvent<'_>);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::{DomainObject, DomainObjectChangeRecord, DomainObjectEvent};
 
-    struct MockEvent;
-    impl DomainObjectChangedEvent for MockEvent {}
+    struct MockDomainObject;
+    impl DomainObject for MockDomainObject {}
 
     struct RecordingListener {
         change_count: usize,
     }
 
     impl DomainObjectListener for RecordingListener {
-        fn domain_object_changed(&mut self, _ev: &dyn DomainObjectChangedEvent) {
+        fn domain_object_changed(&mut self, _ev: &DomainObjectChangedEvent<'_>) {
             self.change_count += 1;
         }
     }
@@ -42,7 +43,11 @@ mod tests {
     fn usable_as_trait_object() {
         let mut listener = RecordingListener { change_count: 0 };
         let dyn_listener: &mut dyn DomainObjectListener = &mut listener;
-        let event = MockEvent;
+        let src = MockDomainObject;
+        let event = DomainObjectChangedEvent::new(
+            &src,
+            vec![DomainObjectChangeRecord::new(Box::new(DomainObjectEvent::Saved))],
+        );
         dyn_listener.domain_object_changed(&event);
         dyn_listener.domain_object_changed(&event);
         assert_eq!(listener.change_count, 2);
