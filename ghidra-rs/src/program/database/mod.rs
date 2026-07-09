@@ -21,4 +21,4 @@ pub use manager_db::ManagerDB;
 pub use merge_program_generator::MergeProgramGenerator;
 pub use program_db::ProgramDB;
 pub use program_modifier_listener::ProgramModifierListener;
-pub use properties::TestSaveable;
+pub use properties::{PropertiesDBAdapter, TestSaveable};
