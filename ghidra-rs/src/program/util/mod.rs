@@ -16,6 +16,7 @@ pub mod program_conflict_exception;
 pub mod program_diff_filter;
 pub mod program_event;
 pub mod string_property_map;
+pub mod user_data_change_record;
 pub mod void_property_map;
 
 pub use code_unit_container::CodeUnitContainer;
@@ -35,4 +36,5 @@ pub use program_conflict_exception::ProgramConflictException;
 pub use program_diff_filter::ProgramDiffFilter;
 pub use program_event::ProgramEvent;
 pub use string_property_map::StringPropertyMap;
+pub use user_data_change_record::UserDataChangeRecord;
 pub use void_property_map::VoidPropertyMap;
