@@ -6,10 +6,11 @@ use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
 use crate::program::model::lang::decompiler_language::DecompilerLanguage;
 use crate::program::model::lang::language::Language;
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::parameter::Parameter;
-use crate::program::seam_stubs::{CompilerSpecID, Encoder, PcodeInjectLibrary, PrototypeModel};
+use crate::program::seam_stubs::{Encoder, PcodeInjectLibrary, PrototypeModel};
 
 /// Stands in for `CompilerSpec.CALLING_CONVENTION_unknown`.
 pub const CALLING_CONVENTION_UNKNOWN: &str = "unknown";
@@ -358,7 +359,7 @@ mod tests {
 
         fn get_compiler_spec_by_id(
             &self,
-            _compiler_spec_id: &crate::program::seam_stubs::CompilerSpecID,
+            _compiler_spec_id: &CompilerSpecID,
         ) -> Result<
             Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
             crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,

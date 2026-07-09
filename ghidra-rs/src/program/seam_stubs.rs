@@ -5,6 +5,7 @@
 
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
@@ -294,33 +295,6 @@ pub trait MemoryBlockDefinition {}
 /// before the real class is ported. `CompilerSpec` only ever returns this type opaquely, so no
 /// members are needed yet.
 pub trait PcodeInjectLibrary {}
-
-/// Placeholder for `ghidra.program.model.lang.CompilerSpecID`, referenced by
-/// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec) and
-/// [`LanguageCompilerSpecPair`], before the real class is ported.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct CompilerSpecID(String);
-
-impl CompilerSpecID {
-    /// Stands in for `CompilerSpecID.DEFAULT_ID`.
-    pub const DEFAULT_ID: &'static str = "default";
-
-    /// Creates a new compiler spec ID, defaulting to [`Self::DEFAULT_ID`] when `id` is `None`.
-    pub fn new(id: Option<&str>) -> Self {
-        CompilerSpecID(id.unwrap_or(Self::DEFAULT_ID).to_string())
-    }
-
-    /// Returns the compiler spec ID as a string.
-    pub fn get_id_as_string(&self) -> &str {
-        &self.0
-    }
-}
-
-impl fmt::Display for CompilerSpecID {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
-    }
-}
 
 /// Placeholder for `ghidra.program.model.lang.InjectContext`, referenced by
 /// [`InjectPayload`](crate::program::model::lang::inject_payload::InjectPayload)

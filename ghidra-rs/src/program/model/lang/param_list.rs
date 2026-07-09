@@ -118,7 +118,7 @@ mod tests {
         {
             unimplemented!()
         }
-        fn get_compiler_spec_id(&self) -> crate::program::seam_stubs::CompilerSpecID {
+        fn get_compiler_spec_id(&self) -> crate::program::model::lang::compiler_spec_id::CompilerSpecID {
             unimplemented!()
         }
         fn get_stack_pointer(&self) -> Option<crate::program::model::lang::register::RegisterRef> {

@@ -126,10 +126,11 @@ mod tests {
     use crate::program::model::lang::decompiler_language::DecompilerLanguage;
     use crate::program::model::lang::language_id::LanguageID;
     use crate::program::model::lang::register::RegisterRef;
+    use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
     use crate::program::model::lang::{CompilerSpec, Language, ProgramArchitecture};
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::listing::parameter::Parameter;
-    use crate::program::seam_stubs::{CompilerSpecID, Encoder, PcodeInjectLibrary, PrototypeModel};
+    use crate::program::seam_stubs::{Encoder, PcodeInjectLibrary, PrototypeModel};
     use std::cell::RefCell;
     use std::collections::{HashMap, HashSet};
     use std::sync::Arc;
@@ -338,7 +339,7 @@ mod tests {
 
         fn get_compiler_spec_by_id(
             &self,
-            _compiler_spec_id: &crate::program::seam_stubs::CompilerSpecID,
+            _compiler_spec_id: &CompilerSpecID,
         ) -> Result<
             Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
             crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,

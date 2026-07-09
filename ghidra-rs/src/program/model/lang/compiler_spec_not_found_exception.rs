@@ -1,7 +1,7 @@
 use std::fmt;
 
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::seam_stubs::CompilerSpecID;
 
 /// Error thrown when the named compiler spec cannot be found.
 ///

@@ -1,8 +1,9 @@
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::seam_stubs::{CompilerSpecID, Processor};
+use crate::program::seam_stubs::Processor;
 
 /// Describes the basic characteristics of a
 /// [`Language`](crate::program::model::lang::language::Language) -- its ID, processor,
