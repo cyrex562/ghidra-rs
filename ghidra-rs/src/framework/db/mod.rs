@@ -13,6 +13,7 @@ pub mod illegal_field_access_exception;
 pub mod master_table;
 pub mod nodes;
 pub mod record;
+pub mod record_translator;
 pub mod schema;
 pub mod table;
 pub mod test_speed;
@@ -31,6 +32,7 @@ pub use db_rollback_exception::DBRollbackException;
 pub use field::{Field, FieldType};
 pub use illegal_field_access_exception::IllegalFieldAccessException;
 pub use record::DBRecord;
+pub use record_translator::RecordTranslator;
 pub use schema::Schema;
 pub use table::Table;
 
