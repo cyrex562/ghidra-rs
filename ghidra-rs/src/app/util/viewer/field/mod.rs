@@ -4,4 +4,5 @@ pub mod annotation_exception;
 pub mod comment_part;
 pub mod eol_enablement;
 pub mod field_string_info;
+pub mod hexagon_parallel_instruction_helper;
 pub mod string_comment_part;
