@@ -115,3 +115,5 @@ ts	stub_class	referenced_by
 2026-07-09T23:24:00Z	FunctionComparisonModel	FunctionComparisonService
 2026-07-09T23:24:00Z	FunctionComparisonPanel	FunctionComparisonService
 2026-07-09T23:30:00Z	FieldKeyRecordNode	FieldKeyNode
+2026-07-09T23:36:00Z	ControlMode	DebuggerControlService
+2026-07-09T23:36:00Z	DebuggerCoordinates	DebuggerControlService

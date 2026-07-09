@@ -36,7 +36,7 @@ orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/ann
 orig_src/Ghidra/Debug/AnnotationValidator/src/main/java/ghidra/util/database/annotproc/ValidationContext.java	TODO	orig_src Ghidra Debug AnnotationValidator src main java ghidra util database annotproc 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerAutoMappingService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerConsoleService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerControlService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerControlService.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra app services
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerEmulationService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerListingService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerLogicalBreakpointService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
