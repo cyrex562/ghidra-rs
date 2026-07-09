@@ -4948,7 +4948,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/ExternalLibXmlMg
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/FunctionsXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/MarkupXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/MemoryMapXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/ProgramInfo.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/ProgramInfo.java	DONE	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/ProgramTreeXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/ProgramXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/xml/PropertiesXmlMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra app util xml 
