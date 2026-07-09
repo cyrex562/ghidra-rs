@@ -113,3 +113,5 @@ ts	stub_class	referenced_by
 2026-07-09T01:00:00Z	MessageLog	Analyzer
 2026-07-09T23:23:00Z	FileBytes	MemoryBlockSourceInfo
 2026-07-09T23:23:00Z	ByteMappingScheme	MemoryBlockSourceInfo
+2026-07-09T23:24:00Z	FunctionComparisonModel	FunctionComparisonService
+2026-07-09T23:24:00Z	FunctionComparisonPanel	FunctionComparisonService
