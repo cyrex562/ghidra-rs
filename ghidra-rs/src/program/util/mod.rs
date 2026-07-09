@@ -1,6 +1,7 @@
 pub mod code_unit_container;
 pub mod code_unit_insertion_exception;
 pub mod code_unit_lcs;
+pub mod code_unit_user_data_change_record;
 pub mod data_type_archive_change_manager;
 pub mod db_key_adapter;
 pub mod db_record_adapter;
@@ -22,6 +23,7 @@ pub mod void_property_map;
 pub use code_unit_container::CodeUnitContainer;
 pub use code_unit_insertion_exception::CodeUnitInsertionException;
 pub use code_unit_lcs::CodeUnitLcs;
+pub use code_unit_user_data_change_record::CodeUnitUserDataChangeRecord;
 pub use db_key_adapter::DBKeyAdapter;
 pub use db_record_adapter::DBRecordAdapter;
 pub use deleted_exception::DeletedException;
