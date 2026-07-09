@@ -12712,7 +12712,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFol
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderListenerAdapter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObject.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangeRecord.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangedEvent.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangedEvent.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectClosedListener.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectDisplayUtils.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
