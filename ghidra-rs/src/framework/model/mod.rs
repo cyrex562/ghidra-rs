@@ -8,6 +8,7 @@ pub mod domain_folder;
 pub mod domain_folder_change_listener;
 pub mod domain_folder_filter;
 pub mod domain_object;
+pub mod domain_object_change_record;
 pub mod domain_object_closed_listener;
 pub mod domain_object_event;
 pub mod domain_object_event_id_generator;
@@ -44,6 +45,7 @@ pub use domain_folder_filter::{
 };
 pub use domain_folder_change_listener::DomainFolderChangeListener;
 pub use domain_object::{DomainObject, DomainObjectConsumer, SaveError};
+pub use domain_object_change_record::DomainObjectChangeRecord;
 pub use domain_object_closed_listener::DomainObjectClosedListener;
 pub use domain_object_event::DomainObjectEvent;
 pub use domain_object_event_id_generator::DomainObjectEventIdGenerator;
