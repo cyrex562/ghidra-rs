@@ -14,6 +14,7 @@ pub mod domain_object_exception;
 pub mod domain_object_listener;
 pub mod domain_object_locked_exception;
 pub mod event_queue_id;
+pub mod event_type;
 pub mod project_manager;
 pub mod project_view_listener;
 pub mod runtime_io_exception;
@@ -48,6 +49,7 @@ pub use domain_object_exception::DomainObjectException;
 pub use domain_object_listener::DomainObjectListener;
 pub use domain_object_locked_exception::DomainObjectLockedException;
 pub use event_queue_id::EventQueueID;
+pub use event_type::EventType;
 pub use project_manager::{
     OpenProjectError, ProjectManager, APPLICATION_TOOLS_DIR_NAME, APPLICATION_TOOL_EXTENSION,
 };
