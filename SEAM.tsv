@@ -143,7 +143,7 @@ TODO	interface	233	4	framework	Ghidra/Framework/DB/src/main/java/db/FieldKeyNode
 TODO	interface	231	3	framework	Ghidra/Framework/DB/src/main/java/db/BTreeNode.java
 DONE	interface	230	1	framework	Ghidra/Framework/DB/src/main/java/db/DBChangeSet.java
 TODO	interface	230	6	framework	Ghidra/Framework/DB/src/main/java/db/FieldKeyRecordNode.java
-TODO	interface	229	2	framework	Ghidra/Framework/DB/src/main/java/db/InteriorNode.java
+DONE	interface	229	2	framework	Ghidra/Framework/DB/src/main/java/db/InteriorNode.java
 TODO	interface	229	2	framework	Ghidra/Framework/DB/src/main/java/db/RecordNode.java
 TODO	interface	228	4	framework	Ghidra/Framework/DB/src/main/java/db/FieldKeyInteriorNode.java
 DONE	interface	227	1	framework	Ghidra/Framework/DB/src/main/java/db/DBFileListener.java
