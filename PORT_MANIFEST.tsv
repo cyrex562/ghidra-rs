@@ -14433,7 +14433,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Cha
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitContainer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitLCS.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitPropertyChangeRecord.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitPropertyChangeRecord.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitUserDataChangeRecord.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CollapsedCodeLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CommentChangeRecord.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
