@@ -148,7 +148,7 @@ TODO	interface	229	2	framework	Ghidra/Framework/DB/src/main/java/db/RecordNode.j
 TODO	interface	228	4	framework	Ghidra/Framework/DB/src/main/java/db/FieldKeyInteriorNode.java
 DONE	interface	227	1	framework	Ghidra/Framework/DB/src/main/java/db/DBFileListener.java
 TODO	interface	226	3	framework	Ghidra/Framework/DB/src/main/java/db/DBListener.java
-TODO	interface	226	1	framework	Ghidra/Framework/DB/src/main/java/db/RecordTranslator.java
+DONE	interface	226	1	framework	Ghidra/Framework/DB/src/main/java/db/RecordTranslator.java
 TODO	interface	204	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/Encoder.java
 TODO	interface	162	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/Decoder.java
 TODO	interface	131	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ServiceInfo.java
