@@ -13,3 +13,15 @@ pub trait ToolOptions {}
 /// [`Analyzer`](crate::app::services::Analyzer) before the real class is ported. `Analyzer` only
 /// ever passes this type through as a parameter, so no members are needed yet.
 pub trait MessageLog {}
+
+/// Placeholder for `ghidra.features.base.codecompare.model.FunctionComparisonModel`, referenced
+/// by [`FunctionComparisonService`](crate::app::services::FunctionComparisonService) before the
+/// real class is ported. `FunctionComparisonService` only ever passes this type through as a
+/// parameter, so no members are needed yet.
+pub trait FunctionComparisonModel {}
+
+/// Placeholder for `ghidra.features.base.codecompare.panel.FunctionComparisonPanel`, referenced
+/// by [`FunctionComparisonService`](crate::app::services::FunctionComparisonService) before the
+/// real class is ported. `FunctionComparisonService` only ever returns this type, so no members
+/// are needed yet.
+pub trait FunctionComparisonPanel {}
