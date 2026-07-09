@@ -709,7 +709,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/databas
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceCacheForSequenceQueries.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceChangeSet.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceContentHandler.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceDirectChangeListener.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceDirectChangeListener.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceLinkContentHandler.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceTimeViewport.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database 
