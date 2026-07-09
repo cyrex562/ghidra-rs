@@ -14292,7 +14292,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pc
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/DynamicEntry.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/DynamicHash.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/ElementId.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/Encoder.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/Encoder.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/EquateSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/FunctionPrototype.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/GlobalSymbolMap.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 

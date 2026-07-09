@@ -44,7 +44,8 @@ mod tests {
     use crate::program::model::lang::compiler_spec::EvaluationModelType;
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
     use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
-    use crate::program::seam_stubs::{Encoder, PcodeInjectLibrary, PrototypeModel};
+    use crate::program::model::pcode::Encoder;
+    use crate::program::seam_stubs::{PcodeInjectLibrary, PrototypeModel};
     use std::collections::HashSet;
     use std::sync::Arc;
 

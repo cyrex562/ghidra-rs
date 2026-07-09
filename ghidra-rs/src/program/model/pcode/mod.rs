@@ -1,6 +1,7 @@
 pub mod byte_ingest;
 pub mod decoder;
 pub mod decoder_exception;
+pub mod encoder;
 pub mod ids;
 pub mod linked_byte_buffer;
 pub mod list_linked;
@@ -16,6 +17,7 @@ use std::sync::Arc;
 pub use byte_ingest::ByteIngest;
 pub use decoder::{Decoder, DecoderError};
 pub use decoder_exception::DecoderException;
+pub use encoder::Encoder;
 pub use ids::*;
 pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition};
 pub use list_linked::{LinkedIter, ListLinked};
