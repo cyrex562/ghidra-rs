@@ -157,3 +157,9 @@ pub trait ToolChest {}
 /// `ToolServices` only ever passes this type through as an opaque value, so no members are
 /// needed yet.
 pub trait ToolAssociationInfo {}
+
+/// Placeholder for `db.Database`, referenced by
+/// [`DBFileListener`](crate::framework::db::DBFileListener) before the real class is ported.
+/// `DBFileListener` only ever passes this type through as an opaque value, so no members are
+/// needed yet.
+pub trait Database {}
