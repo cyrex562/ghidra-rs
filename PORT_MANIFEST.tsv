@@ -14453,7 +14453,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Equ
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FieldNameFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FunctionCallFixupFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FunctionCallingConventionFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FunctionChangeRecord.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FunctionChangeRecord.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FunctionEndParametersFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FunctionInlineFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/FunctionLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
