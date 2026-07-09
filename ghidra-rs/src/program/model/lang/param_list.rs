@@ -5,7 +5,8 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::language::Language;
 use crate::program::model::listing::program::Program;
-use crate::program::seam_stubs::{Encoder, ParameterPieces, PrototypePieces, VariableStorage};
+use crate::program::model::pcode::Encoder;
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces, VariableStorage};
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 
@@ -171,7 +172,85 @@ mod tests {
     }
 
     struct MockEncoder;
-    impl Encoder for MockEncoder {}
+    impl Encoder for MockEncoder {
+        fn open_element(
+            &mut self,
+            _elem_id: crate::program::model::pcode::ElementId,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn close_element(
+            &mut self,
+            _elem_id: crate::program::model::pcode::ElementId,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_bool(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _val: bool,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_signed_integer(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _val: i64,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_unsigned_integer(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _val: u64,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_string(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _val: &str,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_string_indexed(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _index: i32,
+            _val: &str,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_space(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _spc: &AddressSpace,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_space_indexed(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _index: i32,
+            _name: &str,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_opcode(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _opcode: crate::decompiler::opcodes::op_code::OpCode,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn write_opcode_ordinal(
+            &mut self,
+            _attrib_id: crate::program::model::pcode::AttributeId,
+            _opcode: i32,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
 
     struct MockParamList {
         stack_alignment: i32,
