@@ -37,3 +37,9 @@ pub trait ControlMode {}
 /// `StateEditor` before the real class is ported. `DebuggerControlService` only ever passes this
 /// type through as a parameter/return value, so no members are needed yet.
 pub trait DebuggerCoordinates {}
+
+/// Placeholder for `ghidra.program.util.ProgramLocation`, referenced by
+/// [`StringTranslationService`](crate::app::services::StringTranslationService) before the real
+/// class is ported. `StringTranslationService` only ever passes this type through as a
+/// parameter, so no members are needed yet.
+pub trait ProgramLocation {}
