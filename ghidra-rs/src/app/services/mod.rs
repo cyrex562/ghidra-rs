@@ -11,6 +11,7 @@ pub mod function_comparison_service;
 pub mod go_to_service_listener;
 pub mod program_manager;
 pub mod query_data;
+pub mod string_translation_service;
 pub mod string_validity_score;
 pub mod terminal;
 pub mod test_dummy_program_manager;
@@ -30,6 +31,9 @@ pub use function_comparison_service::FunctionComparisonService;
 pub use go_to_service_listener::GoToServiceListener;
 pub use program_manager::{ProgramManager, OPEN_CURRENT, OPEN_HIDDEN, OPEN_VISIBLE};
 pub use query_data::QueryData;
+pub use string_translation_service::{
+    sort_string_translation_services, StringTranslationService, TranslateOptions,
+};
 pub use string_validity_score::StringValidityScore;
 pub use terminal::Terminal;
 pub use test_dummy_program_manager::TestDummyProgramManager;
