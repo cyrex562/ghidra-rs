@@ -12770,7 +12770,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Plug
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginWithTransientState.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginsConfiguration.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ProjectPluginEvent.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ServiceInfo.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ServiceInfo.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ServiceInterfaceImplementationPair.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/SettableApplicationInformationDisplayFactory.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/StandAloneApplication.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
