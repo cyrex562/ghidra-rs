@@ -3531,7 +3531,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/StringTransformer.
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/UnsupportedScriptProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AbstractAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalysisPriority.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/Analyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/Analyzer.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalyzerAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/AnalyzerType.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/BlockModelService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 

@@ -8,3 +8,8 @@
 /// real class is ported. `EclipseIntegrationService` only ever returns this type, so no members
 /// are needed yet.
 pub trait ToolOptions {}
+
+/// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
+/// [`Analyzer`](crate::app::services::Analyzer) before the real class is ported. `Analyzer` only
+/// ever passes this type through as a parameter, so no members are needed yet.
+pub trait MessageLog {}
