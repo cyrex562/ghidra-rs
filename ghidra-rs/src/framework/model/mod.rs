@@ -16,6 +16,7 @@ pub mod project_manager;
 pub mod project_view_listener;
 pub mod runtime_io_exception;
 pub mod server_info;
+pub mod tool_chest;
 pub mod tool_chest_change_listener;
 pub mod tool_services;
 pub mod tool_set;
@@ -46,6 +47,7 @@ pub use project_manager::{
 pub use project_view_listener::ProjectViewListener;
 pub use runtime_io_exception::RuntimeIOException;
 pub use server_info::ServerInfo;
+pub use tool_chest::ToolChest;
 pub use tool_chest_change_listener::ToolChestChangeListener;
 pub use tool_services::{ToolServices, DEFAULT_TOOLNAME};
 pub use tool_set::ToolSet;
