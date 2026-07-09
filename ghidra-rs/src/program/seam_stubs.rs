@@ -378,3 +378,15 @@ pub struct PrototypePieces;
 #[derive(Debug, Default, Clone)]
 pub struct ParameterPieces;
 
+/// Placeholder for `ghidra.program.database.mem.FileBytes`, referenced by
+/// [`MemoryBlockSourceInfo`](crate::program::model::mem::memory_block_source_info::MemoryBlockSourceInfo)
+/// before the real class is ported. `MemoryBlockSourceInfo` only ever returns this type opaquely,
+/// so no members are needed yet.
+pub trait FileBytes {}
+
+/// Placeholder for `ghidra.program.database.mem.ByteMappingScheme`, referenced by
+/// [`MemoryBlockSourceInfo`](crate::program::model::mem::memory_block_source_info::MemoryBlockSourceInfo)
+/// before the real class is ported. `MemoryBlockSourceInfo` only ever returns this type opaquely,
+/// so no members are needed yet.
+pub trait ByteMappingScheme {}
+
