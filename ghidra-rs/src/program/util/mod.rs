@@ -1,6 +1,7 @@
 pub mod code_unit_container;
 pub mod code_unit_insertion_exception;
 pub mod code_unit_lcs;
+pub mod data_type_archive_change_manager;
 pub mod db_key_adapter;
 pub mod db_record_adapter;
 pub mod deleted_exception;
