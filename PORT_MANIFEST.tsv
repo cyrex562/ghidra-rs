@@ -14069,7 +14069,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/gc
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/gclass/ClassUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model gclass 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/AddressLabelInfo.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicCompilerSpec.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicCompilerSpecDescription.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicCompilerSpecDescription.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicLanguageDescription.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/CompilerSpec.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/CompilerSpecDescription.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
