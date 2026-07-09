@@ -12702,7 +12702,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/wizard/pro
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/AbortedTransactionListener.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/AbstractDomainObjectListenerBuilder.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ChangeSet.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DefaultDomainFileFilter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DefaultDomainFileFilter.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DefaultLaunchMode.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFile.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFileFilter.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
