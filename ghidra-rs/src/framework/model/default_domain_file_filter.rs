@@ -2,7 +2,7 @@ use std::any::TypeId;
 
 use crate::framework::model::domain_file::DomainFile;
 use crate::framework::model::domain_file_filter::DomainFileFilter;
-use crate::framework::seam_stubs::DomainFolderFilter;
+use crate::framework::model::domain_folder_filter::DomainFolderFilter;
 
 /// A simple default domain file filter which accepts files for a specified domain object
 /// interface class.
