@@ -1,5 +1,5 @@
 use std::sync::OnceLock;
-use crate::framework::model::DomainObjectEventIdGenerator;
+use crate::framework::model::{DomainObjectEventIdGenerator, EventType};
 
 /// Event types for version tracking operations.
 /// Each variant represents a distinct event that can occur in the version tracking system.
@@ -58,6 +58,12 @@ impl VtEvent {
             VtEvent::TagRemoved => 11,
             VtEvent::VoteCountChanged => 12,
         }
+    }
+}
+
+impl EventType for VtEvent {
+    fn get_id(&self) -> i32 {
+        self.id()
     }
 }
 
