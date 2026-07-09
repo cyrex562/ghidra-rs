@@ -1,14 +1,12 @@
 use std::io;
 
 use super::field::Field;
+use super::field_key_node::FieldKeyNode;
 use super::interior_node::InteriorNode;
-use crate::framework::seam_stubs::FieldKeyNode;
 
 /// Common interface for `FieldKeyNode` implementations which are also an `InteriorNode`.
 ///
 /// Mirrors `db.FieldKeyInteriorNode`, which extends both `InteriorNode` and `FieldKeyNode`.
-/// `FieldKeyNode` is not yet ported, so it is represented here by a minimal placeholder trait in
-/// [`seam_stubs`](crate::framework::seam_stubs) (see `STUBS.tsv`).
 pub trait FieldKeyInteriorNode: InteriorNode + FieldKeyNode {
     /// Callback method for when a child node's leftmost key changes.
     ///
@@ -55,7 +53,35 @@ mod tests {
     }
 
     impl InteriorNode for MockFieldKeyInteriorNode {}
-    impl FieldKeyNode for MockFieldKeyInteriorNode {}
+
+    impl FieldKeyNode for MockFieldKeyInteriorNode {
+        fn get_parent(&self) -> Option<Box<dyn FieldKeyInteriorNode>> {
+            None
+        }
+
+        fn get_leaf_node(
+            &self,
+            _key: &Field,
+        ) -> io::Result<Box<dyn crate::framework::seam_stubs::FieldKeyRecordNode>> {
+            Err(io::Error::new(io::ErrorKind::Other, "no leaf node"))
+        }
+
+        fn get_leftmost_leaf_node(
+            &self,
+        ) -> io::Result<Box<dyn crate::framework::seam_stubs::FieldKeyRecordNode>> {
+            Err(io::Error::new(io::ErrorKind::Other, "no leaf node"))
+        }
+
+        fn get_rightmost_leaf_node(
+            &self,
+        ) -> io::Result<Box<dyn crate::framework::seam_stubs::FieldKeyRecordNode>> {
+            Err(io::Error::new(io::ErrorKind::Other, "no leaf node"))
+        }
+
+        fn compare_key_field(&self, _k: &Field, _key_index: i32) -> i32 {
+            0
+        }
+    }
 
     impl FieldKeyInteriorNode for MockFieldKeyInteriorNode {
         fn key_changed(
