@@ -113,7 +113,7 @@ pub use java_source_file::JavaSourceFile;
 pub use java_source_line::JavaSourceLine;
 pub use long_iterator::{EmptyLongIterator, LongIterator};
 pub use timed_msg::TimedMsg;
-pub use task::{CachingLoader, DummyMonitor, TaskMonitor, MonitoredRunnable};
+pub use task::{CachingLoader, DummyMonitor, IssueListener, TaskMonitor, MonitoredRunnable};
 pub use math_utilities::MathUtilities;
 pub use object_storage::ObjectStorage;
 pub use object_storage_stream_adapter::ObjectStorageStreamAdapter;
