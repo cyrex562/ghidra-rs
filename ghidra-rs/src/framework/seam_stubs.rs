@@ -164,9 +164,8 @@ pub trait ToolAssociationInfo {}
 /// needed yet.
 pub trait Database {}
 
-/// Placeholder for `db.FieldKeyNode`, referenced by
-/// [`FieldKeyInteriorNode`](crate::framework::db::FieldKeyInteriorNode) before the real interface
-/// is ported (`FieldKeyInteriorNode extends InteriorNode, FieldKeyNode` in Java).
-/// `FieldKeyInteriorNode` only ever extends this type as a supertrait and passes it through as an
-/// opaque `childNode` argument, so no members are needed yet.
-pub trait FieldKeyNode {}
+/// Placeholder for `db.FieldKeyRecordNode`, referenced by
+/// [`FieldKeyNode`](crate::framework::db::FieldKeyNode) before the real class is ported.
+/// `FieldKeyNode` only ever returns this type from its leaf-node accessors, so no members are
+/// needed yet.
+pub trait FieldKeyRecordNode {}

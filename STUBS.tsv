@@ -114,4 +114,4 @@ ts	stub_class	referenced_by
 2026-07-09T23:23:00Z	ByteMappingScheme	MemoryBlockSourceInfo
 2026-07-09T23:24:00Z	FunctionComparisonModel	FunctionComparisonService
 2026-07-09T23:24:00Z	FunctionComparisonPanel	FunctionComparisonService
-2026-07-09T23:25:00Z	FieldKeyNode	FieldKeyInteriorNode
+2026-07-09T23:30:00Z	FieldKeyRecordNode	FieldKeyNode
