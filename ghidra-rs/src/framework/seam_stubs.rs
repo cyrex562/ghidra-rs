@@ -163,3 +163,10 @@ pub trait ToolAssociationInfo {}
 /// `DBFileListener` only ever passes this type through as an opaque value, so no members are
 /// needed yet.
 pub trait Database {}
+
+/// Placeholder for `db.FieldKeyNode`, referenced by
+/// [`FieldKeyInteriorNode`](crate::framework::db::FieldKeyInteriorNode) before the real interface
+/// is ported (`FieldKeyInteriorNode extends InteriorNode, FieldKeyNode` in Java).
+/// `FieldKeyInteriorNode` only ever extends this type as a supertrait and passes it through as an
+/// opaque `childNode` argument, so no members are needed yet.
+pub trait FieldKeyNode {}
