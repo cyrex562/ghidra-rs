@@ -13704,7 +13704,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/AddressRangeMapIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/AddressSetPropertyMapDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/AndQuery.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/DBFieldAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/DBFieldAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/DBKeyAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/DBRecordAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/DatabaseTableUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database util 
