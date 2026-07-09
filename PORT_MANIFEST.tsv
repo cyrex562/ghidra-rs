@@ -12473,7 +12473,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/MiscellaneousPluginPackag
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/ProjectInitializer.java	TODO	orig_src Ghidra Framework Project src main java ghidra 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/merge/MergeProgressModifier.java	DONE	orig_src Ghidra Framework Project src main java ghidra app merge
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/GenericPluginCategoryNames.java	DONE	orig_src Ghidra Framework Project src main java ghidra app plugin 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/PluginCategoryNames.java	TODO	orig_src Ghidra Framework Project src main java ghidra app plugin 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/PluginCategoryNames.java	DONE	orig_src Ghidra Framework Project src main java ghidra app plugin
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/core/help/AboutDomainObjectUtils.java	TODO	orig_src Ghidra Framework Project src main java ghidra app plugin core help 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/gui/CreateThemeDialog.java	TODO	orig_src Ghidra Framework Project src main java ghidra app plugin gui 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/gui/ThemeChooserDialog.java	TODO	orig_src Ghidra Framework Project src main java ghidra app plugin gui 
