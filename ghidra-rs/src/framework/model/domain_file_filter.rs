@@ -1,5 +1,5 @@
 use crate::framework::model::domain_file::DomainFile;
-use crate::framework::seam_stubs::DomainFolderFilter;
+use crate::framework::model::domain_folder_filter::DomainFolderFilter;
 
 /// `DomainFileFilter` indicates whether a domain file should be included in a list or set of
 /// domain files. This trait extends [`DomainFolderFilter`] which also controls the following of
