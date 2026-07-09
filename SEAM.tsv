@@ -161,7 +161,7 @@ TODO	interface	106	9	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/serv
 DONE	interface	106	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/Analyzer.java
 TODO	interface	105	8	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/TraceRmiService.java
 TODO	interface	105	26	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/BlockModelService.java
-TODO	interface	102	5	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerControlService.java
+DONE	interface	102	5	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerControlService.java
 TODO	interface	102	5	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/StringTranslationService.java
 DONE	interface	102	1	app	Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/PluginCategoryNames.java
 DONE	interface	101	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/EclipseIntegrationService.java
