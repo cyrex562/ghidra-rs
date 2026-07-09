@@ -25,3 +25,15 @@ pub trait FunctionComparisonModel {}
 /// real class is ported. `FunctionComparisonService` only ever returns this type, so no members
 /// are needed yet.
 pub trait FunctionComparisonPanel {}
+
+/// Placeholder for `ghidra.debug.api.control.ControlMode`, referenced by
+/// [`DebuggerControlService`](crate::app::services::DebuggerControlService) and its nested
+/// `ControlModeChangeListener` before the real class is ported. `DebuggerControlService` only
+/// ever passes this type through as a parameter/return value, so no members are needed yet.
+pub trait ControlMode {}
+
+/// Placeholder for `ghidra.debug.api.tracemgr.DebuggerCoordinates`, referenced by
+/// [`DebuggerControlService`](crate::app::services::DebuggerControlService) and its nested
+/// `StateEditor` before the real class is ported. `DebuggerControlService` only ever passes this
+/// type through as a parameter/return value, so no members are needed yet.
+pub trait DebuggerCoordinates {}
