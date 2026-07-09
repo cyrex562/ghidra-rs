@@ -5,6 +5,7 @@ pub mod decompiler;
 pub mod emulator;
 pub mod merge;
 pub mod plugin;
+pub mod seam_stubs;
 pub mod services;
 pub mod tablechooser;
 pub mod util;
