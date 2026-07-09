@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::CompilerSpecID;
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 
 /// A description of a compiler specification, used to enumerate and select from among the
 /// compiler specifications compatible with a particular

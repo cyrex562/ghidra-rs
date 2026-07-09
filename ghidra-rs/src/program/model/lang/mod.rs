@@ -1,5 +1,6 @@
 pub mod compiler_spec;
 pub mod compiler_spec_description;
+pub mod compiler_spec_id;
 pub mod compiler_spec_not_found_exception;
 pub mod data_type_provider_context;
 pub mod decompiler_language;
@@ -42,6 +43,7 @@ pub mod versioned_language_service;
 
 pub use compiler_spec::{CompilerSpec, EvaluationModelType};
 pub use compiler_spec_description::CompilerSpecDescription;
+pub use compiler_spec_id::CompilerSpecID;
 pub use compiler_spec_not_found_exception::CompilerSpecNotFoundException;
 pub use data_type_provider_context::DataTypeProviderContext;
 pub use disassembler_context::DisassemblerContext;

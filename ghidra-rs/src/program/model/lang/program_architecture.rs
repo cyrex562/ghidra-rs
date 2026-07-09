@@ -43,7 +43,8 @@ mod tests {
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::lang::compiler_spec::EvaluationModelType;
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
-    use crate::program::seam_stubs::{CompilerSpecID, Encoder, PcodeInjectLibrary, PrototypeModel};
+    use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
+    use crate::program::seam_stubs::{Encoder, PcodeInjectLibrary, PrototypeModel};
     use std::collections::HashSet;
     use std::sync::Arc;
 
@@ -221,7 +222,7 @@ mod tests {
 
         fn get_compiler_spec_by_id(
             &self,
-            _compiler_spec_id: &crate::program::seam_stubs::CompilerSpecID,
+            _compiler_spec_id: &CompilerSpecID,
         ) -> Result<
             Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
             crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,

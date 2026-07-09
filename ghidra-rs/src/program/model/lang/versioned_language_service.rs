@@ -42,8 +42,8 @@ mod tests {
 
     struct MockCompilerSpecDescription;
     impl crate::program::model::lang::compiler_spec_description::CompilerSpecDescription for MockCompilerSpecDescription {
-        fn get_compiler_spec_id(&self) -> crate::program::seam_stubs::CompilerSpecID {
-            crate::program::seam_stubs::CompilerSpecID::new(Some("gcc"))
+        fn get_compiler_spec_id(&self) -> crate::program::model::lang::compiler_spec_id::CompilerSpecID {
+            crate::program::model::lang::compiler_spec_id::CompilerSpecID::new(Some("gcc"))
         }
 
         fn get_compiler_spec_name(&self) -> String {
@@ -105,7 +105,7 @@ mod tests {
 
         fn get_compiler_spec_description_by_id(
             &self,
-            compiler_spec_id: &crate::program::seam_stubs::CompilerSpecID,
+            compiler_spec_id: &crate::program::model::lang::compiler_spec_id::CompilerSpecID,
         ) -> Result<
             Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>,
             crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,

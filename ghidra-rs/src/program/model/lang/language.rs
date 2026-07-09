@@ -6,6 +6,7 @@ use thiserror::Error;
 use crate::program::model::address::{Address, AddressFactory, AddressSetView, AddressSpace};
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
+use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
 use crate::program::model::lang::insufficient_bytes_exception::InsufficientBytesException;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
@@ -16,9 +17,7 @@ use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
-use crate::program::seam_stubs::{
-    AddressLabelInfo, CompilerSpecID, MemBuffer, MemoryBlockDefinition, Processor,
-};
+use crate::program::seam_stubs::{AddressLabelInfo, MemBuffer, MemoryBlockDefinition, Processor};
 use crate::util::task::TaskMonitor;
 
 /// Combines the checked exceptions declared on `Language.parse`.
