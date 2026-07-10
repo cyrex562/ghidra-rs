@@ -90,3 +90,9 @@ pub trait TargetPublicationListener {}
 /// [`CodeFormatService`](crate::app::services::CodeFormatService) before the real class is
 /// ported. `CodeFormatService` only ever returns this type, so no members are needed yet.
 pub trait FormatManager {}
+
+/// Placeholder for `ghidra.app.plugin.core.datamgr.archive.Archive`, referenced by
+/// [`DataTypeArchiveService`](crate::app::services::DataTypeArchiveService) before the real
+/// class is ported. `DataTypeArchiveService` only ever returns this type, so no members are
+/// needed yet.
+pub trait Archive {}
