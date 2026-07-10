@@ -120,3 +120,28 @@ pub trait ViewService {}
 /// ported. `ViewManagerService` only ever passes this type through as a parameter/return value,
 /// so no members are needed yet.
 pub trait ViewProviderService {}
+
+/// Placeholder for `ghidra.debug.api.progress.MonitorReceiver`, referenced by
+/// [`ProgressService`](crate::app::services::ProgressService) before the real interface is
+/// ported. `ProgressService` only ever returns this type opaquely, so no members are needed yet.
+pub trait MonitorReceiver {}
+
+/// Placeholder for `ghidra.debug.api.progress.ProgressListener`, referenced by
+/// [`ProgressService`](crate::app::services::ProgressService) before the real interface is
+/// ported. `ProgressService` only ever passes this type through as a parameter, so no members
+/// are needed yet.
+pub trait ProgressListener {}
+
+/// Placeholder for `ghidra.util.task.Task`, referenced by
+/// [`ProgressService`](crate::app::services::ProgressService)'s default `execute` method before
+/// the real class is ported. Models just the two members that default method calls.
+pub trait Task {
+    /// Stands in for `Task.canCancel()`.
+    fn can_cancel(&self) -> bool;
+
+    /// Stands in for `Task.run(TaskMonitor)`.
+    fn run(
+        &self,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> Result<(), crate::util::exception::CancelledException>;
+}
