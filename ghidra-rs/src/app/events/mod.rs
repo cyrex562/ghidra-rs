@@ -1,7 +1,9 @@
 pub mod close_program_plugin_event;
 pub mod external_reference_plugin_event;
 pub mod first_time_analyzed_plugin_event;
+pub mod open_program_plugin_event;
 
 pub use close_program_plugin_event::CloseProgramPluginEvent;
 pub use external_reference_plugin_event::ExternalReferencePluginEvent;
 pub use first_time_analyzed_plugin_event::FirstTimeAnalyzedPluginEvent;
+pub use open_program_plugin_event::OpenProgramPluginEvent;
