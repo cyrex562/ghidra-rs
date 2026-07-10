@@ -25,8 +25,6 @@ impl ReferenceIterator for EmptyMemReferenceIterator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::symbol::{RefType, SourceType};
 
     #[test]
     fn empty_iterator_never_yields_references() {

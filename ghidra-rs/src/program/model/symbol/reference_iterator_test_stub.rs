@@ -60,6 +60,10 @@ mod tests {
     }
 
     impl Reference for TestReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             self.from_address.clone()
         }

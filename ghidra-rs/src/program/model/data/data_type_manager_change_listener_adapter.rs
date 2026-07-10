@@ -99,7 +99,29 @@ mod tests {
 
     struct MockSourceArchive;
 
-    impl SourceArchive for MockSourceArchive {}
+    impl SourceArchive for MockSourceArchive {
+        fn source_archive_id(&self) -> crate::util::UniversalID {
+            crate::util::UniversalID::new(0)
+        }
+        fn domain_file_id(&self) -> String {
+            String::new()
+        }
+        fn archive_type(&self) -> crate::program::model::data::archive_type::ArchiveType {
+            crate::program::model::data::archive_type::ArchiveType::Program
+        }
+        fn name(&self) -> String {
+            String::new()
+        }
+        fn last_sync_time(&self) -> i64 {
+            0
+        }
+        fn is_dirty(&self) -> bool {
+            false
+        }
+        fn set_last_sync_time(&mut self, _time: i64) {}
+        fn set_name(&mut self, _name: String) {}
+        fn set_dirty_flag(&mut self, _dirty: bool) {}
+    }
 
     #[test]
     fn category_added_does_nothing() {

@@ -41,7 +41,11 @@ mod tests {
         bytes: Vec<u8>,
     }
 
-    impl MemBuffer for TestInstruction {}
+    impl MemBuffer for TestInstruction {
+        fn get_address(&self) -> Address {
+            mock_address(0x1000)
+        }
+    }
     impl PropertySet for TestInstruction {}
 
     impl ProcessorContextView for TestInstruction {
@@ -378,10 +382,6 @@ mod tests {
 
         fn is_length_overridden(&self) -> bool {
             false
-        }
-
-        fn clear_length_override(&mut self) -> Result<(), crate::program::util::CodeUnitInsertionException> {
-            Ok(())
         }
     }
 

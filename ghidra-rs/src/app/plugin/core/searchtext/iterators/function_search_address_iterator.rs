@@ -116,7 +116,7 @@ mod tests {
             &mut self,
             _name: &str,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::SetFunctionNameError> {
+        ) -> Result<(), crate::program::model::listing::function::SetFunctionNameError> {
             Ok(())
         }
 
@@ -128,12 +128,13 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl crate::program::model::listing::Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:64:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:64:default".to_string()
                 }
             }
             Arc::new(MockProgram)
@@ -344,7 +345,7 @@ mod tests {
             &mut self,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!("not needed for this test")
         }
 
@@ -354,7 +355,7 @@ mod tests {
             _ordinal: i32,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!("not needed for this test")
         }
 
@@ -364,7 +365,7 @@ mod tests {
             _update_type: crate::program::model::listing::FunctionUpdateType,
             _force: bool,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::FunctionEditError> {
+        ) -> Result<(), crate::program::model::listing::function::FunctionEditError> {
             Ok(())
         }
 
@@ -376,7 +377,7 @@ mod tests {
             _update_type: crate::program::model::listing::FunctionUpdateType,
             _force: bool,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::FunctionEditError> {
+        ) -> Result<(), crate::program::model::listing::function::FunctionEditError> {
             Ok(())
         }
 
@@ -441,7 +442,7 @@ mod tests {
             &mut self,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Variable>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Variable>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!("not needed for this test")
         }
 

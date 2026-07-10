@@ -59,6 +59,10 @@ mod tests {
     }
 
     impl crate::program::model::symbol::Reference for MockStackReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             Address::default()
         }

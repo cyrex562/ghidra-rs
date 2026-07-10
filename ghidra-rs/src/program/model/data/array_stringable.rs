@@ -82,6 +82,9 @@ mod tests {
         initialized: bool,
     }
     impl MemBuffer for MockMemBuffer {
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
         fn is_initialized_memory(&self) -> bool {
             self.initialized
         }

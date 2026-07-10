@@ -58,11 +58,7 @@ mod tests {
 
     struct MockDataType;
 
-    impl DataType for MockDataType {
-        fn type_id(&self) -> TypeId {
-            TypeId::of::<MockDataType>()
-        }
-    }
+    impl DataType for MockDataType {}
 
     struct TestPreview {
         name: String,

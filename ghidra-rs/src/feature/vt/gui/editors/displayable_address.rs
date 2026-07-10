@@ -73,13 +73,15 @@ mod tests {
         name: String,
     }
 
+    impl crate::framework::model::DomainObject for MockProgram {}
+
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            &self.name
+        fn get_name(&self) -> String {
+            self.name.clone()
         }
 
-        fn get_language_id(&self) -> &str {
-            "x86"
+        fn get_language_id(&self) -> String {
+            "x86".to_string()
         }
     }
 

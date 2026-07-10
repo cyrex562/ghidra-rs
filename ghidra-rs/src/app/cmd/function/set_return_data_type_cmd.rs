@@ -94,20 +94,6 @@ mod tests {
             4
         }
 
-        fn clone(&self) -> Box<dyn crate::program::model::data::data_type::DataType> {
-            Box::new(MockDataType {
-                name: self.name.clone(),
-            })
-        }
-
-        fn get_value_class(&self) -> String {
-            "int".to_string()
-        }
-
-        fn get_type_def_path(&self) -> Option<String> {
-            None
-        }
-
         fn is_equivalent(
             &self,
             _other: &dyn crate::program::model::data::data_type::DataType,
@@ -116,6 +102,35 @@ mod tests {
         }
     }
 
+    use crate::program::database::function::OverlappingFunctionException;
+    use crate::program::model::address::{AddressIterator, AddressSetView};
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
+    use crate::program::model::listing::code_unit::CodeUnit;
+    use crate::program::model::listing::data::Data;
+    use crate::program::model::listing::function::{
+        FunctionEditError, FunctionUpdateType, SetFunctionNameError,
+    };
+    use crate::program::model::listing::instruction::Instruction;
+    use crate::program::model::listing::program_fragment::ProgramFragment;
+    use crate::program::model::listing::program_module::ProgramModule;
+    use crate::program::model::listing::{
+        CreateFunctionError, FunctionSignature, FunctionTag, Parameter, Variable,
+    };
+    use crate::program::model::lang::instruction_prototype::InstructionPrototype;
+    use crate::program::model::lang::ProcessorContextView;
+    use crate::program::model::symbol::{ExternalLocation, Namespace, NamespaceType};
+    use crate::program::model::util::PropertyMap;
+    use crate::program::seam_stubs::{
+        CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
+        FunctionIterator, InstructionIterator, InstructionSet, MemBuffer, PrototypeModel, StackFrame,
+        VariableFilter, VariableStorage,
+    };
+    use crate::program::util::CodeUnitInsertionException;
+    use crate::util::exception::{CancelledException, DuplicateNameException, InvalidInputException};
+    use crate::util::task::TaskMonitor;
+
+    #[allow(dead_code)]
     struct MockFunction {
         entry_point: Address,
         return_type: Option<Box<dyn DataType>>,
@@ -124,212 +139,250 @@ mod tests {
         last_error: Option<String>,
     }
 
-    impl crate::program::model::symbol::Namespace for MockFunction {
+    impl Namespace for MockFunction {
         fn get_symbol(&self) -> Arc<dyn crate::program::model::symbol::Symbol> {
             unimplemented!()
         }
-
-        fn get_parent_namespace(&self) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
+        fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>> {
             None
         }
     }
 
     impl Function for MockFunction {
-        fn has_var_args(&self) -> bool {
-            false
-        }
-
-        fn set_var_args(&mut self, _has_var_args: bool) {}
-
         fn get_name(&self) -> String {
             "mock_function".to_string()
         }
-
-        fn set_name(
-            &mut self,
-            _name: &str,
-            _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::function::SetFunctionNameError> {
+        fn set_name(&mut self, _name: &str, _source: SourceType) -> Result<(), SetFunctionNameError> {
             Ok(())
         }
-
         fn set_call_fixup(&mut self, _name: Option<&str>) {}
-
         fn get_call_fixup(&self) -> Option<String> {
             None
         }
-
         fn get_program(&self) -> Arc<dyn Program> {
-            struct MockProgram;
-            impl Program for MockProgram {
-                fn get_name(&self) -> String {
-                    "mock_program".to_string()
-                }
-
-                fn get_language_id(&self) -> String {
-                    "x86".to_string()
-                }
-
-                fn get_listing(&mut self) -> Option<&mut dyn crate::program::model::listing::Listing> {
-                    None
-                }
-            }
-            Arc::new(MockProgram)
+            Arc::new(MockProgram { listing: None })
         }
-
         fn get_comment(&self) -> Option<String> {
             None
         }
-
         fn get_comment_as_array(&self) -> Vec<String> {
             vec![]
         }
-
         fn set_comment(&mut self, _comment: Option<&str>) {}
-
         fn get_repeatable_comment(&self) -> Option<String> {
             None
         }
-
         fn get_repeatable_comment_as_array(&self) -> Vec<String> {
             vec![]
         }
-
         fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
-
         fn get_entry_point(&self) -> Address {
             self.entry_point
         }
-
-        fn get_return_type(&self) -> Option<Box<dyn crate::program::model::data::data_type::DataType>> {
-            self.return_type.as_ref().map(|dt| dt.clone())
-        }
-
-        fn set_return_type(
-            &mut self,
-            return_type: Box<dyn crate::program::model::data::data_type::DataType>,
-            source: SourceType,
-        ) -> Result<(), crate::util::exception::InvalidInputException> {
-            if return_type.get_length() <= 0 {
-                self.last_error = Some("Data type must have a fixed length".to_string());
-                return Err(crate::util::exception::InvalidInputException::new(
-                    "Data type must have a fixed length",
-                ));
-            }
-            self.return_type = Some(return_type);
-            self.return_type_source = Some(source);
-            Ok(())
-        }
-
-        fn get_signature(&self) -> Box<dyn crate::program::model::listing::FunctionSignature> {
-            unimplemented!()
-        }
-
-        fn has_custom_variable_storage(&self) -> bool {
-            false
-        }
-
-        fn get_local_variables(&self) -> Vec<Arc<dyn crate::program::model::listing::Variable>> {
-            vec![]
-        }
-
-        fn get_parameters(&self) -> Vec<Arc<dyn crate::program::model::listing::Parameter>> {
-            vec![]
-        }
-
-        fn get_body(&self) -> Arc<dyn crate::program::model::address::AddressSetView> {
-            unimplemented!()
-        }
-
-        fn add_local_variable(
-            &mut self,
-            _var: Arc<dyn crate::program::model::listing::Variable>,
-        ) -> Result<(), crate::program::model::listing::function::FunctionEditError> {
-            Ok(())
-        }
-
-        fn get_stack_depth(&self) -> i32 {
-            0
-        }
-
-        fn set_stack_depth(&mut self, _depth: i32) {}
-
-        fn get_stack_purge_size(&self) -> Option<i32> {
+        fn get_return_type(&self) -> Option<Box<dyn DataType>> {
             None
         }
-
-        fn set_stack_purge_size(&mut self, _purge_size: Option<i32>) {}
-
+        fn set_return_type(
+            &mut self,
+            _data_type: Box<dyn DataType>,
+            _source: SourceType,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
+        fn get_return(&self) -> Box<dyn Parameter> {
+            unimplemented!()
+        }
+        fn set_return(
+            &mut self,
+            _data_type: Box<dyn DataType>,
+            _storage: Box<dyn VariableStorage>,
+            _source: SourceType,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
+        fn get_signature_formal(&self, _formal_signature: bool) -> Box<dyn FunctionSignature> {
+            unimplemented!()
+        }
+        fn get_prototype_string(
+            &self,
+            _formal_signature: bool,
+            _include_calling_convention: bool,
+        ) -> String {
+            String::new()
+        }
+        fn get_signature_source(&self) -> SourceType {
+            SourceType::UserDefined
+        }
+        fn set_signature_source(&mut self, _signature_source: SourceType) {}
+        fn get_stack_frame(&self) -> Box<dyn StackFrame> {
+            unimplemented!()
+        }
+        fn get_stack_purge_size(&self) -> i32 {
+            0
+        }
+        fn get_tags(&self) -> Vec<Box<dyn FunctionTag>> {
+            vec![]
+        }
+        fn add_tag(&mut self, _name: &str) -> bool {
+            true
+        }
+        fn remove_tag(&mut self, _name: &str) {}
+        fn set_stack_purge_size(&mut self, _purge_size: i32) {}
+        fn is_stack_purge_size_valid(&self) -> bool {
+            true
+        }
+        #[allow(deprecated)]
+        fn add_parameter(
+            &mut self,
+            _var: Box<dyn Variable>,
+            _source: SourceType,
+        ) -> Result<Box<dyn Parameter>, FunctionEditError> {
+            unimplemented!()
+        }
+        #[allow(deprecated)]
+        fn insert_parameter(
+            &mut self,
+            _ordinal: i32,
+            _var: Box<dyn Variable>,
+            _source: SourceType,
+        ) -> Result<Box<dyn Parameter>, FunctionEditError> {
+            unimplemented!()
+        }
+        fn replace_parameters(
+            &mut self,
+            _params: Vec<Box<dyn Variable>>,
+            _update_type: FunctionUpdateType,
+            _force: bool,
+            _source: SourceType,
+        ) -> Result<(), FunctionEditError> {
+            Ok(())
+        }
+        fn update_function(
+            &mut self,
+            _calling_convention: Option<&str>,
+            _return_value: Option<Box<dyn Variable>>,
+            _new_params: Vec<Box<dyn Variable>>,
+            _update_type: FunctionUpdateType,
+            _force: bool,
+            _source: SourceType,
+        ) -> Result<(), FunctionEditError> {
+            Ok(())
+        }
+        fn get_parameter(&self, _ordinal: i32) -> Option<Box<dyn Parameter>> {
+            None
+        }
+        #[allow(deprecated)]
+        fn remove_parameter(&mut self, _ordinal: i32) {}
+        #[allow(deprecated)]
+        fn move_parameter(
+            &mut self,
+            _from_ordinal: i32,
+            _to_ordinal: i32,
+        ) -> Result<Box<dyn Parameter>, InvalidInputException> {
+            unimplemented!()
+        }
+        fn get_parameter_count(&self) -> i32 {
+            0
+        }
+        fn get_auto_parameter_count(&self) -> i32 {
+            0
+        }
+        fn get_parameters(&self) -> Vec<Box<dyn Parameter>> {
+            vec![]
+        }
+        fn get_parameters_filtered(
+            &self,
+            _filter: Option<&dyn VariableFilter>,
+        ) -> Vec<Box<dyn Parameter>> {
+            vec![]
+        }
+        fn get_local_variables(&self) -> Vec<Box<dyn Variable>> {
+            vec![]
+        }
+        fn get_local_variables_filtered(
+            &self,
+            _filter: Option<&dyn VariableFilter>,
+        ) -> Vec<Box<dyn Variable>> {
+            vec![]
+        }
+        fn get_variables_filtered(
+            &self,
+            _filter: Option<&dyn VariableFilter>,
+        ) -> Vec<Box<dyn Variable>> {
+            vec![]
+        }
+        fn get_all_variables(&self) -> Vec<Box<dyn Variable>> {
+            vec![]
+        }
+        fn add_local_variable(
+            &mut self,
+            _var: Box<dyn Variable>,
+            _source: SourceType,
+        ) -> Result<Box<dyn Variable>, FunctionEditError> {
+            unimplemented!()
+        }
+        fn remove_variable(&mut self, _var: &dyn Variable) {}
+        fn set_body(
+            &mut self,
+            _new_body: &dyn AddressSetView,
+        ) -> Result<(), OverlappingFunctionException> {
+            Ok(())
+        }
+        fn has_var_args(&self) -> bool {
+            false
+        }
+        fn set_var_args(&mut self, _has_var_args: bool) {}
+        fn is_inline(&self) -> bool {
+            false
+        }
+        fn set_inline(&mut self, _is_inline: bool) {}
         fn has_no_return(&self) -> bool {
             false
         }
-
-        fn set_no_return(&mut self, _no_return: bool) {}
-
-        fn is_external(&self) -> bool {
+        fn set_no_return(&mut self, _has_no_return: bool) {}
+        fn has_custom_variable_storage(&self) -> bool {
             false
         }
-
+        fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
+        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+            None
+        }
+        fn get_calling_convention_name(&self) -> String {
+            "unknown".to_string()
+        }
+        fn set_calling_convention(&mut self, _name: &str) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
         fn is_thunk(&self) -> bool {
             false
         }
-
-        fn get_thunked_function(&self) -> Option<Arc<dyn Function>> {
+        fn get_thunked_function(&self, _recursive: bool) -> Option<Arc<dyn Function>> {
             None
         }
-
+        fn get_function_thunk_addresses(&self, _recursive: bool) -> Option<Vec<Address>> {
+            None
+        }
         fn set_thunked_function(
             &mut self,
             _thunked_function: Option<Arc<dyn Function>>,
         ) -> Result<(), String> {
             Ok(())
         }
-
-        fn set_inline_flag(&mut self, _inline: bool) {}
-
-        fn is_inline(&self) -> bool {
+        fn is_external(&self) -> bool {
             false
         }
-
-        fn get_calling_convention_name(&self) -> String {
-            "unknown".to_string()
+        fn get_external_location(&self) -> Option<Box<dyn ExternalLocation>> {
+            None
         }
-
-        fn set_calling_convention_name(&mut self, _convention_name: &str) -> Result<(), String> {
-            Ok(())
+        fn get_calling_functions(&self, _monitor: &dyn TaskMonitor) -> Vec<Arc<dyn Function>> {
+            vec![]
         }
-
-        fn get_type(&self) -> crate::program::model::symbol::NamespaceType {
-            crate::program::model::symbol::NamespaceType::Function
+        fn get_called_functions(&self, _monitor: &dyn TaskMonitor) -> Vec<Arc<dyn Function>> {
+            vec![]
         }
-
-        fn set_signature_source(&mut self, source: SourceType) {
-            self.signature_source = Some(source);
-        }
-
-        fn get_signature_source(&self) -> SourceType {
-            self.signature_source.unwrap_or(SourceType::Default)
-        }
-
-        fn get_signature_formal(&self, _formal_signature: bool) -> Box<dyn crate::program::model::listing::FunctionSignature> {
-            unimplemented!()
-        }
-
-        fn get_prototype_string(&self, _formal_signature: bool, _include_calling_convention: bool) -> String {
-            String::new()
-        }
-
-        fn get_return(&self) -> Box<dyn crate::program::model::listing::Parameter> {
-            unimplemented!()
-        }
-
-        fn set_return(
-            &mut self,
-            _data_type: Box<dyn crate::program::model::data::data_type::DataType>,
-            _storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
-            _source: SourceType,
-        ) -> Result<(), crate::util::exception::InvalidInputException> {
-            Ok(())
+        fn promote_local_user_labels_to_global(&mut self) {}
+        fn is_deleted(&self) -> bool {
+            false
         }
     }
 
@@ -338,503 +391,402 @@ mod tests {
     }
 
     impl crate::program::model::listing::Listing for MockListing {
-        fn get_code_unit_at(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
+        fn get_code_unit_at(&self, _addr: &Address) -> Option<Arc<dyn CodeUnit>> {
             None
         }
-
-        fn get_code_unit_containing(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
+        fn get_code_unit_containing(&self, _addr: &Address) -> Option<Arc<dyn CodeUnit>> {
             None
         }
-
-        fn get_code_unit_after(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
+        fn get_code_unit_after(&self, _addr: &Address) -> Option<Arc<dyn CodeUnit>> {
             None
         }
-
-        fn get_code_unit_before(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
+        fn get_code_unit_before(&self, _addr: &Address) -> Option<Arc<dyn CodeUnit>> {
             None
         }
-
         fn get_code_unit_iterator(
             &self,
             _property: &str,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+        ) -> Box<dyn CodeUnitIterator> {
             unimplemented!()
         }
-
         fn get_code_unit_iterator_from(
             &self,
             _property: &str,
             _addr: &Address,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+        ) -> Box<dyn CodeUnitIterator> {
             unimplemented!()
         }
-
         fn get_code_unit_iterator_in(
             &self,
             _property: &str,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+        ) -> Box<dyn CodeUnitIterator> {
             unimplemented!()
         }
-
-        fn get_comment_code_unit_iterator_by_ordinal(
-            &self,
-            _ordinal: i32,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
-            unimplemented!()
-        }
-
         fn get_comment_code_unit_iterator(
             &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+            _comment_type: CommentType,
+            _addr_set: &dyn AddressSetView,
+        ) -> Box<dyn CodeUnitIterator> {
             unimplemented!()
         }
-
-        fn get_comment_code_unit_iterator_from(
+        fn get_comment_address_iterator(
             &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
-            _addr: &Address,
+            _comment_type: CommentType,
+            _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+        ) -> Box<dyn AddressIterator> {
             unimplemented!()
         }
-
-        fn get_code_units(
+        fn get_any_comment_address_iterator(
             &self,
+            _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+        ) -> Box<dyn AddressIterator> {
             unimplemented!()
         }
-
-        fn get_code_units_from(
-            &self,
-            _addr: &Address,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+        fn get_comment(&self, _comment_type: CommentType, _address: &Address) -> Option<String> {
+            None
+        }
+        fn get_all_comments(&self, _address: &Address) -> Box<dyn CodeUnitComments> {
+            struct MockComments;
+            impl CodeUnitComments for MockComments {}
+            Box::new(MockComments)
+        }
+        fn set_comment(
+            &mut self,
+            _address: &Address,
+            _comment_type: CommentType,
+            _comment: Option<String>,
+        ) {
+        }
+        fn get_code_units(&self, _forward: bool) -> Box<dyn CodeUnitIterator> {
             unimplemented!()
         }
-
+        fn get_code_units_from(&self, _addr: &Address, _forward: bool) -> Box<dyn CodeUnitIterator> {
+            unimplemented!()
+        }
         fn get_code_units_in(
             &self,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+        ) -> Box<dyn CodeUnitIterator> {
             unimplemented!()
         }
-
-        fn get_instruction_at(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+        fn get_instruction_at(&self, _addr: &Address) -> Option<Arc<dyn Instruction>> {
             None
         }
-
-        fn get_instruction_containing(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+        fn get_instruction_containing(&self, _addr: &Address) -> Option<Arc<dyn Instruction>> {
             None
         }
-
-        fn get_instruction_after(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+        fn get_instruction_after(&self, _addr: &Address) -> Option<Arc<dyn Instruction>> {
             None
         }
-
-        fn get_instruction_before(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+        fn get_instruction_before(&self, _addr: &Address) -> Option<Arc<dyn Instruction>> {
             None
         }
-
-        fn get_instructions(
-            &self,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::InstructionIterator> {
+        fn get_instructions(&self, _forward: bool) -> Box<dyn InstructionIterator> {
             unimplemented!()
         }
-
         fn get_instructions_from(
             &self,
             _addr: &Address,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::InstructionIterator> {
+        ) -> Box<dyn InstructionIterator> {
             unimplemented!()
         }
-
         fn get_instructions_in(
             &self,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::InstructionIterator> {
+        ) -> Box<dyn InstructionIterator> {
             unimplemented!()
         }
-
-        fn get_data_at(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_data_at(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_data_containing(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_data_containing(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_data_after(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_data_after(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_data_before(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_data_before(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_data(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+        fn get_data(&self, _forward: bool) -> Box<dyn DataIterator> {
             unimplemented!()
         }
-
-        fn get_data_from(
-            &self,
-            _addr: &Address,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+        fn get_data_from(&self, _addr: &Address, _forward: bool) -> Box<dyn DataIterator> {
             unimplemented!()
         }
-
         fn get_data_in(
             &self,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+        ) -> Box<dyn DataIterator> {
             unimplemented!()
         }
-
-        fn get_defined_data_at(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_defined_data_at(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_defined_data_containing(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_defined_data_containing(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_defined_data_after(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_defined_data_after(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_defined_data_before(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_defined_data_before(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_defined_data(
-            &self,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+        fn get_defined_data(&self, _forward: bool) -> Box<dyn DataIterator> {
             unimplemented!()
         }
-
-        fn get_defined_data_from(
-            &self,
-            _addr: &Address,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+        fn get_defined_data_from(&self, _addr: &Address, _forward: bool) -> Box<dyn DataIterator> {
             unimplemented!()
         }
-
         fn get_defined_data_in(
             &self,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+        ) -> Box<dyn DataIterator> {
             unimplemented!()
         }
-
-        fn get_undefined_data_at(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+        fn get_undefined_data_at(&self, _addr: &Address) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_undefined_data_containing(
-            &self,
-            _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
-            None
-        }
-
         fn get_undefined_data_after(
             &self,
             _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            _monitor: &dyn TaskMonitor,
+        ) -> Option<Arc<dyn Data>> {
             None
         }
-
+        fn get_first_undefined_data(
+            &self,
+            _set: &dyn AddressSetView,
+            _monitor: &dyn TaskMonitor,
+        ) -> Option<Arc<dyn Data>> {
+            None
+        }
         fn get_undefined_data_before(
             &self,
             _addr: &Address,
-        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            _monitor: &dyn TaskMonitor,
+        ) -> Option<Arc<dyn Data>> {
             None
         }
-
-        fn get_undefined_data(
+        fn get_undefined_ranges(
             &self,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+            _set: &dyn AddressSetView,
+            _initialized_memory_only: bool,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Box<dyn AddressSetView>, CancelledException> {
             unimplemented!()
         }
-
-        fn get_undefined_data_from(
-            &self,
-            _addr: &Address,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
-            unimplemented!()
+        fn get_defined_code_unit_after(&self, _addr: &Address) -> Option<Arc<dyn CodeUnit>> {
+            None
         }
-
-        fn get_undefined_data_in(
-            &self,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
-            unimplemented!()
+        fn get_defined_code_unit_before(&self, _addr: &Address) -> Option<Arc<dyn CodeUnit>> {
+            None
         }
-
-        fn get_function_at(&self, entry_point: &Address) -> Option<Arc<dyn Function>> {
-            if let Some(func) = &self.function {
-                if func.get_entry_point() == *entry_point {
-                    Some(func.clone())
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        }
-
-        fn get_global_functions(&self, _name: &str) -> Vec<Arc<dyn Function>> {
+        fn get_user_defined_properties(&self) -> Vec<String> {
             vec![]
         }
-
-        fn get_functions_by_name(&self, _namespace: Option<&str>, _name: &str) -> Vec<Arc<dyn Function>> {
-            vec![]
-        }
-
-        fn get_function_containing(&self, _addr: &Address) -> Option<Arc<dyn Function>> {
+        fn remove_user_defined_property(&mut self, _property_name: &str) {}
+        fn get_property_map(&self, _property_name: &str) -> Option<Box<dyn PropertyMap>> {
             None
         }
-
-        fn get_external_functions(&self) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn get_functions(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn get_functions_from(
-            &self,
-            _addr: &Address,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn get_functions_in(
-            &self,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn create_function(
+        fn create_instruction(
             &mut self,
-            _name: Option<&str>,
-            _entry: &Address,
-            _body: Arc<dyn crate::program::model::address::AddressSetView>,
-            _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Arc<dyn Function>, crate::program::model::listing::CreateFunctionError> {
+            _addr: Address,
+            _prototype: Arc<dyn InstructionPrototype>,
+            _mem_buf: &dyn MemBuffer,
+            _context: &dyn ProcessorContextView,
+            _length: i32,
+        ) -> Result<Arc<dyn Instruction>, CodeUnitInsertionException> {
             unimplemented!()
         }
-
-        fn remove_function(&mut self, _entry_point: &Address) {}
-
-        fn create_module(
+        fn add_instructions(
             &mut self,
-            _parent_module: Option<Arc<dyn crate::program::model::listing::program_module::ProgramModule>>,
-            _module_name: &str,
-        ) -> Arc<dyn crate::program::model::listing::program_module::ProgramModule> {
+            _instruction_set: &dyn InstructionSet,
+            _overwrite: bool,
+        ) -> Result<Box<dyn AddressSetView>, CodeUnitInsertionException> {
             unimplemented!()
         }
-
-        fn get_root_module(&self) -> Arc<dyn crate::program::model::listing::program_module::ProgramModule> {
+        fn create_data_sized(
+            &mut self,
+            _addr: Address,
+            _data_type: Box<dyn DataType>,
+            _length: i32,
+        ) -> Result<Arc<dyn Data>, CodeUnitInsertionException> {
             unimplemented!()
         }
-
-        fn get_module(&self, _tree_name: &str) -> Option<Arc<dyn crate::program::model::listing::program_module::ProgramModule>> {
-            None
-        }
-
-        fn get_module_tree(&self, _tree_name: &str) -> Option<Arc<dyn crate::program::model::listing::program_module::ProgramModule>> {
-            None
-        }
-
-        fn get_tree_names(&self) -> Vec<String> {
-            vec![]
-        }
-
-        fn create_root_module(&mut self, _module_name: &str) {
-        }
-
-        fn remove_tree(&mut self, _tree_name: &str) {
-        }
-
-        fn add_tree_change_listener(
+        fn create_data(
             &mut self,
-            _listener: Box<dyn crate::program::seam_stubs::TreeChangeListener>,
-        ) {
-        }
-
-        fn remove_tree_change_listener(
-            &mut self,
-            _listener: Box<dyn crate::program::seam_stubs::TreeChangeListener>,
-        ) {
-        }
-
-        fn is_in_delimited_set(
-            &self,
-            _addr: &Address,
-            _property: &str,
-        ) -> bool {
-            false
-        }
-
-        fn get_data_type_manager(&self) -> Arc<dyn crate::program::model::data::data_type_manager::DataTypeManager> {
+            _addr: Address,
+            _data_type: Box<dyn DataType>,
+        ) -> Result<Arc<dyn Data>, CodeUnitInsertionException> {
             unimplemented!()
         }
-
-        fn get_property_map(&self, _property_name: &str) -> Option<Arc<dyn crate::program::model::util::PropertyMap>> {
-            None
-        }
-
-        fn get_property_names(&self) -> Vec<String> {
-            vec![]
-        }
-
-        fn create_property(&mut self, _property_name: &str, _value_type: i32) {
-        }
-
-        fn copy_address_range(
-            &mut self,
-            _from_addr: &Address,
-            _to_addr: &Address,
-            _len: i64,
-            _monitor: Option<Arc<dyn crate::util::task::TaskMonitor>>,
-        ) -> Result<(), crate::util::exception::CancelledException> {
-            Ok(())
-        }
-
-        fn move_address_range(
-            &mut self,
-            _from_addr: &Address,
-            _to_addr: &Address,
-            _len: i64,
-            _monitor: Option<Arc<dyn crate::util::task::TaskMonitor>>,
-        ) -> Result<(), crate::util::exception::CancelledException> {
-            Ok(())
-        }
-
-        fn clear_address_range(
+        fn clear_code_units(
             &mut self,
             _start_addr: &Address,
             _end_addr: &Address,
             _clear_context: bool,
-            _monitor: Option<Arc<dyn crate::util::task::TaskMonitor>>,
-        ) -> Result<(), crate::util::exception::CancelledException> {
-            Ok(())
+        ) {
         }
-
-        fn append_address_range(
+        fn clear_code_units_with_monitor(
             &mut self,
             _start_addr: &Address,
             _end_addr: &Address,
-        ) -> Result<(), String> {
+            _clear_context: bool,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<(), CancelledException> {
             Ok(())
         }
-
-        fn delete_address_range(
+        fn is_undefined(&self, _start: &Address, _end: &Address) -> bool {
+            true
+        }
+        fn clear_comments(&mut self, _start_addr: &Address, _end_addr: &Address) {}
+        fn clear_properties(
             &mut self,
             _start_addr: &Address,
             _end_addr: &Address,
-            _monitor: Option<Arc<dyn crate::util::task::TaskMonitor>>,
-        ) -> Result<(), crate::util::exception::CancelledException> {
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<(), CancelledException> {
             Ok(())
         }
-
-        fn insert_address_range(
-            &mut self,
+        fn clear_all(&mut self, _clear_context: bool, _monitor: &dyn TaskMonitor) {}
+        fn get_fragment(
+            &self,
+            _tree_name: &str,
             _addr: &Address,
-            _size: i64,
-            _monitor: Option<Arc<dyn crate::util::task::TaskMonitor>>,
-        ) -> Result<(), crate::util::exception::CancelledException> {
+        ) -> Option<Arc<dyn ProgramFragment>> {
+            None
+        }
+        fn get_module(&self, _tree_name: &str, _name: &str) -> Option<Arc<dyn ProgramModule>> {
+            None
+        }
+        fn get_fragment_by_name(
+            &self,
+            _tree_name: &str,
+            _name: &str,
+        ) -> Option<Arc<dyn ProgramFragment>> {
+            None
+        }
+        fn create_root_module(
+            &mut self,
+            _tree_name: &str,
+        ) -> Result<Arc<dyn ProgramModule>, DuplicateNameException> {
+            unimplemented!()
+        }
+        fn get_root_module(&self, _tree_name: &str) -> Option<Arc<dyn ProgramModule>> {
+            None
+        }
+        fn get_root_module_by_id(&self, _tree_id: i64) -> Option<Arc<dyn ProgramModule>> {
+            None
+        }
+        fn get_default_root_module(&self) -> Arc<dyn ProgramModule> {
+            unimplemented!()
+        }
+        fn get_tree_names(&self) -> Vec<String> {
+            vec![]
+        }
+        fn remove_tree(&mut self, _tree_name: &str) -> bool {
+            false
+        }
+        fn rename_tree(
+            &mut self,
+            _old_name: &str,
+            _new_name: &str,
+        ) -> Result<(), DuplicateNameException> {
             Ok(())
         }
-
-        fn get_address(&self, offset: i32) -> Address {
-            Address::from(offset as u64)
+        fn get_num_code_units(&self) -> i64 {
+            0
         }
-
-        fn get_address_from_string(&self, _addr_str: &str) -> Result<Address, String> {
-            Err("Unimplemented".to_string())
+        fn get_num_defined_data(&self) -> i64 {
+            0
         }
-
-        fn set_program_context(&mut self, _new_context: Arc<dyn crate::program::model::lang::ProcessorContextView>) {
+        fn get_num_instructions(&self) -> i64 {
+            0
         }
-
-        fn get_program_context(&self) -> Arc<dyn crate::program::model::lang::ProcessorContextView> {
+        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
+            struct MockDataTypeManager;
+            impl DataTypeManager for MockDataTypeManager {}
+            Box::new(MockDataTypeManager)
+        }
+        fn create_function(
+            &mut self,
+            _name: &str,
+            _entry_point: Address,
+            _body: &dyn AddressSetView,
+            _source: SourceType,
+        ) -> Result<Arc<dyn Function>, CreateFunctionError> {
             unimplemented!()
+        }
+        fn create_function_in_namespace(
+            &mut self,
+            _name: &str,
+            _name_space: Arc<dyn Namespace>,
+            _entry_point: Address,
+            _body: &dyn AddressSetView,
+            _source: SourceType,
+        ) -> Result<Arc<dyn Function>, CreateFunctionError> {
+            unimplemented!()
+        }
+        fn remove_function(&mut self, _entry_point: &Address) {}
+        fn get_function_at(&self, entry_point: &Address) -> Option<Arc<dyn Function>> {
+            match &self.function {
+                Some(func) if func.get_entry_point() == *entry_point => Some(func.clone()),
+                _ => None,
+            }
+        }
+        fn get_global_functions(&self, _name: &str) -> Vec<Arc<dyn Function>> {
+            vec![]
+        }
+        fn get_functions_by_name(
+            &self,
+            _namespace: Option<&str>,
+            _name: &str,
+        ) -> Vec<Arc<dyn Function>> {
+            vec![]
+        }
+        fn get_function_containing(&self, _addr: &Address) -> Option<Arc<dyn Function>> {
+            None
+        }
+        fn get_external_functions(&self) -> Box<dyn FunctionIterator> {
+            unimplemented!()
+        }
+        fn get_functions(&self, _forward: bool) -> Box<dyn FunctionIterator> {
+            unimplemented!()
+        }
+        fn get_functions_from(&self, _start: &Address, _forward: bool) -> Box<dyn FunctionIterator> {
+            unimplemented!()
+        }
+        fn get_functions_in(
+            &self,
+            _asv: &dyn AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn FunctionIterator> {
+            unimplemented!()
+        }
+        fn is_in_function(&self, _addr: &Address) -> bool {
+            false
+        }
+        fn get_comment_history(
+            &self,
+            _addr: &Address,
+            _comment_type: CommentType,
+        ) -> Vec<Box<dyn CommentHistory>> {
+            vec![]
+        }
+        fn get_comment_address_count(&self) -> i64 {
+            0
         }
     }
 

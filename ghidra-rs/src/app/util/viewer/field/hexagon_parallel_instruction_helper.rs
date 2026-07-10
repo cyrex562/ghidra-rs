@@ -121,7 +121,12 @@ mod tests {
         }
     }
 
-    impl MemBuffer for MockInstruction {}
+    impl MemBuffer for MockInstruction {
+        fn get_address(&self) -> Address {
+            mock_address()
+        }
+    }
+    impl crate::program::model::util::property_set::PropertySet for MockInstruction {}
     impl InstructionContext for MockInstruction {}
 
     impl ProcessorContextView for MockInstruction {

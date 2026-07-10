@@ -207,6 +207,92 @@ mod tests {
         fn get_platform_manager(&self) -> Box<dyn TracePlatformManager> {
             unimplemented!("not exercised by these tests")
         }
+
+        fn get_memory_manager(&self) -> Box<dyn TraceMemoryManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_module_manager(&self) -> Box<dyn TraceModuleManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_object_manager(&self) -> Box<dyn TraceObjectManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_reference_manager(&self) -> Box<dyn TraceReferenceManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_register_context_manager(&self) -> Box<dyn TraceRegisterContextManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_stack_manager(&self) -> Box<dyn TraceStackManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_static_mapping_manager(&self) -> Box<dyn TraceStaticMappingManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_symbol_manager(&self) -> Box<dyn TraceSymbolManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_thread_manager(&self) -> Box<dyn TraceThreadManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_time_manager(&self) -> Box<dyn TraceTimeManager> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_fixed_program_view(&self, _snap: i64) -> Box<dyn TraceProgramView> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn create_program_view(&self, _snap: i64) -> Box<dyn TraceVariableSnapProgramView> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_all_program_views(&self) -> Vec<Box<dyn TraceProgramView>> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_program_view(&self) -> Box<dyn TraceVariableSnapProgramView> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn create_time_viewport(&self) -> Box<dyn TraceTimeViewport> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn add_program_view_listener(
+            &mut self,
+            _listener: Box<dyn crate::trace::model::trace::TraceProgramViewListener>,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn remove_program_view_listener(
+            &mut self,
+            _listener: &dyn crate::trace::model::trace::TraceProgramViewListener,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn lock_read(
+            &self,
+        ) -> crate::util::lock_hold::LockHold<'_, dyn crate::util::lock_hold::Lock> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn lock_write(
+            &self,
+        ) -> crate::util::lock_hold::LockHold<'_, dyn crate::util::lock_hold::Lock> {
+            unimplemented!("not exercised by these tests")
+        }
     }
 
     fn hash_of<T: Hash>(v: &T) -> u64 {

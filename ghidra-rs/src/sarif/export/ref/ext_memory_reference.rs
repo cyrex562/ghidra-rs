@@ -52,7 +52,7 @@ impl IsfObject for ExtMemoryReference {}
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::symbol::{RefType, SourceType};
+    use crate::program::model::symbol::{OffsetReference, RefType, SourceType};
 
     struct MockMemoryReference {
         ref_type: RefType,
@@ -63,6 +63,10 @@ mod tests {
     }
 
     impl Reference for MockMemoryReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             Address::default()
         }
@@ -139,6 +143,10 @@ mod tests {
     }
 
     impl Reference for MockOffsetMemoryReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             Address::default()
         }

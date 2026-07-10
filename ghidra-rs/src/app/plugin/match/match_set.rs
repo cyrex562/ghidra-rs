@@ -89,7 +89,7 @@ impl Clone for MatchSet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{AddressSpace, AddressSpaceType};
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);

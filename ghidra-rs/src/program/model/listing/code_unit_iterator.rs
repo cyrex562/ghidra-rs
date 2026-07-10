@@ -64,12 +64,27 @@ impl CodeUnitIterator for CodeUnitIteratorAdapter {
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::seam_stubs::CommentType;
+    use crate::program::model::listing::program::Program;
+    use crate::program::model::mem::MemoryAccessException;
+    use crate::program::model::lang::register::Register;
+    use crate::program::model::scalar::Scalar;
+    use crate::program::model::symbol::{
+        ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
+    };
+    use crate::program::model::util::PropertySet;
+    use crate::program::seam_stubs::{CommentType, MemBuffer};
 
     struct TestCodeUnit {
         min_address: Address,
         max_address: Address,
     }
+
+    impl MemBuffer for TestCodeUnit {
+        fn get_address(&self) -> Address {
+            self.min_address.clone()
+        }
+    }
+    impl PropertySet for TestCodeUnit {}
 
     impl TestCodeUnit {
         fn new(offset: i64) -> Self {
@@ -116,6 +131,117 @@ mod tests {
 
         fn get_comment_as_array(&self, _comment_type: CommentType) -> Vec<String> {
             vec![]
+        }
+
+        fn set_comment(&mut self, _comment_type: CommentType, _comment: Option<String>) {}
+
+        fn set_comment_as_array(&mut self, _comment_type: CommentType, _comment: &[String]) {}
+
+        fn get_length(&self) -> i32 {
+            1
+        }
+
+        fn get_bytes(&self) -> Result<Vec<u8>, MemoryAccessException> {
+            Ok(Vec::new())
+        }
+
+        fn get_bytes_in_code_unit(
+            &self,
+            _buffer: &mut [u8],
+            _buffer_offset: i32,
+        ) -> Result<(), MemoryAccessException> {
+            Ok(())
+        }
+
+        fn contains(&self, _test_addr: &Address) -> bool {
+            false
+        }
+
+        fn compare_to(&self, _addr: &Address) -> i32 {
+            0
+        }
+
+        fn add_mnemonic_reference(
+            &mut self,
+            _ref_addr: Address,
+            _ref_type: RefType,
+            _source_type: SourceType,
+        ) {
+        }
+
+        fn remove_mnemonic_reference(&mut self, _ref_addr: &Address) {}
+
+        fn get_mnemonic_references(&self) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+
+        fn get_operand_references(&self, _index: i32) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+
+        fn get_primary_reference(&self, _index: i32) -> Option<Arc<dyn Reference>> {
+            None
+        }
+
+        fn add_operand_reference(
+            &mut self,
+            _index: i32,
+            _ref_addr: Address,
+            _ref_type: RefType,
+            _source_type: SourceType,
+        ) {
+        }
+
+        fn remove_operand_reference(&mut self, _index: i32, _ref_addr: &Address) {}
+
+        fn get_references_from(&self) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+
+        fn get_reference_iterator_to(&self) -> Box<dyn ReferenceIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_program(&self) -> Arc<dyn Program> {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_external_reference(&self, _op_index: i32) -> Option<Arc<dyn ExternalReference>> {
+            None
+        }
+
+        fn remove_external_reference(&mut self, _op_index: i32) {}
+
+        fn set_primary_memory_reference(&mut self, _reference: Arc<dyn Reference>) {}
+
+        fn set_stack_reference(
+            &mut self,
+            _op_index: i32,
+            _offset: i32,
+            _source_type: SourceType,
+            _ref_type: RefType,
+        ) {
+        }
+
+        fn set_register_reference(
+            &mut self,
+            _op_index: i32,
+            _reg: &Register,
+            _source_type: SourceType,
+            _ref_type: RefType,
+        ) {
+        }
+
+        fn get_num_operands(&self) -> i32 {
+            0
+        }
+
+        fn get_address(&self, _op_index: i32) -> Option<Address> {
+            None
+        }
+
+        fn get_scalar(&self, _op_index: i32) -> Option<Scalar> {
+            None
         }
     }
 

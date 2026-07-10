@@ -97,6 +97,10 @@ mod tests {
             Arc::new(MockSymbol)
         }
 
+        fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>> {
+            None
+        }
+
         fn get_name_with_path(&self, _include_namespace_path: bool) -> String {
             "test.namespace".to_string()
         }

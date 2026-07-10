@@ -217,7 +217,11 @@ mod tests {
         constant: bool,
     }
 
-    impl MemBuffer for MockData {}
+    impl MemBuffer for MockData {
+        fn get_address(&self) -> Address {
+            mock_address(0)
+        }
+    }
     impl PropertySet for MockData {}
 
     impl CodeUnit for MockData {
@@ -303,12 +307,13 @@ mod tests {
         }
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock.bin"
+                fn get_name(&self) -> String {
+                    "mock.bin".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "test:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "test:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)

@@ -97,9 +97,26 @@ mod tests {
 
     struct MockLibrary;
 
+    impl crate::program::model::symbol::Namespace for MockLibrary {
+        fn get_symbol(&self) -> Arc<dyn crate::program::model::symbol::Symbol> {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_parent_namespace(&self) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
+            None
+        }
+    }
+
     impl Library for MockLibrary {
-        fn get_name(&self) -> String {
-            "test_lib".to_string()
+        fn get_associated_program_path(&self) -> Option<String> {
+            None
+        }
+
+        fn set_associated_program_path(
+            &mut self,
+            _program_path: Option<&str>,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
         }
     }
 
@@ -113,11 +130,11 @@ mod tests {
 
     impl ExternalManager for MockExternalManager {
         fn get_external_library_names(&self) -> Vec<String> {
-            vec![]
+            Vec::new()
         }
 
-        fn get_libraries(&self) -> Vec<Arc<dyn Library>> {
-            vec![]
+        fn get_libraries(&self) -> Vec<Arc<dyn crate::program::model::listing::Library>> {
+            Vec::new()
         }
 
         fn get_external_library(&self, library_name: &str) -> Option<Arc<dyn Library>> {
@@ -165,7 +182,7 @@ mod tests {
             &mut self,
             _old_name: &str,
             _new_name: &str,
-            _source: SourceType,
+            _source: crate::program::model::symbol::SourceType,
         ) -> Result<bool, crate::program::model::symbol::UpdateExternalLibraryNameError> {
             Ok(false)
         }
@@ -184,7 +201,23 @@ mod tests {
             Box::new(crate::program::model::symbol::EmptyExternalLocationIterator)
         }
 
-        fn get_external_location_for_label_in_library(
+        fn get_external_locations_by_label(
+            &self,
+            _library_name: Option<&str>,
+            _label: &str,
+        ) -> Vec<Arc<dyn crate::program::model::symbol::ExternalLocation>> {
+            Vec::new()
+        }
+
+        fn get_external_locations_in_namespace(
+            &self,
+            _namespace: Option<Arc<dyn crate::program::model::symbol::Namespace>>,
+            _label: &str,
+        ) -> Vec<Arc<dyn crate::program::model::symbol::ExternalLocation>> {
+            Vec::new()
+        }
+
+        fn get_unique_external_location(
             &self,
             _library_name: Option<&str>,
             _label: &str,
@@ -192,11 +225,23 @@ mod tests {
             None
         }
 
-        fn get_external_location_at_address(
+        fn get_unique_external_location_in_namespace(
             &self,
-            _address: &crate::program::model::address::Address,
+            _namespace: Option<Arc<dyn crate::program::model::symbol::Namespace>>,
+            _label: &str,
         ) -> Option<Arc<dyn crate::program::model::symbol::ExternalLocation>> {
             None
+        }
+
+        fn get_external_location(
+            &self,
+            _symbol: Arc<dyn crate::program::model::symbol::Symbol>,
+        ) -> Option<Arc<dyn crate::program::model::symbol::ExternalLocation>> {
+            None
+        }
+
+        fn contains(&self, _library_name: &str) -> bool {
+            false
         }
 
         fn add_external_library_name(
@@ -217,68 +262,43 @@ mod tests {
         fn add_ext_location_in_library(
             &mut self,
             _library_name: &str,
-            _label: Option<&str>,
-            _address: Option<&crate::program::model::address::Address>,
-            _source: SourceType,
-        ) -> Result<
-            Arc<dyn crate::program::model::symbol::ExternalLocation>,
-            crate::program::model::symbol::AddExternalLocationInLibraryError,
-        > {
-            Err(InvalidInputException::new("Mock").into())
+            _ext_label: Option<&str>,
+            _ext_addr: Option<crate::program::model::address::Address>,
+            _source_type: crate::program::model::symbol::SourceType,
+        ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, crate::program::model::symbol::AddExternalLocationInLibraryError> {
+            unimplemented!("not needed for this smoke test")
         }
 
-        fn add_ext_location_in_library_reuse(
+        fn add_ext_location_in_namespace_reuse(
             &mut self,
-            _library_name: &str,
-            _label: Option<&str>,
-            _address: Option<&crate::program::model::address::Address>,
-            _source: SourceType,
+            _ext_namespace: Arc<dyn crate::program::model::symbol::Namespace>,
+            _ext_label: Option<&str>,
+            _ext_addr: Option<crate::program::model::address::Address>,
+            _source_type: crate::program::model::symbol::SourceType,
             _reuse_existing: bool,
-        ) -> Result<
-            Arc<dyn crate::program::model::symbol::ExternalLocation>,
-            crate::program::model::symbol::AddExternalLocationInLibraryError,
-        > {
-            Err(InvalidInputException::new("Mock").into())
+        ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, crate::util::exception::InvalidInputException> {
+            unimplemented!("not needed for this smoke test")
         }
 
         fn add_ext_function_in_library(
             &mut self,
             _library_name: &str,
-            _label: Option<&str>,
-            _address: Option<&crate::program::model::address::Address>,
-            _source: SourceType,
-        ) -> Result<
-            Arc<dyn crate::program::model::symbol::ExternalLocation>,
-            crate::program::model::symbol::AddExternalLocationInLibraryError,
-        > {
-            Err(InvalidInputException::new("Mock").into())
+            _ext_label: Option<&str>,
+            _ext_addr: Option<crate::program::model::address::Address>,
+            _source_type: crate::program::model::symbol::SourceType,
+        ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, crate::program::model::symbol::AddExternalLocationInLibraryError> {
+            unimplemented!("not needed for this smoke test")
         }
 
-        fn add_ext_function_in_library_reuse(
+        fn add_ext_function_in_namespace_reuse(
             &mut self,
-            _library_name: &str,
-            _label: Option<&str>,
-            _address: Option<&crate::program::model::address::Address>,
-            _source: SourceType,
+            _ext_namespace: Arc<dyn crate::program::model::symbol::Namespace>,
+            _ext_label: Option<&str>,
+            _ext_addr: Option<crate::program::model::address::Address>,
+            _source_type: crate::program::model::symbol::SourceType,
             _reuse_existing: bool,
-        ) -> Result<
-            Arc<dyn crate::program::model::symbol::ExternalLocation>,
-            crate::program::model::symbol::AddExternalLocationInLibraryError,
-        > {
-            Err(InvalidInputException::new("Mock").into())
-        }
-
-        fn remove_external_location(
-            &mut self,
-            _location: Arc<dyn crate::program::model::symbol::ExternalLocation>,
-        ) {
-        }
-
-        fn contains_external_location(
-            &self,
-            _location: &dyn crate::program::model::symbol::ExternalLocation,
-        ) -> bool {
-            false
+        ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, crate::util::exception::InvalidInputException> {
+            unimplemented!("not needed for this smoke test")
         }
     }
 

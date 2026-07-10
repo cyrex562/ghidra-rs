@@ -61,15 +61,13 @@ mod tests {
         }
     }
 
-    impl crate::program::seam_stubs::MemBuffer for MockInstruction {}
-
-    impl crate::program::model::util::PropertySet for MockInstruction {
-        fn get_property(&self, _property_name: &str) -> Option<Box<dyn std::any::Any>> {
-            None
+    impl crate::program::seam_stubs::MemBuffer for MockInstruction {
+        fn get_address(&self) -> Address {
+            self.addr
         }
-
-        fn set_property(&mut self, _property_name: &str, _value: Option<Box<dyn std::any::Any>>) {}
     }
+
+    impl crate::program::model::util::PropertySet for MockInstruction {}
 
     impl crate::program::model::listing::code_unit::CodeUnit for MockInstruction {
         fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {
@@ -106,31 +104,114 @@ mod tests {
 
         fn set_comment(&mut self, _comment_type: crate::program::seam_stubs::CommentType, _comment: Option<String>) {}
 
-        fn get_references(&self) -> Vec<Arc<dyn crate::program::model::symbol::Reference>> {
+        fn get_mnemonic_string(&self) -> String {
+            String::new()
+        }
+
+        fn get_comment_as_array(&self, _comment_type: crate::program::seam_stubs::CommentType) -> Vec<String> {
             Vec::new()
         }
 
-        fn add_reference(
+        fn set_comment_as_array(&mut self, _comment_type: crate::program::seam_stubs::CommentType, _comment: &[String]) {}
+
+        fn get_length(&self) -> i32 {
+            4
+        }
+
+        fn get_bytes(&self) -> Result<Vec<u8>, crate::program::model::mem::MemoryAccessException> {
+            Ok(Vec::new())
+        }
+
+        fn get_bytes_in_code_unit(
+            &self,
+            _buffer: &mut [u8],
+            _buffer_offset: i32,
+        ) -> Result<(), crate::program::model::mem::MemoryAccessException> {
+            Ok(())
+        }
+
+        fn compare_to(&self, _addr: &Address) -> i32 {
+            0
+        }
+
+        fn add_mnemonic_reference(
             &mut self,
-            _address: &Address,
+            _ref_addr: Address,
             _ref_type: crate::program::model::symbol::RefType,
             _source_type: crate::program::model::symbol::SourceType,
         ) {}
 
-        fn remove_reference(&mut self, _address: &Address, _ref_type: crate::program::model::symbol::RefType) {}
+        fn remove_mnemonic_reference(&mut self, _ref_addr: &Address) {}
 
-        fn get_bookmarks(&self) -> Vec<Arc<dyn crate::program::model::listing::Bookmark>> {
+        fn get_mnemonic_references(&self) -> Vec<Arc<dyn crate::program::model::symbol::Reference>> {
             Vec::new()
         }
 
-        fn set_bookmark(
+        fn get_operand_references(&self, _index: i32) -> Vec<Arc<dyn crate::program::model::symbol::Reference>> {
+            Vec::new()
+        }
+
+        fn get_primary_reference(&self, _index: i32) -> Option<Arc<dyn crate::program::model::symbol::Reference>> {
+            None
+        }
+
+        fn add_operand_reference(
             &mut self,
-            _bookmark_type: &str,
-            _category: &str,
-            _comment: &str,
+            _index: i32,
+            _ref_addr: Address,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source_type: crate::program::model::symbol::SourceType,
         ) {}
 
-        fn remove_bookmark(&mut self, _bookmark_type: &str, _category: &str) {}
+        fn remove_operand_reference(&mut self, _index: i32, _ref_addr: &Address) {}
+
+        fn get_references_from(&self) -> Vec<Arc<dyn crate::program::model::symbol::Reference>> {
+            Vec::new()
+        }
+
+        fn get_reference_iterator_to(&self) -> Box<dyn crate::program::model::symbol::ReferenceIterator> {
+            unimplemented!("not needed for this test")
+        }
+
+        fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
+            unimplemented!("not needed for this test")
+        }
+
+        fn get_external_reference(&self, _op_index: i32) -> Option<Arc<dyn crate::program::model::symbol::ExternalReference>> {
+            None
+        }
+
+        fn remove_external_reference(&mut self, _op_index: i32) {}
+
+        fn set_primary_memory_reference(&mut self, _reference: Arc<dyn crate::program::model::symbol::Reference>) {}
+
+        fn set_stack_reference(
+            &mut self,
+            _op_index: i32,
+            _offset: i32,
+            _source_type: crate::program::model::symbol::SourceType,
+            _ref_type: crate::program::model::symbol::RefType,
+        ) {}
+
+        fn set_register_reference(
+            &mut self,
+            _op_index: i32,
+            _reg: &crate::program::model::lang::register::Register,
+            _source_type: crate::program::model::symbol::SourceType,
+            _ref_type: crate::program::model::symbol::RefType,
+        ) {}
+
+        fn get_num_operands(&self) -> i32 {
+            0
+        }
+
+        fn get_address(&self, _op_index: i32) -> Option<Address> {
+            None
+        }
+
+        fn get_scalar(&self, _op_index: i32) -> Option<crate::program::model::scalar::Scalar> {
+            None
+        }
     }
 
     impl ProcessorContextView for MockInstruction {
@@ -256,6 +337,68 @@ mod tests {
             false
         }
 
+        fn get_flows(&self) -> Option<Vec<Address>> {
+            None
+        }
+
+        fn get_default_flows(&self) -> Option<Vec<Address>> {
+            None
+        }
+
+        fn get_flow_type(&self) -> crate::program::model::symbol::RefType {
+            crate::program::model::symbol::RefType::FallThrough
+        }
+
+        fn is_fallthrough(&self) -> bool {
+            true
+        }
+
+        fn has_fallthrough(&self) -> bool {
+            true
+        }
+
+        fn get_flow_override(&self) -> crate::program::seam_stubs::FlowOverride {
+            crate::program::seam_stubs::FlowOverride::None
+        }
+
+        fn set_flow_override(&mut self, _flow_override: crate::program::seam_stubs::FlowOverride) {}
+
+        fn set_length_override(&mut self, _length: i32) -> Result<(), crate::program::util::CodeUnitInsertionException> {
+            Ok(())
+        }
+
+        fn is_length_overridden(&self) -> bool {
+            false
+        }
+
+        fn get_parsed_length(&self) -> i32 {
+            4
+        }
+
+        fn get_parsed_bytes(&self) -> Result<Vec<u8>, crate::program::model::mem::MemoryAccessException> {
+            Ok(Vec::new())
+        }
+
+        fn get_pcode(&self) -> Vec<crate::program::model::pcode::PcodeOp> {
+            Vec::new()
+        }
+
+        fn get_pcode_with_overrides(&self, _include_overrides: bool) -> Vec<crate::program::model::pcode::PcodeOp> {
+            Vec::new()
+        }
+
+        fn get_pcode_for_operand(&self, _operand_index: i32) -> Vec<crate::program::model::pcode::PcodeOp> {
+            Vec::new()
+        }
+
+        fn get_delay_slot_depth(&self) -> i32 {
+            0
+        }
+
+        fn is_in_delay_slot(&self) -> bool {
+            false
+        }
+
         fn get_instruction_context(&self) -> Arc<dyn crate::program::seam_stubs::InstructionContext> {
             unimplemented!()
         }
@@ -274,117 +417,399 @@ mod tests {
     }
 
     impl crate::program::model::listing::Listing for MockListing {
-        fn get_instruction_at(&self, _addr: &Address) -> Option<Arc<dyn Instruction>> {
-            self.instruction.clone()
-        }
-
-        fn get_function_at(&self, _entry_point: &Address) -> Option<Arc<dyn crate::program::model::listing::Function>> {
+        fn get_code_unit_at(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::CodeUnit>> {
             None
         }
-
-        fn remove_function(&mut self, _entry_point: &Address) {}
-
-        fn create_function(
-            &mut self,
-            _entry_point: &Address,
-            _name: &str,
-        ) -> Result<Arc<dyn crate::program::model::listing::Function>, crate::program::model::listing::CreateFunctionError> {
-            unimplemented!()
-        }
-
-        fn create_function_in_namespace(
-            &mut self,
-            _entry_point: &Address,
-            _name: &str,
-            _namespace: Option<Arc<dyn crate::program::model::symbol::Namespace>>,
-        ) -> Result<Arc<dyn crate::program::model::listing::Function>, crate::program::model::listing::CreateFunctionError> {
-            unimplemented!()
-        }
-
-        fn get_global_functions(&self, _name: &str) -> Vec<Arc<dyn crate::program::model::listing::Function>> {
-            Vec::new()
-        }
-
-        fn get_functions_by_name(
-            &self,
-            _namespace: Option<&str>,
-            _name: &str,
-        ) -> Vec<Arc<dyn crate::program::model::listing::Function>> {
-            Vec::new()
-        }
-
-        fn get_function_containing(&self, _addr: &Address) -> Option<Arc<dyn crate::program::model::listing::Function>> {
+        fn get_code_unit_containing(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::CodeUnit>> {
             None
         }
-
-        fn get_external_functions(&self) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn get_functions(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn get_functions_from(
-            &self,
-            _start: &Address,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn get_functions_in(
-            &self,
-            _addr_set: &dyn crate::program::model::address::AddressSetView,
-            _forward: bool,
-        ) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
-            unimplemented!()
-        }
-
-        fn is_in_function(&self, _addr: &Address) -> bool {
-            false
-        }
-
-        fn get_code_unit_at(&self, _addr: &Address) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
+        fn get_code_unit_after(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::CodeUnit>> {
             None
         }
-
-        fn get_code_unit_containing(&self, _addr: &Address) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
+        fn get_code_unit_before(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::CodeUnit>> {
             None
         }
-
-        fn get_code_unit_after(&self, _addr: &Address) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
-            None
-        }
-
-        fn get_code_unit_before(&self, _addr: &Address) -> Option<Arc<dyn crate::program::model::listing::code_unit::CodeUnit>> {
-            None
-        }
-
         fn get_code_unit_iterator(
             &self,
             _property: &str,
             _forward: bool,
         ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
-            unimplemented!()
+            unimplemented!("not needed for this smoke test")
         }
-
         fn get_code_unit_iterator_from(
             &self,
             _property: &str,
-            _addr: &Address,
+            _addr: &crate::program::model::address::Address,
             _forward: bool,
         ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
-            unimplemented!()
+            unimplemented!("not needed for this smoke test")
         }
-
         fn get_code_unit_iterator_in(
             &self,
             _property: &str,
             _addr_set: &dyn crate::program::model::address::AddressSetView,
             _forward: bool,
         ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
-            unimplemented!()
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_comment_code_unit_iterator(
+            &self,
+            _comment_type: crate::program::seam_stubs::CommentType,
+            _addr_set: &dyn crate::program::model::address::AddressSetView,
+        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_comment_address_iterator(
+            &self,
+            _comment_type: crate::program::seam_stubs::CommentType,
+            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_any_comment_address_iterator(
+            &self,
+            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_comment(&self, _comment_type: crate::program::seam_stubs::CommentType, _address: &crate::program::model::address::Address) -> Option<String> {
+            None
+        }
+        fn get_all_comments(&self, _address: &crate::program::model::address::Address) -> Box<dyn crate::program::seam_stubs::CodeUnitComments> {
+            struct MockComments;
+            impl crate::program::seam_stubs::CodeUnitComments for MockComments {}
+            Box::new(MockComments)
+        }
+        fn set_comment(
+            &mut self,
+            _address: &crate::program::model::address::Address,
+            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment: Option<String>,
+        ) {
+        }
+        fn get_code_units(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_code_units_from(&self, _addr: &crate::program::model::address::Address, _forward: bool) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_code_units_in(
+            &self,
+            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_instruction_at(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+            self.instruction.clone()
+        }
+        fn get_instruction_containing(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+            None
+        }
+        fn get_instruction_after(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+            None
+        }
+        fn get_instruction_before(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
+            None
+        }
+        fn get_instructions(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::InstructionIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_instructions_from(
+            &self,
+            _addr: &crate::program::model::address::Address,
+            _forward: bool,
+        ) -> Box<dyn crate::program::seam_stubs::InstructionIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_instructions_in(
+            &self,
+            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn crate::program::seam_stubs::InstructionIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_data_at(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_data_containing(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_data_after(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_data_before(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_data(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_data_from(&self, _addr: &crate::program::model::address::Address, _forward: bool) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_data_in(
+            &self,
+            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_defined_data_at(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_defined_data_containing(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_defined_data_after(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_defined_data_before(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_defined_data(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_defined_data_from(&self, _addr: &crate::program::model::address::Address, _forward: bool) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_defined_data_in(
+            &self,
+            _addr_set: &dyn crate::program::model::address::AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn crate::program::seam_stubs::DataIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_undefined_data_at(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_undefined_data_after(
+            &self,
+            _addr: &crate::program::model::address::Address,
+            _monitor: &dyn TaskMonitor,
+        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_first_undefined_data(
+            &self,
+            _set: &dyn crate::program::model::address::AddressSetView,
+            _monitor: &dyn TaskMonitor,
+        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_undefined_data_before(
+            &self,
+            _addr: &crate::program::model::address::Address,
+            _monitor: &dyn TaskMonitor,
+        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            None
+        }
+        fn get_undefined_ranges(
+            &self,
+            _set: &dyn crate::program::model::address::AddressSetView,
+            _initialized_memory_only: bool,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Box<dyn crate::program::model::address::AddressSetView>, crate::util::exception::CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_defined_code_unit_after(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::CodeUnit>> {
+            None
+        }
+        fn get_defined_code_unit_before(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::CodeUnit>> {
+            None
+        }
+        fn get_user_defined_properties(&self) -> Vec<String> {
+            Vec::new()
+        }
+        fn remove_user_defined_property(&mut self, _property_name: &str) {}
+        fn get_property_map(&self, _property_name: &str) -> Option<Box<dyn crate::program::model::util::PropertyMap>> {
+            None
+        }
+        fn create_instruction(
+            &mut self,
+            _addr: crate::program::model::address::Address,
+            _prototype: Arc<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype>,
+            _mem_buf: &dyn crate::program::seam_stubs::MemBuffer,
+            _context: &dyn crate::program::model::lang::ProcessorContextView,
+            _length: i32,
+        ) -> Result<Arc<dyn crate::program::model::listing::instruction::Instruction>, crate::program::util::CodeUnitInsertionException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn add_instructions(
+            &mut self,
+            _instruction_set: &dyn crate::program::seam_stubs::InstructionSet,
+            _overwrite: bool,
+        ) -> Result<Box<dyn crate::program::model::address::AddressSetView>, crate::program::util::CodeUnitInsertionException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn create_data_sized(
+            &mut self,
+            _addr: crate::program::model::address::Address,
+            _data_type: Box<dyn crate::program::model::data::data_type::DataType>,
+            _length: i32,
+        ) -> Result<Arc<dyn crate::program::model::listing::data::Data>, crate::program::util::CodeUnitInsertionException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn create_data(
+            &mut self,
+            _addr: crate::program::model::address::Address,
+            _data_type: Box<dyn crate::program::model::data::data_type::DataType>,
+        ) -> Result<Arc<dyn crate::program::model::listing::data::Data>, crate::program::util::CodeUnitInsertionException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn clear_code_units(
+            &mut self,
+            _start_addr: &crate::program::model::address::Address,
+            _end_addr: &crate::program::model::address::Address,
+            _clear_context: bool,
+        ) {
+        }
+        fn clear_code_units_with_monitor(
+            &mut self,
+            _start_addr: &crate::program::model::address::Address,
+            _end_addr: &crate::program::model::address::Address,
+            _clear_context: bool,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+        fn is_undefined(&self, _start: &crate::program::model::address::Address, _end: &crate::program::model::address::Address) -> bool {
+            true
+        }
+        fn clear_comments(&mut self, _start_addr: &crate::program::model::address::Address, _end_addr: &crate::program::model::address::Address) {}
+        fn clear_properties(
+            &mut self,
+            _start_addr: &crate::program::model::address::Address,
+            _end_addr: &crate::program::model::address::Address,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+        fn clear_all(&mut self, _clear_context: bool, _monitor: &dyn TaskMonitor) {}
+        fn get_fragment(
+            &self,
+            _tree_name: &str,
+            _addr: &crate::program::model::address::Address,
+        ) -> Option<Arc<dyn crate::program::model::listing::program_fragment::ProgramFragment>> {
+            None
+        }
+        fn get_module(&self, _tree_name: &str, _name: &str) -> Option<Arc<dyn crate::program::model::listing::program_module::ProgramModule>> {
+            None
+        }
+        fn get_fragment_by_name(
+            &self,
+            _tree_name: &str,
+            _name: &str,
+        ) -> Option<Arc<dyn crate::program::model::listing::program_fragment::ProgramFragment>> {
+            None
+        }
+        fn create_root_module(
+            &mut self,
+            _tree_name: &str,
+        ) -> Result<Arc<dyn crate::program::model::listing::program_module::ProgramModule>, crate::util::exception::DuplicateNameException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_root_module(&self, _tree_name: &str) -> Option<Arc<dyn crate::program::model::listing::program_module::ProgramModule>> {
+            None
+        }
+        fn get_root_module_by_id(&self, _tree_id: i64) -> Option<Arc<dyn crate::program::model::listing::program_module::ProgramModule>> {
+            None
+        }
+        fn get_default_root_module(&self) -> Arc<dyn crate::program::model::listing::program_module::ProgramModule> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_tree_names(&self) -> Vec<String> {
+            vec!["Program Tree".to_string()]
+        }
+        fn remove_tree(&mut self, _tree_name: &str) -> bool {
+            false
+        }
+        fn rename_tree(
+            &mut self,
+            _old_name: &str,
+            _new_name: &str,
+        ) -> Result<(), crate::util::exception::DuplicateNameException> {
+            Ok(())
+        }
+        fn get_num_code_units(&self) -> i64 {
+            0
+        }
+        fn get_num_defined_data(&self) -> i64 {
+            0
+        }
+        fn get_num_instructions(&self) -> i64 {
+            0
+        }
+        fn get_data_type_manager(&self) -> Box<dyn crate::program::model::data::data_type_manager::DataTypeManager> {
+            struct MockDataTypeManager;
+            impl crate::program::model::data::data_type_manager::DataTypeManager for MockDataTypeManager {}
+            Box::new(MockDataTypeManager)
+        }
+        fn create_function(
+            &mut self,
+            _name: &str,
+            _entry_point: crate::program::model::address::Address,
+            _body: &dyn crate::program::model::address::AddressSetView,
+            _source: crate::program::model::symbol::SourceType,
+        ) -> Result<Arc<dyn crate::program::model::listing::function::Function>, crate::program::model::listing::CreateFunctionError> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn create_function_in_namespace(
+            &mut self,
+            _name: &str,
+            _name_space: Arc<dyn crate::program::model::symbol::Namespace>,
+            _entry_point: crate::program::model::address::Address,
+            _body: &dyn crate::program::model::address::AddressSetView,
+            _source: crate::program::model::symbol::SourceType,
+        ) -> Result<Arc<dyn crate::program::model::listing::function::Function>, crate::program::model::listing::CreateFunctionError> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn remove_function(&mut self, _entry_point: &crate::program::model::address::Address) {}
+        fn get_function_at(&self, _entry_point: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::function::Function>> {
+            None
+        }
+        fn get_global_functions(&self, _name: &str) -> Vec<Arc<dyn crate::program::model::listing::function::Function>> {
+            Vec::new()
+        }
+        fn get_functions_by_name(
+            &self,
+            _namespace: Option<&str>,
+            _name: &str,
+        ) -> Vec<Arc<dyn crate::program::model::listing::function::Function>> {
+            Vec::new()
+        }
+        fn get_function_containing(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::function::Function>> {
+            None
+        }
+        fn get_external_functions(&self) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_functions(&self, _forward: bool) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_functions_from(&self, _start: &crate::program::model::address::Address, _forward: bool) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_functions_in(
+            &self,
+            _asv: &dyn crate::program::model::address::AddressSetView,
+            _forward: bool,
+        ) -> Box<dyn crate::program::seam_stubs::FunctionIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn is_in_function(&self, _addr: &crate::program::model::address::Address) -> bool {
+            false
+        }
+        fn get_comment_history(
+            &self,
+            _addr: &crate::program::model::address::Address,
+            _comment_type: crate::program::seam_stubs::CommentType,
+        ) -> Vec<Box<dyn crate::program::seam_stubs::CommentHistory>> {
+            Vec::new()
+        }
+        fn get_comment_address_count(&self) -> i64 {
+            0
         }
     }
 

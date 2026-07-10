@@ -55,8 +55,13 @@ mod tests {
 
     struct MockInstruction;
 
-    impl MemBuffer for MockInstruction {}
+    impl MemBuffer for MockInstruction {
+        fn get_address(&self) -> Address {
+            mock_address()
+        }
+    }
     impl InstructionContext for MockInstruction {}
+    impl crate::program::model::util::property_set::PropertySet for MockInstruction {}
 
     impl ProcessorContextView for MockInstruction {
         fn get_base_context_register(&self) -> Option<RegisterRef> {

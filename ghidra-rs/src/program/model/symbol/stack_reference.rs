@@ -36,6 +36,10 @@ mod tests {
     }
 
     impl Reference for TestStackReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
             addr(0x1000, AddressSpaceType::Ram)
         }

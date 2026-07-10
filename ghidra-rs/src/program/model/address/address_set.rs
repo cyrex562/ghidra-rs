@@ -499,13 +499,15 @@ mod tests {
         factory: Arc<DefaultAddressFactory>,
     }
 
+    impl crate::framework::model::DomainObject for TestProgram {}
+
     impl Program for TestProgram {
-        fn get_name(&self) -> &str {
-            "test"
+        fn get_name(&self) -> String {
+            "test".to_string()
         }
 
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
 
         fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {

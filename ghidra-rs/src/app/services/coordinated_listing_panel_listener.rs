@@ -27,13 +27,15 @@ mod tests {
         name: String,
     }
 
+    impl crate::framework::model::DomainObject for MockProgram {}
+
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            &self.name
+        fn get_name(&self) -> String {
+            self.name.clone()
         }
 
-        fn get_language_id(&self) -> &str {
-            "x86:LE:64:default"
+        fn get_language_id(&self) -> String {
+            "x86:LE:64:default".to_string()
         }
 
         fn get_address_factory(&self) -> Option<std::sync::Arc<dyn crate::program::model::address::AddressFactory>> {

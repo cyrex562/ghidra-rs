@@ -169,6 +169,64 @@ mod tests {
         ) -> crate::program::model::lang::decompiler_language::DecompilerLanguage {
             unimplemented!()
         }
+        fn get_prototype_evaluation_model(
+            &self,
+            _model_type: crate::program::model::lang::compiler_spec::EvaluationModelType,
+        ) -> Box<dyn crate::program::seam_stubs::PrototypeModel> {
+            unimplemented!()
+        }
+        fn is_global(&self, _addr: &Address) -> bool {
+            false
+        }
+        fn get_data_organization(
+            &self,
+        ) -> Box<dyn crate::program::model::data::data_organization::DataOrganization> {
+            unimplemented!()
+        }
+        fn get_pcode_inject_library(
+            &self,
+        ) -> Box<dyn crate::program::seam_stubs::PcodeInjectLibrary> {
+            unimplemented!()
+        }
+        fn match_convention(
+            &self,
+            _convention_name: &str,
+        ) -> Box<dyn crate::program::seam_stubs::PrototypeModel> {
+            unimplemented!()
+        }
+        fn find_best_calling_convention(
+            &self,
+            _params: &[&dyn crate::program::model::listing::parameter::Parameter],
+        ) -> Box<dyn crate::program::seam_stubs::PrototypeModel> {
+            unimplemented!()
+        }
+        fn has_property(&self, _key: &str) -> bool {
+            false
+        }
+        fn does_c_data_type_conversions(&self) -> bool {
+            false
+        }
+        fn get_property_as_int(&self, _key: &str, default_int: i32) -> i32 {
+            default_int
+        }
+        fn get_property_as_boolean(&self, _key: &str, default_boolean: bool) -> bool {
+            default_boolean
+        }
+        fn get_property_or(&self, _key: &str, default_string: &str) -> String {
+            default_string.to_string()
+        }
+        fn get_property(&self, _key: &str) -> Option<String> {
+            None
+        }
+        fn get_property_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+        fn encode(&self, _encoder: &mut dyn Encoder) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn is_equivalent(&self, _other: &dyn CompilerSpec) -> bool {
+            false
+        }
     }
 
     struct MockEncoder;

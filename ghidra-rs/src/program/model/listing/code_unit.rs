@@ -297,6 +297,9 @@ mod tests {
 
     struct MockReference;
     impl Reference for MockReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
         fn from_address(&self) -> Address {
             mock_address(0x100)
         }
@@ -349,6 +352,9 @@ mod tests {
 
     struct MockExternalReference;
     impl Reference for MockExternalReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
         fn from_address(&self) -> Address {
             mock_address(0x100)
         }
@@ -416,12 +422,13 @@ mod tests {
     }
 
     struct MockProgram;
+    impl crate::framework::model::DomainObject for MockProgram {}
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            "mock.bin"
+        fn get_name(&self) -> String {
+            "mock.bin".to_string()
         }
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
     }
 
@@ -448,7 +455,11 @@ mod tests {
         comment: Option<String>,
     }
 
-    impl MemBuffer for MockCodeUnit {}
+    impl MemBuffer for MockCodeUnit {
+        fn get_address(&self) -> Address {
+            self.min_address.clone()
+        }
+    }
     impl PropertySet for MockCodeUnit {}
 
     impl CodeUnit for MockCodeUnit {

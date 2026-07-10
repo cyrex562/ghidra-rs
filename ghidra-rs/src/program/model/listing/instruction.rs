@@ -214,7 +214,11 @@ mod tests {
         length_override: Option<i32>,
     }
 
-    impl MemBuffer for MockInstruction {}
+    impl MemBuffer for MockInstruction {
+        fn get_address(&self) -> Address {
+            self.address.clone()
+        }
+    }
     impl PropertySet for MockInstruction {}
 
     impl ProcessorContextView for MockInstruction {

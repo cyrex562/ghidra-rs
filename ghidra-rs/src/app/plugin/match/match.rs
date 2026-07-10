@@ -262,12 +262,13 @@ mod tests {
     }
 
     struct FakeProgram;
+    impl crate::framework::model::DomainObject for FakeProgram {}
     impl Program for FakeProgram {
-        fn get_name(&self) -> &str {
-            "fake.bin"
+        fn get_name(&self) -> String {
+            "fake.bin".to_string()
         }
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
     }
 
@@ -286,7 +287,11 @@ mod tests {
         length: i32,
     }
 
-    impl MemBuffer for FakeCodeUnit {}
+    impl MemBuffer for FakeCodeUnit {
+        fn get_address(&self) -> Address {
+            self.min_address.clone()
+        }
+    }
     impl PropertySet for FakeCodeUnit {}
 
     impl CodeUnit for FakeCodeUnit {

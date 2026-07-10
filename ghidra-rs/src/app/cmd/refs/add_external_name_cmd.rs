@@ -62,7 +62,8 @@ impl Command<dyn Program + 'static> for AddExternalNameCmd {
 mod tests {
     use super::*;
     use crate::framework::model::DomainObject;
-    use crate::program::model::symbol::{ExternalManager, Library, SourceType};
+    use crate::program::model::symbol::{ExternalManager, SourceType};
+    use crate::program::model::listing::Library;
     use crate::util::exception::{DuplicateNameException, InvalidInputException};
     use std::sync::Arc;
 
@@ -236,31 +237,16 @@ mod tests {
             Err(InvalidInputException::new("Mock").into())
         }
 
-        fn add_ext_function_in_library_reuse(
+        fn add_ext_function_in_namespace_reuse(
             &mut self,
-            _library_name: &str,
+            _ext_namespace: Arc<dyn crate::program::model::symbol::Namespace>,
             _ext_label: Option<&str>,
             _ext_addr: Option<crate::program::model::address::Address>,
             _source_type: SourceType,
             _reuse_existing: bool,
-        ) -> Result<
-            Arc<dyn crate::program::model::symbol::ExternalLocation>,
-            crate::program::model::symbol::AddExternalLocationInLibraryError,
-        > {
-            Err(InvalidInputException::new("Mock").into())
-        }
-
-        fn remove_external_location(
-            &mut self,
-            _location: Arc<dyn crate::program::model::symbol::ExternalLocation>,
-        ) {
-        }
-
-        fn contains_external_location(
-            &self,
-            _location: &dyn crate::program::model::symbol::ExternalLocation,
-        ) -> bool {
-            false
+        ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, InvalidInputException>
+        {
+            Err(InvalidInputException::new("Mock"))
         }
     }
 

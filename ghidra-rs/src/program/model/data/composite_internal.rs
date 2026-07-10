@@ -293,10 +293,91 @@ mod tests {
         assert_eq!(get_min_alignment_string(&s), "");
     }
 
+    struct MockBitFieldPacking;
+    impl crate::program::model::data::bit_field_packing::BitFieldPacking for MockBitFieldPacking {
+        fn use_ms_convention(&self) -> bool {
+            false
+        }
+        fn is_type_alignment_enabled(&self) -> bool {
+            true
+        }
+        fn get_zero_length_boundary(&self) -> i32 {
+            0
+        }
+    }
+
     struct MockDataOrganization;
     impl DataOrganization for MockDataOrganization {
+        fn is_big_endian(&self) -> bool {
+            false
+        }
+        fn get_pointer_size(&self) -> i32 {
+            8
+        }
+        fn get_pointer_shift(&self) -> i32 {
+            0
+        }
+        fn is_signed_char(&self) -> bool {
+            true
+        }
+        fn get_char_size(&self) -> i32 {
+            1
+        }
+        fn get_wide_char_size(&self) -> i32 {
+            2
+        }
+        fn get_short_size(&self) -> i32 {
+            2
+        }
+        fn get_integer_size(&self) -> i32 {
+            4
+        }
+        fn get_long_size(&self) -> i32 {
+            8
+        }
+        fn get_long_long_size(&self) -> i32 {
+            8
+        }
+        fn get_float_size(&self) -> i32 {
+            4
+        }
+        fn get_double_size(&self) -> i32 {
+            8
+        }
+        fn get_long_double_size(&self) -> i32 {
+            8
+        }
+        fn get_absolute_max_alignment(&self) -> i32 {
+            0
+        }
         fn get_machine_alignment(&self) -> i32 {
             8
+        }
+        fn get_default_alignment(&self) -> i32 {
+            1
+        }
+        fn get_default_pointer_alignment(&self) -> i32 {
+            8
+        }
+        fn get_size_alignment(&self, _size: i32) -> i32 {
+            1
+        }
+        fn get_bit_field_packing(
+            &self,
+        ) -> Box<dyn crate::program::model::data::bit_field_packing::BitFieldPacking> {
+            Box::new(MockBitFieldPacking)
+        }
+        fn get_size_alignment_count(&self) -> i32 {
+            0
+        }
+        fn get_sizes(&self) -> Vec<i32> {
+            vec![]
+        }
+        fn get_integer_c_type_approximation(&self, _size: i32, _signed: bool) -> String {
+            String::new()
+        }
+        fn get_alignment(&self, _data_type: &dyn DataType) -> i32 {
+            1
         }
     }
 

@@ -28,7 +28,17 @@ mod tests {
 
     struct MockProgram;
 
-    impl Program for MockProgram {}
+    impl crate::framework::model::DomainObject for MockProgram {}
+
+    impl Program for MockProgram {
+        fn get_name(&self) -> String {
+            "mock".to_string()
+        }
+
+        fn get_language_id(&self) -> String {
+            "test".to_string()
+        }
+    }
 
     struct TestTranslator;
 

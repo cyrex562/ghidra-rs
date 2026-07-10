@@ -95,7 +95,7 @@ mod tests {
             self.name.clone()
         }
 
-        fn set_name(&mut self, _name: &str, _source: crate::program::model::symbol::SourceType) -> Result<(), crate::program::model::listing::SetFunctionNameError> {
+        fn set_name(&mut self, _name: &str, _source: crate::program::model::symbol::SourceType) -> Result<(), crate::program::model::listing::function::SetFunctionNameError> {
             Ok(())
         }
 
@@ -200,7 +200,7 @@ mod tests {
             &mut self,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!()
         }
 
@@ -209,7 +209,7 @@ mod tests {
             _ordinal: i32,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!()
         }
 
@@ -219,7 +219,7 @@ mod tests {
             _update_type: crate::program::model::listing::FunctionUpdateType,
             _force: bool,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::FunctionEditError> {
+        ) -> Result<(), crate::program::model::listing::function::FunctionEditError> {
             Ok(())
         }
 
@@ -231,7 +231,7 @@ mod tests {
             _update_type: crate::program::model::listing::FunctionUpdateType,
             _force: bool,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<(), crate::program::model::listing::FunctionEditError> {
+        ) -> Result<(), crate::program::model::listing::function::FunctionEditError> {
             Ok(())
         }
 
@@ -255,26 +255,51 @@ mod tests {
             &mut self,
             _var: Box<dyn crate::program::model::listing::Variable>,
             _source: crate::program::model::symbol::SourceType,
-        ) -> Result<Box<dyn crate::program::model::listing::Variable>, crate::program::model::listing::FunctionEditError> {
+        ) -> Result<Box<dyn crate::program::model::listing::Variable>, crate::program::model::listing::function::FunctionEditError> {
             unimplemented!()
         }
 
         fn remove_variable(&mut self, _var: &dyn crate::program::model::listing::Variable) {}
 
-        fn get_variables(&self, _filter: crate::program::seam_stubs::VariableFilter) -> Vec<Box<dyn crate::program::model::listing::Variable>> {
+        fn get_parameters_filtered(
+            &self,
+            _filter: Option<&dyn crate::program::seam_stubs::VariableFilter>,
+        ) -> Vec<Box<dyn crate::program::model::listing::Parameter>> {
             vec![]
         }
 
-        fn get_variable_containing(
+        fn get_local_variables_filtered(
             &self,
-            _address: crate::program::model::address::Address,
-            _stack_offset: i32,
-        ) -> Option<Box<dyn crate::program::model::listing::Variable>> {
-            None
+            _filter: Option<&dyn crate::program::seam_stubs::VariableFilter>,
+        ) -> Vec<Box<dyn crate::program::model::listing::Variable>> {
+            vec![]
         }
 
-        fn get_variable_at_offset(&self, _offset: i32) -> Option<Box<dyn crate::program::model::listing::Variable>> {
-            None
+        fn get_variables_filtered(
+            &self,
+            _filter: Option<&dyn crate::program::seam_stubs::VariableFilter>,
+        ) -> Vec<Box<dyn crate::program::model::listing::Variable>> {
+            vec![]
+        }
+
+        fn get_all_variables(&self) -> Vec<Box<dyn crate::program::model::listing::Variable>> {
+            vec![]
+        }
+
+        fn get_auto_parameter_count(&self) -> i32 {
+            0
+        }
+
+        #[allow(deprecated)]
+        fn remove_parameter(&mut self, _ordinal: i32) {}
+
+        #[allow(deprecated)]
+        fn move_parameter(
+            &mut self,
+            _from_ordinal: i32,
+            _to_ordinal: i32,
+        ) -> Result<Box<dyn crate::program::model::listing::Parameter>, crate::util::exception::InvalidInputException> {
+            unimplemented!()
         }
 
         fn has_custom_variable_storage(&self) -> bool {
@@ -291,8 +316,6 @@ mod tests {
             None
         }
 
-        fn set_external_location(&mut self, _external_location: Option<&str>) {}
-
         fn get_thunked_function(&self, _recursive: bool) -> Option<Arc<dyn Function>> {
             None
         }
@@ -301,8 +324,42 @@ mod tests {
             Ok(())
         }
 
+        fn get_function_thunk_addresses(&self, _recursive: bool) -> Option<Vec<crate::program::model::address::Address>> {
+            None
+        }
+
         fn is_thunk(&self) -> bool {
             false
+        }
+
+        fn has_var_args(&self) -> bool {
+            false
+        }
+
+        fn set_var_args(&mut self, _has_var_args: bool) {}
+
+        fn is_inline(&self) -> bool {
+            false
+        }
+
+        fn set_inline(&mut self, _is_inline: bool) {}
+
+        fn has_no_return(&self) -> bool {
+            false
+        }
+
+        fn set_no_return(&mut self, _has_no_return: bool) {}
+
+        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+            None
+        }
+
+        fn get_calling_convention_name(&self) -> String {
+            String::from("unknown")
+        }
+
+        fn set_calling_convention(&mut self, _name: &str) -> Result<(), crate::util::exception::InvalidInputException> {
+            Ok(())
         }
 
         fn get_calling_functions(&self, _monitor: &dyn crate::util::task::TaskMonitor) -> Vec<Arc<dyn Function>> {
@@ -313,56 +370,28 @@ mod tests {
             vec![]
         }
 
-        fn get_body(&self) -> crate::program::model::address::AddressSetView {
-            unimplemented!()
-        }
-
-        fn set_body(&mut self, _addresses: crate::program::model::address::AddressSetView) -> Result<(), crate::program::database::function::OverlappingFunctionException> {
+        fn set_body(&mut self, _new_body: &dyn crate::program::model::address::AddressSetView) -> Result<(), crate::program::database::function::OverlappingFunctionException> {
             Ok(())
         }
 
-        fn get_signature_source_type(&self) -> crate::program::model::symbol::SourceType {
-            unimplemented!()
-        }
+        fn promote_local_user_labels_to_global(&mut self) {}
 
-        fn set_signature_source_type(&mut self, _source: crate::program::model::symbol::SourceType) {}
-
-        fn get_namespace(&self) -> Option<Box<dyn crate::program::model::symbol::Namespace>> {
-            None
-        }
-
-        fn set_namespace(&mut self, _namespace: Box<dyn crate::program::model::symbol::Namespace>) -> Result<(), crate::util::exception::InvalidInputException> {
-            Ok(())
+        fn is_deleted(&self) -> bool {
+            false
         }
     }
 
     impl crate::program::model::symbol::Namespace for MockFunction {
-        fn get_name(&self) -> String {
-            self.name.clone()
-        }
-
-        fn set_name(&mut self, _name: &str) -> Result<(), crate::util::exception::DuplicateNameException> {
-            Ok(())
-        }
-
-        fn get_id(&self) -> u64 {
-            0
-        }
-
-        fn get_symbol_table(&self) -> Box<dyn crate::program::seam_stubs::SymbolTable> {
+        fn get_symbol(&self) -> Arc<dyn crate::program::model::symbol::Symbol> {
             unimplemented!()
+        }
+
+        fn get_parent_namespace(&self) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
+            None
         }
 
         fn get_type(&self) -> crate::program::model::symbol::NamespaceType {
             crate::program::model::symbol::NamespaceType::Function
-        }
-
-        fn get_parent_namespace(&self) -> Option<Box<dyn crate::program::model::symbol::Namespace>> {
-            None
-        }
-
-        fn set_parent_namespace(&mut self, _namespace: Box<dyn crate::program::model::symbol::Namespace>) -> Result<(), crate::util::exception::InvalidInputException> {
-            Ok(())
         }
     }
 

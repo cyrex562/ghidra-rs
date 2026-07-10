@@ -96,11 +96,78 @@ mod tests {
         address: Address,
     }
 
-    impl crate::program::seam_stubs::MemBuffer for MockInstruction {}
+    use crate::program::model::lang::instruction_prototype::InstructionPrototype;
+    use crate::program::model::lang::register::{Register, RegisterRef};
+    use crate::program::model::lang::{ProcessorContext, ProcessorContextView};
+    use crate::program::model::listing::code_unit::CodeUnit;
+    use crate::program::model::listing::program::Program;
+    use crate::program::model::listing::{
+        ContextChangeException, Instruction, OperandValue, MAX_LENGTH_OVERRIDE,
+    };
+    use crate::program::model::mem::MemoryAccessException;
+    use crate::program::model::pcode::PcodeOp;
+    use crate::program::model::scalar::Scalar;
+    use crate::program::model::symbol::{
+        ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
+    };
+    use crate::program::model::util::PropertySet;
+    use crate::program::seam_stubs::{
+        CommentType, FlowOverride, InstructionContext, MemBuffer, RegisterValue,
+    };
+    use crate::program::util::CodeUnitInsertionException;
 
-    impl crate::program::model::util::PropertySet for MockInstruction {}
+    impl MemBuffer for MockInstruction {
+        fn get_address(&self) -> Address {
+            self.address.clone()
+        }
+    }
 
-    impl crate::program::model::listing::CodeUnit for MockInstruction {
+    impl PropertySet for MockInstruction {}
+
+    impl ProcessorContextView for MockInstruction {
+        fn get_base_context_register(&self) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register(&self, _name: &str) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_value(&self, _register: &Register, _signed: bool) -> Option<i128> {
+            None
+        }
+
+        fn get_register_value(&self, _register: &Register) -> Option<Box<dyn RegisterValue>> {
+            None
+        }
+
+        fn has_value(&self, _register: &Register) -> bool {
+            false
+        }
+    }
+
+    impl ProcessorContext for MockInstruction {
+        fn set_value(&mut self, _register: &Register, _value: i128) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+
+        fn set_register_value(
+            &mut self,
+            _value: Box<dyn RegisterValue>,
+        ) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+
+        fn clear_register(&mut self, _register: &Register) -> Result<(), ContextChangeException> {
+            Ok(())
+        }
+    }
+
+    impl CodeUnit for MockInstruction {
         fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {
             "test".to_string()
         }
@@ -109,11 +176,11 @@ mod tests {
             None
         }
 
-        fn get_symbols(&self) -> Vec<Arc<dyn crate::program::model::symbol::Symbol>> {
-            vec![]
+        fn get_symbols(&self) -> Vec<Arc<dyn Symbol>> {
+            Vec::new()
         }
 
-        fn get_primary_symbol(&self) -> Option<Arc<dyn crate::program::model::symbol::Symbol>> {
+        fn get_primary_symbol(&self) -> Option<Arc<dyn Symbol>> {
             None
         }
 
@@ -129,83 +196,267 @@ mod tests {
             "test".to_string()
         }
 
-        fn get_comment(&self, _comment_type: crate::program::seam_stubs::CommentType) -> Option<String> {
+        fn get_comment(&self, _comment_type: CommentType) -> Option<String> {
             None
         }
 
-        fn get_comment_as_array(
-            &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
-        ) -> Vec<String> {
-            vec![]
-        }
-    }
-
-    impl crate::program::model::lang::ProcessorContext for MockInstruction {}
-
-    impl crate::program::model::listing::Instruction for MockInstruction {
-        fn get_prototype(&self) -> Arc<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype> {
-            unimplemented!()
+        fn get_comment_as_array(&self, _comment_type: CommentType) -> Vec<String> {
+            Vec::new()
         }
 
-        fn get_register(&self, _operand_index: i32) -> Option<crate::program::model::lang::register::RegisterRef> {
-            None
-        }
+        fn set_comment(&mut self, _comment_type: CommentType, _comment: Option<String>) {}
 
-        fn get_op_objects(&self, _operand_index: i32) -> Vec<crate::program::model::listing::OperandValue> {
-            vec![]
-        }
-
-        fn get_input_objects(&self) -> Vec<crate::program::model::listing::OperandValue> {
-            vec![]
-        }
-
-        fn get_operand_references(&self, _operand_index: i32) -> Vec<crate::program::model::address::Reference> {
-            vec![]
-        }
-
-        fn get_mnemonic(&self) -> String {
-            "test".to_string()
-        }
-
-        fn get_default_fall_through_address(&self) -> Option<crate::program::model::address::Address> {
-            None
-        }
+        fn set_comment_as_array(&mut self, _comment_type: CommentType, _comment: &[String]) {}
 
         fn get_length(&self) -> i32 {
             1
         }
 
-        fn has_default_length_override(&self) -> bool {
+        fn get_bytes(&self) -> Result<Vec<u8>, MemoryAccessException> {
+            Ok(Vec::new())
+        }
+
+        fn get_bytes_in_code_unit(
+            &self,
+            _buffer: &mut [u8],
+            _buffer_offset: i32,
+        ) -> Result<(), MemoryAccessException> {
+            Ok(())
+        }
+
+        fn contains(&self, _test_addr: &Address) -> bool {
             false
         }
 
-        fn is_valid(&self) -> bool {
+        fn compare_to(&self, _addr: &Address) -> i32 {
+            0
+        }
+
+        fn add_mnemonic_reference(
+            &mut self,
+            _ref_addr: Address,
+            _ref_type: RefType,
+            _source_type: SourceType,
+        ) {
+        }
+
+        fn remove_mnemonic_reference(&mut self, _ref_addr: &Address) {}
+
+        fn get_mnemonic_references(&self) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+
+        fn get_operand_references(&self, _index: i32) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+
+        fn get_primary_reference(&self, _index: i32) -> Option<Arc<dyn Reference>> {
+            None
+        }
+
+        fn add_operand_reference(
+            &mut self,
+            _index: i32,
+            _ref_addr: Address,
+            _ref_type: RefType,
+            _source_type: SourceType,
+        ) {
+        }
+
+        fn remove_operand_reference(&mut self, _index: i32, _ref_addr: &Address) {}
+
+        fn get_references_from(&self) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+
+        fn get_reference_iterator_to(&self) -> Box<dyn ReferenceIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_program(&self) -> Arc<dyn Program> {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_external_reference(&self, _op_index: i32) -> Option<Arc<dyn ExternalReference>> {
+            None
+        }
+
+        fn remove_external_reference(&mut self, _op_index: i32) {}
+
+        fn set_primary_memory_reference(&mut self, _reference: Arc<dyn Reference>) {}
+
+        fn set_stack_reference(
+            &mut self,
+            _op_index: i32,
+            _offset: i32,
+            _source_type: SourceType,
+            _ref_type: RefType,
+        ) {
+        }
+
+        fn set_register_reference(
+            &mut self,
+            _op_index: i32,
+            _reg: &Register,
+            _source_type: SourceType,
+            _ref_type: RefType,
+        ) {
+        }
+
+        fn get_num_operands(&self) -> i32 {
+            1
+        }
+
+        fn get_address(&self, _op_index: i32) -> Option<Address> {
+            None
+        }
+
+        fn get_scalar(&self, _op_index: i32) -> Option<Scalar> {
+            None
+        }
+    }
+
+    impl Instruction for MockInstruction {
+        fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
+            unimplemented!()
+        }
+
+        fn get_register(&self, _operand_index: i32) -> Option<RegisterRef> {
+            None
+        }
+
+        fn get_op_objects(&self, _operand_index: i32) -> Vec<OperandValue> {
+            Vec::new()
+        }
+
+        fn get_input_objects(&self) -> Vec<OperandValue> {
+            Vec::new()
+        }
+
+        fn get_result_objects(&self) -> Vec<OperandValue> {
+            Vec::new()
+        }
+
+        fn get_default_operand_representation(&self, _operand_index: i32) -> String {
+            String::new()
+        }
+
+        fn get_default_operand_representation_list(
+            &self,
+            _operand_index: i32,
+        ) -> Option<Vec<OperandValue>> {
+            None
+        }
+
+        fn get_separator(&self, _operand_index: i32) -> Option<String> {
+            None
+        }
+
+        fn get_operand_type(&self, _operand_index: i32) -> i32 {
+            0
+        }
+
+        fn get_operand_ref_type(&self, _operand_index: i32) -> RefType {
+            RefType::Data
+        }
+
+        fn get_default_fall_through_offset(&self) -> i32 {
+            self.get_length()
+        }
+
+        fn get_default_fall_through(&self) -> Option<Address> {
+            None
+        }
+
+        fn get_fall_through(&self) -> Option<Address> {
+            None
+        }
+
+        fn get_fall_from(&self) -> Option<Address> {
+            None
+        }
+
+        fn get_flows(&self) -> Option<Vec<Address>> {
+            None
+        }
+
+        fn get_default_flows(&self) -> Option<Vec<Address>> {
+            None
+        }
+
+        fn get_flow_type(&self) -> RefType {
+            RefType::FallThrough
+        }
+
+        fn is_fallthrough(&self) -> bool {
             true
         }
 
-        fn get_flow_override(&self) -> crate::program::seam_stubs::FlowOverride {
-            crate::program::seam_stubs::FlowOverride::None
+        fn has_fallthrough(&self) -> bool {
+            true
         }
 
-        fn get_operand_ref_type(&self, _operand_index: i32) -> crate::program::model::symbol::RefType {
-            crate::program::model::symbol::RefType::Data
+        fn get_flow_override(&self) -> FlowOverride {
+            FlowOverride::None
         }
 
-        fn get_all_flow_addresses(&self) -> Vec<crate::program::model::address::Address> {
-            vec![]
+        fn set_flow_override(&mut self, _flow_override: FlowOverride) {}
+
+        fn set_length_override(&mut self, _length: i32) -> Result<(), CodeUnitInsertionException> {
+            let _ = MAX_LENGTH_OVERRIDE;
+            Ok(())
         }
 
-        fn get_fallthrough(&self) -> Option<crate::program::model::address::Address> {
+        fn is_length_overridden(&self) -> bool {
+            false
+        }
+
+        fn get_parsed_length(&self) -> i32 {
+            1
+        }
+
+        fn get_parsed_bytes(&self) -> Result<Vec<u8>, MemoryAccessException> {
+            Ok(Vec::new())
+        }
+
+        fn get_pcode(&self) -> Vec<PcodeOp> {
+            Vec::new()
+        }
+
+        fn get_pcode_with_overrides(&self, _include_overrides: bool) -> Vec<PcodeOp> {
+            Vec::new()
+        }
+
+        fn get_pcode_for_operand(&self, _operand_index: i32) -> Vec<PcodeOp> {
+            Vec::new()
+        }
+
+        fn get_delay_slot_depth(&self) -> i32 {
+            0
+        }
+
+        fn is_in_delay_slot(&self) -> bool {
+            false
+        }
+
+        fn get_next(&self) -> Option<Arc<dyn Instruction>> {
             None
         }
 
-        fn get_next_instruction_address(&self) -> Option<crate::program::model::address::Address> {
+        fn get_previous(&self) -> Option<Arc<dyn Instruction>> {
             None
         }
 
-        fn get_pcode_ops(&self, _op_type: Option<i32>) -> Vec<Arc<dyn crate::program::model::pcode::PcodeOp>> {
-            vec![]
+        fn set_fall_through(&mut self, _addr: Option<Address>) {}
+
+        fn clear_fall_through_override(&mut self) {}
+
+        fn is_fall_through_overridden(&self) -> bool {
+            false
+        }
+
+        fn get_instruction_context(&self) -> Arc<dyn InstructionContext> {
+            unimplemented!("not needed for this smoke test")
         }
     }
 

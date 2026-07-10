@@ -60,13 +60,31 @@ mod tests {
     use crate::framework::model::DomainObject;
     use crate::program::model::symbol::ExternalManager;
     use crate::program::model::listing::Library;
+    use crate::util::exception::InvalidInputException;
     use std::sync::Arc;
 
     struct MockLibrary;
 
+    impl crate::program::model::symbol::Namespace for MockLibrary {
+        fn get_symbol(&self) -> Arc<dyn crate::program::model::symbol::Symbol> {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn get_parent_namespace(&self) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
+            None
+        }
+    }
+
     impl Library for MockLibrary {
-        fn get_name(&self) -> String {
-            "test_lib".to_string()
+        fn get_associated_program_path(&self) -> Option<String> {
+            None
+        }
+
+        fn set_associated_program_path(
+            &mut self,
+            _program_path: Option<&str>,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
         }
     }
 
@@ -234,31 +252,16 @@ mod tests {
             Err(InvalidInputException::new("Mock").into())
         }
 
-        fn add_ext_function_in_library_reuse(
+        fn add_ext_function_in_namespace_reuse(
             &mut self,
-            _library_name: &str,
+            _ext_namespace: Arc<dyn crate::program::model::symbol::Namespace>,
             _ext_label: Option<&str>,
             _ext_addr: Option<crate::program::model::address::Address>,
             _source_type: crate::program::model::symbol::SourceType,
             _reuse_existing: bool,
-        ) -> Result<
-            Arc<dyn crate::program::model::symbol::ExternalLocation>,
-            crate::program::model::symbol::AddExternalLocationInLibraryError,
-        > {
-            Err(InvalidInputException::new("Mock").into())
-        }
-
-        fn remove_external_location(
-            &mut self,
-            _location: Arc<dyn crate::program::model::symbol::ExternalLocation>,
-        ) {
-        }
-
-        fn contains_external_location(
-            &self,
-            _location: &dyn crate::program::model::symbol::ExternalLocation,
-        ) -> bool {
-            false
+        ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, InvalidInputException>
+        {
+            Err(InvalidInputException::new("Mock"))
         }
     }
 

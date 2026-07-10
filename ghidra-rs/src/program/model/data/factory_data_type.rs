@@ -23,7 +23,11 @@ mod tests {
     use super::*;
 
     struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {}
+    impl MemBuffer for MockMemBuffer {
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
 
     struct MockFactoryDataType;
 

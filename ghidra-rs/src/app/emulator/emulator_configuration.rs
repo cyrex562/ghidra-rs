@@ -382,6 +382,49 @@ mod tests {
         fn get_property_or(&self, _key: &str, default_string: &str) -> String {
             default_string.to_string()
         }
+
+        fn get_property(&self, _key: &str) -> Option<String> {
+            None
+        }
+
+        fn get_property_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+
+        fn has_manual(&self) -> bool {
+            false
+        }
+
+        fn get_manual_entry(
+            &self,
+            _instruction_mnemonic: &str,
+        ) -> Option<crate::util::manual_entry::ManualEntry> {
+            None
+        }
+
+        fn get_manual_instruction_mnemonic_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+
+        fn get_manual_exception(
+            &self,
+        ) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+            None
+        }
+
+        fn get_sorted_vector_registers(
+            &self,
+        ) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            vec![]
+        }
+
+        fn get_register_addresses(&self) -> Box<dyn crate::program::model::address::AddressSetView> {
+            todo!()
+        }
+
+        fn get_maximum_instruction_length(&self) -> Option<i32> {
+            None
+        }
     }
 
     struct TestEmulatorConfiguration {

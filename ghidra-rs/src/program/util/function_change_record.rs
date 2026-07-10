@@ -115,8 +115,20 @@ impl fmt::Display for FunctionChangeRecord {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use std::any::Any;
+    use crate::program::model::address::{Address, AddressSetView, AddressSpace, AddressSpaceType};
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};
+    use crate::program::model::listing::function::{
+        FunctionEditError, FunctionUpdateType, SetFunctionNameError,
+    };
+    use crate::program::model::symbol::{
+        ExternalLocation, Namespace, NamespaceType, SourceType, Symbol,
+    };
+    use crate::program::seam_stubs::{PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+    use crate::program::database::function::OverlappingFunctionException;
+    use crate::util::exception::InvalidInputException;
+    use crate::util::task::TaskMonitor;
+    use std::sync::Arc;
 
     struct MockFunction {
         entry_point: Address,
@@ -130,133 +142,324 @@ mod tests {
         }
     }
 
-    impl crate::program::model::symbol::Namespace for MockFunction {
-        fn get_name(&self) -> &str {
-            "mock_function"
+    impl Namespace for MockFunction {
+        fn get_name(&self) -> String {
+            "mock_function".to_string()
         }
 
-        fn get_id(&self) -> u64 {
+        fn get_id(&self) -> i64 {
             1
         }
 
-        fn get_address(&self) -> Option<Address> {
-            Some(self.entry_point.clone())
+        fn get_type(&self) -> NamespaceType {
+            NamespaceType::Function
         }
 
-        fn get_type(&self) -> crate::program::model::symbol::NamespaceType {
-            crate::program::model::symbol::NamespaceType::Function
+        fn get_symbol(&self) -> Arc<dyn Symbol> {
+            unimplemented!()
         }
 
-        fn get_symbol(&self) -> Option<&dyn crate::program::model::symbol::Symbol> {
+        fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>> {
             None
-        }
-
-        fn get_parent_namespace(&self) -> Option<&dyn crate::program::model::symbol::Namespace> {
-            None
-        }
-
-        fn contains(
-            &self,
-            _namespace: &dyn crate::program::model::symbol::Namespace,
-        ) -> bool {
-            false
-        }
-
-        fn as_any(&self) -> &dyn Any {
-            self
         }
     }
 
     impl Function for MockFunction {
-        fn get_entry_point(&self) -> Address {
-            self.entry_point.clone()
+        fn get_name(&self) -> String {
+            "mock_function".to_string()
         }
 
-        fn get_call_fixup(&self) -> Option<&str> {
+        fn set_name(&mut self, _name: &str, _source: SourceType) -> Result<(), SetFunctionNameError> {
+            Ok(())
+        }
+
+        fn set_call_fixup(&mut self, _name: Option<&str>) {}
+
+        fn get_call_fixup(&self) -> Option<String> {
             None
         }
 
-        fn get_calling_convention_name(&self) -> &str {
-            "default"
-        }
-
-        fn get_body(
-            &self,
-        ) -> crate::program::model::address::AddressSetView {
-            crate::program::model::address::AddressSetView::empty()
-        }
-
-        fn is_external(&self) -> bool {
-            false
-        }
-
-        fn get_external_location(
-            &self,
-        ) -> Option<crate::program::model::symbol::ExternalLocation> {
-            None
-        }
-
-        fn has_var_args(&self) -> bool {
-            false
-        }
-
-        fn get_parameters(&self) -> &[crate::program::model::listing::Parameter] {
-            &[]
-        }
-
-        fn get_local_variables(
-            &self,
-        ) -> &[crate::program::model::listing::Variable] {
-            &[]
+        fn get_program(&self) -> Arc<dyn Program> {
+            unimplemented!()
         }
 
         fn get_comment(&self) -> Option<String> {
             None
         }
 
-        fn set_comment(
+        fn get_comment_as_array(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn set_comment(&mut self, _comment: Option<&str>) {}
+
+        fn get_repeatable_comment(&self) -> Option<String> {
+            None
+        }
+
+        fn get_repeatable_comment_as_array(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
+
+        fn get_entry_point(&self) -> Address {
+            self.entry_point.clone()
+        }
+
+        fn get_return_type(&self) -> Option<Box<dyn DataType>> {
+            None
+        }
+
+        fn set_return_type(
             &mut self,
-            _comment: Option<String>,
-        ) -> Result<(), Box<dyn std::error::Error>> {
+            _data_type: Box<dyn DataType>,
+            _source: SourceType,
+        ) -> Result<(), InvalidInputException> {
             Ok(())
         }
 
-        fn get_return_type(&self) -> &dyn crate::program::model::data::data_type::DataType {
+        fn get_return(&self) -> Box<dyn Parameter> {
             unimplemented!()
         }
 
-        fn get_stack_frame(&self) -> &dyn crate::program::seam_stubs::StackFrame {
+        fn set_return(
+            &mut self,
+            _data_type: Box<dyn DataType>,
+            _storage: Box<dyn VariableStorage>,
+            _source: SourceType,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
+
+        fn get_signature_formal(&self, _formal_signature: bool) -> Box<dyn FunctionSignature> {
             unimplemented!()
         }
 
-        fn get_prototype_model(
+        fn get_prototype_string(
             &self,
-        ) -> Option<&dyn crate::program::seam_stubs::PrototypeModel> {
+            _formal_signature: bool,
+            _include_calling_convention: bool,
+        ) -> String {
+            String::new()
+        }
+
+        fn get_signature_source(&self) -> SourceType {
+            SourceType::Default
+        }
+
+        fn set_signature_source(&mut self, _signature_source: SourceType) {}
+
+        fn get_stack_frame(&self) -> Box<dyn StackFrame> {
+            unimplemented!()
+        }
+
+        fn get_stack_purge_size(&self) -> i32 {
+            -1
+        }
+
+        fn get_tags(&self) -> Vec<Box<dyn FunctionTag>> {
+            Vec::new()
+        }
+
+        fn add_tag(&mut self, _name: &str) -> bool {
+            false
+        }
+
+        fn remove_tag(&mut self, _name: &str) {}
+
+        fn set_stack_purge_size(&mut self, _purge_size: i32) {}
+
+        fn is_stack_purge_size_valid(&self) -> bool {
+            false
+        }
+
+        fn add_parameter(
+            &mut self,
+            _var: Box<dyn Variable>,
+            _source: SourceType,
+        ) -> Result<Box<dyn Parameter>, FunctionEditError> {
+            unimplemented!()
+        }
+
+        fn insert_parameter(
+            &mut self,
+            _ordinal: i32,
+            _var: Box<dyn Variable>,
+            _source: SourceType,
+        ) -> Result<Box<dyn Parameter>, FunctionEditError> {
+            unimplemented!()
+        }
+
+        fn replace_parameters(
+            &mut self,
+            _params: Vec<Box<dyn Variable>>,
+            _update_type: FunctionUpdateType,
+            _force: bool,
+            _source: SourceType,
+        ) -> Result<(), FunctionEditError> {
+            Ok(())
+        }
+
+        fn update_function(
+            &mut self,
+            _calling_convention: Option<&str>,
+            _return_value: Option<Box<dyn Variable>>,
+            _new_params: Vec<Box<dyn Variable>>,
+            _update_type: FunctionUpdateType,
+            _force: bool,
+            _source: SourceType,
+        ) -> Result<(), FunctionEditError> {
+            Ok(())
+        }
+
+        fn get_parameter(&self, _ordinal: i32) -> Option<Box<dyn Parameter>> {
             None
+        }
+
+        fn remove_parameter(&mut self, _ordinal: i32) {}
+
+        fn move_parameter(
+            &mut self,
+            _from_ordinal: i32,
+            _to_ordinal: i32,
+        ) -> Result<Box<dyn Parameter>, InvalidInputException> {
+            unimplemented!()
+        }
+
+        fn get_parameter_count(&self) -> i32 {
+            0
+        }
+
+        fn get_auto_parameter_count(&self) -> i32 {
+            0
+        }
+
+        fn get_parameters(&self) -> Vec<Box<dyn Parameter>> {
+            Vec::new()
+        }
+
+        fn get_parameters_filtered(
+            &self,
+            _filter: Option<&dyn VariableFilter>,
+        ) -> Vec<Box<dyn Parameter>> {
+            Vec::new()
+        }
+
+        fn get_local_variables(&self) -> Vec<Box<dyn Variable>> {
+            Vec::new()
+        }
+
+        fn get_local_variables_filtered(
+            &self,
+            _filter: Option<&dyn VariableFilter>,
+        ) -> Vec<Box<dyn Variable>> {
+            Vec::new()
+        }
+
+        fn get_variables_filtered(
+            &self,
+            _filter: Option<&dyn VariableFilter>,
+        ) -> Vec<Box<dyn Variable>> {
+            Vec::new()
+        }
+
+        fn get_all_variables(&self) -> Vec<Box<dyn Variable>> {
+            Vec::new()
+        }
+
+        fn add_local_variable(
+            &mut self,
+            _var: Box<dyn Variable>,
+            _source: SourceType,
+        ) -> Result<Box<dyn Variable>, FunctionEditError> {
+            unimplemented!()
+        }
+
+        fn remove_variable(&mut self, _var: &dyn Variable) {}
+
+        fn set_body(
+            &mut self,
+            _new_body: &dyn AddressSetView,
+        ) -> Result<(), OverlappingFunctionException> {
+            Ok(())
+        }
+
+        fn has_var_args(&self) -> bool {
+            false
+        }
+
+        fn set_var_args(&mut self, _has_var_args: bool) {}
+
+        fn is_inline(&self) -> bool {
+            false
+        }
+
+        fn set_inline(&mut self, _is_inline: bool) {}
+
+        fn has_no_return(&self) -> bool {
+            false
+        }
+
+        fn set_no_return(&mut self, _has_no_return: bool) {}
+
+        fn has_custom_variable_storage(&self) -> bool {
+            false
+        }
+
+        fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
+
+        fn get_calling_convention(&self) -> Option<Box<dyn PrototypeModel>> {
+            None
+        }
+
+        fn get_calling_convention_name(&self) -> String {
+            "default".to_string()
+        }
+
+        fn set_calling_convention(&mut self, _name: &str) -> Result<(), InvalidInputException> {
+            Ok(())
         }
 
         fn is_thunk(&self) -> bool {
             false
         }
 
-        fn get_thunked_function(&self) -> Option<&dyn Function> {
+        fn get_thunked_function(&self, _recursive: bool) -> Option<Arc<dyn Function>> {
             None
         }
 
-        fn is_inline(&self) -> bool {
+        fn get_function_thunk_addresses(&self, _recursive: bool) -> Option<Vec<Address>> {
+            None
+        }
+
+        fn set_thunked_function(
+            &mut self,
+            _thunked_function: Option<Arc<dyn Function>>,
+        ) -> Result<(), String> {
+            Ok(())
+        }
+
+        fn is_external(&self) -> bool {
             false
         }
 
-        fn is_no_return(&self) -> bool {
+        fn get_external_location(&self) -> Option<Box<dyn ExternalLocation>> {
+            None
+        }
+
+        fn get_calling_functions(&self, _monitor: &dyn TaskMonitor) -> Vec<Arc<dyn Function>> {
+            Vec::new()
+        }
+
+        fn get_called_functions(&self, _monitor: &dyn TaskMonitor) -> Vec<Arc<dyn Function>> {
+            Vec::new()
+        }
+
+        fn promote_local_user_labels_to_global(&mut self) {}
+
+        fn is_deleted(&self) -> bool {
             false
-        }
-
-        fn get_purge_size(&self) -> i32 {
-            -1
-        }
-
-        fn as_any(&self) -> &dyn Any {
-            self
         }
     }
 

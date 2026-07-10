@@ -223,6 +223,7 @@ mod tests {
     impl FunctionManager for MockFunctionManager {
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
                 fn get_name(&self) -> String {
                     "mock".to_string()

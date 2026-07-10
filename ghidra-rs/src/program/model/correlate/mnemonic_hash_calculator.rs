@@ -40,7 +40,11 @@ mod tests {
         mnemonic: String,
     }
 
-    impl MemBuffer for TestInstruction {}
+    impl MemBuffer for TestInstruction {
+        fn get_address(&self) -> Address {
+            mock_address(0x1000)
+        }
+    }
     impl PropertySet for TestInstruction {}
 
     impl ProcessorContextView for TestInstruction {

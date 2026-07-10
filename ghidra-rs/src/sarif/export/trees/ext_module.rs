@@ -438,6 +438,14 @@ mod tests {
     }
 
     impl ProgramModule for MockProgramModule {
+        fn get_min_address(&self) -> Option<crate::program::model::address::Address> {
+            None
+        }
+
+        fn get_max_address(&self) -> Option<crate::program::model::address::Address> {
+            None
+        }
+
         fn contains_fragment(&self, _fragment: &dyn ProgramFragment) -> bool {
             false
         }

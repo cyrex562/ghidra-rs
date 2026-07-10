@@ -29,75 +29,146 @@ pub trait InstructionPanelListener {
 mod tests {
     use super::*;
 
-    struct FakeAddressSet;
-    impl AddressSetView for FakeAddressSet {
-        fn min(&self) -> Option<crate::program::model::address::Address> {
-            None
-        }
-        fn max(&self) -> Option<crate::program::model::address::Address> {
-            None
-        }
-        fn is_empty(&self) -> bool {
-            true
-        }
-        fn contains(&self, _addr: crate::program::model::address::Address) -> bool {
-            false
-        }
-        fn get_ranges(&self) -> Vec<crate::program::model::address::AddressRange> {
-            vec![]
-        }
-        fn get_num_address_ranges(&self) -> usize {
-            0
-        }
-        fn intersects(&self, _other: &dyn AddressSetView) -> bool {
-            false
-        }
-        fn intersect(&self, _other: &dyn AddressSetView) -> Box<dyn AddressSetView> {
-            Box::new(FakeAddressSet)
-        }
-        fn union(&self, _other: &dyn AddressSetView) -> Box<dyn AddressSetView> {
-            Box::new(FakeAddressSet)
-        }
-        fn subtract(&self, _other: &dyn AddressSetView) -> Box<dyn AddressSetView> {
-            Box::new(FakeAddressSet)
-        }
-        fn xor(&self, _other: &dyn AddressSetView) -> Box<dyn AddressSetView> {
-            Box::new(FakeAddressSet)
-        }
-        fn contains_range(&self, _start: crate::program::model::address::Address, _end: crate::program::model::address::Address) -> bool {
-            false
-        }
-        fn has_gap_between(&self, _start: crate::program::model::address::Address, _end: crate::program::model::address::Address) -> bool {
-            false
-        }
-        fn clone_box(&self) -> Box<dyn AddressSetView> {
-            Box::new(FakeAddressSet)
-        }
-        fn size(&self) -> i64 {
-            0
-        }
+    use std::sync::Arc;
+    use crate::program::model::address::{Address, AddressSet, AddressSpace, AddressSpaceType};
+    use crate::program::model::lang::register::Register;
+    use crate::program::model::listing::program::Program;
+    use crate::program::model::mem::MemoryAccessException;
+    use crate::program::model::scalar::Scalar;
+    use crate::program::model::symbol::{
+        ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
+    };
+    use crate::program::model::util::PropertySet;
+    use crate::program::seam_stubs::{CommentType, MemBuffer};
+
+    fn fake_address() -> Address {
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+        Address::new(space, 0)
     }
 
     struct FakeCodeUnit;
-    impl crate::program::model::mem::MemBuffer for FakeCodeUnit {
-        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
-            Ok(0)
-        }
-        fn get_bytes(&self, _offset: i32, _buf: &mut [u8]) -> Result<i32, crate::program::model::mem::MemoryAccessException> {
-            Ok(0)
-        }
-        fn length(&self) -> usize {
-            0
+
+    impl MemBuffer for FakeCodeUnit {
+        fn get_address(&self) -> Address {
+            fake_address()
         }
     }
-    impl crate::program::model::util::PropertySet for FakeCodeUnit {}
+
+    impl PropertySet for FakeCodeUnit {}
+
     impl CodeUnit for FakeCodeUnit {
-        fn get_address_string(
-            &self,
-            _show_block_name: bool,
-            _pad: bool,
-        ) -> String {
+        fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {
             "0x0".to_string()
+        }
+        fn get_label(&self) -> Option<String> {
+            None
+        }
+        fn get_symbols(&self) -> Vec<Arc<dyn Symbol>> {
+            Vec::new()
+        }
+        fn get_primary_symbol(&self) -> Option<Arc<dyn Symbol>> {
+            None
+        }
+        fn get_min_address(&self) -> Address {
+            fake_address()
+        }
+        fn get_max_address(&self) -> Address {
+            fake_address()
+        }
+        fn get_mnemonic_string(&self) -> String {
+            String::new()
+        }
+        fn get_comment(&self, _comment_type: CommentType) -> Option<String> {
+            None
+        }
+        fn get_comment_as_array(&self, _comment_type: CommentType) -> Vec<String> {
+            Vec::new()
+        }
+        fn set_comment(&mut self, _comment_type: CommentType, _comment: Option<String>) {}
+        fn set_comment_as_array(&mut self, _comment_type: CommentType, _comment: &[String]) {}
+        fn get_length(&self) -> i32 {
+            1
+        }
+        fn get_bytes(&self) -> Result<Vec<u8>, MemoryAccessException> {
+            Ok(Vec::new())
+        }
+        fn get_bytes_in_code_unit(
+            &self,
+            _buffer: &mut [u8],
+            _buffer_offset: i32,
+        ) -> Result<(), MemoryAccessException> {
+            Ok(())
+        }
+        fn contains(&self, _test_addr: &Address) -> bool {
+            false
+        }
+        fn compare_to(&self, _addr: &Address) -> i32 {
+            0
+        }
+        fn add_mnemonic_reference(
+            &mut self,
+            _ref_addr: Address,
+            _ref_type: RefType,
+            _source_type: SourceType,
+        ) {
+        }
+        fn remove_mnemonic_reference(&mut self, _ref_addr: &Address) {}
+        fn get_mnemonic_references(&self) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+        fn get_operand_references(&self, _index: i32) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+        fn get_primary_reference(&self, _index: i32) -> Option<Arc<dyn Reference>> {
+            None
+        }
+        fn add_operand_reference(
+            &mut self,
+            _index: i32,
+            _ref_addr: Address,
+            _ref_type: RefType,
+            _source_type: SourceType,
+        ) {
+        }
+        fn remove_operand_reference(&mut self, _index: i32, _ref_addr: &Address) {}
+        fn get_references_from(&self) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+        fn get_reference_iterator_to(&self) -> Box<dyn ReferenceIterator> {
+            Box::new(crate::program::model::symbol::EmptyReferenceIterator)
+        }
+        fn get_program(&self) -> Arc<dyn Program> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_external_reference(&self, _op_index: i32) -> Option<Arc<dyn ExternalReference>> {
+            None
+        }
+        fn remove_external_reference(&mut self, _op_index: i32) {}
+        fn set_primary_memory_reference(&mut self, _reference: Arc<dyn Reference>) {}
+        fn set_stack_reference(
+            &mut self,
+            _op_index: i32,
+            _offset: i32,
+            _source_type: SourceType,
+            _ref_type: RefType,
+        ) {
+        }
+        fn set_register_reference(
+            &mut self,
+            _op_index: i32,
+            _reg: &Register,
+            _source_type: SourceType,
+            _ref_type: RefType,
+        ) {
+        }
+        fn get_num_operands(&self) -> i32 {
+            0
+        }
+        fn get_address(&self, _op_index: i32) -> Option<Address> {
+            None
+        }
+        fn get_scalar(&self, _op_index: i32) -> Option<Scalar> {
+            None
         }
     }
 
@@ -160,7 +231,7 @@ mod tests {
     #[test]
     fn selection_dropped_records_op_index() {
         let mut listener = RecordingListener::new(true);
-        let addr_set = FakeAddressSet;
+        let addr_set = AddressSet::new();
         let code_unit = FakeCodeUnit;
         listener.selection_dropped(&addr_set, &code_unit, 3);
         assert_eq!(listener.drops, vec![3]);
@@ -169,7 +240,7 @@ mod tests {
     #[test]
     fn selection_dropped_records_multiple() {
         let mut listener = RecordingListener::new(true);
-        let addr_set = FakeAddressSet;
+        let addr_set = AddressSet::new();
         let code_unit = FakeCodeUnit;
         listener.selection_dropped(&addr_set, &code_unit, 0);
         listener.selection_dropped(&addr_set, &code_unit, 1);

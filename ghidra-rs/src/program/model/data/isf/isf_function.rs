@@ -36,7 +36,7 @@ impl IsfObject for IsfFunction {}
 mod tests {
     use super::*;
     use crate::program::model::data::data_type::DataType;
-    use crate::program::model::data::function_signature::FunctionSignature;
+    use crate::program::model::listing::function_signature::FunctionSignature;
 
     struct MockFunctionDefinition {
         name: String,
@@ -63,9 +63,99 @@ mod tests {
         }
     }
 
-    impl FunctionSignature for MockFunctionDefinition {}
+    impl FunctionSignature for MockFunctionDefinition {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
 
-    impl FunctionDefinition for MockFunctionDefinition {}
+        fn get_prototype_string_with_calling_convention(
+            &self,
+            _include_calling_convention: bool,
+        ) -> String {
+            String::new()
+        }
+
+        fn get_arguments(
+            &self,
+        ) -> Vec<Box<dyn crate::program::model::data::parameter_definition::ParameterDefinition>>
+        {
+            Vec::new()
+        }
+
+        fn get_return_type(&self) -> Box<dyn DataType> {
+            Box::new(MockFunctionDefinition::new("", ""))
+        }
+
+        fn get_comment(&self) -> Option<String> {
+            None
+        }
+
+        fn has_var_args(&self) -> bool {
+            false
+        }
+
+        fn has_no_return(&self) -> bool {
+            false
+        }
+
+        fn get_calling_convention(
+            &self,
+        ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+            None
+        }
+
+        fn get_calling_convention_name(&self) -> String {
+            String::new()
+        }
+
+        fn is_equivalent_signature(
+            &self,
+            _signature: &dyn FunctionSignature,
+        ) -> bool {
+            false
+        }
+    }
+
+    impl FunctionDefinition for MockFunctionDefinition {
+        fn set_arguments(
+            &mut self,
+            _args: Vec<Box<dyn crate::program::model::data::parameter_definition::ParameterDefinition>>,
+        ) {
+        }
+
+        fn set_return_type(&mut self, _data_type: Box<dyn DataType>) -> Result<(), String> {
+            Ok(())
+        }
+
+        fn set_comment(&mut self, _comment: Option<String>) {}
+
+        fn set_var_args(&mut self, _has_var_args: bool) {}
+
+        fn set_no_return(&mut self, _has_no_return: bool) {}
+
+        fn set_generic_calling_convention(
+            &mut self,
+            _generic_calling_convention: &dyn crate::program::seam_stubs::GenericCallingConvention,
+        ) {
+        }
+
+        fn set_calling_convention(
+            &mut self,
+            _convention_name: Option<String>,
+        ) -> Result<(), crate::util::exception::InvalidInputException> {
+            Ok(())
+        }
+
+        fn replace_argument(
+            &mut self,
+            _ordinal: i32,
+            _name: Option<String>,
+            _dt: Box<dyn DataType>,
+            _comment: Option<String>,
+            _source: crate::program::model::symbol::source_type::SourceType,
+        ) {
+        }
+    }
 
     #[test]
     fn new_creates_struct_from_function_definition() {

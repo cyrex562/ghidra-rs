@@ -82,7 +82,11 @@ mod tests {
         length: i32,
     }
 
-    impl MemBuffer for MockCodeUnitImpl {}
+    impl MemBuffer for MockCodeUnitImpl {
+        fn get_address(&self) -> Address {
+            self.min_address.clone()
+        }
+    }
     impl PropertySet for MockCodeUnitImpl {}
 
     impl CodeUnit for MockCodeUnitImpl {

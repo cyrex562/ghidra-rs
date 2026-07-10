@@ -43,13 +43,17 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_organization::DataOrganization;
     use crate::docking::settings::settings::Settings;
-    use crate::program::model::seam_stubs::MemBuffer;
+    use crate::program::seam_stubs::MemBuffer;
 
     struct MockSettings;
     impl Settings for MockSettings {}
 
     struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {}
+    impl MemBuffer for MockMemBuffer {
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
 
     struct MockDynamic {
         name: String,

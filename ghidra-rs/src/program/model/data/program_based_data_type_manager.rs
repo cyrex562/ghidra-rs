@@ -113,12 +113,13 @@ mod tests {
     }
 
     struct MockProgram;
+    impl crate::framework::model::DomainObject for MockProgram {}
     impl Program for MockProgram {
-        fn get_name(&self) -> &str {
-            "test.bin"
+        fn get_name(&self) -> String {
+            "test.bin".to_string()
         }
-        fn get_language_id(&self) -> &str {
-            "test:LE:32:default"
+        fn get_language_id(&self) -> String {
+            "test:LE:32:default".to_string()
         }
     }
 
@@ -133,7 +134,11 @@ mod tests {
 
     struct MockData;
 
-    impl MemBuffer for MockData {}
+    impl MemBuffer for MockData {
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
     impl PropertySet for MockData {}
 
     impl CodeUnit for MockData {

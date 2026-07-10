@@ -40,6 +40,17 @@ mod tests {
     struct TestMemBuffer;
 
     impl MemBuffer for TestMemBuffer {
+        fn get_address(&self) -> crate::program::model::address::Address {
+            let space = crate::program::model::address::AddressSpace::new(
+                "ram",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Ram,
+                0,
+            );
+            crate::program::model::address::Address::new(space, 0)
+        }
+
         fn is_initialized_memory(&self) -> bool {
             true
         }

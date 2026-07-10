@@ -90,7 +90,11 @@ mod tests {
     impl Settings for MockSettings {}
 
     struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {}
+    impl MemBuffer for MockMemBuffer {
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
 
     struct MockStringDataInstance;
     impl StringDataInstance for MockStringDataInstance {
