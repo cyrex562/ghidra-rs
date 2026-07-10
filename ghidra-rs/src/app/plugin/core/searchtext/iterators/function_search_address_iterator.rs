@@ -551,7 +551,7 @@ mod tests {
     fn iterator_with_functions_has_next() {
         let addr1 = test_address(0x1000);
         let func1 = Arc::new(MockFunction { entry_point: addr1 });
-        let functions = vec![func1];
+        let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![func1];
         let test_iter = TestFunctionIterator::new(functions);
         let iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
         assert!(iter.has_next());
@@ -567,7 +567,7 @@ mod tests {
         let func2 = Arc::new(MockFunction { entry_point: addr2.clone() });
         let func3 = Arc::new(MockFunction { entry_point: addr3.clone() });
 
-        let functions = vec![func1, func2, func3];
+        let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![func1, func2, func3];
         let test_iter = TestFunctionIterator::new(functions);
         let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
 

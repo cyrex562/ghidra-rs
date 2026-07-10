@@ -72,9 +72,16 @@ impl fmt::Debug for CodeUnitContainer {
 mod tests {
     use super::*;
     use crate::program::model::listing::CodeUnit as _;
-    use crate::program::model::address::Address;
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::util::PropertySet;
     use crate::program::seam_stubs::{CommentType, MemBuffer};
+
+    fn addr(offset: i64) -> Address {
+        Address::new(
+            AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1),
+            offset,
+        )
+    }
 
     struct MockCodeUnit {
         mnemonic: String,
@@ -270,7 +277,7 @@ mod tests {
 
     #[test]
     fn construction_caches_mnemonic_and_arity() {
-        let addr = Address::new_default_space(0x1000);
+        let addr = addr(0x1000);
         let code_unit = MockCodeUnit::new("MOV", 2, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -280,7 +287,7 @@ mod tests {
 
     #[test]
     fn get_code_unit_returns_reference() {
-        let addr = Address::new_default_space(0x2000);
+        let addr = addr(0x2000);
         let code_unit = MockCodeUnit::new("JMP", 1, addr.clone());
         let container = CodeUnitContainer::new(code_unit.clone());
 
@@ -289,7 +296,7 @@ mod tests {
 
     #[test]
     fn display_includes_mnemonic_and_address() {
-        let addr = Address::new_default_space(0x3000);
+        let addr = addr(0x3000);
         let code_unit = MockCodeUnit::new("ADD", 3, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -300,7 +307,7 @@ mod tests {
 
     #[test]
     fn zero_operands() {
-        let addr = Address::new_default_space(0x4000);
+        let addr = addr(0x4000);
         let code_unit = MockCodeUnit::new("NOP", 0, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -309,7 +316,7 @@ mod tests {
 
     #[test]
     fn multiple_operands() {
-        let addr = Address::new_default_space(0x5000);
+        let addr = addr(0x5000);
         let code_unit = MockCodeUnit::new("IMUL", 3, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -318,7 +325,7 @@ mod tests {
 
     #[test]
     fn different_mnemonics() {
-        let addr = Address::new_default_space(0x6000);
+        let addr = addr(0x6000);
         let code_unit = MockCodeUnit::new("PUSH", 1, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 
@@ -327,7 +334,7 @@ mod tests {
 
     #[test]
     fn debug_display() {
-        let addr = Address::new_default_space(0x7000);
+        let addr = addr(0x7000);
         let code_unit = MockCodeUnit::new("XOR", 2, addr.clone());
         let container = CodeUnitContainer::new(code_unit);
 

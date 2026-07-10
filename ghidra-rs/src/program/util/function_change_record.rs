@@ -115,6 +115,7 @@ impl fmt::Display for FunctionChangeRecord {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::event_type::EventType;
     use crate::program::model::address::{Address, AddressSetView, AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};

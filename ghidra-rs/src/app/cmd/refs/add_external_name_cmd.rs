@@ -185,7 +185,7 @@ mod tests {
             if let Some(dup_name) = &self.duplicate_name {
                 if dup_name == library_name {
                     return Err(
-                        DuplicateNameException::new(format!("{} already exists", library_name))
+                        DuplicateNameException::with_message(format!("{} already exists", library_name))
                             .into(),
                     );
                 }
@@ -193,9 +193,9 @@ mod tests {
 
             if self.should_succeed {
                 self.added_libraries.push(library_name.to_string());
-                Err(InvalidInputException::new("Mock").into())
+                Err(InvalidInputException::with_message("Mock").into())
             } else {
-                Err(InvalidInputException::new("Mock").into())
+                Err(InvalidInputException::with_message("Mock").into())
             }
         }
 
@@ -209,7 +209,7 @@ mod tests {
             Arc<dyn crate::program::model::symbol::ExternalLocation>,
             crate::program::model::symbol::AddExternalLocationInLibraryError,
         > {
-            Err(InvalidInputException::new("Mock").into())
+            Err(InvalidInputException::with_message("Mock").into())
         }
 
         fn add_ext_location_in_namespace_reuse(
@@ -221,7 +221,7 @@ mod tests {
             _reuse_existing: bool,
         ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, InvalidInputException>
         {
-            Err(InvalidInputException::new("Mock"))
+            Err(InvalidInputException::with_message("Mock"))
         }
 
         fn add_ext_function_in_library(
@@ -234,7 +234,7 @@ mod tests {
             Arc<dyn crate::program::model::symbol::ExternalLocation>,
             crate::program::model::symbol::AddExternalLocationInLibraryError,
         > {
-            Err(InvalidInputException::new("Mock").into())
+            Err(InvalidInputException::with_message("Mock").into())
         }
 
         fn add_ext_function_in_namespace_reuse(
@@ -246,7 +246,7 @@ mod tests {
             _reuse_existing: bool,
         ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, InvalidInputException>
         {
-            Err(InvalidInputException::new("Mock"))
+            Err(InvalidInputException::with_message("Mock"))
         }
     }
 

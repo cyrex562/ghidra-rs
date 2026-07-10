@@ -193,7 +193,9 @@ mod tests {
         fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
 
         fn get_entry_point(&self) -> Address {
-            Address::default()
+            use crate::program::model::address::{AddressSpace, AddressSpaceType};
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+            Address::new(space, 0)
         }
 
         fn get_return_type(&self) -> Option<Box<dyn DataType>> {

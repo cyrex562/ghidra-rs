@@ -176,11 +176,8 @@ mod tests {
         }
 
         fn set_symbol_pinned(&mut self, symbol_id: i64, pinned: bool) -> io::Result<()> {
-            for (_, is_pinned) in &mut self.symbols {
-                if let Some(entry) = self.symbols.iter_mut().find(|(s, _)| s.get_id() == symbol_id) {
-                    entry.1 = pinned;
-                    return Ok(());
-                }
+            if let Some(entry) = self.symbols.iter_mut().find(|(s, _)| s.get_id() == symbol_id) {
+                entry.1 = pinned;
             }
             Ok(())
         }

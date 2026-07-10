@@ -34,7 +34,7 @@ mod tests {
         fn domain_object_closed(&mut self, domain_object: &dyn DomainObject) {
             self.closed_names.push(
                 domain_object
-                    .domain_file()
+                    .get_domain_file()
                     .map(|df| df.to_string())
                     .unwrap_or_else(|| "unnamed".to_string()),
             );

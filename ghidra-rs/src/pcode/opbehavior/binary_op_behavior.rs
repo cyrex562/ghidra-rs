@@ -108,6 +108,11 @@ mod tests {
         fn new(opcode: i32) -> BinaryOpBehaviorImpl<Self> {
             BinaryOpBehaviorImpl::new(opcode, TestBinaryOp)
         }
+
+        /// The bare evaluator carries no opcode of its own.
+        fn opcode(&self) -> i32 {
+            0
+        }
     }
 
     impl BinaryOpBehavior for BinaryOpBehaviorImpl<TestBinaryOp> {

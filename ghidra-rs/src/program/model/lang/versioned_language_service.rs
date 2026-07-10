@@ -168,7 +168,7 @@ mod tests {
     fn get_language_unknown_version_errs() {
         let service = MockVersionedLanguageService { known_version: 2 };
         let id = LanguageID::new("x86:LE:32:default").unwrap();
-        let err = service.get_language(&id, 1).unwrap_err();
+        let err = service.get_language(&id, 1).err().unwrap();
         assert!(err.to_string().contains("version 1"));
     }
 

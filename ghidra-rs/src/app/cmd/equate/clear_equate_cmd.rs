@@ -63,6 +63,7 @@ mod tests {
     use crate::framework::model::DomainObject;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::listing::Listing;
+    use crate::program::model::symbol::equate_reference::EquateReference;
     use crate::program::model::symbol::{EquateTable, SimpleEquateTable};
 
     fn addr(offset: i64) -> Address {

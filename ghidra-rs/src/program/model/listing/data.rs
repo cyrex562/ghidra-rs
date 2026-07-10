@@ -505,10 +505,10 @@ mod tests {
         };
         let dyn_data: &dyn Data = &data;
         assert_eq!(
-            dyn_data.get_value().and_then(|v| v.downcast::<i32>().ok()),
+            Data::get_value(dyn_data).and_then(|v| v.downcast::<i32>().ok()),
             Some(Box::new(42))
         );
-        assert!(dyn_data.is_immutable_settings());
+        assert!(Data::is_immutable_settings(dyn_data));
         assert!(dyn_data.is_constant());
         assert!(!dyn_data.is_writable());
         assert_eq!(

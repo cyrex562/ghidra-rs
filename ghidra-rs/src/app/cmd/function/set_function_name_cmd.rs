@@ -66,11 +66,18 @@ mod tests {
     use std::sync::Arc;
 
     use crate::program::database::function::OverlappingFunctionException;
-    use crate::program::model::address::{AddressIterator, AddressSetView};
+    use crate::program::model::address::{
+        AddressIterator, AddressSetView, AddressSpace, AddressSpaceType,
+    };
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::listing::code_unit::CodeUnit;
     use crate::program::model::listing::data::Data;
+
+    fn addr(offset: i64) -> Address {
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
     use crate::program::model::listing::function::{
         FunctionEditError, FunctionUpdateType, SetFunctionNameError,
     };
@@ -140,7 +147,7 @@ mod tests {
         }
         fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
         fn get_entry_point(&self) -> Address {
-            self.entry_point
+            self.entry_point.clone()
         }
         fn get_return_type(&self) -> Option<Box<dyn DataType>> {
             None
@@ -779,35 +786,35 @@ mod tests {
 
     #[test]
     fn test_set_function_name_cmd_empty_name_converted_to_none() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let cmd = SetFunctionNameCmd::new(addr, "".to_string(), SourceType::UserDefined);
         assert_eq!(cmd.name, None);
     }
 
     #[test]
     fn test_set_function_name_cmd_name_preserved() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let cmd = SetFunctionNameCmd::new(addr, "my_function".to_string(), SourceType::UserDefined);
         assert_eq!(cmd.name, Some("my_function".to_string()));
     }
 
     #[test]
     fn test_set_function_name_cmd_name() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let cmd = SetFunctionNameCmd::new(addr, "test".to_string(), SourceType::UserDefined);
         assert_eq!(cmd.name(), "Rename Function");
     }
 
     #[test]
     fn test_set_function_name_cmd_status_msg_initially_none() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let cmd = SetFunctionNameCmd::new(addr, "test".to_string(), SourceType::UserDefined);
         assert_eq!(cmd.status_msg(), None);
     }
 
     #[test]
     fn test_set_function_name_cmd_apply_no_listing() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let mut cmd = SetFunctionNameCmd::new(addr, "test".to_string(), SourceType::UserDefined);
         let mut program = MockProgram { listing: None };
         let result = cmd.apply_to(&mut program);
@@ -816,7 +823,7 @@ mod tests {
 
     #[test]
     fn test_set_function_name_cmd_apply_no_function() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let mut cmd = SetFunctionNameCmd::new(addr, "new_name".to_string(), SourceType::UserDefined);
 
         let listing = MockListing { function: None };

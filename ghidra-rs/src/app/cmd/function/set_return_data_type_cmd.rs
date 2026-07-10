@@ -73,6 +73,12 @@ mod tests {
     use super::*;
     use std::sync::Arc;
 
+    fn addr(offset: i64) -> Address {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
+
     struct MockDataType {
         name: String,
     }
@@ -177,7 +183,7 @@ mod tests {
         }
         fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
         fn get_entry_point(&self) -> Address {
-            self.entry_point
+            self.entry_point.clone()
         }
         fn get_return_type(&self) -> Option<Box<dyn DataType>> {
             None
@@ -816,7 +822,7 @@ mod tests {
 
     #[test]
     fn test_set_return_data_type_cmd_name() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });
@@ -826,7 +832,7 @@ mod tests {
 
     #[test]
     fn test_set_return_data_type_cmd_status_msg_initially_none() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });
@@ -836,7 +842,7 @@ mod tests {
 
     #[test]
     fn test_set_return_data_type_cmd_apply_no_listing() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });
@@ -848,7 +854,7 @@ mod tests {
 
     #[test]
     fn test_set_return_data_type_cmd_apply_no_function() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });
@@ -865,7 +871,7 @@ mod tests {
 
     #[test]
     fn test_set_return_data_type_cmd_apply_success() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });
@@ -893,7 +899,7 @@ mod tests {
 
     #[test]
     fn test_set_return_data_type_cmd_apply_with_default_source() {
-        let addr = Address::from(0x1000);
+        let addr = addr(0x1000);
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });

@@ -91,7 +91,7 @@ mod tests {
 
         fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
             use crate::program::model::data::category_path::CategoryPath;
-            CategoryPath::from_path(&self.category_path)
+            CategoryPath::parse(&self.category_path).unwrap()
         }
     }
 
@@ -167,7 +167,7 @@ mod tests {
         }
 
         fn get_signed_state(&self) -> crate::program::database::data::EnumSignedState {
-            crate::program::database::data::EnumSignedState::Unspecified
+            crate::program::database::data::EnumSignedState::None
         }
 
         fn get_max_possible_value(&self) -> i64 {

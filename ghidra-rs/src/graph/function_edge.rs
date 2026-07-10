@@ -397,8 +397,8 @@ mod tests {
         let end = Arc::new(MockFunction::new("func_end")) as Arc<dyn Function>;
         let edge = FunctionEdge::new(Arc::clone(&start), Arc::clone(&end));
 
-        assert_eq!(edge.get_start().get_name(), "func_start");
-        assert_eq!(edge.get_end().get_name(), "func_end");
+        assert_eq!(Function::get_name(edge.get_start().as_ref()), "func_start");
+        assert_eq!(Function::get_name(edge.get_end().as_ref()), "func_end");
     }
 
     #[test]
@@ -418,7 +418,7 @@ mod tests {
         let edge1 = FunctionEdge::new(Arc::clone(&start), Arc::clone(&end));
         let edge2 = FunctionEdge::new(Arc::clone(&start), Arc::clone(&end));
 
-        assert_eq!(edge1, edge2);
+        assert!(edge1 == edge2);
     }
 
     #[test]
@@ -430,7 +430,7 @@ mod tests {
         let edge1 = FunctionEdge::new(Arc::clone(&start1), Arc::clone(&end));
         let edge2 = FunctionEdge::new(Arc::clone(&start2), Arc::clone(&end));
 
-        assert_ne!(edge1, edge2);
+        assert!(edge1 != edge2);
     }
 
     #[test]
@@ -442,7 +442,7 @@ mod tests {
         let edge1 = FunctionEdge::new(Arc::clone(&start), Arc::clone(&end1));
         let edge2 = FunctionEdge::new(Arc::clone(&start), Arc::clone(&end2));
 
-        assert_ne!(edge1, edge2);
+        assert!(edge1 != edge2);
     }
 
     #[test]
@@ -469,8 +469,8 @@ mod tests {
         let start_ref = edge.get_start();
         let end_ref = edge.get_end();
 
-        assert_eq!(start_ref.get_name(), "caller");
-        assert_eq!(end_ref.get_name(), "callee");
+        assert_eq!(Function::get_name(start_ref.as_ref()), "caller");
+        assert_eq!(Function::get_name(end_ref.as_ref()), "callee");
     }
 
     #[test]

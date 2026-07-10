@@ -51,6 +51,12 @@ mod tests {
     use super::*;
     use std::sync::Arc;
 
+    fn addr(offset: i64) -> Address {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
+
     use crate::program::database::function::OverlappingFunctionException;
     use crate::program::model::address::AddressSetView;
     use crate::program::model::data::data_type::DataType;
@@ -109,7 +115,7 @@ mod tests {
         }
         fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
         fn get_entry_point(&self) -> Address {
-            self.entry_point
+            self.entry_point.clone()
         }
         fn get_return_type(&self) -> Option<Box<dyn DataType>> {
             None
@@ -341,19 +347,19 @@ mod tests {
     fn test_set_function_purge_size() {
         let mock_func = MockFunction {
             purge_size: 0,
-            entry_point: Address::from(0x1000),
+            entry_point: addr(0x1000),
         };
 
         let mut cmd = SetFunctionPurgeCommand::new(&mock_func, 8);
         assert_eq!(cmd.purge_size, 8);
-        assert_eq!(cmd.entry_point, Address::from(0x1000));
+        assert_eq!(cmd.entry_point, addr(0x1000));
     }
 
     #[test]
     fn test_command_name() {
         let mock_func = MockFunction {
             purge_size: 0,
-            entry_point: Address::from(0x1000),
+            entry_point: addr(0x1000),
         };
 
         let cmd = SetFunctionPurgeCommand::new(&mock_func, 8);
@@ -364,7 +370,7 @@ mod tests {
     fn test_command_status_msg() {
         let mock_func = MockFunction {
             purge_size: 0,
-            entry_point: Address::from(0x1000),
+            entry_point: addr(0x1000),
         };
 
         let cmd = SetFunctionPurgeCommand::new(&mock_func, 8);
@@ -375,7 +381,7 @@ mod tests {
     fn test_apply_to_with_no_listing() {
         let mock_func = MockFunction {
             purge_size: 0,
-            entry_point: Address::from(0x1000),
+            entry_point: addr(0x1000),
         };
 
         let mut cmd = SetFunctionPurgeCommand::new(&mock_func, 8);

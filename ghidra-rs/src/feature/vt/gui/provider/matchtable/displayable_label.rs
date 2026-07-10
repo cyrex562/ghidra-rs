@@ -94,7 +94,7 @@ mod tests {
         }
 
         fn get_source(&self) -> SourceType {
-            SourceType::User
+            SourceType::UserDefined
         }
 
         fn is_primary(&self) -> bool {
@@ -169,21 +169,21 @@ mod tests {
     fn equality_both_none() {
         let label1 = DisplayableLabel::new(None);
         let label2 = DisplayableLabel::new(None);
-        assert_eq!(label1, label2);
+        assert!(label1 == label2);
     }
 
     #[test]
     fn equality_case_insensitive() {
         let label1 = DisplayableLabel::new(Some(MockSymbol::new("Test")));
         let label2 = DisplayableLabel::new(Some(MockSymbol::new("test")));
-        assert_eq!(label1, label2);
+        assert!(label1 == label2);
     }
 
     #[test]
     fn inequality_different_symbols() {
         let label1 = DisplayableLabel::new(Some(MockSymbol::new("first")));
         let label2 = DisplayableLabel::new(Some(MockSymbol::new("second")));
-        assert_ne!(label1, label2);
+        assert!(label1 != label2);
     }
 
     #[test]

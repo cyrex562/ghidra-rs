@@ -150,7 +150,13 @@ mod tests {
 
     struct MockData;
 
-    impl MemBuffer for MockData {}
+    impl MemBuffer for MockData {
+        fn get_address(&self) -> Address {
+            use crate::program::model::address::{AddressSpace, AddressSpaceType};
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+            Address::new(space, 0)
+        }
+    }
     impl PropertySet for MockData {}
 
     impl CodeUnit for MockData {
@@ -433,8 +439,8 @@ mod tests {
         let matched = MatchedData::new(
             Arc::clone(&a_prog),
             Arc::clone(&b_prog),
-            a_addr,
-            b_addr,
+            a_addr.clone(),
+            b_addr.clone(),
             Arc::clone(&a_data),
             Arc::clone(&b_data),
             1,

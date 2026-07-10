@@ -272,7 +272,7 @@ mod tests {
             forced_indirect: false,
         };
         assert_eq!(param.get_ordinal(), 0);
-        assert!(!param.is_auto_parameter());
+        assert!(!Parameter::is_auto_parameter(&param));
         assert_eq!(param.get_auto_parameter_type(), None);
         assert!(!param.is_forced_indirect());
     }
@@ -284,7 +284,7 @@ mod tests {
             auto_parameter_type: Some(AutoParameterType::ReturnStoragePtr),
             forced_indirect: true,
         };
-        assert!(param.is_auto_parameter());
+        assert!(Parameter::is_auto_parameter(&param));
         assert_eq!(
             param.get_auto_parameter_type(),
             Some(AutoParameterType::ReturnStoragePtr)

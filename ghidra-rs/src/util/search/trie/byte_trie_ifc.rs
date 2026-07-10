@@ -99,7 +99,10 @@ mod tests {
             self.items
                 .iter()
                 .find(|(k, _)| k == value)
-                .map(|_| Box::new(()) as Box<dyn ByteTrieNodeIfc<T>>)
+                .map(|_| {
+                    Box::new(crate::util::search::trie::ByteTrieNode::<T>::new(0, None, 0))
+                        as Box<dyn ByteTrieNodeIfc<T>>
+                })
         }
 
         fn inorder(

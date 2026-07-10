@@ -67,7 +67,7 @@ mod tests {
             self.calls
                 .lock()
                 .unwrap()
-                .push((program.get_name().to_string(), addr.offset()));
+                .push((Program::get_name(program.as_ref()).to_string(), addr.offset()));
         }
     }
 

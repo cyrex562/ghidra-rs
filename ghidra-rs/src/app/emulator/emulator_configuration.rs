@@ -190,7 +190,7 @@ mod tests {
 
     impl Language for TestLanguage {
         fn get_language_id(&self) -> LanguageID {
-            LanguageID::new("x86", "64", "default", 1, 0)
+            LanguageID::new("x86:LE:64:default").unwrap()
         }
 
         fn get_language_description(
@@ -222,7 +222,7 @@ mod tests {
         }
 
         fn get_default_space(&self) -> Arc<AddressSpace> {
-            Arc::new(AddressSpace::new("RAM", 64, 1, AddressSpaceType::Ram, 0))
+            AddressSpace::new("RAM", 64, 1, AddressSpaceType::Ram, 0)
         }
 
         fn get_default_data_space(&self) -> Arc<AddressSpace> {
@@ -480,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_get_program_counter_name_success() {
-        let ram = Arc::new(AddressSpace::new("RAM", 64, 1, AddressSpaceType::Ram, 0));
+        let ram = AddressSpace::new("RAM", 64, 1, AddressSpaceType::Ram, 0);
         let pc_addr = Address::new(ram, 0x0);
         let pc_register = Register::new("rip", "Instruction Pointer", pc_addr, 8, false, 4);
 

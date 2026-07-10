@@ -98,7 +98,7 @@ pub trait MemBufferMixin: MemBuffer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::Address;
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::mem::MemoryAccessException;
 
     struct MockMemBuffer {
@@ -124,7 +124,8 @@ mod tests {
 
     impl MemBuffer for MockMemBuffer {
         fn get_address(&self) -> Address {
-            Address::default()
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+            Address::new(space, 0)
         }
 
         fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {

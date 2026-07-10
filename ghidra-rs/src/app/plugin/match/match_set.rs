@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn test_add_and_len() {
         let mut match_set = MatchSet::new("prog1".to_string(), "prog2".to_string());
-        let m = Match::new_from_bytes(&addr(0x1000), &addr(0x2000), b"\x90\x90", 2);
+        let m = Match::new_from_bytes(addr(0x1000), addr(0x2000), b"\x90\x90", 2);
         match_set.add(m);
         assert_eq!(match_set.len(), 1);
         assert!(!match_set.is_empty());
@@ -117,8 +117,8 @@ mod tests {
     #[test]
     fn test_get_matches_sorted() {
         let mut match_set = MatchSet::new("prog1".to_string(), "prog2".to_string());
-        let m1 = Match::new_from_bytes(&addr(0x3000), &addr(0x4000), b"\x90", 1);
-        let m2 = Match::new_from_bytes(&addr(0x1000), &addr(0x2000), b"\x90\x90", 2);
+        let m1 = Match::new_from_bytes(addr(0x3000), addr(0x4000), b"\x90", 1);
+        let m2 = Match::new_from_bytes(addr(0x1000), addr(0x2000), b"\x90\x90", 2);
         match_set.add(m1);
         match_set.add(m2);
 
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn test_get_results_array() {
         let match_set = MatchSet::new("prog1".to_string(), "prog2".to_string());
-        let m = Match::new_from_bytes(&addr(0x1000), &addr(0x2000), b"\x90\x90", 2);
+        let m = Match::new_from_bytes(addr(0x1000), addr(0x2000), b"\x90\x90", 2);
         let (this_addr, this_name, other_addr, other_name, length) = match_set.get_results_array(&m);
 
         assert_eq!(this_addr, 0x1000);
@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn test_clear() {
         let mut match_set = MatchSet::new("prog1".to_string(), "prog2".to_string());
-        let m = Match::new_from_bytes(&addr(0x1000), &addr(0x2000), b"\x90\x90", 2);
+        let m = Match::new_from_bytes(addr(0x1000), addr(0x2000), b"\x90\x90", 2);
         match_set.add(m);
         assert_eq!(match_set.len(), 1);
 
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn test_clone() {
         let mut match_set = MatchSet::new("prog1".to_string(), "prog2".to_string());
-        let m = Match::new_from_bytes(&addr(0x1000), &addr(0x2000), b"\x90\x90", 2);
+        let m = Match::new_from_bytes(addr(0x1000), addr(0x2000), b"\x90\x90", 2);
         match_set.add(m);
 
         let cloned = match_set.clone();

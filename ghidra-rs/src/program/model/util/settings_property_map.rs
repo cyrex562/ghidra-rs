@@ -200,14 +200,19 @@ mod tests {
         }
 
         fn move_range(&mut self, start: &Address, end: &Address, new_start: &Address) {
-            let moved: Vec<(Address, Box<dyn Settings>)> = self
+            // `Box<dyn Settings>` is not `Clone`, so collect the affected keys first and
+            // then take ownership of the stored values via `remove`.
+            let keys: Vec<Address> = self
                 .values
-                .iter()
-                .filter(|(a, _)| *a >= start && *a <= end)
-                .map(|(a, v)| (a.clone(), v.clone()))
+                .keys()
+                .filter(|a| *a >= start && *a <= end)
+                .cloned()
                 .collect();
-            for (a, _) in &moved {
-                self.values.remove(a);
+            let mut moved: Vec<(Address, Box<dyn Settings>)> = Vec::new();
+            for a in keys {
+                if let Some(v) = self.values.remove(&a) {
+                    moved.push((a, v));
+                }
             }
             for (a, v) in moved {
                 let offset = a.offset() - start.offset();
@@ -223,10 +228,13 @@ mod tests {
         }
 
         fn get_settings(&self, addr: &Address) -> Result<Box<dyn Settings>, NoValueException> {
-            self.values
-                .get(addr)
-                .map(|v| v.clone())
-                .ok_or_else(|| NoValueException::new("No value at address".to_string()))
+            // `Box<dyn Settings>` is not `Clone`; this mock only records presence, so
+            // reconstruct an owned settings value when one is stored at `addr`.
+            if self.values.contains_key(addr) {
+                Ok(Box::new(MockSettings { id: 0 }))
+            } else {
+                Err(NoValueException::with_message("No value at address"))
+            }
         }
     }
 

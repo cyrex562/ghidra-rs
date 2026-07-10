@@ -214,7 +214,7 @@ mod tests {
         fn is_visible(&self, program: &dyn Program) -> bool {
             self.open_programs
                 .iter()
-                .any(|p| p.get_name() == program.get_name())
+                .any(|p| Program::get_name(p.as_ref()) == Program::get_name(program))
         }
 
         fn close_current_program(&mut self) -> bool {
@@ -305,13 +305,15 @@ mod tests {
 
         fn close_program(&mut self, program: &dyn Program, _ignore_changes: bool) -> bool {
             let before = self.open_programs.len();
-            self.open_programs.retain(|p| p.get_name() != program.get_name());
+            self.open_programs
+                .retain(|p| Program::get_name(p.as_ref()) != Program::get_name(program));
             before != self.open_programs.len()
         }
 
         fn close_other_programs(&mut self, _ignore_changes: bool) -> bool {
             if let Some(current) = self.current.clone() {
-                self.open_programs.retain(|p| p.get_name() == current.get_name());
+                self.open_programs
+                    .retain(|p| Program::get_name(p.as_ref()) == Program::get_name(current.as_ref()));
             }
             true
         }
@@ -360,7 +362,7 @@ mod tests {
             name: "prog1".to_string(),
         };
         let opened = mgr.open_program(&df).expect("program should open");
-        assert_eq!(opened.get_name(), "prog1");
+        assert_eq!(Program::get_name(opened.as_ref()), "prog1");
         assert!(mgr.is_visible(opened.as_ref()));
         assert_eq!(mgr.get_all_open_programs().len(), 1);
 

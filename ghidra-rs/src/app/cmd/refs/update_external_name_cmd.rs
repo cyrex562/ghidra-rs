@@ -126,10 +126,10 @@ mod tests {
             _source: SourceType,
         ) -> Result<bool, UpdateExternalLibraryNameError> {
             if self.return_duplicate {
-                return Err(DuplicateNameException::new(format!("{} already exists", new_name)).into());
+                return Err(DuplicateNameException::with_message(format!("{} already exists", new_name)).into());
             }
             if self.return_invalid {
-                return Err(InvalidInputException::new("Invalid name").into());
+                return Err(InvalidInputException::with_message("Invalid name").into());
             }
             if self.should_succeed {
                 self.updated_names.push((old_name.to_string(), new_name.to_string()));
@@ -273,7 +273,7 @@ mod tests {
 
     #[test]
     fn command_name_is_correct() {
-        let cmd = UpdateExternalNameCmd::new("kernel32", "kernel64", SourceType::DEFAULT);
+        let cmd = UpdateExternalNameCmd::new("kernel32", "kernel64", SourceType::Default);
         assert_eq!(cmd.name(), "Update External Program Name");
     }
 
@@ -287,7 +287,7 @@ mod tests {
                 return_invalid: false,
             }),
         };
-        let mut cmd = UpdateExternalNameCmd::new("kernel32", "kernel64", SourceType::DEFAULT);
+        let mut cmd = UpdateExternalNameCmd::new("kernel32", "kernel64", SourceType::Default);
 
         assert!(cmd.apply_to(&mut program));
         assert_eq!(cmd.status_msg(), None);
@@ -307,7 +307,7 @@ mod tests {
                 return_invalid: false,
             }),
         };
-        let mut cmd = UpdateExternalNameCmd::new("nonexistent", "newname", SourceType::DEFAULT);
+        let mut cmd = UpdateExternalNameCmd::new("nonexistent", "newname", SourceType::Default);
 
         assert!(!cmd.apply_to(&mut program));
         assert_eq!(cmd.status_msg(), Some("nonexistent not found".to_string()));
@@ -323,7 +323,7 @@ mod tests {
                 return_invalid: false,
             }),
         };
-        let mut cmd = UpdateExternalNameCmd::new("kernel32", "existing_lib", SourceType::DEFAULT);
+        let mut cmd = UpdateExternalNameCmd::new("kernel32", "existing_lib", SourceType::Default);
 
         assert!(!cmd.apply_to(&mut program));
         assert!(cmd.status_msg().is_some());
@@ -340,7 +340,7 @@ mod tests {
                 return_invalid: true,
             }),
         };
-        let mut cmd = UpdateExternalNameCmd::new("kernel32", "new64", SourceType::DEFAULT);
+        let mut cmd = UpdateExternalNameCmd::new("kernel32", "new64", SourceType::Default);
 
         assert!(!cmd.apply_to(&mut program));
         assert_eq!(cmd.status_msg(), Some("Invalid name".to_string()));
@@ -349,7 +349,7 @@ mod tests {
     #[test]
     fn apply_to_fails_when_external_manager_not_available() {
         let mut program = MockProgram { ext_mgr: None };
-        let mut cmd = UpdateExternalNameCmd::new("kernel32", "kernel64", SourceType::DEFAULT);
+        let mut cmd = UpdateExternalNameCmd::new("kernel32", "kernel64", SourceType::Default);
 
         assert!(!cmd.apply_to(&mut program));
         assert_eq!(
@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn constructor_stores_names() {
-        let cmd = UpdateExternalNameCmd::new("old_name", "new_name", SourceType::DEFAULT);
+        let cmd = UpdateExternalNameCmd::new("old_name", "new_name", SourceType::Default);
         assert_eq!(cmd.old_name, "old_name");
         assert_eq!(cmd.new_name, "new_name");
     }
@@ -368,6 +368,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "newName is invalid")]
     fn constructor_panics_on_empty_new_name() {
-        UpdateExternalNameCmd::new("kernel32", "", SourceType::DEFAULT);
+        UpdateExternalNameCmd::new("kernel32", "", SourceType::Default);
     }
 }

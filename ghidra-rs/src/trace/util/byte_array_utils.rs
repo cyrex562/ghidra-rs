@@ -45,6 +45,7 @@ pub fn compute_diffs_address_set(start: &Address, a: &[u8], b: &[u8]) -> Address
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::program::model::address::address_set::AddressSetView;
 	use crate::program::model::address::{AddressSpace, AddressSpaceType};
 	use std::sync::Arc;
 

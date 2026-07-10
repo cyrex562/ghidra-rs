@@ -218,7 +218,10 @@ mod tests {
         assert_eq!(group_id, "a\nb");
         assert!(view.vertex_selection_cleared);
         assert!(view.edge_selection_cleared);
-        assert_eq!(view.selected, [group_id.clone()].into_iter().collect());
+        assert_eq!(
+            view.selected,
+            [group_id.clone()].into_iter().collect::<HashSet<_>>()
+        );
 
         assert!(!collapser.contains_vertex("a"));
         assert!(!collapser.contains_vertex("b"));

@@ -84,10 +84,43 @@ mod tests {
         }
     }
 
+    /// Read-only `Saveable` handle backed by a shared `Arc`.
+    ///
+    /// `dyn Saveable` is not `Clone`, so the mock stores values behind an `Arc` and hands
+    /// out this delegating wrapper when an owned `Box<dyn Saveable>` is required.
+    struct ArcSaveable(Arc<dyn Saveable>);
+
+    impl Saveable for ArcSaveable {
+        fn get_object_storage_fields(&self) -> Vec<ObjectStorageFieldType> {
+            self.0.get_object_storage_fields()
+        }
+        fn save(&self, obj_storage: &mut dyn ObjectStorage) {
+            self.0.save(obj_storage);
+        }
+        fn restore(&mut self, _obj_storage: &mut dyn ObjectStorage) {}
+        fn get_schema_version(&self) -> i32 {
+            self.0.get_schema_version()
+        }
+        fn is_upgradeable(&self, old_schema_version: i32) -> bool {
+            self.0.is_upgradeable(old_schema_version)
+        }
+        fn upgrade(
+            &mut self,
+            _old_obj_storage: &mut dyn ObjectStorage,
+            _old_schema_version: i32,
+            _current_obj_storage: &mut dyn ObjectStorage,
+        ) -> bool {
+            false
+        }
+        fn is_private(&self) -> bool {
+            self.0.is_private()
+        }
+    }
+
     #[derive(Default)]
     struct MockObjectPropertyMap {
         name: String,
-        values: BTreeMap<Address, Box<dyn Saveable>>,
+        values: BTreeMap<Address, Arc<dyn Saveable>>,
     }
 
     impl PropertyMap for MockObjectPropertyMap {
@@ -129,7 +162,7 @@ mod tests {
             match value {
                 Some(v) => {
                     if let Ok(saveable) = v.downcast::<Box<dyn Saveable>>() {
-                        self.values.insert(addr.clone(), *saveable);
+                        self.values.insert(addr.clone(), Arc::from(*saveable));
                     } else {
                         panic!("Saveable object value required");
                     }
@@ -143,7 +176,7 @@ mod tests {
         fn get(&self, addr: &Address) -> Option<Box<dyn Any>> {
             self.values
                 .get(addr)
-                .map(|v| Box::clone(v) as Box<dyn Any>)
+                .map(|v| Box::new(Arc::clone(v)) as Box<dyn Any>)
         }
 
         fn get_next_property_address(&self, addr: &Address) -> Option<Address> {
@@ -240,11 +273,11 @@ mod tests {
         }
 
         fn move_range(&mut self, start: &Address, end: &Address, new_start: &Address) {
-            let moved: Vec<(Address, Box<dyn Saveable>)> = self
+            let moved: Vec<(Address, Arc<dyn Saveable>)> = self
                 .values
                 .iter()
                 .filter(|(a, _)| *a >= start && *a <= end)
-                .map(|(a, v)| (a.clone(), Box::clone(v)))
+                .map(|(a, v)| (a.clone(), Arc::clone(v)))
                 .collect();
             for (a, _) in &moved {
                 self.values.remove(a);
@@ -259,13 +292,13 @@ mod tests {
 
     impl ObjectPropertyMap for MockObjectPropertyMap {
         fn add_object(&mut self, addr: &Address, value: Box<dyn Saveable>) {
-            self.values.insert(addr.clone(), value);
+            self.values.insert(addr.clone(), Arc::from(value));
         }
 
         fn get_object(&self, addr: &Address) -> Result<Box<dyn Saveable>, NoValueException> {
             self.values
                 .get(addr)
-                .map(|v| Box::clone(v))
+                .map(|v| Box::new(ArcSaveable(Arc::clone(v))) as Box<dyn Saveable>)
                 .ok_or_else(NoValueException::new)
         }
     }
@@ -381,16 +414,20 @@ mod tests {
 
     #[test]
     fn usable_as_trait_object() {
-        let mut map: Box<dyn ObjectPropertyMap> = Box::new(MockObjectPropertyMap {
+        let mut map = MockObjectPropertyMap {
             name: "test".to_string(),
             ..Default::default()
-        });
+        };
 
-        map.add_object(&addr(0x1000), Box::new(MockSaveable { id: 42 }));
-        assert!(map.get_object(&addr(0x1000)).is_ok());
+        // Exercise the ObjectPropertyMap interface through a trait object.
+        {
+            let map_obj: &mut dyn ObjectPropertyMap = &mut map;
+            map_obj.add_object(&addr(0x1000), Box::new(MockSaveable { id: 42 }));
+            assert!(map_obj.get_object(&addr(0x1000)).is_ok());
 
-        map.add_object(&addr(0x2000), Box::new(MockSaveable { id: 7 }));
-        assert!(map.get_object(&addr(0x2000)).is_ok());
+            map_obj.add_object(&addr(0x2000), Box::new(MockSaveable { id: 7 }));
+            assert!(map_obj.get_object(&addr(0x2000)).is_ok());
+        }
 
         assert_eq!(map.get_size(), 2);
 

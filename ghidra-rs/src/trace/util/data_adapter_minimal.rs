@@ -447,7 +447,7 @@ mod tests {
             address: addr(&space, 0x1000),
         };
 
-        assert_eq!(mock.get_num_operands(), 1);
+        assert_eq!(DataAdapterMinimal::get_num_operands(&mock), 1);
     }
 
     #[test]
@@ -485,7 +485,7 @@ mod tests {
             address: addr(&space, 0x1000),
         };
 
-        let refs = mock.get_value_references();
+        let refs = DataAdapterMinimal::get_value_references(&mock);
         assert_eq!(refs.len(), 0);
     }
 

@@ -117,7 +117,7 @@ mod tests {
         def.set_value(&mut settings1, true);
         def.set_value(&mut settings2, true);
 
-        assert!(def.has_same_value(&settings1, &settings2));
+        assert!(BooleanSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]
@@ -132,7 +132,7 @@ mod tests {
         def.set_value(&mut settings1, true);
         def.set_value(&mut settings2, false);
 
-        assert!(!def.has_same_value(&settings1, &settings2));
+        assert!(!BooleanSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]

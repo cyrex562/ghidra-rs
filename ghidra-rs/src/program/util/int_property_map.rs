@@ -322,16 +322,20 @@ mod tests {
 
     #[test]
     fn usable_as_trait_object() {
-        let mut map: Box<dyn IntPropertyMap> = Box::new(MockIntPropertyMap {
+        let mut map = MockIntPropertyMap {
             name: "test".to_string(),
             ..Default::default()
-        });
+        };
 
-        map.add_int(&addr(0x1000), 42);
-        assert_eq!(map.get_int(&addr(0x1000)).unwrap(), 42);
+        // Exercise the IntPropertyMap interface through a trait object.
+        {
+            let map_obj: &mut dyn IntPropertyMap = &mut map;
+            map_obj.add_int(&addr(0x1000), 42);
+            assert_eq!(map_obj.get_int(&addr(0x1000)).unwrap(), 42);
 
-        map.add_int(&addr(0x2000), 7);
-        assert_eq!(map.get_int(&addr(0x2000)).unwrap(), 7);
+            map_obj.add_int(&addr(0x2000), 7);
+            assert_eq!(map_obj.get_int(&addr(0x2000)).unwrap(), 7);
+        }
 
         assert_eq!(map.get_size(), 2);
 

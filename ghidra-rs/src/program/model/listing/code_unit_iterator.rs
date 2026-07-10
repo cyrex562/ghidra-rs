@@ -98,7 +98,7 @@ mod tests {
 
     impl CodeUnit for TestCodeUnit {
         fn get_address_string(&self, _show_block_name: bool, _pad: bool) -> String {
-            format!("{:x}", self.min_address.offset)
+            format!("{:x}", self.min_address.offset())
         }
 
         fn get_label(&self) -> Option<String> {
@@ -263,12 +263,12 @@ mod tests {
 
         assert!(iterator.has_next());
         assert_eq!(
-            iterator.next_code_unit().unwrap().get_min_address().offset,
+            iterator.next_code_unit().unwrap().get_min_address().offset(),
             0x1000
         );
         assert!(iterator.has_next());
         assert_eq!(
-            iterator.next_code_unit().unwrap().get_min_address().offset,
+            iterator.next_code_unit().unwrap().get_min_address().offset(),
             0x1002
         );
         assert!(!iterator.has_next());
@@ -292,7 +292,7 @@ mod tests {
 
         assert!(iterator.has_next());
         assert_eq!(
-            iterator.next_code_unit().unwrap().get_min_address().offset,
+            iterator.next_code_unit().unwrap().get_min_address().offset(),
             0x5000
         );
         assert!(!iterator.has_next());

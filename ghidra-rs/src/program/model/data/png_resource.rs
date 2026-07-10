@@ -137,7 +137,14 @@ mod tests {
 
     impl MemBuffer for MockMemBuffer {
         fn get_address(&self) -> Address {
-            Address::default()
+            let space = crate::program::model::address::AddressSpace::new(
+                "ram",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Ram,
+                1,
+            );
+            Address::new(space, 0)
         }
 
         fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
@@ -221,7 +228,7 @@ mod tests {
         bytes[0] = 0x00;
         let mock = MockMemBuffer::new(bytes);
 
-        let err = PngResource::new(&mock).unwrap_err();
+        let err = PngResource::new(&mock).err().unwrap();
         assert!(matches!(err, PngResourceError::InvalidData(_)));
     }
 
@@ -229,7 +236,7 @@ mod tests {
     fn truncated_signature_is_a_memory_access_error() {
         let mock = MockMemBuffer::new(vec![0x89, 0x50, 0x4e]);
 
-        let err = PngResource::new(&mock).unwrap_err();
+        let err = PngResource::new(&mock).err().unwrap();
         assert!(matches!(err, PngResourceError::MemoryAccess(_)));
     }
 
@@ -244,7 +251,7 @@ mod tests {
         push_chunk(&mut bytes, b"IEND", &[]);
         let mock = MockMemBuffer::new(bytes);
 
-        let err = PngResource::new(&mock).unwrap_err();
+        let err = PngResource::new(&mock).err().unwrap();
         assert!(matches!(err, PngResourceError::InvalidData(_)));
     }
 
@@ -256,7 +263,7 @@ mod tests {
         bytes.extend_from_slice(b"IHDR");
         let mock = MockMemBuffer::new(bytes);
 
-        let err = PngResource::new(&mock).unwrap_err();
+        let err = PngResource::new(&mock).err().unwrap();
         assert!(matches!(err, PngResourceError::InvalidData(_)));
     }
 
@@ -268,7 +275,7 @@ mod tests {
         bytes.extend_from_slice(b"IHDR");
         let mock = MockMemBuffer::new(bytes);
 
-        let err = PngResource::new(&mock).unwrap_err();
+        let err = PngResource::new(&mock).err().unwrap();
         assert!(matches!(err, PngResourceError::InvalidData(_)));
     }
 
@@ -282,7 +289,7 @@ mod tests {
         bytes.extend_from_slice(&[1, 2, 3, 4]);
         let mock = MockMemBuffer::new(bytes);
 
-        let err = PngResource::new(&mock).unwrap_err();
+        let err = PngResource::new(&mock).err().unwrap();
         assert!(matches!(err, PngResourceError::InvalidData(_)));
     }
 
@@ -292,7 +299,7 @@ mod tests {
         let bytes = PNG_SIGNATURE.to_be_bytes().to_vec();
         let mock = MockMemBuffer::new(bytes);
 
-        let err = PngResource::new(&mock).unwrap_err();
+        let err = PngResource::new(&mock).err().unwrap();
         assert!(matches!(err, PngResourceError::InvalidData(_)));
     }
 }

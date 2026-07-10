@@ -538,7 +538,7 @@ mod tests {
         let b = DisplayableVariableOffset::new(mock_function(), None);
 
         assert_eq!(a.cmp(&b), Ordering::Equal);
-        assert_eq!(a, b);
+        assert!(a == b);
     }
 
     #[test]

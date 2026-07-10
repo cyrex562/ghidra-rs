@@ -71,6 +71,17 @@ impl IsfObject for ExtExternalReference {}
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::listing::Function;
     use crate::program::model::symbol::{
@@ -212,7 +223,7 @@ mod tests {
         fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
 
         fn get_entry_point(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn get_return_type(&self) -> Option<Box<dyn DataType>> {
@@ -548,11 +559,11 @@ mod tests {
         }
 
         fn from_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn to_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn is_primary(&self) -> bool {

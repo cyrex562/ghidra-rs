@@ -388,7 +388,7 @@ mod tests {
         }
 
         fn get_operand_ref_type(&self, _operand_index: i32) -> RefType {
-            RefType::default()
+            RefType::Invalid
         }
 
         fn get_default_fall_through_offset(&self) -> i32 {
@@ -416,7 +416,7 @@ mod tests {
         }
 
         fn get_flow_type(&self) -> RefType {
-            RefType::default()
+            RefType::Invalid
         }
 
         fn is_fallthrough(&self) -> bool {
@@ -493,13 +493,13 @@ mod tests {
     #[test]
     fn test_new() {
         let helper = HexagonParallelInstructionHelper::new();
-        assert_eq!(helper, HexagonParallelInstructionHelper);
+        assert!(matches!(helper, HexagonParallelInstructionHelper));
     }
 
     #[test]
     fn test_default() {
         let helper = HexagonParallelInstructionHelper::default();
-        assert_eq!(helper, HexagonParallelInstructionHelper);
+        assert!(matches!(helper, HexagonParallelInstructionHelper));
     }
 
     #[test]

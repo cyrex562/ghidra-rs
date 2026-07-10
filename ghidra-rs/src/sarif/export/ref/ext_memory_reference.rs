@@ -52,6 +52,17 @@ impl IsfObject for ExtMemoryReference {}
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     use crate::program::model::symbol::{OffsetReference, RefType, SourceType};
 
     struct MockMemoryReference {
@@ -68,7 +79,7 @@ mod tests {
         }
 
         fn from_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn to_address(&self) -> Address {
@@ -148,7 +159,7 @@ mod tests {
         }
 
         fn from_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn to_address(&self) -> Address {

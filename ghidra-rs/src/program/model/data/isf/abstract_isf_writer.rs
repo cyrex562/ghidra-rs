@@ -159,7 +159,7 @@ mod tests {
             value: i32,
         }
 
-        let writer = TestWriter {
+        let mut writer = TestWriter {
             state: AbstractIsfWriterState::new(None),
         };
         let obj = TestObj {
@@ -179,7 +179,7 @@ mod tests {
             value: i32,
         }
 
-        let writer = TestWriter {
+        let mut writer = TestWriter {
             state: AbstractIsfWriterState::new(None),
         };
         let json = json!({ "name": "test", "value": 42 });
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn get_results_returns_objects_array() {
-        let writer = TestWriter {
+        let mut writer = TestWriter {
             state: AbstractIsfWriterState::new(None),
         };
         let results = writer.get_results();

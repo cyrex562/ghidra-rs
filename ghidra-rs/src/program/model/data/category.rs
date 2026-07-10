@@ -253,22 +253,22 @@ mod tests {
         }
 
         fn compare_to(&self, other: &dyn Category) -> Ordering {
-            self.get_name().cmp(&other.get_name())
+            Category::get_name(self).cmp(&other.get_name())
         }
     }
 
     #[test]
     fn set_name_rejects_empty() {
         let mut cat = MockCategory { name: "root".to_string(), id: 0 };
-        let err = cat.set_name("").unwrap_err();
+        let err = Category::set_name(&mut cat, "").unwrap_err();
         assert!(matches!(err, SetCategoryNameError::InvalidName(_)));
     }
 
     #[test]
     fn set_name_updates_name() {
         let mut cat = MockCategory { name: "old".to_string(), id: 1 };
-        cat.set_name("new").unwrap();
-        assert_eq!(cat.get_name(), "new");
+        Category::set_name(&mut cat, "new").unwrap();
+        assert_eq!(Category::get_name(&cat), "new");
     }
 
     #[test]

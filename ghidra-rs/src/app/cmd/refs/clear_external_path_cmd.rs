@@ -127,7 +127,7 @@ mod tests {
             if self.should_succeed {
                 Ok(())
             } else {
-                Err(InvalidInputException::new("Mock error"))
+                Err(InvalidInputException::with_message("Mock error"))
             }
         }
 
@@ -211,7 +211,7 @@ mod tests {
             _source: crate::program::model::symbol::SourceType,
         ) -> Result<Arc<dyn Library>, crate::program::model::symbol::AddExternalLibraryNameError>
         {
-            Err(InvalidInputException::new("Mock").into())
+            Err(InvalidInputException::with_message("Mock").into())
         }
 
         fn add_ext_location_in_library(
@@ -224,7 +224,7 @@ mod tests {
             Arc<dyn crate::program::model::symbol::ExternalLocation>,
             crate::program::model::symbol::AddExternalLocationInLibraryError,
         > {
-            Err(InvalidInputException::new("Mock").into())
+            Err(InvalidInputException::with_message("Mock").into())
         }
 
         fn add_ext_location_in_namespace_reuse(
@@ -236,7 +236,7 @@ mod tests {
             _reuse_existing: bool,
         ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, InvalidInputException>
         {
-            Err(InvalidInputException::new("Mock"))
+            Err(InvalidInputException::with_message("Mock"))
         }
 
         fn add_ext_function_in_library(
@@ -249,7 +249,7 @@ mod tests {
             Arc<dyn crate::program::model::symbol::ExternalLocation>,
             crate::program::model::symbol::AddExternalLocationInLibraryError,
         > {
-            Err(InvalidInputException::new("Mock").into())
+            Err(InvalidInputException::with_message("Mock").into())
         }
 
         fn add_ext_function_in_namespace_reuse(
@@ -261,7 +261,7 @@ mod tests {
             _reuse_existing: bool,
         ) -> Result<Arc<dyn crate::program::model::symbol::ExternalLocation>, InvalidInputException>
         {
-            Err(InvalidInputException::new("Mock"))
+            Err(InvalidInputException::with_message("Mock"))
         }
     }
 

@@ -44,12 +44,19 @@ impl<'a> LcsTrait<CodeUnitContainer> for CodeUnitLcs<'a> {
 mod tests {
     use super::*;
     use crate::program::model::listing::CodeUnit as _;
-    use crate::program::model::address::Address;
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::util::PropertySet;
     use crate::program::seam_stubs::{CommentType, MemBuffer};
     use crate::util::task::DummyMonitor;
     use std::fmt;
     use std::sync::Arc;
+
+    fn addr(offset: i64) -> Address {
+        Address::new(
+            AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1),
+            offset,
+        )
+    }
 
     struct MockCodeUnit {
         mnemonic: String,
@@ -254,8 +261,8 @@ mod tests {
 
     #[test]
     fn single_element_lists_match() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("MOV", 2, addr2);
         let container1 = CodeUnitContainer::new(code_unit1);
@@ -271,9 +278,9 @@ mod tests {
 
     #[test]
     fn matching_mnemonics_and_arity() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
-        let addr3 = Address::new_default_space(0x3000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
+        let addr3 = addr(0x3000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("MOV", 2, addr2);
         let code_unit3 = MockCodeUnit::new("MOV", 2, addr3);
@@ -289,8 +296,8 @@ mod tests {
 
     #[test]
     fn different_mnemonics() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("JMP", 1, addr2);
         let container1 = CodeUnitContainer::new(code_unit1);
@@ -302,8 +309,8 @@ mod tests {
 
     #[test]
     fn different_arity() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x2000);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x2000);
         let code_unit1 = MockCodeUnit::new("MOV", 2, addr1);
         let code_unit2 = MockCodeUnit::new("MOV", 3, addr2);
         let container1 = CodeUnitContainer::new(code_unit1);
@@ -315,12 +322,12 @@ mod tests {
 
     #[test]
     fn partial_sequence_match() {
-        let addr1 = Address::new_default_space(0x1000);
-        let addr2 = Address::new_default_space(0x1001);
-        let addr3 = Address::new_default_space(0x1002);
-        let addr4 = Address::new_default_space(0x2000);
-        let addr5 = Address::new_default_space(0x2001);
-        let addr6 = Address::new_default_space(0x2002);
+        let addr1 = addr(0x1000);
+        let addr2 = addr(0x1001);
+        let addr3 = addr(0x1002);
+        let addr4 = addr(0x2000);
+        let addr5 = addr(0x2001);
+        let addr6 = addr(0x2002);
 
         let c1 = CodeUnitContainer::new(MockCodeUnit::new("MOV", 2, addr1));
         let c2 = CodeUnitContainer::new(MockCodeUnit::new("ADD", 3, addr2));

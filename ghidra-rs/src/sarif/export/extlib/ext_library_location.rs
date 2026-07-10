@@ -54,6 +54,17 @@ impl IsfObject for ExtLibraryLocation {}
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace};
+
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     use crate::program::model::listing::Function;
     use crate::program::model::symbol::{Namespace, SourceType, Symbol, SymbolType};
     use std::sync::Arc;
@@ -62,7 +73,7 @@ mod tests {
 
     impl Symbol for MockSymbol {
         fn get_address(&self) -> Address {
-            Address::new(AddressSpace::default_space(), 0)
+            Address::new(default_space(), 0)
         }
 
         fn get_name(&self) -> &str {
@@ -188,7 +199,7 @@ mod tests {
 
         fn get_external_space_address(&self) -> Option<Address> {
             if self.has_address {
-                Some(Address::new(AddressSpace::default_space(), 0x1000))
+                Some(Address::new(default_space(), 0x1000))
             } else {
                 None
             }

@@ -51,6 +51,12 @@ mod tests {
     use crate::framework::model::DomainObject;
     use crate::program::model::lang::ProcessorContextView;
 
+    fn mk_addr(offset: i64) -> Address {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
+
     struct MockInstruction {
         addr: Address,
         fall_through_override_cleared: bool,
@@ -64,7 +70,7 @@ mod tests {
 
     impl crate::program::seam_stubs::MemBuffer for MockInstruction {
         fn get_address(&self) -> Address {
-            self.addr
+            self.addr.clone()
         }
     }
 
@@ -88,7 +94,7 @@ mod tests {
         }
 
         fn get_min_address(&self) -> Address {
-            self.addr
+            self.addr.clone()
         }
 
         fn get_max_address(&self) -> Address {
@@ -309,7 +315,7 @@ mod tests {
         }
 
         fn get_operand_ref_type(&self, _operand_index: i32) -> crate::program::model::symbol::RefType {
-            crate::program::model::symbol::RefType::Fall
+            crate::program::model::symbol::RefType::FallThrough
         }
 
         fn get_default_fall_through_offset(&self) -> i32 {
@@ -842,21 +848,21 @@ mod tests {
 
     #[test]
     fn command_name_is_correct() {
-        let addr = Address::new(0x1000);
+        let addr = mk_addr(0x1000);
         let cmd = ClearFallThroughCmd::new(addr);
         assert_eq!(cmd.name(), "Clear Fall-through Override");
     }
 
     #[test]
     fn command_status_msg_is_none() {
-        let addr = Address::new(0x1000);
+        let addr = mk_addr(0x1000);
         let cmd = ClearFallThroughCmd::new(addr);
         assert_eq!(cmd.status_msg(), None);
     }
 
     #[test]
     fn apply_to_clears_fall_through_override() {
-        let addr = Address::new(0x1000);
+        let addr = mk_addr(0x1000);
         let mock_inst = Arc::new(MockInstruction {
             addr,
             fall_through_override_cleared: false,
@@ -875,7 +881,7 @@ mod tests {
 
     #[test]
     fn apply_to_returns_false_when_instruction_not_found() {
-        let addr = Address::new(0x1000);
+        let addr = mk_addr(0x1000);
         let mut cmd = ClearFallThroughCmd::new(addr);
         let mut program = MockProgram {
             listing: MockListing {
@@ -906,7 +912,7 @@ mod tests {
             }
         }
 
-        let addr = Address::new(0x1000);
+        let addr = mk_addr(0x1000);
         let mut cmd = ClearFallThroughCmd::new(addr);
         let mut program = ProgramWithoutListing;
 

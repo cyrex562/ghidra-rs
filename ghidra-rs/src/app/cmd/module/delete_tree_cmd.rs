@@ -479,13 +479,13 @@ mod tests {
     #[test]
     fn test_delete_tree_command_name() {
         let cmd = DeleteTreeCmd::new("MyTree".to_string());
-        assert_eq!(cmd.name(), "Delete MyTree");
+        assert_eq!(<DeleteTreeCmd as Command<MockProgram>>::name(&cmd), "Delete MyTree");
     }
 
     #[test]
     fn test_delete_tree_status_msg() {
         let cmd = DeleteTreeCmd::new("MyTree".to_string());
-        assert_eq!(cmd.status_msg(), None);
+        assert_eq!(<DeleteTreeCmd as Command<MockProgram>>::status_msg(&cmd), None);
     }
 
     #[test]

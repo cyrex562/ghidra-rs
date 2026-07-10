@@ -24,7 +24,13 @@ pub trait AddressTranslator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use std::sync::Arc;
+
+    fn ram_address(offset: i64) -> Address {
+        let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(ram, offset)
+    }
 
     struct MockProgram;
 
@@ -52,8 +58,8 @@ mod tests {
     fn test_translate_returns_address() {
         let translator = TestTranslator;
         let mock = MockProgram;
-        let test_addr = Address::new(0, 0x1000);
-        let result = translator.translate(test_addr, &mock, &mock);
+        let test_addr = ram_address(0x1000);
+        let result = translator.translate(test_addr.clone(), &mock, &mock);
         assert_eq!(result, test_addr);
     }
 
@@ -61,8 +67,8 @@ mod tests {
     fn test_trait_object_dispatch() {
         let translator: Box<dyn AddressTranslator> = Box::new(TestTranslator);
         let mock = MockProgram;
-        let test_addr = Address::new(0, 0x2000);
-        let result = translator.translate(test_addr, &mock, &mock);
+        let test_addr = ram_address(0x2000);
+        let result = translator.translate(test_addr.clone(), &mock, &mock);
         assert_eq!(result, test_addr);
     }
 }

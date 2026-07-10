@@ -135,25 +135,25 @@ mod tests {
     fn test_get_address() {
         let buffer = TestDataBuffer::new();
         let address = buffer.get_address();
-        assert_eq!(address.get_offset(), 0);
+        assert_eq!(address.offset(), 0);
     }
 
     #[test]
     fn test_get_data_returns_none() {
         let buffer = TestDataBuffer::new();
-        assert_eq!(buffer.get_data(0), None);
+        assert!(buffer.get_data(0).is_none());
     }
 
     #[test]
     fn test_get_data_after_returns_none() {
         let buffer = TestDataBuffer::new();
-        assert_eq!(buffer.get_data_after(0), None);
+        assert!(buffer.get_data_after(0).is_none());
     }
 
     #[test]
     fn test_get_data_before_returns_none() {
         let buffer = TestDataBuffer::new();
-        assert_eq!(buffer.get_data_before(0), None);
+        assert!(buffer.get_data_before(0).is_none());
     }
 
     #[test]

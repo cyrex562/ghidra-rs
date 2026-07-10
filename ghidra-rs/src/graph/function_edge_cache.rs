@@ -429,7 +429,7 @@ mod tests {
         let edge = FunctionEdge::new(Arc::clone(&start), Arc::clone(&end));
 
         let edges = cache.get(Arc::clone(&start));
-        edges.insert(edge.clone());
+        edges.insert(FunctionEdge::new(Arc::clone(&start), Arc::clone(&end)));
 
         let retrieved_edges = cache.get(Arc::clone(&start));
         assert_eq!(retrieved_edges.len(), 1);
@@ -446,8 +446,8 @@ mod tests {
         let edge1 = FunctionEdge::new(Arc::clone(&func1), Arc::clone(&func2));
         let edge2 = FunctionEdge::new(Arc::clone(&func2), Arc::clone(&func3));
 
-        cache.get(Arc::clone(&func1)).insert(edge1.clone());
-        cache.get(Arc::clone(&func2)).insert(edge2.clone());
+        cache.get(Arc::clone(&func1)).insert(edge1);
+        cache.get(Arc::clone(&func2)).insert(edge2);
 
         assert_eq!(cache.get(Arc::clone(&func1)).len(), 1);
         assert_eq!(cache.get(Arc::clone(&func2)).len(), 1);

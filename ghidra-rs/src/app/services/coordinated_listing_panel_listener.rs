@@ -67,7 +67,7 @@ mod tests {
 
         fn active_program_changed(&self, active_program: &dyn Program) {
             *self.active_program_changed_called.borrow_mut() = true;
-            *self.active_program_name.borrow_mut() = active_program.get_name().to_string();
+            *self.active_program_name.borrow_mut() = Program::get_name(active_program).to_string();
         }
     }
 

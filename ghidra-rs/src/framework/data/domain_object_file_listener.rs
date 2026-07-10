@@ -39,7 +39,7 @@ mod tests {
             self.file_change_count += 1;
             self.changed_names.push(
                 domain_object
-                    .domain_file()
+                    .get_domain_file()
                     .map(|df| df.to_string())
                     .unwrap_or_else(|| "unnamed".to_string()),
             );

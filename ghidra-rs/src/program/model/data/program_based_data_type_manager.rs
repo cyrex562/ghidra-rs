@@ -464,7 +464,7 @@ mod tests {
 
         let dyn_mgr: &mut dyn ProgramBasedDataTypeManager = &mut mgr;
         assert_eq!(dyn_mgr.get_path(), "/tmp/prog.gpr");
-        assert_eq!(dyn_mgr.get_program().get_name(), "test.bin");
+        assert_eq!(Program::get_name(&dyn_mgr.get_program()), "test.bin");
         assert!(dyn_mgr.is_change_allowed(&data, &settings_def));
         assert!(dyn_mgr.set_long_settings_value(&data, "size", 4));
         assert!(dyn_mgr.is_empty_setting(&data));

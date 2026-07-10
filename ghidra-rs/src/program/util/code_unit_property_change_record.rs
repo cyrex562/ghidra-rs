@@ -89,6 +89,7 @@ impl fmt::Display for CodeUnitPropertyChangeRecord {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::event_type::EventType;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
     fn addr(offset: i64) -> Address {

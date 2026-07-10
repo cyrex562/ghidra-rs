@@ -92,11 +92,11 @@ mod tests {
 
     impl crate::program::model::symbol::Reference for MockReference {
         fn from_address(&self) -> Address {
-            self.from_addr
+            self.from_addr.clone()
         }
 
         fn to_address(&self) -> Address {
-            self.to_addr
+            self.to_addr.clone()
         }
 
         fn is_primary(&self) -> bool {
@@ -152,7 +152,7 @@ mod tests {
         }
 
         fn source(&self) -> SourceType {
-            SourceType::User
+            SourceType::UserDefined
         }
 
         fn as_any(&self) -> &dyn Any {

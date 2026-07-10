@@ -72,7 +72,7 @@ mod tests {
 
         fn get_category_path(&self) -> crate::program::model::data::category_path::CategoryPath {
             use crate::program::model::data::category_path::CategoryPath;
-            CategoryPath::from_path(&self.category_path)
+            CategoryPath::parse(&self.category_path).unwrap()
         }
     }
 
@@ -199,7 +199,7 @@ mod tests {
     fn subtype_is_isf_function() {
         let func_def = MockFunctionDefinition::new("testFunc", "/Path");
         let isf = IsfFunctionPointer::new(&func_def);
-        fn accepts_isf_object<T: IsfObject>(_: &T) {}
+        fn accepts_isf_object<T: IsfObject + ?Sized>(_: &T) {}
         accepts_isf_object(&*isf.subtype);
     }
 

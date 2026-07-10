@@ -465,9 +465,11 @@ mod tests {
                     let mock = MockProgramModule::new(&name);
                     Box::new(mock) as Box<dyn Group>
                 } else if let Some(_fragment) = downcast_to_program_fragment(c.as_ref()) {
-                    c.clone_box()
+                    let name = c.get_name();
+                    Box::new(MockProgramFragment::new(&name)) as Box<dyn Group>
                 } else {
-                    c.clone_box()
+                    let name = c.get_name();
+                    Box::new(MockProgramFragment::new(&name)) as Box<dyn Group>
                 }
             }).collect()
         }

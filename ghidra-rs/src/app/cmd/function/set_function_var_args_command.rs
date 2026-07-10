@@ -52,6 +52,12 @@ mod tests {
     use super::*;
     use std::sync::Arc;
 
+    fn mk_addr(offset: i64) -> Address {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
+
     use crate::program::database::function::OverlappingFunctionException;
     use crate::program::model::address::{AddressIterator, AddressSetView};
     use crate::program::model::data::data_type::DataType;
@@ -133,7 +139,7 @@ mod tests {
         }
         fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
         fn get_entry_point(&self) -> Address {
-            self.entry_point
+            self.entry_point.clone()
         }
         fn get_return_type(&self) -> Option<Box<dyn DataType>> {
             None
@@ -774,7 +780,7 @@ mod tests {
 
     #[test]
     fn command_name_is_correct() {
-        let entry_point = Address::new(0x1000);
+        let entry_point = mk_addr(0x1000);
         let mock_func = Arc::new(MockFunction {
             var_args: false,
             entry_point,
@@ -785,7 +791,7 @@ mod tests {
 
     #[test]
     fn command_status_msg_is_none() {
-        let entry_point = Address::new(0x1000);
+        let entry_point = mk_addr(0x1000);
         let mock_func = Arc::new(MockFunction {
             var_args: false,
             entry_point,

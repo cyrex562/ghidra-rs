@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn lock_grants_lock_and_returns_hold() {
         let mock = MockDomainObject::new();
-        let object = Arc::new(Mutex::new(mock as Box<dyn DomainObject>));
+        let object = Arc::new(Mutex::new(mock));
 
         let hold = DomainObjectLockHold::lock(Arc::clone(&object), "test").unwrap();
         let obj = object.lock().unwrap();
@@ -157,19 +157,22 @@ mod tests {
 
     #[test]
     fn lock_fails_if_cannot_acquire() {
-        let mock = Box::new(MockDomainObject::new().with_lock_result(false));
-        let object = Arc::new(Mutex::new(mock as Box<dyn DomainObject>));
+        let mock = MockDomainObject::new().with_lock_result(false);
+        let object = Arc::new(Mutex::new(mock));
 
         let result = DomainObjectLockHold::lock(Arc::clone(&object), "test");
-        assert!(result.is_err());
-        let err = result.unwrap_err();
+        // `DomainObjectLockHold` (the Ok variant) is not `Debug`, so avoid `unwrap_err`.
+        let err = match result {
+            Err(e) => e,
+            Ok(_) => panic!("expected lock acquisition to fail"),
+        };
         assert_eq!(err.to_string(), "Domain object is locked by Could not get lock");
     }
 
     #[test]
     fn lock_is_released_on_drop() {
         let mock = MockDomainObject::new();
-        let object = Arc::new(Mutex::new(mock as Box<dyn DomainObject>));
+        let object = Arc::new(Mutex::new(mock));
 
         {
             let _hold = DomainObjectLockHold::lock(Arc::clone(&object), "test").unwrap();
@@ -185,8 +188,8 @@ mod tests {
 
     #[test]
     fn force_lock_always_succeeds() {
-        let mock = Box::new(MockDomainObject::new().with_lock_result(false));
-        let object = Arc::new(Mutex::new(mock as Box<dyn DomainObject>));
+        let mock = MockDomainObject::new().with_lock_result(false);
+        let object = Arc::new(Mutex::new(mock));
 
         let hold = DomainObjectLockHold::force_lock(Arc::clone(&object), false, "test");
         let obj = object.lock().unwrap();
@@ -198,7 +201,7 @@ mod tests {
     #[test]
     fn force_lock_is_released_on_drop() {
         let mock = MockDomainObject::new();
-        let object = Arc::new(Mutex::new(mock as Box<dyn DomainObject>));
+        let object = Arc::new(Mutex::new(mock));
 
         {
             let _hold = DomainObjectLockHold::force_lock(Arc::clone(&object), false, "test");
@@ -215,7 +218,7 @@ mod tests {
     #[test]
     fn force_lock_with_rollback_true() {
         let mock = MockDomainObject::new();
-        let object = Arc::new(Mutex::new(mock as Box<dyn DomainObject>));
+        let object = Arc::new(Mutex::new(mock));
 
         let _hold = DomainObjectLockHold::force_lock(Arc::clone(&object), true, "test");
     }
@@ -223,7 +226,7 @@ mod tests {
     #[test]
     fn multiple_holds_on_same_object() {
         let mock = MockDomainObject::new();
-        let object = Arc::new(Mutex::new(mock as Box<dyn DomainObject>));
+        let object = Arc::new(Mutex::new(mock));
 
         {
             let _h1 = DomainObjectLockHold::lock(Arc::clone(&object), "first").unwrap();

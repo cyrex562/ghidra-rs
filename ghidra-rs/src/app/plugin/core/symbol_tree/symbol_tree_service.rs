@@ -33,7 +33,9 @@ mod tests {
 
     impl Symbol for TestSymbol {
         fn get_address(&self) -> Address {
-            Address::from(0u32)
+            use crate::program::model::address::{AddressSpace, AddressSpaceType};
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+            Address::new(space, 0)
         }
 
         fn get_name(&self) -> &str {
@@ -45,7 +47,7 @@ mod tests {
         }
 
         fn get_source(&self) -> SourceType {
-            SourceType::USER_DEFINED
+            SourceType::UserDefined
         }
 
         fn is_primary(&self) -> bool {
@@ -86,35 +88,35 @@ mod tests {
     fn test_symbol_tree_service_trait_exists() {
         let service: Box<dyn SymbolTreeService> =
             Box::new(TestSymbolTreeService::new());
-        let symbol = Arc::new(TestSymbol::new("test_symbol", SymbolType::LABEL));
+        let symbol = Arc::new(TestSymbol::new("test_symbol", SymbolType::Label));
         service.select_symbol(symbol);
     }
 
     #[test]
     fn test_select_label_symbol() {
         let service = TestSymbolTreeService::new();
-        let symbol = Arc::new(TestSymbol::new("main", SymbolType::LABEL));
+        let symbol = Arc::new(TestSymbol::new("main", SymbolType::Label));
         service.select_symbol(symbol);
     }
 
     #[test]
     fn test_select_function_symbol() {
         let service = TestSymbolTreeService::new();
-        let symbol = Arc::new(TestSymbol::new("func_1000", SymbolType::FUNCTION));
+        let symbol = Arc::new(TestSymbol::new("func_1000", SymbolType::Function));
         service.select_symbol(symbol);
     }
 
     #[test]
     fn test_select_namespace_symbol() {
         let service = TestSymbolTreeService::new();
-        let symbol = Arc::new(TestSymbol::new("NS1", SymbolType::NAMESPACE));
+        let symbol = Arc::new(TestSymbol::new("NS1", SymbolType::Namespace));
         service.select_symbol(symbol);
     }
 
     #[test]
     fn test_select_class_symbol() {
         let service = TestSymbolTreeService::new();
-        let symbol = Arc::new(TestSymbol::new("MyClass", SymbolType::CLASS));
+        let symbol = Arc::new(TestSymbol::new("MyClass", SymbolType::Class));
         service.select_symbol(symbol);
     }
 }

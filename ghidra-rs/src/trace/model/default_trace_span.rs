@@ -325,14 +325,14 @@ mod tests {
         let trace = make_trace("t1");
         let a = DefaultTraceSpan::new(trace.clone(), make_span(0, 10));
         let b = DefaultTraceSpan::new(trace, make_span(0, 10));
-        assert_eq!(a, b);
+        assert!(a == b);
     }
 
     #[test]
     fn not_equal_when_different_trace_reference() {
         let a = DefaultTraceSpan::new(make_trace("t1"), make_span(0, 10));
         let b = DefaultTraceSpan::new(make_trace("t1"), make_span(0, 10));
-        assert_ne!(a, b);
+        assert!(a != b);
     }
 
     #[test]
@@ -340,7 +340,7 @@ mod tests {
         let trace = make_trace("t1");
         let a = DefaultTraceSpan::new(trace.clone(), make_span(0, 10));
         let b = DefaultTraceSpan::new(trace, make_span(0, 20));
-        assert_ne!(a, b);
+        assert!(a != b);
     }
 
     #[test]

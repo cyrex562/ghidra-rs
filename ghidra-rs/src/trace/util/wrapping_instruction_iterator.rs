@@ -421,7 +421,7 @@ mod tests {
     fn wraps_empty_iterator() {
         let instrs: Vec<Arc<dyn Instruction>> = vec![];
         let mut it = WrappingInstructionIterator::new(instrs.into_iter());
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
     }
 
     #[test]
@@ -429,8 +429,8 @@ mod tests {
         let instrs: Vec<Arc<dyn Instruction>> = vec![Arc::new(MockInstruction)];
         let mut it = WrappingInstructionIterator::new(instrs.into_iter());
         assert!(it.next().is_some());
-        assert_eq!(it.next(), None);
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
+        assert!(it.next().is_none());
     }
 
     #[test]
@@ -445,7 +445,7 @@ mod tests {
         assert!(it.next().is_some());
         assert!(it.next().is_some());
         assert!(it.next().is_some());
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
     }
 
     #[test]
@@ -459,6 +459,6 @@ mod tests {
         let mut it = WrappingInstructionIterator::new(filtered);
         assert!(it.next().is_some());
         assert!(it.next().is_some());
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
     }
 }

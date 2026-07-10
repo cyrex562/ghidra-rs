@@ -51,6 +51,12 @@ impl Command<dyn Program + 'static> for SetFunctionRepeatableCommentCmd {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn mk_addr(offset: i64) -> Address {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
     use std::sync::Arc;
 
     use crate::program::database::function::OverlappingFunctionException;
@@ -136,7 +142,7 @@ mod tests {
             self.repeatable_comment = comment.map(|c| c.to_string());
         }
         fn get_entry_point(&self) -> Address {
-            self.entry_point
+            self.entry_point.clone()
         }
         fn get_return_type(&self) -> Option<Box<dyn DataType>> {
             None
@@ -775,23 +781,23 @@ mod tests {
 
     #[test]
     fn command_name_is_correct() {
-        let entry = Address::new(0x1000);
+        let entry = mk_addr(0x1000);
         let cmd = SetFunctionRepeatableCommentCmd::new(entry, Some("test comment".to_string()));
         assert_eq!(cmd.name(), "Set Function Repeatable Comment");
     }
 
     #[test]
     fn command_status_msg_is_none() {
-        let entry = Address::new(0x1000);
+        let entry = mk_addr(0x1000);
         let cmd = SetFunctionRepeatableCommentCmd::new(entry, Some("test comment".to_string()));
         assert_eq!(cmd.status_msg(), None);
     }
 
     #[test]
     fn apply_to_sets_repeatable_comment() {
-        let entry = Address::new(0x1000);
+        let entry = mk_addr(0x1000);
         let mock_func = Arc::new(MockFunction {
-            entry_point: entry,
+            entry_point: entry.clone(),
             repeatable_comment: None,
         });
         let mut cmd = SetFunctionRepeatableCommentCmd::new(
@@ -814,9 +820,9 @@ mod tests {
 
     #[test]
     fn apply_to_sets_none_repeatable_comment() {
-        let entry = Address::new(0x1000);
+        let entry = mk_addr(0x1000);
         let mock_func = Arc::new(MockFunction {
-            entry_point: entry,
+            entry_point: entry.clone(),
             repeatable_comment: Some("old comment".to_string()),
         });
         let mut cmd = SetFunctionRepeatableCommentCmd::new(entry, None);
@@ -836,7 +842,7 @@ mod tests {
 
     #[test]
     fn apply_to_returns_false_when_function_not_found() {
-        let entry = Address::new(0x1000);
+        let entry = mk_addr(0x1000);
         let mut cmd = SetFunctionRepeatableCommentCmd::new(
             entry,
             Some("new comment".to_string()),

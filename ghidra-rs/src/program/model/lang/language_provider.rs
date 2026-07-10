@@ -187,7 +187,7 @@ mod tests {
             had_failure: true,
         };
         let id = LanguageID::new("bogus:LE:32:default").unwrap();
-        let err = provider.get_language(&id).unwrap_err();
+        let err = provider.get_language(&id).err().unwrap();
         assert_eq!(err.to_string(), "Language not found for 'bogus:LE:32:default'");
     }
 

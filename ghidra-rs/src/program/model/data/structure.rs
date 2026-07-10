@@ -433,13 +433,13 @@ mod tests {
         s.insert_at_offset(4, Box::new(MockDataType), 4).unwrap();
 
         let dyn_struct: &dyn Structure = &s;
-        assert_eq!(dyn_struct.get_component(1).unwrap().get_offset(), 4);
+        assert_eq!(Structure::get_component(dyn_struct, 1).unwrap().get_offset(), 4);
         assert!(dyn_struct.get_component_at(4).is_some());
         assert!(dyn_struct.get_component_at(2).is_none());
 
         let dtm = MockDataTypeManager;
         let cloned = dyn_struct.clone_structure(&dtm);
-        assert!(cloned.get_component(0).is_err());
+        assert!(Structure::get_component(&cloned, 0).is_err());
     }
 
     #[test]
@@ -451,7 +451,7 @@ mod tests {
 
         let s = BareStructure;
         let dyn_struct: &dyn Structure = &s;
-        assert!(dyn_struct.get_component(0).is_err());
+        assert!(Structure::get_component(dyn_struct, 0).is_err());
         assert!(dyn_struct.get_component_at(0).is_none());
         assert!(dyn_struct.get_components_containing(0).is_empty());
         assert!(dyn_struct.grow_structure(-1).is_err());

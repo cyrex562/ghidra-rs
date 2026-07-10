@@ -151,7 +151,7 @@ mod tests {
         let mut settings = MockSettings::new();
         def.set_value(&mut settings, 255);
 
-        assert_eq!(def.get_value_string(&settings), Some("0xff".to_string()));
+        assert_eq!(NumberSettingsDefinition::get_value_string(&def, &settings), Some("0xff".to_string()));
     }
 
     #[test]
@@ -166,7 +166,7 @@ mod tests {
         def.set_value(&mut settings, -1);
 
         assert_eq!(
-            def.get_value_string(&settings),
+            NumberSettingsDefinition::get_value_string(&def, &settings),
             Some("0xffffffffffffffff".to_string())
         );
     }
@@ -182,7 +182,7 @@ mod tests {
         let mut settings = MockSettings::new();
         def.set_value(&mut settings, 255);
 
-        assert_eq!(def.get_value_string(&settings), Some("0xff".to_string()));
+        assert_eq!(NumberSettingsDefinition::get_value_string(&def, &settings), Some("0xff".to_string()));
     }
 
     #[test]
@@ -197,7 +197,7 @@ mod tests {
         def.set_value(&mut settings, -255);
 
         assert_eq!(
-            def.get_value_string(&settings),
+            NumberSettingsDefinition::get_value_string(&def, &settings),
             Some("-0xff".to_string())
         );
     }
@@ -213,7 +213,7 @@ mod tests {
         let mut settings = MockSettings::new();
         def.set_value(&mut settings, -1);
 
-        assert_eq!(def.get_value_string(&settings), Some("-0x1".to_string()));
+        assert_eq!(NumberSettingsDefinition::get_value_string(&def, &settings), Some("-0x1".to_string()));
     }
 
     #[test]
@@ -230,7 +230,7 @@ mod tests {
         def.set_value(&mut settings1, 42);
         def.set_value(&mut settings2, 42);
 
-        assert!(def.has_same_value(&settings1, &settings2));
+        assert!(NumberSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]
@@ -247,7 +247,7 @@ mod tests {
         def.set_value(&mut settings1, 42);
         def.set_value(&mut settings2, 43);
 
-        assert!(!def.has_same_value(&settings1, &settings2));
+        assert!(!NumberSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]

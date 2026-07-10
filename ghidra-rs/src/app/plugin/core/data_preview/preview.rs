@@ -29,6 +29,7 @@ pub trait Preview: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::any::Any;
     use std::any::TypeId;
 
     struct MockMemory {

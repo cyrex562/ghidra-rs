@@ -121,7 +121,7 @@ mod tests {
         let converter = MockByteArrayConverter::new(vec![]);
         let dc = MockDataConverter;
         let result = converter.to_bytes(&dc);
-        assert_eq!(result.unwrap(), vec![]);
+        assert_eq!(result.unwrap(), Vec::<u8>::new());
     }
 
     #[test]

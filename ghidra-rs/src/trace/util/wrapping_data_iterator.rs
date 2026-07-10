@@ -377,7 +377,7 @@ mod tests {
     fn wraps_empty_iterator() {
         let data: Vec<Box<dyn Data>> = vec![];
         let mut it = WrappingDataIterator::new(data.into_iter());
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
     }
 
     #[test]
@@ -385,7 +385,7 @@ mod tests {
         let data: Vec<Box<dyn Data>> = vec![Box::new(MockData)];
         let mut it = WrappingDataIterator::new(data.into_iter());
         assert!(it.next().is_some());
-        assert_eq!(it.next(), None);
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
+        assert!(it.next().is_none());
     }
 }

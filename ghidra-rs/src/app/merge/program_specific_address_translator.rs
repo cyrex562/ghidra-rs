@@ -121,7 +121,7 @@ mod tests {
         let lookup_addr = Address::new(space.clone(), 0x1000);
         let program: Arc<dyn Program> = Arc::new(TestProgram { name: "test".to_string() });
 
-        translator.add_program_address(program.clone(), addr);
+        translator.add_program_address(program.clone(), addr.clone());
 
         let result = translator.translate(lookup_addr, program.as_ref(), program.as_ref());
         assert_eq!(result, addr);
@@ -134,7 +134,7 @@ mod tests {
         let lookup_addr = Address::new(space.clone(), 0x1000);
         let program: Arc<dyn Program> = Arc::new(TestProgram { name: "test".to_string() });
 
-        let result = translator.translate(lookup_addr, program.as_ref(), program.as_ref());
+        let result = translator.translate(lookup_addr.clone(), program.as_ref(), program.as_ref());
         assert_eq!(result, lookup_addr);
     }
 

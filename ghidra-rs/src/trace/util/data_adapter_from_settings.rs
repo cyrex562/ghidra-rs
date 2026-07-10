@@ -536,7 +536,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(data.is_constant());
+        assert!(DataAdapterFromSettings::is_constant(&data));
     }
 
     #[test]
@@ -549,7 +549,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(!data.is_constant());
+        assert!(!DataAdapterFromSettings::is_constant(&data));
     }
 
     #[test]
@@ -562,7 +562,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(data.is_writable());
+        assert!(DataAdapterFromSettings::is_writable(&data));
     }
 
     #[test]
@@ -575,7 +575,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(!data.is_writable());
+        assert!(!DataAdapterFromSettings::is_writable(&data));
     }
 
     #[test]
@@ -588,7 +588,7 @@ mod tests {
             volatile: true,
         };
 
-        assert!(data.is_volatile());
+        assert!(DataAdapterFromSettings::is_volatile(&data));
     }
 
     #[test]
@@ -601,7 +601,7 @@ mod tests {
             volatile: false,
         };
 
-        assert!(!data.is_volatile());
+        assert!(!DataAdapterFromSettings::is_volatile(&data));
     }
 
     #[test]

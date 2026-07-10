@@ -147,7 +147,7 @@ mod tests {
     #[test]
     fn test_emulator_load_data_get_view_default_none() {
         let load_data = TestEmulatorLoadData;
-        assert_eq!(load_data.get_view(), None);
+        assert!(load_data.get_view().is_none());
     }
 
     #[test]

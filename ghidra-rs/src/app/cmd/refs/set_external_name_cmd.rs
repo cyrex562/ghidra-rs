@@ -160,7 +160,7 @@ mod tests {
             user_defined: bool,
         ) -> Result<(), InvalidInputException> {
             if self.set_path_should_fail {
-                return Err(InvalidInputException::new("bad path"));
+                return Err(InvalidInputException::with_message("bad path"));
             }
             self.set_paths.push((
                 library_name.to_string(),
@@ -251,7 +251,7 @@ mod tests {
         ) -> Result<Arc<dyn Library>, crate::program::model::symbol::AddExternalLibraryNameError>
         {
             if self.add_should_fail {
-                return Err(InvalidInputException::new("cannot add").into());
+                return Err(InvalidInputException::with_message("cannot add").into());
             }
             self.added_libraries
                 .push((library_name.to_string(), source));

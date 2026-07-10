@@ -322,16 +322,20 @@ mod tests {
 
     #[test]
     fn usable_as_trait_object() {
-        let mut map: Box<dyn LongPropertyMap> = Box::new(MockLongPropertyMap {
+        let mut map = MockLongPropertyMap {
             name: "test".to_string(),
             ..Default::default()
-        });
+        };
 
-        map.add_long(&addr(0x1000), 42);
-        assert_eq!(map.get_long(&addr(0x1000)).unwrap(), 42);
+        // Exercise the LongPropertyMap interface through a trait object.
+        {
+            let map_obj: &mut dyn LongPropertyMap = &mut map;
+            map_obj.add_long(&addr(0x1000), 42);
+            assert_eq!(map_obj.get_long(&addr(0x1000)).unwrap(), 42);
 
-        map.add_long(&addr(0x2000), 7);
-        assert_eq!(map.get_long(&addr(0x2000)).unwrap(), 7);
+            map_obj.add_long(&addr(0x2000), 7);
+            assert_eq!(map_obj.get_long(&addr(0x2000)).unwrap(), 7);
+        }
 
         assert_eq!(map.get_size(), 2);
 

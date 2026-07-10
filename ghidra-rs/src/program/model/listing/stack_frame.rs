@@ -451,9 +451,15 @@ mod tests {
             .create_variable("local_1", -4, Box::new(MockDataType), SourceType::UserDefined)
             .unwrap();
 
-        let err = frame
-            .create_variable("local_1", -8, Box::new(MockDataType), SourceType::UserDefined)
-            .unwrap_err();
+        let err = match frame.create_variable(
+            "local_1",
+            -8,
+            Box::new(MockDataType),
+            SourceType::UserDefined,
+        ) {
+            Err(e) => e,
+            Ok(_) => panic!("expected duplicate name error"),
+        };
         assert!(matches!(err, CreateStackVariableError::Duplicate(_)));
     }
 

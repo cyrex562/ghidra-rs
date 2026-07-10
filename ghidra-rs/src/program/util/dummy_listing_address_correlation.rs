@@ -168,15 +168,21 @@ mod tests {
         let corr = DummyListingAddressCorrelation;
         let prog_left = corr.get_program(Side::Left);
         let prog_right = corr.get_program(Side::Right);
-        assert_eq!(prog_left.get_name(), "dummy".to_string());
-        assert_eq!(prog_right.get_name(), "dummy".to_string());
+        assert_eq!(
+            crate::program::model::listing::program::Program::get_name(&*prog_left),
+            "dummy".to_string()
+        );
+        assert_eq!(
+            crate::program::model::listing::program::Program::get_name(&*prog_right),
+            "dummy".to_string()
+        );
     }
 
     #[test]
     fn get_function_returns_none() {
         let corr = DummyListingAddressCorrelation;
-        assert_eq!(corr.get_function(Side::Left), None);
-        assert_eq!(corr.get_function(Side::Right), None);
+        assert!(corr.get_function(Side::Left).is_none());
+        assert!(corr.get_function(Side::Right).is_none());
     }
 
     #[test]

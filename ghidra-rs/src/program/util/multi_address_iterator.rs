@@ -135,7 +135,7 @@ mod tests {
 
     fn adapter(offsets: &[i64]) -> Option<Box<dyn AddressIterator>> {
         Some(Box::new(AddressIteratorAdapter::new(
-            offsets.iter().map(|o| addr(*o)).collect(),
+            offsets.iter().map(|o| addr(*o)).collect::<Vec<_>>().into_iter(),
         )))
     }
 

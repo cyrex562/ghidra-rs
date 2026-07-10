@@ -30,12 +30,60 @@ mod tests {
     impl crate::framework::seam_stubs::PluginTool for MockPluginTool {}
     impl crate::framework::seam_stubs::ToolChest for MockToolChest {}
     impl crate::framework::seam_stubs::ToolAssociationInfo for MockToolAssociationInfo {}
-    impl crate::framework::model::DomainFile for MockDomainFile {
-        fn get_shared_project_url(&self) -> Option<&str> {
+    impl crate::framework::model::DomainFile for MockDomainFile {}
+
+    struct MockToolIconURL;
+    impl crate::framework::seam_stubs::ToolIconURL for MockToolIconURL {}
+
+    struct MockImageIcon;
+    impl crate::framework::seam_stubs::ImageIcon for MockImageIcon {}
+
+    struct MockJdomElement;
+    impl crate::framework::seam_stubs::JdomElement for MockJdomElement {}
+
+    struct MockProject;
+    impl crate::framework::seam_stubs::Project for MockProject {}
+
+    impl crate::framework::model::ToolTemplate for MockToolTemplate {
+        fn get_name(&self) -> String {
+            "MockTool".to_string()
+        }
+
+        fn get_path(&self) -> Option<String> {
             None
         }
+
+        fn set_name(&mut self, _name: &str) {}
+
+        fn get_icon_url(&self) -> Box<dyn crate::framework::seam_stubs::ToolIconURL> {
+            Box::new(MockToolIconURL)
+        }
+
+        fn get_icon(&self) -> Box<dyn crate::framework::seam_stubs::ImageIcon> {
+            Box::new(MockImageIcon)
+        }
+
+        fn get_supported_data_types(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn save_to_xml(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
+            Box::new(MockJdomElement)
+        }
+
+        fn restore_from_xml(&mut self, _root: &dyn crate::framework::seam_stubs::JdomElement) {}
+
+        fn create_tool(
+            &self,
+            _project: &dyn crate::framework::seam_stubs::Project,
+        ) -> Box<dyn crate::framework::seam_stubs::PluginTool> {
+            Box::new(MockPluginTool)
+        }
+
+        fn get_tool_element(&self) -> Box<dyn crate::framework::seam_stubs::JdomElement> {
+            Box::new(MockJdomElement)
+        }
     }
-    impl crate::framework::model::ToolTemplate for MockToolTemplate {}
 
     struct MockToolServices;
 

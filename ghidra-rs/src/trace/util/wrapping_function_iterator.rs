@@ -392,7 +392,7 @@ mod tests {
     fn wraps_empty_iterator() {
         let funcs: Vec<Arc<dyn Function>> = vec![];
         let mut it = WrappingFunctionIterator::new(funcs.into_iter());
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
     }
 
     #[test]
@@ -400,8 +400,8 @@ mod tests {
         let funcs: Vec<Arc<dyn Function>> = vec![Arc::new(MockFunction)];
         let mut it = WrappingFunctionIterator::new(funcs.into_iter());
         assert!(it.next().is_some());
-        assert_eq!(it.next(), None);
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
+        assert!(it.next().is_none());
     }
 
     #[test]
@@ -416,7 +416,7 @@ mod tests {
         assert!(it.next().is_some());
         assert!(it.next().is_some());
         assert!(it.next().is_some());
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
     }
 
     #[test]
@@ -430,6 +430,6 @@ mod tests {
         let mut it = WrappingFunctionIterator::new(filtered);
         assert!(it.next().is_some());
         assert!(it.next().is_some());
-        assert_eq!(it.next(), None);
+        assert!(it.next().is_none());
     }
 }

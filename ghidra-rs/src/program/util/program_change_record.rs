@@ -103,6 +103,7 @@ impl fmt::Display for ProgramChangeRecord {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::event_type::EventType;
 
     #[test]
     fn new_without_range_has_no_start_end_or_object() {

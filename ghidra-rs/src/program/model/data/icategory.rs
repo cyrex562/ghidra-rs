@@ -238,15 +238,15 @@ mod tests {
     #[test]
     fn set_name_rejects_empty() {
         let mut cat = MockICategory { name: "root".to_string(), is_root: true };
-        let err = cat.set_name("").unwrap_err();
+        let err = ICategory::set_name(&mut cat, "").unwrap_err();
         assert!(matches!(err, SetICategoryNameError::InvalidName(_)));
     }
 
     #[test]
     fn set_name_updates_name() {
         let mut cat = MockICategory { name: "old".to_string(), is_root: false };
-        cat.set_name("new").unwrap();
-        assert_eq!(cat.get_name(), "new");
+        ICategory::set_name(&mut cat, "new").unwrap();
+        assert_eq!(ICategory::get_name(&cat), "new");
     }
 
     #[test]

@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn test_new_creates_empty_collection() {
         let collection = ModifiableAddressSetCollection::new();
-        assert!(collection.is_empty());
+        assert!(AddressSetView::is_empty(&collection));
         assert_eq!(collection.num_address_ranges(), 0);
     }
 
@@ -241,13 +241,13 @@ mod tests {
         let mut collection = ModifiableAddressSetCollection::new();
         collection.add_range(&addr(0x1000), &addr(0x1005));
         assert_eq!(collection.num_address_ranges(), 1);
-        assert!(collection.contains(&addr(0x1002)));
+        assert!(AddressSetView::contains(&collection, &addr(0x1002)));
 
         collection.delete_range(&addr(0x1002), &addr(0x1003));
         assert_eq!(collection.num_address_ranges(), 2);
-        assert!(!collection.contains(&addr(0x1002)));
-        assert!(collection.contains(&addr(0x1001)));
-        assert!(collection.contains(&addr(0x1004)));
+        assert!(!AddressSetView::contains(&collection, &addr(0x1002)));
+        assert!(AddressSetView::contains(&collection, &addr(0x1001)));
+        assert!(AddressSetView::contains(&collection, &addr(0x1004)));
     }
 
     #[test]
@@ -258,8 +258,8 @@ mod tests {
         let other = AddressSet::from_start_end(addr(0x1003), addr(0x2000));
         collection.add_set(&other);
 
-        assert!(collection.contains(&addr(0x1000)));
-        assert!(collection.contains(&addr(0x2000)));
+        assert!(AddressSetView::contains(&collection, &addr(0x1000)));
+        assert!(AddressSetView::contains(&collection, &addr(0x2000)));
     }
 
     #[test]
@@ -267,10 +267,10 @@ mod tests {
         let mut collection = ModifiableAddressSetCollection::new();
         collection.add_range(&addr(0x1000), &addr(0x1005));
         collection.add_range(&addr(0x2000), &addr(0x2005));
-        assert!(!collection.is_empty());
+        assert!(!AddressSetView::is_empty(&collection));
 
         collection.clear();
-        assert!(collection.is_empty());
+        assert!(AddressSetView::is_empty(&collection));
         assert_eq!(collection.num_address_ranges(), 0);
     }
 
@@ -279,10 +279,10 @@ mod tests {
         let mut collection = ModifiableAddressSetCollection::new();
         collection.add_range(&addr(0x1000), &addr(0x1009));
 
-        assert_eq!(collection.min_address(), Some(addr(0x1000)));
-        assert_eq!(collection.max_address(), Some(addr(0x1009)));
-        assert!(collection.contains(&addr(0x1005)));
-        assert!(!collection.contains(&addr(0x0FFF)));
+        assert_eq!(AddressSetView::min_address(&collection), Some(addr(0x1000)));
+        assert_eq!(AddressSetView::max_address(&collection), Some(addr(0x1009)));
+        assert!(AddressSetView::contains(&collection, &addr(0x1005)));
+        assert!(!AddressSetView::contains(&collection, &addr(0x0FFF)));
     }
 
     #[test]

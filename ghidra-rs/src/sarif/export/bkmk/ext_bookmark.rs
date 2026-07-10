@@ -48,6 +48,17 @@ impl IsfObject for ExtBookmark {}
 mod tests {
     use super::*;
     use crate::program::model::address::AddressSpace;
+
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     use crate::program::model::listing::bookmark_type::BookmarkType;
     use std::cmp::Ordering;
 
@@ -100,7 +111,7 @@ mod tests {
         }
 
         fn get_address(&self) -> crate::program::model::address::Address {
-            crate::program::model::address::Address::new(AddressSpace::default_space(), 0)
+            crate::program::model::address::Address::new(default_space(), 0)
         }
 
         fn get_type(&self) -> &dyn BookmarkType {

@@ -205,7 +205,7 @@ mod tests {
 
         let tool_event_name = event.event().tool_event_name();
         assert!(tool_event_name.is_some());
-        assert_eq!(tool_event_name.unwrap().event_name(), "ByteBlockChange");
+        assert_eq!(tool_event_name.unwrap().value(), "ByteBlockChange");
     }
 
     #[test]

@@ -332,7 +332,10 @@ mod tests {
         }
     }
 
-    impl VoidPropertyMap for MockVoidPropertyMap {
+    // `add_void` is provided as an inherent method rather than via the `VoidPropertyMap`
+    // trait: the mock supplies its own concrete `PropertyMap` implementation, and the
+    // blanket `impl<T: VoidPropertyMap> PropertyMap for T` would otherwise conflict with it.
+    impl MockVoidPropertyMap {
         fn add_void(&mut self, addr: &Address) {
             self.properties.insert(addr.clone(), true);
         }
@@ -421,7 +424,7 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(map.get(&addr(0x1000)), None);
+        assert!(map.get(&addr(0x1000)).is_none());
     }
 
     #[test]

@@ -70,6 +70,7 @@ impl fmt::Display for CodeUnitUserDataChangeRecord {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::event_type::EventType;
 
     #[test]
     fn new_stores_property_name() {

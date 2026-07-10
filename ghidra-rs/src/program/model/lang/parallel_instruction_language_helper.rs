@@ -304,7 +304,7 @@ mod tests {
         }
 
         fn get_operand_ref_type(&self, _operand_index: i32) -> RefType {
-            RefType::default()
+            RefType::Invalid
         }
 
         fn get_default_fall_through_offset(&self) -> i32 {
@@ -332,7 +332,7 @@ mod tests {
         }
 
         fn get_flow_type(&self) -> RefType {
-            RefType::default()
+            RefType::Invalid
         }
 
         fn is_fallthrough(&self) -> bool {

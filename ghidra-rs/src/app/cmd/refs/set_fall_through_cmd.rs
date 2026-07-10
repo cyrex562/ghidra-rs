@@ -56,6 +56,12 @@ mod tests {
     use crate::framework::model::DomainObject;
     use crate::program::model::lang::ProcessorContextView;
 
+    fn addr(offset: i64) -> Address {
+        use crate::program::model::address::{AddressSpace, AddressSpaceType};
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
+        Address::new(space, offset)
+    }
+
     struct MockInstruction {
         addr: Address,
         fall_through_addr: Option<Address>,
@@ -314,7 +320,7 @@ mod tests {
         }
 
         fn get_operand_ref_type(&self, _operand_index: i32) -> crate::program::model::symbol::RefType {
-            crate::program::model::symbol::RefType::Fall
+            crate::program::model::symbol::RefType::FallThrough
         }
 
         fn get_default_fall_through_offset(&self) -> i32 {
@@ -847,24 +853,24 @@ mod tests {
 
     #[test]
     fn command_name_is_correct() {
-        let inst_addr = Address::new(0x1000);
-        let fallthrough_addr = Address::new(0x1004);
+        let inst_addr = addr(0x1000);
+        let fallthrough_addr = addr(0x1004);
         let cmd = SetFallThroughCmd::new(inst_addr, fallthrough_addr);
         assert_eq!(cmd.name(), "Set Fall-Through Address");
     }
 
     #[test]
     fn command_status_msg_is_none() {
-        let inst_addr = Address::new(0x1000);
-        let fallthrough_addr = Address::new(0x1004);
+        let inst_addr = addr(0x1000);
+        let fallthrough_addr = addr(0x1004);
         let cmd = SetFallThroughCmd::new(inst_addr, fallthrough_addr);
         assert_eq!(cmd.status_msg(), None);
     }
 
     #[test]
     fn apply_to_sets_fall_through() {
-        let inst_addr = Address::new(0x1000);
-        let fallthrough_addr = Address::new(0x1004);
+        let inst_addr = addr(0x1000);
+        let fallthrough_addr = addr(0x1004);
         let mock_inst = Arc::new(MockInstruction {
             addr: inst_addr.clone(),
             fall_through_addr: None,
@@ -882,8 +888,8 @@ mod tests {
 
     #[test]
     fn apply_to_returns_false_when_instruction_not_found() {
-        let inst_addr = Address::new(0x1000);
-        let fallthrough_addr = Address::new(0x1004);
+        let inst_addr = addr(0x1000);
+        let fallthrough_addr = addr(0x1004);
         let mut cmd = SetFallThroughCmd::new(inst_addr, fallthrough_addr);
         let mut program = MockProgram {
             listing: MockListing {
@@ -914,8 +920,8 @@ mod tests {
             }
         }
 
-        let inst_addr = Address::new(0x1000);
-        let fallthrough_addr = Address::new(0x1004);
+        let inst_addr = addr(0x1000);
+        let fallthrough_addr = addr(0x1004);
         let mut cmd = SetFallThroughCmd::new(inst_addr, fallthrough_addr);
         let mut program = ProgramWithoutListing;
 

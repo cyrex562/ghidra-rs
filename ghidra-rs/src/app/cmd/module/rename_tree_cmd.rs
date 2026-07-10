@@ -495,7 +495,7 @@ mod tests {
         };
 
         assert!(cmd.apply_to(&mut program));
-        assert_eq!(cmd.status_msg(), None);
+        assert_eq!(<RenameTreeCmd as Command<MockProgram>>::status_msg(&cmd), None);
         assert_eq!(
             renamed_trees.lock().unwrap().as_slice(),
             &[("OldName".to_string(), "NewName".to_string())]
@@ -514,7 +514,7 @@ mod tests {
         };
 
         assert!(!cmd.apply_to(&mut program));
-        assert!(cmd.status_msg().is_some());
+        assert!(<RenameTreeCmd as Command<MockProgram>>::status_msg(&cmd).is_some());
         assert!(cmd
             .status_msg()
             .unwrap()
@@ -527,19 +527,19 @@ mod tests {
         let mut program = MockProgram { listing: None };
 
         assert!(!cmd.apply_to(&mut program));
-        assert_eq!(cmd.status_msg(), Some("No listing available".to_string()));
+        assert_eq!(<RenameTreeCmd as Command<MockProgram>>::status_msg(&cmd), Some("No listing available".to_string()));
     }
 
     #[test]
     fn test_rename_tree_command_name() {
         let cmd = RenameTreeCmd::new("OldName".to_string(), "NewName".to_string());
-        assert_eq!(cmd.name(), "Rename Tree View");
+        assert_eq!(<RenameTreeCmd as Command<MockProgram>>::name(&cmd), "Rename Tree View");
     }
 
     #[test]
     fn test_rename_tree_initial_status() {
         let cmd = RenameTreeCmd::new("OldName".to_string(), "NewName".to_string());
-        assert_eq!(cmd.status_msg(), None);
+        assert_eq!(<RenameTreeCmd as Command<MockProgram>>::status_msg(&cmd), None);
     }
 
     #[test]

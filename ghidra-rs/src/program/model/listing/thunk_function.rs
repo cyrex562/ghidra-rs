@@ -104,7 +104,7 @@ mod tests {
                 fn set_repeatable_comment(&mut self, _comment: Option<&str>) {}
 
                 fn get_entry_point(&self) -> Address {
-                    self.entry_point
+                    self.entry_point.clone()
                 }
 
                 fn get_return_type(&self) -> Option<Box<dyn DataType>> {
@@ -396,24 +396,27 @@ mod tests {
     impl ThunkFunction for MockThunkFunction {
         fn set_destination_function(&mut self, _function: &dyn Function) {
             self.destination = Some(Box::new(MockFunction {
-                entry_point: self.destination_entry_point,
+                entry_point: self.destination_entry_point.clone(),
             }));
         }
 
         fn get_destination_function_entry_point(&self) -> Address {
-            self.destination_entry_point
+            self.destination_entry_point.clone()
         }
     }
 
     fn create_test_address(offset: u64) -> Address {
-        Address::new(AddressSpace::new_default(AddressSpaceType::RAM), offset)
+        Address::new(
+            AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1),
+            offset as i64,
+        )
     }
 
     #[test]
     fn get_destination_function_entry_point_returns_set_address() {
         let entry = create_test_address(0x1000);
         let dest = create_test_address(0x2000);
-        let thunk = MockThunkFunction::new(entry, dest);
+        let thunk = MockThunkFunction::new(entry, dest.clone());
         assert_eq!(thunk.get_destination_function_entry_point(), dest);
     }
 
@@ -421,7 +424,7 @@ mod tests {
     fn set_destination_function_stores_destination() {
         let entry = create_test_address(0x1000);
         let dest = create_test_address(0x2000);
-        let mut thunk = MockThunkFunction::new(entry, dest);
+        let mut thunk = MockThunkFunction::new(entry, dest.clone());
         let destination = MockFunction {
             entry_point: dest,
         };
@@ -433,7 +436,7 @@ mod tests {
     fn thunk_preserves_own_entry_point() {
         let entry = create_test_address(0x1000);
         let dest = create_test_address(0x2000);
-        let thunk = MockThunkFunction::new(entry, dest);
+        let thunk = MockThunkFunction::new(entry.clone(), dest);
         assert_eq!(thunk.get_entry_point(), entry);
     }
 
