@@ -182,7 +182,7 @@ DONE	interface	99	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/fram
 DONE	interface	99	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectListener.java
 DONE	interface	99	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/TransactionListener.java
 DONE	interface	98	1	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerAutoMappingService.java
-TODO	interface	98	5	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerEmulationService.java
+DONE	interface	98	5	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerEmulationService.java
 DONE	interface	98	2	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerTargetService.java
 DONE	interface	98	4	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/ProgressService.java
 DONE	interface	98	4	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/services/InternalTraceRmiService.java
