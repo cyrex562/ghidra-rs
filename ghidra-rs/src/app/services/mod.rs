@@ -11,6 +11,7 @@ pub mod eclipse_integration_service;
 pub mod file_importer_service;
 pub mod function_comparison_service;
 pub mod go_to_service_listener;
+pub mod listing_margin_provider_service;
 pub mod program_manager;
 pub mod query_data;
 pub mod string_translation_service;
@@ -34,6 +35,7 @@ pub use eclipse_integration_service::EclipseIntegrationService;
 pub use file_importer_service::FileImporterService;
 pub use function_comparison_service::FunctionComparisonService;
 pub use go_to_service_listener::GoToServiceListener;
+pub use listing_margin_provider_service::ListingMarginProviderService;
 pub use program_manager::{ProgramManager, OPEN_CURRENT, OPEN_HIDDEN, OPEN_VISIBLE};
 pub use query_data::QueryData;
 pub use string_translation_service::{
