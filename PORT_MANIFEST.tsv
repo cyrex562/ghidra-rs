@@ -2201,7 +2201,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/RestrictedAddress
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/AbstractHighlightPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/AbstractLocationPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/AbstractSelectionPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/CloseProgramPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/CloseProgramPluginEvent.java	DONE	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ExternalProgramLocationPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ExternalProgramSelectionPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ExternalReferencePluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 

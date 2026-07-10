@@ -3,6 +3,7 @@ pub mod cmd;
 pub mod context;
 pub mod decompiler;
 pub mod emulator;
+pub mod events;
 pub mod merge;
 pub mod plugin;
 pub mod seam_stubs;
