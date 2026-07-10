@@ -134,3 +134,5 @@ ts	stub_class	referenced_by
 2026-07-10T00:00:00Z	Archive	DataTypeArchiveService
 2026-07-10T00:00:00Z	Navigatable	MemorySearchService
 2026-07-10T00:00:00Z	SearchSettings	MemorySearchService
+2026-07-10T00:00:00Z	ViewService	ViewManagerService
+2026-07-10T00:00:00Z	ViewProviderService	ViewManagerService
