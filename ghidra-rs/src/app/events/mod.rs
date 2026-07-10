@@ -3,9 +3,11 @@ pub mod external_reference_plugin_event;
 pub mod first_time_analyzed_plugin_event;
 pub mod open_program_plugin_event;
 pub mod program_activated_plugin_event;
+pub mod program_closed_plugin_event;
 
 pub use close_program_plugin_event::CloseProgramPluginEvent;
 pub use external_reference_plugin_event::ExternalReferencePluginEvent;
 pub use first_time_analyzed_plugin_event::FirstTimeAnalyzedPluginEvent;
 pub use open_program_plugin_event::OpenProgramPluginEvent;
 pub use program_activated_plugin_event::ProgramActivatedPluginEvent;
+pub use program_closed_plugin_event::ProgramClosedPluginEvent;
