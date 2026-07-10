@@ -5,6 +5,7 @@ pub mod block_model_service_listener;
 pub mod bookmark_service;
 pub mod console_service;
 pub mod coordinated_listing_panel_listener;
+pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
 pub mod eclipse_integration_service;
 pub mod file_importer_service;
@@ -24,6 +25,7 @@ pub use block_model_service_listener::BlockModelServiceListener;
 pub use bookmark_service::BookmarkService;
 pub use console_service::ConsoleService;
 pub use coordinated_listing_panel_listener::CoordinatedListingPanelListener;
+pub use debugger_auto_mapping_service::DebuggerAutoMappingService;
 pub use debugger_control_service::{
     ControlModeChangeListener, DebuggerControlService, StateEditFuture, StateEditor,
 };

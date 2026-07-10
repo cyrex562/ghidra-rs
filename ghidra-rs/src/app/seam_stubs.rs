@@ -43,3 +43,9 @@ pub trait DebuggerCoordinates {}
 /// class is ported. `StringTranslationService` only ever passes this type through as a
 /// parameter, so no members are needed yet.
 pub trait ProgramLocation {}
+
+/// Placeholder for `ghidra.debug.api.action.AutoMapSpec`, referenced by
+/// [`DebuggerAutoMappingService`](crate::app::services::DebuggerAutoMappingService) before the
+/// real class is ported. `DebuggerAutoMappingService` only ever passes this type through as a
+/// parameter/return value, so no members are needed yet.
+pub trait AutoMapSpec {}
