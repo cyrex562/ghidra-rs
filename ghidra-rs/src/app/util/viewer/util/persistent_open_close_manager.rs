@@ -158,6 +158,153 @@ mod tests {
         properties: BTreeMap<Address, bool>,
     }
 
+    impl PropertyMap for MockVoidPropertyMap {
+        fn get_name(&self) -> String {
+            "void".to_string()
+        }
+        fn get_value_class(&self) -> Option<std::any::TypeId> {
+            Some(std::any::TypeId::of::<bool>())
+        }
+        fn clear(&mut self) {
+            self.properties.clear();
+        }
+        fn intersects_range(&self, start: &Address, end: &Address) -> bool {
+            self.properties.keys().any(|a| a >= start && a <= end)
+        }
+        fn intersects_set(&self, set: &dyn crate::program::model::address::AddressSetView) -> bool {
+            self.properties.keys().any(|a| set.contains(a))
+        }
+        fn remove_range(&mut self, start: &Address, end: &Address) -> bool {
+            let before = self.properties.len();
+            self.properties.retain(|a, _| !(a >= start && a <= end));
+            self.properties.len() != before
+        }
+        fn remove(&mut self, addr: &Address) -> bool {
+            self.properties.remove(addr).is_some()
+        }
+        fn has_property(&self, addr: &Address) -> bool {
+            self.properties.contains_key(addr)
+        }
+        fn add(&mut self, addr: &Address, value: Option<Box<dyn std::any::Any>>) {
+            match value {
+                Some(v) => match v.downcast::<bool>() {
+                    Ok(b) if *b => {
+                        self.properties.insert(addr.clone(), true);
+                    }
+                    _ => {
+                        self.properties.remove(addr);
+                    }
+                },
+                None => {
+                    self.properties.remove(addr);
+                }
+            }
+        }
+        fn get(&self, addr: &Address) -> Option<Box<dyn std::any::Any>> {
+            self.properties
+                .get(addr)
+                .map(|v| Box::new(*v) as Box<dyn std::any::Any>)
+        }
+        fn get_next_property_address(&self, addr: &Address) -> Option<Address> {
+            self.properties.keys().find(|a| *a > addr).cloned()
+        }
+        fn get_previous_property_address(&self, addr: &Address) -> Option<Address> {
+            self.properties.keys().rev().find(|a| *a < addr).cloned()
+        }
+        fn get_first_property_address(&self) -> Option<Address> {
+            self.properties.keys().next().cloned()
+        }
+        fn get_last_property_address(&self) -> Option<Address> {
+            self.properties.keys().next_back().cloned()
+        }
+        fn get_size(&self) -> usize {
+            self.properties.len()
+        }
+        fn get_property_iterator_range(
+            &self,
+            start: &Address,
+            end: &Address,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            self.get_property_iterator_range_ordered(start, end, true)
+        }
+        fn get_property_iterator_range_ordered(
+            &self,
+            start: &Address,
+            end: &Address,
+            forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            let mut addrs: Vec<Address> = self
+                .properties
+                .keys()
+                .filter(|a| *a >= start && *a <= end)
+                .cloned()
+                .collect();
+            if !forward {
+                addrs.reverse();
+            }
+            Box::new(crate::program::model::address::AddressIteratorAdapter::from_vec(addrs))
+        }
+        fn get_property_iterator(&self) -> Box<dyn crate::program::model::address::AddressIterator> {
+            Box::new(crate::program::model::address::AddressIteratorAdapter::from_vec(
+                self.properties.keys().cloned().collect(),
+            ))
+        }
+        fn get_property_iterator_set(
+            &self,
+            asv: &dyn crate::program::model::address::AddressSetView,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            self.get_property_iterator_set_ordered(asv, true)
+        }
+        fn get_property_iterator_set_ordered(
+            &self,
+            asv: &dyn crate::program::model::address::AddressSetView,
+            forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            let mut addrs: Vec<Address> = self
+                .properties
+                .keys()
+                .filter(|a| asv.contains(a))
+                .cloned()
+                .collect();
+            if !forward {
+                addrs.reverse();
+            }
+            Box::new(crate::program::model::address::AddressIteratorAdapter::from_vec(addrs))
+        }
+        fn get_property_iterator_from(
+            &self,
+            start: &Address,
+            forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            let mut addrs: Vec<Address> = self
+                .properties
+                .keys()
+                .filter(|a| if forward { *a >= start } else { *a <= start })
+                .cloned()
+                .collect();
+            if !forward {
+                addrs.reverse();
+            }
+            Box::new(crate::program::model::address::AddressIteratorAdapter::from_vec(addrs))
+        }
+        fn move_range(&mut self, start: &Address, end: &Address, new_start: &Address) {
+            let moved: Vec<(Address, bool)> = self
+                .properties
+                .iter()
+                .filter(|(a, _)| *a >= start && *a <= end)
+                .map(|(a, v)| (a.clone(), *v))
+                .collect();
+            for (a, _) in &moved {
+                self.properties.remove(a);
+            }
+            for (a, v) in moved {
+                let offset = a.offset() - start.offset();
+                let new_addr = Address::new(new_start.space().clone(), new_start.offset() + offset);
+                self.properties.insert(new_addr, v);
+            }
+        }
+    }
+
     impl VoidPropertyMap for MockVoidPropertyMap {
         fn add_void(&mut self, addr: &Address) {
             self.properties.insert(addr.clone(), true);
