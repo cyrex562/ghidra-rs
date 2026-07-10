@@ -1,6 +1,7 @@
 pub mod annotation;
 pub mod busy_tool_exception;
 pub mod generic_stand_alone_application;
+pub mod plugin_event;
 pub mod plugin_info;
 pub mod service_info;
 pub mod service_interface_implementation_pair;
@@ -14,6 +15,7 @@ pub mod util;
 
 pub use busy_tool_exception::BusyToolException;
 pub use generic_stand_alone_application::GenericStandAloneApplication;
+pub use plugin_event::{PluginEvent, PluginEventBehavior, EXTERNAL_SOURCE_NAME};
 pub use plugin_info::PluginInfo;
 pub use service_info::ServiceInfo;
 pub use service_interface_implementation_pair::ServiceInterfaceImplementationPair;
