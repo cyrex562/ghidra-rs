@@ -173,7 +173,7 @@ TODO	interface	100	2	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/serv
 TODO	interface	100	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ProgramTreeService.java
 TODO	interface	100	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/VSCodeIntegrationService.java
 TODO	interface	100	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Workspace.java
-TODO	interface	99	1	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/TraceRmiLauncherService.java
+DONE	interface	99	1	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/TraceRmiLauncherService.java
 TODO	interface	99	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/CodeFormatService.java
 TODO	interface	99	233	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeQueryService.java
 TODO	interface	99	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewManagerService.java
