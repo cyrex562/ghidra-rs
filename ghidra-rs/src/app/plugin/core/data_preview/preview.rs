@@ -117,7 +117,8 @@ mod tests {
 
     #[test]
     fn test_get_data_type_returns_data_type() {
-        let preview = TestPreview { name: "Test".to_string() };
+        let preview: &'static TestPreview =
+            Box::leak(Box::new(TestPreview { name: "Test".to_string() }));
         let data_type = preview.get_data_type();
         assert_eq!(data_type.type_id(), TypeId::of::<MockDataType>());
     }

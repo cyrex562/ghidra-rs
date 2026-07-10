@@ -35,7 +35,7 @@ mod tests {
             self.closed_names.push(
                 domain_object
                     .get_domain_file()
-                    .map(|df| df.to_string())
+                    .map(|df| df.get_name())
                     .unwrap_or_else(|| "unnamed".to_string()),
             );
         }

@@ -875,7 +875,7 @@ mod tests {
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });
-        let mut cmd = SetReturnDataTypeCmd::new(addr, data_type, SourceType::UserDefined);
+        let mut cmd = SetReturnDataTypeCmd::new(addr.clone(), data_type, SourceType::UserDefined);
 
         let function = Arc::new(MockFunction {
             entry_point: addr,
@@ -903,7 +903,7 @@ mod tests {
         let data_type: Box<dyn DataType> = Box::new(MockDataType {
             name: "int".to_string(),
         });
-        let mut cmd = SetReturnDataTypeCmd::new(addr, data_type, SourceType::Default);
+        let mut cmd = SetReturnDataTypeCmd::new(addr.clone(), data_type, SourceType::Default);
 
         let function = Arc::new(MockFunction {
             entry_point: addr,

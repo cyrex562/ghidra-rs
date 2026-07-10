@@ -268,7 +268,9 @@ mod tests {
         let container1 = CodeUnitContainer::new(code_unit1);
         let container2 = CodeUnitContainer::new(code_unit2);
 
-        let lcs = CodeUnitLcs::new(&[container1.clone()], &[container2]);
+        let x_binding = [container1.clone()];
+        let y_binding = [container2];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         let monitor = DummyMonitor;
         let result = lcs.get_lcs(&monitor).unwrap();
         assert_eq!(result.len(), 1);
@@ -288,7 +290,9 @@ mod tests {
         let container2 = CodeUnitContainer::new(code_unit2);
         let container3 = CodeUnitContainer::new(code_unit3);
 
-        let lcs = CodeUnitLcs::new(&[container1], &[container2, container3]);
+        let x_binding = [container1];
+        let y_binding = [container2, container3];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         let monitor = DummyMonitor;
         let result = lcs.get_lcs(&monitor).unwrap();
         assert_eq!(result.len(), 1);
@@ -303,7 +307,9 @@ mod tests {
         let container1 = CodeUnitContainer::new(code_unit1);
         let container2 = CodeUnitContainer::new(code_unit2);
 
-        let lcs = CodeUnitLcs::new(&[container1], &[container2]);
+        let x_binding = [container1];
+        let y_binding = [container2];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         assert!(!lcs.matches(&lcs.x_list[0], &lcs.y_list[0]));
     }
 
@@ -316,7 +322,9 @@ mod tests {
         let container1 = CodeUnitContainer::new(code_unit1);
         let container2 = CodeUnitContainer::new(code_unit2);
 
-        let lcs = CodeUnitLcs::new(&[container1], &[container2]);
+        let x_binding = [container1];
+        let y_binding = [container2];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         assert!(!lcs.matches(&lcs.x_list[0], &lcs.y_list[0]));
     }
 
@@ -337,7 +345,9 @@ mod tests {
         let c5 = CodeUnitContainer::new(MockCodeUnit::new("XOR", 2, addr5));
         let c6 = CodeUnitContainer::new(MockCodeUnit::new("JMP", 1, addr6));
 
-        let lcs = CodeUnitLcs::new(&[c1, c2, c3], &[c4, c5, c6]);
+        let x_binding = [c1, c2, c3];
+        let y_binding = [c4, c5, c6];
+        let lcs = CodeUnitLcs::new(&x_binding, &y_binding);
         let monitor = DummyMonitor;
         let result = lcs.get_lcs(&monitor).unwrap();
         assert_eq!(result.len(), 2);

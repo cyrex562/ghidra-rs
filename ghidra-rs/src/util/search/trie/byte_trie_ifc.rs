@@ -72,7 +72,7 @@ mod tests {
         }
     }
 
-    impl<T: Clone> ByteTrieIfc<T> for MockTrie<T> {
+    impl<T: Clone + 'static> ByteTrieIfc<T> for MockTrie<T> {
         fn is_empty(&self) -> bool {
             self.items.is_empty()
         }

@@ -864,7 +864,7 @@ mod tests {
     fn apply_to_clears_fall_through_override() {
         let addr = mk_addr(0x1000);
         let mock_inst = Arc::new(MockInstruction {
-            addr,
+            addr: addr.clone(),
             fall_through_override_cleared: false,
         });
         let mut cmd = ClearFallThroughCmd::new(addr);

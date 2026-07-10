@@ -143,12 +143,17 @@ mod tests {
         }
     }
 
+    /// Coerce a concrete mock handle into the trait-object `Arc` the lock APIs expect.
+    fn as_dyn(object: &Arc<Mutex<MockDomainObject>>) -> Arc<Mutex<dyn DomainObject>> {
+        object.clone()
+    }
+
     #[test]
     fn lock_grants_lock_and_returns_hold() {
         let mock = MockDomainObject::new();
         let object = Arc::new(Mutex::new(mock));
 
-        let hold = DomainObjectLockHold::lock(Arc::clone(&object), "test").unwrap();
+        let hold = DomainObjectLockHold::lock(as_dyn(&object), "test").unwrap();
         let obj = object.lock().unwrap();
         assert_eq!(obj.lock_count(), 1);
         drop(obj);
@@ -160,7 +165,7 @@ mod tests {
         let mock = MockDomainObject::new().with_lock_result(false);
         let object = Arc::new(Mutex::new(mock));
 
-        let result = DomainObjectLockHold::lock(Arc::clone(&object), "test");
+        let result = DomainObjectLockHold::lock(as_dyn(&object), "test");
         // `DomainObjectLockHold` (the Ok variant) is not `Debug`, so avoid `unwrap_err`.
         let err = match result {
             Err(e) => e,
@@ -175,7 +180,7 @@ mod tests {
         let object = Arc::new(Mutex::new(mock));
 
         {
-            let _hold = DomainObjectLockHold::lock(Arc::clone(&object), "test").unwrap();
+            let _hold = DomainObjectLockHold::lock(as_dyn(&object), "test").unwrap();
             let obj = object.lock().unwrap();
             assert_eq!(obj.lock_count(), 1);
             assert_eq!(obj.unlock_count(), 0);
@@ -191,7 +196,7 @@ mod tests {
         let mock = MockDomainObject::new().with_lock_result(false);
         let object = Arc::new(Mutex::new(mock));
 
-        let hold = DomainObjectLockHold::force_lock(Arc::clone(&object), false, "test");
+        let hold = DomainObjectLockHold::force_lock(as_dyn(&object), false, "test");
         let obj = object.lock().unwrap();
         assert_eq!(obj.lock_count(), 1);
         drop(obj);
@@ -204,7 +209,7 @@ mod tests {
         let object = Arc::new(Mutex::new(mock));
 
         {
-            let _hold = DomainObjectLockHold::force_lock(Arc::clone(&object), false, "test");
+            let _hold = DomainObjectLockHold::force_lock(as_dyn(&object), false, "test");
             let obj = object.lock().unwrap();
             assert_eq!(obj.lock_count(), 1);
             assert_eq!(obj.unlock_count(), 0);
@@ -220,7 +225,7 @@ mod tests {
         let mock = MockDomainObject::new();
         let object = Arc::new(Mutex::new(mock));
 
-        let _hold = DomainObjectLockHold::force_lock(Arc::clone(&object), true, "test");
+        let _hold = DomainObjectLockHold::force_lock(as_dyn(&object), true, "test");
     }
 
     #[test]
@@ -229,9 +234,9 @@ mod tests {
         let object = Arc::new(Mutex::new(mock));
 
         {
-            let _h1 = DomainObjectLockHold::lock(Arc::clone(&object), "first").unwrap();
+            let _h1 = DomainObjectLockHold::lock(as_dyn(&object), "first").unwrap();
             {
-                let _h2 = DomainObjectLockHold::lock(Arc::clone(&object), "second").unwrap();
+                let _h2 = DomainObjectLockHold::lock(as_dyn(&object), "second").unwrap();
             }
         }
     }

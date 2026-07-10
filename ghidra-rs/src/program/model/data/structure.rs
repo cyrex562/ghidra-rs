@@ -439,7 +439,7 @@ mod tests {
 
         let dtm = MockDataTypeManager;
         let cloned = dyn_struct.clone_structure(&dtm);
-        assert!(Structure::get_component(&cloned, 0).is_err());
+        assert!(Structure::get_component(cloned.as_ref(), 0).is_err());
     }
 
     #[test]
@@ -449,8 +449,8 @@ mod tests {
         impl Composite for BareStructure {}
         impl Structure for BareStructure {}
 
-        let s = BareStructure;
-        let dyn_struct: &dyn Structure = &s;
+        let mut s = BareStructure;
+        let dyn_struct: &mut dyn Structure = &mut s;
         assert!(Structure::get_component(dyn_struct, 0).is_err());
         assert!(dyn_struct.get_component_at(0).is_none());
         assert!(dyn_struct.get_components_containing(0).is_empty());

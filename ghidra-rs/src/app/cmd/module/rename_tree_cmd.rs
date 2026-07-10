@@ -515,8 +515,7 @@ mod tests {
 
         assert!(!cmd.apply_to(&mut program));
         assert!(<RenameTreeCmd as Command<MockProgram>>::status_msg(&cmd).is_some());
-        assert!(cmd
-            .status_msg()
+        assert!(<RenameTreeCmd as Command<MockProgram>>::status_msg(&cmd)
             .unwrap()
             .contains("already exists"));
     }
