@@ -9054,7 +9054,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/func/ExtFunctionStack.
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/func/ExtFunctionStackVar.java	TODO	orig_src Ghidra Features Sarif src main java sarif export func 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/func/ExtFunctionWriter.java	DONE	orig_src Ghidra Features Sarif src main java sarif export func 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/func/SarifFunctionWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export func 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/mm/ExtMemoryMap.java	TODO	orig_src Ghidra Features Sarif src main java sarif export mm 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/mm/ExtMemoryMap.java	DONE	orig_src Ghidra Features Sarif src main java sarif export mm
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/mm/SarifMemoryMapWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export mm 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/props/ExtProperty.java	TODO	orig_src Ghidra Features Sarif src main java sarif export props 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/props/SarifPropertyListWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export props 
