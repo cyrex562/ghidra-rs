@@ -2216,7 +2216,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramPostActivat
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramSelectionPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramVisibilityChangePluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/TreeSelectionPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ViewChangedPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ViewChangedPluginEvent.java	DONE	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/factory/GhidraToolStateFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/DataTypeArchiveMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/merge/DataTypeArchiveMergeManagerPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app merge 
