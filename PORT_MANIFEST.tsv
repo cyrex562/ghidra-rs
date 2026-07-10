@@ -40,7 +40,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerCon
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerEmulationService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerListingService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerLogicalBreakpointService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerPlatformService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerPlatformService.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra app services
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerStaticMappingService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerTargetService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerTraceManagerService.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra app services 
