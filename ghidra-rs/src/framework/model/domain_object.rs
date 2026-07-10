@@ -12,8 +12,8 @@ use crate::framework::model::domain_object_closed_listener::DomainObjectClosedLi
 use crate::framework::model::domain_object_listener::DomainObjectListener;
 use crate::framework::model::event_queue_id::EventQueueID;
 use crate::framework::model::transaction_info::TransactionInfo;
+use crate::framework::model::transaction_listener::TransactionListener;
 use crate::framework::options::Options;
-use crate::framework::seam_stubs::TransactionListener;
 use crate::framework::store::LockException;
 use crate::program::seam_stubs::Transaction;
 use crate::util::exception::CancelledException;
