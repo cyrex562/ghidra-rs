@@ -187,5 +187,5 @@ TODO	interface	98	2	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/servi
 TODO	interface	98	4	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/ProgressService.java
 TODO	interface	98	4	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/services/InternalTraceRmiService.java
 TODO	interface	98	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeArchiveService.java
-TODO	interface	98	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingMarginProviderService.java
+DONE	interface	98	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingMarginProviderService.java
 TODO	interface	98	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/MemorySearchService.java
