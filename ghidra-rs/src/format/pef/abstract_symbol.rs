@@ -62,7 +62,7 @@ mod tests {
             name: "test_symbol".to_string(),
             class: SymbolClass::Code,
         };
-        let display_str = symbol.to_string();
+        let display_str = (&symbol as &dyn AbstractSymbol).to_string();
         assert!(display_str.contains("test_symbol"));
         assert!(display_str.contains("Code"));
     }
@@ -83,7 +83,7 @@ mod tests {
                 name: "sym".to_string(),
                 class,
             };
-            let display_str = symbol.to_string();
+            let display_str = (&symbol as &dyn AbstractSymbol).to_string();
             assert!(display_str.contains("sym"));
         }
     }

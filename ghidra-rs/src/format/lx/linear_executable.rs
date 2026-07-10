@@ -61,6 +61,6 @@ mod tests {
         let mut provider = MockByteProvider;
         let result = LinearExecutable::new(&mut provider);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "LinearExecutable is not yet implemented");
+        assert_eq!(result.err(), Some("LinearExecutable is not yet implemented"));
     }
 }

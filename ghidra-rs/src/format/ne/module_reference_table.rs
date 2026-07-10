@@ -107,7 +107,7 @@ mod tests {
     struct MockReader {
         provider: Rc<RefCell<dyn ByteProvider>>,
         little_endian: bool,
-        current_index: u64,
+        current_index: Rc<RefCell<u64>>,
     }
 
     impl MockReader {
@@ -115,7 +115,7 @@ mod tests {
             MockReader {
                 provider: Rc::new(RefCell::new(VecProvider(data))),
                 little_endian: true,
-                current_index: 0,
+                current_index: Rc::new(RefCell::new(0)),
             }
         }
     }
@@ -128,11 +128,11 @@ mod tests {
             self.provider.borrow_mut().is_valid_index(index)
         }
         fn get_pointer_index(&self) -> u64 {
-            self.current_index
+            *self.current_index.borrow()
         }
         fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
+            let old = *self.current_index.borrow();
+            *self.current_index.borrow_mut() = index;
             old
         }
         fn is_little_endian(&self) -> bool {
@@ -154,7 +154,7 @@ mod tests {
             Box::new(MockReader {
                 provider: Rc::clone(&self.provider),
                 little_endian: self.little_endian,
-                current_index: new_index,
+                current_index: Rc::new(RefCell::new(new_index)),
             })
         }
     }
@@ -211,11 +211,12 @@ mod tests {
 
         let mut reader = Box::new(MockReader::new(data.clone()));
         reader.set_pointer_index(100);
+        let index_handle = Rc::clone(&reader.current_index);
 
         let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 0);
         let _ = ModuleReferenceTable::new(reader, 0, 1, &import_table).unwrap();
 
-        let ptr = reader.get_pointer_index();
+        let ptr = *index_handle.borrow();
         assert_eq!(ptr, 100);
     }
 
