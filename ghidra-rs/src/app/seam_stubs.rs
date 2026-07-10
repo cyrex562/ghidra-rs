@@ -132,6 +132,25 @@ pub trait MonitorReceiver {}
 /// are needed yet.
 pub trait ProgressListener {}
 
+/// Placeholder for `ghidra.app.services.TraceRmiService`, the base interface extended by
+/// [`InternalTraceRmiService`](crate::app::services::InternalTraceRmiService) before the real
+/// interface is ported. `InternalTraceRmiService` does not itself call any `TraceRmiService`
+/// members (it only overrides two of them with covariant return types), so no members are
+/// needed yet.
+pub trait TraceRmiService {}
+
+/// Placeholder for `ghidra.app.plugin.core.debug.service.tracermi.DefaultTraceRmiAcceptor`,
+/// returned by [`InternalTraceRmiService`](crate::app::services::InternalTraceRmiService) before
+/// the real class is ported. `InternalTraceRmiService` only ever returns this type opaquely, so
+/// no members are needed yet.
+pub trait DefaultTraceRmiAcceptor {}
+
+/// Placeholder for `ghidra.app.plugin.core.debug.service.tracermi.TraceRmiHandler`, returned by
+/// [`InternalTraceRmiService`](crate::app::services::InternalTraceRmiService) before the real
+/// class is ported. `InternalTraceRmiService` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait TraceRmiHandler {}
+
 /// Placeholder for `ghidra.util.task.Task`, referenced by
 /// [`ProgressService`](crate::app::services::ProgressService)'s default `execute` method before
 /// the real class is ported. Models just the two members that default method calls.
