@@ -1,0 +1,3 @@
+pub mod abstract_interpretation_service;
+
+pub use abstract_interpretation_service::AbstractInterpretationService;
