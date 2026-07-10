@@ -7,6 +7,7 @@ pub mod console_service;
 pub mod coordinated_listing_panel_listener;
 pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
+pub mod debugger_platform_service;
 pub mod eclipse_integration_service;
 pub mod file_importer_service;
 pub mod function_comparison_service;
@@ -32,6 +33,7 @@ pub use debugger_auto_mapping_service::DebuggerAutoMappingService;
 pub use debugger_control_service::{
     ControlModeChangeListener, DebuggerControlService, StateEditFuture, StateEditor,
 };
+pub use debugger_platform_service::DebuggerPlatformService;
 pub use eclipse_integration_service::EclipseIntegrationService;
 pub use file_importer_service::FileImporterService;
 pub use function_comparison_service::FunctionComparisonService;
