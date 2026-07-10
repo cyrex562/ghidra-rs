@@ -2211,7 +2211,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramActivatedPl
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramClosedPluginEvent.java	DONE	orig_src Ghidra Features Base src main java ghidra app events
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramHighlightPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramLocationPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramOpenedPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramOpenedPluginEvent.java	DONE	orig_src Ghidra Features Base src main java ghidra app events
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramPostActivatedPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramSelectionPluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/events/ProgramVisibilityChangePluginEvent.java	TODO	orig_src Ghidra Features Base src main java ghidra app events 
