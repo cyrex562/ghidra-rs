@@ -128,3 +128,5 @@ ts	stub_class	referenced_by
 2026-07-10T11:00:00Z	RecordNumber	MsType
 2026-07-10T00:00:00Z	DebuggerPlatformMapper	DebuggerPlatformService
 2026-07-10T00:00:00Z	TraceObject	DebuggerPlatformService
+2026-07-10T00:00:00Z	Target	DebuggerTargetService
+2026-07-10T00:00:00Z	TargetPublicationListener	DebuggerTargetService
