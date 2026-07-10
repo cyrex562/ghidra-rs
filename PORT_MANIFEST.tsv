@@ -8632,7 +8632,7 @@ orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbre
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/ModifierExMsType.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/ModifierMsType.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/MsProperty.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type 
-orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/MsType.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type 
+orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/MsType.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/MsTypeField.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/NestedType16MsType.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/NestedTypeExtMsType.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader type 

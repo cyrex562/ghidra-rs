@@ -50,3 +50,19 @@ impl PdbReaderOptions {
 pub trait AbstractPdb {
     fn pdb_reader_options(&self) -> &PdbReaderOptions;
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.RecordNumber`, referenced by
+/// [`MsType`](crate::format::pdb2::pdbreader::type::ms_type::MsType) before the real class is
+/// ported. Models only the `NO_TYPE` sentinel that `MsType::record_number`'s default needs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct RecordNumber {
+    pub number: i32,
+}
+
+impl RecordNumber {
+    pub const T_NOTYPE: i32 = 0;
+
+    pub fn no_type() -> Self {
+        RecordNumber { number: Self::T_NOTYPE }
+    }
+}
