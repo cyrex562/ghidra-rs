@@ -3,10 +3,11 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
-/// Placeholder for `ghidra.framework.model.TransactionListener`, referenced by
-/// [`DomainObject`](crate::framework::model::DomainObject) before the real interface is ported.
-/// `DomainObject` only ever registers/unregisters this listener, so no members are needed yet.
-pub trait TransactionListener {}
+/// Placeholder for `ghidra.framework.data.DomainObjectAdapterDB`, referenced by
+/// [`TransactionListener`](crate::framework::model::TransactionListener) before the real class is
+/// ported. `TransactionListener` only ever passes this type through as an opaque value, so no
+/// members are needed yet.
+pub trait DomainObjectAdapterDB {}
 
 /// Placeholder for `ghidra.framework.model.ProjectData`, referenced by
 /// [`DomainFolder`](crate::framework::model::DomainFolder) before the real class is ported.

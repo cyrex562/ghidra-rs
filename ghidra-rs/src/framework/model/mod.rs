@@ -33,6 +33,7 @@ pub mod tool_services;
 pub mod tool_set;
 pub mod tool_template;
 pub mod transaction_info;
+pub mod transaction_listener;
 pub mod user_data;
 
 pub use aborted_transaction_listener::AbortedTransactionListener;
@@ -80,4 +81,5 @@ pub use tool_template::{
     ToolTemplate, TOOL_INSTANCE_NAME_XML_NAME, TOOL_NAME_XML_NAME, TOOL_XML_NAME,
 };
 pub use transaction_info::{TransactionInfo, TransactionStatus};
+pub use transaction_listener::TransactionListener;
 pub use user_data::UserData;

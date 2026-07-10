@@ -86,9 +86,10 @@ mod tests {
     use std::path::Path;
 
     use crate::framework::data::DomainObjectFileListener;
-    use crate::framework::model::{SaveError, DomainObjectConsumer, DomainFile, DomainObjectListener};
+    use crate::framework::model::{
+        SaveError, DomainObjectConsumer, DomainFile, DomainObjectListener, TransactionListener,
+    };
     use crate::framework::options::Options;
-    use crate::framework::seam_stubs::TransactionListener;
     use crate::framework::model::event_queue_id::EventQueueID;
     use crate::program::seam_stubs::Transaction;
     use crate::util::task::TaskMonitor;
