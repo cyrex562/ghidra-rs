@@ -12747,7 +12747,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolTempl
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/TransactionInfo.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/TransactionListener.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/UserData.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Workspace.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Workspace.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework model
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/WorkspaceChangeListener.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/XmlDataReader.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework model 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/BusyToolException.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
