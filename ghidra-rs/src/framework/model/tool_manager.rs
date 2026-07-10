@@ -1,5 +1,5 @@
-use crate::framework::model::ToolConnection;
-use crate::framework::seam_stubs::{PluginTool, Workspace, WorkspaceChangeListener};
+use crate::framework::model::{ToolConnection, Workspace};
+use crate::framework::seam_stubs::{PluginTool, WorkspaceChangeListener};
 use crate::util::exception::DuplicateNameException;
 
 /// The name to use for a new unnamed workspace; used by the Ghidra Project Window when the user
@@ -101,7 +101,35 @@ mod tests {
     impl PluginTool for MockPluginTool {}
 
     struct MockWorkspace;
-    impl Workspace for MockWorkspace {}
+    impl Workspace for MockWorkspace {
+        fn get_name(&self) -> String {
+            "MockWorkspace".to_string()
+        }
+
+        fn get_tools(&self) -> Vec<Box<dyn PluginTool>> {
+            Vec::new()
+        }
+
+        fn create_tool(&mut self) -> Box<dyn PluginTool> {
+            Box::new(MockPluginTool)
+        }
+
+        fn run_tool(
+            &mut self,
+            _template: &dyn crate::framework::model::ToolTemplate,
+        ) -> Box<dyn PluginTool> {
+            Box::new(MockPluginTool)
+        }
+
+        fn set_name(
+            &mut self,
+            _new_name: &str,
+        ) -> Result<(), crate::util::exception::DuplicateNameException> {
+            Ok(())
+        }
+
+        fn set_active(&mut self) {}
+    }
 
     struct MockWorkspaceChangeListener;
     impl WorkspaceChangeListener for MockWorkspaceChangeListener {}

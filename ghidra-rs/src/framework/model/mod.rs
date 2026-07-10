@@ -35,6 +35,7 @@ pub mod tool_template;
 pub mod transaction_info;
 pub mod transaction_listener;
 pub mod user_data;
+pub mod workspace;
 
 pub use aborted_transaction_listener::AbortedTransactionListener;
 pub use change_set::ChangeSet;
@@ -83,3 +84,4 @@ pub use tool_template::{
 pub use transaction_info::{TransactionInfo, TransactionStatus};
 pub use transaction_listener::TransactionListener;
 pub use user_data::UserData;
+pub use workspace::Workspace;
