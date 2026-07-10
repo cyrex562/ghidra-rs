@@ -12758,7 +12758,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Gene
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ModalPluginTool.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Plugin.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginConfigurationModel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginEvent.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginEvent.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginInfo.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginInstaller.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
