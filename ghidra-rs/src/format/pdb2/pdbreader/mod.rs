@@ -2,6 +2,7 @@ pub mod abstract_parsable_item;
 pub mod delimiter_state;
 pub mod id_ms_parsable;
 pub mod msf;
+pub mod pdb_byte_reader;
 pub mod pdb_exception;
 pub mod pdb_reader_utils;
 pub mod parsing_iterator;
