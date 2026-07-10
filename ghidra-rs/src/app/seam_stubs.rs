@@ -55,3 +55,9 @@ pub trait AutoMapSpec {}
 /// class is ported. `TraceRmiLauncherService` only ever returns this type, so no members are
 /// needed yet.
 pub trait TraceRmiLaunchOffer {}
+
+/// Placeholder for `ghidra.app.util.viewer.listingpanel.ListingMarginProvider`, referenced by
+/// [`ListingMarginProviderService`](crate::app::services::ListingMarginProviderService) before
+/// the real class is ported. `ListingMarginProviderService` only ever passes this type through
+/// as a parameter/return value, so no members are needed yet.
+pub trait ListingMarginProvider {}
