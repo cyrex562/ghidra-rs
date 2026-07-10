@@ -108,3 +108,15 @@ pub trait Navigatable {}
 /// ported. `MemorySearchService` only ever passes this type through as a parameter, so no
 /// members are needed yet.
 pub trait SearchSettings {}
+
+/// Placeholder for `ghidra.app.services.ViewService`, the base interface extended by
+/// [`ViewManagerService`](crate::app::services::ViewManagerService) before the real class is
+/// ported. `ViewManagerService` does not itself call any `ViewService` members, so no members
+/// are needed yet.
+pub trait ViewService {}
+
+/// Placeholder for `ghidra.app.plugin.core.programtree.ViewProviderService`, referenced by
+/// [`ViewManagerService`](crate::app::services::ViewManagerService) before the real class is
+/// ported. `ViewManagerService` only ever passes this type through as a parameter/return value,
+/// so no members are needed yet.
+pub trait ViewProviderService {}

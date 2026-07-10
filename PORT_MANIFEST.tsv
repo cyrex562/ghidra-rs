@@ -3580,7 +3580,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValiditySc
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/Terminal.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/TerminalService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/VSCodeIntegrationService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewManagerService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewManagerService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AbstractColumnDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AbstractComparableColumnDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
