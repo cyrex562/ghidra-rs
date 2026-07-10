@@ -16,6 +16,7 @@ pub mod function_comparison_service;
 pub mod go_to_service_listener;
 pub mod listing_margin_provider_service;
 pub mod program_manager;
+pub mod program_tree_service;
 pub mod query_data;
 pub mod string_translation_service;
 pub mod string_validity_score;
@@ -44,6 +45,7 @@ pub use function_comparison_service::FunctionComparisonService;
 pub use go_to_service_listener::GoToServiceListener;
 pub use listing_margin_provider_service::ListingMarginProviderService;
 pub use program_manager::{ProgramManager, OPEN_CURRENT, OPEN_HIDDEN, OPEN_VISIBLE};
+pub use program_tree_service::ProgramTreeService;
 pub use query_data::QueryData;
 pub use string_translation_service::{
     sort_string_translation_services, StringTranslationService, TranslateOptions,
