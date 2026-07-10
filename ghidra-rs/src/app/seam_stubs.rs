@@ -215,3 +215,9 @@ pub trait RunResult {
     /// Stands in for `RunResult.error()`.
     fn error(&self) -> Option<&(dyn std::error::Error + Send + Sync)>;
 }
+
+/// Placeholder for `ghidra.app.services.GoToOverrideService`, referenced by
+/// [`GoToService`](crate::app::services::GoToService) before the real interface is ported.
+/// `GoToService` only ever passes this type through as a parameter/return value, so no members
+/// are needed yet.
+pub trait GoToOverrideService {}
