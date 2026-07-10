@@ -268,7 +268,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/TraceHighlightPluginEvent.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug event 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/TraceInactiveCoordinatesPluginEvent.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug event 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/TraceLocationPluginEvent.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug event 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/TraceOpenedPluginEvent.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug event 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/TraceOpenedPluginEvent.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug event
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/TraceSelectionPluginEvent.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug event 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/event/TrackingChangedPluginEvent.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug event 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/gui/AbstractDebuggerMapProposalDialog.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug gui 
