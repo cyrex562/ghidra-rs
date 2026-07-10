@@ -12501,7 +12501,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainFold
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectAdapter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectAdapterDB.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectChangeSupport.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectDBChangeSet.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectDBChangeSet.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectDBTransaction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectFileListener.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectMergeManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
