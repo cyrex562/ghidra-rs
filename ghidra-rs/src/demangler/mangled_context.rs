@@ -97,7 +97,7 @@ mod tests {
             Some(address.clone()),
         );
 
-        assert_eq!(Program::get_name(&context.program().unwrap()), "test.bin");
+        assert_eq!(Program::get_name(&*context.program().unwrap()), "test.bin");
         assert_eq!(context.options(), &options);
         assert_eq!(context.mangled(), "_Z3fooi");
         assert_eq!(context.address().unwrap().offset(), address.offset());
@@ -129,7 +129,7 @@ mod tests {
         let cloned = context.clone();
 
         assert_eq!(cloned.mangled(), context.mangled());
-        assert_eq!(Program::get_name(&cloned.program().unwrap()), "cloned");
+        assert_eq!(Program::get_name(&*cloned.program().unwrap()), "cloned");
         assert_eq!(cloned.address().unwrap().offset(), 0x2000);
     }
 }

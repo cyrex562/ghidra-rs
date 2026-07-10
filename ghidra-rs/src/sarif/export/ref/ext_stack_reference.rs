@@ -276,7 +276,7 @@ mod tests {
             ref_type: RefType::Read,
             operand_index: 3,
             source: SourceType::UserDefined,
-            stack_offset: -0xdeadbeef,
+            stack_offset: 0xdeadbeefu32 as i32,
         };
         let ext_ref = ExtStackReference::new(&mock_ref);
 
@@ -284,6 +284,6 @@ mod tests {
         assert_eq!(ext_ref.index, RefType::Read.value().to_string());
         assert_eq!(ext_ref.op_index, 3);
         assert_eq!(ext_ref.source_type, SourceType::UserDefined.display_string());
-        assert_eq!(ext_ref.offset, -0xdeadbeef);
+        assert_eq!(ext_ref.offset, 0xdeadbeefu32 as i32);
     }
 }

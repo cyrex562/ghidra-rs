@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn evaluate_binary_i128_large_values() {
         let b = TestBinaryOp::new(1);
-        let large1: i128 = 0xffffffffffffffff0000000000000000i128;
+        let large1: i128 = 0xffffffffffffffff0000000000000000u128 as i128;
         let large2: i128 = 0x00000000000000000000000000000000i128;
         assert_eq!(b.evaluate_binary_i128(16, 16, large1, large2), 0);
     }

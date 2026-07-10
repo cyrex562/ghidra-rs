@@ -212,11 +212,11 @@ mod tests {
 
     #[test]
     fn big_endian_reads() {
-        let data = (0xABCDEF00i32).to_be_bytes().to_vec();
+        let data = (0xABCDEF00u32 as i32).to_be_bytes().to_vec();
         let mut r = MockReader::new(data);
         r.set_little_endian(false);
         let entry = SomDltEntry::new(&mut r).unwrap();
 
-        assert_eq!(entry.value(), 0xABCDEF00);
+        assert_eq!(entry.value(), 0xABCDEF00u32 as i32);
     }
 }

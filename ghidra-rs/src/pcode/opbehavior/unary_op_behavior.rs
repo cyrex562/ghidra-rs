@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn evaluate_unary_i128_large_value() {
         let b = TestUnaryOp::new(1);
-        let large: i128 = 0xffffffffffffffff0000000000000000i128;
+        let large: i128 = 0xffffffffffffffff0000000000000000u128 as i128;
         assert_eq!(b.evaluate_unary_i128(16, 16, large), -large);
     }
 

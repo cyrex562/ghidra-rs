@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn generate_name_with_large_index() {
         assert_eq!(generate_name(0x1000), "BPLIST_Index_1000");
-        assert_eq!(generate_name(0xffffffff), "BPLIST_Index_ffffffff");
+        assert_eq!(generate_name(0xffffffffu32 as i32), "BPLIST_Index_ffffffff");
     }
 
     #[test]
