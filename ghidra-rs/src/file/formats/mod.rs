@@ -4,6 +4,7 @@ pub mod cart;
 pub mod cramfs;
 pub mod dtb;
 pub mod dump;
+pub mod ext4;
 pub mod gzip;
 pub mod ios;
 pub mod java;
