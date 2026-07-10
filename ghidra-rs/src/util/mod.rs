@@ -126,7 +126,7 @@ pub use reversed_list_iterator::{ListIterator, ReversedListIterator};
 pub use signedness_format_mode::SignednessFormatMode;
 pub use string_format::StringFormat;
 pub use universal_id::UniversalID;
-pub use classfinder::{ClassFileInfo, ClassExclusionFilter, ClassFilter, ClassLocation};
+pub use classfinder::{ClassFileInfo, ClassExclusionFilter, ClassFilter, ClassLocation, ExtensionPoint};
 pub use map::{TypeMismatchException, ValueStoragePageIndex};
 pub use log_listener::LogListener;
 pub use log_panel_appender::LogPanelAppender;
