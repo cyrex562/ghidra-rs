@@ -96,3 +96,15 @@ pub trait FormatManager {}
 /// class is ported. `DataTypeArchiveService` only ever returns this type, so no members are
 /// needed yet.
 pub trait Archive {}
+
+/// Placeholder for `ghidra.app.nav.Navigatable`, referenced by
+/// [`MemorySearchService`](crate::app::services::MemorySearchService) before the real class is
+/// ported. `MemorySearchService` only ever passes this type through as a parameter, so no
+/// members are needed yet.
+pub trait Navigatable {}
+
+/// Placeholder for `ghidra.features.base.memsearch.gui.SearchSettings`, referenced by
+/// [`MemorySearchService`](crate::app::services::MemorySearchService) before the real class is
+/// ported. `MemorySearchService` only ever passes this type through as a parameter, so no
+/// members are needed yet.
+pub trait SearchSettings {}
