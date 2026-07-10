@@ -4,6 +4,7 @@ pub mod error;
 pub mod globalcontext;
 pub mod opcodes;
 pub mod sleigh;
+pub mod sleigh_base;
 pub mod slgh_compile;
 pub mod slghsymbol;
 pub mod space;
