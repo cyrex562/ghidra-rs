@@ -7,6 +7,7 @@ pub mod console_service;
 pub mod coordinated_listing_panel_listener;
 pub mod debugger_control_service;
 pub mod eclipse_integration_service;
+pub mod file_importer_service;
 pub mod function_comparison_service;
 pub mod go_to_service_listener;
 pub mod program_manager;
@@ -27,6 +28,7 @@ pub use debugger_control_service::{
     ControlModeChangeListener, DebuggerControlService, StateEditFuture, StateEditor,
 };
 pub use eclipse_integration_service::EclipseIntegrationService;
+pub use file_importer_service::FileImporterService;
 pub use function_comparison_service::FunctionComparisonService;
 pub use go_to_service_listener::GoToServiceListener;
 pub use program_manager::{ProgramManager, OPEN_CURRENT, OPEN_HIDDEN, OPEN_VISIBLE};
