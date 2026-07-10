@@ -169,7 +169,7 @@ DONE	interface	101	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/
 TODO	interface	101	159	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeArithmetic.java
 DONE	interface	101	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolConnection.java
 DONE	interface	101	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolManager.java
-TODO	interface	100	2	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerPlatformService.java
+DONE	interface	100	2	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerPlatformService.java
 TODO	interface	100	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ProgramTreeService.java
 DONE	interface	100	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/VSCodeIntegrationService.java
 DONE	interface	100	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Workspace.java
