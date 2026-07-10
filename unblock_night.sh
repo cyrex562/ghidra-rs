@@ -138,6 +138,12 @@ fi
 if [ "$PUSH" = "1" ] && [ $((ported+reconciled)) -gt 0 ]; then
   git push "$PUSH_REMOTE" "$INTEGRATION" >/dev/null 2>&1 && log "pushed $PUSH_REMOTE/$INTEGRATION" || log "push FAILED (non-fatal)"
 fi
+# test-health: report test-crate compile drift (visibility so it can't silently rot for days again)
+if [ "$ported" -gt 0 ]; then
+  terr=$(timeout "$BUILD_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error' || true)
+  printf '%s\t%s\n' "${terr:-?}" "$(date +%s)" > test_health.txt 2>/dev/null || true
+  [ "${terr:-0}" -gt 0 ] && log "WARNING: test crate has ${terr} compile errors (drift) -- run a repair sweep soon" || log "test-health OK"
+fi
 "$PY" scripts/dep_stats.py >/dev/null 2>&1 || true
 line="[$(date '+%Y-%m-%d %H:%M')] unblock run: +${ported} blockers, ${reconciled} reconciled, ${parked} parked${ROLLED_BACK:+ (ROLLED BACK: test regression)}  (DONE $(grep -c $'\tDONE\t' "$MANIFEST"))"
 echo "$line" | tee -a "$LOG_DIR/port-summary.log"

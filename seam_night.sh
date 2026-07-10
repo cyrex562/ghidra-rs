@@ -149,6 +149,18 @@ git checkout -f "$INTEGRATION" >/dev/null 2>&1 || true
 if [ "$PUSH" = "1" ] && [ $((ported+reconciled)) -gt 0 ]; then
   git push "$PUSH_REMOTE" "$INTEGRATION" >/dev/null 2>&1 && log "pushed $PUSH_REMOTE/$INTEGRATION" || log "push FAILED (non-fatal; check SSH under cron)"
 fi
+# test-health: report test-crate compile drift so it can never silently rot for days again
+# (the seam campaign left 816 test-compile errors undetected because gates only ran build --lib).
+if [ "$ported" -gt 0 ]; then
+  terr=$(timeout "$BUILD_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error' || true)
+  printf '%s\t%s\n' "${terr:-?}" "$(date +%s)" > test_health.txt 2>/dev/null || true
+  if [ "${terr:-0}" -gt 0 ]; then
+    log "WARNING: test crate has ${terr} compile errors (drift accumulating) -- run a repair sweep soon"
+    command -v notify-send >/dev/null 2>&1 && notify-send "ghidra-rs test drift" "test crate: ${terr} compile errors" 2>/dev/null || true
+  else
+    log "test-health OK: test crate compiles clean"
+  fi
+fi
 "$PY" scripts/dep_stats.py >/dev/null 2>&1 || true
 line="[$(date '+%Y-%m-%d %H:%M')] seam run: +${ported} traits, ${reconciled} reconciled, ${parked} parked  (DONE $(grep -c $'\tDONE\t' "$MANIFEST"))"
 echo "$line" | tee -a "$LOG_DIR/port-summary.log"
