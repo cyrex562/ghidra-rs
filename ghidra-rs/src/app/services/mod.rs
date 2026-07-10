@@ -9,6 +9,7 @@ pub mod coordinated_listing_panel_listener;
 pub mod data_type_archive_service;
 pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
+pub mod debugger_emulation_service;
 pub mod debugger_platform_service;
 pub mod debugger_target_service;
 pub mod eclipse_integration_service;
@@ -42,6 +43,10 @@ pub use data_type_archive_service::{DataTypeArchiveService, OpenArchiveError, Op
 pub use debugger_auto_mapping_service::DebuggerAutoMappingService;
 pub use debugger_control_service::{
     ControlModeChangeListener, DebuggerControlService, StateEditFuture, StateEditor,
+};
+pub use debugger_emulation_service::{
+    CachedEmulator, DebuggerEmulationService, EmulateFuture, EmulationResult,
+    EmulatorStateListener, RecordEmulationResult, RunFuture,
 };
 pub use debugger_platform_service::DebuggerPlatformService;
 pub use debugger_target_service::DebuggerTargetService;
