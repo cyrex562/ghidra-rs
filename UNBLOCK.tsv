@@ -2,7 +2,7 @@ status	unblk	rem	kind	module	path
 DONE	42	1	interface	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/Recognizer.java
 DONE	41	2	class	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Msg.java
 DONE	10	1	interface	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ExtensionPoint.java
-TODO	10	3	class	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbByteReader.java
+DONE	10	3	class	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbByteReader.java
 TODO	8	2	class	docking	Ghidra/Framework/Docking/src/main/java/docking/DefaultActionContext.java
 TODO	8	2	interface	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceObjectInterface.java
 TODO	8	2	class	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramBasedDynamicTableColumnExtensionPoint.java
