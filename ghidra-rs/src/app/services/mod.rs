@@ -6,6 +6,7 @@ pub mod bookmark_service;
 pub mod code_format_service;
 pub mod console_service;
 pub mod coordinated_listing_panel_listener;
+pub mod data_type_archive_service;
 pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
 pub mod debugger_platform_service;
@@ -33,6 +34,7 @@ pub use bookmark_service::BookmarkService;
 pub use code_format_service::CodeFormatService;
 pub use console_service::ConsoleService;
 pub use coordinated_listing_panel_listener::CoordinatedListingPanelListener;
+pub use data_type_archive_service::{DataTypeArchiveService, OpenArchiveError, OpenProjectArchiveError};
 pub use debugger_auto_mapping_service::DebuggerAutoMappingService;
 pub use debugger_control_service::{
     ControlModeChangeListener, DebuggerControlService, StateEditFuture, StateEditor,

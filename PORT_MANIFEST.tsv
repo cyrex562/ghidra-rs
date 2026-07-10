@@ -3545,7 +3545,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/CodeViewerServic
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ConsoleService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/CoordinatedListingPanelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/DataService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeArchiveService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeArchiveService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeManagerService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeQueryService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeReference.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
