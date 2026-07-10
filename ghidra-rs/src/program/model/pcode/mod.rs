@@ -1,4 +1,5 @@
 pub mod byte_ingest;
+pub mod cached_encoder;
 pub mod decoder;
 pub mod decoder_exception;
 pub mod encoder;
@@ -15,6 +16,7 @@ use std::fmt;
 use std::sync::Arc;
 
 pub use byte_ingest::ByteIngest;
+pub use cached_encoder::CachedEncoder;
 pub use decoder::{Decoder, DecoderError};
 pub use decoder_exception::DecoderException;
 pub use encoder::Encoder;
