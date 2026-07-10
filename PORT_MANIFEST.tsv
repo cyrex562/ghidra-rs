@@ -3540,7 +3540,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/BookmarkService.
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ButtonPressedListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ClipboardContentProviderService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ClipboardService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/CodeFormatService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/CodeFormatService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/CodeViewerService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ConsoleService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/CoordinatedListingPanelListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app services

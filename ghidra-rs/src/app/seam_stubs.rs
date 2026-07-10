@@ -85,3 +85,8 @@ pub trait Target {}
 /// is ported. `DebuggerTargetService` only ever passes this type through as a parameter, so no
 /// members are needed yet.
 pub trait TargetPublicationListener {}
+
+/// Placeholder for `ghidra.app.util.viewer.format.FormatManager`, referenced by
+/// [`CodeFormatService`](crate::app::services::CodeFormatService) before the real class is
+/// ported. `CodeFormatService` only ever returns this type, so no members are needed yet.
+pub trait FormatManager {}
