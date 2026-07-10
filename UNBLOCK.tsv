@@ -1,5 +1,5 @@
 status	unblk	rem	kind	module	path
-TODO	42	1	interface	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/Recognizer.java
+DONE	42	1	interface	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/Recognizer.java
 TODO	41	2	class	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Msg.java
 TODO	10	1	interface	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/classfinder/ExtensionPoint.java
 TODO	10	3	class	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbByteReader.java
