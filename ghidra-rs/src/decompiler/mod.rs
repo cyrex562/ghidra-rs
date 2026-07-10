@@ -6,6 +6,7 @@ pub mod opcodes;
 pub mod sleigh;
 pub mod sleigh_base;
 pub mod slgh_compile;
+pub mod slghpattern;
 pub mod slghsymbol;
 pub mod space;
 pub mod translate;
