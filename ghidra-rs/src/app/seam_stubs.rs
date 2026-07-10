@@ -73,3 +73,15 @@ pub trait DebuggerPlatformMapper {}
 /// class is ported. `DebuggerPlatformService` only ever passes this type through as a
 /// parameter, so no members are needed yet.
 pub trait TraceObject {}
+
+/// Placeholder for `ghidra.debug.api.target.Target`, referenced by
+/// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService) before the real class
+/// is ported. `DebuggerTargetService` only ever passes this type through as a
+/// parameter/return value, so no members are needed yet.
+pub trait Target {}
+
+/// Placeholder for `ghidra.debug.api.target.TargetPublicationListener`, referenced by
+/// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService) before the real class
+/// is ported. `DebuggerTargetService` only ever passes this type through as a parameter, so no
+/// members are needed yet.
+pub trait TargetPublicationListener {}
