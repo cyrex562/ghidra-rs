@@ -164,3 +164,54 @@ pub trait Task {
         monitor: &dyn crate::util::task::TaskMonitor,
     ) -> Result<(), crate::util::exception::CancelledException>;
 }
+
+/// Placeholder for `ghidra.debug.api.emulation.EmulatorFactory`, referenced by
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
+/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
+/// parameter/return value, so no members are needed yet.
+pub trait EmulatorFactory {}
+
+/// Placeholder for `ghidra.pcode.emu.PcodeMachine`, referenced by
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) and its nested
+/// `CachedEmulator` before the real class is ported. Java's `PcodeMachine<?>` wildcard is
+/// dropped, since this crate has no generic parameter to substitute yet.
+/// `DebuggerEmulationService` only ever passes this type through as a parameter/return value, so
+/// no members are needed yet.
+pub trait PcodeMachine {}
+
+/// Placeholder for `ghidra.trace.model.time.schedule.TraceSchedule`, referenced by
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
+/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
+/// parameter/return value, so no members are needed yet.
+pub trait TraceSchedule {}
+
+/// Placeholder for `ghidra.trace.model.time.schedule.Scheduler`, referenced by
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
+/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
+/// parameter, so no members are needed yet.
+pub trait Scheduler {}
+
+/// Placeholder for `ghidra.trace.model.guest.TracePlatform`, referenced by
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
+/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
+/// parameter, so no members are needed yet.
+pub trait TracePlatform {}
+
+/// Placeholder for `ghidra.pcode.exec.trace.TraceEmulationIntegration.Writer`, referenced by
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService)'s nested
+/// `CachedEmulator` before the real class is ported. `CachedEmulator` only ever stores and
+/// returns this type opaquely, so no members are needed yet.
+pub trait Writer {}
+
+/// Placeholder for `ghidra.trace.model.time.schedule.Scheduler.RunResult`, the base interface
+/// extended by `DebuggerEmulationService.EmulationResult` before the real `Scheduler` class is
+/// ported. Models the two accessors that `EmulationResult` and `RecordEmulationResult`
+/// (both in [`debugger_emulation_service`](crate::app::services::debugger_emulation_service))
+/// build on.
+pub trait RunResult {
+    /// Stands in for `RunResult.schedule()`.
+    fn schedule(&self) -> &dyn TraceSchedule;
+
+    /// Stands in for `RunResult.error()`.
+    fn error(&self) -> Option<&(dyn std::error::Error + Send + Sync)>;
+}
