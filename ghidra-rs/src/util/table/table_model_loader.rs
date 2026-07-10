@@ -39,7 +39,7 @@ mod tests {
     impl TableModelLoader<String> for SimpleLoader {
         fn load(
             &mut self,
-            accumulator: &mut dyn Accumulator<String>,
+            accumulator: &mut impl Accumulator<String>,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
             for item in self.data.drain(..) {
@@ -92,7 +92,7 @@ mod tests {
     impl TableModelLoader<String> for CancellingLoader {
         fn load(
             &mut self,
-            _accumulator: &mut dyn Accumulator<String>,
+            _accumulator: &mut impl Accumulator<String>,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
             Err(CancelledException::new("User cancelled"))

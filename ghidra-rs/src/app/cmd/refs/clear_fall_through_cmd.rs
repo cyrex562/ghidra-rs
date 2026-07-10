@@ -46,6 +46,7 @@ impl Command<dyn Program + 'static> for ClearFallThroughCmd {
 mod tests {
     use super::*;
     use std::sync::Arc;
+    use crate::util::TaskMonitor;
     use crate::program::model::listing::Instruction;
     use crate::framework::model::DomainObject;
     use crate::program::model::lang::ProcessorContextView;
@@ -413,7 +414,7 @@ mod tests {
     }
 
     struct MockListing {
-        instruction: Option<Arc<dyn Instruction>>,
+        instruction: Option<Arc<dyn Instruction + Send + Sync>>,
     }
 
     impl crate::program::model::listing::Listing for MockListing {
@@ -503,7 +504,9 @@ mod tests {
             unimplemented!("not needed for this smoke test")
         }
         fn get_instruction_at(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
-            self.instruction.clone()
+            self.instruction
+                .clone()
+                .map(|i| -> Arc<dyn crate::program::model::listing::instruction::Instruction> { i })
         }
         fn get_instruction_containing(&self, _addr: &crate::program::model::address::Address) -> Option<Arc<dyn crate::program::model::listing::instruction::Instruction>> {
             None

@@ -133,7 +133,7 @@ mod tests {
     #[allow(dead_code)]
     struct MockFunction {
         entry_point: Address,
-        return_type: Option<Box<dyn DataType>>,
+        return_type: Option<Box<dyn DataType + Send + Sync>>,
         return_type_source: Option<SourceType>,
         signature_source: Option<SourceType>,
         last_error: Option<String>,

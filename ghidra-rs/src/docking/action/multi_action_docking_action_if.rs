@@ -114,21 +114,33 @@ mod tests {
             None
         }
 
-        fn toolbar_data(&self) -> Option<Arc<dyn crate::docking::seam_stubs::ToolBarData>> {
+        fn tool_bar_data(&self) -> Option<Arc<dyn crate::docking::seam_stubs::ToolBarData>> {
             None
-        }
-
-        fn key_binding_type(&self) -> crate::docking::seam_stubs::KeyBindingType {
-            crate::docking::seam_stubs::KeyBindingType::Shared
         }
 
         fn key_binding_data(&self) -> Option<Arc<dyn crate::docking::seam_stubs::KeyBindingData>> {
             None
         }
 
-        fn set_key_binding_data(&mut self, _data: Option<Arc<dyn crate::docking::seam_stubs::KeyBindingData>>) {}
+        fn default_key_binding_data(&self) -> Option<Arc<dyn crate::docking::seam_stubs::KeyBindingData>> {
+            None
+        }
+
+        fn key_binding(&self) -> Option<Arc<dyn crate::docking::seam_stubs::KeyStroke>> {
+            None
+        }
+
+        fn full_name(&self) -> String {
+            format!("{} - {}", self.name(), self.owner())
+        }
+
+        fn action_performed(&mut self, _context: &dyn ActionContext) {}
 
         fn is_add_to_popup(&self, _context: &dyn ActionContext) -> bool {
+            true
+        }
+
+        fn is_valid_context(&self, _context: &dyn ActionContext) -> bool {
             true
         }
 
@@ -136,15 +148,53 @@ mod tests {
             true
         }
 
-        fn perform_action(&mut self, _context: &dyn ActionContext) {}
+        fn inception_information(&self) -> String {
+            "MockAction.java:1".to_string()
+        }
 
-        fn get_context_class(&self) -> Option<std::any::TypeId> {
+        fn create_button(&self) -> Option<Arc<dyn crate::docking::seam_stubs::JButton>> {
             None
         }
 
-        fn create_menu_component(&self, _is_button_style: bool) -> Arc<dyn crate::docking::seam_stubs::JMenuItem> {
+        fn create_menu_item(&self, _is_popup: bool) -> Arc<dyn crate::docking::seam_stubs::JMenuItem> {
             Arc::new(MockMenuComponent)
         }
+
+        fn create_menu_component(&self, _is_popup: bool) -> Arc<dyn crate::docking::seam_stubs::Component> {
+            struct MockComponent;
+            impl crate::docking::seam_stubs::Component for MockComponent {}
+            Arc::new(MockComponent)
+        }
+
+        fn should_add_to_window(&self, is_main_window: bool, _context_types: &std::collections::HashSet<std::any::TypeId>) -> bool {
+            is_main_window
+        }
+
+        fn key_binding_type(&self) -> Arc<dyn crate::docking::seam_stubs::KeyBindingType> {
+            struct Individual;
+            impl crate::docking::seam_stubs::KeyBindingType for Individual {}
+            Arc::new(Individual)
+        }
+
+        fn set_key_binding_data(&mut self, _data: Option<Arc<dyn crate::docking::seam_stubs::KeyBindingData>>) {}
+
+        fn set_unvalidated_key_binding_data(
+            &mut self,
+            _new_key_binding_data: Option<Arc<dyn crate::docking::seam_stubs::KeyBindingData>>,
+        ) {
+        }
+
+        fn dispose(&mut self) {}
+
+        fn context_class(&self) -> std::any::TypeId {
+            std::any::TypeId::of::<dyn ActionContext>()
+        }
+
+        fn supports_default_context(&self) -> bool {
+            false
+        }
+
+        fn set_context_class(&mut self, _context_type: std::any::TypeId, _supports_default_context: bool) {}
     }
 
     struct MockMenuComponent;

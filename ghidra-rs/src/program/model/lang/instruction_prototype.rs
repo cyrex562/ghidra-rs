@@ -497,7 +497,12 @@ mod tests {
             unimplemented!("not needed for this smoke test")
         }
 
-        fn get_parser_context(&self) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
+        fn get_parser_context(
+            &self,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::parser_context::ParserContext>,
+            MemoryAccessException,
+        > {
             unimplemented!("not needed for this smoke test")
         }
 
@@ -505,7 +510,7 @@ mod tests {
             &self,
             _instruction_address: Address,
         ) -> Result<
-            Box<dyn ParserContext>,
+            Box<dyn crate::program::model::lang::parser_context::ParserContext>,
             crate::program::model::lang::instruction_context::InstructionContextError,
         > {
             unimplemented!("not needed for this smoke test")

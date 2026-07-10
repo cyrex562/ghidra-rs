@@ -48,7 +48,7 @@ impl<T: Program + ?Sized> Command<T> for RenameTreeCmd {
 mod tests {
     use super::*;
     use std::sync::Arc;
-    use crate::util::exception::DuplicateNameException;
+    use crate::util::TaskMonitor;
 
     struct MockListing {
         renamed_trees: Arc<std::sync::Mutex<Vec<(String, String)>>>,

@@ -68,7 +68,7 @@ mod tests {
                 }
 
                 fn is_auto_parameter(&self) -> bool {
-                    $is_auto
+                    ($is_auto)(self)
                 }
 
                 fn get_data_type(&self) -> Box<dyn DataType> {
@@ -230,7 +230,7 @@ mod tests {
 
     struct MockVariable;
 
-    impl_mock_variable!(MockVariable, false, false);
+    impl_mock_variable!(MockVariable, false, |_v: &MockVariable| false);
 
     struct MockParameter {
         ordinal: i32,
@@ -238,7 +238,9 @@ mod tests {
         forced_indirect: bool,
     }
 
-    impl_mock_variable!(MockParameter, true, self.auto_parameter_type.is_some());
+    impl_mock_variable!(MockParameter, true, |v: &MockParameter| v
+        .auto_parameter_type
+        .is_some());
 
     impl Parameter for MockParameter {
         fn get_ordinal(&self) -> i32 {

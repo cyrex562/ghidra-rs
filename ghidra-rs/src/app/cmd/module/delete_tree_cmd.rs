@@ -34,6 +34,7 @@ impl<T: Program + ?Sized> Command<T> for DeleteTreeCmd {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::TaskMonitor;
     use std::sync::Arc;
 
     struct MockListing {
