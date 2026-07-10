@@ -49,3 +49,9 @@ pub trait ProgramLocation {}
 /// real class is ported. `DebuggerAutoMappingService` only ever passes this type through as a
 /// parameter/return value, so no members are needed yet.
 pub trait AutoMapSpec {}
+
+/// Placeholder for `ghidra.debug.api.tracermi.TraceRmiLaunchOffer`, referenced by
+/// [`TraceRmiLauncherService`](crate::app::services::TraceRmiLauncherService) before the real
+/// class is ported. `TraceRmiLauncherService` only ever returns this type, so no members are
+/// needed yet.
+pub trait TraceRmiLaunchOffer {}
