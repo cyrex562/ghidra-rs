@@ -178,7 +178,7 @@ TODO	interface	99	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/C
 TODO	interface	99	233	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeQueryService.java
 TODO	interface	99	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewManagerService.java
 DONE	interface	99	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/MsType.java
-TODO	interface	99	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/LinkedDomainFile.java
+DONE	interface	99	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/LinkedDomainFile.java
 TODO	interface	99	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectListener.java
 TODO	interface	99	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/TransactionListener.java
 DONE	interface	98	1	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerAutoMappingService.java
