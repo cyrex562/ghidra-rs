@@ -107,7 +107,10 @@ impl SleighLanguage {
 
         let mut all_spaces: Vec<Arc<AddressSpace>> = space_table.values().cloned().collect();
         all_spaces.sort_by_key(|s| s.space_id());
-        let address_factory = Arc::new(DefaultAddressFactory::new(all_spaces));
+        let address_factory = Arc::new(DefaultAddressFactory::with_default_space(
+            all_spaces,
+            default_space.clone(),
+        ));
         decoder.set_address_factory(address_factory.clone());
 
         let mut sleigh = Self {

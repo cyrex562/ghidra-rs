@@ -379,6 +379,18 @@ mod tests {
         pages: HashMap<i64, MemoryPage>,
     }
 
+    /// Create a page whose bytes are all uninitialized until explicitly written.
+    ///
+    /// A bank's never-written memory is uninitialized (mirroring Java's `MemoryBank`
+    /// subclasses); `MemoryPage::new` alone yields a fully-initialized page (no mask),
+    /// so we explicitly mark it uninitialized here.
+    #[allow(deprecated)]
+    fn new_uninitialized_page(pagesize: usize) -> MemoryPage {
+        let mut page = MemoryPage::new(pagesize);
+        page.set_uninitialized();
+        page
+    }
+
     #[allow(deprecated)]
     impl TestBank {
         fn new(
@@ -404,7 +416,7 @@ mod tests {
             let pagesize = self.state.page_size() as usize;
             self.pages
                 .entry(addr)
-                .or_insert_with(|| MemoryPage::new(pagesize))
+                .or_insert_with(|| new_uninitialized_page(pagesize))
         }
 
         fn set_page(&mut self, addr: i64, val: &[u8], skip: i32, size: i32, buf_offset: i32) {
@@ -412,7 +424,7 @@ mod tests {
             let page = self
                 .pages
                 .entry(addr)
-                .or_insert_with(|| MemoryPage::new(pagesize));
+                .or_insert_with(|| new_uninitialized_page(pagesize));
             let skip = skip as usize;
             let size = size as usize;
             let buf_offset = buf_offset as usize;
@@ -432,7 +444,7 @@ mod tests {
             let page = self
                 .pages
                 .entry(addr)
-                .or_insert_with(|| MemoryPage::new(pagesize));
+                .or_insert_with(|| new_uninitialized_page(pagesize));
             if initialized {
                 page.mark_initialized(skip as usize, size as usize);
             } else {

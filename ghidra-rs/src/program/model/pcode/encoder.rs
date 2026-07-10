@@ -212,7 +212,8 @@ mod tests {
         encoder.close_element(ELEM_DATA).unwrap();
 
         assert_eq!(encoder.depth, 0);
-        assert_eq!(encoder.writes.len(), 5);
+        // open + bool + unsigned int + space + opcode + close = 6 recorded writes.
+        assert_eq!(encoder.writes.len(), 6);
         assert_eq!(encoder.writes[0], "open:data");
         assert!(encoder.writes.contains(&"space:val=ram".to_string()));
     }

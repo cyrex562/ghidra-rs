@@ -30,7 +30,12 @@ impl ProfileConstants {
 
     /// Converts the byte array into String and trims it.
     pub fn to_string(bytes: &[u8]) -> String {
-        String::from_utf8_lossy(bytes).trim().to_string()
+        // Java's String.trim() strips all characters <= 0x20 (space), which
+        // includes the NUL terminator; Rust's str::trim() only strips Unicode
+        // whitespace, so replicate Java's behaviour explicitly.
+        String::from_utf8_lossy(bytes)
+            .trim_matches(|c: char| c <= ' ')
+            .to_string()
     }
 
     /// Checks if the reader contains a profile file signature.

@@ -182,7 +182,9 @@ mod tests {
 
         assert!(!filter.accept(&link_file));
         assert!(filter.accept(&plain_file));
-        assert!(filter.follow_externally_linked_folders());
+        // MockFilter uses default folder-filter behavior (ignore_external_links() == true),
+        // so external-linked folders are not followed.
+        assert!(!filter.follow_externally_linked_folders());
     }
 
     #[test]

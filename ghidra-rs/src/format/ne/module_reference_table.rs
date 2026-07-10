@@ -176,8 +176,11 @@ mod tests {
         data.extend_from_slice(&[0i16, 4, 8, 12].iter().flat_map(|&x| x.to_le_bytes()).collect::<Vec<_>>());
         data.extend_from_slice(&[0u8; 20]);
 
-        let reader = Box::new(MockReader::new(data));
-        let import_table = ImportedNameTable::new(Box::new(MockReader::new(vec![])), 0);
+        let reader = Box::new(MockReader::new(data.clone()));
+        // Imported name table shares the same buffer; names begin right after the
+        // 8-byte offset table. Offset 0 lands on a zero-length entry, so the name
+        // loop terminates immediately, leaving only the offsets to verify.
+        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 8);
 
         let table = ModuleReferenceTable::new(reader, 0, 4, &import_table).unwrap();
         assert_eq!(table.offsets(), &[0, 4, 8, 12]);
@@ -230,7 +233,9 @@ mod tests {
         data.extend_from_slice(b"test");
 
         let reader = Box::new(MockReader::new(data.clone()));
-        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 50);
+        // Names begin right after the 2-byte offset table at index 52; offset 0
+        // therefore resolves against import-table base 52.
+        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 52);
 
         let table = ModuleReferenceTable::new(reader, 50, 1, &import_table).unwrap();
         assert_eq!(table.offsets(), &[0]);
@@ -255,7 +260,9 @@ mod tests {
     #[test]
     fn multiple_modules() {
         let mut data = Vec::new();
-        data.extend_from_slice(&[0i16, 5, 10].iter().flat_map(|&x| x.to_le_bytes()).collect::<Vec<_>>());
+        // Names are packed after the 6-byte offset table (base 6): "dll" at rel 0,
+        // "sys" at rel 4, "so" at rel 8.
+        data.extend_from_slice(&[0i16, 4, 8].iter().flat_map(|&x| x.to_le_bytes()).collect::<Vec<_>>());
 
         data.push(3);
         data.extend_from_slice(b"dll");
@@ -267,10 +274,10 @@ mod tests {
         data.extend_from_slice(b"so");
 
         let reader = Box::new(MockReader::new(data.clone()));
-        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 0);
+        let import_table = ImportedNameTable::new(Box::new(MockReader::new(data)), 6);
 
         let table = ModuleReferenceTable::new(reader, 0, 3, &import_table).unwrap();
-        assert_eq!(table.offsets(), &[0, 5, 10]);
+        assert_eq!(table.offsets(), &[0, 4, 8]);
         assert_eq!(table.names().len(), 3);
         assert_eq!(table.names()[0].name(), Some("dll"));
         assert_eq!(table.names()[1].name(), Some("sys"));

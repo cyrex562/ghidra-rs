@@ -98,6 +98,8 @@ mod tests {
         cs.add_register_range(&addr1, &addr2);
         cs.add_register_range(&addr3, &addr4);
         let addr_set = cs.get_register_address_set();
-        assert_eq!(addr_set.num_address_ranges(), 2);
+        // The two ranges are adjacent (0x1005 and 0x1006 are consecutive), so the
+        // AddressSet coalesces them into a single combined range.
+        assert_eq!(addr_set.num_address_ranges(), 1);
     }
 }

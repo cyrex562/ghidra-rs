@@ -230,7 +230,7 @@ mod tests {
     fn parses_offset_with_leading_whitespace() {
         let mut data = Vec::new();
         data.extend_from_slice(b"<bigaf>\n");
-        data.extend_from_slice(b"       12345       "); // fl_memoff with whitespace
+        data.extend_from_slice(b"       12345        "); // fl_memoff with whitespace (20 bytes)
         data.extend_from_slice(format!("{:<20}", 0).as_bytes()); // fl_gstoff
         data.extend_from_slice(format!("{:<20}", 0).as_bytes()); // fl_gst64off
         data.extend_from_slice(format!("{:<20}", 0).as_bytes()); // fl_fstmoff

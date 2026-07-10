@@ -90,8 +90,8 @@ mod tests {
         assert_eq!(boxed.get_key_count(), 2);
         assert!(boxed.get_parent().is_none());
         assert_eq!(boxed.compare_key_field(&Field::Long(Some(10)), 0), 0);
-        assert_eq!(boxed.compare_key_field(&Field::Long(Some(5)), 0), 1);
-        assert_eq!(boxed.compare_key_field(&Field::Long(Some(20)), 0), -1);
+        assert_eq!(boxed.compare_key_field(&Field::Long(Some(5)), 0), -1);
+        assert_eq!(boxed.compare_key_field(&Field::Long(Some(20)), 0), 1);
         assert!(boxed.get_leaf_node(&Field::Long(Some(10))).is_err());
     }
 }

@@ -39,10 +39,10 @@ impl ExtModule {
             for child in children {
                 let child_name = child.get_name();
 
-                if let Some(module_child) = downcast_to_program_module(&*child) {
+                if let Some(module_child) = child.as_program_module() {
                     let ext_module = ExtModule::new(&child_name, module_child, visited);
                     modules.push(ext_module);
-                } else if let Some(fragment_child) = downcast_to_program_fragment(&*child) {
+                } else if let Some(fragment_child) = child.as_program_fragment() {
                     let ext_fragment = ExtFragment::new(fragment_child, visited);
                     fragments.push(ext_fragment);
                 }
@@ -59,18 +59,6 @@ impl ExtModule {
 }
 
 impl IsfObject for ExtModule {}
-
-fn downcast_to_program_module(group: &dyn Group) -> Option<&dyn ProgramModule> {
-    (group as &dyn std::any::Any)
-        .downcast_ref::<&dyn ProgramModule>()
-        .copied()
-}
-
-fn downcast_to_program_fragment(group: &dyn Group) -> Option<&dyn crate::program::model::listing::program_fragment::ProgramFragment> {
-    (group as &dyn std::any::Any)
-        .downcast_ref::<&dyn crate::program::model::listing::program_fragment::ProgramFragment>()
-        .copied()
-}
 
 #[cfg(test)]
 mod tests {
@@ -148,6 +136,10 @@ mod tests {
 
         fn get_max_address(&self) -> Option<Address> {
             None
+        }
+
+        fn as_program_fragment(&self) -> Option<&dyn ProgramFragment> {
+            Some(self)
         }
     }
 
@@ -328,6 +320,10 @@ mod tests {
         fn get_max_address(&self) -> Option<Address> {
             None
         }
+
+        fn as_program_module(&self) -> Option<&dyn ProgramModule> {
+            Some(self)
+        }
     }
 
     impl crate::program::model::address::AddressSetView for MockProgramModule {
@@ -460,11 +456,11 @@ mod tests {
 
         fn get_children(&self) -> Vec<Box<dyn Group>> {
             self.children.iter().map(|c| {
-                if let Some(module) = downcast_to_program_module(c.as_ref()) {
+                if let Some(_module) = c.as_program_module() {
                     let name = c.get_name();
                     let mock = MockProgramModule::new(&name);
                     Box::new(mock) as Box<dyn Group>
-                } else if let Some(_fragment) = downcast_to_program_fragment(c.as_ref()) {
+                } else if let Some(_fragment) = c.as_program_fragment() {
                     let name = c.get_name();
                     Box::new(MockProgramFragment::new(&name)) as Box<dyn Group>
                 } else {

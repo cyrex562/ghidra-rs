@@ -57,7 +57,7 @@ mod tests {
         fn get_address(&self) -> crate::program::model::address::Address {
             use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
-            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+            let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
             crate::program::model::address::Address::new(space, self.addr_offset)
         }
 

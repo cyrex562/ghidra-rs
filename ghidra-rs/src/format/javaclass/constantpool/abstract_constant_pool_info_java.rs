@@ -159,7 +159,8 @@ mod tests {
 
     #[test]
     fn new_captures_offset_before_reading() {
-        let data = vec![0x01u8];
+        let mut data = vec![0u8; 6];
+        data[5] = 0x01u8;
         let mut reader = MockReader::new(data);
         reader.set_pointer_index(5);
 
@@ -172,7 +173,8 @@ mod tests {
 
     #[test]
     fn get_offset_returns_stored_offset() {
-        let data = vec![0x03u8];
+        let mut data = vec![0u8; 101];
+        data[100] = 0x03u8;
         let mut reader = MockReader::new(data);
         reader.set_pointer_index(100);
 

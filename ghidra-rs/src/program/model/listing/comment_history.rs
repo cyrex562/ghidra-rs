@@ -146,7 +146,7 @@ mod tests {
         let text = history.to_string();
         assert!(text.contains("user: someone"));
         assert!(text.contains("address:"));
-        assert!(text.contains("comment: this comm..."));
+        assert!(text.contains("comment: this co..."));
     }
 
     #[test]

@@ -204,7 +204,7 @@ mod tests {
         let mut data = vec![0u8; 28];
 
         // Name with special characters
-        let name_bytes = b"large\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF";
+        let name_bytes = b"large\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF";
         data[0..16].copy_from_slice(&name_bytes[..16]);
 
         // Large values

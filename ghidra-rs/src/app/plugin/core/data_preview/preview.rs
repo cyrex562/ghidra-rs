@@ -29,8 +29,6 @@ pub trait Preview: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::any::Any;
-    use std::any::TypeId;
 
     struct MockMemory {
         big_endian: bool,
@@ -59,7 +57,11 @@ mod tests {
 
     struct MockDataType;
 
-    impl DataType for MockDataType {}
+    impl DataType for MockDataType {
+        fn get_name(&self) -> String {
+            "MockDataType".to_string()
+        }
+    }
 
     struct TestPreview {
         name: String,
@@ -120,7 +122,7 @@ mod tests {
         let preview: &'static TestPreview =
             Box::leak(Box::new(TestPreview { name: "Test".to_string() }));
         let data_type = preview.get_data_type();
-        assert_eq!(data_type.type_id(), TypeId::of::<MockDataType>());
+        assert_eq!(data_type.get_name(), "MockDataType");
     }
 
     fn create_test_address() -> Address {

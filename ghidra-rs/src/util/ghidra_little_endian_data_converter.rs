@@ -160,7 +160,7 @@ mod tests {
     #[test]
     fn get_long_buf_at_offset() {
         let buf = FixedMemBuffer {
-            bytes: vec![0xFF, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF],
+            bytes: vec![0xFF, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
         };
         assert_eq!(INSTANCE.get_long_buf(&buf, 1).unwrap(), 1);
     }

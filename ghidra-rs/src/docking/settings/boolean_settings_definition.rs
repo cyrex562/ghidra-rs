@@ -35,13 +35,13 @@ mod tests {
     use super::*;
 
     struct MockSettings {
-        boolean_values: std::cell::RefCell<std::collections::HashMap<String, bool>>,
+        string_values: std::collections::HashMap<String, String>,
     }
 
     impl MockSettings {
         fn new() -> Self {
             MockSettings {
-                boolean_values: std::cell::RefCell::new(std::collections::HashMap::new()),
+                string_values: std::collections::HashMap::new(),
             }
         }
     }
@@ -51,16 +51,18 @@ mod tests {
             None
         }
 
-        fn get_string(&self, _name: &str) -> Option<String> {
-            None
+        fn get_string(&self, name: &str) -> Option<String> {
+            self.string_values.get(name).cloned()
         }
 
         fn set_long(&mut self, _name: &str, _value: i64) {}
 
-        fn set_string(&mut self, _name: &str, _value: &str) {}
+        fn set_string(&mut self, name: &str, value: &str) {
+            self.string_values.insert(name.to_string(), value.to_string());
+        }
 
         fn is_empty(&self) -> bool {
-            self.boolean_values.borrow().is_empty()
+            self.string_values.is_empty()
         }
     }
 

@@ -382,7 +382,7 @@ impl PdbByteReader {
         let offset = self.index;
         let width = 1;
         let end = self.find_null_terminator_index(width);
-        self.index = end + width;
+        self.index = (end + width).min(self.limit);
         if end == offset {
             return String::new();
         }
@@ -395,7 +395,7 @@ impl PdbByteReader {
         let offset = self.index;
         let width = 1;
         let end = self.find_null_terminator_index(width);
-        self.index = end + width;
+        self.index = (end + width).min(self.limit);
         if end == offset {
             return String::new();
         }
@@ -409,7 +409,7 @@ impl PdbByteReader {
         let offset = self.index;
         let width = 2;
         let end = self.find_null_terminator_index(width);
-        self.index = end + width;
+        self.index = (end + width).min(self.limit);
         if end == offset {
             return String::new();
         }
@@ -535,19 +535,20 @@ impl PdbByteReader {
 
     /// Returns the index of the first character of the null terminator of any width.
     fn find_null_terminator_index(&self, width: usize) -> usize {
-        let mut count = 0;
+        // Scan in aligned `width`-byte units starting from the current index. A
+        // terminator is a unit whose bytes are all zero. Scanning by units (rather
+        // than counting consecutive zero bytes) avoids a false match that spans the
+        // zero high byte of a preceding ASCII character and the low byte of the
+        // real terminator when `width == 2`.
         let mut finder_index = self.index;
-        while finder_index < self.limit {
-            let b = self.bytes[finder_index];
-            finder_index += 1;
-            if b == 0x00 {
-                count += 1;
-                if count == width {
-                    return finder_index - width;
-                }
-            } else {
-                count = 0;
+        while finder_index + width <= self.limit {
+            if self.bytes[finder_index..finder_index + width]
+                .iter()
+                .all(|&b| b == 0x00)
+            {
+                return finder_index;
             }
+            finder_index += width;
         }
         self.limit
     }

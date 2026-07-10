@@ -165,9 +165,22 @@ mod tests {
     use crate::app::util::bin::struct_converter::ToDataTypeError;
     use crate::program::model::data::composite::Composite;
 
+    struct MockDataTypeComponent;
+    impl crate::program::model::data::data_type_component::DataTypeComponent for MockDataTypeComponent {}
+
     struct MockStructure;
     impl DataType for MockStructure {}
-    impl Composite for MockStructure {}
+    impl Composite for MockStructure {
+        fn add(
+            &mut self,
+            _data_type: Box<dyn DataType>,
+        ) -> Result<
+            Box<dyn crate::program::model::data::data_type_component::DataTypeComponent>,
+            String,
+        > {
+            Ok(Box::new(MockDataTypeComponent))
+        }
+    }
     impl Structure for MockStructure {}
 
     struct MockObject(&'static str);

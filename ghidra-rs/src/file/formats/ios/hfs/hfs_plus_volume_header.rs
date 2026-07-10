@@ -436,6 +436,10 @@ mod tests {
     fn probe_true_for_well_formed_volume() {
         let mut data = vec![0xAAu8; 1024];
         data.extend_from_slice(&valid_header_bytes(0x1000, 1));
+        // A well-formed volume with block_size 0x1000 and total_blocks 1 spans
+        // 0x1000 bytes, so the backing provider must be at least that large for
+        // has_good_volume_info to succeed.
+        data.resize(0x1000, 0);
         let mut reader = MockReader::new(data);
 
         assert!(HfsPlusVolumeHeader::probe(&mut reader));

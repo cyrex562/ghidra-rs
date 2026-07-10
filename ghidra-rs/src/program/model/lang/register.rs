@@ -554,7 +554,13 @@ impl Ord for Register {
     fn cmp(&self, other: &Self) -> Ordering {
         let my_base = self.get_base_register();
         let other_base = other.get_base_register();
-        let mut ordering = if *my_base.borrow() == *other_base.borrow() {
+        // Fast path: when both registers share the very same base register object
+        // (e.g. while sorting the children of a register whose RefCell is currently
+        // mutably borrowed), avoid borrowing the base cells at all — they are identical
+        // by construction, which would otherwise panic with "already mutably borrowed".
+        let same_base =
+            Rc::ptr_eq(&my_base, &other_base) || *my_base.borrow() == *other_base.borrow();
+        let mut ordering = if same_base {
             self.least_sig_bit_in_base_register
                 .cmp(&other.least_sig_bit_in_base_register)
         } else {

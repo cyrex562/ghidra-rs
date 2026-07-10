@@ -45,12 +45,12 @@ impl ListingDisplaySearchAddressIterator {
             }
         }
         else {
-            // don't add past the address range
+            // don't add past the address range: only step forward one address when the
+            // start is not already the maximum address of its space. Offsets are stored as
+            // i64 but represent unsigned values (the space max is -1 == u64::MAX), so compare
+            // by equality rather than signed ordering.
             let max_address = start_address.space().max_address();
-            let max_offset = max_address.offset();
-            let start_offset = start_address.offset();
-            let result = start_offset.wrapping_add(1);
-            if result > start_offset && result < max_offset {
+            if start_address.offset() != max_address.offset() {
                 if let Ok(address) = start_address.add(1) {
                     self.last_address = Some(address);
                 }

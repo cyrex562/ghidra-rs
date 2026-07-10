@@ -27,7 +27,7 @@ impl ExtExternalReference {
     /// information from the associated external location.
     pub fn new(reference: &dyn ExternalReference) -> Self {
         let reference_type = reference.reference_type();
-        let index = (reference_type.value() as u8).to_string();
+        let index = reference_type.value().to_string();
         let kind = reference_type.name().to_string();
         let op_index = reference.operand_index();
         let source_type = reference.source().display_string().to_string();
@@ -625,14 +625,15 @@ mod tests {
 
     impl ExternalReference for MockExternalReference {
         fn get_external_location(&self) -> Box<dyn ExternalLocation> {
+            let loc = &self.external_location;
             Box::new(MockExternalLocation {
-                has_data_type: false,
-                has_function: false,
-                label: String::new(),
-                parent_ns: None,
-                address: None,
-                ext_space_address: None,
-                original_imported_name: None,
+                has_data_type: loc.get_data_type().is_some(),
+                has_function: loc.get_function().is_some(),
+                label: loc.get_label(),
+                parent_ns: loc.get_parent_namespace(),
+                address: loc.get_address(),
+                ext_space_address: loc.get_external_space_address(),
+                original_imported_name: loc.get_original_imported_name(),
             })
         }
 

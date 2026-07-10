@@ -164,9 +164,14 @@ impl RegisterTree {
         None
     }
 
-    /// Removes the register from the children.
-    pub fn remove(&self, reg: &RegisterRef) {
-        let Some(tree) = self.get_register_tree(reg) else {
+    /// Removes the register's subtree from its parent within `this` tree.
+    ///
+    /// Takes the tree by shared `Rc` rather than `&self` so that no borrow of any node is
+    /// held across the mutation. This matters when the subtree's parent is the root node
+    /// itself: a `&self` method would still hold a shared borrow of that node while trying
+    /// to `borrow_mut()` it to edit its children, panicking with "already borrowed".
+    pub fn remove(this: &RegisterTreeRef, reg: &RegisterRef) {
+        let Some(tree) = this.borrow().get_register_tree(reg) else {
             return;
         };
         let Some(parent) = tree.borrow().parent() else {
@@ -336,7 +341,7 @@ mod tests {
         let tree = RegisterTree::new(&eax);
         assert_eq!(tree.borrow().get_components().len(), 1);
 
-        tree.borrow().remove(&ax);
+        RegisterTree::remove(&tree, &ax);
 
         assert_eq!(tree.borrow().get_components().len(), 0);
         assert!(tree.borrow().get_register_tree(&ax).is_none());
@@ -348,7 +353,7 @@ mod tests {
         let eax = Register::new("EAX", "", space.address(0x0), 4, false, Register::TYPE_NONE);
         let tree = RegisterTree::new(&eax);
 
-        tree.borrow().remove(&eax);
+        RegisterTree::remove(&tree, &eax);
         assert!(tree.borrow().get_register_tree(&eax).is_some());
     }
 

@@ -24,14 +24,22 @@ impl ExtMemoryReference {
     /// primary flag, and optionally base address and offset if the reference is an offset reference.
     pub fn new(reference: &dyn Reference) -> Self {
         let reference_type = reference.reference_type();
-        let index = (reference_type.value() as u8).to_string();
+        let index = reference_type.value().to_string();
         let kind = reference_type.name().to_string();
         let op_index = reference.operand_index();
         let source_type = reference.source().display_string().to_string();
         let to = reference.to_address().to_string();
         let primary = reference.is_primary();
 
-        let (base, offset) = (None, None);
+        let (base, offset) = if reference.is_offset_reference() {
+            if let Some(oref) = reference.as_offset_reference() {
+                (Some(oref.base_address().to_string()), Some(oref.offset()))
+            } else {
+                (None, None)
+            }
+        } else {
+            (None, None)
+        };
 
         Self {
             index,
@@ -220,6 +228,10 @@ mod tests {
 
         fn source(&self) -> SourceType {
             self.source
+        }
+
+        fn as_offset_reference(&self) -> Option<&dyn OffsetReference> {
+            Some(self)
         }
     }
 

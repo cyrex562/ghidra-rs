@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn skips_zero_length_ordinal() {
-        let mut data = vec![0];
+        let mut data = Vec::new();
         data.push(4);
         data.extend_from_slice(b"skip");
         data.extend_from_slice(&99i16.to_le_bytes());
@@ -264,7 +264,8 @@ mod tests {
         data.extend_from_slice(&0i16.to_le_bytes());
         data.push(6);
         data.extend_from_slice(b"second");
-        data.extend_from_slice(&0i16.to_le_bytes());
+        // Non-zero ordinal: only the first (ordinal-zero) entry supplies the title.
+        data.extend_from_slice(&1i16.to_le_bytes());
         data.push(0);
 
         let mut reader = MockReader::new(data);

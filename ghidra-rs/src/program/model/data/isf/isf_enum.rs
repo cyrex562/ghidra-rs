@@ -93,6 +93,10 @@ mod tests {
             use crate::program::model::data::category_path::CategoryPath;
             CategoryPath::parse(&self.category_path).unwrap()
         }
+
+        fn get_length(&self) -> i32 {
+            self.length
+        }
     }
 
     impl Enum for MockEnum {

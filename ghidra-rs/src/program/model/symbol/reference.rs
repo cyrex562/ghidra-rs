@@ -62,6 +62,14 @@ pub trait Reference: Send + Sync + Any {
 
     /// Returns a reference to self as Any for downcasting.
     fn as_any(&self) -> &dyn Any;
+
+    /// Returns this reference viewed as an [`OffsetReference`] when it is one.
+    ///
+    /// Mirrors Ghidra's `(OffsetReference) ref` cast. The default returns
+    /// `None`; offset references override it to return `Some(self)`.
+    fn as_offset_reference(&self) -> Option<&dyn crate::program::model::symbol::OffsetReference> {
+        None
+    }
 }
 
 /// Marker trait for dynamically determined references that may not be

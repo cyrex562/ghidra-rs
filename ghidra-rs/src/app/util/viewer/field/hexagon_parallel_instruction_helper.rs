@@ -596,10 +596,10 @@ mod tests {
 
         // Test mixed byte patterns with different bits
         let mut test_cases = vec![
-            (vec![0x12, 0x34], false),  // bits = 11, end of group
-            (vec![0x12, 0x3C], false),  // bits = 11, end of group
-            (vec![0x12, 0x3F], true),   // bits = 11, end of group
-            (vec![0x12, 0x05], true),   // bits = 00, end of group
+            (vec![0x12, 0x34], true),   // bits[7:6] = 00, end of group
+            (vec![0x12, 0x3C], true),   // bits[7:6] = 00, end of group
+            (vec![0x12, 0x3F], true),   // bits[7:6] = 00, end of group
+            (vec![0x12, 0x05], true),   // bits[7:6] = 00, end of group
             (vec![0x12, 0x45], false),  // bits = 01, not end of group
             (vec![0x12, 0x85], false),  // bits = 10, not end of group
         ];

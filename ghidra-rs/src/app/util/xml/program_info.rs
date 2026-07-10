@@ -174,7 +174,9 @@ mod tests {
         info.set_tool(Some("Ghidra 10.0".to_string()));
         assert_eq!(info.tool(), Some("Ghidra 10.0"));
         assert_eq!(info.normalized_external_tool_name(), None);
-        assert!(info.is_ghidra());
+        // A "Ghidra" tool normalizes to None, so is_ghidra() (which inspects the
+        // normalized name, matching Java's ProgramInfo.isGhidra) is false.
+        assert!(!info.is_ghidra());
     }
 
     #[test]

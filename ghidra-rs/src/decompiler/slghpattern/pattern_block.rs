@@ -442,8 +442,8 @@ mod tests {
         let b = PatternBlock::new(0, 0x00ff_0000u32 as i32, 0x00bb_0000u32 as i32);
         let combined = a.intersect(&b);
         assert!(!combined.is_always_false());
-        assert_eq!(combined.get_mask(0, 8) as u32, 0xaa);
-        assert_eq!(combined.get_mask(8, 8) as u32, 0xbb);
+        assert_eq!(combined.get_value(0, 8) as u32, 0xaa);
+        assert_eq!(combined.get_value(8, 8) as u32, 0xbb);
     }
 
     #[test]
@@ -473,9 +473,9 @@ mod tests {
         let b = PatternBlock::new(0, 0x00ff_0000u32 as i32, 0x00bb_0000u32 as i32);
         let c = PatternBlock::new(0, 0x0000_ff00u32 as i32, 0x0000_cc00u32 as i32);
         let block = PatternBlock::from_and_list(&[a, b, c]);
-        assert_eq!(block.get_mask(0, 8) as u32, 0xaa);
-        assert_eq!(block.get_mask(8, 8) as u32, 0xbb);
-        assert_eq!(block.get_mask(16, 8) as u32, 0xcc);
+        assert_eq!(block.get_value(0, 8) as u32, 0xaa);
+        assert_eq!(block.get_value(8, 8) as u32, 0xbb);
+        assert_eq!(block.get_value(16, 8) as u32, 0xcc);
     }
 
     #[test]

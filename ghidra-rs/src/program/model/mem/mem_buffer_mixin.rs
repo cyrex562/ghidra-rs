@@ -188,7 +188,8 @@ mod tests {
     fn get_short_little_endian() {
         let mock = MockMemBuffer::little_endian(vec![0x12, 0x34]);
         let result = mock.get_short(0).unwrap();
-        assert_eq!(result, 0x1234i16);
+        // Little-endian: least-significant byte first, so [0x12, 0x34] -> 0x3412.
+        assert_eq!(result, 0x3412i16);
     }
 
     #[test]
@@ -202,7 +203,8 @@ mod tests {
     fn get_int_little_endian() {
         let mock = MockMemBuffer::little_endian(vec![0x12, 0x34, 0x56, 0x78]);
         let result = mock.get_int(0).unwrap();
-        assert_eq!(result, 0x12345678i32);
+        // Little-endian: [0x12, 0x34, 0x56, 0x78] -> 0x78563412.
+        assert_eq!(result, 0x78563412i32);
     }
 
     #[test]
@@ -218,7 +220,8 @@ mod tests {
             0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
         ]);
         let result = mock.get_long(0).unwrap();
-        assert_eq!(result, 0x123456789abcdef0i64);
+        // Little-endian: byte order reversed -> 0xf0debc9a78563412.
+        assert_eq!(result, 0xf0debc9a78563412u64 as i64);
     }
 
     #[test]

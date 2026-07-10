@@ -5,6 +5,10 @@ use std::sync::RwLock;
 pub struct MemoryBlockImpl {
     name: String,
     start: Address,
+    /// Logical size of the block in bytes. This is independent of whether the
+    /// block is initialized: an uninitialized block still occupies address space.
+    size: u64,
+    initialized: bool,
     data: RwLock<Vec<u8>>,
 }
 
@@ -13,6 +17,8 @@ impl MemoryBlockImpl {
         Self {
             name,
             start,
+            size,
+            initialized,
             data: RwLock::new(if initialized {
                 vec![0; size as usize]
             } else {
@@ -38,11 +44,11 @@ impl MemoryBlock for MemoryBlockImpl {
     }
 
     fn get_size(&self) -> u64 {
-        self.data.read().unwrap().len() as u64
+        self.size
     }
 
     fn is_initialized(&self) -> bool {
-        !self.data.read().unwrap().is_empty()
+        self.initialized
     }
 
     fn get_byte(&self, addr: &Address) -> Result<u8, MemoryAccessException> {

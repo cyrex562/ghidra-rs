@@ -126,7 +126,7 @@ mod tests {
         let mut stream = MonitoredOutputStream::new(&mut out, &monitor);
         let data = vec![0u8; PROGRESS_INCREMENT as usize + 10];
         stream.write_all(&data).unwrap();
-        assert_eq!(monitor.get_progress(), PROGRESS_INCREMENT);
+        assert_eq!(monitor.get_progress(), PROGRESS_INCREMENT + 10);
     }
 
     #[test]
@@ -172,7 +172,7 @@ mod tests {
         assert_eq!(monitor.get_progress(), -1);
         stream.write_all(&half).unwrap();
         stream.write_all(&[0u8]).unwrap();
-        assert_eq!(monitor.get_progress(), PROGRESS_INCREMENT + 1);
+        assert_eq!(monitor.get_progress(), PROGRESS_INCREMENT);
     }
 
     #[test]

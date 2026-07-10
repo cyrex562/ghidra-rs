@@ -22,7 +22,7 @@ impl ExtRegisterReference {
     /// and primary status from the given reference.
     pub fn new(reference: &dyn Reference) -> Self {
         let reference_type = reference.reference_type();
-        let index = (reference_type.value() as u8).to_string();
+        let index = reference_type.value().to_string();
         let kind = reference_type.name().to_string();
         let op_index = reference.operand_index();
         let source_type = reference.source().display_string().to_string();
