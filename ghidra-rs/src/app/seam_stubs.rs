@@ -4,9 +4,9 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
-/// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) before the
-/// real class is ported. `EclipseIntegrationService` only ever returns this type, so no members
-/// are needed yet.
+/// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
+/// [`VSCodeIntegrationService`](crate::app::services::VSCodeIntegrationService) before the
+/// real class is ported. Both services only ever return this type, so no members are needed yet.
 pub trait ToolOptions {}
 
 /// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
