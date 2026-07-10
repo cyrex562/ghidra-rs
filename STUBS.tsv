@@ -149,3 +149,4 @@ ts	stub_class	referenced_by
 2026-07-10T13:00:00Z	TracePlatform	DebuggerEmulationService
 2026-07-10T13:00:00Z	Writer	DebuggerEmulationService
 2026-07-10T13:00:00Z	RunResult	DebuggerEmulationService
+2026-07-10T13:15:00Z	GoToOverrideService	GoToService
