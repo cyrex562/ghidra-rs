@@ -4752,7 +4752,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/AddressAlignme
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/AlignedObjectBasedPreviewTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util query 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/ProgramLocationPreviewTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util query 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/query/TableService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util query 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/Recognizer.java	TODO	orig_src Ghidra Features Base src main java ghidra app util recognizer 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/Recognizer.java	DONE	orig_src Ghidra Features Base src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/RecognizerService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/task/OpenProgramRequest.java	TODO	orig_src Ghidra Features Base src main java ghidra app util task 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/task/OpenProgramTask.java	TODO	orig_src Ghidra Features Base src main java ghidra app util task 
