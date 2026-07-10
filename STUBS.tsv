@@ -139,3 +139,6 @@ ts	stub_class	referenced_by
 2026-07-10T00:00:00Z	MonitorReceiver	ProgressService
 2026-07-10T00:00:00Z	ProgressListener	ProgressService
 2026-07-10T00:00:00Z	Task	ProgressService
+2026-07-10T12:30:00Z	TraceRmiService	InternalTraceRmiService
+2026-07-10T12:30:00Z	DefaultTraceRmiAcceptor	InternalTraceRmiService
+2026-07-10T12:30:00Z	TraceRmiHandler	InternalTraceRmiService
