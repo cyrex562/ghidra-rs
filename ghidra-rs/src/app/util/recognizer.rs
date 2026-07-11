@@ -969,6 +969,37 @@ impl Recognizer for TarRecognizer {
     }
 }
 
+/// Recognizes UHARC or WinUHA compressed files by their magic header bytes: `UHA` followed by version byte.
+///
+/// UHARC files start with the signature "UHA" (0x55 0x48 0x41) followed by a version byte
+/// that can be 0x04, 0x05, or 0x06.
+///
+/// Port of `ghidra.app.util.recognizer.UharcRecognizer`.
+pub struct UharcRecognizer;
+
+impl Recognizer for UharcRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x55
+                && bytes[1] == 0x48
+                && bytes[2] == 0x41
+                && (bytes[3] == 0x04 || bytes[3] == 0x05 || bytes[3] == 0x06)
+            {
+                return Some("File appears to be a UHARC or WinUHA compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3746,6 +3777,107 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&tar_header),
             Some("File appears to be a TAR file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn uharc_recognizer_identifies_valid_header_version_04() {
+        let recognizer = UharcRecognizer;
+        let uharc_header = [0x55, 0x48, 0x41, 0x04];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&uharc_header),
+            Some("File appears to be a UHARC or WinUHA compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn uharc_recognizer_identifies_valid_header_version_05() {
+        let recognizer = UharcRecognizer;
+        let uharc_header = [0x55, 0x48, 0x41, 0x05];
+
+        assert_eq!(
+            recognizer.recognize(&uharc_header),
+            Some("File appears to be a UHARC or WinUHA compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn uharc_recognizer_identifies_valid_header_version_06() {
+        let recognizer = UharcRecognizer;
+        let uharc_header = [0x55, 0x48, 0x41, 0x06];
+
+        assert_eq!(
+            recognizer.recognize(&uharc_header),
+            Some("File appears to be a UHARC or WinUHA compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn uharc_recognizer_rejects_insufficient_bytes() {
+        let recognizer = UharcRecognizer;
+        let short_buffer = [0x55, 0x48, 0x41];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn uharc_recognizer_rejects_mismatched_magic() {
+        let recognizer = UharcRecognizer;
+        let wrong_magic = [0x55, 0x48, 0x42, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn uharc_recognizer_rejects_invalid_version_byte() {
+        let recognizer = UharcRecognizer;
+        let invalid_version = [0x55, 0x48, 0x41, 0x03];
+
+        assert_eq!(recognizer.recognize(&invalid_version), None);
+    }
+
+    #[test]
+    fn uharc_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = UharcRecognizer;
+        let wrong_first = [0x56, 0x48, 0x41, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn uharc_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = UharcRecognizer;
+        let wrong_second = [0x55, 0x49, 0x41, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn uharc_recognizer_works_with_extra_data() {
+        let recognizer = UharcRecognizer;
+        let uharc_with_data = [0x55, 0x48, 0x41, 0x04, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&uharc_with_data),
+            Some("File appears to be a UHARC or WinUHA compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn uharc_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(UharcRecognizer);
+        let uharc_header = [0x55, 0x48, 0x41, 0x05];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&uharc_header),
+            Some("File appears to be a UHARC or WinUHA compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
