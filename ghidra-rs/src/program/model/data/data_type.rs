@@ -464,6 +464,15 @@ pub trait DataType {
     fn is_pointer(&self) -> bool {
         false
     }
+
+    /// Stands in for `dt instanceof Composite ? (Composite) dt : null`, used by
+    /// [`CompositeTestUtils::dump`](crate::program::model::data::composite_test_utils::dump) to
+    /// recurse into a component's data type only when it is itself a composite.
+    fn into_composite(
+        self: Box<Self>,
+    ) -> Option<Box<dyn crate::program::model::data::composite::Composite>> {
+        None
+    }
 }
 
 /// Trivial fallback used by this trait's default methods where the Java interface has no
