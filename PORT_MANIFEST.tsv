@@ -8954,7 +8954,7 @@ orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/Fr
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/GzipRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/ISO9660Recognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/ImpRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer
-orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/JarRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
+orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/JarRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/LhaRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/MSWIMRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/MacromediaFlashRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
