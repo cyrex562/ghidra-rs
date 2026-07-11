@@ -4390,7 +4390,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugFixupElement.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugMisc.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugSymbolSelector.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugSymbolSelector.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/OMFAlignSym.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/OMFDirEntry.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/OMFDirHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
