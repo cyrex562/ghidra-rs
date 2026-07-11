@@ -936,6 +936,39 @@ impl Recognizer for SzipRecognizer {
     }
 }
 
+/// Recognizes TAR archive files by their magic header bytes: "ustar\0" at offset 257.
+///
+/// TAR files have the POSIX ustar magic signature located at byte offset 257 in the file header.
+/// The signature is 6 bytes: 0x75 0x73 0x74 0x61 0x72 0x00 ("ustar\0").
+///
+/// Port of `ghidra.app.util.recognizer.TarRecognizer`.
+pub struct TarRecognizer;
+
+impl Recognizer for TarRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        263
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[257] == 0x75
+                && bytes[258] == 0x73
+                && bytes[259] == 0x74
+                && bytes[260] == 0x61
+                && bytes[261] == 0x72
+                && bytes[262] == 0x00
+            {
+                return Some("File appears to be a TAR file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3552,6 +3585,167 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&szip_header),
             Some("File appears to be a szip compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn tar_recognizer_identifies_valid_header() {
+        let recognizer = TarRecognizer;
+        let mut tar_header = vec![0u8; 263];
+        tar_header[257] = 0x75;
+        tar_header[258] = 0x73;
+        tar_header[259] = 0x74;
+        tar_header[260] = 0x61;
+        tar_header[261] = 0x72;
+        tar_header[262] = 0x00;
+
+        assert_eq!(recognizer.number_of_bytes_required(), 263);
+        assert_eq!(
+            recognizer.recognize(&tar_header),
+            Some("File appears to be a TAR file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_insufficient_bytes() {
+        let recognizer = TarRecognizer;
+        let short_buffer = vec![0u8; 262];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_mismatched_magic() {
+        let recognizer = TarRecognizer;
+        let mut bad_header = vec![0u8; 263];
+        bad_header[257] = 0x75;
+        bad_header[258] = 0x73;
+        bad_header[259] = 0x74;
+        bad_header[260] = 0x61;
+        bad_header[261] = 0x72;
+        bad_header[262] = 0x01;
+
+        assert_eq!(recognizer.recognize(&bad_header), None);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_byte_257_mismatch() {
+        let recognizer = TarRecognizer;
+        let mut bad_header = vec![0u8; 263];
+        bad_header[257] = 0x74;
+        bad_header[258] = 0x73;
+        bad_header[259] = 0x74;
+        bad_header[260] = 0x61;
+        bad_header[261] = 0x72;
+        bad_header[262] = 0x00;
+
+        assert_eq!(recognizer.recognize(&bad_header), None);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_byte_258_mismatch() {
+        let recognizer = TarRecognizer;
+        let mut bad_header = vec![0u8; 263];
+        bad_header[257] = 0x75;
+        bad_header[258] = 0x72;
+        bad_header[259] = 0x74;
+        bad_header[260] = 0x61;
+        bad_header[261] = 0x72;
+        bad_header[262] = 0x00;
+
+        assert_eq!(recognizer.recognize(&bad_header), None);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_byte_259_mismatch() {
+        let recognizer = TarRecognizer;
+        let mut bad_header = vec![0u8; 263];
+        bad_header[257] = 0x75;
+        bad_header[258] = 0x73;
+        bad_header[259] = 0x73;
+        bad_header[260] = 0x61;
+        bad_header[261] = 0x72;
+        bad_header[262] = 0x00;
+
+        assert_eq!(recognizer.recognize(&bad_header), None);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_byte_260_mismatch() {
+        let recognizer = TarRecognizer;
+        let mut bad_header = vec![0u8; 263];
+        bad_header[257] = 0x75;
+        bad_header[258] = 0x73;
+        bad_header[259] = 0x74;
+        bad_header[260] = 0x62;
+        bad_header[261] = 0x72;
+        bad_header[262] = 0x00;
+
+        assert_eq!(recognizer.recognize(&bad_header), None);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_byte_261_mismatch() {
+        let recognizer = TarRecognizer;
+        let mut bad_header = vec![0u8; 263];
+        bad_header[257] = 0x75;
+        bad_header[258] = 0x73;
+        bad_header[259] = 0x74;
+        bad_header[260] = 0x61;
+        bad_header[261] = 0x73;
+        bad_header[262] = 0x00;
+
+        assert_eq!(recognizer.recognize(&bad_header), None);
+    }
+
+    #[test]
+    fn tar_recognizer_rejects_byte_262_mismatch() {
+        let recognizer = TarRecognizer;
+        let mut bad_header = vec![0u8; 263];
+        bad_header[257] = 0x75;
+        bad_header[258] = 0x73;
+        bad_header[259] = 0x74;
+        bad_header[260] = 0x61;
+        bad_header[261] = 0x72;
+        bad_header[262] = 0x01;
+
+        assert_eq!(recognizer.recognize(&bad_header), None);
+    }
+
+    #[test]
+    fn tar_recognizer_works_with_extra_data() {
+        let recognizer = TarRecognizer;
+        let mut tar_with_data = vec![0u8; 300];
+        tar_with_data[257] = 0x75;
+        tar_with_data[258] = 0x73;
+        tar_with_data[259] = 0x74;
+        tar_with_data[260] = 0x61;
+        tar_with_data[261] = 0x72;
+        tar_with_data[262] = 0x00;
+
+        assert_eq!(
+            recognizer.recognize(&tar_with_data),
+            Some("File appears to be a TAR file".to_string())
+        );
+    }
+
+    #[test]
+    fn tar_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(TarRecognizer);
+        let mut tar_header = vec![0u8; 263];
+        tar_header[257] = 0x75;
+        tar_header[258] = 0x73;
+        tar_header[259] = 0x74;
+        tar_header[260] = 0x61;
+        tar_header[261] = 0x72;
+        tar_header[262] = 0x00;
+
+        assert_eq!(recognizer.number_of_bytes_required(), 263);
+        assert_eq!(
+            recognizer.recognize(&tar_header),
+            Some("File appears to be a TAR file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
