@@ -85,6 +85,30 @@ impl Recognizer for ArjRecognizer {
     }
 }
 
+/// Recognizes BZIP2 compressed files by their magic header bytes: `0x42 0x5a 0x68`.
+///
+/// Port of `ghidra.app.util.recognizer.Bzip2Recognizer`.
+pub struct Bzip2Recognizer;
+
+impl Recognizer for Bzip2Recognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        3
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x42 && bytes[1] == 0x5a && bytes[2] == 0x68 {
+                return Some("File appears to be a BZIP2 compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,6 +248,59 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&arj_header),
             Some("File appears to be an ARJ compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn bzip2_recognizer_identifies_valid_header() {
+        let recognizer = Bzip2Recognizer;
+        let bzip2_header = [0x42, 0x5a, 0x68];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 3);
+        assert_eq!(
+            recognizer.recognize(&bzip2_header),
+            Some("File appears to be a BZIP2 compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn bzip2_recognizer_rejects_insufficient_bytes() {
+        let recognizer = Bzip2Recognizer;
+        let short_buffer = [0x42, 0x5a];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn bzip2_recognizer_rejects_mismatched_magic() {
+        let recognizer = Bzip2Recognizer;
+        let wrong_magic = [0x42, 0x5a, 0x69];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn bzip2_recognizer_works_with_extra_data() {
+        let recognizer = Bzip2Recognizer;
+        let bzip2_header_with_data = [0x42, 0x5a, 0x68, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&bzip2_header_with_data),
+            Some("File appears to be a BZIP2 compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn bzip2_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(Bzip2Recognizer);
+        let bzip2_header = [0x42, 0x5a, 0x68];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 3);
+        assert_eq!(
+            recognizer.recognize(&bzip2_header),
+            Some("File appears to be a BZIP2 compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
