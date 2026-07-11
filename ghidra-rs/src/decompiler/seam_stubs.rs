@@ -6,9 +6,9 @@
 /// PatternExpression` in Java).
 pub trait PatternExpression: Send + Sync {}
 
-/// Placeholder for `ghidra.pcodeCPort.slghpatexpress.TokenPattern`, needed by
-/// [`crate::decompiler::slghpatexpress::PatternValue::gen_pattern`].
-pub trait TokenPattern: Send + Sync {}
+/// Placeholder for `ghidra.pcodeCPort.slghpattern.Pattern`, needed by
+/// [`crate::decompiler::slghpatexpress::TokenPattern::get_pattern`].
+pub trait Pattern: Send + Sync {}
 
 /// Placeholder for `ghidra.pcodeCPort.slghsymbol.TripleSymbol`, needed by
 /// [`crate::decompiler::slghsymbol::SpecificSymbol`] as its supertype (`SpecificSymbol extends
