@@ -23,6 +23,7 @@ pub mod record_category;
 pub mod section_contribution;
 pub mod section_contribution_1400;
 pub mod section_contribution_200;
+pub mod section_contribution_400;
 pub mod segment_map_description;
 pub mod string_parse_type;
 pub mod symbol;
