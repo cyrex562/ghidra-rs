@@ -1,8 +1,10 @@
 pub mod ghidra_bundle_activator;
 pub mod osgi_exception;
+pub mod osgi_utils;
 
 pub use ghidra_bundle_activator::GhidraBundleActivator;
 pub use osgi_exception::OSGiException;
+pub use osgi_utils::{BundleCapability, BundleEventType, BundleRequirement, BundleState, OSGiUtils};
 
 /// Represents the OSGi bundle context. This is a marker type for the context in which
 /// a bundle operates. In the full OSGi framework, this would contain references to services,
