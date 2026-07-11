@@ -390,6 +390,58 @@ impl Recognizer for GzipRecognizer {
     }
 }
 
+/// Recognizes ISO 9660 CD images by their volume descriptor signature "CD01" at specific offsets.
+///
+/// ISO 9660 is the standard file system used on CD-ROMs. This recognizer checks for the
+/// volume descriptor signature at three possible offsets: 32769, 34817, and 36865 bytes.
+///
+/// Port of `ghidra.app.util.recognizer.ISO9660Recognizer`.
+pub struct Iso9660Recognizer;
+
+impl Recognizer for Iso9660Recognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        36870
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= 32774 {
+            if bytes[32769] == 0x43
+                && bytes[32770] == 0x44
+                && bytes[32771] == 0x30
+                && bytes[32772] == 0x30
+                && bytes[32773] == 0x31
+            {
+                return Some("File appears to be an ISO9660 (CD) image".to_string());
+            }
+        }
+        if bytes.len() >= 34822 {
+            if bytes[34817] == 0x43
+                && bytes[34818] == 0x44
+                && bytes[34819] == 0x30
+                && bytes[34820] == 0x30
+                && bytes[34821] == 0x31
+            {
+                return Some("File appears to be an ISO9660 (CD) image".to_string());
+            }
+        }
+        if bytes.len() >= 36870 {
+            if bytes[36865] == 0x43
+                && bytes[36866] == 0x44
+                && bytes[36867] == 0x30
+                && bytes[36868] == 0x30
+                && bytes[36869] == 0x31
+            {
+                return Some("File appears to be an ISO9660 (CD) image".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1288,6 +1340,111 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&gzip_header),
             Some("File appears to be a GZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn iso9660_recognizer_identifies_valid_header_at_first_offset() {
+        let recognizer = Iso9660Recognizer;
+        let mut buffer = vec![0u8; 32774];
+        buffer[32769] = 0x43;
+        buffer[32770] = 0x44;
+        buffer[32771] = 0x30;
+        buffer[32772] = 0x30;
+        buffer[32773] = 0x31;
+
+        assert_eq!(recognizer.number_of_bytes_required(), 36870);
+        assert_eq!(
+            recognizer.recognize(&buffer),
+            Some("File appears to be an ISO9660 (CD) image".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn iso9660_recognizer_identifies_valid_header_at_second_offset() {
+        let recognizer = Iso9660Recognizer;
+        let mut buffer = vec![0u8; 34822];
+        buffer[34817] = 0x43;
+        buffer[34818] = 0x44;
+        buffer[34819] = 0x30;
+        buffer[34820] = 0x30;
+        buffer[34821] = 0x31;
+
+        assert_eq!(
+            recognizer.recognize(&buffer),
+            Some("File appears to be an ISO9660 (CD) image".to_string())
+        );
+    }
+
+    #[test]
+    fn iso9660_recognizer_identifies_valid_header_at_third_offset() {
+        let recognizer = Iso9660Recognizer;
+        let mut buffer = vec![0u8; 36870];
+        buffer[36865] = 0x43;
+        buffer[36866] = 0x44;
+        buffer[36867] = 0x30;
+        buffer[36868] = 0x30;
+        buffer[36869] = 0x31;
+
+        assert_eq!(
+            recognizer.recognize(&buffer),
+            Some("File appears to be an ISO9660 (CD) image".to_string())
+        );
+    }
+
+    #[test]
+    fn iso9660_recognizer_rejects_insufficient_bytes_for_first_offset() {
+        let recognizer = Iso9660Recognizer;
+        let short_buffer = vec![0u8; 32773];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn iso9660_recognizer_rejects_mismatched_magic_at_first_offset() {
+        let recognizer = Iso9660Recognizer;
+        let mut buffer = vec![0u8; 32774];
+        buffer[32769] = 0x42;
+        buffer[32770] = 0x44;
+        buffer[32771] = 0x30;
+        buffer[32772] = 0x30;
+        buffer[32773] = 0x31;
+
+        assert_eq!(recognizer.recognize(&buffer), None);
+    }
+
+    #[test]
+    fn iso9660_recognizer_works_with_extra_data() {
+        let recognizer = Iso9660Recognizer;
+        let mut buffer = vec![0xffu8; 36870];
+        buffer[36865] = 0x43;
+        buffer[36866] = 0x44;
+        buffer[36867] = 0x30;
+        buffer[36868] = 0x30;
+        buffer[36869] = 0x31;
+
+        assert_eq!(
+            recognizer.recognize(&buffer),
+            Some("File appears to be an ISO9660 (CD) image".to_string())
+        );
+    }
+
+    #[test]
+    fn iso9660_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(Iso9660Recognizer);
+        let mut buffer = vec![0u8; 36870];
+        buffer[36865] = 0x43;
+        buffer[36866] = 0x44;
+        buffer[36867] = 0x30;
+        buffer[36868] = 0x30;
+        buffer[36869] = 0x31;
+
+        assert_eq!(recognizer.number_of_bytes_required(), 36870);
+        assert_eq!(
+            recognizer.recognize(&buffer),
+            Some("File appears to be an ISO9660 (CD) image".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
