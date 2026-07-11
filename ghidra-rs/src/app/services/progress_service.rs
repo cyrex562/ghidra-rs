@@ -103,12 +103,11 @@ pub trait ProgressService {
 mod tests {
     use super::*;
     use crate::util::exception::CancelledException;
-    use std::cell::RefCell;
     use std::sync::{Arc, Mutex};
 
     struct MockMonitor {
-        cancel_enabled: RefCell<bool>,
-        closed: RefCell<bool>,
+        cancel_enabled: Mutex<bool>,
+        closed: Mutex<bool>,
     }
 
     impl TaskMonitor for MockMonitor {
@@ -141,17 +140,17 @@ mod tests {
         fn add_cancelled_listener(&self, _listener: Box<dyn crate::util::task::CancelledListener>) {}
         fn remove_cancelled_listener(&self, _listener: &dyn crate::util::task::CancelledListener) {}
         fn set_cancel_enabled(&self, enabled: bool) {
-            *self.cancel_enabled.borrow_mut() = enabled;
+            *self.cancel_enabled.lock().unwrap() = enabled;
         }
         fn is_cancel_enabled(&self) -> bool {
-            *self.cancel_enabled.borrow()
+            *self.cancel_enabled.lock().unwrap()
         }
         fn clear_cancelled(&self) {}
     }
 
     impl CloseableTaskMonitor for MockMonitor {
         fn close(&self) {
-            *self.closed.borrow_mut() = true;
+            *self.closed.lock().unwrap() = true;
         }
         fn report_error(&self, _error: Box<dyn std::error::Error + Send + Sync>) {}
     }
@@ -182,8 +181,8 @@ mod tests {
     impl ProgressService for MockProgressService {
         fn publish_task(&self) -> Box<dyn CloseableTaskMonitor> {
             Box::new(MockMonitor {
-                cancel_enabled: RefCell::new(false),
-                closed: RefCell::new(false),
+                cancel_enabled: Mutex::new(false),
+                closed: Mutex::new(false),
             })
         }
 

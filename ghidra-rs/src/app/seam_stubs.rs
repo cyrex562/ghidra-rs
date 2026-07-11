@@ -183,7 +183,9 @@ pub trait PcodeMachine {}
 /// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
 /// class is ported. `DebuggerEmulationService` only ever passes this type through as a
 /// parameter/return value, so no members are needed yet.
-pub trait TraceSchedule {}
+// `Send` so an `EmulationResult` holding a `Box<dyn TraceSchedule>` can cross threads,
+// as required by the `+ Send` `RunFuture` (ports Java's `CompletableFuture<EmulationResult>`).
+pub trait TraceSchedule: Send {}
 
 /// Placeholder for `ghidra.trace.model.time.schedule.Scheduler`, referenced by
 /// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
@@ -208,7 +210,9 @@ pub trait Writer {}
 /// ported. Models the two accessors that `EmulationResult` and `RecordEmulationResult`
 /// (both in [`debugger_emulation_service`](crate::app::services::debugger_emulation_service))
 /// build on.
-pub trait RunResult {
+// `Send` so `dyn EmulationResult` (its subtrait) is `Send`, letting the `+ Send` `RunFuture`
+// carry a `Box<dyn EmulationResult>` across threads.
+pub trait RunResult: Send {
     /// Stands in for `RunResult.schedule()`.
     fn schedule(&self) -> &dyn TraceSchedule;
 
