@@ -4,6 +4,10 @@
 # Original Source
 /orig_src
 
+# Ghidra release used only to generate .sla test fixtures (see scripts/fixtures/).
+# Anchored to the exact dir -- do NOT use a bare/unanchored pattern here.
+/tools/ghidra-dist/
+
 # Backups and Debugging
 **/*.rs.bk
 *.pdb
