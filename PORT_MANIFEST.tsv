@@ -4613,7 +4613,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/ProgramExpo
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/ProgramTextOptions.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/ProgramTextWriter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/ReferenceLineDispenser.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/StringComparer.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/StringComparer.java	DONE	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/exporter/XmlExporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util exporter 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/headless/AnalyzeHeadless.java	TODO	orig_src Ghidra Features Base src main java ghidra app util headless 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/headless/GhidraScriptRunner.java	TODO	orig_src Ghidra Features Base src main java ghidra app util headless 
