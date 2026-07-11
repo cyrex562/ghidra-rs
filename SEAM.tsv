@@ -200,4 +200,4 @@ DONE	abstract	12	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	abstract	11	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SpecificSymbol.java
 DONE	abstract	11	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternEquation.java
 DONE	class	11	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstructTpl.java
-TODO	class	10	6	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/VarnodeSymbol.java
+DONE	class	10	6	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/VarnodeSymbol.java
