@@ -99,7 +99,6 @@ ts	stub_class	referenced_by
 2026-07-08T21:00:00Z	PluginTool	ToolTemplate
 2026-07-08T21:00:00Z	Project	ToolTemplate
 2026-07-08T22:00:00Z	LanguageNotFoundException	LanguageProvider
-2026-07-08T23:00:00Z	LanguageService	VersionedLanguageService
 2026-07-08T23:30:00Z	RepositoryAdapter	ProjectManager
 2026-07-08T23:30:00Z	RepositoryServerAdapter	ProjectManager
 2026-07-08T23:30:00Z	ToolChest	ProjectManager
@@ -153,3 +152,5 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	TripleSymbol	SpecificSymbol
 2026-07-11T00:00:00Z	VarnodeTpl	SpecificSymbol
 2026-07-11T00:00:00Z	LocalFileSystem	ProjectData
+2026-07-11T00:00:00Z	LanguageCompilerSpecQuery	LanguageService
+2026-07-11T00:00:00Z	ExternalLanguageCompilerSpecQuery	LanguageService

@@ -6,6 +6,7 @@
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
+use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
@@ -352,11 +353,67 @@ impl fmt::Display for LanguageNotFoundException {
 
 impl std::error::Error for LanguageNotFoundException {}
 
-/// Placeholder for `ghidra.program.model.lang.LanguageService`, referenced by
-/// [`VersionedLanguageService`](crate::program::model::lang::versioned_language_service::VersionedLanguageService)
-/// (as a supertrait) before the real interface is ported. `VersionedLanguageService` does not
-/// itself rely on any `LanguageService` methods, so this is a marker with no members yet.
-pub trait LanguageService {}
+/// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecQuery`, referenced by
+/// [`LanguageService`](crate::program::model::lang::language_service::LanguageService)
+/// before the real class is ported. A `None` field mirrors a `null` Java field, meaning
+/// "don't care" for that criterion.
+pub struct LanguageCompilerSpecQuery {
+    pub processor: Option<Box<dyn Processor>>,
+    pub endian: Option<Endian>,
+    pub size: Option<i32>,
+    pub variant: Option<String>,
+    pub compiler_spec_id: Option<CompilerSpecID>,
+}
+
+impl LanguageCompilerSpecQuery {
+    /// Constructs a new `LanguageCompilerSpecQuery`.
+    pub fn new(
+        processor: Option<Box<dyn Processor>>,
+        endian: Option<Endian>,
+        size: Option<i32>,
+        variant: Option<String>,
+        compiler_spec_id: Option<CompilerSpecID>,
+    ) -> Self {
+        LanguageCompilerSpecQuery {
+            processor,
+            endian,
+            size,
+            variant,
+            compiler_spec_id,
+        }
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.ExternalLanguageCompilerSpecQuery`, referenced by
+/// [`LanguageService`](crate::program::model::lang::language_service::LanguageService)
+/// before the real class is ported. Analog to [`LanguageCompilerSpecQuery`], for querying
+/// external languages (e.g. IDA-Pro's "metapc").
+pub struct ExternalLanguageCompilerSpecQuery {
+    pub external_processor_name: Option<String>,
+    pub external_tool: Option<String>,
+    pub endian: Option<Endian>,
+    pub size: Option<i32>,
+    pub compiler_spec_id: Option<CompilerSpecID>,
+}
+
+impl ExternalLanguageCompilerSpecQuery {
+    /// Constructs a new `ExternalLanguageCompilerSpecQuery`.
+    pub fn new(
+        external_processor_name: Option<String>,
+        external_tool: Option<String>,
+        endian: Option<Endian>,
+        size: Option<i32>,
+        compiler_spec_id: Option<CompilerSpecID>,
+    ) -> Self {
+        ExternalLanguageCompilerSpecQuery {
+            external_processor_name,
+            external_tool,
+            endian,
+            size,
+            compiler_spec_id,
+        }
+    }
+}
 
 /// Placeholder for `ghidra.program.model.lang.PrototypePieces`, referenced by
 /// [`ParamList`](crate::program::model::lang::param_list::ParamList)
