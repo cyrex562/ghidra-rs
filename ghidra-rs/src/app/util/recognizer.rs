@@ -1082,6 +1082,32 @@ impl Recognizer for VhdRecognizer {
     }
 }
 
+/// Recognizes XAR compressed files by their magic header bytes: `0x78 0x61 0x72 0x21`.
+///
+/// The magic bytes are: `0x78 0x61 0x72 0x21` (which is "xar!").
+///
+/// Port of `ghidra.app.util.recognizer.XarRecognizer`.
+pub struct XarRecognizer;
+
+impl Recognizer for XarRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x78 && bytes[1] == 0x61 && bytes[2] == 0x72 && bytes[3] == 0x21 {
+                return Some("File appears to be a XAR compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 /// Recognizes XZ compressed files by their magic header bytes: `0xfd 0x37 0x7a 0x58 0x5a 0x00`.
 ///
 /// The magic bytes are: `0xfd 0x37 0x7a 0x58 0x5a 0x00` (which is "\xfd7zXZ\0").
@@ -4215,6 +4241,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&vhd_header),
             Some("File appears to be a Connectix VHD image".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn xar_recognizer_identifies_valid_header() {
+        let recognizer = XarRecognizer;
+        let xar_header = [0x78, 0x61, 0x72, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&xar_header),
+            Some("File appears to be a XAR compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn xar_recognizer_rejects_insufficient_bytes() {
+        let recognizer = XarRecognizer;
+        let short_buffer = [0x78, 0x61, 0x72];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn xar_recognizer_rejects_mismatched_magic() {
+        let recognizer = XarRecognizer;
+        let wrong_magic = [0x78, 0x61, 0x72, 0x22];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn xar_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = XarRecognizer;
+        let wrong_first = [0x79, 0x61, 0x72, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn xar_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = XarRecognizer;
+        let wrong_second = [0x78, 0x62, 0x72, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn xar_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = XarRecognizer;
+        let wrong_third = [0x78, 0x61, 0x73, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn xar_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = XarRecognizer;
+        let wrong_fourth = [0x78, 0x61, 0x72, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn xar_recognizer_works_with_extra_data() {
+        let recognizer = XarRecognizer;
+        let xar_with_data = [0x78, 0x61, 0x72, 0x21, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&xar_with_data),
+            Some("File appears to be a XAR compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn xar_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(XarRecognizer);
+        let xar_header = [0x78, 0x61, 0x72, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&xar_header),
+            Some("File appears to be a XAR compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
