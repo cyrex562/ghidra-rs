@@ -1024,6 +1024,30 @@ impl Recognizer for UnixCompressRecognizer {
     }
 }
 
+/// Recognizes UNIX Pack compressed files by their magic header bytes: `0x1f 0x1e 0x00`.
+///
+/// Port of `ghidra.app.util.recognizer.UnixPackRecognizer`.
+pub struct UnixPackRecognizer;
+
+impl Recognizer for UnixPackRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        3
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x1f && bytes[1] == 0x1e && bytes[2] == 0x00 {
+                return Some("File appears to be a UNIX Pack compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3971,6 +3995,83 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&unix_compress_header),
             Some("File appears to be a UNIX Compress compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn unix_pack_recognizer_identifies_valid_header() {
+        let recognizer = UnixPackRecognizer;
+        let unix_pack_header = [0x1f, 0x1e, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 3);
+        assert_eq!(
+            recognizer.recognize(&unix_pack_header),
+            Some("File appears to be a UNIX Pack compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn unix_pack_recognizer_rejects_insufficient_bytes() {
+        let recognizer = UnixPackRecognizer;
+        let short_buffer = [0x1f, 0x1e];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn unix_pack_recognizer_rejects_mismatched_magic() {
+        let recognizer = UnixPackRecognizer;
+        let wrong_magic = [0x1f, 0x1e, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn unix_pack_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = UnixPackRecognizer;
+        let wrong_first = [0x1e, 0x1e, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn unix_pack_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = UnixPackRecognizer;
+        let wrong_second = [0x1f, 0x1f, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn unix_pack_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = UnixPackRecognizer;
+        let wrong_third = [0x1f, 0x1e, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn unix_pack_recognizer_works_with_extra_data() {
+        let recognizer = UnixPackRecognizer;
+        let unix_pack_with_data = [0x1f, 0x1e, 0x00, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&unix_pack_with_data),
+            Some("File appears to be a UNIX Pack compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn unix_pack_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(UnixPackRecognizer);
+        let unix_pack_header = [0x1f, 0x1e, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 3);
+        assert_eq!(
+            recognizer.recognize(&unix_pack_header),
+            Some("File appears to be a UNIX Pack compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
