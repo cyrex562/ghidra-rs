@@ -12,6 +12,7 @@ pub mod category_path;
 pub mod component_offset_settings_definition;
 pub mod composite;
 pub mod composite_internal;
+pub mod composite_test_utils;
 pub mod custom_format;
 pub mod custom_organization;
 pub mod data_organization;

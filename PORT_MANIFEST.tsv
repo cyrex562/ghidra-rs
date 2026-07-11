@@ -14664,7 +14664,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/CategoryPathTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/CharDataTypesRenderTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/CharsetSettingsDefinitionTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/CompositeTestUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/CompositeTestUtils.java	DONE	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/DataOrganizationTestUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/DataTypeNameComparatorTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/test/java/ghidra/program/model/data/DataUtilitiesTest.java	TODO	orig_src Ghidra Framework SoftwareModeling src test java ghidra program model data 
