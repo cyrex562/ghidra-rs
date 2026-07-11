@@ -7,6 +7,7 @@ pub mod c13_file_record;
 pub mod c13_inlinee_source_line;
 pub mod c13_line_record;
 pub mod delimiter_state;
+pub mod dense_integer_array;
 pub mod frame_data_record;
 pub mod frame_pointer_omission_record;
 pub mod hasher;
