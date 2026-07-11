@@ -555,6 +555,32 @@ impl Recognizer for MswimRecognizer {
     }
 }
 
+/// Recognizes Macromedia Flash compressed files by their magic header bytes: `CWS`.
+///
+/// The magic bytes are: `0x43 0x57 0x53` (which is "CWS").
+///
+/// Port of `ghidra.app.util.recognizer.MacromediaFlashRecognizer`.
+pub struct MacromediaFlashRecognizer;
+
+impl Recognizer for MacromediaFlashRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        3
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x43 && bytes[1] == 0x57 && bytes[2] == 0x53 {
+                return Some("File appears to be a Macromedia Flash compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1928,6 +1954,83 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&mswim_header),
             Some("File appears to be a Windows Imaging Format (WIM) file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_identifies_valid_header() {
+        let recognizer = MacromediaFlashRecognizer;
+        let flash_header = [0x43, 0x57, 0x53];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 3);
+        assert_eq!(
+            recognizer.recognize(&flash_header),
+            Some("File appears to be a Macromedia Flash compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_rejects_insufficient_bytes() {
+        let recognizer = MacromediaFlashRecognizer;
+        let short_buffer = [0x43, 0x57];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_rejects_mismatched_magic() {
+        let recognizer = MacromediaFlashRecognizer;
+        let wrong_magic = [0x43, 0x57, 0x54];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = MacromediaFlashRecognizer;
+        let wrong_first = [0x42, 0x57, 0x53];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = MacromediaFlashRecognizer;
+        let wrong_second = [0x43, 0x58, 0x53];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = MacromediaFlashRecognizer;
+        let wrong_third = [0x43, 0x57, 0x52];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_works_with_extra_data() {
+        let recognizer = MacromediaFlashRecognizer;
+        let flash_with_data = [0x43, 0x57, 0x53, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&flash_with_data),
+            Some("File appears to be a Macromedia Flash compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn macromedia_flash_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(MacromediaFlashRecognizer);
+        let flash_header = [0x43, 0x57, 0x53];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 3);
+        assert_eq!(
+            recognizer.recognize(&flash_header),
+            Some("File appears to be a Macromedia Flash compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
