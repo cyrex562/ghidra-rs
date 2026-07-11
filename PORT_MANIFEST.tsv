@@ -4383,7 +4383,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCOFFSymbolsHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCodeView.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCodeViewConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCodeViewSymbolTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCodeViewSymbolTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugDirectoryParser.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugFixup.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe debug 
