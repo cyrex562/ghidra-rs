@@ -607,6 +607,35 @@ impl Recognizer for PakArcRecognizer {
     }
 }
 
+/// Recognizes PKZIP, WINZIP, or JAR compressed files by their magic header bytes:
+/// `0x50 0x4b 0x03 0x04`.
+///
+/// Port of `ghidra.app.util.recognizer.PkzipRecognizer`.
+pub struct PkzipRecognizer;
+
+impl Recognizer for PkzipRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x50
+                && bytes[1] == 0x4b
+                && bytes[2] == 0x03
+                && bytes[3] == 0x04
+            {
+                return Some("File appears to be a PKZIP, WINZIP, or JAR compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2140,6 +2169,83 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&pak_arc_header),
             Some("File appears to be a PAK or ARC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn pkzip_recognizer_identifies_valid_header() {
+        let recognizer = PkzipRecognizer;
+        let pkzip_header = [0x50, 0x4b, 0x03, 0x04];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&pkzip_header),
+            Some("File appears to be a PKZIP, WINZIP, or JAR compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn pkzip_recognizer_rejects_insufficient_bytes() {
+        let recognizer = PkzipRecognizer;
+        let short_buffer = [0x50, 0x4b, 0x03];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn pkzip_recognizer_rejects_mismatched_magic() {
+        let recognizer = PkzipRecognizer;
+        let wrong_magic = [0x50, 0x4b, 0x03, 0x05];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn pkzip_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = PkzipRecognizer;
+        let wrong_first = [0x51, 0x4b, 0x03, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn pkzip_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = PkzipRecognizer;
+        let wrong_second = [0x50, 0x4c, 0x03, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn pkzip_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = PkzipRecognizer;
+        let wrong_third = [0x50, 0x4b, 0x02, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn pkzip_recognizer_works_with_extra_data() {
+        let recognizer = PkzipRecognizer;
+        let pkzip_with_data = [0x50, 0x4b, 0x03, 0x04, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&pkzip_with_data),
+            Some("File appears to be a PKZIP, WINZIP, or JAR compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn pkzip_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(PkzipRecognizer);
+        let pkzip_header = [0x50, 0x4b, 0x03, 0x04];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&pkzip_header),
+            Some("File appears to be a PKZIP, WINZIP, or JAR compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
