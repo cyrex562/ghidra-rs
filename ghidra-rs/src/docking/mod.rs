@@ -8,6 +8,7 @@ pub mod menu;
 pub mod options;
 pub mod seam_stubs;
 pub mod settings;
+pub mod spy;
 pub mod theme;
 pub mod util;
 pub mod widgets;
