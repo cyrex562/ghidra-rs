@@ -248,3 +248,14 @@ pub trait RunResult: Send {
 /// `GoToService` only ever passes this type through as a parameter/return value, so no members
 /// are needed yet.
 pub trait GoToOverrideService {}
+
+/// Placeholder for `ghidra.service.graph.GraphDisplayProvider`, referenced by
+/// [`GraphDisplayBroker`](crate::app::services::GraphDisplayBroker) before the real class is
+/// ported. `GraphDisplayBroker` only ever passes this type through as a parameter/return value,
+/// so no members are needed yet.
+pub trait GraphDisplayProvider {}
+
+/// Placeholder for `ghidra.service.graph.GraphDisplay`, referenced by
+/// [`GraphDisplayBroker`](crate::app::services::GraphDisplayBroker) before the real class is
+/// ported. `GraphDisplayBroker` only ever returns this type, so no members are needed yet.
+pub trait GraphDisplay {}
