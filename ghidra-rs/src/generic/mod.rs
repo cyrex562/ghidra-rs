@@ -16,6 +16,7 @@ pub mod constraint;
 pub mod hash;
 pub mod jar;
 pub mod lsh;
+pub mod random;
 pub mod stl;
 pub mod test;
 pub mod timer;
