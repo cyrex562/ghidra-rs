@@ -8939,7 +8939,7 @@ orig_src/Ghidra/Features/PyGhidra/src/main/py/tests/data/bad_plugin/BadPluginCla
 orig_src/Ghidra/Features/PyGhidra/src/main/py/tests/data/good_plugin/DummyTestRecognizer.java	TODO	orig_src Ghidra Features PyGhidra src main py tests data good_plugin 
 orig_src/Ghidra/Features/PyGhidra/src/test.slow/java/ghidra/pyghidra/PyGhidraPluginTest.java	TODO	orig_src Ghidra Features PyGhidra src test.slow java ghidra pyghidra 
 orig_src/Ghidra/Features/PyGhidra/src/test.slow/java/ghidra/pyghidra/PythonScriptInfoTest.java	TODO	orig_src Ghidra Features PyGhidra src test.slow java ghidra pyghidra 
-orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/AceRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
+orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/AceRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/ArjRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/Bzip2Recognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/CHMRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
