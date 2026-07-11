@@ -4,6 +4,7 @@ pub mod c13_column_record;
 pub mod c13_cross_scope_export;
 pub mod c13_cross_scope_import;
 pub mod c13_inlinee_source_line;
+pub mod c13_line_record;
 pub mod delimiter_state;
 pub mod frame_pointer_omission_record;
 pub mod hasher;
