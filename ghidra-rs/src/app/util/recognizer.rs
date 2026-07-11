@@ -109,6 +109,30 @@ impl Recognizer for Bzip2Recognizer {
     }
 }
 
+/// Recognizes Microsoft Compiled HTML (CHM) files by their magic header bytes: `ITSF`.
+///
+/// Port of `ghidra.app.util.recognizer.CHMRecognizer`.
+pub struct ChmRecognizer;
+
+impl Recognizer for ChmRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x49 && bytes[1] == 0x54 && bytes[2] == 0x53 && bytes[3] == 0x46 {
+                return Some("File appears to be a Microsoft Compiled HTML (CHM) file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -301,6 +325,63 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&bzip2_header),
             Some("File appears to be a BZIP2 compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn chm_recognizer_identifies_valid_header() {
+        let recognizer = ChmRecognizer;
+        let chm_header = [0x49, 0x54, 0x53, 0x46];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&chm_header),
+            Some("File appears to be a Microsoft Compiled HTML (CHM) file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn chm_recognizer_rejects_insufficient_bytes() {
+        let recognizer = ChmRecognizer;
+        let short_buffer = [0x49, 0x54, 0x53];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn chm_recognizer_rejects_mismatched_magic() {
+        let recognizer = ChmRecognizer;
+        let wrong_magic = [0x49, 0x54, 0x53, 0x46];
+
+        // Change the last byte to invalidate the magic
+        let mut modified = wrong_magic;
+        modified[3] = 0x47;
+
+        assert_eq!(recognizer.recognize(&modified), None);
+    }
+
+    #[test]
+    fn chm_recognizer_works_with_extra_data() {
+        let recognizer = ChmRecognizer;
+        let chm_header_with_data = [0x49, 0x54, 0x53, 0x46, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&chm_header_with_data),
+            Some("File appears to be a Microsoft Compiled HTML (CHM) file".to_string())
+        );
+    }
+
+    #[test]
+    fn chm_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(ChmRecognizer);
+        let chm_header = [0x49, 0x54, 0x53, 0x46];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&chm_header),
+            Some("File appears to be a Microsoft Compiled HTML (CHM) file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
