@@ -14538,7 +14538,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/service/graph/Gr
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/service/graph/VertexGraphActionContext.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra service graph 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/ANTLRUtil.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/AbstractSleighCompiler.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/AbstractSleighLexer.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/AbstractSleighLexer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/AbstractSleighParser.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/BailoutException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/BaseRecognizerOverride.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
