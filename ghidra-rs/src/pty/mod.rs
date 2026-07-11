@@ -1,4 +1,5 @@
 pub mod abstract_pty_test;
+pub mod local_process_pty_session;
 pub mod pty;
 pub mod pty_child;
 pub mod pty_endpoint;
@@ -8,6 +9,7 @@ pub mod shell_utils;
 pub mod stream_pumper;
 pub mod windows;
 
+pub use local_process_pty_session::LocalProcessPtySession;
 pub use pty::Pty;
 pub use pty_child::{Echo, PtyChild, TermMode};
 pub use pty_endpoint::PtyEndpoint;
