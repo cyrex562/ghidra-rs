@@ -6,6 +6,7 @@ pub mod c13_cross_scope_import;
 pub mod c13_inlinee_source_line;
 pub mod delimiter_state;
 pub mod frame_pointer_omission_record;
+pub mod hasher;
 pub mod id_ms_parsable;
 pub mod msf;
 pub mod pdb_byte_reader;
