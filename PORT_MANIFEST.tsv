@@ -7413,7 +7413,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashFragmentTable.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashInode.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashInodeTable.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashMetablock.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashMetablock.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashOtherInode.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashSuperBlock.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashSymlinkInode.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats squashfs 
