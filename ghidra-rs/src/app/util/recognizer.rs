@@ -684,6 +684,30 @@ impl Recognizer for RpmRecognizer {
     }
 }
 
+/// Recognizes RAR compressed files by their magic header bytes: `Rar!` (0x52 0x61 0x72 0x21).
+///
+/// Port of `ghidra.app.util.recognizer.RarRecognizer`.
+pub struct RarRecognizer;
+
+impl Recognizer for RarRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x52 && bytes[1] == 0x61 && bytes[2] == 0x72 && bytes[3] == 0x21 {
+                return Some("File appears to be a RAR compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2464,6 +2488,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&rpm_header),
             Some("File appears to be an RPM package".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn rar_recognizer_identifies_valid_header() {
+        let recognizer = RarRecognizer;
+        let rar_header = [0x52, 0x61, 0x72, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&rar_header),
+            Some("File appears to be a RAR compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn rar_recognizer_rejects_insufficient_bytes() {
+        let recognizer = RarRecognizer;
+        let short_buffer = [0x52, 0x61, 0x72];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn rar_recognizer_rejects_mismatched_magic() {
+        let recognizer = RarRecognizer;
+        let wrong_magic = [0x52, 0x61, 0x72, 0x22];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn rar_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = RarRecognizer;
+        let wrong_first = [0x53, 0x61, 0x72, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn rar_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = RarRecognizer;
+        let wrong_second = [0x52, 0x62, 0x72, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn rar_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = RarRecognizer;
+        let wrong_third = [0x52, 0x61, 0x73, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn rar_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = RarRecognizer;
+        let wrong_fourth = [0x52, 0x61, 0x72, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn rar_recognizer_works_with_extra_data() {
+        let recognizer = RarRecognizer;
+        let rar_with_data = [0x52, 0x61, 0x72, 0x21, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&rar_with_data),
+            Some("File appears to be a RAR compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn rar_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(RarRecognizer);
+        let rar_header = [0x52, 0x61, 0x72, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&rar_header),
+            Some("File appears to be a RAR compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
