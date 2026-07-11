@@ -95,6 +95,7 @@ impl ExtensionPoint for CompilerConstraint {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::DomainObject;
     use crate::program::model::lang::CompilerSpecID;
     use std::collections::HashMap;
 
@@ -102,6 +103,8 @@ mod tests {
         compiler: String,
         compiler_spec_id: Option<CompilerSpecID>,
     }
+
+    impl DomainObject for TestProgram {}
 
     impl Program for TestProgram {
         fn get_name(&self) -> String {

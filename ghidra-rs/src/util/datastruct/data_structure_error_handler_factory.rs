@@ -57,9 +57,9 @@ mod tests {
     #[test]
     fn test_create_listener_error_handler_returns_handler() {
         let handler = create_listener_error_handler();
-        assert!(!std::mem::discriminant(&handler) == std::mem::discriminant(
-            &Box::new(DefaultListenerErrorHandler) as &dyn std::any::Any
-        ) || true);
+        // Ensure the factory returned a usable handler.
+        let payload: Box<dyn Any + Send> = Box::new("check");
+        handler.handle_error(payload);
     }
 
     #[test]

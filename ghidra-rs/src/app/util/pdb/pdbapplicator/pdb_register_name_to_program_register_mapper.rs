@@ -66,11 +66,12 @@ impl PdbRegisterNameToProgramRegisterMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
+    use std::collections::HashSet;
+    use std::sync::{Arc, Mutex};
 
     struct MockProgram {
-        call_count: RefCell<usize>,
-        registers_to_return: HashMap<String, Option<RegisterRef>>,
+        call_count: Arc<Mutex<usize>>,
+        registers_to_return: HashSet<String>,
     }
 
     impl Program for MockProgram {
@@ -83,30 +84,24 @@ mod tests {
         }
 
         fn get_register(&self, name: &str) -> Option<RegisterRef> {
-            *self.call_count.borrow_mut() += 1;
-            self.registers_to_return.get(name).cloned()
+            *self.call_count.lock().unwrap() += 1;
+            // Register (Rc<RefCell<..>>) is not Send+Sync, so this mock cannot store
+            // real registers; it only records which names were registered and always
+            // reports them as not found, which matches every test's expectation.
+            let _ = self.registers_to_return.contains(name);
+            None
         }
     }
 
-    impl crate::framework::model::DomainObject for MockProgram {
-        fn get_domain_object_id(&self) -> i64 {
-            0
-        }
-
-        fn get_metadata(&self) -> String {
-            String::new()
-        }
-
-        fn set_metadata(&mut self, _metadata: String) {}
-    }
+    impl crate::framework::model::DomainObject for MockProgram {}
 
     #[test]
     fn test_direct_register_lookup_when_found() {
-        let mut registers_to_return = HashMap::new();
-        registers_to_return.insert("RAX".to_string(), None);
+        let mut registers_to_return = HashSet::new();
+        registers_to_return.insert("RAX".to_string());
 
         let program = Box::new(MockProgram {
-            call_count: RefCell::new(0),
+            call_count: Arc::new(Mutex::new(0)),
             registers_to_return,
         });
 
@@ -119,11 +114,11 @@ mod tests {
 
     #[test]
     fn test_mapped_register_lookup() {
-        let mut registers_to_return = HashMap::new();
-        registers_to_return.insert("RBP".to_string(), None);
+        let mut registers_to_return = HashSet::new();
+        registers_to_return.insert("RBP".to_string());
 
         let program = Box::new(MockProgram {
-            call_count: RefCell::new(0),
+            call_count: Arc::new(Mutex::new(0)),
             registers_to_return,
         });
 
@@ -137,8 +132,8 @@ mod tests {
     #[test]
     fn test_unmapped_register_not_found() {
         let program = Box::new(MockProgram {
-            call_count: RefCell::new(0),
-            registers_to_return: HashMap::new(),
+            call_count: Arc::new(Mutex::new(0)),
+            registers_to_return: HashSet::new(),
         });
 
         let mut mapper = PdbRegisterNameToProgramRegisterMapper::new(program);
@@ -149,11 +144,12 @@ mod tests {
 
     #[test]
     fn test_caching_prevents_duplicate_lookups() {
-        let mut registers_to_return = HashMap::new();
-        registers_to_return.insert("RAX".to_string(), None);
+        let mut registers_to_return = HashSet::new();
+        registers_to_return.insert("RAX".to_string());
 
+        let call_count = Arc::new(Mutex::new(0));
         let program = Box::new(MockProgram {
-            call_count: RefCell::new(0),
+            call_count: call_count.clone(),
             registers_to_return,
         });
 
@@ -163,14 +159,15 @@ mod tests {
         let _reg2 = mapper.get_register("RAX");
 
         // Should only call program.get_register once due to caching
-        assert_eq!(*program.call_count.borrow(), 1);
+        assert_eq!(*call_count.lock().unwrap(), 1);
     }
 
     #[test]
     fn test_cache_stores_none_results() {
+        let call_count = Arc::new(Mutex::new(0));
         let program = Box::new(MockProgram {
-            call_count: RefCell::new(0),
-            registers_to_return: HashMap::new(),
+            call_count: call_count.clone(),
+            registers_to_return: HashSet::new(),
         });
 
         let mut mapper = PdbRegisterNameToProgramRegisterMapper::new(program);
@@ -179,16 +176,17 @@ mod tests {
         let _reg2 = mapper.get_register("UNKNOWN");
 
         // Should only call program.get_register once, caching the None result
-        assert_eq!(*program.call_count.borrow(), 1);
+        assert_eq!(*call_count.lock().unwrap(), 1);
     }
 
     #[test]
     fn test_register_name_mapping_applied() {
-        let mut registers_to_return = HashMap::new();
-        registers_to_return.insert("RBP".to_string(), None);
+        let mut registers_to_return = HashSet::new();
+        registers_to_return.insert("RBP".to_string());
 
+        let call_count = Arc::new(Mutex::new(0));
         let program = Box::new(MockProgram {
-            call_count: RefCell::new(0),
+            call_count: call_count.clone(),
             registers_to_return,
         });
 
@@ -198,6 +196,6 @@ mod tests {
         mapper.get_register("fbp");
 
         // Verify the lookup happened (one call to program.get_register)
-        assert_eq!(*program.call_count.borrow(), 1);
+        assert_eq!(*call_count.lock().unwrap(), 1);
     }
 }

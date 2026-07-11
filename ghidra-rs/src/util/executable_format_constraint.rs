@@ -79,6 +79,8 @@ mod tests {
         }
     }
 
+    impl crate::framework::model::DomainObject for TestProgram {}
+
     #[test]
     fn is_satisfied_when_format_matches() {
         let program = TestProgram {
@@ -111,7 +113,8 @@ mod tests {
             executable_format: String::new(),
         };
         let mut constraint = ExecutableFormatConstraint::new();
-        let data = HashMap::new();
+        let mut data = HashMap::new();
+        data.insert("name".to_string(), String::new()); // load_constraint_data reads the "name" attr
         constraint.load_constraint_data(&ConstraintData::new(data));
 
         assert!(constraint.is_satisfied(&program));

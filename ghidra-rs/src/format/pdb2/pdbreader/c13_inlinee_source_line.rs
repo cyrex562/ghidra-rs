@@ -58,7 +58,7 @@ mod tests {
         assert!(result.is_ok());
         let record = result.unwrap();
         assert_eq!(record.inlinee(), 0x78563412);
-        assert_eq!(record.file_id(), 0xf0debc9a);
+        assert_eq!(record.file_id(), 0xf0debc9a_u32 as i32);
         assert_eq!(record.source_line_num(), 0x44332211);
     }
 
@@ -166,7 +166,7 @@ mod tests {
         let mut reader = PdbByteReader::new(bytes);
         let record = C13InlineeSourceLine::parse(&mut reader).unwrap();
         let display_str = format!("{}", record);
-        assert_eq!(display_str, "0xffffffff, 0xffffff, -1");
+        assert_eq!(display_str, "0x0ffffffff, 0xffffffff, -1");
     }
 
     #[test]

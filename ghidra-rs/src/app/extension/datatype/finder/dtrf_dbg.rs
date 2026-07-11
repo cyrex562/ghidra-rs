@@ -585,7 +585,7 @@ mod tests {
         let key_a_again = FunctionKey(Arc::clone(&a));
         let key_b = FunctionKey(Arc::clone(&b));
 
-        assert_eq!(key_a, key_a_again);
-        assert_ne!(key_a, key_b);
+        assert!(key_a == key_a_again);
+        assert!(key_a != key_b);
     }
 }

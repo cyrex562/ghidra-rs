@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn hash_with_empty_string() {
         let result = Hasher::hash("", 256).unwrap();
-        assert!(result.is_finite(), "hash of empty string should be valid");
+        assert!(result <= 0xffff, "hash of empty string should be valid");
     }
 
     #[test]

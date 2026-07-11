@@ -10,6 +10,7 @@ static MULTI_TAB_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\t{2,}").unwrap());
 /// Storage class for Strings identified by the String Searcher and their associated
 /// ngram scores. The scores, combined with the score thresholds, determine if this
 /// string passes or fails.
+#[derive(Debug)]
 pub struct StringAndScores {
     original_string: String,
     scored_string: String,
@@ -221,8 +222,8 @@ mod tests {
         let sas = StringAndScores::new("café", false);
         assert_eq!(sas.get_scored_string(), "caf");
         // The trailing non-ASCII char becomes a space, which is then
-        // trimmed away by normalize_spaces.
-        assert_eq!(sas.get_scored_string_length(), 4);
+        // trimmed away by normalize_spaces, leaving "caf" (length 3).
+        assert_eq!(sas.get_scored_string_length(), 3);
     }
 
     #[test]

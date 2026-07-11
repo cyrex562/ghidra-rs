@@ -82,11 +82,14 @@ impl ExtensionPoint for LanguageConstraint {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::DomainObject;
     use std::collections::HashMap;
 
     struct TestProgram {
         language_id: String,
     }
+
+    impl DomainObject for TestProgram {}
 
     impl Program for TestProgram {
         fn get_name(&self) -> String {
@@ -199,7 +202,8 @@ mod tests {
             language_id: String::new(),
         };
         let mut constraint = LanguageConstraint::new();
-        let data = HashMap::new();
+        let mut data = HashMap::new();
+        data.insert("id".to_string(), String::new()); // load_constraint_data reads the "id" attr
         constraint.load_constraint_data(&ConstraintData::new(data));
 
         assert!(constraint.is_satisfied(&program));

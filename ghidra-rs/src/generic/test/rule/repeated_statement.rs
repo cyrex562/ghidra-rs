@@ -92,11 +92,13 @@ mod tests {
     fn test_zero_count_rejected() {
         let closure = || Ok(());
         let result = RepeatedStatement::new(closure, "test".to_string(), 0);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "@Repeated count must be positive. To ignore a test. Use @Ignore"
-        );
+        match result {
+            Err(msg) => assert_eq!(
+                msg,
+                "@Repeated count must be positive. To ignore a test. Use @Ignore"
+            ),
+            Ok(_) => panic!("expected zero count to be rejected"),
+        }
     }
 
     #[test]

@@ -118,10 +118,12 @@ mod tests {
     #[test]
     fn mock_handler_implements_trait() {
         let handler = MockRelocationHandler;
-        assert!(handler.can_relocate(&mut (&MockProgram as &dyn Program)));
+        assert!(handler.can_relocate(&MockProgram));
     }
 
     struct MockProgram;
+
+    impl crate::framework::model::DomainObject for MockProgram {}
 
     impl Program for MockProgram {
         fn get_name(&self) -> String {

@@ -69,7 +69,9 @@ impl SquashDirectoryTableHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::exception::CancelledException;
     use std::cell::RefCell;
+    use std::io;
     use std::rc::Rc;
 
     struct TestProvider(Vec<u8>);
@@ -95,6 +97,25 @@ mod tests {
                 return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "index out of range"));
             }
             Ok(self.0[index as usize..index as usize + length].to_vec())
+        }
+
+        fn write_byte(&mut self, index: u64, value: u8) -> io::Result<()> {
+            match self.0.get_mut(index as usize) {
+                Some(slot) => {
+                    *slot = value;
+                    Ok(())
+                }
+                None => Err(io::Error::new(io::ErrorKind::UnexpectedEof, "index out of range")),
+            }
+        }
+
+        fn write_bytes(&mut self, index: u64, values: &[u8]) -> io::Result<()> {
+            let start = index as usize;
+            if start + values.len() > self.0.len() {
+                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "index out of range"));
+            }
+            self.0[start..start + values.len()].copy_from_slice(values);
+            Ok(())
         }
     }
 
@@ -129,6 +150,11 @@ mod tests {
         fn cancel(&self) {}
         fn add_cancelled_listener(&self, _listener: Box<dyn crate::util::task::CancelledListener>) {}
         fn remove_cancelled_listener(&self, _listener: &dyn crate::util::task::CancelledListener) {}
+        fn set_cancel_enabled(&self, _enabled: bool) {}
+        fn is_cancel_enabled(&self) -> bool {
+            true
+        }
+        fn clear_cancelled(&self) {}
     }
 
     #[test]
@@ -150,7 +176,7 @@ mod tests {
         data.extend_from_slice(b"test");
 
         let provider = TestProvider(data);
-        let mut reader = GBinaryReader::new(Rc::new(RefCell::new(provider)));
+        let mut reader = GBinaryReader::new(Rc::new(RefCell::new(provider)), true);
         let monitor = TestMonitor;
 
         let result = SquashDirectoryTableHeader::read(&mut reader, &monitor);
@@ -189,7 +215,7 @@ mod tests {
         data.extend_from_slice(b"def");
 
         let provider = TestProvider(data);
-        let mut reader = GBinaryReader::new(Rc::new(RefCell::new(provider)));
+        let mut reader = GBinaryReader::new(Rc::new(RefCell::new(provider)), true);
         let monitor = TestMonitor;
 
         let result = SquashDirectoryTableHeader::read(&mut reader, &monitor);
@@ -213,11 +239,11 @@ mod tests {
         data.extend_from_slice(&(10u16).to_le_bytes());
         data.extend_from_slice(&(1i16).to_le_bytes());
         data.extend_from_slice(&(4u16).to_le_bytes());
-        data.extend_from_slice(&(1u16).to_le_bytes());
+        data.extend_from_slice(&(0u16).to_le_bytes()); // nameSize = len-1, so 0 => 1-byte name "x"
         data.extend_from_slice(b"x");
 
         let provider = TestProvider(data);
-        let mut reader = GBinaryReader::new(Rc::new(RefCell::new(provider)));
+        let mut reader = GBinaryReader::new(Rc::new(RefCell::new(provider)), true);
         let monitor = TestMonitor;
 
         let header = SquashDirectoryTableHeader::read(&mut reader, &monitor).unwrap();
