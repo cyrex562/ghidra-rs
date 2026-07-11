@@ -756,6 +756,36 @@ impl Recognizer for SbxRecognizer {
     }
 }
 
+/// Recognizes 7-ZIP compressed files by their magic header bytes: `0x37 0x7a 0xbc 0xaf 0x27 0x1c`.
+///
+/// Port of `ghidra.app.util.recognizer.SevenZipRecognizer`.
+pub struct SevenZipRecognizer;
+
+impl Recognizer for SevenZipRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        6
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x37
+                && bytes[1] == 0x7a
+                && bytes[2] == 0xbc
+                && bytes[3] == 0xaf
+                && bytes[4] == 0x27
+                && bytes[5] == 0x1c
+            {
+                return Some("File appears to be a 7-ZIP compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2791,6 +2821,108 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&sbx_header),
             Some("File appears to be an SBX compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_identifies_valid_header() {
+        let recognizer = SevenZipRecognizer;
+        let seven_zip_header = [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 6);
+        assert_eq!(
+            recognizer.recognize(&seven_zip_header),
+            Some("File appears to be a 7-ZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_insufficient_bytes() {
+        let recognizer = SevenZipRecognizer;
+        let short_buffer = [0x37, 0x7a, 0xbc, 0xaf, 0x27];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_mismatched_magic() {
+        let recognizer = SevenZipRecognizer;
+        let wrong_magic = [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1d];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = SevenZipRecognizer;
+        let wrong_first = [0x36, 0x7a, 0xbc, 0xaf, 0x27, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = SevenZipRecognizer;
+        let wrong_second = [0x37, 0x7b, 0xbc, 0xaf, 0x27, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = SevenZipRecognizer;
+        let wrong_third = [0x37, 0x7a, 0xbd, 0xaf, 0x27, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = SevenZipRecognizer;
+        let wrong_fourth = [0x37, 0x7a, 0xbc, 0xae, 0x27, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_fifth_byte_mismatch() {
+        let recognizer = SevenZipRecognizer;
+        let wrong_fifth = [0x37, 0x7a, 0xbc, 0xaf, 0x26, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_fifth), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_rejects_sixth_byte_mismatch() {
+        let recognizer = SevenZipRecognizer;
+        let wrong_sixth = [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1d];
+
+        assert_eq!(recognizer.recognize(&wrong_sixth), None);
+    }
+
+    #[test]
+    fn seven_zip_recognizer_works_with_extra_data() {
+        let recognizer = SevenZipRecognizer;
+        let seven_zip_with_data =
+            [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&seven_zip_with_data),
+            Some("File appears to be a 7-ZIP compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn seven_zip_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(SevenZipRecognizer);
+        let seven_zip_header = [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 6);
+        assert_eq!(
+            recognizer.recognize(&seven_zip_header),
+            Some("File appears to be a 7-ZIP compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
