@@ -7433,7 +7433,7 @@ orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YA
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemBuiltin.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zip 
-orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zlib/ZLIB.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zlib 
+orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zlib/ZLIB.java	DONE	orig_src Ghidra Features FileFormats src main java ghidra file formats zlib 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/ZstdCliToolWrapper.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zstd 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/ZstdFileSystem.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zstd 
 orig_src/Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/ZstdFileSystemFactory.java	TODO	orig_src Ghidra Features FileFormats src main java ghidra file formats zstd 
