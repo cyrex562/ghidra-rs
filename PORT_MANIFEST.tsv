@@ -8775,7 +8775,7 @@ orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/Pdb
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbApplicatorOptions.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbPeHeaderInfoManager.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbPrimitiveTypeApplicator.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
-orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbRegisterNameToProgramRegisterMapper.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
+orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbRegisterNameToProgramRegisterMapper.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbResearch.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbSourceLinesApplicator.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/pdb/pdbapplicator/PdbVbtManager.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util pdb pdbapplicator 
