@@ -840,6 +840,40 @@ impl Recognizer for SqzRecognizer {
     }
 }
 
+/// Recognizes Stuffit1 compressed files by their magic header bytes: `SIT!`.
+///
+/// Recognizes Stuffit versions up to v4.0. The magic bytes are: `0x53 0x49 0x54 0x21`
+/// (which is "SIT!").
+///
+/// Port of `ghidra.app.util.recognizer.StuffIt1Recognizer`.
+pub struct StuffIt1Recognizer;
+
+impl Recognizer for StuffIt1Recognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x53
+                && bytes[1] == 0x49
+                && bytes[2] == 0x54
+                && bytes[3] == 0x21
+            {
+                return Some(
+                    "File appears to be a Stuffit1 (Stuffit versions up to v4.0) compressed file"
+                        .to_string(),
+                );
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3163,6 +3197,94 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&sqz_header),
             Some("File appears to be a SQZ compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_identifies_valid_header() {
+        let recognizer = StuffIt1Recognizer;
+        let stuffit1_header = [0x53, 0x49, 0x54, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&stuffit1_header),
+            Some("File appears to be a Stuffit1 (Stuffit versions up to v4.0) compressed file"
+                .to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_rejects_insufficient_bytes() {
+        let recognizer = StuffIt1Recognizer;
+        let short_buffer = [0x53, 0x49, 0x54];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_rejects_mismatched_magic() {
+        let recognizer = StuffIt1Recognizer;
+        let wrong_magic = [0x53, 0x49, 0x54, 0x22];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = StuffIt1Recognizer;
+        let wrong_first = [0x52, 0x49, 0x54, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = StuffIt1Recognizer;
+        let wrong_second = [0x53, 0x48, 0x54, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = StuffIt1Recognizer;
+        let wrong_third = [0x53, 0x49, 0x55, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = StuffIt1Recognizer;
+        let wrong_fourth = [0x53, 0x49, 0x54, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn stuffit1_recognizer_works_with_extra_data() {
+        let recognizer = StuffIt1Recognizer;
+        let stuffit1_with_data = [0x53, 0x49, 0x54, 0x21, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&stuffit1_with_data),
+            Some("File appears to be a Stuffit1 (Stuffit versions up to v4.0) compressed file"
+                .to_string())
+        );
+    }
+
+    #[test]
+    fn stuffit1_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(StuffIt1Recognizer);
+        let stuffit1_header = [0x53, 0x49, 0x54, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&stuffit1_header),
+            Some("File appears to be a Stuffit1 (Stuffit versions up to v4.0) compressed file"
+                .to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
