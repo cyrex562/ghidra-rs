@@ -786,6 +786,30 @@ impl Recognizer for SevenZipRecognizer {
     }
 }
 
+/// Recognizes spanned PKZIP compressed files by their magic header bytes: `0x50 0x4b 0x07 0x08`.
+///
+/// Port of `ghidra.app.util.recognizer.SpannedPkzipRecognizer`.
+pub struct SpannedPkzipRecognizer;
+
+impl Recognizer for SpannedPkzipRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x50 && bytes[1] == 0x4b && bytes[2] == 0x07 && bytes[3] == 0x08 {
+                return Some("File appears to be a spanned PKZIP compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2923,6 +2947,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&seven_zip_header),
             Some("File appears to be a 7-ZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_identifies_valid_header() {
+        let recognizer = SpannedPkzipRecognizer;
+        let spanned_pkzip_header = [0x50, 0x4b, 0x07, 0x08];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&spanned_pkzip_header),
+            Some("File appears to be a spanned PKZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_rejects_insufficient_bytes() {
+        let recognizer = SpannedPkzipRecognizer;
+        let short_buffer = [0x50, 0x4b, 0x07];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_rejects_mismatched_magic() {
+        let recognizer = SpannedPkzipRecognizer;
+        let wrong_magic = [0x50, 0x4b, 0x07, 0x09];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = SpannedPkzipRecognizer;
+        let wrong_first = [0x51, 0x4b, 0x07, 0x08];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = SpannedPkzipRecognizer;
+        let wrong_second = [0x50, 0x4c, 0x07, 0x08];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = SpannedPkzipRecognizer;
+        let wrong_third = [0x50, 0x4b, 0x08, 0x08];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = SpannedPkzipRecognizer;
+        let wrong_fourth = [0x50, 0x4b, 0x07, 0x07];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_works_with_extra_data() {
+        let recognizer = SpannedPkzipRecognizer;
+        let spanned_pkzip_with_data = [0x50, 0x4b, 0x07, 0x08, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&spanned_pkzip_with_data),
+            Some("File appears to be a spanned PKZIP compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn spanned_pkzip_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(SpannedPkzipRecognizer);
+        let spanned_pkzip_header = [0x50, 0x4b, 0x07, 0x08];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&spanned_pkzip_header),
+            Some("File appears to be a spanned PKZIP compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
