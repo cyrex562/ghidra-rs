@@ -1082,6 +1082,38 @@ impl Recognizer for VhdRecognizer {
     }
 }
 
+/// Recognizes XZ compressed files by their magic header bytes: `0xfd 0x37 0x7a 0x58 0x5a 0x00`.
+///
+/// The magic bytes are: `0xfd 0x37 0x7a 0x58 0x5a 0x00` (which is "\xfd7zXZ\0").
+///
+/// Port of `ghidra.app.util.recognizer.XZRecognizer`.
+pub struct XzRecognizer;
+
+impl Recognizer for XzRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        6
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0xfd
+                && bytes[1] == 0x37
+                && bytes[2] == 0x7a
+                && bytes[3] == 0x58
+                && bytes[4] == 0x5a
+                && bytes[5] == 0x00
+            {
+                return Some("File appears to be an XZ compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4183,6 +4215,107 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&vhd_header),
             Some("File appears to be a Connectix VHD image".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn xz_recognizer_identifies_valid_header() {
+        let recognizer = XzRecognizer;
+        let xz_header = [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 6);
+        assert_eq!(
+            recognizer.recognize(&xz_header),
+            Some("File appears to be an XZ compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_insufficient_bytes() {
+        let recognizer = XzRecognizer;
+        let short_buffer = [0xfd, 0x37, 0x7a, 0x58, 0x5a];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_mismatched_magic() {
+        let recognizer = XzRecognizer;
+        let wrong_magic = [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = XzRecognizer;
+        let wrong_first = [0xfe, 0x37, 0x7a, 0x58, 0x5a, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = XzRecognizer;
+        let wrong_second = [0xfd, 0x36, 0x7a, 0x58, 0x5a, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = XzRecognizer;
+        let wrong_third = [0xfd, 0x37, 0x7b, 0x58, 0x5a, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = XzRecognizer;
+        let wrong_fourth = [0xfd, 0x37, 0x7a, 0x59, 0x5a, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_fifth_byte_mismatch() {
+        let recognizer = XzRecognizer;
+        let wrong_fifth = [0xfd, 0x37, 0x7a, 0x58, 0x5b, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_fifth), None);
+    }
+
+    #[test]
+    fn xz_recognizer_rejects_sixth_byte_mismatch() {
+        let recognizer = XzRecognizer;
+        let wrong_sixth = [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_sixth), None);
+    }
+
+    #[test]
+    fn xz_recognizer_works_with_extra_data() {
+        let recognizer = XzRecognizer;
+        let xz_with_data = [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&xz_with_data),
+            Some("File appears to be an XZ compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn xz_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(XzRecognizer);
+        let xz_header = [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 6);
+        assert_eq!(
+            recognizer.recognize(&xz_header),
+            Some("File appears to be an XZ compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
