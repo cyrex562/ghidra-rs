@@ -132,12 +132,23 @@ pub trait MonitorReceiver {}
 /// are needed yet.
 pub trait ProgressListener {}
 
-/// Placeholder for `ghidra.app.services.TraceRmiService`, the base interface extended by
-/// [`InternalTraceRmiService`](crate::app::services::InternalTraceRmiService) before the real
-/// interface is ported. `InternalTraceRmiService` does not itself call any `TraceRmiService`
-/// members (it only overrides two of them with covariant return types), so no members are
-/// needed yet.
-pub trait TraceRmiService {}
+/// Placeholder for `ghidra.debug.api.tracermi.TraceRmiConnection`, referenced by
+/// [`TraceRmiService`](crate::app::services::TraceRmiService) before the real interface is
+/// ported. `TraceRmiService` only ever passes this type through as a return value, so no members
+/// are needed yet.
+pub trait TraceRmiConnection {}
+
+/// Placeholder for `ghidra.debug.api.tracermi.TraceRmiAcceptor`, referenced by
+/// [`TraceRmiService`](crate::app::services::TraceRmiService) before the real interface is
+/// ported. `TraceRmiService` only ever passes this type through as a return value, so no members
+/// are needed yet.
+pub trait TraceRmiAcceptor {}
+
+/// Placeholder for `ghidra.debug.api.tracermi.TraceRmiServiceListener`, referenced by
+/// [`TraceRmiService`](crate::app::services::TraceRmiService) before the real interface is
+/// ported. `TraceRmiService` only ever passes this type through as a parameter, so no members
+/// are needed yet.
+pub trait TraceRmiServiceListener {}
 
 /// Placeholder for `ghidra.app.plugin.core.debug.service.tracermi.DefaultTraceRmiAcceptor`,
 /// returned by [`InternalTraceRmiService`](crate::app::services::InternalTraceRmiService) before
