@@ -10,6 +10,8 @@ pub enum SqlStringTableError {
     Sql(String),
     #[error("No database connection")]
     NoConnection,
+    #[error("Unsupported operation: {0}")]
+    UnsupportedOperation(String),
 }
 
 /// Abstracts the SQL back-end operations required by [`SqlStringTable`].
