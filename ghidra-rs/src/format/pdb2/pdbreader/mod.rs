@@ -21,6 +21,7 @@ pub mod parsing_iterator;
 pub mod processor;
 pub mod record_category;
 pub mod section_contribution;
+pub mod section_contribution_1400;
 pub mod segment_map_description;
 pub mod string_parse_type;
 pub mod symbol;
