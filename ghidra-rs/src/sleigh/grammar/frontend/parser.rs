@@ -14,17 +14,18 @@
 //! DISPLAY mode (whitespace-significant; see [`super::display_lexer`]) and
 //! back to base mode at the reserved word `is` -- the Rust equivalent of
 //! `DisplayParser.g`'s `lexer.pushMode(DISPLAY) ... lexer.popMode()`
-//! parser actions.
-//!
-//! // TODO(sleigh-frontend): semantic bodies are captured as the raw tokens
-//! // between balanced braces (SemanticParser.g / SemanticLexer.g not yet
-//! // ported).
+//! parser actions. Semantic bodies switch the same way: the `{` opening a
+//! constructor or `macro` body pushes SEMANTIC mode and hands off to
+//! [`super::semantic_parser::SemanticParser`], which parses the typed
+//! p-code statement AST through the matching `}` (SemanticParser.g /
+//! SemanticLexer.g).
 
 use crate::sleigh::grammar::{Location, ParsingEnvironment, SleighToken};
 
 use super::ast::*;
 use super::display_lexer::DisplayLexer;
 use super::lexer::{BaseLexer, TokenType};
+use super::semantic_parser::SemanticParser;
 
 /// Parse error with source position information.
 #[derive(Debug, thiserror::Error)]
@@ -179,7 +180,8 @@ impl SleighParser {
 
     /// `identifier : strict_id | key_as_id` -- any keyword may be used as an
     /// identifier (its text is used); `with` (RES_WITH) may not.
-    fn is_identifier_like(ty: TokenType) -> bool {
+    /// Shared with the semantic-body parser ([`super::semantic_parser`]).
+    pub(super) fn is_identifier_like(ty: TokenType) -> bool {
         matches!(ty, TokenType::Identifier)
             || matches!(
                 ty,
@@ -860,32 +862,23 @@ impl SleighParser {
         }
     }
 
-    /// `semanticbody : { ... }` -- raw balanced-brace token capture.
-    ///
-    /// // TODO(sleigh-frontend): parse the p-code statements per
-    /// // SemanticParser.g once the SEMANTIC lexer mode exists.
+    /// `semanticbody : LBRACE semantic RBRACE` (SemanticParser.g) -- the
+    /// second lexer mode switch: the `{` is consumed in base mode, then
+    /// every token through the matching `}` is pulled in SEMANTIC mode
+    /// (letter operators like `s<`/`f==` live, `if` reserved) by the
+    /// dedicated [`SemanticParser`] -- the equivalent of
+    /// `lexer.pushMode(SEMANTIC) ... lexer.popMode()` around `semantic`.
     fn parse_semanticbody(&mut self) -> PResult<SemanticBody> {
         self.expect(TokenType::LBrace, "'{'")?;
-        let mut depth = 1usize;
-        let mut body = SemanticBody::default();
-        loop {
-            match self.peek_ty() {
-                TokenType::Eof => return Err(self.err_here("unterminated semantic body")),
-                TokenType::LBrace => {
-                    depth += 1;
-                    body.tokens.push(self.bump());
-                }
-                TokenType::RBrace => {
-                    depth -= 1;
-                    if depth == 0 {
-                        self.bump();
-                        return Ok(body);
-                    }
-                    body.tokens.push(self.bump());
-                }
-                _ => body.tokens.push(self.bump()),
-            }
+        // As with displays, the mode switch is only sound if base-mode
+        // lookahead never crossed the '{' (the grammar guarantees at most
+        // one-token lookahead here, ending at the '{' itself).
+        if self.pos != self.tokens.len() {
+            return Err(self.err_here(
+                "internal error: base-mode lookahead crossed into a semantic body",
+            ));
         }
+        SemanticParser::new(&mut self.lexer).parse_semantic()
     }
 
     /// `contextblock : [ ctxstmt* ] | (nothing)`.
@@ -1317,10 +1310,85 @@ mod tests {
             SpecItem::Constructorlike(Constructorlike::Macro(m)) => {
                 assert_eq!(m.name, "setflag");
                 assert_eq!(m.args, vec!["a", "b"]);
-                assert!(!m.body.tokens.is_empty());
+                // macrodef bodies go through the same semanticbody rule as
+                // constructors: typed p-code statements.
+                assert_eq!(
+                    m.body.statements,
+                    vec![PcodeStmt::Assign {
+                        local: false,
+                        lvalue: Lvalue::Id("a".into()),
+                        rhs: PcodeExpr::Identifier("b".into()),
+                    }]
+                );
             }
             other => panic!("unexpected item: {other:?}"),
         }
+    }
+
+    #[test]
+    fn constructor_semantic_body_is_structured() {
+        // The SEMANTIC mode must push at '{' and pop at '}' for each body;
+        // signed comparison ops only lex inside the braces.
+        let spec = parse(
+            "define endian=little; \
+             :NEG A is op=1 { A = -A; S_flag = (A s< 0); } \
+             :CLR A is op=2 { A = 0; }",
+        );
+        let bodies: Vec<_> = spec
+            .items
+            .iter()
+            .map(|i| match i {
+                SpecItem::Constructorlike(Constructorlike::Constructor(c)) => match &c.semantic {
+                    CtorSemantic::Body(b) => b,
+                    other => panic!("unexpected semantic: {other:?}"),
+                },
+                other => panic!("unexpected item: {other:?}"),
+            })
+            .collect();
+        assert_eq!(bodies[0].statements.len(), 2);
+        match &bodies[0].statements[1] {
+            PcodeStmt::Assign { rhs, .. } => match rhs {
+                PcodeExpr::Parenthesized(inner) => {
+                    assert!(matches!(
+                        **inner,
+                        PcodeExpr::Binary {
+                            op: PcodeBinOp::SLess,
+                            ..
+                        }
+                    ));
+                }
+                other => panic!("unexpected rhs: {other:?}"),
+            },
+            other => panic!("unexpected stmt: {other:?}"),
+        }
+        assert_eq!(bodies[1].statements.len(), 1);
+    }
+
+    #[test]
+    fn semantic_body_reserves_if_but_only_inside_braces() {
+        // 'if' is an ordinary identifier in base mode (e.g. a table name)
+        // but reserved inside a semantic body.
+        let spec = parse(
+            "define endian=little; :BR rel is op=3 { if (Z_flag) goto rel; }",
+        );
+        match &spec.items[0] {
+            SpecItem::Constructorlike(Constructorlike::Constructor(c)) => match &c.semantic {
+                CtorSemantic::Body(b) => {
+                    assert!(matches!(b.statements[0], PcodeStmt::IfGoto { .. }));
+                }
+                other => panic!("unexpected semantic: {other:?}"),
+            },
+            other => panic!("unexpected item: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn semantic_parse_error_propagates() {
+        let err = SleighParser::parse_str(
+            "define endian=little; :X is op=1 { A = ; }",
+        )
+        .unwrap_err();
+        assert!(err.message.contains("expected"), "{err}");
     }
 
     #[test]

@@ -68,6 +68,19 @@ pub trait SpecVisitor {
     /// called right after [`SpecVisitor::visit_constructor`] with the same
     /// constructor's structured printpieces.
     fn visit_display(&mut self, display: &DisplaySection) {}
+
+    /// `semanticbody`/`semantic` rules (SemanticParser.g `OP_SEMANTIC`
+    /// subtree); called after [`SpecVisitor::visit_macro_def`] with a
+    /// macro's body, and after [`SpecVisitor::visit_display`] with a
+    /// constructor's body (not called for `unimpl` constructors). The
+    /// body's statements are then walked via
+    /// [`SpecVisitor::visit_pcode_stmt`].
+    fn visit_semantic_body(&mut self, body: &SemanticBody) {}
+
+    /// One `statement` of a semantic body, in source order (the
+    /// per-statement rules of SemanticParser.g / SleighCompiler.g's
+    /// `code_block` walk).
+    fn visit_pcode_stmt(&mut self, stmt: &PcodeStmt) {}
 }
 
 /// Walks `spec` in source order, dispatching each node to `visitor`.
@@ -103,7 +116,10 @@ fn walk_definition(def: &Definition, visitor: &mut dyn SpecVisitor) {
 
 fn walk_constructorlike(c: &Constructorlike, visitor: &mut dyn SpecVisitor) {
     match c {
-        Constructorlike::Macro(m) => visitor.visit_macro_def(m),
+        Constructorlike::Macro(m) => {
+            visitor.visit_macro_def(m);
+            walk_semantic_body(&m.body, visitor);
+        }
         Constructorlike::With(w) => {
             visitor.enter_with_block(w);
             walk_items(&w.body, visitor);
@@ -112,7 +128,17 @@ fn walk_constructorlike(c: &Constructorlike, visitor: &mut dyn SpecVisitor) {
         Constructorlike::Constructor(ctor) => {
             visitor.visit_constructor(ctor);
             visitor.visit_display(&ctor.display);
+            if let CtorSemantic::Body(body) = &ctor.semantic {
+                walk_semantic_body(body, visitor);
+            }
         }
+    }
+}
+
+fn walk_semantic_body(body: &SemanticBody, visitor: &mut dyn SpecVisitor) {
+    visitor.visit_semantic_body(body);
+    for stmt in &body.statements {
+        visitor.visit_pcode_stmt(stmt);
     }
 }
 
@@ -208,6 +234,22 @@ impl SpecVisitor for SleighCompileDriver {
         // SleighCompiler.g's display rule); '^' pieces suppress the
         // separating whitespace, whitespace pieces collapse to one space.
     }
+
+    fn visit_semantic_body(&mut self, _body: &SemanticBody) {
+        self.visited += 1;
+        // TODO(sleigh-frontend): open the PcodeCompile section context
+        // (SleighCompiler.g's `semantic` rule: pcode.newSectionSymbol /
+        // ConstructTpl assembly for the constructor or macro).
+    }
+
+    fn visit_pcode_stmt(&mut self, _stmt: &PcodeStmt) {
+        self.visited += 1;
+        // TODO(sleigh-frontend): compile the statement via the ported
+        // pcodeCPort backend (PcodeCompile::createOp / newOutput /
+        // assignBitRange / createStore / matchers for goto/call/return/
+        // export/build/crossbuild, label symbol resolution, macro
+        // invocation expansion).
+    }
 }
 
 #[cfg(test)]
@@ -253,13 +295,51 @@ mod tests {
     #[test]
     fn compile_driver_stub_counts_nodes() {
         let spec = SleighParser::parse_str(
-            "define endian=little; define alignment=1; :nop is a=1 { }",
+            "define endian=little; define alignment=1; :nop is a=1 { A = 1; }",
         )
         .unwrap();
         let mut driver = SleighCompileDriver::default();
         walk_spec(&spec, &mut driver);
-        // endian + alignment + constructor + its display section.
-        assert_eq!(driver.visited, 4);
+        // endian + alignment + constructor + its display section + its
+        // semantic body + the body's one statement.
+        assert_eq!(driver.visited, 6);
+    }
+
+    #[test]
+    fn semantic_hooks_fire_for_macros_and_constructors() {
+        #[derive(Default)]
+        struct SemGrabber {
+            bodies: usize,
+            stmts: Vec<PcodeStmt>,
+        }
+        impl SpecVisitor for SemGrabber {
+            fn visit_semantic_body(&mut self, _body: &SemanticBody) {
+                self.bodies += 1;
+            }
+            fn visit_pcode_stmt(&mut self, stmt: &PcodeStmt) {
+                self.stmts.push(stmt.clone());
+            }
+        }
+
+        let spec = SleighParser::parse_str(
+            "define endian=little; \
+             macro set(a) { a = 1; } \
+             :nop is a=1 { goto inst_next; } \
+             :bad is a=2 unimpl",
+        )
+        .unwrap();
+        let mut grabber = SemGrabber::default();
+        walk_spec(&spec, &mut grabber);
+        // Macro body + one constructor body; unimpl has none.
+        assert_eq!(grabber.bodies, 2);
+        assert_eq!(grabber.stmts.len(), 2);
+        assert!(matches!(grabber.stmts[0], PcodeStmt::Assign { .. }));
+        assert!(matches!(
+            grabber.stmts[1],
+            PcodeStmt::Goto {
+                dest: JumpDest::Symbol(_)
+            }
+        ));
     }
 
     #[test]

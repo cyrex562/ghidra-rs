@@ -16,13 +16,11 @@
 //!   errors.
 //!
 //! The DISPLAY sub-lexer mode (`DisplayLexer.g`) is ported in
-//! [`super::display_lexer`]; it shares this lexer's cursor and inherits the
+//! [`super::display_lexer`], and the SEMANTIC sub-lexer mode
+//! (`SemanticLexer.g` and its Hex/IdHex number-context variants) in
+//! [`super::semantic_lexer`]; both share this lexer's cursor and inherit the
 //! base rules by delegation. The parser selects the mode per token pull
 //! (see the integration note in `display_lexer.rs`).
-//!
-//! // TODO(sleigh-frontend): SemanticLexer.g sub-lexer MODE is not yet
-//! // ported. Semantic bodies are currently captured as raw base-mode
-//! // tokens between balanced braces.
 //!
 //! // TODO(sleigh-frontend): token type numbering is local to this port; it
 //! // does not (yet) mirror the numbers in the generated SleighLexer.tokens
@@ -139,6 +137,28 @@ pub enum TokenType {
     // that terminates a constructor display section.
     DispChar = 120,
     ResIs = 121,
+
+    // SEMANTIC-mode-only token types (see SemanticLexer.g /
+    // semantic_lexer.rs): float/signed comparison and arithmetic operators
+    // spelled with a leading letter, and the reserved word 'if'.
+    FEqual = 130,      // 'f=='
+    FNotEqual = 131,   // 'f!='
+    FLess = 132,       // 'f<'
+    FGreat = 133,      // 'f>'
+    FLessEqual = 134,  // 'f<='
+    FGreatEqual = 135, // 'f>='
+    FPlus = 136,       // 'f+'
+    FMinus = 137,      // 'f-'
+    FMult = 138,       // 'f*'
+    FDiv = 139,        // 'f/'
+    SLess = 140,       // 's<'
+    SGreat = 141,      // 's>'
+    SLessEqual = 142,  // 's<='
+    SGreatEqual = 143, // 's>='
+    SRight = 144,      // 's>>'
+    SDiv = 145,        // 's/'
+    SRem = 146,        // 's%'
+    ResIf = 147,       // 'if'
 }
 
 impl TokenType {
@@ -160,7 +180,9 @@ impl TokenType {
             Equal, NotEqual, Less, Great, LessEqual, GreatEqual, BoolOr, BoolXor, BoolAnd, Pipe,
             Caret, Ampersand, Left, Right, Plus, Minus, Asterisk, Slash, Percent, SpecOr, SpecAnd,
             SpecXor, Identifier, QString, BinInt, DecInt, HexInt, DefInt, LineComment, CppComment,
-            Whitespace, Unknown, DispChar, ResIs,
+            Whitespace, Unknown, DispChar, ResIs, FEqual, FNotEqual, FLess, FGreat, FLessEqual,
+            FGreatEqual, FPlus, FMinus, FMult, FDiv, SLess, SGreat, SLessEqual, SGreatEqual,
+            SRight, SDiv, SRem, ResIf,
         ];
         ALL.iter().copied().find(|t| t.as_i32() == v)
     }
@@ -838,7 +860,7 @@ mod tests {
 
     #[test]
     fn token_type_roundtrip() {
-        for v in [-1, 4, 10, 42, 50, 60, 70, 92, 100, 105, 110, 113, 120, 121] {
+        for v in [-1, 4, 10, 42, 50, 60, 70, 92, 100, 105, 110, 113, 120, 121, 130, 139, 140, 146, 147] {
             let t = TokenType::from_i32(v).unwrap();
             assert_eq!(t.as_i32(), v);
         }

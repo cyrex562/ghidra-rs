@@ -5,13 +5,11 @@
 //! rules that produce them (noted per item).
 //!
 //! Display sections are structured printpieces ([`DisplaySection`] /
-//! [`PrintPiece`]), mirroring `DisplayParser.g`.
-//!
-//! // TODO(sleigh-frontend): semantic bodies are represented as raw token
-//! // runs ([`SemanticBody`]) until the semantic sub-lexer mode and its
-//! // parser (SemanticLexer.g / SemanticParser.g) are ported.
+//! [`PrintPiece`]), mirroring `DisplayParser.g`. Semantic bodies are typed
+//! p-code statement lists ([`SemanticBody`] / [`PcodeStmt`] / [`PcodeExpr`]),
+//! mirroring `SemanticParser.g`.
 
-use crate::sleigh::grammar::{Location, SleighToken};
+use crate::sleigh::grammar::Location;
 
 /// `endian` rule: `big` / `little`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -297,13 +295,198 @@ pub enum PrintPiece {
     Literal(String),
 }
 
-/// Raw token run between balanced `{` `}`.
-///
-/// // TODO(sleigh-frontend): replace with a real p-code statement AST once
-/// // SemanticLexer/SemanticParser are ported.
-#[derive(Debug, Clone, Default)]
+/// `semanticbody : { semantic }` with `semantic : code_block`
+/// (SemanticParser.g, `OP_SEMANTIC`): the typed p-code statements of a
+/// constructor or `macro` body. An empty statement list is the grammar's
+/// `OP_NOP` (empty `code_block`).
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct SemanticBody {
-    pub tokens: Vec<SleighToken>,
+    pub statements: Vec<PcodeStmt>,
+}
+
+/// `statement` (SemanticParser.g). Statement-terminating `;` and the
+/// `label`/`section_def` forms (which take no `;`) are handled by the
+/// parser, not the types.
+#[derive(Debug, Clone, PartialEq)]
+pub enum PcodeStmt {
+    /// `assignment : KEY_LOCAL? lvalue = expr` (`OP_ASSIGN`, wrapped in
+    /// `OP_LOCAL` for the `local` form).
+    Assign {
+        local: bool,
+        lvalue: Lvalue,
+        rhs: PcodeExpr,
+    },
+    /// `declaration : local <id> (: <size>)?` (`OP_LOCAL`).
+    LocalDecl { name: String, size: Option<Integer> },
+    /// `funcall : expr_apply` -- macro invocation or user-pcodeop call whose
+    /// value is discarded (`OP_APPLY` at statement level).
+    Funcall { name: String, args: Vec<PcodeExpr> },
+    /// `build_stmt : build <id>` (`OP_BUILD`).
+    Build { operand: String },
+    /// `crossbuild_stmt : crossbuild varnode , <id>` (`OP_CROSSBUILD`).
+    CrossBuild { address: PcodeExpr, section: String },
+    /// `goto_stmt : goto jumpdest` (`OP_GOTO`).
+    Goto { dest: JumpDest },
+    /// `cond_stmt : if expr goto_stmt` (`OP_IF`).
+    IfGoto { cond: PcodeExpr, dest: JumpDest },
+    /// `call_stmt : call jumpdest` (`OP_CALL`).
+    Call { dest: JumpDest },
+    /// `return_stmt : return [ expr ]` (`OP_RETURN`).
+    Return { dest: PcodeExpr },
+    /// `export` (`OP_EXPORT`).
+    Export(Export),
+    /// `label : < <id> >` (`OP_LABEL`); takes no `;`.
+    Label { name: String },
+    /// `section_def : << <id> >>` (`OP_SECTION_LABEL`); takes no `;`.
+    SectionLabel { name: String },
+}
+
+/// `export : export sizedexport | export varnode` alternatives.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Export {
+    /// `sizedexport : sizedstar identifier`
+    Sized { star: SizedStar, name: String },
+    /// `export varnode`
+    Varnode(PcodeExpr),
+}
+
+/// `lvalue` (SemanticParser.g).
+#[derive(Debug, Clone, PartialEq)]
+pub enum Lvalue {
+    /// `sembitrange : <id> [ <lsb> , <size> ]` (`OP_BITRANGE`)
+    BitRange {
+        name: String,
+        lsb: Integer,
+        size: Integer,
+    },
+    /// `<id> : <size>` (`OP_DECLARATIVE_SIZE`) -- declares-and-assigns,
+    /// e.g. `tmp:2 = inst_next`.
+    SizedId { name: String, size: Integer },
+    /// `<id>`
+    Id(String),
+    /// `sizedstar expr` (`OP_DEREFERENCE`) -- store through a pointer.
+    Deref { star: SizedStar, addr: PcodeExpr },
+}
+
+/// `sizedstar : * ([<space>])? (: <size>)?` (`OP_DEREFERENCE` decorations).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct SizedStar {
+    pub space: Option<String>,
+    pub size: Option<Integer>,
+}
+
+/// `jumpdest` (SemanticParser.g).
+#[derive(Debug, Clone, PartialEq)]
+pub enum JumpDest {
+    /// `identifier` (`OP_JUMPDEST_SYMBOL`)
+    Symbol(String),
+    /// `[ expr ]` (`OP_JUMPDEST_DYNAMIC`)
+    Dynamic(PcodeExpr),
+    /// `integer` (`OP_JUMPDEST_ABSOLUTE`)
+    Absolute(Integer),
+    /// `constant [ <space> ]` (`OP_JUMPDEST_RELATIVE`)
+    Relative { offset: Integer, space: String },
+    /// `label : < <id> >` (`OP_JUMPDEST_LABEL`)
+    Label(String),
+}
+
+/// Binary operators of the semantic expression ladder (`expr_boolor` ..
+/// `expr_mult` in SemanticParser.g), loosest to tightest:
+/// `||` < `&&`/`^^` < `|` < `^` < `&` < equality < comparison < shift <
+/// additive < multiplicative.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PcodeBinOp {
+    BoolOr,      // `||`  (OP_BOOL_OR)
+    BoolAnd,     // `&&`  (OP_BOOL_AND)
+    BoolXor,     // `^^`  (OP_BOOL_XOR)
+    Or,          // `|`   (OP_OR)
+    Xor,         // `^`   (OP_XOR)
+    And,         // `&`   (OP_AND)
+    Equal,       // `==`  (OP_EQUAL)
+    NotEqual,    // `!=`  (OP_NOTEQUAL)
+    FEqual,      // `f==` (OP_FEQUAL)
+    FNotEqual,   // `f!=` (OP_FNOTEQUAL)
+    Less,        // `<`   (OP_LESS)
+    GreatEqual,  // `>=`  (OP_GREATEQUAL)
+    LessEqual,   // `<=`  (OP_LESSEQUAL)
+    Great,       // `>`   (OP_GREAT)
+    SLess,       // `s<`  (OP_SLESS)
+    SGreatEqual, // `s>=` (OP_SGREATEQUAL)
+    SLessEqual,  // `s<=` (OP_SLESSEQUAL)
+    SGreat,      // `s>`  (OP_SGREAT)
+    FLess,       // `f<`  (OP_FLESS)
+    FGreatEqual, // `f>=` (OP_FGREATEQUAL)
+    FLessEqual,  // `f<=` (OP_FLESSEQUAL)
+    FGreat,      // `f>`  (OP_FGREAT)
+    Left,        // `<<`  (OP_LEFT)
+    Right,       // `>>`  (OP_RIGHT)
+    SRight,      // `s>>` (OP_SRIGHT)
+    Add,         // `+`   (OP_ADD)
+    Sub,         // `-`   (OP_SUB)
+    FAdd,        // `f+`  (OP_FADD)
+    FSub,        // `f-`  (OP_FSUB)
+    Mult,        // `*`   (OP_MULT)
+    Div,         // `/`   (OP_DIV)
+    Rem,         // `%`   (OP_REM)
+    SDiv,        // `s/`  (OP_SDIV)
+    SRem,        // `s%`  (OP_SREM)
+    FMult,       // `f*`  (OP_FMULT)
+    FDiv,        // `f/`  (OP_FDIV)
+}
+
+/// `unary_op` alternatives other than `sizedstar` (which carries payload and
+/// is [`PcodeExpr::Deref`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PcodeUnaryOp {
+    Not,     // `!` (OP_NOT)
+    Invert,  // `~` (OP_INVERT)
+    Negate,  // `-` (OP_NEGATE)
+    FNegate, // `f-` (OP_FNEGATE)
+}
+
+/// Semantic (p-code) expression (`expr` rules of SemanticParser.g).
+#[derive(Debug, Clone, PartialEq)]
+pub enum PcodeExpr {
+    Binary {
+        op: PcodeBinOp,
+        lhs: Box<PcodeExpr>,
+        rhs: Box<PcodeExpr>,
+    },
+    Unary {
+        op: PcodeUnaryOp,
+        operand: Box<PcodeExpr>,
+    },
+    /// `sizedstar expr_func` in unary position (`OP_DEREFERENCE`) -- load
+    /// through a pointer, e.g. `*:2 SP` or `*[ram]:4 ptr`.
+    Deref {
+        star: SizedStar,
+        operand: Box<PcodeExpr>,
+    },
+    /// `expr_apply : identifier ( operands )` (`OP_APPLY`) -- built-in op
+    /// (`zext`, `sext`, `carry`, ...), macro, or user pcodeop.
+    Apply { name: String, args: Vec<PcodeExpr> },
+    /// `( expr )` (`OP_PARENTHESIZED`).
+    Parenthesized(Box<PcodeExpr>),
+    /// `sembitrange : <id> [ <lsb> , <size> ]` (`OP_BITRANGE`).
+    BitRange {
+        name: String,
+        lsb: Integer,
+        size: Integer,
+    },
+    /// `varnode : int_lit` (`OP_*_CONSTANT`).
+    Integer(Integer),
+    /// `varnode : identifier`.
+    Identifier(String),
+    /// `varnode : int_lit : <size>` (`OP_TRUNCATION_SIZE`), e.g. `0x1234:2`.
+    Truncation { value: Integer, size: Integer },
+    /// `varnode : identifier : <size>` (`OP_BITRANGE2`), e.g. `val:1`.
+    SizedId { name: String, size: Integer },
+    /// `varnode : & (: <size>)? varnode` (`OP_ADDRESS_OF`, with
+    /// `OP_SIZING_SIZE` for the sized form).
+    AddressOf {
+        size: Option<Integer>,
+        operand: Box<PcodeExpr>,
+    },
 }
 
 /// `ctxstmt : ctxassign | pfuncall`.
