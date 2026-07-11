@@ -12807,7 +12807,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/DefaultProject.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/DefaultProjectManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/ProjectDataService.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/ProjectJarWriter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/ProjectJarWriter.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework project 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/ToolChestImpl.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/extensions/ExtensionDetailsPanel.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project extensions 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/extensions/ExtensionInstallationInfo.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project extensions 
