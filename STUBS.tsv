@@ -152,3 +152,5 @@ ts	stub_class	referenced_by
 2026-07-10T13:15:00Z	GoToOverrideService	GoToService
 2026-07-11T00:00:00Z	PatternExpression	PatternValue
 2026-07-11T00:00:00Z	TokenPattern	PatternValue
+2026-07-11T00:00:00Z	TripleSymbol	SpecificSymbol
+2026-07-11T00:00:00Z	VarnodeTpl	SpecificSymbol
