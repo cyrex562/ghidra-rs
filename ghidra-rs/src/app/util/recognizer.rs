@@ -366,15 +366,39 @@ impl Recognizer for FreezeRecognizer {
     }
 }
 
+/// Recognizes GZIP compressed files by their magic header bytes: `0x1f 0x8b`.
+///
+/// Port of `ghidra.app.util.recognizer.GzipRecognizer`.
+pub struct GzipRecognizer;
+
+impl Recognizer for GzipRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        2
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x1f && bytes[1] == 0x8b {
+                return Some("File appears to be a GZIP compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     /// Minimal mock recognizer proving the trait is object-safe and usable via `Box<dyn
     /// Recognizer>`.
-    struct GzipRecognizer;
+    struct MockGzipRecognizer;
 
-    impl Recognizer for GzipRecognizer {
+    impl Recognizer for MockGzipRecognizer {
         fn number_of_bytes_required(&self) -> usize {
             2
         }
@@ -394,7 +418,7 @@ mod tests {
 
     #[test]
     fn recognizes_gzip_header_via_trait_object() {
-        let recognizer: Box<dyn Recognizer> = Box::new(GzipRecognizer);
+        let recognizer: Box<dyn Recognizer> = Box::new(MockGzipRecognizer);
 
         assert_eq!(recognizer.number_of_bytes_required(), 2);
         assert_eq!(recognizer.recognize(&[0x1f, 0x8b, 0x00]), Some("GZIP".to_string()));
@@ -1211,6 +1235,59 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&freeze_header),
             Some("File appears to be a Freeze compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn gzip_recognizer_identifies_valid_header() {
+        let recognizer = GzipRecognizer;
+        let gzip_header = [0x1f, 0x8b];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&gzip_header),
+            Some("File appears to be a GZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn gzip_recognizer_rejects_insufficient_bytes() {
+        let recognizer = GzipRecognizer;
+        let short_buffer = [0x1f];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn gzip_recognizer_rejects_mismatched_magic() {
+        let recognizer = GzipRecognizer;
+        let wrong_magic = [0x1f, 0x9e];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn gzip_recognizer_works_with_extra_data() {
+        let recognizer = GzipRecognizer;
+        let gzip_header_with_data = [0x1f, 0x8b, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&gzip_header_with_data),
+            Some("File appears to be a GZIP compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn gzip_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(GzipRecognizer);
+        let gzip_header = [0x1f, 0x8b];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&gzip_header),
+            Some("File appears to be a GZIP compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
