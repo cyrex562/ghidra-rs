@@ -159,3 +159,4 @@ ts	stub_class	referenced_by
 2026-07-11T12:00:00Z	SaveState	Project
 2026-07-11T13:00:00Z	GraphDisplayProvider	GraphDisplayBroker
 2026-07-11T13:00:00Z	GraphDisplay	GraphDisplayBroker
+2026-07-11T13:30:00Z	CodeBlockModel	BlockModelService
