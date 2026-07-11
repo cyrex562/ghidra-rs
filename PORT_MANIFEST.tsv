@@ -12287,7 +12287,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/CustomOptio
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/CustomOptionsEditor.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EditorState.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EditorStateFactory.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EnumEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/EnumEditor.java	DONE	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/ErrorPropertyEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/FileOptions.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/NoRegisteredEditorPropertyEditor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra framework options 
