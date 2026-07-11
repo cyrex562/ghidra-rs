@@ -1,13 +1,13 @@
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_description::LanguageDescription;
 use crate::program::model::lang::language_id::LanguageID;
-use crate::program::seam_stubs::{LanguageNotFoundException, LanguageService};
+use crate::program::model::lang::language_service::LanguageService;
+use crate::program::seam_stubs::LanguageNotFoundException;
 
 /// Service that provides a `Language` given a name, and information about the language.
 ///
 /// Port of `ghidra.program.model.lang.VersionedLanguageService`. The Java interface extends
-/// `LanguageService`, which is ported here only as a minimal placeholder supertrait (see
-/// `seam_stubs.rs`) until it is fully ported.
+/// `LanguageService`.
 pub trait VersionedLanguageService: LanguageService {
     /// Returns a specific language version with the given language ID.
     /// This form should only be used when handling language upgrade concerns.
@@ -127,7 +127,75 @@ mod tests {
         known_version: i32,
     }
 
-    impl LanguageService for MockVersionedLanguageService {}
+    impl LanguageService for MockVersionedLanguageService {
+        fn get_language(
+            &self,
+            language_id: &LanguageID,
+        ) -> Result<Box<dyn Language>, LanguageNotFoundException> {
+            Err(LanguageNotFoundException(format!(
+                "No language '{}'",
+                language_id
+            )))
+        }
+
+        fn get_default_language(
+            &self,
+            _processor: &dyn crate::program::seam_stubs::Processor,
+        ) -> Result<Box<dyn Language>, LanguageNotFoundException> {
+            Err(LanguageNotFoundException(
+                "No default language for processor".to_string(),
+            ))
+        }
+
+        fn get_language_description(
+            &self,
+            language_id: &LanguageID,
+        ) -> Result<Box<dyn LanguageDescription>, LanguageNotFoundException> {
+            Err(LanguageNotFoundException(format!(
+                "No description for '{}'",
+                language_id
+            )))
+        }
+
+        fn get_language_descriptions(
+            &self,
+            _include_deprecated_languages: bool,
+        ) -> Vec<Box<dyn LanguageDescription>> {
+            vec![Box::new(MockLanguageDescription)]
+        }
+
+        #[allow(deprecated)]
+        fn get_language_descriptions_matching(
+            &self,
+            _processor: &dyn crate::program::seam_stubs::Processor,
+            _endianness: Option<crate::program::model::lang::endian::Endian>,
+            _size: Option<i32>,
+            _variant: Option<&str>,
+        ) -> Vec<Box<dyn LanguageDescription>> {
+            vec![Box::new(MockLanguageDescription)]
+        }
+
+        fn get_language_compiler_spec_pairs(
+            &self,
+            _query: &crate::program::seam_stubs::LanguageCompilerSpecQuery,
+        ) -> Vec<crate::program::seam_stubs::LanguageCompilerSpecPair> {
+            Vec::new()
+        }
+
+        fn get_language_compiler_spec_pairs_external(
+            &self,
+            _query: &crate::program::seam_stubs::ExternalLanguageCompilerSpecQuery,
+        ) -> Vec<crate::program::seam_stubs::LanguageCompilerSpecPair> {
+            Vec::new()
+        }
+
+        fn get_language_descriptions_for_processor(
+            &self,
+            _processor: &dyn crate::program::seam_stubs::Processor,
+        ) -> Vec<Box<dyn LanguageDescription>> {
+            vec![Box::new(MockLanguageDescription)]
+        }
+    }
 
     impl VersionedLanguageService for MockVersionedLanguageService {
         fn get_language(
