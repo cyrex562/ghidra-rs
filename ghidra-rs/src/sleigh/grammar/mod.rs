@@ -6,6 +6,7 @@ pub mod conditional_helper;
 pub mod expression_environment;
 pub mod fake_line_array_list_writer;
 pub mod file_searcher;
+pub mod frontend;
 pub mod lexer_multiplexer;
 pub mod line_array_list_writer;
 pub mod location;
