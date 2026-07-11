@@ -342,6 +342,30 @@ impl Recognizer for EmptyPkzipRecognizer {
     }
 }
 
+/// Recognizes Freeze compressed files by their magic header bytes: `0x1f 0x9e`.
+///
+/// Port of `ghidra.app.util.recognizer.FreezeRecognizer`.
+pub struct FreezeRecognizer;
+
+impl Recognizer for FreezeRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        2
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x1f && bytes[1] == 0x9e {
+                return Some("File appears to be a Freeze compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1118,6 +1142,75 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&empty_pkzip_header),
             Some("File appears to be an empty PKZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn freeze_recognizer_identifies_valid_header() {
+        let recognizer = FreezeRecognizer;
+        let freeze_header = [0x1f, 0x9e];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&freeze_header),
+            Some("File appears to be a Freeze compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn freeze_recognizer_rejects_insufficient_bytes() {
+        let recognizer = FreezeRecognizer;
+        let short_buffer = [0x1f];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn freeze_recognizer_rejects_mismatched_magic() {
+        let recognizer = FreezeRecognizer;
+        let wrong_magic = [0x1f, 0x9f];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn freeze_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = FreezeRecognizer;
+        let wrong_first = [0x1e, 0x9e];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn freeze_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = FreezeRecognizer;
+        let wrong_second = [0x1f, 0x9d];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn freeze_recognizer_works_with_extra_data() {
+        let recognizer = FreezeRecognizer;
+        let freeze_with_data = [0x1f, 0x9e, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&freeze_with_data),
+            Some("File appears to be a Freeze compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn freeze_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(FreezeRecognizer);
+        let freeze_header = [0x1f, 0x9e];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&freeze_header),
+            Some("File appears to be a Freeze compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
