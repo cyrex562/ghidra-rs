@@ -232,6 +232,30 @@ impl Recognizer for CpioRecognizer {
     }
 }
 
+/// Recognizes CramFS filesystem image files by their magic header bytes: `0x45 0x3d 0xcd 0x28`.
+///
+/// Port of `ghidra.app.util.recognizer.CramFSRecognizer`.
+pub struct CramFSRecognizer;
+
+impl Recognizer for CramFSRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x45 && bytes[1] == 0x3d && bytes[2] == 0xcd && bytes[3] == 0x28 {
+                return Some("File appears to be a CramFS image file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -708,6 +732,83 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&byte_swapped),
             Some("File appears to be a byte-swapped cpio archive file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn cramfs_recognizer_identifies_valid_header() {
+        let recognizer = CramFSRecognizer;
+        let cramfs_header = [0x45, 0x3d, 0xcd, 0x28];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&cramfs_header),
+            Some("File appears to be a CramFS image file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn cramfs_recognizer_rejects_insufficient_bytes() {
+        let recognizer = CramFSRecognizer;
+        let short_buffer = [0x45, 0x3d, 0xcd];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn cramfs_recognizer_rejects_mismatched_magic() {
+        let recognizer = CramFSRecognizer;
+        let wrong_magic = [0x45, 0x3d, 0xcd, 0x29];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn cramfs_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = CramFSRecognizer;
+        let wrong_first = [0x46, 0x3d, 0xcd, 0x28];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn cramfs_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = CramFSRecognizer;
+        let wrong_second = [0x45, 0x3e, 0xcd, 0x28];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn cramfs_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = CramFSRecognizer;
+        let wrong_third = [0x45, 0x3d, 0xce, 0x28];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn cramfs_recognizer_works_with_extra_data() {
+        let recognizer = CramFSRecognizer;
+        let cramfs_with_data = [0x45, 0x3d, 0xcd, 0x28, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&cramfs_with_data),
+            Some("File appears to be a CramFS image file".to_string())
+        );
+    }
+
+    #[test]
+    fn cramfs_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(CramFSRecognizer);
+        let cramfs_header = [0x45, 0x3d, 0xcd, 0x28];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&cramfs_header),
+            Some("File appears to be a CramFS image file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
