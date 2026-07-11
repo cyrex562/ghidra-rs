@@ -1048,6 +1048,40 @@ impl Recognizer for UnixPackRecognizer {
     }
 }
 
+/// Recognizes Connectix VHD image files by their magic header bytes: `conectix`.
+///
+/// The magic bytes are: `0x63 0x6f 0x6e 0x65 0x63 0x74 0x69 0x78` (which is "conectix").
+///
+/// Port of `ghidra.app.util.recognizer.VHDRecognizer`.
+pub struct VhdRecognizer;
+
+impl Recognizer for VhdRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        8
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x63
+                && bytes[1] == 0x6f
+                && bytes[2] == 0x6e
+                && bytes[3] == 0x65
+                && bytes[4] == 0x63
+                && bytes[5] == 0x74
+                && bytes[6] == 0x69
+                && bytes[7] == 0x78
+            {
+                return Some("File appears to be a Connectix VHD image".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4072,6 +4106,83 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&unix_pack_header),
             Some("File appears to be a UNIX Pack compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn vhd_recognizer_identifies_valid_header() {
+        let recognizer = VhdRecognizer;
+        let vhd_header = [0x63, 0x6f, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x78];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&vhd_header),
+            Some("File appears to be a Connectix VHD image".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn vhd_recognizer_rejects_insufficient_bytes() {
+        let recognizer = VhdRecognizer;
+        let short_buffer = [0x63, 0x6f, 0x6e, 0x65, 0x63, 0x74, 0x69];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn vhd_recognizer_rejects_mismatched_magic() {
+        let recognizer = VhdRecognizer;
+        let wrong_magic = [0x63, 0x6f, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x79];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn vhd_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = VhdRecognizer;
+        let wrong_first = [0x64, 0x6f, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x78];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn vhd_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = VhdRecognizer;
+        let wrong_second = [0x63, 0x70, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x78];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn vhd_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = VhdRecognizer;
+        let wrong_third = [0x63, 0x6f, 0x6d, 0x65, 0x63, 0x74, 0x69, 0x78];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn vhd_recognizer_works_with_extra_data() {
+        let recognizer = VhdRecognizer;
+        let vhd_with_data = [0x63, 0x6f, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x78, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&vhd_with_data),
+            Some("File appears to be a Connectix VHD image".to_string())
+        );
+    }
+
+    #[test]
+    fn vhd_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(VhdRecognizer);
+        let vhd_header = [0x63, 0x6f, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x78];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&vhd_header),
+            Some("File appears to be a Connectix VHD image".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
