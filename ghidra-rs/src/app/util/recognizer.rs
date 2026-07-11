@@ -1140,6 +1140,32 @@ impl Recognizer for XzRecognizer {
     }
 }
 
+/// Recognizes YBS compressed files by their magic header bytes: `0x59 0x42 0x53 0x01`.
+///
+/// The magic bytes are: `0x59 0x42 0x53 0x01` (which is "YBS" followed by 0x01).
+///
+/// Port of `ghidra.app.util.recognizer.YbsRecognizer`.
+pub struct YbsRecognizer;
+
+impl Recognizer for YbsRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x59 && bytes[1] == 0x42 && bytes[2] == 0x53 && bytes[3] == 0x01 {
+                return Some("File appears to be a YBS compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4427,6 +4453,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&xz_header),
             Some("File appears to be an XZ compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn ybs_recognizer_identifies_valid_header() {
+        let recognizer = YbsRecognizer;
+        let ybs_header = [0x59, 0x42, 0x53, 0x01];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&ybs_header),
+            Some("File appears to be a YBS compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn ybs_recognizer_rejects_insufficient_bytes() {
+        let recognizer = YbsRecognizer;
+        let short_buffer = [0x59, 0x42, 0x53];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn ybs_recognizer_rejects_mismatched_magic() {
+        let recognizer = YbsRecognizer;
+        let wrong_magic = [0x59, 0x42, 0x53, 0x02];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn ybs_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = YbsRecognizer;
+        let wrong_first = [0x58, 0x42, 0x53, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn ybs_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = YbsRecognizer;
+        let wrong_second = [0x59, 0x41, 0x53, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn ybs_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = YbsRecognizer;
+        let wrong_third = [0x59, 0x42, 0x54, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn ybs_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = YbsRecognizer;
+        let wrong_fourth = [0x59, 0x42, 0x53, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn ybs_recognizer_works_with_extra_data() {
+        let recognizer = YbsRecognizer;
+        let ybs_with_data = [0x59, 0x42, 0x53, 0x01, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&ybs_with_data),
+            Some("File appears to be a YBS compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn ybs_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(YbsRecognizer);
+        let ybs_header = [0x59, 0x42, 0x53, 0x01];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&ybs_header),
+            Some("File appears to be a YBS compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
