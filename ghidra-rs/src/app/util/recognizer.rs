@@ -290,6 +290,32 @@ impl Recognizer for DebRecognizer {
     }
 }
 
+/// Recognizes Apple Disk Image (DMG) files by their magic header bytes: `GMI2`.
+///
+/// The magic bytes are: `0x47 0x4d 0x49 0x32` (which is "GMI2").
+///
+/// Port of `ghidra.app.util.recognizer.DmgRecognizer`.
+pub struct DmgRecognizer;
+
+impl Recognizer for DmgRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x47 && bytes[1] == 0x4d && bytes[2] == 0x49 && bytes[3] == 0x32 {
+                return Some("File appears to be an Apple Disk Image file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -912,6 +938,83 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&deb_header),
             Some("File appears to be a Debian package file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn dmg_recognizer_identifies_valid_header() {
+        let recognizer = DmgRecognizer;
+        let dmg_header = [0x47, 0x4d, 0x49, 0x32];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&dmg_header),
+            Some("File appears to be an Apple Disk Image file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn dmg_recognizer_rejects_insufficient_bytes() {
+        let recognizer = DmgRecognizer;
+        let short_buffer = [0x47, 0x4d, 0x49];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn dmg_recognizer_rejects_mismatched_magic() {
+        let recognizer = DmgRecognizer;
+        let wrong_magic = [0x47, 0x4d, 0x49, 0x33];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn dmg_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = DmgRecognizer;
+        let wrong_first = [0x48, 0x4d, 0x49, 0x32];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn dmg_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = DmgRecognizer;
+        let wrong_second = [0x47, 0x4e, 0x49, 0x32];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn dmg_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = DmgRecognizer;
+        let wrong_third = [0x47, 0x4d, 0x4a, 0x32];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn dmg_recognizer_works_with_extra_data() {
+        let recognizer = DmgRecognizer;
+        let dmg_with_data = [0x47, 0x4d, 0x49, 0x32, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&dmg_with_data),
+            Some("File appears to be an Apple Disk Image file".to_string())
+        );
+    }
+
+    #[test]
+    fn dmg_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(DmgRecognizer);
+        let dmg_header = [0x47, 0x4d, 0x49, 0x32];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&dmg_header),
+            Some("File appears to be an Apple Disk Image file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }

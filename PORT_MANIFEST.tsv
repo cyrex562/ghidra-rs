@@ -8948,7 +8948,7 @@ orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/Co
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/CpioRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/CramFSRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/DebRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
-orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/DmgRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
+orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/DmgRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/EmptyPkzipRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/FreezeRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/GzipRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
