@@ -1,8 +1,10 @@
 pub mod ghidra_bundle_activator;
+pub mod ghidra_bundle_exception;
 pub mod osgi_exception;
 pub mod osgi_utils;
 
 pub use ghidra_bundle_activator::GhidraBundleActivator;
+pub use ghidra_bundle_exception::{Bundle, BundleException, GhidraBundleException};
 pub use osgi_exception::OSGiException;
 pub use osgi_utils::{BundleCapability, BundleEventType, BundleRequirement, BundleState, OSGiUtils};
 
