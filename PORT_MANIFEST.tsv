@@ -14968,7 +14968,7 @@ orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/Referen
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/analyzers/AbstractJavaAnalyzer.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass analyzers 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/analyzers/JavaAnalyzer.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass analyzers 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/analyzers/JvmSwitchAnalyzer.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass analyzers 
-orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/analyzers/MethodHandleBytecodeBehaviors.java	TODO	orig_src Ghidra Processors JVM src main java ghidra javaclass analyzers 
+orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/analyzers/MethodHandleBytecodeBehaviors.java	DONE	orig_src Ghidra Processors JVM src main java ghidra javaclass analyzers 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/flags/ClassFileFlags.java	DONE	orig_src Ghidra Processors JVM src main java ghidra javaclass flags 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/flags/FieldInfoAccessFlags.java	DONE	orig_src Ghidra Processors JVM src main java ghidra javaclass flags 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/flags/MethodsInfoAccessFlags.java	DONE	orig_src Ghidra Processors JVM src main java ghidra javaclass flags 
