@@ -1693,7 +1693,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/ta
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/tables/SQLComplexTable.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client tables 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/tables/SQLStringTable.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client tables 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/tables/StatementSupplier.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client tables 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/tables/WeightTable.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client tables 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/tables/WeightTable.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client tables 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/CallgraphEntry.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query description 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/CategoryRecord.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query description 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/DatabaseInformation.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query description 
