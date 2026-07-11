@@ -256,6 +256,40 @@ impl Recognizer for CramFSRecognizer {
     }
 }
 
+/// Recognizes Debian package files by their magic header bytes: `!` followed by newline and `debian`.
+///
+/// The magic bytes are: `0x21 0x0a 0x64 0x65 0x62 0x69 0x61 0x6e` (which is "!\n" + "debian").
+///
+/// Port of `ghidra.app.util.recognizer.DebRecognizer`.
+pub struct DebRecognizer;
+
+impl Recognizer for DebRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        8
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x21
+                && bytes[1] == 0x0a
+                && bytes[2] == 0x64
+                && bytes[3] == 0x65
+                && bytes[4] == 0x62
+                && bytes[5] == 0x69
+                && bytes[6] == 0x61
+                && bytes[7] == 0x6e
+            {
+                return Some("File appears to be a Debian package file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -809,6 +843,75 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&cramfs_header),
             Some("File appears to be a CramFS image file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn deb_recognizer_identifies_valid_header() {
+        let recognizer = DebRecognizer;
+        let deb_header = [0x21, 0x0a, 0x64, 0x65, 0x62, 0x69, 0x61, 0x6e];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&deb_header),
+            Some("File appears to be a Debian package file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn deb_recognizer_rejects_insufficient_bytes() {
+        let recognizer = DebRecognizer;
+        let short_buffer = [0x21, 0x0a, 0x64, 0x65, 0x62, 0x69, 0x61];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn deb_recognizer_rejects_mismatched_magic() {
+        let recognizer = DebRecognizer;
+        let wrong_magic = [0x21, 0x0a, 0x64, 0x65, 0x62, 0x69, 0x61, 0x6f];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn deb_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = DebRecognizer;
+        let wrong_first = [0x22, 0x0a, 0x64, 0x65, 0x62, 0x69, 0x61, 0x6e];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn deb_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = DebRecognizer;
+        let wrong_second = [0x21, 0x0b, 0x64, 0x65, 0x62, 0x69, 0x61, 0x6e];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn deb_recognizer_works_with_extra_data() {
+        let recognizer = DebRecognizer;
+        let deb_with_data = [0x21, 0x0a, 0x64, 0x65, 0x62, 0x69, 0x61, 0x6e, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&deb_with_data),
+            Some("File appears to be a Debian package file".to_string())
+        );
+    }
+
+    #[test]
+    fn deb_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(DebRecognizer);
+        let deb_header = [0x21, 0x0a, 0x64, 0x65, 0x62, 0x69, 0x61, 0x6e];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&deb_header),
+            Some("File appears to be a Debian package file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
