@@ -708,6 +708,30 @@ impl Recognizer for RarRecognizer {
     }
 }
 
+/// Recognizes SBC compressed files by their magic header bytes: `0x53 0x42 0x43 0x1c`.
+///
+/// Port of `ghidra.app.util.recognizer.SbcRecognizer`.
+pub struct SbcRecognizer;
+
+impl Recognizer for SbcRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x53 && bytes[1] == 0x42 && bytes[2] == 0x43 && bytes[3] == 0x1c {
+                return Some("File appears to be a SBC compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2573,6 +2597,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&rar_header),
             Some("File appears to be a RAR compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sbc_recognizer_identifies_valid_header() {
+        let recognizer = SbcRecognizer;
+        let sbc_header = [0x53, 0x42, 0x43, 0x1c];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&sbc_header),
+            Some("File appears to be a SBC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sbc_recognizer_rejects_insufficient_bytes() {
+        let recognizer = SbcRecognizer;
+        let short_buffer = [0x53, 0x42, 0x43];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn sbc_recognizer_rejects_mismatched_magic() {
+        let recognizer = SbcRecognizer;
+        let wrong_magic = [0x53, 0x42, 0x43, 0x1d];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn sbc_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = SbcRecognizer;
+        let wrong_first = [0x54, 0x42, 0x43, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn sbc_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = SbcRecognizer;
+        let wrong_second = [0x53, 0x41, 0x43, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn sbc_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = SbcRecognizer;
+        let wrong_third = [0x53, 0x42, 0x44, 0x1c];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn sbc_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = SbcRecognizer;
+        let wrong_fourth = [0x53, 0x42, 0x43, 0x1d];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn sbc_recognizer_works_with_extra_data() {
+        let recognizer = SbcRecognizer;
+        let sbc_with_data = [0x53, 0x42, 0x43, 0x1c, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&sbc_with_data),
+            Some("File appears to be a SBC compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn sbc_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(SbcRecognizer);
+        let sbc_header = [0x53, 0x42, 0x43, 0x1c];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&sbc_header),
+            Some("File appears to be a SBC compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
