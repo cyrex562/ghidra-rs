@@ -660,6 +660,30 @@ impl Recognizer for PkzipRecognizer {
     }
 }
 
+/// Recognizes RPM package files by their magic header bytes: `0xed 0xab 0xee 0xdb`.
+///
+/// Port of `ghidra.app.util.recognizer.RPMRecognizer`.
+pub struct RpmRecognizer;
+
+impl Recognizer for RpmRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0xed && bytes[1] == 0xab && bytes[2] == 0xee && bytes[3] == 0xdb {
+                return Some("File appears to be an RPM package".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2355,6 +2379,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&pkzip_header),
             Some("File appears to be a PKZIP, WINZIP, or JAR compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn rpm_recognizer_identifies_valid_header() {
+        let recognizer = RpmRecognizer;
+        let rpm_header = [0xed, 0xab, 0xee, 0xdb];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&rpm_header),
+            Some("File appears to be an RPM package".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn rpm_recognizer_rejects_insufficient_bytes() {
+        let recognizer = RpmRecognizer;
+        let short_buffer = [0xed, 0xab, 0xee];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn rpm_recognizer_rejects_mismatched_magic() {
+        let recognizer = RpmRecognizer;
+        let wrong_magic = [0xed, 0xab, 0xee, 0xdc];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn rpm_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = RpmRecognizer;
+        let wrong_first = [0xec, 0xab, 0xee, 0xdb];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn rpm_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = RpmRecognizer;
+        let wrong_second = [0xed, 0xac, 0xee, 0xdb];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn rpm_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = RpmRecognizer;
+        let wrong_third = [0xed, 0xab, 0xef, 0xdb];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn rpm_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = RpmRecognizer;
+        let wrong_fourth = [0xed, 0xab, 0xee, 0xda];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn rpm_recognizer_works_with_extra_data() {
+        let recognizer = RpmRecognizer;
+        let rpm_with_data = [0xed, 0xab, 0xee, 0xdb, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&rpm_with_data),
+            Some("File appears to be an RPM package".to_string())
+        );
+    }
+
+    #[test]
+    fn rpm_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(RpmRecognizer);
+        let rpm_header = [0xed, 0xab, 0xee, 0xdb];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&rpm_header),
+            Some("File appears to be an RPM package".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
