@@ -581,6 +581,32 @@ impl Recognizer for MacromediaFlashRecognizer {
     }
 }
 
+/// Recognizes PAK or ARC compressed files by their magic header bytes.
+///
+/// Checks for byte 0x1a (0x1a) followed by a byte with upper nibble 0x0 (i.e., second byte & 0xf0 == 0x00).
+///
+/// Port of `ghidra.app.util.recognizer.PakArcRecognizer`.
+pub struct PakArcRecognizer;
+
+impl Recognizer for PakArcRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        2
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x1a && (bytes[1] & 0xf0) == 0x00 {
+                return Some("File appears to be a PAK or ARC compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2031,6 +2057,89 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&flash_header),
             Some("File appears to be a Macromedia Flash compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn pak_arc_recognizer_identifies_valid_header() {
+        let recognizer = PakArcRecognizer;
+        let pak_arc_header = [0x1a, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&pak_arc_header),
+            Some("File appears to be a PAK or ARC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn pak_arc_recognizer_identifies_valid_header_with_second_byte_variations() {
+        let recognizer = PakArcRecognizer;
+
+        for second_byte in 0x00..=0x0f {
+            let header = [0x1a, second_byte];
+            assert_eq!(
+                recognizer.recognize(&header),
+                Some("File appears to be a PAK or ARC compressed file".to_string()),
+                "failed for second_byte=0x{:02x}",
+                second_byte
+            );
+        }
+    }
+
+    #[test]
+    fn pak_arc_recognizer_rejects_insufficient_bytes() {
+        let recognizer = PakArcRecognizer;
+        let short_buffer = [0x1a];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn pak_arc_recognizer_rejects_mismatched_first_byte() {
+        let recognizer = PakArcRecognizer;
+        let wrong_first = [0x1b, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn pak_arc_recognizer_rejects_second_byte_with_high_nibble_nonzero() {
+        let recognizer = PakArcRecognizer;
+
+        for second_byte in 0x10..=0xff {
+            let header = [0x1a, second_byte];
+            assert_eq!(
+                recognizer.recognize(&header),
+                None,
+                "should reject second_byte=0x{:02x}",
+                second_byte
+            );
+        }
+    }
+
+    #[test]
+    fn pak_arc_recognizer_works_with_extra_data() {
+        let recognizer = PakArcRecognizer;
+        let pak_arc_with_data = [0x1a, 0x05, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&pak_arc_with_data),
+            Some("File appears to be a PAK or ARC compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn pak_arc_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(PakArcRecognizer);
+        let pak_arc_header = [0x1a, 0x07];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&pak_arc_header),
+            Some("File appears to be a PAK or ARC compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
