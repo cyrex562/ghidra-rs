@@ -97,7 +97,6 @@ ts	stub_class	referenced_by
 2026-07-08T21:00:00Z	ImageIcon	ToolTemplate
 2026-07-08T21:00:00Z	JdomElement	ToolTemplate
 2026-07-08T21:00:00Z	PluginTool	ToolTemplate
-2026-07-08T21:00:00Z	Project	ToolTemplate
 2026-07-08T22:00:00Z	LanguageNotFoundException	LanguageProvider
 2026-07-08T23:30:00Z	RepositoryAdapter	ProjectManager
 2026-07-08T23:30:00Z	RepositoryServerAdapter	ProjectManager
@@ -157,3 +156,4 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	LanguageCompilerSpecQuery	LanguageService
 2026-07-11T00:00:00Z	ExternalLanguageCompilerSpecQuery	LanguageService
 2026-07-11T00:00:00Z	TraceThread	DebuggerTraceManagerService
+2026-07-11T12:00:00Z	SaveState	Project

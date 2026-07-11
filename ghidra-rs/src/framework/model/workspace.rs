@@ -81,7 +81,7 @@ mod tests {
 
         fn create_tool(
             &self,
-            _project: &dyn crate::framework::seam_stubs::Project,
+            _project: &dyn crate::framework::model::Project,
         ) -> Box<dyn PluginTool> {
             Box::new(MockPluginTool)
         }

@@ -1,4 +1,5 @@
-use crate::framework::seam_stubs::{ImageIcon, JdomElement, PluginTool, Project, ToolIconURL};
+use crate::framework::model::Project;
+use crate::framework::seam_stubs::{ImageIcon, JdomElement, PluginTool, ToolIconURL};
 
 /// XML element name used when a tool template is written to/read from XML.
 ///
