@@ -840,6 +840,51 @@ impl Recognizer for SqzRecognizer {
     }
 }
 
+/// Recognizes SITX (Stuffit v8.0+) compressed files by their magic header bytes.
+///
+/// Recognizes Stuffit versions v8.0 and higher. The magic bytes are either:
+/// - `0x53 0x74 0x75 0x66 0x66 0x49 0x74 0x21` (which is "StuffIt!")
+/// - `0x53 0x74 0x75 0x66 0x66 0x49 0x74 0x3f` (which is "StuffIt?")
+///
+/// Port of `ghidra.app.util.recognizer.sitxRecognizer`.
+pub struct SitxRecognizer;
+
+impl Recognizer for SitxRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        8
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if (bytes[0] == 0x53
+                && bytes[1] == 0x74
+                && bytes[2] == 0x75
+                && bytes[3] == 0x66
+                && bytes[4] == 0x66
+                && bytes[5] == 0x49
+                && bytes[6] == 0x74
+                && bytes[7] == 0x21)
+                || (bytes[0] == 0x53
+                    && bytes[1] == 0x74
+                    && bytes[2] == 0x75
+                    && bytes[3] == 0x66
+                    && bytes[4] == 0x66
+                    && bytes[5] == 0x49
+                    && bytes[6] == 0x74
+                    && bytes[7] == 0x3f)
+            {
+                return Some("File appears to be a sitx (Stuffit v8.0 or higher) compressed file"
+                    .to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 /// Recognizes Stuffit1 compressed files by their magic header bytes: `SIT!`.
 ///
 /// Recognizes Stuffit versions up to v4.0. The magic bytes are: `0x53 0x49 0x54 0x21`
@@ -3513,6 +3558,98 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&sqz_header),
             Some("File appears to be a SQZ compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sitx_recognizer_identifies_valid_header_exclamation() {
+        let recognizer = SitxRecognizer;
+        let sitx_header = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&sitx_header),
+            Some("File appears to be a sitx (Stuffit v8.0 or higher) compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sitx_recognizer_identifies_valid_header_question() {
+        let recognizer = SitxRecognizer;
+        let sitx_header = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x3f];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&sitx_header),
+            Some("File appears to be a sitx (Stuffit v8.0 or higher) compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sitx_recognizer_rejects_insufficient_bytes() {
+        let recognizer = SitxRecognizer;
+        let short_buffer = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn sitx_recognizer_rejects_wrong_magic_exclamation() {
+        let recognizer = SitxRecognizer;
+        let wrong_magic = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn sitx_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = SitxRecognizer;
+        let wrong_first = [0x54, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn sitx_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = SitxRecognizer;
+        let wrong_second = [0x53, 0x75, 0x75, 0x66, 0x66, 0x49, 0x74, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn sitx_recognizer_rejects_seventh_byte_mismatch() {
+        let recognizer = SitxRecognizer;
+        let wrong_seventh = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x75, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_seventh), None);
+    }
+
+    #[test]
+    fn sitx_recognizer_works_with_extra_data() {
+        let recognizer = SitxRecognizer;
+        let sitx_with_data = [
+            0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x21, 0xff, 0xfe, 0xfd, 0xfc,
+        ];
+
+        assert_eq!(
+            recognizer.recognize(&sitx_with_data),
+            Some("File appears to be a sitx (Stuffit v8.0 or higher) compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn sitx_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(SitxRecognizer);
+        let sitx_header = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x21];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&sitx_header),
+            Some("File appears to be a sitx (Stuffit v8.0 or higher) compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
