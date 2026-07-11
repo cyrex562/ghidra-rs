@@ -34,8 +34,10 @@ pub trait ControlMode {}
 
 /// Placeholder for `ghidra.debug.api.tracemgr.DebuggerCoordinates`, referenced by
 /// [`DebuggerControlService`](crate::app::services::DebuggerControlService) and its nested
-/// `StateEditor` before the real class is ported. `DebuggerControlService` only ever passes this
-/// type through as a parameter/return value, so no members are needed yet.
+/// `StateEditor`, and by
+/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService), before the
+/// real class is ported. Both services only ever pass this type through as a parameter/return
+/// value, so no members are needed yet.
 pub trait DebuggerCoordinates {}
 
 /// Placeholder for `ghidra.program.util.ProgramLocation`, referenced by
@@ -69,15 +71,17 @@ pub trait ListingMarginProvider {}
 pub trait DebuggerPlatformMapper {}
 
 /// Placeholder for `ghidra.trace.model.target.TraceObject`, referenced by
-/// [`DebuggerPlatformService`](crate::app::services::DebuggerPlatformService) before the real
-/// class is ported. `DebuggerPlatformService` only ever passes this type through as a
-/// parameter, so no members are needed yet.
+/// [`DebuggerPlatformService`](crate::app::services::DebuggerPlatformService) and
+/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
+/// real class is ported. Both services only ever pass this type through as a parameter/return
+/// value, so no members are needed yet.
 pub trait TraceObject {}
 
 /// Placeholder for `ghidra.debug.api.target.Target`, referenced by
-/// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService) before the real class
-/// is ported. `DebuggerTargetService` only ever passes this type through as a
-/// parameter/return value, so no members are needed yet.
+/// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService) and
+/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
+/// real class is ported. Both services only ever pass this type through as a parameter/return
+/// value, so no members are needed yet.
 pub trait Target {}
 
 /// Placeholder for `ghidra.debug.api.target.TargetPublicationListener`, referenced by
@@ -191,9 +195,10 @@ pub trait EmulatorFactory {}
 pub trait PcodeMachine {}
 
 /// Placeholder for `ghidra.trace.model.time.schedule.TraceSchedule`, referenced by
-/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
-/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
-/// parameter/return value, so no members are needed yet.
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) and
+/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
+/// real class is ported. Both services only ever pass this type through as a parameter/return
+/// value, so no members are needed yet.
 // `Send` so an `EmulationResult` holding a `Box<dyn TraceSchedule>` can cross threads,
 // as required by the `+ Send` `RunFuture` (ports Java's `CompletableFuture<EmulationResult>`).
 pub trait TraceSchedule: Send {}
@@ -205,10 +210,17 @@ pub trait TraceSchedule: Send {}
 pub trait Scheduler {}
 
 /// Placeholder for `ghidra.trace.model.guest.TracePlatform`, referenced by
-/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
-/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
-/// parameter, so no members are needed yet.
+/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) and
+/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
+/// real class is ported. Both services only ever pass this type through as a parameter/return
+/// value, so no members are needed yet.
 pub trait TracePlatform {}
+
+/// Placeholder for `ghidra.trace.model.thread.TraceThread`, referenced by
+/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
+/// real class is ported. `DebuggerTraceManagerService` only ever passes this type through as a
+/// parameter/return value, so no members are needed yet.
+pub trait TraceThread {}
 
 /// Placeholder for `ghidra.pcode.exec.trace.TraceEmulationIntegration.Writer`, referenced by
 /// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService)'s nested

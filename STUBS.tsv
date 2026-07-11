@@ -156,3 +156,4 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	LocalFileSystem	ProjectData
 2026-07-11T00:00:00Z	LanguageCompilerSpecQuery	LanguageService
 2026-07-11T00:00:00Z	ExternalLanguageCompilerSpecQuery	LanguageService
+2026-07-11T00:00:00Z	TraceThread	DebuggerTraceManagerService

@@ -12,6 +12,7 @@ pub mod debugger_control_service;
 pub mod debugger_emulation_service;
 pub mod debugger_platform_service;
 pub mod debugger_target_service;
+pub mod debugger_trace_manager_service;
 pub mod eclipse_integration_service;
 pub mod file_importer_service;
 pub mod function_comparison_service;
@@ -52,6 +53,10 @@ pub use debugger_emulation_service::{
 };
 pub use debugger_platform_service::DebuggerPlatformService;
 pub use debugger_target_service::DebuggerTargetService;
+pub use debugger_trace_manager_service::{
+    ActivationCause, BooleanChangeAdapter, DebuggerTraceManagerService, MaterializeFuture,
+    TraceManagerVoidFuture,
+};
 pub use eclipse_integration_service::EclipseIntegrationService;
 pub use file_importer_service::FileImporterService;
 pub use function_comparison_service::FunctionComparisonService;
