@@ -189,6 +189,49 @@ impl Recognizer for CompressiaRecognizer {
     }
 }
 
+/// Recognizes cpio archive files by their magic header bytes.
+///
+/// Recognizes both standard cpio (newc format: `070707`, `070701`, `070702`) and
+/// byte-swapped cpio format (`0143561`).
+///
+/// Port of `ghidra.app.util.recognizer.CpioRecognizer`.
+pub struct CpioRecognizer;
+
+impl Recognizer for CpioRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        7
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x30
+                && bytes[1] == 0x37
+                && bytes[2] == 0x30
+                && bytes[3] == 0x37
+                && bytes[4] == 0x30
+                && (bytes[5] == 0x37 || bytes[5] == 0x31 || bytes[5] == 0x32)
+            {
+                return Some("File appears to be a cpio archive file".to_string());
+            }
+            if bytes[0] == 0x30
+                && bytes[1] == 0x31
+                && bytes[2] == 0x34
+                && bytes[3] == 0x33
+                && bytes[4] == 0x35
+                && bytes[5] == 0x36
+                && bytes[6] == 0x31
+            {
+                return Some("File appears to be a byte-swapped cpio archive file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -545,6 +588,126 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&compressia_header),
             Some("File appears to be a Compressia compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn cpio_recognizer_identifies_standard_format_070707() {
+        let recognizer = CpioRecognizer;
+        let cpio_header = [0x30, 0x37, 0x30, 0x37, 0x30, 0x37, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 7);
+        assert_eq!(
+            recognizer.recognize(&cpio_header),
+            Some("File appears to be a cpio archive file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn cpio_recognizer_identifies_standard_format_070701() {
+        let recognizer = CpioRecognizer;
+        let cpio_header = [0x30, 0x37, 0x30, 0x37, 0x30, 0x31, 0x00];
+
+        assert_eq!(
+            recognizer.recognize(&cpio_header),
+            Some("File appears to be a cpio archive file".to_string())
+        );
+    }
+
+    #[test]
+    fn cpio_recognizer_identifies_standard_format_070702() {
+        let recognizer = CpioRecognizer;
+        let cpio_header = [0x30, 0x37, 0x30, 0x37, 0x30, 0x32, 0x00];
+
+        assert_eq!(
+            recognizer.recognize(&cpio_header),
+            Some("File appears to be a cpio archive file".to_string())
+        );
+    }
+
+    #[test]
+    fn cpio_recognizer_identifies_byte_swapped_format() {
+        let recognizer = CpioRecognizer;
+        let byte_swapped_header = [0x30, 0x31, 0x34, 0x33, 0x35, 0x36, 0x31];
+
+        assert_eq!(
+            recognizer.recognize(&byte_swapped_header),
+            Some("File appears to be a byte-swapped cpio archive file".to_string())
+        );
+    }
+
+    #[test]
+    fn cpio_recognizer_rejects_insufficient_bytes() {
+        let recognizer = CpioRecognizer;
+        let short_buffer = [0x30, 0x37, 0x30, 0x37, 0x30];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn cpio_recognizer_rejects_invalid_prefix() {
+        let recognizer = CpioRecognizer;
+        let wrong_magic = [0x31, 0x37, 0x30, 0x37, 0x30, 0x37, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn cpio_recognizer_rejects_invalid_sixth_byte() {
+        let recognizer = CpioRecognizer;
+        let invalid_sixth = [0x30, 0x37, 0x30, 0x37, 0x30, 0x38, 0x00];
+
+        assert_eq!(recognizer.recognize(&invalid_sixth), None);
+    }
+
+    #[test]
+    fn cpio_recognizer_works_with_extra_data_standard_format() {
+        let recognizer = CpioRecognizer;
+        let cpio_with_data = [
+            0x30, 0x37, 0x30, 0x37, 0x30, 0x37, 0x00, 0xff, 0xfe, 0xfd, 0xfc,
+        ];
+
+        assert_eq!(
+            recognizer.recognize(&cpio_with_data),
+            Some("File appears to be a cpio archive file".to_string())
+        );
+    }
+
+    #[test]
+    fn cpio_recognizer_works_with_extra_data_byte_swapped() {
+        let recognizer = CpioRecognizer;
+        let byte_swapped_with_data = [0x30, 0x31, 0x34, 0x33, 0x35, 0x36, 0x31, 0xff, 0xfe];
+
+        assert_eq!(
+            recognizer.recognize(&byte_swapped_with_data),
+            Some("File appears to be a byte-swapped cpio archive file".to_string())
+        );
+    }
+
+    #[test]
+    fn cpio_recognizer_via_trait_object_standard_format() {
+        let recognizer: Box<dyn Recognizer> = Box::new(CpioRecognizer);
+        let cpio_header = [0x30, 0x37, 0x30, 0x37, 0x30, 0x37, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 7);
+        assert_eq!(
+            recognizer.recognize(&cpio_header),
+            Some("File appears to be a cpio archive file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn cpio_recognizer_via_trait_object_byte_swapped() {
+        let recognizer: Box<dyn Recognizer> = Box::new(CpioRecognizer);
+        let byte_swapped = [0x30, 0x31, 0x34, 0x33, 0x35, 0x36, 0x31];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 7);
+        assert_eq!(
+            recognizer.recognize(&byte_swapped),
+            Some("File appears to be a byte-swapped cpio archive file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
