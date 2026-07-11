@@ -1,3 +1,4 @@
+pub mod b_sim_initializer;
 pub mod client;
 pub mod decompile_function_task;
 pub mod description;
@@ -8,6 +9,7 @@ pub mod minimal_error_logger;
 pub mod postgresql;
 pub mod server_config;
 
+pub use b_sim_initializer::BSimInitializer;
 pub use decompile_function_task::DecompileFunctionTask;
 pub use lsh_exception::LshException;
 pub use minimal_error_logger::MinimalErrorLogger;
