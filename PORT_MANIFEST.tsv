@@ -11530,7 +11530,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/MessageDigestFactor
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/SimpleCRC32.java	DONE	orig_src Ghidra Framework Generic src main java generic hash
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/init/GenericApplicationSettings.java	TODO	orig_src Ghidra Framework Generic src main java generic init 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/init/GenericInitializer.java	TODO	orig_src Ghidra Framework Generic src main java generic init 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/JarWriter.java	TODO	orig_src Ghidra Framework Generic src main java generic io 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/JarWriter.java	DONE	orig_src Ghidra Framework Generic src main java generic io
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/NullPrintWriter.java	DONE	orig_src Ghidra Framework Generic src main java generic io
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/io/NullWriter.java	DONE	orig_src Ghidra Framework Generic src main java generic io 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/jar/ApplicationModule.java	TODO	orig_src Ghidra Framework Generic src main java generic jar 
