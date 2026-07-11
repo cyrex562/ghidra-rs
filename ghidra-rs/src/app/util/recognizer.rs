@@ -61,6 +61,30 @@ impl Recognizer for AceRecognizer {
     }
 }
 
+/// Recognizes ARJ compressed files by their magic header bytes: `0x60 0xea`.
+///
+/// Port of `ghidra.app.util.recognizer.ArjRecognizer`.
+pub struct ArjRecognizer;
+
+impl Recognizer for ArjRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        2
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x60 && bytes[1] == 0xea {
+                return Some("File appears to be an ARJ compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -147,6 +171,59 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&ace_header),
             Some("File appears to be an ACE compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn arj_recognizer_identifies_valid_header() {
+        let recognizer = ArjRecognizer;
+        let arj_header = [0x60, 0xea];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&arj_header),
+            Some("File appears to be an ARJ compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn arj_recognizer_rejects_insufficient_bytes() {
+        let recognizer = ArjRecognizer;
+        let short_buffer = [0x60];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn arj_recognizer_rejects_mismatched_magic() {
+        let recognizer = ArjRecognizer;
+        let wrong_magic = [0x60, 0xeb];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn arj_recognizer_works_with_extra_data() {
+        let recognizer = ArjRecognizer;
+        let arj_header_with_data = [0x60, 0xea, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&arj_header_with_data),
+            Some("File appears to be an ARJ compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn arj_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(ArjRecognizer);
+        let arj_header = [0x60, 0xea];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&arj_header),
+            Some("File appears to be an ARJ compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
