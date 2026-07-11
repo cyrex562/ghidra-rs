@@ -42,7 +42,7 @@ mod tests {
     impl crate::framework::seam_stubs::JdomElement for MockJdomElement {}
 
     struct MockProject;
-    impl crate::framework::seam_stubs::Project for MockProject {}
+    impl crate::framework::model::Project for MockProject {}
 
     impl crate::framework::model::ToolTemplate for MockToolTemplate {
         fn get_name(&self) -> String {
@@ -75,7 +75,7 @@ mod tests {
 
         fn create_tool(
             &self,
-            _project: &dyn crate::framework::seam_stubs::Project,
+            _project: &dyn crate::framework::model::Project,
         ) -> Box<dyn crate::framework::seam_stubs::PluginTool> {
             Box::new(MockPluginTool)
         }

@@ -14,7 +14,7 @@ pub trait FrontEndService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::framework::seam_stubs::Project;
+    use crate::framework::model::Project;
 
     struct MockProject;
     impl Project for MockProject {}

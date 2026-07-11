@@ -2,8 +2,9 @@ use std::io;
 
 use thiserror::Error;
 
+use crate::framework::model::Project;
 use crate::framework::seam_stubs::{
-    Project, ProjectLocator, RepositoryAdapter, RepositoryServerAdapter, ToolChest,
+    ProjectLocator, RepositoryAdapter, RepositoryServerAdapter, ToolChest,
 };
 use crate::framework::store::LockException;
 use crate::framework::model::server_info::ServerInfo;

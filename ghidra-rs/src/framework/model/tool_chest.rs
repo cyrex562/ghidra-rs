@@ -117,7 +117,7 @@ mod tests {
 
         fn restore_from_xml(&mut self, _root: &dyn crate::framework::seam_stubs::JdomElement) {}
 
-        fn create_tool(&self, _project: &dyn crate::framework::seam_stubs::Project) -> Box<dyn crate::framework::seam_stubs::PluginTool> {
+        fn create_tool(&self, _project: &dyn crate::framework::model::Project) -> Box<dyn crate::framework::seam_stubs::PluginTool> {
             struct Stub;
             impl crate::framework::seam_stubs::PluginTool for Stub {}
             Box::new(Stub)

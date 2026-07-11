@@ -1,4 +1,4 @@
-use crate::framework::seam_stubs::Project;
+use crate::framework::model::Project;
 
 /// Listener that is notified when a project is opened or closed.
 ///

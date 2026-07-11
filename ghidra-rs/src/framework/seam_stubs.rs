@@ -126,12 +126,6 @@ pub trait JdomElement {}
 /// `ToolTemplate` only ever returns this type, so no members are needed yet.
 pub trait PluginTool {}
 
-/// Placeholder for `ghidra.framework.model.Project`, referenced by
-/// [`ToolTemplate`](crate::framework::model::ToolTemplate) and
-/// [`ProjectManager`](crate::framework::model::ProjectManager) before the real interface is
-/// ported. Only ever returned/passed through as an opaque value, so no members are needed yet.
-pub trait Project {}
-
 /// Placeholder for `ghidra.framework.client.RepositoryAdapter`, referenced by
 /// [`ProjectManager`](crate::framework::model::ProjectManager) before the real class is ported.
 /// `ProjectManager` only ever passes this type through as an opaque value, so no members are
@@ -170,3 +164,8 @@ pub trait WorkspaceChangeListener {}
 /// `ProjectData` only needs this type to identify itself via [`std::any::TypeId`] (standing in
 /// for Java's `Class<? extends LocalFileSystem>`), so no members are needed yet.
 pub trait LocalFileSystem {}
+
+/// Placeholder for `ghidra.framework.options.SaveState`, referenced by
+/// [`Project`](crate::framework::model::Project) before the real class is ported. `Project` only
+/// ever passes this type through as an opaque value, so no members are needed yet.
+pub trait SaveState {}
