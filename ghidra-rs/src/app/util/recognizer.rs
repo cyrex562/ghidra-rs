@@ -522,6 +522,39 @@ impl Recognizer for LhaRecognizer {
     }
 }
 
+/// Recognizes Windows Imaging Format (WIM) files by their magic header bytes: `MSWIM\0\0`.
+///
+/// The magic bytes are: `0x4d 0x53 0x57 0x49 0x4d 0x00 0x00` (which is "MSWIM" followed by two null bytes).
+///
+/// Port of `ghidra.app.util.recognizer.MSWIMRecognizer`.
+pub struct MswimRecognizer;
+
+impl Recognizer for MswimRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        7
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x4d
+                && bytes[1] == 0x53
+                && bytes[2] == 0x57
+                && bytes[3] == 0x49
+                && bytes[4] == 0x4d
+                && bytes[5] == 0x00
+                && bytes[6] == 0x00
+            {
+                return Some("File appears to be a Windows Imaging Format (WIM) file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1786,6 +1819,115 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&lha_header),
             Some("File appears to be a LHA/LHARC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn mswim_recognizer_identifies_valid_header() {
+        let recognizer = MswimRecognizer;
+        let mswim_header = [0x4d, 0x53, 0x57, 0x49, 0x4d, 0x00, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 7);
+        assert_eq!(
+            recognizer.recognize(&mswim_header),
+            Some("File appears to be a Windows Imaging Format (WIM) file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_insufficient_bytes() {
+        let recognizer = MswimRecognizer;
+        let short_buffer = [0x4d, 0x53, 0x57, 0x49, 0x4d, 0x00];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_mismatched_magic() {
+        let recognizer = MswimRecognizer;
+        let wrong_magic = [0x4d, 0x53, 0x57, 0x49, 0x4d, 0x01, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = MswimRecognizer;
+        let wrong_first = [0x4e, 0x53, 0x57, 0x49, 0x4d, 0x00, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = MswimRecognizer;
+        let wrong_second = [0x4d, 0x52, 0x57, 0x49, 0x4d, 0x00, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = MswimRecognizer;
+        let wrong_third = [0x4d, 0x53, 0x58, 0x49, 0x4d, 0x00, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = MswimRecognizer;
+        let wrong_fourth = [0x4d, 0x53, 0x57, 0x4a, 0x4d, 0x00, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_fifth_byte_mismatch() {
+        let recognizer = MswimRecognizer;
+        let wrong_fifth = [0x4d, 0x53, 0x57, 0x49, 0x4e, 0x00, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_fifth), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_sixth_byte_mismatch() {
+        let recognizer = MswimRecognizer;
+        let wrong_sixth = [0x4d, 0x53, 0x57, 0x49, 0x4d, 0x01, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_sixth), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_rejects_seventh_byte_mismatch() {
+        let recognizer = MswimRecognizer;
+        let wrong_seventh = [0x4d, 0x53, 0x57, 0x49, 0x4d, 0x00, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_seventh), None);
+    }
+
+    #[test]
+    fn mswim_recognizer_works_with_extra_data() {
+        let recognizer = MswimRecognizer;
+        let mswim_with_data = [0x4d, 0x53, 0x57, 0x49, 0x4d, 0x00, 0x00, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&mswim_with_data),
+            Some("File appears to be a Windows Imaging Format (WIM) file".to_string())
+        );
+    }
+
+    #[test]
+    fn mswim_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(MswimRecognizer);
+        let mswim_header = [0x4d, 0x53, 0x57, 0x49, 0x4d, 0x00, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 7);
+        assert_eq!(
+            recognizer.recognize(&mswim_header),
+            Some("File appears to be a Windows Imaging Format (WIM) file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
