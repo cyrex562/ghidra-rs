@@ -109,6 +109,30 @@ impl Recognizer for Bzip2Recognizer {
     }
 }
 
+/// Recognizes CABARC compressed files by their magic header bytes: `MSCF`.
+///
+/// Port of `ghidra.app.util.recognizer.CabarcRecognizer`.
+pub struct CabarcRecognizer;
+
+impl Recognizer for CabarcRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x4d && bytes[1] == 0x53 && bytes[2] == 0x43 && bytes[3] == 0x46 {
+                return Some("File appears to be a CABARC compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 /// Recognizes Microsoft Compiled HTML (CHM) files by their magic header bytes: `ITSF`.
 ///
 /// Port of `ghidra.app.util.recognizer.CHMRecognizer`.
@@ -325,6 +349,59 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&bzip2_header),
             Some("File appears to be a BZIP2 compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn cabarc_recognizer_identifies_valid_header() {
+        let recognizer = CabarcRecognizer;
+        let cabarc_header = [0x4d, 0x53, 0x43, 0x46];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&cabarc_header),
+            Some("File appears to be a CABARC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn cabarc_recognizer_rejects_insufficient_bytes() {
+        let recognizer = CabarcRecognizer;
+        let short_buffer = [0x4d, 0x53, 0x43];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn cabarc_recognizer_rejects_mismatched_magic() {
+        let recognizer = CabarcRecognizer;
+        let wrong_magic = [0x4d, 0x53, 0x43, 0x47];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn cabarc_recognizer_works_with_extra_data() {
+        let recognizer = CabarcRecognizer;
+        let cabarc_header_with_data = [0x4d, 0x53, 0x43, 0x46, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&cabarc_header_with_data),
+            Some("File appears to be a CABARC compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn cabarc_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(CabarcRecognizer);
+        let cabarc_header = [0x4d, 0x53, 0x43, 0x46];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&cabarc_header),
+            Some("File appears to be a CABARC compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
