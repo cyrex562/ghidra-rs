@@ -468,6 +468,34 @@ impl Recognizer for ImpRecognizer {
     }
 }
 
+/// Recognizes JAR compressed files by their magic header bytes: `0x50 0x4b 0x03 0x04`.
+///
+/// Port of `ghidra.app.util.recognizer.JarRecognizer`.
+pub struct JarRecognizer;
+
+impl Recognizer for JarRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x50
+                && bytes[1] == 0x4b
+                && bytes[2] == 0x03
+                && bytes[3] == 0x04
+            {
+                return Some("File appears to be a JAR compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1548,6 +1576,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&imp_header),
             Some("File appears to be an IMP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn jar_recognizer_identifies_valid_header() {
+        let recognizer = JarRecognizer;
+        let jar_header = [0x50, 0x4b, 0x03, 0x04];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&jar_header),
+            Some("File appears to be a JAR compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn jar_recognizer_rejects_insufficient_bytes() {
+        let recognizer = JarRecognizer;
+        let short_buffer = [0x50, 0x4b, 0x03];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn jar_recognizer_rejects_mismatched_magic() {
+        let recognizer = JarRecognizer;
+        let wrong_magic = [0x50, 0x4b, 0x03, 0x05];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn jar_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = JarRecognizer;
+        let wrong_first = [0x51, 0x4b, 0x03, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn jar_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = JarRecognizer;
+        let wrong_second = [0x50, 0x4c, 0x03, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn jar_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = JarRecognizer;
+        let wrong_third = [0x50, 0x4b, 0x02, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn jar_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = JarRecognizer;
+        let wrong_fourth = [0x50, 0x4b, 0x03, 0x05];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn jar_recognizer_works_with_extra_data() {
+        let recognizer = JarRecognizer;
+        let jar_header_with_data = [0x50, 0x4b, 0x03, 0x04, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&jar_header_with_data),
+            Some("File appears to be a JAR compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn jar_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(JarRecognizer);
+        let jar_header = [0x50, 0x4b, 0x03, 0x04];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&jar_header),
+            Some("File appears to be a JAR compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
