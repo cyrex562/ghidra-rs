@@ -6198,7 +6198,7 @@ orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/Functio
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FunctionStartPostAnalyzer.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/FunctionStartPreFuncAnalyzer.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/LibraryRecord.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
-orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/PatternConstraint.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
+orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/PatternConstraint.java	DONE	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/app/analyzers/Patterns.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra app analyzers 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/AlignmentPanelBuilder.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
 orig_src/Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/gui/BitsInputDialogComponentProvider.java	TODO	orig_src Ghidra Features BytePatterns src main java ghidra bitpatterns gui 
