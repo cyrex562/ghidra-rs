@@ -190,7 +190,7 @@ DONE	interface	98	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/D
 DONE	interface	98	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingMarginProviderService.java
 DONE	interface	98	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/MemorySearchService.java
 DONE	abstract	36	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternExpression.java
-TODO	class	29	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/TokenPattern.java
+DONE	class	29	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/TokenPattern.java
 DONE	abstract	26	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternValue.java
 DONE	class	19	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/VarnodeTpl.java
 TODO	class	19	5	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/Constructor.java
