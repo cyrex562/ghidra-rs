@@ -1,5 +1,5 @@
 use crate::framework::model::DomainObject;
-use crate::program::model::address::AddressFactory;
+use crate::program::model::address::{AddressFactory, AddressSet, AddressSetView};
 use crate::program::model::lang::CompilerSpecID;
 use crate::program::model::listing::Listing;
 use crate::program::model::symbol::{EquateTable, ExternalManager, ReferenceManager, SymbolTable};
@@ -16,6 +16,14 @@ pub trait Program: DomainObject + Send + Sync {
 
     fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {
         None
+    }
+
+    fn get_loaded_and_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(AddressSet::new())
+    }
+
+    fn get_all_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(AddressSet::new())
     }
 
     fn get_listing(&mut self) -> Option<&mut dyn Listing> {
