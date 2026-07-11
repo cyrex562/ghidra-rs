@@ -2,14 +2,12 @@ use std::io;
 
 use super::field::Field;
 use super::field_key_interior_node::FieldKeyInteriorNode;
+use super::field_key_record_node::FieldKeyRecordNode;
 use super::nodes::BTreeNode;
-use crate::framework::seam_stubs::FieldKeyRecordNode;
 
 /// Common interface for `BTreeNode` implementations which utilize a `Field` key.
 ///
-/// Mirrors `db.FieldKeyNode`, which extends `BTreeNode`. `FieldKeyRecordNode` is not yet ported,
-/// so it is represented here by a minimal placeholder trait in
-/// [`seam_stubs`](crate::framework::seam_stubs) (see `STUBS.tsv`).
+/// Mirrors `db.FieldKeyNode`, which extends `BTreeNode`.
 pub trait FieldKeyNode: BTreeNode {
     /// Get the parent node, or `None` if this is the root.
     fn get_parent(&self) -> Option<Box<dyn FieldKeyInteriorNode>>;

@@ -165,12 +165,6 @@ pub trait ToolAssociationInfo {}
 /// needed yet.
 pub trait Database {}
 
-/// Placeholder for `db.FieldKeyRecordNode`, referenced by
-/// [`FieldKeyNode`](crate::framework::db::FieldKeyNode) before the real class is ported.
-/// `FieldKeyNode` only ever returns this type from its leaf-node accessors, so no members are
-/// needed yet.
-pub trait FieldKeyRecordNode {}
-
 /// Placeholder for `ghidra.framework.model.WorkspaceChangeListener`, referenced by
 /// [`ToolManager`](crate::framework::model::ToolManager) before the real interface is ported.
 /// `ToolManager` only ever registers/unregisters this listener, so no members are needed yet.

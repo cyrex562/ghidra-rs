@@ -62,19 +62,19 @@ mod tests {
         fn get_leaf_node(
             &self,
             _key: &Field,
-        ) -> io::Result<Box<dyn crate::framework::seam_stubs::FieldKeyRecordNode>> {
+        ) -> io::Result<Box<dyn crate::framework::db::field_key_record_node::FieldKeyRecordNode>> {
             Err(io::Error::new(io::ErrorKind::Other, "no leaf node"))
         }
 
         fn get_leftmost_leaf_node(
             &self,
-        ) -> io::Result<Box<dyn crate::framework::seam_stubs::FieldKeyRecordNode>> {
+        ) -> io::Result<Box<dyn crate::framework::db::field_key_record_node::FieldKeyRecordNode>> {
             Err(io::Error::new(io::ErrorKind::Other, "no leaf node"))
         }
 
         fn get_rightmost_leaf_node(
             &self,
-        ) -> io::Result<Box<dyn crate::framework::seam_stubs::FieldKeyRecordNode>> {
+        ) -> io::Result<Box<dyn crate::framework::db::field_key_record_node::FieldKeyRecordNode>> {
             Err(io::Error::new(io::ErrorKind::Other, "no leaf node"))
         }
 
