@@ -874,6 +874,44 @@ impl Recognizer for StuffIt1Recognizer {
     }
 }
 
+/// Recognizes Stuffit5 compressed files by their magic header bytes: `Stuff It `.
+///
+/// Recognizes Stuffit versions v5.0 to v7.0. The magic bytes are: `0x53 0x74 0x75 0x66 0x66 0x49 0x74 0x20`
+/// (which is "Stuff It " with a trailing space).
+///
+/// Port of `ghidra.app.util.recognizer.StuffIt5Recognizer`.
+pub struct StuffIt5Recognizer;
+
+impl Recognizer for StuffIt5Recognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        8
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x53
+                && bytes[1] == 0x74
+                && bytes[2] == 0x75
+                && bytes[3] == 0x66
+                && bytes[4] == 0x66
+                && bytes[5] == 0x49
+                && bytes[6] == 0x74
+                && bytes[7] == 0x20
+            {
+                return Some(
+                    "File appears to be a Stuffit5 (Stuffit versions v5.0 to v7.0) compressed file"
+                        .to_string(),
+                );
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3284,6 +3322,126 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&stuffit1_header),
             Some("File appears to be a Stuffit1 (Stuffit versions up to v4.0) compressed file"
+                .to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_identifies_valid_header() {
+        let recognizer = StuffIt5Recognizer;
+        let stuffit5_header = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&stuffit5_header),
+            Some("File appears to be a Stuffit5 (Stuffit versions v5.0 to v7.0) compressed file"
+                .to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_insufficient_bytes() {
+        let recognizer = StuffIt5Recognizer;
+        let short_buffer = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_mismatched_magic() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_magic = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_first = [0x52, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_second = [0x53, 0x75, 0x75, 0x66, 0x66, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_third = [0x53, 0x74, 0x76, 0x66, 0x66, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_fourth = [0x53, 0x74, 0x75, 0x67, 0x66, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_fifth_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_fifth = [0x53, 0x74, 0x75, 0x66, 0x67, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_fifth), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_sixth_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_sixth = [0x53, 0x74, 0x75, 0x66, 0x66, 0x4a, 0x74, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_sixth), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_seventh_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_seventh = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x75, 0x20];
+
+        assert_eq!(recognizer.recognize(&wrong_seventh), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_rejects_eighth_byte_mismatch() {
+        let recognizer = StuffIt5Recognizer;
+        let wrong_eighth = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x21];
+
+        assert_eq!(recognizer.recognize(&wrong_eighth), None);
+    }
+
+    #[test]
+    fn stuffit5_recognizer_works_with_extra_data() {
+        let recognizer = StuffIt5Recognizer;
+        let stuffit5_with_data = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x20, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&stuffit5_with_data),
+            Some("File appears to be a Stuffit5 (Stuffit versions v5.0 to v7.0) compressed file"
+                .to_string())
+        );
+    }
+
+    #[test]
+    fn stuffit5_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(StuffIt5Recognizer);
+        let stuffit5_header = [0x53, 0x74, 0x75, 0x66, 0x66, 0x49, 0x74, 0x20];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&stuffit5_header),
+            Some("File appears to be a Stuffit5 (Stuffit versions v5.0 to v7.0) compressed file"
                 .to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
