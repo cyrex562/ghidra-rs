@@ -316,6 +316,32 @@ impl Recognizer for DmgRecognizer {
     }
 }
 
+/// Recognizes empty PKZIP compressed files by their magic header bytes: `PK\x05\x06`.
+///
+/// The magic bytes are: `0x50 0x4b 0x05 0x06` (which is "PK" followed by ETX and ACK control chars).
+///
+/// Port of `ghidra.app.util.recognizer.EmptyPkzipRecognizer`.
+pub struct EmptyPkzipRecognizer;
+
+impl Recognizer for EmptyPkzipRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x50 && bytes[1] == 0x4b && bytes[2] == 0x05 && bytes[3] == 0x06 {
+                return Some("File appears to be an empty PKZIP compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1015,6 +1041,83 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&dmg_header),
             Some("File appears to be an Apple Disk Image file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_identifies_valid_header() {
+        let recognizer = EmptyPkzipRecognizer;
+        let empty_pkzip_header = [0x50, 0x4b, 0x05, 0x06];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&empty_pkzip_header),
+            Some("File appears to be an empty PKZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_rejects_insufficient_bytes() {
+        let recognizer = EmptyPkzipRecognizer;
+        let short_buffer = [0x50, 0x4b, 0x05];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_rejects_mismatched_magic() {
+        let recognizer = EmptyPkzipRecognizer;
+        let wrong_magic = [0x50, 0x4b, 0x05, 0x07];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = EmptyPkzipRecognizer;
+        let wrong_first = [0x51, 0x4b, 0x05, 0x06];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = EmptyPkzipRecognizer;
+        let wrong_second = [0x50, 0x4c, 0x05, 0x06];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = EmptyPkzipRecognizer;
+        let wrong_third = [0x50, 0x4b, 0x04, 0x06];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_works_with_extra_data() {
+        let recognizer = EmptyPkzipRecognizer;
+        let empty_pkzip_with_data = [0x50, 0x4b, 0x05, 0x06, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&empty_pkzip_with_data),
+            Some("File appears to be an empty PKZIP compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn empty_pkzip_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(EmptyPkzipRecognizer);
+        let empty_pkzip_header = [0x50, 0x4b, 0x05, 0x06];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&empty_pkzip_header),
+            Some("File appears to be an empty PKZIP compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
