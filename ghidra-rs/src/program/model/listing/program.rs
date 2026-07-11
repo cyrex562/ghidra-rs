@@ -1,5 +1,6 @@
 use crate::framework::model::DomainObject;
 use crate::program::model::address::AddressFactory;
+use crate::program::model::lang::CompilerSpecID;
 use crate::program::model::listing::Listing;
 use crate::program::model::symbol::{EquateTable, ExternalManager, ReferenceManager, SymbolTable};
 use std::sync::Arc;
@@ -53,5 +54,17 @@ pub trait Program: DomainObject + Send + Sync {
     /// Returns an empty string if the format is not set or unknown.
     fn get_executable_format(&self) -> String {
         String::new()
+    }
+
+    /// Get a name for the compiler that produced this program, if known.
+    ///
+    /// Returns an empty string if the compiler is not set or unknown.
+    fn get_compiler(&self) -> String {
+        String::new()
+    }
+
+    /// Get the ID of the compiler spec associated with this program, if known.
+    fn get_compiler_spec_id(&self) -> Option<CompilerSpecID> {
+        None
     }
 }
