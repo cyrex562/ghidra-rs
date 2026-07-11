@@ -8965,7 +8965,7 @@ orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/RP
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/RarRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/SbcRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/SbxRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer
-orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/SevenZipRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
+orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/SevenZipRecognizer.java	DONE	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/SpannedPkzipRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/SqzRecognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
 orig_src/Ghidra/Features/Recognizers/src/main/java/ghidra/app/util/recognizer/StuffIt1Recognizer.java	TODO	orig_src Ghidra Features Recognizers src main java ghidra app util recognizer 
