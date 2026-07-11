@@ -12542,7 +12542,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/FrontEndPl
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/FrontEndProjectDataCollapseAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/FrontEndProjectDataExpandAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/FrontEndProjectDataNewFolderAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/FrontEndService.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/FrontEndService.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework main
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/FrontEndTool.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/GetDomainObjectTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/ImportGhidraToolsDialog.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main 
