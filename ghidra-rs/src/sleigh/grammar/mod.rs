@@ -1,3 +1,4 @@
+pub mod abstract_sleigh_lexer;
 pub mod antlr_util;
 pub mod bailout_exception;
 pub mod base_recognizer_override;
@@ -17,6 +18,7 @@ pub mod sleigh_recognizer_constants;
 pub mod sleigh_token;
 pub mod token_extractor;
 
+pub use abstract_sleigh_lexer::{AbstractSleighLexer, LexerState};
 pub use antlr_util::{AntlrUtil, DebugStreamNode, DebugTreeNode};
 pub use bailout_exception::BailoutException;
 pub use base_recognizer_override::{
