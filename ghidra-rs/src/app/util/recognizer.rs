@@ -30,6 +30,37 @@ pub trait Recognizer {
     fn get_priority(&self) -> i32;
 }
 
+/// Recognizes ACE compressed files by their magic header bytes: `**ACE**`.
+///
+/// Port of `ghidra.app.util.recognizer.AceRecognizer`.
+pub struct AceRecognizer;
+
+impl Recognizer for AceRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        7
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x2a
+                && bytes[1] == 0x2a
+                && bytes[2] == 0x41
+                && bytes[3] == 0x43
+                && bytes[4] == 0x45
+                && bytes[5] == 0x2a
+                && bytes[6] == 0x2a
+            {
+                return Some("File appears to be an ACE compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -64,5 +95,59 @@ mod tests {
         assert_eq!(recognizer.recognize(&[0x1f, 0x8b, 0x00]), Some("GZIP".to_string()));
         assert_eq!(recognizer.recognize(&[0x00, 0x00]), None);
         assert_eq!(recognizer.get_priority(), 0);
+    }
+
+    #[test]
+    fn ace_recognizer_identifies_valid_header() {
+        let recognizer = AceRecognizer;
+        let ace_header = [0x2a, 0x2a, 0x41, 0x43, 0x45, 0x2a, 0x2a];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 7);
+        assert_eq!(
+            recognizer.recognize(&ace_header),
+            Some("File appears to be an ACE compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn ace_recognizer_rejects_insufficient_bytes() {
+        let recognizer = AceRecognizer;
+        let short_buffer = [0x2a, 0x2a, 0x41, 0x43, 0x45];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn ace_recognizer_rejects_mismatched_magic() {
+        let recognizer = AceRecognizer;
+        let wrong_magic = [0x2a, 0x2a, 0x42, 0x43, 0x45, 0x2a, 0x2a];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn ace_recognizer_works_with_extra_data() {
+        let recognizer = AceRecognizer;
+        let ace_header_with_data =
+            [0x2a, 0x2a, 0x41, 0x43, 0x45, 0x2a, 0x2a, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&ace_header_with_data),
+            Some("File appears to be an ACE compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn ace_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(AceRecognizer);
+        let ace_header = [0x2a, 0x2a, 0x41, 0x43, 0x45, 0x2a, 0x2a];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 7);
+        assert_eq!(
+            recognizer.recognize(&ace_header),
+            Some("File appears to be an ACE compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
     }
 }
