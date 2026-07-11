@@ -1,6 +1,7 @@
 use crate::generic::constraint::constraint_data::ConstraintData;
 use crate::program::model::listing::Program;
 use crate::util::classfinder::ExtensionPoint;
+use std::any::Any;
 
 /// A constraint on a Program.
 ///
@@ -9,7 +10,7 @@ use crate::util::classfinder::ExtensionPoint;
 /// the constraint interface and be marked as extension points for dynamic discovery.
 ///
 /// Port of `ghidra.util.constraint.ProgramConstraint`.
-pub trait ProgramConstraint: Send + Sync + ExtensionPoint {
+pub trait ProgramConstraint: Send + Sync + ExtensionPoint + Any {
     /// Returns the name of the constraint.
     fn name(&self) -> &str;
 

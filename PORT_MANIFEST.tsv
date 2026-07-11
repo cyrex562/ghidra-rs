@@ -14579,7 +14579,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/XmlProgramU
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfo.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/charset/CharsetInfoManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util charset 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/CompilerConstraint.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/ExecutableFormatConstraint.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/ExecutableFormatConstraint.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/LanguageConstraint.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/ProgramConstraint.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/constraint/ProgramDecisionTree.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra util constraint 

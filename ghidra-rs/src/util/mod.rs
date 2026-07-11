@@ -59,6 +59,7 @@ pub mod string_format;
 pub mod universal_id;
 pub mod classfinder;
 pub mod constraint;
+pub mod executable_format_constraint;
 pub mod graph;
 pub mod map;
 pub mod log_listener;
