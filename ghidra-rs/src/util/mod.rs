@@ -78,6 +78,7 @@ pub mod monitored_output_stream;
 pub mod domain_object_lock_hold;
 pub mod seam_stubs;
 pub mod tracked_task_listener;
+pub mod dbg_msg_tracer;
 
 pub use address_range_comparators::AddressRangeComparators;
 pub use async_fence::AsyncFence;
@@ -146,3 +147,4 @@ pub use monitored_input_stream::MonitoredInputStream;
 pub use monitored_output_stream::MonitoredOutputStream;
 pub use domain_object_lock_hold::DomainObjectLockHold;
 pub use tracked_task_listener::TrackedTaskListener;
+pub use dbg_msg_tracer::{DbgMsgTracer, CallRec};
