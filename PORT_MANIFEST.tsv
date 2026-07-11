@@ -8183,7 +8183,7 @@ orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbre
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SectionContribution1400.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SectionContribution200.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SectionContribution400.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader
-orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SectionContribution600.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
+orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SectionContribution600.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SegmentMapDescription.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/StringParseType.java	DONE	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
 orig_src/Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/StringTableC13Section.java	TODO	orig_src Ghidra Features PDB src main java ghidra app util bin format pdb2 pdbreader 
