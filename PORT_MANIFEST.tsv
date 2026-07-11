@@ -13285,7 +13285,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghp
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/OrExpression.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternEquation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternExpression.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternValue.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternValue.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PlusExpression.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/RightShiftExpression.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/StartInstructionValue.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
