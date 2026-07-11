@@ -1706,7 +1706,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/descripti
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/VectorResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query description 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/Base64Lite.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query elastic
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/Base64VectorFactory.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query elastic 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/ElasticConnection.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query elastic 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/ElasticConnection.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query elastic 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/ElasticDatabase.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query elastic 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/ElasticEffects.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query elastic 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/ElasticException.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query elastic
