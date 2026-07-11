@@ -196,7 +196,7 @@ TODO	class	19	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 TODO	class	19	5	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/Constructor.java
 TODO	class	18	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstTpl.java
 TODO	class	16	4	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/OperandSymbol.java
-TODO	abstract	12	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/Pattern.java
+DONE	abstract	12	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/Pattern.java
 TODO	abstract	11	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SpecificSymbol.java
 TODO	abstract	11	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternEquation.java
 TODO	class	11	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstructTpl.java
