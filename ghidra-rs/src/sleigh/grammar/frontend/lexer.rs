@@ -15,10 +15,14 @@
 //! - `//` (`CPPCOMMENT`) and unrecognized characters (`UNKNOWN`) are lexing
 //!   errors.
 //!
-//! // TODO(sleigh-frontend): DisplayLexer.g and SemanticLexer.g sub-lexer
-//! // MODES are not yet ported. Constructor display sections and semantic
-//! // bodies are currently lexed with base-mode rules; the mode switch will
-//! // hang off `LexerMultiplexer` (already ported) in a later increment.
+//! The DISPLAY sub-lexer mode (`DisplayLexer.g`) is ported in
+//! [`super::display_lexer`]; it shares this lexer's cursor and inherits the
+//! base rules by delegation. The parser selects the mode per token pull
+//! (see the integration note in `display_lexer.rs`).
+//!
+//! // TODO(sleigh-frontend): SemanticLexer.g sub-lexer MODE is not yet
+//! // ported. Semantic bodies are currently captured as raw base-mode
+//! // tokens between balanced braces.
 //!
 //! // TODO(sleigh-frontend): token type numbering is local to this port; it
 //! // does not (yet) mirror the numbers in the generated SleighLexer.tokens
@@ -129,6 +133,12 @@ pub enum TokenType {
     CppComment = 111,
     Whitespace = 112,
     Unknown = 113,
+
+    // DISPLAY-mode-only token types (see DisplayLexer.g / display_lexer.rs):
+    // '@' | '$' | '?' displayable characters, and the reserved word 'is'
+    // that terminates a constructor display section.
+    DispChar = 120,
+    ResIs = 121,
 }
 
 impl TokenType {
@@ -150,7 +160,7 @@ impl TokenType {
             Equal, NotEqual, Less, Great, LessEqual, GreatEqual, BoolOr, BoolXor, BoolAnd, Pipe,
             Caret, Ampersand, Left, Right, Plus, Minus, Asterisk, Slash, Percent, SpecOr, SpecAnd,
             SpecXor, Identifier, QString, BinInt, DecInt, HexInt, DefInt, LineComment, CppComment,
-            Whitespace, Unknown,
+            Whitespace, Unknown, DispChar, ResIs,
         ];
         ALL.iter().copied().find(|t| t.as_i32() == v)
     }
@@ -244,15 +254,21 @@ impl BaseLexer {
         &self.errors
     }
 
-    fn peek(&self) -> Option<char> {
+    /// Current cursor position as `(line, column)`; shared with the DISPLAY
+    /// sub-lexer ([`super::display_lexer::DisplayLexer`]).
+    pub(super) fn cursor(&self) -> (i32, i32) {
+        (self.line, self.col)
+    }
+
+    pub(super) fn peek(&self) -> Option<char> {
         self.chars.get(self.pos).copied()
     }
 
-    fn peek_at(&self, offset: usize) -> Option<char> {
+    pub(super) fn peek_at(&self, offset: usize) -> Option<char> {
         self.chars.get(self.pos + offset).copied()
     }
 
-    fn bump(&mut self) -> Option<char> {
+    pub(super) fn bump(&mut self) -> Option<char> {
         let c = self.peek()?;
         self.pos += 1;
         if c == '\n' {
@@ -271,7 +287,7 @@ impl BaseLexer {
         self.errors.push(msg);
     }
 
-    fn make_token(
+    pub(super) fn make_token(
         &self,
         ty: TokenType,
         channel: i32,
@@ -822,7 +838,7 @@ mod tests {
 
     #[test]
     fn token_type_roundtrip() {
-        for v in [-1, 4, 10, 42, 50, 60, 70, 92, 100, 105, 110, 113] {
+        for v in [-1, 4, 10, 42, 50, 60, 70, 92, 100, 105, 110, 113, 120, 121] {
             let t = TokenType::from_i32(v).unwrap();
             assert_eq!(t.as_i32(), v);
         }

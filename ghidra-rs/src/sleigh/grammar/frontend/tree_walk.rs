@@ -63,6 +63,11 @@ pub trait SpecVisitor {
 
     /// `constructor` rule.
     fn visit_constructor(&mut self, constructor: &Constructor) {}
+
+    /// `display`/`pieces` rules (DisplayParser.g `OP_DISPLAY` subtree);
+    /// called right after [`SpecVisitor::visit_constructor`] with the same
+    /// constructor's structured printpieces.
+    fn visit_display(&mut self, display: &DisplaySection) {}
 }
 
 /// Walks `spec` in source order, dispatching each node to `visitor`.
@@ -104,7 +109,10 @@ fn walk_constructorlike(c: &Constructorlike, visitor: &mut dyn SpecVisitor) {
             walk_items(&w.body, visitor);
             visitor.exit_with_block(w);
         }
-        Constructorlike::Constructor(ctor) => visitor.visit_constructor(ctor),
+        Constructorlike::Constructor(ctor) => {
+            visitor.visit_constructor(ctor);
+            visitor.visit_display(&ctor.display);
+        }
     }
 }
 
@@ -189,8 +197,16 @@ impl SpecVisitor for SleighCompileDriver {
 
     fn visit_constructor(&mut self, _constructor: &Constructor) {
         self.visited += 1;
-        // TODO(sleigh-frontend): build Constructor, display pieces, pattern
-        // equation, context mutations, and compile the semantic body.
+        // TODO(sleigh-frontend): build Constructor, pattern equation,
+        // context mutations, and compile the semantic body.
+    }
+
+    fn visit_display(&mut self, _display: &DisplaySection) {
+        self.visited += 1;
+        // TODO(sleigh-frontend): feed the structured printpieces to the
+        // backend Constructor (mnemonic/addSyntax/addOperand equivalents of
+        // SleighCompiler.g's display rule); '^' pieces suppress the
+        // separating whitespace, whitespace pieces collapse to one space.
     }
 }
 
@@ -242,6 +258,37 @@ mod tests {
         .unwrap();
         let mut driver = SleighCompileDriver::default();
         walk_spec(&spec, &mut driver);
-        assert_eq!(driver.visited, 3);
+        // endian + alignment + constructor + its display section.
+        assert_eq!(driver.visited, 4);
+    }
+
+    #[test]
+    fn display_hook_sees_structured_pieces() {
+        #[derive(Default)]
+        struct DisplayGrabber(Vec<Vec<PrintPiece>>);
+        impl SpecVisitor for DisplayGrabber {
+            fn visit_display(&mut self, display: &DisplaySection) {
+                self.0.push(display.pieces.clone());
+            }
+        }
+
+        let spec = SleighParser::parse_str(
+            "define endian=little; :J^cc addr is a=1 { }",
+        )
+        .unwrap();
+        let mut grabber = DisplayGrabber::default();
+        walk_spec(&spec, &mut grabber);
+        assert_eq!(grabber.0.len(), 1);
+        assert_eq!(
+            grabber.0[0],
+            vec![
+                PrintPiece::Identifier("J".into()),
+                PrintPiece::Concatenate,
+                PrintPiece::Identifier("cc".into()),
+                PrintPiece::Whitespace(" ".into()),
+                PrintPiece::Identifier("addr".into()),
+                PrintPiece::Whitespace(" ".into()),
+            ]
+        );
     }
 }

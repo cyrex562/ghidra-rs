@@ -5,17 +5,25 @@
 //! (alignment, token, context, space, varnode, bitrange, pcodeop, and the
 //! three `attach` forms), pattern equations (`pequation`), pattern
 //! expressions (`pexpression`/`pexpression2`), context blocks, macro
-//! definitions, `with` blocks, and constructors.
+//! definitions, `with` blocks, constructors, and constructor display
+//! sections (`DisplayParser.g`, structured printpieces).
 //!
-//! // TODO(sleigh-frontend): constructor display sections are captured as the
-//! // raw base-mode tokens between ':' and 'is' (DisplayParser.g wants a
-//! // DISPLAY lexer mode where whitespace is significant), and semantic
-//! // bodies are captured as the raw tokens between balanced braces
-//! // (SemanticParser.g / SemanticLexer.g not yet ported).
+//! Lexing is pull-based: the parser owns the [`BaseLexer`] and buffers
+//! base-mode tokens only as far as its lookahead needs, so that when a
+//! constructor's `:` is consumed it can switch the *unlexed remainder* into
+//! DISPLAY mode (whitespace-significant; see [`super::display_lexer`]) and
+//! back to base mode at the reserved word `is` -- the Rust equivalent of
+//! `DisplayParser.g`'s `lexer.pushMode(DISPLAY) ... lexer.popMode()`
+//! parser actions.
+//!
+//! // TODO(sleigh-frontend): semantic bodies are captured as the raw tokens
+//! // between balanced braces (SemanticParser.g / SemanticLexer.g not yet
+//! // ported).
 
-use crate::sleigh::grammar::{Location, SleighToken};
+use crate::sleigh::grammar::{Location, ParsingEnvironment, SleighToken};
 
 use super::ast::*;
+use super::display_lexer::DisplayLexer;
 use super::lexer::{BaseLexer, TokenType};
 
 /// Parse error with source position information.
@@ -29,48 +37,82 @@ pub struct ParseError {
 
 type PResult<T> = Result<T, ParseError>;
 
-/// Recursive-descent parser over the default-channel token stream.
+/// Recursive-descent parser pulling tokens on demand from a [`BaseLexer`],
+/// switching the lexer into DISPLAY mode inside constructor display
+/// sections.
 pub struct SleighParser {
+    lexer: BaseLexer,
+    /// Base-mode default-channel tokens buffered for lookahead. Consumed
+    /// tokens are kept (indexed by `pos`); the buffer is only ever filled as
+    /// far as `peek`/`peek_ty_at` require, so no base-mode token is lexed
+    /// past a constructor `:` before the mode switch.
     tokens: Vec<SleighToken>,
     pos: usize,
 }
 
 impl SleighParser {
-    /// Builds a parser over pre-lexed tokens (hidden/comment/preproc channels
-    /// must already be filtered out; see
-    /// [`BaseLexer::tokenize_default_channel`]).
-    pub fn new(tokens: Vec<SleighToken>) -> Self {
-        Self { tokens, pos: 0 }
+    /// Builds a parser over (already preprocessed) SLEIGH source text.
+    pub fn new(input: &str) -> Self {
+        Self {
+            lexer: BaseLexer::new(input),
+            tokens: Vec::new(),
+            pos: 0,
+        }
     }
 
-    /// Convenience: lex `input` in base mode and parse it as a full spec.
-    pub fn parse_str(input: &str) -> PResult<Spec> {
-        let mut lexer = BaseLexer::new(input);
-        let tokens = lexer.tokenize_default_channel();
-        if let Some(msg) = lexer.errors().first() {
-            return Err(ParseError {
-                message: format!("lexing error: {msg}"),
-                line: 0,
-                location: None,
-            });
+    /// Like [`SleighParser::new`], with a [`ParsingEnvironment`] attached so
+    /// tokens (and thus errors) carry original-source [`Location`]s from the
+    /// preprocessor's position markers.
+    pub fn with_env(input: &str, env: ParsingEnvironment) -> Self {
+        Self {
+            lexer: BaseLexer::with_env(input, env),
+            tokens: Vec::new(),
+            pos: 0,
         }
-        Self::new(tokens).parse_spec()
+    }
+
+    /// Convenience: parse `input` as a full spec.
+    pub fn parse_str(input: &str) -> PResult<Spec> {
+        Self::new(input).parse_spec()
     }
 
     // ----- token utilities -------------------------------------------------
 
-    fn peek(&self) -> &SleighToken {
+    /// Ensures the lookahead buffer holds a token at `pos + n` (or ends with
+    /// EOF), pulling base-mode default-channel tokens as needed.
+    fn ensure(&mut self, n: usize) {
+        while self.tokens.len() <= self.pos + n {
+            if let Some(last) = self.tokens.last() {
+                if last.token_type() == TokenType::Eof.as_i32() {
+                    return;
+                }
+            }
+            loop {
+                let t = self.lexer.next_token();
+                // Hidden/comment/preproc channels are invisible to the
+                // base-mode parse (as in `BaseLexer.g`).
+                if t.channel() == 0 || t.token_type() == TokenType::Eof.as_i32() {
+                    self.tokens.push(t);
+                    break;
+                }
+            }
+        }
+    }
+
+    fn peek(&mut self) -> &SleighToken {
+        self.ensure(0);
         self.tokens
             .get(self.pos)
             .or_else(|| self.tokens.last())
             .expect("token stream always ends with EOF")
     }
 
-    fn peek_ty(&self) -> TokenType {
+    fn peek_ty(&mut self) -> TokenType {
         TokenType::from_i32(self.peek().token_type()).unwrap_or(TokenType::Unknown)
     }
 
-    fn peek_ty_at(&self, offset: usize) -> TokenType {
+    fn peek_ty_at(&mut self, offset: usize) -> TokenType {
+        self.ensure(offset);
         self.tokens
             .get(self.pos + offset)
             .and_then(|t| TokenType::from_i32(t.token_type()))
@@ -79,14 +121,34 @@ impl SleighParser {
 
     fn bump(&mut self) -> SleighToken {
         let t = self.peek().clone();
-        if self.pos + 1 < self.tokens.len() {
+        if t.token_type() != TokenType::Eof.as_i32() {
             self.pos += 1;
         }
         t
     }
 
+    /// The token at the current position, for error reporting. Does not pull
+    /// from the lexer; error paths always follow a peek that filled it.
+    fn current(&self) -> Option<&SleighToken> {
+        self.tokens.get(self.pos).or_else(|| self.tokens.last())
+    }
+
     fn err_here(&self, message: impl Into<String>) -> ParseError {
-        let t = self.peek();
+        match self.current() {
+            Some(t) => ParseError {
+                message: message.into(),
+                line: t.line(),
+                location: t.location().cloned(),
+            },
+            None => ParseError {
+                message: message.into(),
+                line: 0,
+                location: None,
+            },
+        }
+    }
+
+    fn err_at(t: &SleighToken, message: impl Into<String>) -> ParseError {
         ParseError {
             message: message.into(),
             line: t.line(),
@@ -98,14 +160,12 @@ impl SleighParser {
         if self.peek_ty() == ty {
             Ok(self.bump())
         } else {
-            Err(self.err_here(format!(
-                "expected {what}, found '{}'",
-                self.peek().text().unwrap_or("<?>")
-            )))
+            let found = self.peek().text().unwrap_or("<?>").to_string();
+            Err(self.err_here(format!("expected {what}, found '{found}'")))
         }
     }
 
-    fn at(&self, ty: TokenType) -> bool {
+    fn at(&mut self, ty: TokenType) -> bool {
         self.peek_ty() == ty
     }
 
@@ -223,6 +283,15 @@ impl SleighParser {
                     items.push(SpecItem::Constructorlike(self.parse_constructorlike()?));
                 }
             }
+        }
+        // Lexing errors surface lazily (tokens are pulled on demand); any
+        // that did not already derail the parse are still hard errors.
+        if let Some(msg) = self.lexer.errors().first() {
+            return Err(ParseError {
+                message: format!("lexing error: {msg}"),
+                line: 0,
+                location: None,
+            });
         }
         Ok(Spec { endian, items })
     }
@@ -667,23 +736,7 @@ impl SleighParser {
             Some(self.parse_identifier()?)
         };
         self.expect(TokenType::Colon, "':' starting constructor display")?;
-
-        // TODO(sleigh-frontend): the display section should be lexed in
-        // DISPLAY mode (whitespace-significant, DISPCHAR, 'is' reserved).
-        // For now capture raw base-mode tokens up to the 'is' terminator.
-        let mut display = DisplaySection::default();
-        loop {
-            match self.peek_ty() {
-                TokenType::Eof => {
-                    return Err(self.err_here("constructor display never reached 'is'"))
-                }
-                TokenType::Identifier if self.peek().text() == Some("is") => {
-                    self.bump();
-                    break;
-                }
-                _ => display.tokens.push(self.bump()),
-            }
-        }
+        let display = self.parse_display()?;
 
         let pattern = self.parse_pequation()?;
         let context = self.parse_contextblock()?;
@@ -701,6 +754,110 @@ impl SleighParser {
             semantic,
             location: Self::loc_of(&start),
         })
+    }
+
+    /// `display : COLON pieces RES_IS` with
+    /// `pieces : printpiece*` (DisplayParser.g); the COLON has already been
+    /// consumed by the caller.
+    ///
+    /// This is where the lexer mode switches: pieces are pulled straight
+    /// from the DISPLAY-mode lexer (whitespace on the default channel, `#`
+    /// and `@$?` displayable, `is` reserved), bypassing the base-mode
+    /// lookahead buffer, and the `is` terminator returns the remaining
+    /// input to base mode -- the equivalent of DisplayParser.g's
+    /// `lexer.pushMode(DISPLAY) ... lexer.popMode()` actions.
+    fn parse_display(&mut self) -> PResult<DisplaySection> {
+        // The mode switch is only sound if base-mode lookahead never crossed
+        // the ':' (the grammar guarantees at most one-token lookahead, which
+        // ends at the ':' itself).
+        if self.pos != self.tokens.len() {
+            return Err(self.err_here(
+                "internal error: base-mode lookahead crossed into a display section",
+            ));
+        }
+        let mut pieces = Vec::new();
+        loop {
+            let t = self.next_display_token();
+            let ty = TokenType::from_i32(t.token_type()).unwrap_or(TokenType::Unknown);
+            let text = || t.text().unwrap_or("").to_string();
+            match ty {
+                // RES_IS terminates the display and pops back to base mode.
+                TokenType::ResIs => return Ok(DisplaySection { pieces }),
+                TokenType::Eof => {
+                    return Err(Self::err_at(&t, "constructor display never reached 'is'"))
+                }
+                // printpiece : identifier (keywords double as identifiers)
+                ty if Self::is_identifier_like(ty) => {
+                    pieces.push(PrintPiece::Identifier(text()));
+                }
+                // printpiece : whitespace (significant in display mode)
+                TokenType::Whitespace => pieces.push(PrintPiece::Whitespace(text())),
+                // printpiece : concatenate ('^' joins neighbors, not printed)
+                TokenType::Caret => pieces.push(PrintPiece::Concatenate),
+                // printpiece : qstring
+                TokenType::QString => pieces.push(PrintPiece::QString(text())),
+                // printpiece : special -- every alternative of the `special`
+                // rule prints its literal characters.
+                TokenType::DispChar
+                | TokenType::LineComment
+                | TokenType::LBrace
+                | TokenType::RBrace
+                | TokenType::LBracket
+                | TokenType::RBracket
+                | TokenType::LParen
+                | TokenType::RParen
+                | TokenType::Ellipsis
+                | TokenType::Equal
+                | TokenType::NotEqual
+                | TokenType::Less
+                | TokenType::Great
+                | TokenType::LessEqual
+                | TokenType::GreatEqual
+                | TokenType::Assign
+                | TokenType::Colon
+                | TokenType::Comma
+                | TokenType::Asterisk
+                | TokenType::BoolOr
+                | TokenType::BoolXor
+                | TokenType::BoolAnd
+                | TokenType::Pipe
+                | TokenType::Ampersand
+                | TokenType::Left
+                | TokenType::Right
+                | TokenType::Plus
+                | TokenType::Minus
+                | TokenType::Slash
+                | TokenType::Percent
+                | TokenType::Exclaim
+                | TokenType::Tilde
+                | TokenType::Semi
+                | TokenType::SpecOr
+                | TokenType::SpecAnd
+                | TokenType::SpecXor
+                | TokenType::DefInt
+                | TokenType::HexInt
+                | TokenType::BinInt => pieces.push(PrintPiece::Literal(text())),
+                // Not printpieces in DisplayParser.g: UNDERSCORE, DEC_INT
+                // (0n...), RES_WITH, CPPCOMMENT, UNKNOWN.
+                _ => {
+                    return Err(Self::err_at(
+                        &t,
+                        format!("'{}' is not valid in a constructor display section", text()),
+                    ))
+                }
+            }
+        }
+    }
+
+    /// Pulls one default-channel token in DISPLAY mode (preprocessor
+    /// position markers stay on the PREPROC channel and are skipped).
+    fn next_display_token(&mut self) -> SleighToken {
+        loop {
+            let t = DisplayLexer::new(&mut self.lexer).next_token();
+            if t.channel() == 0 || t.token_type() == TokenType::Eof.as_i32() {
+                return t;
+            }
+        }
     }
 
     /// `semanticbody : { ... }` -- raw balanced-brace token capture.
@@ -1174,8 +1331,13 @@ mod tests {
         match &spec.items[0] {
             SpecItem::Constructorlike(Constructorlike::Constructor(c)) => {
                 assert_eq!(c.table, None);
-                assert_eq!(c.display.tokens.len(), 1);
-                assert_eq!(c.display.tokens[0].text(), Some("ret"));
+                assert_eq!(
+                    c.display.pieces,
+                    vec![
+                        PrintPiece::Identifier("ret".into()),
+                        PrintPiece::Whitespace(" ".into()),
+                    ]
+                );
                 match &c.pattern {
                     PatternEquation::Constraint { symbol, op, expr } => {
                         assert_eq!(symbol, "op");
@@ -1202,6 +1364,15 @@ mod tests {
             SpecItem::Constructorlike(Constructorlike::Constructor(c)) => {
                 assert_eq!(c.table.as_deref(), Some("mode"));
                 assert!(matches!(c.pattern, PatternEquation::And(_, _)));
+                // Leading whitespace and the quoted string are printpieces.
+                assert_eq!(
+                    c.display.pieces,
+                    vec![
+                        PrintPiece::Whitespace(" ".into()),
+                        PrintPiece::QString("m".into()),
+                        PrintPiece::Whitespace(" ".into()),
+                    ]
+                );
             }
             other => panic!("unexpected item: {other:?}"),
         }
@@ -1335,5 +1506,215 @@ mod tests {
             .unwrap_err();
         assert!(err.message.contains("expected"), "{err}");
         assert_eq!(err.line, 1);
+    }
+
+    // ----- display sections (DisplayParser.g) -------------------------------
+
+    use PrintPiece::*;
+
+    fn pieces(src: &str) -> Vec<PrintPiece> {
+        let spec = parse(src);
+        match &spec.items[0] {
+            SpecItem::Constructorlike(Constructorlike::Constructor(c)) => {
+                c.display.pieces.clone()
+            }
+            other => panic!("unexpected item: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn display_literal_only() {
+        assert_eq!(
+            pieces("define endian=little; :nop is op=0 { }"),
+            vec![Identifier("nop".into()), Whitespace(" ".into())]
+        );
+    }
+
+    #[test]
+    fn display_symbols_and_punctuation() {
+        assert_eq!(
+            pieces("define endian=little; :MOV r1,r2 is op=0 { }"),
+            vec![
+                Identifier("MOV".into()),
+                Whitespace(" ".into()),
+                Identifier("r1".into()),
+                Literal(",".into()),
+                Identifier("r2".into()),
+                Whitespace(" ".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn display_caret_concatenation() {
+        // '^' joins adjacent pieces with no separating whitespace and is
+        // itself not printed.
+        assert_eq!(
+            pieces("define endian=little; :J^cc addr is op=0 { }"),
+            vec![
+                Identifier("J".into()),
+                Concatenate,
+                Identifier("cc".into()),
+                Whitespace(" ".into()),
+                Identifier("addr".into()),
+                Whitespace(" ".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn display_whitespace_runs_are_preserved() {
+        assert_eq!(
+            pieces("define endian=little; :A  B \t C is op=0 { }"),
+            vec![
+                Identifier("A".into()),
+                Whitespace("  ".into()),
+                Identifier("B".into()),
+                Whitespace(" \t ".into()),
+                Identifier("C".into()),
+                Whitespace(" ".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn display_special_characters() {
+        // '@', '$', '?' (DISPCHAR) and '#' (overridden LINECOMMENT) are
+        // literal pieces; '#' does not start a comment in display mode.
+        assert_eq!(
+            pieces("define endian=little; :LD #imm @$? is op=0 { }"),
+            vec![
+                Identifier("LD".into()),
+                Whitespace(" ".into()),
+                Literal("#".into()),
+                Identifier("imm".into()),
+                Whitespace(" ".into()),
+                Literal("@".into()),
+                Literal("$".into()),
+                Literal("?".into()),
+                Whitespace(" ".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn display_numbers_and_operators_print_verbatim() {
+        assert_eq!(
+            pieces("define endian=little; :X (0x1f+2) is op=0 { }"),
+            vec![
+                Identifier("X".into()),
+                Whitespace(" ".into()),
+                Literal("(".into()),
+                Literal("0x1f".into()),
+                Literal("+".into()),
+                Literal("2".into()),
+                Literal(")".into()),
+                Whitespace(" ".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn display_keywords_are_identifier_pieces() {
+        // key_as_id: grammar keywords are ordinary identifiers in a display.
+        assert_eq!(
+            pieces("define endian=little; :token export is op=0 { }"),
+            vec![
+                Identifier("token".into()),
+                Whitespace(" ".into()),
+                Identifier("export".into()),
+                Whitespace(" ".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn display_is_terminator_needs_word_boundary() {
+        // 'disp' and 'isle' contain 'is' but do not terminate the display.
+        assert_eq!(
+            pieces("define endian=little; :disp isle is op=0 { }"),
+            vec![
+                Identifier("disp".into()),
+                Whitespace(" ".into()),
+                Identifier("isle".into()),
+                Whitespace(" ".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn display_leading_whitespace_only() {
+        // ': is ...' -- an empty mnemonic is grammatically fine; the lone
+        // whitespace run is still a piece.
+        assert_eq!(
+            pieces("define endian=little; : is op=0 { }"),
+            vec![Whitespace(" ".into())]
+        );
+    }
+
+    #[test]
+    fn display_without_is_errors() {
+        let err =
+            SleighParser::parse_str("define endian=little; :halt op=0 { }").unwrap_err();
+        assert!(err.message.contains("'is'"), "{err}");
+    }
+
+    #[test]
+    fn display_rejects_non_printpieces() {
+        // UNDERSCORE and DEC_INT are not printpiece alternatives in
+        // DisplayParser.g.
+        let err = SleighParser::parse_str("define endian=little; :X _ is op=0 { }")
+            .unwrap_err();
+        assert!(err.message.contains("not valid"), "{err}");
+        let err = SleighParser::parse_str("define endian=little; :X 0n5 is op=0 { }")
+            .unwrap_err();
+        assert!(err.message.contains("not valid"), "{err}");
+    }
+
+    #[test]
+    fn display_mode_ends_at_is_for_each_constructor() {
+        // Two constructors back to back: mode must pop back to base after
+        // each 'is' (patterns lex base-mode) and push again at the next ':'.
+        let spec = parse(
+            "define endian=little; :INC r1 is op=0x4 { } :DEC r1 is op=0x5 { }",
+        );
+        assert_eq!(spec.items.len(), 2);
+        for (i, mnemonic) in ["INC", "DEC"].iter().enumerate() {
+            match &spec.items[i] {
+                SpecItem::Constructorlike(Constructorlike::Constructor(c)) => {
+                    assert_eq!(
+                        c.display.pieces[0],
+                        Identifier((*mnemonic).to_string())
+                    );
+                }
+                other => panic!("unexpected item: {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn display_inside_with_block() {
+        // The with-block ':' is NOT a display; only constructor ':' switches
+        // the lexer mode.
+        let spec = parse(
+            "define endian=little; with sub: op=2 [ ] { :nop^\"!\" is rd { } }",
+        );
+        match &spec.items[0] {
+            SpecItem::Constructorlike(Constructorlike::With(w)) => match &w.body[0] {
+                SpecItem::Constructorlike(Constructorlike::Constructor(c)) => {
+                    assert_eq!(
+                        c.display.pieces,
+                        vec![
+                            Identifier("nop".into()),
+                            Concatenate,
+                            QString("!".into()),
+                            Whitespace(" ".into()),
+                        ]
+                    );
+                }
+                other => panic!("unexpected item: {other:?}"),
+            },
+            other => panic!("unexpected item: {other:?}"),
+        }
     }
 }

@@ -4,10 +4,12 @@
 //! port uses typed Rust structures instead. Node names map to the grammar
 //! rules that produce them (noted per item).
 //!
-//! // TODO(sleigh-frontend): display sections and semantic bodies are
-//! // represented as raw token runs ([`DisplaySection`], [`SemanticBody`])
-//! // until the display/semantic sub-lexer modes and their parsers
-//! // (DisplayParser.g / SemanticParser.g) are ported.
+//! Display sections are structured printpieces ([`DisplaySection`] /
+//! [`PrintPiece`]), mirroring `DisplayParser.g`.
+//!
+//! // TODO(sleigh-frontend): semantic bodies are represented as raw token
+//! // runs ([`SemanticBody`]) until the semantic sub-lexer mode and its
+//! // parser (SemanticLexer.g / SemanticParser.g) are ported.
 
 use crate::sleigh::grammar::{Location, SleighToken};
 
@@ -257,14 +259,42 @@ pub enum CtorSemantic {
     Unimpl,
 }
 
-/// Raw token run between the constructor start and the `is` keyword.
+/// `display : ':' pieces 'is'` (DisplayParser.g, `OP_DISPLAY`): the
+/// structured printpieces of a constructor display section, lexed in the
+/// whitespace-significant DISPLAY mode.
 ///
-/// // TODO(sleigh-frontend): replace with a real display AST (printpieces,
-/// // `^` concatenation, whitespace tokens) once DisplayLexer/DisplayParser
-/// // are ported; base-mode lexing loses display-significant whitespace.
-#[derive(Debug, Clone, Default)]
+/// The pieces are kept exactly as the grammar produces them: whitespace
+/// runs keep their raw text, leading/trailing whitespace pieces are
+/// preserved, and `^` appears as an explicit [`PrintPiece::Concatenate`].
+/// Collapsing whitespace to single separators and extracting the mnemonic
+/// (the first non-whitespace piece) are compile-pass concerns, exactly as
+/// in Ghidra's `SleighCompiler.g`/`SleighCompile` -- not parse-time ones.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DisplaySection {
-    pub tokens: Vec<SleighToken>,
+    pub pieces: Vec<PrintPiece>,
+}
+
+/// `printpiece : identifier | whitespace | concatenate | qstring | special`
+/// (DisplayParser.g).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PrintPiece {
+    /// `identifier` -- a symbol reference (operand/table/register name),
+    /// resolved against the pattern/table symbols by the compile pass;
+    /// prints verbatim when it resolves to nothing. Keywords used as
+    /// identifiers (key_as_id) land here too.
+    Identifier(String),
+    /// `whitespace` (`OP_WHITESPACE`) -- a significant whitespace run,
+    /// raw text preserved.
+    Whitespace(String),
+    /// `concatenate` (`OP_CONCATENATE`) -- `^`: joins the adjacent pieces
+    /// with no separating whitespace and is itself not printed.
+    Concatenate,
+    /// `qstring` (`OP_QSTRING`) -- quoted string, printed verbatim (quotes
+    /// stripped, escapes kept as lexed).
+    QString(String),
+    /// `special` (`OP_STRING`) -- punctuation, operator, `@$?#`, or integer
+    /// lexeme used for its literal characters.
+    Literal(String),
 }
 
 /// Raw token run between balanced `{` `}`.

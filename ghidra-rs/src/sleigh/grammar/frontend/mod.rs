@@ -2,7 +2,7 @@
 //!
 //! This module replaces the ANTLR-3 generated code from
 //! `Ghidra/Framework/SoftwareModeling/src/main/antlr/ghidra/sleigh/grammar/`
-//! with hand-written Rust. Increment 1 provides:
+//! with hand-written Rust. Increments 1 and 2 provide:
 //!
 //! 1. [`preprocessor`] -- full port of `SleighPreprocessor.java` semantics
 //!    (`@define`/`@undef`/`@include`/`@if*`/`@else`/`@endif`, `$(VAR)`
@@ -11,18 +11,23 @@
 //!    evaluator for `BooleanExpression.g` (used by `@if`/`@elif`).
 //! 3. [`lexer`] -- tokenizer over the preprocessed stream covering the
 //!    `BaseLexer.g` (base mode) token set.
-//! 4. [`ast`] + [`parser`] -- AST types for the top-level grammar
-//!    (`SleighParser.g`) and a recursive-descent parser; simple definitions
-//!    are implemented, constructor display/semantic bodies are captured as
-//!    raw token runs pending the display/semantic sub-lexer modes.
-//! 5. [`tree_walk`] -- visitor/driver scaffold for the pass that will drive
+//! 4. [`display_lexer`] -- the DISPLAY sub-lexer mode (`DisplayLexer.g`):
+//!    whitespace-significant lexing for constructor display sections, with
+//!    `is` reserved and `@$?#` displayable.
+//! 5. [`ast`] + [`parser`] -- AST types for the top-level grammar
+//!    (`SleighParser.g`) and a recursive-descent parser; constructor display
+//!    sections parse to structured printpieces (`DisplayParser.g`), while
+//!    semantic bodies remain raw token runs pending the semantic sub-lexer
+//!    mode.
+//! 6. [`tree_walk`] -- visitor/driver scaffold for the pass that will drive
 //!    the separately-ported `pcodeCPort` backend (`SleighCompiler.g`).
 //!
-//! // TODO(sleigh-frontend): display-mode and semantic-mode sub-lexers
-//! // (DisplayLexer.g / SemanticLexer.g) and their parsers are not yet ported.
+//! // TODO(sleigh-frontend): the semantic-mode sub-lexer (SemanticLexer.g)
+//! // and its parser (SemanticParser.g) are not yet ported.
 
 pub mod ast;
 pub mod boolean_expression;
+pub mod display_lexer;
 pub mod lexer;
 pub mod parser;
 pub mod preprocessor;
@@ -31,6 +36,7 @@ pub mod tree_walk;
 
 pub use ast::*;
 pub use boolean_expression::{evaluate_boolean_expression, BooleanExpressionEnvironment};
+pub use display_lexer::DisplayLexer;
 pub use lexer::{BaseLexer, TokenType, HIDDEN_CHANNEL};
 pub use parser::{ParseError, SleighParser};
 pub use preprocessor::{PreprocessorError, PreprocessorWriter, SleighPreprocessor};
@@ -86,10 +92,55 @@ mod smoke_tests {
             .iter()
             .all(|t| t.token_type() != TokenType::PpPosition.as_i32()));
 
-        let spec = SleighParser::new(tokens)
-            .parse_spec()
-            .expect("parse 8085.slaspec");
+        let spec = SleighParser::parse_str(&text).expect("parse 8085.slaspec");
         assert!(spec.items.len() > 100, "items: {}", spec.items.len());
+
+        // Display sections come out as structured printpieces now.
+        use super::ast::{Constructorlike, PrintPiece, SpecItem};
+        let ctors: Vec<_> = spec
+            .items
+            .iter()
+            .filter_map(|i| match i {
+                SpecItem::Constructorlike(Constructorlike::Constructor(c)) => Some(c),
+                _ => None,
+            })
+            .collect();
+        assert!(ctors.len() > 50, "constructors: {}", ctors.len());
+
+        // ':MOV reg3_3,reg0_3  is ...' -- identifiers, literal comma, and
+        // significant whitespace (including the trailing run before 'is').
+        let mov = ctors
+            .iter()
+            .find(|c| c.display.pieces.first() == Some(&PrintPiece::Identifier("MOV".into())))
+            .expect("a MOV constructor");
+        assert_eq!(
+            mov.display.pieces,
+            vec![
+                PrintPiece::Identifier("MOV".into()),
+                PrintPiece::Whitespace(" ".into()),
+                PrintPiece::Identifier("reg3_3".into()),
+                PrintPiece::Literal(",".into()),
+                PrintPiece::Identifier("reg0_3".into()),
+                PrintPiece::Whitespace("  ".into()),
+            ]
+        );
+
+        // ':J^cc Addr16  is ...' -- '^' concatenation survives as a piece.
+        let jcc = ctors
+            .iter()
+            .find(|c| c.display.pieces.first() == Some(&PrintPiece::Identifier("J".into())))
+            .expect("the J^cc constructor");
+        assert_eq!(
+            jcc.display.pieces,
+            vec![
+                PrintPiece::Identifier("J".into()),
+                PrintPiece::Concatenate,
+                PrintPiece::Identifier("cc".into()),
+                PrintPiece::Whitespace(" ".into()),
+                PrintPiece::Identifier("Addr16".into()),
+                PrintPiece::Whitespace("  ".into()),
+            ]
+        );
     }
 
     #[test]
