@@ -9,11 +9,6 @@
 /// members are needed yet.
 pub trait DomainObjectAdapterDB {}
 
-/// Placeholder for `ghidra.framework.model.ProjectData`, referenced by
-/// [`DomainFolder`](crate::framework::model::DomainFolder) before the real class is ported.
-/// `DomainFolder` only ever returns this type, so no members are needed yet.
-pub trait ProjectData {}
-
 /// Placeholder for `ghidra.framework.data.LinkHandler`, referenced by
 /// [`DomainFolder`](crate::framework::model::DomainFolder) before the real class is ported.
 /// `DomainFolder` only ever passes this type through as an opaque value, so no members are needed
@@ -169,3 +164,9 @@ pub trait Database {}
 /// [`ToolManager`](crate::framework::model::ToolManager) before the real interface is ported.
 /// `ToolManager` only ever registers/unregisters this listener, so no members are needed yet.
 pub trait WorkspaceChangeListener {}
+
+/// Placeholder for `ghidra.framework.store.local.LocalFileSystem`, referenced by
+/// [`ProjectData`](crate::framework::model::ProjectData) before the real class is ported.
+/// `ProjectData` only needs this type to identify itself via [`std::any::TypeId`] (standing in
+/// for Java's `Class<? extends LocalFileSystem>`), so no members are needed yet.
+pub trait LocalFileSystem {}
