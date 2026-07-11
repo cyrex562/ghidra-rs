@@ -1,7 +1,9 @@
 //! Models `ghidra.pcodeCPort.slghpatexpress.PatternValue`.
 
-use crate::decompiler::seam_stubs::{PatternExpression, TokenPattern};
+use crate::decompiler::seam_stubs::{Pattern, PatternExpression};
+use crate::decompiler::slghpatexpress::TokenPattern;
 use crate::decompiler::utils::MutableInt;
+use crate::sleigh::grammar::Location;
 
 /// A [`PatternExpression`] that evaluates directly to a single value, rather than combining
 /// sub-expressions: token fields, context fields, constants, start/end/next2 instruction
@@ -53,12 +55,96 @@ mod tests {
     }
 
     struct MockPattern;
-    impl TokenPattern for MockPattern {}
+    impl Pattern for MockPattern {}
+
+    struct MockTokenPattern {
+        location: Location,
+        pattern: Box<dyn Pattern>,
+        left_ellipsis: bool,
+        right_ellipsis: bool,
+    }
+
+    impl MockTokenPattern {
+        fn new() -> Self {
+            Self {
+                location: Location::new("test.sleigh", 1),
+                pattern: Box::new(MockPattern),
+                left_ellipsis: false,
+                right_ellipsis: false,
+            }
+        }
+    }
+
+    impl TokenPattern for MockTokenPattern {
+        fn location(&self) -> &Location {
+            &self.location
+        }
+
+        fn get_pattern(&self) -> &dyn Pattern {
+            self.pattern.as_ref()
+        }
+
+        fn always_true(&self) -> bool {
+            true
+        }
+
+        fn always_false(&self) -> bool {
+            false
+        }
+
+        fn always_instruction_true(&self) -> bool {
+            true
+        }
+
+        fn get_left_ellipsis(&self) -> bool {
+            self.left_ellipsis
+        }
+
+        fn get_right_ellipsis(&self) -> bool {
+            self.right_ellipsis
+        }
+
+        fn set_left_ellipsis(&mut self, val: bool) {
+            self.left_ellipsis = val;
+        }
+
+        fn set_right_ellipsis(&mut self, val: bool) {
+            self.right_ellipsis = val;
+        }
+
+        fn get_minimum_length(&self) -> i32 {
+            0
+        }
+
+        fn simplify_pattern(&mut self) {}
+
+        fn copy_into(&mut self, tokpat: &dyn TokenPattern) {
+            self.left_ellipsis = tokpat.get_left_ellipsis();
+            self.right_ellipsis = tokpat.get_right_ellipsis();
+        }
+
+        fn do_and(&self, _tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+            Box::new(MockTokenPattern::new())
+        }
+
+        fn do_or(&self, _tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+            Box::new(MockTokenPattern::new())
+        }
+
+        fn do_cat(&self, _tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+            Box::new(MockTokenPattern::new())
+        }
+
+        fn common_sub_pattern(&self, _tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+            Box::new(MockTokenPattern::new())
+        }
+    }
+
     impl PatternExpression for FixedValue {}
 
     impl PatternValue for FixedValue {
         fn gen_pattern(&self, _val: i64) -> Box<dyn TokenPattern> {
-            Box::new(MockPattern)
+            Box::new(MockTokenPattern::new())
         }
 
         fn min_value(&self) -> i64 {
