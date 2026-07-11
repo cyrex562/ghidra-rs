@@ -1000,6 +1000,30 @@ impl Recognizer for UharcRecognizer {
     }
 }
 
+/// Recognizes UNIX Compress compressed files by their magic header bytes: `0x1f 0x9d`.
+///
+/// Port of `ghidra.app.util.recognizer.UnixCompressRecognizer`.
+pub struct UnixCompressRecognizer;
+
+impl Recognizer for UnixCompressRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        2
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x1f && bytes[1] == 0x9d {
+                return Some("File appears to be a UNIX Compress compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3878,6 +3902,75 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&uharc_header),
             Some("File appears to be a UHARC or WinUHA compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn unix_compress_recognizer_identifies_valid_header() {
+        let recognizer = UnixCompressRecognizer;
+        let unix_compress_header = [0x1f, 0x9d];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&unix_compress_header),
+            Some("File appears to be a UNIX Compress compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn unix_compress_recognizer_rejects_insufficient_bytes() {
+        let recognizer = UnixCompressRecognizer;
+        let short_buffer = [0x1f];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn unix_compress_recognizer_rejects_mismatched_magic() {
+        let recognizer = UnixCompressRecognizer;
+        let wrong_magic = [0x1f, 0x9e];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn unix_compress_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = UnixCompressRecognizer;
+        let wrong_first = [0x1e, 0x9d];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn unix_compress_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = UnixCompressRecognizer;
+        let wrong_second = [0x1f, 0x9c];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn unix_compress_recognizer_works_with_extra_data() {
+        let recognizer = UnixCompressRecognizer;
+        let unix_compress_with_data = [0x1f, 0x9d, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&unix_compress_with_data),
+            Some("File appears to be a UNIX Compress compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn unix_compress_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(UnixCompressRecognizer);
+        let unix_compress_header = [0x1f, 0x9d];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 2);
+        assert_eq!(
+            recognizer.recognize(&unix_compress_header),
+            Some("File appears to be a UNIX Compress compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
