@@ -882,6 +882,11 @@ impl Recognizer for StuffIt1Recognizer {
 /// Port of `ghidra.app.util.recognizer.StuffIt5Recognizer`.
 pub struct StuffIt5Recognizer;
 
+/// Recognizes SZIP compressed files by their magic header bytes: `0x53 0x5a 0x0a 0x04`.
+///
+/// Port of `ghidra.app.util.recognizer.SzipRecognizer`.
+pub struct SzipRecognizer;
+
 impl Recognizer for StuffIt5Recognizer {
     fn number_of_bytes_required(&self) -> usize {
         8
@@ -902,6 +907,25 @@ impl Recognizer for StuffIt5Recognizer {
                     "File appears to be a Stuffit5 (Stuffit versions v5.0 to v7.0) compressed file"
                         .to_string(),
                 );
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
+impl Recognizer for SzipRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x53 && bytes[1] == 0x5a && bytes[2] == 0x0a && bytes[3] == 0x04 {
+                return Some("File appears to be a szip compressed file".to_string());
             }
         }
         None
@@ -3443,6 +3467,91 @@ mod tests {
             recognizer.recognize(&stuffit5_header),
             Some("File appears to be a Stuffit5 (Stuffit versions v5.0 to v7.0) compressed file"
                 .to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn szip_recognizer_identifies_valid_header() {
+        let recognizer = SzipRecognizer;
+        let szip_header = [0x53, 0x5a, 0x0a, 0x04];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&szip_header),
+            Some("File appears to be a szip compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn szip_recognizer_rejects_insufficient_bytes() {
+        let recognizer = SzipRecognizer;
+        let short_buffer = [0x53, 0x5a, 0x0a];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn szip_recognizer_rejects_mismatched_magic() {
+        let recognizer = SzipRecognizer;
+        let wrong_magic = [0x53, 0x5a, 0x0b, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn szip_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = SzipRecognizer;
+        let wrong_first = [0x52, 0x5a, 0x0a, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn szip_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = SzipRecognizer;
+        let wrong_second = [0x53, 0x5b, 0x0a, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn szip_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = SzipRecognizer;
+        let wrong_third = [0x53, 0x5a, 0x09, 0x04];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn szip_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = SzipRecognizer;
+        let wrong_fourth = [0x53, 0x5a, 0x0a, 0x05];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn szip_recognizer_works_with_extra_data() {
+        let recognizer = SzipRecognizer;
+        let szip_with_data = [0x53, 0x5a, 0x0a, 0x04, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&szip_with_data),
+            Some("File appears to be a szip compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn szip_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(SzipRecognizer);
+        let szip_header = [0x53, 0x5a, 0x0a, 0x04];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&szip_header),
+            Some("File appears to be a szip compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
