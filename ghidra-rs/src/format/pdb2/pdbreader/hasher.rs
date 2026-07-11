@@ -40,7 +40,7 @@ impl Hasher {
     /// # Errors
     ///
     /// Returns a [`PdbException`] if there is not enough data to parse.
-    fn hash_string32(string: &str, unsigned_32bit_mod: u32) -> Result<u32, PdbException> {
+    pub fn hash_string32(string: &str, unsigned_32bit_mod: u32) -> Result<u32, PdbException> {
         let bytes = string.as_bytes();
         let mut reader = PdbByteReader::new(bytes.to_vec());
         let count = bytes.len();
