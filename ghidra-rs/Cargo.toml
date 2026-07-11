@@ -34,6 +34,7 @@ pulldown-cmark = "0.12"     # MarkdownToHtml (CommonMark -> HTML)
 rsa = { version = "0.9", features = ["sha1", "sha2"] }   # SSH RSA signing / keygen
 dsa = "0.6"                 # SSHSignatureCallback DSA signing
 ssh-key = { version = "0.6", features = ["rsa", "dsa", "std"] }  # OpenSSH/PEM key format
+aes = "0.8"                  # SSHKeyManager legacy PEM key decryption (AES-CBC)
 tokio = { version = "1.37", features = ["full"] }
 native-tls = "0.2"
 regex = "1.10"
