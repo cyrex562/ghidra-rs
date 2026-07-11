@@ -1,6 +1,7 @@
 pub mod analysis_priority;
 pub mod analyzer;
 pub mod analyzer_type;
+pub mod block_model_service;
 pub mod block_model_service_listener;
 pub mod bookmark_service;
 pub mod code_format_service;
@@ -38,6 +39,12 @@ pub mod vscode_integration_service;
 pub use analysis_priority::AnalysisPriority;
 pub use analyzer::Analyzer;
 pub use analyzer_type::AnalyzerType;
+pub use block_model_service::{
+    BlockModelService, CodeBlockModelFactory, BASIC_MODEL, DEFAULT_BLOCK_MODEL_NAME,
+    DEFAULT_SUBROUTINE_MODEL_NAME, ISOLATED_ENTRY_SUBROUTINE_MODEL_NAME,
+    MULTI_ENTRY_SUBROUTINE_MODEL_NAME, OVERLAPPED_SUBROUTINE_MODEL_NAME,
+    PARTITIONED_SUBROUTINE_MODEL_NAME, SIMPLE_BLOCK_MODEL_NAME, SUBROUTINE_MODEL,
+};
 pub use block_model_service_listener::BlockModelServiceListener;
 pub use bookmark_service::BookmarkService;
 pub use code_format_service::CodeFormatService;

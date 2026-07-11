@@ -259,3 +259,9 @@ pub trait GraphDisplayProvider {}
 /// [`GraphDisplayBroker`](crate::app::services::GraphDisplayBroker) before the real class is
 /// ported. `GraphDisplayBroker` only ever returns this type, so no members are needed yet.
 pub trait GraphDisplay {}
+
+/// Placeholder for `ghidra.program.model.block.CodeBlockModel`, referenced by
+/// [`BlockModelService`](crate::app::services::BlockModelService) before the real class is
+/// ported. `BlockModelService` only ever passes/returns this type opaquely (and registers
+/// factories for it), so no members are needed yet.
+pub trait CodeBlockModel {}
