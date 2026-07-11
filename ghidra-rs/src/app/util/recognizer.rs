@@ -1166,6 +1166,30 @@ impl Recognizer for YbsRecognizer {
     }
 }
 
+/// Recognizes ZLIB compressed files by their magic header byte: `0x78`.
+///
+/// Port of `ghidra.app.util.recognizer.ZlibRecognizer`.
+pub struct ZlibRecognizer;
+
+impl Recognizer for ZlibRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        1
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x78 {
+                return Some("File appears to be a ZLIB compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4538,6 +4562,60 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&ybs_header),
             Some("File appears to be a YBS compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn zlib_recognizer_identifies_valid_header() {
+        let recognizer = ZlibRecognizer;
+        let zlib_header = [0x78];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 1);
+        assert_eq!(
+            recognizer.recognize(&zlib_header),
+            Some("File appears to be a ZLIB compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn zlib_recognizer_rejects_insufficient_bytes() {
+        let recognizer = ZlibRecognizer;
+        let empty_buffer: [u8; 0] = [];
+
+        assert_eq!(recognizer.recognize(&empty_buffer), None);
+    }
+
+    #[test]
+    fn zlib_recognizer_rejects_wrong_magic_byte() {
+        let recognizer = ZlibRecognizer;
+        let wrong_magic = [0x77];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn zlib_recognizer_works_with_extra_data() {
+        let recognizer = ZlibRecognizer;
+        let mut zlib_with_data = vec![0u8; 100];
+        zlib_with_data[0] = 0x78;
+
+        assert_eq!(
+            recognizer.recognize(&zlib_with_data),
+            Some("File appears to be a ZLIB compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn zlib_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(ZlibRecognizer);
+        let zlib_header = [0x78];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 1);
+        assert_eq!(
+            recognizer.recognize(&zlib_header),
+            Some("File appears to be a ZLIB compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
