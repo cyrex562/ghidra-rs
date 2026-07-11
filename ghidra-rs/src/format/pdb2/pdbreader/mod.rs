@@ -3,6 +3,7 @@ pub mod c11_lines_start_end;
 pub mod c13_column_record;
 pub mod c13_cross_scope_export;
 pub mod c13_cross_scope_import;
+pub mod c13_extended_inlinee_source_line;
 pub mod c13_file_record;
 pub mod c13_inlinee_source_line;
 pub mod c13_line_record;
