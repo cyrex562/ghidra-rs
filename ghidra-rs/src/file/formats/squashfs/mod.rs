@@ -1,4 +1,5 @@
 pub mod squash_constants;
+pub mod square_fragment;
 
 pub use squash_constants::{
     ALWAYS_FRAGMENT, COMPRESSION_OPTIONS_EXIST, COMPRESSION_TYPE_GZIP, COMPRESSION_TYPE_LZ4,
@@ -14,3 +15,4 @@ pub use squash_constants::{
     NO_XATTRS, SECTION_OMITTED, UNCOMPRESSED_DATA_BLOCKS, UNCOMPRESSED_FRAGMENTS,
     UNCOMPRESSED_IDS, UNCOMPRESSED_INODES, UNCOMPRESSED_XATTRS, UNUSED_FLAG,
 };
+pub use square_fragment::SquashFragment;
