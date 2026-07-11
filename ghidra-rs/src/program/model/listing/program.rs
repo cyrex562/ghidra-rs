@@ -47,4 +47,11 @@ pub trait Program: DomainObject + Send + Sync {
     fn get_executable_path(&self) -> String {
         String::new()
     }
+
+    /// Get the executable format for this program (e.g., "ELF", "PE", "Mach-O").
+    ///
+    /// Returns an empty string if the format is not set or unknown.
+    fn get_executable_format(&self) -> String {
+        String::new()
+    }
 }
