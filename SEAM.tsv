@@ -189,3 +189,15 @@ DONE	interface	98	4	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app
 DONE	interface	98	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeArchiveService.java
 DONE	interface	98	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingMarginProviderService.java
 DONE	interface	98	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/MemorySearchService.java
+TODO	abstract	36	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternExpression.java
+TODO	class	29	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/TokenPattern.java
+TODO	abstract	26	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternValue.java
+TODO	class	19	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/VarnodeTpl.java
+TODO	class	19	5	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/Constructor.java
+TODO	class	18	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstTpl.java
+TODO	class	16	4	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/OperandSymbol.java
+TODO	abstract	12	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/Pattern.java
+TODO	abstract	11	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SpecificSymbol.java
+TODO	abstract	11	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternEquation.java
+TODO	class	11	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstructTpl.java
+TODO	class	10	6	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/VarnodeSymbol.java
