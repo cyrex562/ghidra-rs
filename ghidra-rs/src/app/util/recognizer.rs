@@ -607,6 +607,30 @@ impl Recognizer for PakArcRecognizer {
     }
 }
 
+/// Recognizes PPMD compressed files by their magic header bytes: `0x8f 0xaf 0xac 0x8c`.
+///
+/// Port of `ghidra.app.util.recognizer.PpmdRecognizer`.
+pub struct PpmdRecognizer;
+
+impl Recognizer for PpmdRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x8f && bytes[1] == 0xaf && bytes[2] == 0xac && bytes[3] == 0x8c {
+                return Some("File appears to be a PPMD compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 /// Recognizes PKZIP, WINZIP, or JAR compressed files by their magic header bytes:
 /// `0x50 0x4b 0x03 0x04`.
 ///
@@ -2169,6 +2193,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&pak_arc_header),
             Some("File appears to be a PAK or ARC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn ppmd_recognizer_identifies_valid_header() {
+        let recognizer = PpmdRecognizer;
+        let ppmd_header = [0x8f, 0xaf, 0xac, 0x8c];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&ppmd_header),
+            Some("File appears to be a PPMD compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn ppmd_recognizer_rejects_insufficient_bytes() {
+        let recognizer = PpmdRecognizer;
+        let short_buffer = [0x8f, 0xaf, 0xac];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn ppmd_recognizer_rejects_mismatched_magic() {
+        let recognizer = PpmdRecognizer;
+        let wrong_magic = [0x8f, 0xaf, 0xac, 0x8d];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn ppmd_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = PpmdRecognizer;
+        let wrong_first = [0x8e, 0xaf, 0xac, 0x8c];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn ppmd_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = PpmdRecognizer;
+        let wrong_second = [0x8f, 0xae, 0xac, 0x8c];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn ppmd_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = PpmdRecognizer;
+        let wrong_third = [0x8f, 0xaf, 0xad, 0x8c];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn ppmd_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = PpmdRecognizer;
+        let wrong_fourth = [0x8f, 0xaf, 0xac, 0x8d];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn ppmd_recognizer_works_with_extra_data() {
+        let recognizer = PpmdRecognizer;
+        let ppmd_with_data = [0x8f, 0xaf, 0xac, 0x8c, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&ppmd_with_data),
+            Some("File appears to be a PPMD compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn ppmd_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(PpmdRecognizer);
+        let ppmd_header = [0x8f, 0xaf, 0xac, 0x8c];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&ppmd_header),
+            Some("File appears to be a PPMD compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
