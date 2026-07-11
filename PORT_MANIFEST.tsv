@@ -2782,7 +2782,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/Equate
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/EquateTableModel.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/EquateTablePlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/EquateTableProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/RemoveEquateCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/RemoveEquateCmd.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/RenameEquateCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/equate/RenameEquatesCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core equate 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/exporter/ExporterDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core exporter 
