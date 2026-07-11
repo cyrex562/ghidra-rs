@@ -29,6 +29,7 @@ pub mod string_validity_score;
 pub mod terminal;
 pub mod test_dummy_program_manager;
 pub mod trace_rmi_launcher_service;
+pub mod trace_rmi_service;
 pub mod view_manager_service;
 pub mod vscode_integration_service;
 
@@ -70,5 +71,6 @@ pub use string_validity_score::StringValidityScore;
 pub use terminal::Terminal;
 pub use test_dummy_program_manager::TestDummyProgramManager;
 pub use trace_rmi_launcher_service::TraceRmiLauncherService;
+pub use trace_rmi_service::TraceRmiService;
 pub use view_manager_service::ViewManagerService;
 pub use vscode_integration_service::VSCodeIntegrationService;
