@@ -104,6 +104,25 @@ pub trait Symbol: Send + Sync {
     fn as_namespace(&self) -> Option<Arc<dyn Namespace>> {
         None
     }
+
+    /// The namespace that contains this symbol, or `None` if this symbol is contained
+    /// directly in the global namespace. Stands in for `Symbol.getParentNamespace()`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected; concrete implementations
+    /// should override once namespace membership is wired up.
+    fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>> {
+        None
+    }
+
+    /// The name of the memory block containing this symbol's address, if known. Stands in for
+    /// `symbol.getProgram().getMemory().getBlock(symbol.getAddress()).getName()`, used by legacy
+    /// callers that match symbols against memory-block-qualified paths.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected; concrete implementations
+    /// should override once program/memory back-references are wired up.
+    fn get_containing_memory_block_name(&self) -> Option<String> {
+        None
+    }
 }
 
 pub trait SymbolTable: Send + Sync {

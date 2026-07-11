@@ -4671,7 +4671,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/navigation/GoToAddre
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/navigation/GoToQuery.java	TODO	orig_src Ghidra Features Base src main java ghidra app util navigation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/navigation/GoToServiceImpl.java	TODO	orig_src Ghidra Features Base src main java ghidra app util navigation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/navigation/GoToSymbolSearchTask.java	TODO	orig_src Ghidra Features Base src main java ghidra app util navigation 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/navigation/SymbolMatcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app util navigation 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/navigation/SymbolMatcher.java	DONE	orig_src Ghidra Features Base src main java ghidra app util navigation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/navigation/SymbolSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra app util navigation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractLibrarySupportLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractOrdinalSupportLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 

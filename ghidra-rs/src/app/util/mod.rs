@@ -11,6 +11,7 @@ pub mod html;
 pub mod help_topics;
 pub mod hex_long;
 pub mod importer;
+pub mod navigation;
 pub mod opinion;
 pub mod option_exception;
 pub mod pcode_inject;
