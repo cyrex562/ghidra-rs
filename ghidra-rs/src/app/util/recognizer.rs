@@ -732,6 +732,30 @@ impl Recognizer for SbcRecognizer {
     }
 }
 
+/// Recognizes SBX compressed files by their magic header bytes: `0x53 0x42 0x31 0x00`.
+///
+/// Port of `ghidra.app.util.recognizer.SbxRecognizer`.
+pub struct SbxRecognizer;
+
+impl Recognizer for SbxRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        4
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x53 && bytes[1] == 0x42 && bytes[2] == 0x31 && bytes[3] == 0x00 {
+                return Some("File appears to be an SBX compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2682,6 +2706,91 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&sbc_header),
             Some("File appears to be a SBC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sbx_recognizer_identifies_valid_header() {
+        let recognizer = SbxRecognizer;
+        let sbx_header = [0x53, 0x42, 0x31, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&sbx_header),
+            Some("File appears to be an SBX compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sbx_recognizer_rejects_insufficient_bytes() {
+        let recognizer = SbxRecognizer;
+        let short_buffer = [0x53, 0x42, 0x31];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn sbx_recognizer_rejects_mismatched_magic() {
+        let recognizer = SbxRecognizer;
+        let wrong_magic = [0x53, 0x42, 0x31, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn sbx_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = SbxRecognizer;
+        let wrong_first = [0x54, 0x42, 0x31, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn sbx_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = SbxRecognizer;
+        let wrong_second = [0x53, 0x41, 0x31, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn sbx_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = SbxRecognizer;
+        let wrong_third = [0x53, 0x42, 0x32, 0x00];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn sbx_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = SbxRecognizer;
+        let wrong_fourth = [0x53, 0x42, 0x31, 0x01];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn sbx_recognizer_works_with_extra_data() {
+        let recognizer = SbxRecognizer;
+        let sbx_with_data = [0x53, 0x42, 0x31, 0x00, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&sbx_with_data),
+            Some("File appears to be an SBX compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn sbx_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(SbxRecognizer);
+        let sbx_header = [0x53, 0x42, 0x31, 0x00];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 4);
+        assert_eq!(
+            recognizer.recognize(&sbx_header),
+            Some("File appears to be an SBX compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
