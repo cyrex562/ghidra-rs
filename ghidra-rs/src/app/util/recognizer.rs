@@ -496,6 +496,32 @@ impl Recognizer for JarRecognizer {
     }
 }
 
+/// Recognizes LHA/LHARC compressed files by their magic header bytes: `0x2d 0x6c 0x68` ("-lh").
+///
+/// LHA files have the signature starting at offset 2 with the bytes "-lh" (0x2d 0x6c 0x68).
+///
+/// Port of `ghidra.app.util.recognizer.LhaRecognizer`.
+pub struct LhaRecognizer;
+
+impl Recognizer for LhaRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        5
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[2] == 0x2d && bytes[3] == 0x6c && bytes[4] == 0x68 {
+                return Some("File appears to be a LHA/LHARC compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1661,6 +1687,105 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&jar_header),
             Some("File appears to be a JAR compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn lha_recognizer_identifies_valid_header() {
+        let recognizer = LhaRecognizer;
+        let lha_header = [0x00, 0x00, 0x2d, 0x6c, 0x68];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 5);
+        assert_eq!(
+            recognizer.recognize(&lha_header),
+            Some("File appears to be a LHA/LHARC compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn lha_recognizer_rejects_insufficient_bytes() {
+        let recognizer = LhaRecognizer;
+        let short_buffer = [0x00, 0x00, 0x2d, 0x6c];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn lha_recognizer_rejects_mismatched_magic() {
+        let recognizer = LhaRecognizer;
+        let wrong_magic = [0x00, 0x00, 0x2d, 0x6c, 0x69];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn lha_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = LhaRecognizer;
+        let wrong_third = [0x00, 0x00, 0x2c, 0x6c, 0x68];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn lha_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = LhaRecognizer;
+        let wrong_fourth = [0x00, 0x00, 0x2d, 0x6d, 0x68];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn lha_recognizer_rejects_fifth_byte_mismatch() {
+        let recognizer = LhaRecognizer;
+        let wrong_fifth = [0x00, 0x00, 0x2d, 0x6c, 0x69];
+
+        assert_eq!(recognizer.recognize(&wrong_fifth), None);
+    }
+
+    #[test]
+    fn lha_recognizer_works_with_extra_data() {
+        let recognizer = LhaRecognizer;
+        let lha_with_data = [0x00, 0x00, 0x2d, 0x6c, 0x68, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&lha_with_data),
+            Some("File appears to be a LHA/LHARC compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn lha_recognizer_recognizes_common_lh0_variant() {
+        let recognizer = LhaRecognizer;
+        let lh0_header = [0xff, 0xff, 0x2d, 0x6c, 0x68];
+
+        assert_eq!(
+            recognizer.recognize(&lh0_header),
+            Some("File appears to be a LHA/LHARC compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn lha_recognizer_recognizes_common_lh5_variant() {
+        let recognizer = LhaRecognizer;
+        let lh5_header = [0xaa, 0xbb, 0x2d, 0x6c, 0x68];
+
+        assert_eq!(
+            recognizer.recognize(&lh5_header),
+            Some("File appears to be a LHA/LHARC compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn lha_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(LhaRecognizer);
+        let lha_header = [0x00, 0x00, 0x2d, 0x6c, 0x68];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 5);
+        assert_eq!(
+            recognizer.recognize(&lha_header),
+            Some("File appears to be a LHA/LHARC compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
