@@ -10850,7 +10850,7 @@ orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/tree/GTestNode.j
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/tree/GTreeNodeTest.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets tree 
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/tree/LazyGTestNode.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets tree 
 orig_src/Ghidra/Framework/Docking/src/test/java/docking/widgets/tree/support/TreeIteratorTest.java	TODO	orig_src Ghidra Framework Docking src test java docking widgets tree support 
-orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/docking/spy/SpyEventRecorder.java	TODO	orig_src Ghidra Framework Docking src test java ghidra docking spy 
+orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/docking/spy/SpyEventRecorder.java	DONE	orig_src Ghidra Framework Docking src test java ghidra docking spy 
 orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/bean/EmptyBorderButtonTest.java	TODO	orig_src Ghidra Framework Docking src test java ghidra util bean 
 orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/task/AbstractTaskTest.java	TODO	orig_src Ghidra Framework Docking src test java ghidra util task 
 orig_src/Ghidra/Framework/Docking/src/test/java/ghidra/util/task/TaskDialogTest.java	TODO	orig_src Ghidra Framework Docking src test java ghidra util task 
