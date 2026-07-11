@@ -7684,7 +7684,7 @@ orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/UserManager.ja
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/GhidraSSLServerSocket.java	DONE	orig_src Ghidra Features GhidraServer src main java ghidra server remote
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/GhidraServer.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/GhidraServerApplicationLayout.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
-orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/InetNameLookup.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
+orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/InetNameLookup.java	DONE	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/RemoteBufferFileImpl.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/RemoteExceptionUtil.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/RemoteLoggingUtil.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
