@@ -12905,7 +12905,7 @@ orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/ShellUtils.java	DONE	orig
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/linux/LinuxIoctls.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty linux 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/linux/LinuxPtyFactory.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty linux 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/linux/LinuxPtySessionLeader.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty linux 
-orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/local/LocalProcessPtySession.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty local 
+orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/local/LocalProcessPtySession.java	DONE	orig_src Ghidra Framework Pty src main java ghidra pty local
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/local/LocalWindowsNativeProcessPtySession.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty local 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/macos/MacosIoctls.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty macos 
 orig_src/Ghidra/Framework/Pty/src/main/java/ghidra/pty/macos/MacosPtyFactory.java	TODO	orig_src Ghidra Framework Pty src main java ghidra pty macos 
