@@ -1,3 +1,4 @@
+pub mod ansi_buffered_input_stream;
 pub mod con_pty_endpoint;
 pub mod con_pty_parent;
 pub mod handle;
@@ -8,6 +9,7 @@ pub mod named_pipe_test;
 pub mod pipe;
 pub mod pseudo_console_handle;
 
+pub use ansi_buffered_input_stream::AnsiBufferedInputStream;
 pub use con_pty_endpoint::ConPtyEndpoint;
 pub use con_pty_parent::ConPtyParent;
 pub use handle::Handle;
