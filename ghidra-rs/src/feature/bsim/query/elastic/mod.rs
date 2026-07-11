@@ -1,4 +1,5 @@
 pub mod base64_lite;
+pub mod elastic_connection;
 pub mod elastic_exception;
 pub mod elastic_utilities;
 pub mod handler;
