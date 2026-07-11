@@ -1,3 +1,4 @@
+pub mod pdb_error_reader_thread;
 pub mod pdb_exception;
 pub mod pdb_kind;
 pub mod pdb_member;
