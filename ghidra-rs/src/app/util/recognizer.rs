@@ -157,6 +157,38 @@ impl Recognizer for ChmRecognizer {
     }
 }
 
+/// Recognizes Compressia compressed files by their magic header bytes: `CMP0CMP1`.
+///
+/// Port of `ghidra.app.util.recognizer.CompressiaRecognizer`.
+pub struct CompressiaRecognizer;
+
+impl Recognizer for CompressiaRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        8
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x43
+                && bytes[1] == 0x4d
+                && bytes[2] == 0x50
+                && bytes[3] == 0x30
+                && bytes[4] == 0x43
+                && bytes[5] == 0x4d
+                && bytes[6] == 0x50
+                && bytes[7] == 0x31
+            {
+                return Some("File appears to be a Compressia compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -459,6 +491,60 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&chm_header),
             Some("File appears to be a Microsoft Compiled HTML (CHM) file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn compressia_recognizer_identifies_valid_header() {
+        let recognizer = CompressiaRecognizer;
+        let compressia_header = [0x43, 0x4d, 0x50, 0x30, 0x43, 0x4d, 0x50, 0x31];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&compressia_header),
+            Some("File appears to be a Compressia compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn compressia_recognizer_rejects_insufficient_bytes() {
+        let recognizer = CompressiaRecognizer;
+        let short_buffer = [0x43, 0x4d, 0x50, 0x30, 0x43, 0x4d, 0x50];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn compressia_recognizer_rejects_mismatched_magic() {
+        let recognizer = CompressiaRecognizer;
+        let wrong_magic = [0x43, 0x4d, 0x50, 0x30, 0x43, 0x4d, 0x50, 0x32];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn compressia_recognizer_works_with_extra_data() {
+        let recognizer = CompressiaRecognizer;
+        let compressia_header_with_data =
+            [0x43, 0x4d, 0x50, 0x30, 0x43, 0x4d, 0x50, 0x31, 0xff, 0xfe, 0xfd];
+
+        assert_eq!(
+            recognizer.recognize(&compressia_header_with_data),
+            Some("File appears to be a Compressia compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn compressia_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(CompressiaRecognizer);
+        let compressia_header = [0x43, 0x4d, 0x50, 0x30, 0x43, 0x4d, 0x50, 0x31];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 8);
+        assert_eq!(
+            recognizer.recognize(&compressia_header),
+            Some("File appears to be a Compressia compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
