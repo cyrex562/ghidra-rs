@@ -810,6 +810,36 @@ impl Recognizer for SpannedPkzipRecognizer {
     }
 }
 
+/// Recognizes SQZ compressed files by their magic header bytes: `HLSQZ1`.
+///
+/// Port of `ghidra.app.util.recognizer.SqzRecognizer`.
+pub struct SqzRecognizer;
+
+impl Recognizer for SqzRecognizer {
+    fn number_of_bytes_required(&self) -> usize {
+        6
+    }
+
+    fn recognize(&self, bytes: &[u8]) -> Option<String> {
+        if bytes.len() >= self.number_of_bytes_required() {
+            if bytes[0] == 0x48
+                && bytes[1] == 0x4c
+                && bytes[2] == 0x53
+                && bytes[3] == 0x51
+                && bytes[4] == 0x5a
+                && bytes[5] == 0x31
+            {
+                return Some("File appears to be a SQZ compressed file".to_string());
+            }
+        }
+        None
+    }
+
+    fn get_priority(&self) -> i32 {
+        100
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3032,6 +3062,107 @@ mod tests {
         assert_eq!(
             recognizer.recognize(&spanned_pkzip_header),
             Some("File appears to be a spanned PKZIP compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sqz_recognizer_identifies_valid_header() {
+        let recognizer = SqzRecognizer;
+        let sqz_header = [0x48, 0x4c, 0x53, 0x51, 0x5a, 0x31];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 6);
+        assert_eq!(
+            recognizer.recognize(&sqz_header),
+            Some("File appears to be a SQZ compressed file".to_string())
+        );
+        assert_eq!(recognizer.get_priority(), 100);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_insufficient_bytes() {
+        let recognizer = SqzRecognizer;
+        let short_buffer = [0x48, 0x4c, 0x53, 0x51, 0x5a];
+
+        assert_eq!(recognizer.recognize(&short_buffer), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_mismatched_magic() {
+        let recognizer = SqzRecognizer;
+        let wrong_magic = [0x48, 0x4c, 0x53, 0x51, 0x5a, 0x32];
+
+        assert_eq!(recognizer.recognize(&wrong_magic), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_first_byte_mismatch() {
+        let recognizer = SqzRecognizer;
+        let wrong_first = [0x49, 0x4c, 0x53, 0x51, 0x5a, 0x31];
+
+        assert_eq!(recognizer.recognize(&wrong_first), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_second_byte_mismatch() {
+        let recognizer = SqzRecognizer;
+        let wrong_second = [0x48, 0x4d, 0x53, 0x51, 0x5a, 0x31];
+
+        assert_eq!(recognizer.recognize(&wrong_second), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_third_byte_mismatch() {
+        let recognizer = SqzRecognizer;
+        let wrong_third = [0x48, 0x4c, 0x54, 0x51, 0x5a, 0x31];
+
+        assert_eq!(recognizer.recognize(&wrong_third), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_fourth_byte_mismatch() {
+        let recognizer = SqzRecognizer;
+        let wrong_fourth = [0x48, 0x4c, 0x53, 0x52, 0x5a, 0x31];
+
+        assert_eq!(recognizer.recognize(&wrong_fourth), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_fifth_byte_mismatch() {
+        let recognizer = SqzRecognizer;
+        let wrong_fifth = [0x48, 0x4c, 0x53, 0x51, 0x5b, 0x31];
+
+        assert_eq!(recognizer.recognize(&wrong_fifth), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_rejects_sixth_byte_mismatch() {
+        let recognizer = SqzRecognizer;
+        let wrong_sixth = [0x48, 0x4c, 0x53, 0x51, 0x5a, 0x30];
+
+        assert_eq!(recognizer.recognize(&wrong_sixth), None);
+    }
+
+    #[test]
+    fn sqz_recognizer_works_with_extra_data() {
+        let recognizer = SqzRecognizer;
+        let sqz_with_data = [0x48, 0x4c, 0x53, 0x51, 0x5a, 0x31, 0xff, 0xfe, 0xfd, 0xfc];
+
+        assert_eq!(
+            recognizer.recognize(&sqz_with_data),
+            Some("File appears to be a SQZ compressed file".to_string())
+        );
+    }
+
+    #[test]
+    fn sqz_recognizer_via_trait_object() {
+        let recognizer: Box<dyn Recognizer> = Box::new(SqzRecognizer);
+        let sqz_header = [0x48, 0x4c, 0x53, 0x51, 0x5a, 0x31];
+
+        assert_eq!(recognizer.number_of_bytes_required(), 6);
+        assert_eq!(
+            recognizer.recognize(&sqz_header),
+            Some("File appears to be a SQZ compressed file".to_string())
         );
         assert_eq!(recognizer.get_priority(), 100);
     }
