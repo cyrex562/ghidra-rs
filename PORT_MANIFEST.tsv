@@ -1179,7 +1179,7 @@ orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/pcode/eval/VarnodeEvalu
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/program/model/address/CachedAddressSetView.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra program model address 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/ByteBufferUtils.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/DistinctIterator.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
-orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java	TODO	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
+orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util 
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LockHold.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
 orig_src/Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/MergeSortingSpliterator.java	DONE	orig_src Ghidra Debug ProposedUtils src main java ghidra util
