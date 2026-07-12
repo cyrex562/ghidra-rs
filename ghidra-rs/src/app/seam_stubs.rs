@@ -345,3 +345,9 @@ pub trait TraceSection {}
 /// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
 /// as a parameter, so no members are needed yet.
 pub trait TraceMemoryRegion {}
+
+/// Placeholder for `javax.swing.tree.TreePath`, referenced by
+/// [`DataTypeManagerService`](crate::app::services::DataTypeManagerService) before the real class
+/// is ported. `DataTypeManagerService` only ever passes this type through as a parameter, so no
+/// members are needed yet.
+pub trait TreePath {}

@@ -8,6 +8,7 @@ pub mod code_format_service;
 pub mod console_service;
 pub mod coordinated_listing_panel_listener;
 pub mod data_type_archive_service;
+pub mod data_type_manager_service;
 pub mod data_type_query_service;
 pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
@@ -53,6 +54,7 @@ pub use code_format_service::CodeFormatService;
 pub use console_service::ConsoleService;
 pub use coordinated_listing_panel_listener::CoordinatedListingPanelListener;
 pub use data_type_archive_service::{DataTypeArchiveService, OpenArchiveError, OpenProjectArchiveError};
+pub use data_type_manager_service::DataTypeManagerService;
 pub use data_type_query_service::DataTypeQueryService;
 pub use debugger_auto_mapping_service::DebuggerAutoMappingService;
 pub use debugger_control_service::{
