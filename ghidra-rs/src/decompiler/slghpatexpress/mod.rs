@@ -1,3 +1,4 @@
+pub mod and_expression;
 pub mod binary_expression;
 pub mod constant_value;
 pub mod context_field;
@@ -14,6 +15,7 @@ pub mod token_pattern;
 pub mod unary_expression;
 pub mod val_express_equation;
 
+pub use and_expression::AndExpression;
 pub use binary_expression::BinaryExpression;
 pub use constant_value::ConstantValue;
 pub use context_field::ContextField;
