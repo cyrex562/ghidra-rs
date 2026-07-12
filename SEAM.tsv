@@ -154,7 +154,7 @@ DONE	interface	162	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	interface	131	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ServiceInfo.java
 DONE	interface	125	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/MemoryBlockSourceInfo.java
 DONE	interface	124	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Op.java
-TODO	interface	111	28	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerStaticMappingService.java
+DONE	interface	111	28	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerStaticMappingService.java
 DONE	interface	109	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ConsoleService.java
 DONE	interface	108	15	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/GraphDisplayBroker.java
 DONE	interface	106	9	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerTraceManagerService.java
