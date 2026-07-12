@@ -1,4 +1,5 @@
 pub mod constant_value;
+pub mod context_field;
 pub mod end_instruction_value;
 pub mod express_utils;
 pub mod next2_instruction_value;
@@ -7,6 +8,7 @@ pub mod start_instruction_value;
 pub mod token_pattern;
 
 pub use constant_value::ConstantValue;
+pub use context_field::ContextField;
 pub use end_instruction_value::EndInstructionValue;
 pub use express_utils::{advance_combo, build_pattern};
 pub use next2_instruction_value::Next2InstructionValue;
