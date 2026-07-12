@@ -12,6 +12,7 @@ pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
 pub mod debugger_emulation_service;
 pub mod debugger_platform_service;
+pub mod debugger_static_mapping_service;
 pub mod debugger_target_service;
 pub mod debugger_trace_manager_service;
 pub mod eclipse_integration_service;
@@ -60,6 +61,7 @@ pub use debugger_emulation_service::{
     EmulatorStateListener, RecordEmulationResult, RunFuture,
 };
 pub use debugger_platform_service::DebuggerPlatformService;
+pub use debugger_static_mapping_service::{ChangesSettledFuture, DebuggerStaticMappingService};
 pub use debugger_target_service::DebuggerTargetService;
 pub use debugger_trace_manager_service::{
     ActivationCause, BooleanChangeAdapter, DebuggerTraceManagerService, MaterializeFuture,

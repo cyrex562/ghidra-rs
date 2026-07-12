@@ -265,3 +265,83 @@ pub trait GraphDisplay {}
 /// ported. `BlockModelService` only ever passes/returns this type opaquely (and registers
 /// factories for it), so no members are needed yet.
 pub trait CodeBlockModel {}
+
+/// Placeholder for `ghidra.debug.api.modules.DebuggerAddressTranslator`, the base interface
+/// extended by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real interface is ported. `DebuggerStaticMappingService` does not itself call any
+/// `DebuggerAddressTranslator` members, so no members are needed yet.
+pub trait DebuggerAddressTranslator {}
+
+/// Placeholder for `ghidra.trace.model.TraceLocation`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through as
+/// a parameter, so no members are needed yet.
+pub trait TraceLocation {}
+
+/// Placeholder for `ghidra.trace.model.modules.TraceConflictedMappingException`, thrown by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. Extends `std::error::Error` so it can stand in for the Java checked
+/// exception as a boxed `Result` error.
+pub trait TraceConflictedMappingException: std::error::Error {}
+
+/// Placeholder for `ghidra.debug.api.modules.MapEntry`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. Java's `MapEntry<?, ?>` wildcard generics are dropped, since this
+/// crate has no generic parameters to substitute yet. `DebuggerStaticMappingService` only ever
+/// passes this type through as a parameter, so no members are needed yet.
+pub trait MapEntry {}
+
+/// Placeholder for `ghidra.debug.api.modules.ModuleMapProposal.ModuleMapEntry`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
+/// as a parameter, so no members are needed yet.
+pub trait ModuleMapEntry {}
+
+/// Placeholder for `ghidra.debug.api.modules.SectionMapProposal.SectionMapEntry`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
+/// as a parameter, so no members are needed yet.
+pub trait SectionMapEntry {}
+
+/// Placeholder for `ghidra.debug.api.modules.RegionMapProposal.RegionMapEntry`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
+/// as a parameter, so no members are needed yet.
+pub trait RegionMapEntry {}
+
+/// Placeholder for `ghidra.debug.api.modules.ModuleMapProposal`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever returns this type, so no
+/// members are needed yet.
+pub trait ModuleMapProposal {}
+
+/// Placeholder for `ghidra.debug.api.modules.SectionMapProposal`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever returns this type, so no
+/// members are needed yet.
+pub trait SectionMapProposal {}
+
+/// Placeholder for `ghidra.debug.api.modules.RegionMapProposal`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever returns this type, so no
+/// members are needed yet.
+pub trait RegionMapProposal {}
+
+/// Placeholder for `ghidra.trace.model.modules.TraceModule`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
+/// as a parameter, so no members are needed yet.
+pub trait TraceModule {}
+
+/// Placeholder for `ghidra.trace.model.modules.TraceSection`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
+/// as a parameter, so no members are needed yet.
+pub trait TraceSection {}
+
+/// Placeholder for `ghidra.trace.model.memory.TraceMemoryRegion`, referenced by
+/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
+/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
+/// as a parameter, so no members are needed yet.
+pub trait TraceMemoryRegion {}

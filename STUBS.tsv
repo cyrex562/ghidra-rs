@@ -160,3 +160,16 @@ ts	stub_class	referenced_by
 2026-07-11T13:00:00Z	GraphDisplayProvider	GraphDisplayBroker
 2026-07-11T13:00:00Z	GraphDisplay	GraphDisplayBroker
 2026-07-11T13:30:00Z	CodeBlockModel	BlockModelService
+2026-07-11T14:00:00Z	DebuggerAddressTranslator	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	TraceLocation	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	TraceConflictedMappingException	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	MapEntry	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	ModuleMapEntry	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	SectionMapEntry	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	RegionMapEntry	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	ModuleMapProposal	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	SectionMapProposal	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	RegionMapProposal	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	TraceModule	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	TraceSection	DebuggerStaticMappingService
+2026-07-11T14:00:00Z	TraceMemoryRegion	DebuggerStaticMappingService
