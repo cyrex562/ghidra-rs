@@ -1,5 +1,6 @@
 pub mod bitrange_symbol;
 pub mod context_change;
+pub mod context_commit;
 pub mod label_symbol;
 pub mod patternless_symbol;
 pub mod section_symbol;
@@ -12,6 +13,7 @@ pub mod varnode_symbol;
 
 pub use bitrange_symbol::BitrangeSymbol;
 pub use context_change::ContextChange;
+pub use context_commit::ContextCommit;
 pub use label_symbol::LabelSymbol;
 pub use patternless_symbol::PatternlessSymbol;
 pub use section_symbol::SectionSymbol;
