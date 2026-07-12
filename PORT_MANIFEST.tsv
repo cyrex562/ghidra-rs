@@ -13263,7 +13263,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghp
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/DivExpression.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EndInstructionValue.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EqualEquation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EquationAnd.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EquationAnd.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EquationCat.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EquationLeftEllipsis.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EquationOr.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
