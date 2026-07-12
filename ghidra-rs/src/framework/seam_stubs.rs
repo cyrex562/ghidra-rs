@@ -30,10 +30,26 @@ pub trait Version {}
 /// `DomainFile` only ever returns this type, so no members are needed yet.
 pub trait ItemCheckoutStatus {}
 
-/// Placeholder for `ghidra.framework.model.LinkFileInfo`, referenced by
-/// [`DomainFile`](crate::framework::model::DomainFile) before the real interface is ported.
-/// `DomainFile` only ever returns this type, so no members are needed yet.
-pub trait LinkFileInfo {}
+/// Placeholder for `ghidra.framework.data.LinkedGhidraFolder`, referenced by
+/// [`LinkFileInfo`](crate::framework::model::LinkFileInfo) before the real class is ported.
+/// `LinkFileInfo` only ever returns this type, so no members are needed yet.
+pub trait LinkedGhidraFolder {}
+
+/// Placeholder for the `ghidra.framework.data.LinkHandler.LinkStatus` nested enum, referenced by
+/// [`LinkFileInfo`](crate::framework::model::LinkFileInfo) before the real `LinkHandler` class
+/// (and its nested `LinkStatus` enum) is ported. Mirrors the four Java enum constants since call
+/// sites branch on which status was returned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LinkStatus {
+    /// The link-file specified does not refer to a valid file or content-type.
+    Broken,
+    /// The link-file ultimately refers to a file or folder path within the same project.
+    Internal,
+    /// The link-file ultimately refers to an external project/repository path with a Ghidra URL.
+    External,
+    /// The specified file is not a link-file.
+    NonLink,
+}
 
 /// Placeholder for `ghidra.framework.options.OptionType`, referenced by
 /// [`Options`](crate::framework::options::Options) before the real (Java `enum`) type is ported.
