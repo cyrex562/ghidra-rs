@@ -13303,7 +13303,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghp
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/OrPattern.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/Pattern.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/PatternBlock.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/BitrangeSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/BitrangeSymbol.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/Constructor.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/ContextChange.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/ContextCommit.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
