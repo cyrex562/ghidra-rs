@@ -13280,7 +13280,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghp
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/NotEqualEquation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/NotExpression.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/OperandEquation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/OperandResolve.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/OperandResolve.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/OperandValue.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/OrExpression.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/PatternEquation.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
