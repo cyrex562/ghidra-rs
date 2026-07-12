@@ -13256,7 +13256,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Token.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Yylval.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/space_class.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slgh_compile 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/AndExpression.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/AndExpression.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/BinaryExpression.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/ConstantValue.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/ContextField.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress
