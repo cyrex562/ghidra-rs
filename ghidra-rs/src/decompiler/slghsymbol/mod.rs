@@ -1,3 +1,4 @@
+pub mod bitrange_symbol;
 pub mod context_change;
 pub mod label_symbol;
 pub mod section_symbol;
@@ -8,6 +9,7 @@ pub mod triple_symbol;
 pub mod user_op_symbol;
 pub mod varnode_symbol;
 
+pub use bitrange_symbol::BitrangeSymbol;
 pub use context_change::ContextChange;
 pub use label_symbol::LabelSymbol;
 pub use section_symbol::SectionSymbol;
