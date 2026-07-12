@@ -1,6 +1,7 @@
 pub mod bitrange_symbol;
 pub mod context_change;
 pub mod label_symbol;
+pub mod patternless_symbol;
 pub mod section_symbol;
 pub mod sleigh_symbol;
 pub mod specific_symbol;
@@ -12,6 +13,7 @@ pub mod varnode_symbol;
 pub use bitrange_symbol::BitrangeSymbol;
 pub use context_change::ContextChange;
 pub use label_symbol::LabelSymbol;
+pub use patternless_symbol::PatternlessSymbol;
 pub use section_symbol::SectionSymbol;
 pub use sleigh_symbol::SleighSymbol;
 pub use specific_symbol::SpecificSymbol;
