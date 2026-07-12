@@ -174,3 +174,5 @@ ts	stub_class	referenced_by
 2026-07-11T14:00:00Z	TraceModule	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	TraceSection	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	TraceMemoryRegion	DebuggerStaticMappingService
+2026-07-11T15:00:00Z	Reason	PcodeArithmetic
+2026-07-11T15:00:00Z	ConcretionError	PcodeArithmetic
