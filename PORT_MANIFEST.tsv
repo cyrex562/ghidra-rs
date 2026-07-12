@@ -13298,7 +13298,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghp
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/XorExpression.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpatexpress 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/CombinePattern.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/ContextPattern.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/DisjointPattern.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/DisjointPattern.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/InstructionPattern.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/OrPattern.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/Pattern.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghpattern 
