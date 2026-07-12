@@ -14554,7 +14554,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/L
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/ParsingEnvironment.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/PreprocessorException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/RadixBigInteger.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/SleighLexer.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/SleighLexer.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/SleighParserRun.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/SleighPreprocessor.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/sleigh/grammar/SleighRecognizerConstants.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra sleigh grammar 
