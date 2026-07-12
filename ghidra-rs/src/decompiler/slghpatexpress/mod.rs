@@ -19,6 +19,7 @@ pub mod start_instruction_value;
 pub mod sub_expression;
 pub mod token_field;
 pub mod token_pattern;
+pub mod unconstrained_equation;
 pub mod unary_expression;
 pub mod val_express_equation;
 
@@ -43,5 +44,6 @@ pub use start_instruction_value::StartInstructionValue;
 pub use sub_expression::SubExpression;
 pub use token_field::TokenField;
 pub use token_pattern::TokenPattern;
+pub use unconstrained_equation::UnconstrainedEquation;
 pub use unary_expression::UnaryExpression;
 pub use val_express_equation::ValExpressEquation;
