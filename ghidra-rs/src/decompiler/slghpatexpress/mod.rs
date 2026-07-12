@@ -7,6 +7,7 @@ pub mod next2_instruction_value;
 pub mod not_expression;
 pub mod pattern_value;
 pub mod start_instruction_value;
+pub mod token_field;
 pub mod token_pattern;
 pub mod unary_expression;
 
@@ -19,5 +20,6 @@ pub use next2_instruction_value::Next2InstructionValue;
 pub use not_expression::NotExpression;
 pub use pattern_value::PatternValue;
 pub use start_instruction_value::StartInstructionValue;
+pub use token_field::TokenField;
 pub use token_pattern::TokenPattern;
 pub use unary_expression::UnaryExpression;
