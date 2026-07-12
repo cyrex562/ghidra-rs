@@ -22,6 +22,7 @@ pub mod token_pattern;
 pub mod unconstrained_equation;
 pub mod unary_expression;
 pub mod val_express_equation;
+pub mod xor_expression;
 
 pub use and_expression::AndExpression;
 pub use binary_expression::BinaryExpression;
@@ -47,3 +48,4 @@ pub use token_pattern::TokenPattern;
 pub use unconstrained_equation::UnconstrainedEquation;
 pub use unary_expression::UnaryExpression;
 pub use val_express_equation::ValExpressEquation;
+pub use xor_expression::XorExpression;
