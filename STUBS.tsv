@@ -33,7 +33,8 @@ ts	stub_class	referenced_by
 2026-07-06T05:00:00Z	ProjectLocator	DomainFile
 2026-07-06T05:00:00Z	Version	DomainFile
 2026-07-06T05:00:00Z	ItemCheckoutStatus	DomainFile
-2026-07-06T05:00:00Z	LinkFileInfo	DomainFile
+2026-07-11T00:00:00Z	LinkedGhidraFolder	LinkFileInfo
+2026-07-11T00:00:00Z	LinkStatus	LinkFileInfo
 2026-07-06T06:00:00Z	ParserContext	InstructionPrototype
 2026-07-06T06:00:00Z	Mask	InstructionPrototype
 2026-07-06T06:00:00Z	PcodeOverride	InstructionPrototype
