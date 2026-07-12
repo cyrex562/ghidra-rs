@@ -124,7 +124,7 @@ DONE	interface	302	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/Tracked
 DONE	interface	302	1	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Issue.java
 DONE	interface	301	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/DynamicHelpLocation.java
 DONE	interface	301	1	util	Ghidra/Framework/Utility/src/main/java/ghidra/util/Location.java
-TODO	interface	300	71	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java
+DONE	interface	300	71	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java
 DONE	interface	291	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectListener.java
 DONE	interface	284	6	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToService.java
 DONE	interface	284	10	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Project.java
