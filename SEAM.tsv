@@ -166,7 +166,7 @@ DONE	interface	102	5	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/
 DONE	interface	102	1	app	Ghidra/Framework/Project/src/main/java/ghidra/app/plugin/PluginCategoryNames.java
 DONE	interface	101	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/EclipseIntegrationService.java
 DONE	interface	101	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/FunctionComparisonService.java
-TODO	interface	101	159	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeArithmetic.java
+DONE	interface	101	159	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeArithmetic.java
 DONE	interface	101	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolConnection.java
 DONE	interface	101	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ToolManager.java
 DONE	interface	100	2	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerPlatformService.java
