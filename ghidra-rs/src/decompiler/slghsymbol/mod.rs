@@ -4,6 +4,7 @@ pub mod section_symbol;
 pub mod sleigh_symbol;
 pub mod specific_symbol;
 pub mod symbol_type;
+pub mod triple_symbol;
 pub mod user_op_symbol;
 pub mod varnode_symbol;
 
@@ -13,5 +14,6 @@ pub use section_symbol::SectionSymbol;
 pub use sleigh_symbol::SleighSymbol;
 pub use specific_symbol::SpecificSymbol;
 pub use symbol_type::SymbolType;
+pub use triple_symbol::TripleSymbol;
 pub use user_op_symbol::UserOpSymbol;
 pub use varnode_symbol::VarnodeSymbol;

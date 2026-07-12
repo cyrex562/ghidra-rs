@@ -10,11 +10,6 @@ pub trait PatternExpression: Send + Sync {}
 /// [`crate::decompiler::slghpatexpress::TokenPattern::get_pattern`].
 pub trait Pattern: Send + Sync {}
 
-/// Placeholder for `ghidra.pcodeCPort.slghsymbol.TripleSymbol`, needed by
-/// [`crate::decompiler::slghsymbol::SpecificSymbol`] as its supertype (`SpecificSymbol extends
-/// TripleSymbol` in Java).
-pub trait TripleSymbol: Send + Sync {}
-
 /// Placeholder for `ghidra.pcodeCPort.semantics.VarnodeTpl`, needed by
 /// [`crate::decompiler::slghsymbol::SpecificSymbol::get_varnode`].
 pub trait VarnodeTpl: Send + Sync {}
