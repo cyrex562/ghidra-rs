@@ -348,8 +348,154 @@ pub trait DebuggerTraceManagerService {
 mod tests {
     use super::*;
 
+    use crate::framework::model::DomainObject;
+    use crate::program::model::address::AddressFactory;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
+    use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
+    use crate::program::model::lang::{CompilerSpec, Language};
+    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::trace::model::trace::TraceProgramViewListener;
+    use crate::trace::seam_stubs::{
+        TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
+        TraceBreakpointManager, TraceCodeManager, TraceEquateManager, TraceMemoryManager,
+        TraceModuleManager, TraceObjectManager, TracePlatformManager,
+        TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
+        TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager, TraceTimeManager,
+        TraceTimeViewport, TraceVariableSnapProgramView,
+    };
+    use crate::util::lock_hold::{Lock, LockHold};
+
     struct MockTrace;
-    impl Trace for MockTrace {}
+
+    impl DomainObject for MockTrace {}
+
+    impl DataTypeManagerOwner for MockTrace {
+        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl DataTypeManagerDomainObject for MockTrace {}
+
+    impl Trace for MockTrace {
+        fn get_base_language(&self) -> Box<dyn Language> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_base_compiler_spec(&self) -> Box<dyn CompilerSpec> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_emulator_cache_version(&mut self, _version: i64) {}
+
+        fn get_emulator_cache_version(&self) -> i64 {
+            0
+        }
+
+        fn get_base_address_factory(&self) -> Box<dyn AddressFactory> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_address_property_manager(&self) -> Box<dyn TraceAddressPropertyManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_bookmark_manager(&self) -> Box<dyn TraceBookmarkManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoint_manager(&self) -> Box<dyn TraceBreakpointManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_code_manager(&self) -> Box<dyn TraceCodeManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_base_data_type_manager(&self) -> Box<dyn TraceBasedDataTypeManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_equate_manager(&self) -> Box<dyn TraceEquateManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_platform_manager(&self) -> Box<dyn TracePlatformManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_memory_manager(&self) -> Box<dyn TraceMemoryManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_module_manager(&self) -> Box<dyn TraceModuleManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_object_manager(&self) -> Box<dyn TraceObjectManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_reference_manager(&self) -> Box<dyn TraceReferenceManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_register_context_manager(&self) -> Box<dyn TraceRegisterContextManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_stack_manager(&self) -> Box<dyn TraceStackManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_static_mapping_manager(&self) -> Box<dyn TraceStaticMappingManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_symbol_manager(&self) -> Box<dyn TraceSymbolManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_thread_manager(&self) -> Box<dyn TraceThreadManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_time_manager(&self) -> Box<dyn TraceTimeManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_fixed_program_view(&self, _snap: i64) -> Box<dyn TraceProgramView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_program_view(&self, _snap: i64) -> Box<dyn TraceVariableSnapProgramView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_program_views(&self) -> Vec<Box<dyn TraceProgramView>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_program_view(&self) -> Box<dyn TraceVariableSnapProgramView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_time_viewport(&self) -> Box<dyn TraceTimeViewport> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn add_program_view_listener(&mut self, _listener: Box<dyn TraceProgramViewListener>) {}
+
+        fn remove_program_view_listener(&mut self, _listener: &dyn TraceProgramViewListener) {}
+
+        fn lock_read(&self) -> LockHold<'_, dyn Lock> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn lock_write(&self) -> LockHold<'_, dyn Lock> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockCoordinates;
     impl DebuggerCoordinates for MockCoordinates {}

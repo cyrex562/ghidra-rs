@@ -137,6 +137,7 @@ impl crate::decompiler::slghpatexpress::PatternValue for Next2InstructionValue {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::decompiler::slghpatexpress::PatternValue;
 
     #[test]
     fn new_creates_with_location() {

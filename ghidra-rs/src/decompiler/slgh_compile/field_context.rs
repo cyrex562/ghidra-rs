@@ -42,6 +42,16 @@ impl Ord for FieldContext {
     }
 }
 
+impl fmt::Debug for FieldContext {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FieldContext")
+            .field("sym", &self.sym.name())
+            .field("qual", &self.qual.name)
+            .field("low", &self.qual.low)
+            .finish()
+    }
+}
+
 impl fmt::Display for FieldContext {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}/{}", self.sym.name(), self.qual)

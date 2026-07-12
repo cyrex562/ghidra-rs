@@ -212,6 +212,7 @@ impl crate::decompiler::slghpatexpress::PatternValue for TokenField {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::decompiler::slghpatexpress::PatternValue;
 
     #[test]
     fn new_creates_with_location_and_no_token() {
@@ -269,7 +270,7 @@ mod tests {
         let location = Location::new("test.sleigh", 1);
         let tok = Token::new("tok", 4, false, 0);
         let field = TokenField::with_bits(location, tok, false, 5, 5);
-        assert_eq!(field.max_value(), 0);
+        assert_eq!(field.max_value(), 1); // bits [5,5] = 1-bit field, max = 2^1-1 = 1
     }
 
     #[test]

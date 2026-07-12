@@ -10,6 +10,7 @@ use std::io;
 /// inheriting from it, since Rust has no class inheritance.
 ///
 /// Models `ghidra.pcodeCPort.slghsymbol.SleighSymbol`.
+#[derive(Clone)]
 pub struct SleighSymbol {
     name: String,
     /// Unique id across all symbols.

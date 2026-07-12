@@ -264,6 +264,64 @@ mod tests {
             ) -> io::Result<()> {
                 Ok(())
             }
+
+            fn write_unsigned_integer(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _val: u64,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_string(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _val: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_string_indexed(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _index: i32,
+                _val: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_space(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _spc: &crate::program::model::address::AddressSpace,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_space_indexed(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _index: i32,
+                _name: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_opcode(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _opcode: crate::decompiler::opcodes::op_code::OpCode,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_opcode_ordinal(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _opcode: i32,
+            ) -> io::Result<()> {
+                Ok(())
+            }
         }
 
         let mut encoder = NoOpEncoder::default();
@@ -272,16 +330,15 @@ mod tests {
 
     #[test]
     fn encode_calls_both_operands_encode() {
-        use std::cell::RefCell;
-        use std::rc::Rc;
+        use std::sync::{Arc, Mutex};
 
         struct CountingOperand {
-            encoded: Rc<RefCell<bool>>,
+            encoded: Arc<Mutex<bool>>,
         }
 
         impl PatternExpression for CountingOperand {
             fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
-                *self.encoded.borrow_mut() = true;
+                *self.encoded.lock().unwrap() = true;
                 Ok(())
             }
         }
@@ -318,11 +375,69 @@ mod tests {
             ) -> io::Result<()> {
                 Ok(())
             }
+
+            fn write_unsigned_integer(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _val: u64,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_string(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _val: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_string_indexed(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _index: i32,
+                _val: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_space(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _spc: &crate::program::model::address::AddressSpace,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_space_indexed(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _index: i32,
+                _name: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_opcode(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _opcode: crate::decompiler::opcodes::op_code::OpCode,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_opcode_ordinal(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _opcode: i32,
+            ) -> io::Result<()> {
+                Ok(())
+            }
         }
 
         let location = Location::new("test.sleigh", 1);
-        let left_encoded = Rc::new(RefCell::new(false));
-        let right_encoded = Rc::new(RefCell::new(false));
+        let left_encoded = Arc::new(Mutex::new(false));
+        let right_encoded = Arc::new(Mutex::new(false));
         let left = Box::new(CountingOperand {
             encoded: left_encoded.clone(),
         });
@@ -334,8 +449,8 @@ mod tests {
 
         expr.encode(&mut encoder).unwrap();
 
-        assert!(*left_encoded.borrow());
-        assert!(*right_encoded.borrow());
+        assert!(*left_encoded.lock().unwrap());
+        assert!(*right_encoded.lock().unwrap());
     }
 
     #[test]

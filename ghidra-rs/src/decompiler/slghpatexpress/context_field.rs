@@ -207,6 +207,7 @@ impl crate::decompiler::slghpatexpress::PatternValue for ContextField {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::decompiler::slghpatexpress::PatternValue;
 
     #[test]
     fn new_creates_with_location() {
@@ -248,7 +249,7 @@ mod tests {
     fn max_value_for_single_bit_field() {
         let location = Location::new("test.sleigh", 1);
         let field = ContextField::with_bits(location, false, 5, 5);
-        assert_eq!(field.max_value(), 0);
+        assert_eq!(field.max_value(), 1); // bits [5,5] = 1-bit field, max = 2^1-1 = 1
     }
 
     #[test]

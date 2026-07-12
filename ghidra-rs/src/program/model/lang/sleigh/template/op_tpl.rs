@@ -254,7 +254,7 @@ mod tests {
     #[test]
     fn new_defaults_to_no_output_or_input() {
         let op = OpTpl::new();
-        assert_eq!(op.get_out(), None);
+        assert!(op.get_out().is_none());
         assert_eq!(op.num_input(), 0);
     }
 
@@ -295,7 +295,7 @@ mod tests {
         op.set_output(real_varnode(0, 4));
         assert!(op.get_out().is_some());
         op.clear_output();
-        assert_eq!(op.get_out(), None);
+        assert!(op.get_out().is_none());
     }
 
     #[test]

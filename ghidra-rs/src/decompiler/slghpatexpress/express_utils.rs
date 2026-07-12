@@ -48,7 +48,7 @@ pub fn build_pattern(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::decompiler::seam_stubs::Pattern;
+	use crate::decompiler::seam_stubs::{Pattern, PatternExpression};
 	use crate::sleigh::grammar::Location;
 
 	struct MockPattern;
@@ -141,6 +141,8 @@ mod tests {
 		min: i64,
 		max: i64,
 	}
+
+	impl PatternExpression for FixedValue {}
 
 	impl PatternValue for FixedValue {
 		fn gen_pattern(&self, _val: i64) -> Box<dyn TokenPattern> {
@@ -244,7 +246,7 @@ mod tests {
 		let sub2 = FixedValue { min: 0, max: 5 };
 		let sub2_ref: &dyn PatternValue = &sub2;
 
-		let semval = vec![&sub1_ref, &sub2_ref];
+		let semval = vec![sub1_ref, sub2_ref];
 
 		let mut val = VectorStl::new();
 		val.push_back(1);

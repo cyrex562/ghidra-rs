@@ -66,7 +66,7 @@ impl TripleSymbol for PatternlessSymbol {
 impl Clone for PatternlessSymbol {
     fn clone(&self) -> Self {
         Self {
-            symbol: SleighSymbol::new(self.symbol.location().clone()),
+            symbol: self.symbol.clone(),
             patexp: self.patexp.clone(),
         }
     }

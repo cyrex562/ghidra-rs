@@ -156,6 +156,107 @@ mod tests {
         fn get_categories(&self) -> Vec<Box<dyn Category>> {
             Vec::new()
         }
+
+        fn get_data_types(&self) -> Vec<Box<dyn DataType>> {
+            Vec::new()
+        }
+
+        fn get_data_types_by_base_name(&self, _name: &str) -> Vec<Box<dyn DataType>> {
+            Vec::new()
+        }
+
+        fn add_data_type(
+            &mut self,
+            dt: Box<dyn DataType>,
+            _handler: &dyn crate::program::model::data::data_type_conflict_handler::DataTypeConflictHandler,
+        ) -> Box<dyn DataType> {
+            dt
+        }
+
+        fn get_category(&self, _name: &str) -> Option<Box<dyn Category>> {
+            None
+        }
+
+        fn get_category_path(&self) -> CategoryPath {
+            crate::program::model::data::category_path::ROOT.clone()
+        }
+
+        fn get_data_type(&self, _name: &str) -> Option<Box<dyn DataType>> {
+            None
+        }
+
+        fn create_category(
+            &mut self,
+            _name: &str,
+        ) -> Result<Box<dyn Category>, crate::util::exception::InvalidNameException> {
+            Err(crate::util::exception::InvalidNameException::new())
+        }
+
+        fn remove_category(&mut self, _name: &str, _monitor: &dyn TaskMonitor) -> bool {
+            false
+        }
+
+        fn remove_empty_category(&mut self, _name: &str, _monitor: &dyn TaskMonitor) -> bool {
+            false
+        }
+
+        fn move_category(
+            &mut self,
+            _category: Box<dyn Category>,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<(), crate::util::exception::DuplicateNameException> {
+            Ok(())
+        }
+
+        fn copy_category(
+            &mut self,
+            _category: &dyn Category,
+            _handler: &dyn crate::program::model::data::data_type_conflict_handler::DataTypeConflictHandler,
+            _monitor: &dyn TaskMonitor,
+        ) -> Box<dyn Category> {
+            Box::new(MockCategory)
+        }
+
+        fn get_parent(&self) -> Option<Box<dyn Category>> {
+            None
+        }
+
+        fn is_root(&self) -> bool {
+            true
+        }
+
+        fn get_category_path_name(&self) -> String {
+            "/mock".to_string()
+        }
+
+        fn get_root(&self) -> Box<dyn Category> {
+            Box::new(MockCategory)
+        }
+
+        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
+            Box::new(MockDataTypeManager)
+        }
+
+        fn move_data_type(
+            &mut self,
+            _dt_type: Box<dyn DataType>,
+            _handler: &dyn crate::program::model::data::data_type_conflict_handler::DataTypeConflictHandler,
+        ) -> Result<(), crate::program::model::data::data_type_dependency_exception::DataTypeDependencyException>
+        {
+            Ok(())
+        }
+
+        fn remove(&mut self, _dt_type: &dyn DataType, _monitor: &dyn TaskMonitor) -> bool {
+            false
+        }
+
+        fn get_id(&self) -> i64 {
+            0
+        }
+
+        fn compare_to(&self, other: &dyn Category) -> std::cmp::Ordering {
+            Category::get_name(self).cmp(&other.get_name())
+        }
     }
 
     struct MockService;

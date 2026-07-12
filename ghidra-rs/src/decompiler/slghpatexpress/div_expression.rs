@@ -336,34 +336,33 @@ mod tests {
         }
 
         struct CountingOperand {
-            encoded: std::cell::RefCell<bool>,
+            encoded: std::sync::Arc<std::sync::atomic::AtomicBool>,
         }
 
         impl PatternExpression for CountingOperand {
             fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
-                *self.encoded.borrow_mut() = true;
+                self.encoded
+                    .store(true, std::sync::atomic::Ordering::SeqCst);
                 Ok(())
             }
         }
 
         let location = Location::new("test.sleigh", 1);
+        let left_encoded = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let left = Box::new(CountingOperand {
-            encoded: std::cell::RefCell::new(false),
+            encoded: left_encoded.clone(),
         });
-        let left_ref = &left.as_ref();
-        let left_encoded = left_ref.encoded.as_ref();
+        let right_encoded = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let right = Box::new(CountingOperand {
-            encoded: std::cell::RefCell::new(false),
+            encoded: right_encoded.clone(),
         });
-        let right_ref = &right.as_ref();
-        let right_encoded = right_ref.encoded.as_ref();
 
         let expr = DivExpression::with_operands(location, left, right);
         let mut encoder = TestEncoder::default();
 
         expr.encode(&mut encoder).unwrap();
 
-        assert!(*left_encoded.borrow());
-        assert!(*right_encoded.borrow());
+        assert!(left_encoded.load(std::sync::atomic::Ordering::SeqCst));
+        assert!(right_encoded.load(std::sync::atomic::Ordering::SeqCst));
     }
 }

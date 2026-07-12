@@ -88,6 +88,7 @@ impl super::context_change::ContextChange for ContextCommit {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::context_change::ContextChange;
     use crate::program::model::pcode::ids::AttributeId;
     use crate::program::model::address::AddressSpace;
     use crate::decompiler::opcodes::op_code::OpCode;

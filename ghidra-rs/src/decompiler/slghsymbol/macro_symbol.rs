@@ -89,7 +89,7 @@ mod tests {
         let macro_sym = MacroSymbol::new(loc(), "test_macro", 42);
         assert_eq!(macro_sym.symbol().name(), "test_macro");
         assert_eq!(macro_sym.index(), 42);
-        assert_eq!(macro_sym.construct(), None);
+        assert!(macro_sym.construct().is_none());
         assert_eq!(macro_sym.num_operands(), 0);
     }
 
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn construct_operations() {
         let mut macro_sym = MacroSymbol::new(loc(), "macro", 1);
-        assert_eq!(macro_sym.construct(), None);
+        assert!(macro_sym.construct().is_none());
 
         let construct = ConstructTpl::new();
         macro_sym.set_construct(construct);

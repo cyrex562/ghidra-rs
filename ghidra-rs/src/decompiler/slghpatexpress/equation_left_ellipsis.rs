@@ -238,7 +238,7 @@ mod tests {
         let location = Location::new("test.sleigh", 1);
 
         struct TrackingEquation {
-            observed_base: std::cell::RefCell<i32>,
+            observed_base: std::sync::atomic::AtomicI32,
             token_pattern: Option<Box<dyn TokenPattern>>,
         }
 
@@ -246,7 +246,8 @@ mod tests {
             fn gen_pattern(&mut self) {}
 
             fn resolve_operand_left(&self, state: &mut OperandResolve) -> bool {
-                *self.observed_base.borrow_mut() = state.base;
+                self.observed_base
+                    .store(state.base, std::sync::atomic::Ordering::SeqCst);
                 true
             }
 
@@ -258,7 +259,7 @@ mod tests {
         }
 
         let tracking_eq = TrackingEquation {
-            observed_base: std::cell::RefCell::new(0),
+            observed_base: std::sync::atomic::AtomicI32::new(0),
             token_pattern: None,
         };
 

@@ -134,6 +134,204 @@ mod tests {
         fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
             vec![Box::new(MockCompilerSpecDescription)]
         }
+
+        fn supports_pcode(&self) -> bool {
+            true
+        }
+
+        fn is_volatile(&self, _addr: &crate::program::model::address::Address) -> bool {
+            false
+        }
+
+        fn parse(
+            &self,
+            _buf: &dyn crate::program::seam_stubs::MemBuffer,
+            _context: &mut dyn crate::program::model::lang::processor_context::ProcessorContext,
+            _in_delay_slot: bool,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype>,
+            crate::program::model::lang::language::ParseError,
+        > {
+            Err(crate::program::model::lang::language::ParseError::UnknownInstruction(
+                crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException::new(),
+            ))
+        }
+
+        fn get_number_of_user_defined_op_names(&self) -> i32 {
+            0
+        }
+
+        fn get_user_defined_op_name(&self, _index: i32) -> Option<String> {
+            None
+        }
+
+        fn get_registers_at(
+            &self,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register_in_space(
+            &self,
+            _addrspc: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _offset: i64,
+            _size: i32,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_registers(&self) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register_names(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn get_register_by_name(
+            &self,
+            _name: &str,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_register_at(
+            &self,
+            _addr: &crate::program::model::address::Address,
+            _size: i32,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_program_counter(&self) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_context_base_register(
+            &self,
+        ) -> Option<crate::program::model::lang::register::RegisterRef> {
+            None
+        }
+
+        fn get_context_registers(&self) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_default_memory_blocks(
+            &self,
+        ) -> Vec<Box<dyn crate::program::seam_stubs::MemoryBlockDefinition>> {
+            Vec::new()
+        }
+
+        fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+            Vec::new()
+        }
+
+        fn get_segmented_space(&self) -> String {
+            String::new()
+        }
+
+        fn get_volatile_addresses(
+            &self,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            Box::new(crate::program::model::address::AddressSet::new())
+        }
+
+        fn apply_context_settings(
+            &self,
+            _ctx: &mut dyn crate::program::model::listing::default_program_context::DefaultProgramContext,
+        ) {
+        }
+
+        fn reload_language(
+            &self,
+            _task_monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+
+        fn get_compiler_spec_by_id(
+            &self,
+            compiler_spec_id: &CompilerSpecID,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
+            crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,
+        > {
+            Err(
+                crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException::new(
+                    &self.get_language_id(),
+                    compiler_spec_id,
+                ),
+            )
+        }
+
+        fn get_default_compiler_spec(
+            &self,
+        ) -> Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec> {
+            unimplemented!("not needed for this smoke test")
+        }
+
+        fn has_property(&self, _key: &str) -> bool {
+            false
+        }
+
+        fn get_property_as_int(&self, _key: &str, default_int: i32) -> i32 {
+            default_int
+        }
+
+        fn get_property_as_boolean(&self, _key: &str, default_boolean: bool) -> bool {
+            default_boolean
+        }
+
+        fn get_property_or(&self, _key: &str, default_string: &str) -> String {
+            default_string.to_string()
+        }
+
+        fn get_property(&self, _key: &str) -> Option<String> {
+            None
+        }
+
+        fn get_property_keys(&self) -> HashSet<String> {
+            HashSet::new()
+        }
+
+        fn has_manual(&self) -> bool {
+            false
+        }
+
+        fn get_manual_entry(
+            &self,
+            _instruction_mnemonic: &str,
+        ) -> Option<crate::util::manual_entry::ManualEntry> {
+            None
+        }
+
+        fn get_manual_instruction_mnemonic_keys(&self) -> HashSet<String> {
+            HashSet::new()
+        }
+
+        fn get_manual_exception(
+            &self,
+        ) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+            None
+        }
+
+        fn get_sorted_vector_registers(
+            &self,
+        ) -> Vec<crate::program::model::lang::register::RegisterRef> {
+            Vec::new()
+        }
+
+        fn get_register_addresses(
+            &self,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            Box::new(crate::program::model::address::AddressSet::new())
+        }
+
+        fn get_maximum_instruction_length(&self) -> Option<i32> {
+            Some(16)
+        }
     }
 
     struct MockLanguageService;

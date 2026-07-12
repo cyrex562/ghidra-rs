@@ -152,6 +152,7 @@ impl crate::decompiler::slghpatexpress::PatternValue for ConstantValue {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::decompiler::slghpatexpress::PatternValue;
 
     #[test]
     fn constant_value_new_initializes_to_zero() {

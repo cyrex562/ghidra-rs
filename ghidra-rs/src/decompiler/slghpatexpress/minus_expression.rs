@@ -313,28 +313,28 @@ mod tests {
         }
 
         struct CountingOperand {
-            encoded: std::cell::RefCell<bool>,
+            encoded: std::sync::Arc<std::sync::atomic::AtomicBool>,
         }
 
         impl PatternExpression for CountingOperand {
             fn encode(&self, _encoder: &mut dyn Encoder) -> io::Result<()> {
-                *self.encoded.borrow_mut() = true;
+                self.encoded
+                    .store(true, std::sync::atomic::Ordering::SeqCst);
                 Ok(())
             }
         }
 
         let location = Location::new("test.sleigh", 1);
+        let encoded = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let operand = Box::new(CountingOperand {
-            encoded: std::cell::RefCell::new(false),
+            encoded: std::sync::Arc::clone(&encoded),
         });
-        let operand_ref = &operand.as_ref();
-        let encoded = operand_ref.encoded.as_ref();
 
         let expr = MinusExpression::with_operand(location, operand);
         let mut encoder = TestEncoder::default();
 
         expr.encode(&mut encoder).unwrap();
 
-        assert!(*encoded.borrow());
+        assert!(encoded.load(std::sync::atomic::Ordering::SeqCst));
     }
 }

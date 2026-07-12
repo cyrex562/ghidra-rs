@@ -147,9 +147,18 @@ mod tests {
 		}
 	}
 
+	use crate::decompiler::seam_stubs::Pattern;
+	use crate::decompiler::slghpattern::PatternBlock;
+
 	struct MockPattern;
 
-	impl DisjointPattern for MockPattern {}
+	impl Pattern for MockPattern {}
+
+	impl DisjointPattern for MockPattern {
+		fn get_block(&self, _context: bool) -> Option<&PatternBlock> {
+			None
+		}
+	}
 
 	#[test]
 	fn new_initializes_empty_lists() {

@@ -229,14 +229,23 @@ mod tests {
     fn get_language_description_known_version() {
         let service = MockVersionedLanguageService { known_version: 2 };
         let id = LanguageID::new("x86:LE:32:default").unwrap();
-        assert!(service.get_language_description(&id, 2).is_ok());
+        assert!(
+            <MockVersionedLanguageService as VersionedLanguageService>::get_language_description(
+                &service, &id, 2
+            )
+            .is_ok()
+        );
     }
 
     #[test]
     fn get_language_unknown_version_errs() {
         let service = MockVersionedLanguageService { known_version: 2 };
         let id = LanguageID::new("x86:LE:32:default").unwrap();
-        let err = service.get_language(&id, 1).err().unwrap();
+        let err = <MockVersionedLanguageService as VersionedLanguageService>::get_language(
+            &service, &id, 1,
+        )
+        .err()
+        .unwrap();
         assert!(err.to_string().contains("version 1"));
     }
 
@@ -245,6 +254,6 @@ mod tests {
         let service: Box<dyn VersionedLanguageService> =
             Box::new(MockVersionedLanguageService { known_version: 1 });
         let id = LanguageID::new("x86:LE:32:default").unwrap();
-        assert!(service.get_language_description(&id, 1).is_ok());
+        assert!(VersionedLanguageService::get_language_description(&*service, &id, 1).is_ok());
     }
 }

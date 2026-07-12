@@ -244,6 +244,64 @@ mod tests {
             ) -> io::Result<()> {
                 Ok(())
             }
+
+            fn write_unsigned_integer(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _val: u64,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_string(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _val: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_string_indexed(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _index: i32,
+                _val: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_space(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _spc: &crate::program::model::address::AddressSpace,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_space_indexed(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _index: i32,
+                _name: &str,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_opcode(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _opcode: crate::decompiler::opcodes::op_code::OpCode,
+            ) -> io::Result<()> {
+                Ok(())
+            }
+
+            fn write_opcode_ordinal(
+                &mut self,
+                _attrib_id: crate::program::model::pcode::ids::AttributeId,
+                _opcode: i32,
+            ) -> io::Result<()> {
+                Ok(())
+            }
         }
 
         let mut encoder = NoOpEncoder::default();
