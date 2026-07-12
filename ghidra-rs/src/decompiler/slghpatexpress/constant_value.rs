@@ -104,6 +104,7 @@ impl TokenPattern for BooleanTokenPattern {
 /// expressions. Its min and max values are both equal to the constant itself.
 ///
 /// Models `ghidra.pcodeCPort.slghpatexpress.ConstantValue`.
+#[derive(Clone)]
 pub struct ConstantValue {
     location: Location,
     val: i64,
