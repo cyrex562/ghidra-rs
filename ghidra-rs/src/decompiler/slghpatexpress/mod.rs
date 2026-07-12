@@ -11,6 +11,7 @@ pub mod start_instruction_value;
 pub mod token_field;
 pub mod token_pattern;
 pub mod unary_expression;
+pub mod val_express_equation;
 
 pub use constant_value::ConstantValue;
 pub use context_field::ContextField;
@@ -25,3 +26,4 @@ pub use start_instruction_value::StartInstructionValue;
 pub use token_field::TokenField;
 pub use token_pattern::TokenPattern;
 pub use unary_expression::UnaryExpression;
+pub use val_express_equation::ValExpressEquation;
