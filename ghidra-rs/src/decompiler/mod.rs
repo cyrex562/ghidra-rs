@@ -3,6 +3,7 @@ pub mod context;
 pub mod error;
 pub mod globalcontext;
 pub mod opcodes;
+pub mod pcode_builder;
 pub mod seam_stubs;
 pub mod sleigh;
 pub mod sleigh_base;
