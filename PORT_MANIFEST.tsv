@@ -13328,7 +13328,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghs
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SpecificSymbol.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/StartSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SubtableSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SymbolScope.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SymbolScope.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SymbolTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SymbolTree.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/TokenSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort slghsymbol 
