@@ -206,7 +206,7 @@ TODO	class	7	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 TODO	abstract	3	7	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/sleighbase/SleighBase.java
 DONE	class	9	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/HandleTpl.java
 TODO	class	7	5	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SubtableSymbol.java
-TODO	class	7	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/ValueSymbol.java
+DONE	class	7	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/ValueSymbol.java
 TODO	abstract	7	7	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/translate/Translate.java
 DONE	class	7	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Token.java
 DONE	class	6	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SymbolScope.java
