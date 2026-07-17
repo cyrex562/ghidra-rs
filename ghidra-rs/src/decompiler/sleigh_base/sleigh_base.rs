@@ -1,6 +1,6 @@
 use super::named_symbol_provider::NamedSymbolProvider;
 use crate::decompiler::context::SleighError;
-use crate::decompiler::seam_stubs::Translate;
+use crate::decompiler::translate::Translate;
 use crate::decompiler::slghsymbol::SleighSymbol;
 use crate::decompiler::space::AddrSpace;
 use crate::program::model::pcode::encoder::Encoder;
@@ -96,7 +96,69 @@ mod tests {
         }
     }
 
+    impl crate::decompiler::seam_stubs::BasicSpaceProvider for MockSleighBase {
+        fn get_default_space(&self) -> &dyn AddrSpace {
+            unimplemented!("overridden by get_default_size below")
+        }
+
+        fn get_constant_space(&self) -> &dyn AddrSpace {
+            unimplemented!("not exercised by these tests")
+        }
+    }
     impl Translate for MockSleighBase {
+        fn is_big_endian(&self) -> bool {
+            true
+        }
+
+        fn alignment(&self) -> i32 {
+            1
+        }
+
+        fn get_unique_base(&self) -> i64 {
+            0
+        }
+
+        fn get_iop_space(&self) -> Option<&dyn AddrSpace> {
+            None
+        }
+
+        fn get_fspec_space(&self) -> Option<&dyn AddrSpace> {
+            None
+        }
+
+        fn get_stack_space(&self) -> Option<&dyn AddrSpace> {
+            None
+        }
+
+        fn get_unique_space(&self) -> Option<&dyn AddrSpace> {
+            None
+        }
+
+        fn num_spaces(&self) -> i32 {
+            0
+        }
+
+        fn get_space(&self, _i: i32) -> &dyn AddrSpace {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn no_high_ptr(&self) -> &dyn crate::decompiler::seam_stubs::RangeList {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn instruction_length(&self, _baseaddr: &crate::program::model::address::Address) -> i32 {
+            0
+        }
+
+        fn print_assembly(
+            &self,
+            _out: &mut dyn std::io::Write,
+            _size: i32,
+            _baseaddr: &crate::program::model::address::Address,
+        ) -> std::io::Result<i32> {
+            Ok(0)
+        }
+
         fn get_default_size(&self) -> i32 {
             4
         }
