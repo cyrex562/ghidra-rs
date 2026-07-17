@@ -32,17 +32,10 @@ pub trait ValueSymbol: Send + Sync {
     fn get_pattern_value(&self) -> &dyn crate::decompiler::slghpatexpress::PatternValue;
 }
 
-/// Placeholder for `ghidra.pcodeCPort.space.AddrSpace`, needed as the supertype of
-/// [`crate::decompiler::space::UniqueSpace`] (`UniqueSpace extends AddrSpace` in Java). Only the
-/// member this interface actually needs — the shared basic-attribute encoding helper
-/// (`AddrSpace.encode_basic_attributes`) — is stubbed here.
-pub trait AddrSpace: Send + Sync {
-    /// Encodes the attributes common to every address space kind (name, index, size, etc.).
-    fn encode_basic_attributes(
-        &self,
-        encoder: &mut dyn crate::program::model::pcode::encoder::Encoder,
-    ) -> io::Result<()> {
-        let _ = encoder;
-        Ok(())
-    }
+/// Placeholder for `ghidra.pcodeCPort.translate.Translate`, needed by
+/// [`crate::decompiler::space::AddrSpace::get_trans`] and, in turn,
+/// [`crate::decompiler::space::AddrSpace::print_raw`] (which calls `getTrans().getDefaultSize()`).
+pub trait Translate: Send + Sync {
+    /// The default size, in bytes, this translator expects an address/instruction to be.
+    fn get_default_size(&self) -> i32;
 }

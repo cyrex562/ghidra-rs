@@ -1,16 +1,16 @@
 //! Models `ghidra.pcodeCPort.space.UniqueSpace`.
 
-use crate::decompiler::seam_stubs::AddrSpace;
+use super::addr_space::AddrSpace;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::ELEM_SPACE_UNIQUE;
 use std::io;
 
 /// The address space used as a pool for temporary registers.
 ///
-/// Models `ghidra.pcodeCPort.space.UniqueSpace`, which extends [`AddrSpace`] (stubbed pending
-/// its own port) and overrides only `encode`. The Java constructors set up the space's identity
-/// (translator, index, `hasphysical` flag) via the `AddrSpace` superclass constructor; that
-/// construction-time behavior has no equivalent as trait methods and is left to implementors.
+/// Models `ghidra.pcodeCPort.space.UniqueSpace`, which extends [`AddrSpace`] and overrides only
+/// `encode`. The Java constructors set up the space's identity (translator, index, `hasphysical`
+/// flag) via the `AddrSpace` superclass constructor; that construction-time behavior has no
+/// equivalent as trait methods and is left to implementors.
 pub trait UniqueSpace: AddrSpace {
     /// Encodes this unique space to the given encoder.
     fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
@@ -30,7 +30,58 @@ mod tests {
 
     struct MockUniqueSpace;
 
+    struct MockTranslate;
+    impl crate::decompiler::seam_stubs::Translate for MockTranslate {
+        fn get_default_size(&self) -> i32 {
+            4
+        }
+    }
+
     impl AddrSpace for MockUniqueSpace {
+        fn name(&self) -> &str {
+            "unique"
+        }
+
+        fn get_trans(&self) -> &dyn crate::decompiler::seam_stubs::Translate {
+            &MockTranslate
+        }
+
+        fn get_type(&self) -> crate::decompiler::space::SpaceType {
+            crate::decompiler::space::SpaceType::IptrInternal
+        }
+
+        fn get_delay(&self) -> i32 {
+            0
+        }
+
+        fn get_index(&self) -> i32 {
+            0
+        }
+
+        fn get_word_size(&self) -> i32 {
+            1
+        }
+
+        fn get_scale(&self) -> i32 {
+            0
+        }
+
+        fn get_addr_size(&self) -> i32 {
+            4
+        }
+
+        fn get_mask(&self) -> i64 {
+            0xffff_ffff
+        }
+
+        fn get_short_cut(&self) -> char {
+            'u'
+        }
+
+        fn flags(&self) -> i32 {
+            0
+        }
+
         fn encode_basic_attributes(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
             encoder.write_bool(AttributeId::new("dummy", 0), true)
         }
