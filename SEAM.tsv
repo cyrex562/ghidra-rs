@@ -214,7 +214,7 @@ TODO	class	5	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 TODO	class	5	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/ConstantSpace.java
 TODO	class	4	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/UniqueSpace.java
 TODO	class	4	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/OrPattern.java
-TODO	class	4	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/InstructionPattern.java
+DONE	class	4	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/InstructionPattern.java
 TODO	class	4	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ExprTree.java
 TODO	class	4	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/ContextSymbol.java
 DONE	class	4	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/ContextPattern.java
