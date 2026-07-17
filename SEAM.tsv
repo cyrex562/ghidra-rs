@@ -210,7 +210,7 @@ DONE	class	7	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 TODO	abstract	7	7	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/translate/Translate.java
 DONE	class	7	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/Token.java
 DONE	class	6	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/SymbolScope.java
-TODO	class	5	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/pcoderaw/VarnodeData.java
+DONE	class	5	3	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/pcoderaw/VarnodeData.java
 DONE	class	5	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/ConstantSpace.java
 DONE	class	4	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/space/UniqueSpace.java
 DONE	class	4	0	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpattern/OrPattern.java
