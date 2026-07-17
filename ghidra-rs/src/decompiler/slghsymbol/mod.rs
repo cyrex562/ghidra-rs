@@ -1,6 +1,7 @@
 pub mod bitrange_symbol;
 pub mod context_change;
 pub mod context_commit;
+pub mod context_symbol;
 pub mod decision_properties;
 pub mod label_symbol;
 pub mod macro_symbol;
@@ -17,6 +18,7 @@ pub mod varnode_symbol;
 pub use bitrange_symbol::BitrangeSymbol;
 pub use context_change::ContextChange;
 pub use context_commit::ContextCommit;
+pub use context_symbol::ContextSymbol;
 pub use decision_properties::{ConstructorLike, DecisionProperties};
 pub use label_symbol::LabelSymbol;
 pub use macro_symbol::MacroSymbol;
