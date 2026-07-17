@@ -13225,7 +13225,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/opcod
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/pcoderaw/VarnodeData.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort pcoderaw 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstTpl.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstructTpl.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/HandleTpl.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/HandleTpl.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/OpTpl.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/PcodeBuilder.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/VarnodeTpl.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
