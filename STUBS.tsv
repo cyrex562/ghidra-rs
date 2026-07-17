@@ -178,3 +178,4 @@ ts	stub_class	referenced_by
 2026-07-11T15:00:00Z	ConcretionError	PcodeArithmetic
 2026-07-11T15:30:00Z	TreePath	DataTypeManagerService
 2026-07-17T00:00:00Z	ValueSymbol	ContextSymbol
+2026-07-17T19:00:00Z	AddrSpace	UniqueSpace
