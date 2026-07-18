@@ -7,6 +7,7 @@ pub mod optimize_record;
 pub mod regression;
 pub mod space_class;
 pub mod space_quality;
+pub mod star_quality;
 
 pub use directory_visitor::DirectoryVisitor;
 pub use error_warning_reporter::ErrorWarningReporter;
@@ -17,3 +18,4 @@ pub use optimize_record::OptimizeRecord;
 pub use regression::PushbackEntireLine;
 pub use space_class::SpaceClass;
 pub use space_quality::SpaceQuality;
+pub use star_quality::StarQuality;
