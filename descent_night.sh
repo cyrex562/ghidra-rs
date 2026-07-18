@@ -78,7 +78,7 @@ for ((i=1;i<=DESCENT_MAX;i++)); do
   if grep -rqE --include='*.rs' --exclude='seam_stubs.rs' "\b(pub +)?(struct|trait|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
     esc=$(printf '%s' "$srcpath" | sed 's/[.[\*^$]/\\&/g')
     sed -i "s#^${esc}\tTODO\t#${esc}\tDONE\t#" "$MANIFEST"
-    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#DONE\1#" "$ORDER"
+    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#DONE\1#" "$ORDER"
     git add "$MANIFEST" "$ORDER" >/dev/null 2>&1
     git commit -q -m "descent reconcile: $class already ported -> DONE" >/dev/null 2>&1 || true
     reconciled=$((reconciled+1)); log "reconciled (already ported): $class -> DONE (no LLM turn)"; ((i--)); continue
@@ -155,19 +155,19 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     if git merge --no-ff "$branch" -m "merge descent: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
       git branch -D "$branch" >/dev/null 2>&1||true
-      sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)$/s//DONE\1/" "$ORDER"
+      sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)$/s//DONE\1/" "$ORDER"
       git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: mark $class DONE" >/dev/null 2>&1||true
       ported=$((ported+1)); log "OK descent: $class (${mode}) merged"
     else
       git merge --abort >/dev/null 2>&1||true; git reset --hard >/dev/null 2>&1||true
-      sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
+      sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
       git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: park $class" >/dev/null 2>&1||true
       parked=$((parked+1)); log "PARK descent: $class (post-merge build failed)"
     fi
   else
     git add -A>/dev/null 2>&1||true; git commit -q -m "WIP descent park: $class" >/dev/null 2>&1||true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
-    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
+    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
     git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: park $class" >/dev/null 2>&1||true
     parked=$((parked+1)); log "PARK descent: $class (status=$status / build red). log: $log"
   fi
