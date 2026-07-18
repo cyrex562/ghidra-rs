@@ -1,0 +1,227 @@
+//! Models `ghidra.pcodeCPort.slghsymbol.FlowRefSymbol`.
+
+use super::patternless_symbol::PatternlessSymbol;
+use super::specific_symbol::SpecificSymbol;
+use super::symbol_type::SymbolType;
+use super::triple_symbol::TripleSymbol;
+use crate::decompiler::seam_stubs::VarnodeTpl as VarnodeTplTrait;
+use crate::program::model::address::AddressSpace;
+use crate::program::model::lang::sleigh::template::{ConstTpl, ConstTplType, VarnodeTpl};
+use crate::sleigh::grammar::location::Location;
+use std::sync::Arc;
+
+/// A symbol representing the reference address at the injection site.
+///
+/// Models `ghidra.pcodeCPort.slghsymbol.FlowRefSymbol`. This symbol resolves to the
+/// reference address at the injection site and can only be used in pcode snippets, not in
+/// pattern expressions.
+pub struct FlowRefSymbol {
+    patternless: PatternlessSymbol,
+    const_space: Arc<AddressSpace>,
+}
+
+impl FlowRefSymbol {
+    /// Creates a new flow reference symbol at the given location.
+    ///
+    /// Mirrors the Java `FlowRefSymbol(Location, String, AddrSpace)` constructor.
+    pub fn new(location: Location, name: impl Into<String>, const_space: Arc<AddressSpace>) -> Self {
+        Self {
+            patternless: PatternlessSymbol::with_name(location, name),
+            const_space,
+        }
+    }
+
+    /// Returns the symbol type for this flow reference.
+    pub fn symbol_type(&self) -> SymbolType {
+        SymbolType::FlowrefSymbol
+    }
+
+    /// Gets a reference to the base PatternlessSymbol.
+    pub fn patternless(&self) -> &PatternlessSymbol {
+        &self.patternless
+    }
+
+    /// Gets a mutable reference to the base PatternlessSymbol.
+    pub fn patternless_mut(&mut self) -> &mut PatternlessSymbol {
+        &mut self.patternless
+    }
+}
+
+impl TripleSymbol for FlowRefSymbol {
+    fn get_pattern_expression(&self) -> Box<dyn crate::decompiler::seam_stubs::PatternExpression> {
+        self.patternless.get_pattern_expression()
+    }
+}
+
+impl SpecificSymbol for FlowRefSymbol {
+    fn get_varnode(&self) -> Box<dyn VarnodeTplTrait> {
+        let space_const = ConstTpl {
+            tp: ConstTplType::SpaceId,
+            value_real: 0,
+            value_spaceid: Some(self.const_space.clone()),
+            handle_index: 0,
+            select: None,
+        };
+
+        let offset_const = ConstTpl {
+            tp: ConstTplType::JFlowRef,
+            value_real: 0,
+            value_spaceid: None,
+            handle_index: 0,
+            select: None,
+        };
+
+        let size_const = ConstTpl::new();
+
+        Box::new(VarnodeTpl {
+            space: space_const,
+            offset: offset_const,
+            size: size_const,
+        })
+    }
+}
+
+impl Clone for FlowRefSymbol {
+    fn clone(&self) -> Self {
+        Self {
+            patternless: self.patternless.clone(),
+            const_space: self.const_space.clone(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::program::model::pcode::ids::*;
+    use std::sync::Arc;
+
+    fn loc() -> Location {
+        Location::new("test.sla", 1)
+    }
+
+    struct MockAddressSpace;
+    impl AddressSpace for MockAddressSpace {
+        fn name(&self) -> &str {
+            "const"
+        }
+
+        fn space_type(&self) -> crate::program::model::address::AddressSpaceType {
+            crate::program::model::address::AddressSpaceType::Constant
+        }
+
+        fn address_size(&self) -> u8 {
+            8
+        }
+
+        fn word_size(&self) -> u8 {
+            1
+        }
+
+        fn size(&self) -> u64 {
+            0x1000000
+        }
+
+        fn is_loaded(&self) -> bool {
+            true
+        }
+
+        fn is_memory(&self) -> bool {
+            false
+        }
+
+        fn is_register(&self) -> bool {
+            false
+        }
+
+        fn is_constant(&self) -> bool {
+            true
+        }
+
+        fn is_unique(&self) -> bool {
+            false
+        }
+
+        fn is_other(&self) -> bool {
+            false
+        }
+
+        fn id(&self) -> i32 {
+            5
+        }
+
+        fn physical_space(&self) -> Option<Arc<dyn AddressSpace>> {
+            None
+        }
+
+        fn contains(&self, _offset: u64) -> bool {
+            true
+        }
+    }
+
+    #[test]
+    fn new_creates_symbol() {
+        let space = Arc::new(MockAddressSpace);
+        let frs = FlowRefSymbol::new(loc(), "flow_ref", space);
+        assert_eq!(frs.symbol_type(), SymbolType::FlowrefSymbol);
+        assert_eq!(frs.patternless().name(), "flow_ref");
+    }
+
+    #[test]
+    fn symbol_type_is_flowref() {
+        let space = Arc::new(MockAddressSpace);
+        let frs = FlowRefSymbol::new(loc(), "test", space);
+        assert_eq!(frs.symbol_type(), SymbolType::FlowrefSymbol);
+    }
+
+    #[test]
+    fn get_varnode_returns_varnode_tpl() {
+        let space = Arc::new(MockAddressSpace);
+        let frs = FlowRefSymbol::new(loc(), "test", space);
+        let _varnode = frs.get_varnode();
+    }
+
+    #[test]
+    fn get_pattern_expression_returns_pattern() {
+        let space = Arc::new(MockAddressSpace);
+        let frs = FlowRefSymbol::new(loc(), "test", space);
+        let _pattern = frs.get_pattern_expression();
+    }
+
+    #[test]
+    fn clone_creates_independent_instance() {
+        let space = Arc::new(MockAddressSpace);
+        let frs1 = FlowRefSymbol::new(loc(), "test", space);
+        let frs2 = frs1.clone();
+        assert_eq!(frs1.symbol_type(), frs2.symbol_type());
+        assert_eq!(frs1.patternless().name(), frs2.patternless().name());
+    }
+
+    #[test]
+    fn triple_symbol_trait_provides_pattern_expression() {
+        let space = Arc::new(MockAddressSpace);
+        let frs = FlowRefSymbol::new(loc(), "test", space);
+        let dyn_symbol: &dyn TripleSymbol = &frs;
+        let _pattern = dyn_symbol.get_pattern_expression();
+    }
+
+    #[test]
+    fn const_space_is_preserved() {
+        let space = Arc::new(MockAddressSpace);
+        let frs = FlowRefSymbol::new(loc(), "test", space.clone());
+        let varnode = frs.get_varnode();
+        let varnode_tpl = varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
+        let vt = unsafe { &*varnode_tpl };
+        assert!(vt.space.value_spaceid.is_some());
+    }
+
+    #[test]
+    fn varnode_offset_uses_jflowref_type() {
+        let space = Arc::new(MockAddressSpace);
+        let frs = FlowRefSymbol::new(loc(), "test", space);
+        let varnode = frs.get_varnode();
+        let varnode_tpl = varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
+        let vt = unsafe { &*varnode_tpl };
+        assert_eq!(vt.offset.tp, ConstTplType::JFlowRef);
+    }
+}
