@@ -13220,7 +13220,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/conte
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/context/Token.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort context
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/error/LowlevelError.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort error 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/globalcontext/ContextBitRange.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort globalcontext
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/globalcontext/TrackedContext.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort globalcontext 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/globalcontext/TrackedContext.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort globalcontext 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/opcodes/OpCode.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort opcodes
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/pcoderaw/VarnodeData.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort pcoderaw 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/semantics/ConstTpl.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra pcodeCPort semantics 
