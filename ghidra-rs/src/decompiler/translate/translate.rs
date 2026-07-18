@@ -1,7 +1,8 @@
 //! Models `ghidra.pcodeCPort.translate.Translate`.
 
-use crate::decompiler::seam_stubs::{BasicSpaceProvider, RangeList};
+use crate::decompiler::seam_stubs::RangeList;
 use crate::decompiler::space::{AddrSpace, SpaceType};
+use crate::decompiler::translate::BasicSpaceProvider;
 use crate::program::model::address::Address;
 use std::io;
 
@@ -9,9 +10,7 @@ use std::io;
 /// spaces.
 ///
 /// Models the abstract class `ghidra.pcodeCPort.translate.Translate`, which implements
-/// `BasicSpaceProvider` (ported here as the placeholder supertrait
-/// [`BasicSpaceProvider`](crate::decompiler::seam_stubs::BasicSpaceProvider), since the interface
-/// itself is not yet ported).
+/// `BasicSpaceProvider`.
 ///
 /// Promoted from the placeholder stub that only covered
 /// [`Translate::get_default_size`] (needed by [`AddrSpace::get_trans`] and, transitively,

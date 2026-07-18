@@ -248,7 +248,7 @@ mod tests {
     use super::*;
 
     struct MockTranslate;
-    impl crate::decompiler::seam_stubs::BasicSpaceProvider for MockTranslate {
+    impl crate::decompiler::translate::BasicSpaceProvider for MockTranslate {
         fn get_default_space(&self) -> &dyn AddrSpace {
             unimplemented!("overridden by get_default_size below")
         }

@@ -96,7 +96,7 @@ mod tests {
         }
     }
 
-    impl crate::decompiler::seam_stubs::BasicSpaceProvider for MockSleighBase {
+    impl crate::decompiler::translate::BasicSpaceProvider for MockSleighBase {
         fn get_default_space(&self) -> &dyn AddrSpace {
             unimplemented!("overridden by get_default_size below")
         }
