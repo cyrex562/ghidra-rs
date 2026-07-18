@@ -54,3 +54,33 @@ pub trait RangeList: Send + Sync {
         size: i32,
     ) -> bool;
 }
+
+/// Placeholder for `ghidra.pcodeCPort.slghsymbol.Constructor`, needed by
+/// [`crate::decompiler::slghpatexpress::OperandValue`] to resolve its operand index against the
+/// constructor that defines it. `Constructor` itself has not been ported to a concrete struct
+/// yet (only the narrower [`crate::decompiler::slghsymbol::ConstructorLike`] seam used by
+/// `DecisionProperties` exists so far).
+pub trait Constructor: Send + Sync {
+    /// This constructor's source location (Java's `Constructor.location` field).
+    fn location(&self) -> &crate::sleigh::grammar::Location;
+
+    /// The operand symbol at `index` (`Constructor.getOperand`).
+    fn get_operand(&self, index: i32) -> &crate::decompiler::slghsymbol::OperandSymbol;
+
+    /// Resolves `replace`/`listpos` through the defining expression of the operand at `index`
+    /// (`getOperand(index).getDefiningExpression().getSubValue(replace, listpos)`).
+    /// `OperandSymbol`'s defining-expression field has not been ported yet, so this seam bundles
+    /// the two-step Java traversal into a single method rather than splitting it further.
+    fn get_operand_sub_value(
+        &self,
+        index: i32,
+        replace: &[i64],
+        listpos: &mut crate::decompiler::utils::MutableInt,
+    ) -> i64;
+
+    /// This constructor's parent subtable's id (`Constructor.getParent().getId()`).
+    fn parent_id(&self) -> u64;
+
+    /// This constructor's own id (`Constructor.getId()`).
+    fn id(&self) -> u64;
+}
