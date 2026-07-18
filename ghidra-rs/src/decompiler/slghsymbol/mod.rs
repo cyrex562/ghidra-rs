@@ -14,6 +14,7 @@ pub mod specific_symbol;
 pub mod symbol_type;
 pub mod triple_symbol;
 pub mod user_op_symbol;
+pub mod value_map_symbol;
 pub mod varnode_symbol;
 
 pub use bitrange_symbol::BitrangeSymbol;
@@ -32,4 +33,5 @@ pub use specific_symbol::SpecificSymbol;
 pub use symbol_type::SymbolType;
 pub use triple_symbol::TripleSymbol;
 pub use user_op_symbol::UserOpSymbol;
+pub use value_map_symbol::ValueMapSymbol;
 pub use varnode_symbol::VarnodeSymbol;
