@@ -1,8 +1,26 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use super::datastruct::NoSuchIndexException;
+
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}
 
 /// Placeholder for `ghidra.util.Location`, needed by [`crate::util::Issue`].
 pub trait Location: Send + Sync {}
+
+/// Placeholder for `ghidra.util.map.ValueMap`, needed by
+/// [`crate::util::map::LongIteratorImpl`].
+///
+/// Only the accessors `LongIteratorImpl` needs are declared here; the real port carries
+/// the full page-indexed property storage.
+pub trait ValueMapLike {
+    /// Returns whether there is a property value at `index`.
+    fn has_property(&self, index: i64) -> bool;
+
+    /// Get the next index (exclusive of `index`) where a property value exists.
+    fn get_next_property_index(&self, index: i64) -> Result<i64, NoSuchIndexException>;
+
+    /// Get the previous index (exclusive of `index`) where a property value exists.
+    fn get_previous_property_index(&self, index: i64) -> Result<i64, NoSuchIndexException>;
+}
