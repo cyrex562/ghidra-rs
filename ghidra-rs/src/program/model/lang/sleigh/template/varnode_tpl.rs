@@ -2,6 +2,8 @@ use super::const_tpl::ConstTpl;
 use crate::program::model::pcode::{Decoder, DecoderError, Encoder, ELEM_VARNODE_TPL};
 use std::io;
 
+impl crate::decompiler::seam_stubs::VarnodeTpl for VarnodeTpl {}
+
 #[derive(Debug, Clone)]
 pub struct VarnodeTpl {
     pub space: ConstTpl,
