@@ -180,3 +180,4 @@ ts	stub_class	referenced_by
 2026-07-17T00:00:00Z	ValueSymbol	ContextSymbol
 2026-07-17T20:30:00Z	BasicSpaceProvider	Translate
 2026-07-17T20:30:00Z	RangeList	Translate
+2026-07-18T12:04:32Z	ValueMapLike	LongIteratorImpl

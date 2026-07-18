@@ -1,7 +1,9 @@
 use thiserror::Error;
 
+pub mod long_iterator_impl;
 pub mod value_storage_page_index;
 
+pub use long_iterator_impl::LongIteratorImpl;
 pub use value_storage_page_index::ValueStoragePageIndex;
 
 /// Exception thrown when a PropertyPage does not support a requested data type.
