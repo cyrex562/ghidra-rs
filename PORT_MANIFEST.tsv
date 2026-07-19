@@ -11839,7 +11839,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/AddableLongInt
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/DependencyGraph.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/DepthFirstSearch.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/DeterministicDependencyGraph.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/DirectedGraph.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/DirectedGraph.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Dominator.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Edge.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/EdgeSet.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph

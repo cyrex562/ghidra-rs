@@ -2,7 +2,10 @@
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
 use super::datastruct::NoSuchIndexException;
+use super::exception::NoValueException;
+use super::graph::key_indexable_set::KeyIndexableSet;
 use super::graph::keyed_object::KeyedObject;
+use super::graph::vertex::Vertex;
 
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}
@@ -54,5 +57,32 @@ pub trait GraphIteratorLike<T: KeyedObject> {
 /// int/long/double/string/object value families and the owning-set bookkeeping.
 pub trait AttributeLike<T: KeyedObject> {
     /// Undefine all values set for this attribute.
+    fn clear(&mut self);
+}
+
+/// Placeholder for `ghidra.util.graph.attributes.IntegerAttribute`, needed by
+/// [`crate::util::graph::directed_graph::DirectedGraph`] (`getLevels`/`complexityDepth`).
+///
+/// Only the int-valued get/set that make the returned attribute usable are declared here; the
+/// real port carries the full `Attribute` value-family machinery.
+#[allow(deprecated)]
+pub trait IntegerAttributeLike<T: KeyedObject>: AttributeLike<T> {
+    /// Returns the integer value associated with `obj`, or `NoValueException` if none is set.
+    fn get_value(&self, obj: &T) -> Result<i32, NoValueException>;
+
+    /// Sets the integer value associated with `obj`.
+    fn set_value(&mut self, obj: &T, value: i32);
+}
+
+/// Placeholder for `ghidra.util.graph.VertexSet`, needed by
+/// [`crate::util::graph::directed_graph::DirectedGraph`].
+///
+/// `DirectedGraph`'s defaults recover adjacency (sources/sinks/valence) by scanning `EdgeSet`
+/// directly rather than through `VertexSet`'s first/last edge pointers, so the only surface
+/// needed beyond the inherited [`KeyIndexableSet`] is `clear`; the real port also threads those
+/// edge pointers on behalf of `EdgeSet`.
+#[allow(deprecated)]
+pub trait VertexSetLike<V: Vertex>: KeyIndexableSet<V> {
+    /// Empties the vertex set while leaving capacity unchanged.
     fn clear(&mut self);
 }
