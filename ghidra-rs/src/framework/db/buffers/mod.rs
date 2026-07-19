@@ -1,12 +1,14 @@
 use crate::framework::db::buffer::DataBuffer;
 pub mod block_stream;
 pub mod block_stream_handle;
+pub mod buffer_file_adapter;
 pub mod buffer_file_handle;
 pub mod input_block_stream;
 pub mod local_buffer_file;
 pub mod output_block_stream;
 pub use block_stream::BlockStream;
 pub use block_stream_handle::BlockStreamHandle;
+pub use buffer_file_adapter::BufferFileAdapter;
 pub use buffer_file_handle::BufferFileHandle;
 pub use input_block_stream::InputBlockStream;
 pub use local_buffer_file::LocalBufferFile;
