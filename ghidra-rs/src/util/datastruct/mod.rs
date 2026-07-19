@@ -20,6 +20,7 @@ pub mod case_insensitive_duplicate_string_comparator;
 pub mod collection_change_listener;
 pub mod counter;
 pub mod data_structure_error_handler_factory;
+pub mod data_table;
 pub mod duo;
 pub mod fixed_size_stack;
 pub mod full_key_set;
@@ -69,6 +70,7 @@ pub use case_insensitive_duplicate_string_comparator::CaseInsensitiveDuplicateSt
 pub use collection_change_listener::CollectionChangeListener;
 pub use counter::Counter;
 pub use data_structure_error_handler_factory::{create_listener_error_handler, set_listener_error_handler_factory, reset_listener_error_handler_factory};
+pub use data_table::DataTable;
 pub use duo::{Duo, Side};
 pub use fixed_size_stack::FixedSizeStack;
 pub use full_key_set::FullKeySet;
