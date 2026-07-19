@@ -1,6 +1,7 @@
 pub mod abstract_dependency_graph;
 pub mod addable_long_double_hashtable;
 pub mod addable_long_int_hashtable;
+pub mod attributes;
 pub mod dependency_graph;
 pub mod edge;
 pub mod edge_set;
@@ -16,6 +17,8 @@ pub use dependency_graph::DependencyGraph;
 pub use addable_long_double_hashtable::AddableLongDoubleHashtable;
 #[allow(deprecated)]
 pub use addable_long_int_hashtable::AddableLongIntHashtable;
+#[allow(deprecated)]
+pub use attributes::AttributeManager;
 #[allow(deprecated)]
 pub use edge::Edge;
 #[allow(deprecated)]

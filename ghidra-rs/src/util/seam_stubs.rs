@@ -46,3 +46,13 @@ pub trait GraphIteratorLike<T: KeyedObject> {
     /// Removes the last-returned object from the backing set.
     fn remove(&mut self) -> bool;
 }
+
+/// Placeholder for `ghidra.util.graph.attributes.Attribute`, needed by
+/// [`crate::util::graph::attributes::AttributeManager`].
+///
+/// Only the accessor `AttributeManager` needs is declared here; the real port carries the
+/// int/long/double/string/object value families and the owning-set bookkeeping.
+pub trait AttributeLike<T: KeyedObject> {
+    /// Undefine all values set for this attribute.
+    fn clear(&mut self);
+}
