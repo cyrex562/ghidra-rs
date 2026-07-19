@@ -9,6 +9,13 @@ pub trait Task: Send + Sync {}
 /// Placeholder for `ghidra.util.Location`, needed by [`crate::util::Issue`].
 pub trait Location: Send + Sync {}
 
+/// Placeholder for `ghidra.util.datastruct.WeakSet`, needed by
+/// [`crate::util::datastruct::WeakDataStructureFactory`].
+///
+/// The factory only creates and returns these; no accessors are called on them here, so
+/// this is a marker trait until the real `WeakSet` family is ported.
+pub trait WeakSet<T>: Send + Sync {}
+
 /// Placeholder for `ghidra.util.map.ValueMap`, needed by
 /// [`crate::util::map::LongIteratorImpl`].
 ///
