@@ -11853,7 +11853,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Vertex.java	DO
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/VertexSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/WeightedDigraph.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/Attribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/AttributeManager.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/AttributeManager.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph attributes
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/DoubleAttribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/IntegerAttribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/LongAttribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
