@@ -97,6 +97,14 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    // These tests share the process-global REGISTRY and several register the same TypeId
+    // (String is used by three of them), so running them in parallel races. Serialize the
+    // module behind one poison-tolerant lock; each test takes `let _s = serial();` first.
+    static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    fn serial() -> std::sync::MutexGuard<'static, ()> {
+        SERIAL.lock().unwrap_or_else(|p| p.into_inner())
+    }
+
     struct CountingService {
         count: Arc<AtomicUsize>,
     }
@@ -117,6 +125,7 @@ mod tests {
 
     #[test]
     fn register_and_retrieve_service() {
+        let _s = serial();
         let count = Arc::new(AtomicUsize::new(0));
         let service = Arc::new(CountingService::new(count.clone()));
         assert!(PluggableServiceRegistry::register_pluggable_service(service).is_ok());
@@ -129,6 +138,7 @@ mod tests {
 
     #[test]
     fn returns_none_for_unregistered_service() {
+        let _s = serial();
         let result = PluggableServiceRegistry::get_pluggable_service::<String>();
         // May or may not be None depending on other tests, so we just check the type works
         let _ = result;
@@ -136,6 +146,7 @@ mod tests {
 
     #[test]
     fn register_same_type_replaces_previous() {
+        let _s = serial();
         let svc1 = Arc::new("first".to_string());
         let svc2 = Arc::new("second".to_string());
 
@@ -150,6 +161,7 @@ mod tests {
 
     #[test]
     fn multiple_different_types_coexist() {
+        let _s = serial();
         struct ServiceA;
         struct ServiceB;
 
@@ -165,6 +177,7 @@ mod tests {
 
     #[test]
     fn registration_returns_ok() {
+        let _s = serial();
         let svc = Arc::new(42i32);
         let result = PluggableServiceRegistry::register_pluggable_service(svc);
         assert!(result.is_ok());
@@ -172,6 +185,7 @@ mod tests {
 
     #[test]
     fn retrieved_service_is_same_arc() {
+        let _s = serial();
         let original = Arc::new("test_service".to_string());
         let original_ptr = Arc::as_ptr(&original);
 
@@ -184,6 +198,7 @@ mod tests {
 
     #[test]
     fn service_accessible_by_type() {
+        let _s = serial();
         let vec_service: Arc<Vec<i32>> = Arc::new(vec![1, 2, 3]);
         assert!(PluggableServiceRegistry::register_pluggable_service(vec_service.clone()).is_ok());
 
@@ -194,6 +209,7 @@ mod tests {
 
     #[test]
     fn concurrent_registration() {
+        let _s = serial();
         use std::thread;
 
         let handles: Vec<_> = (0..10)
