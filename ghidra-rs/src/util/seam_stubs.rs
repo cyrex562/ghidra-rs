@@ -86,3 +86,15 @@ pub trait VertexSetLike<V: Vertex>: KeyIndexableSet<V> {
     /// Empties the vertex set while leaving capacity unchanged.
     fn clear(&mut self);
 }
+
+/// Placeholder for `ghidra.util.WordLocation`, needed by
+/// [`crate::util::string_utilities::StringUtilities`] (`find_word`/`find_word_location`).
+///
+/// `WordLocation` is a concrete final class in Java, not an interface, but the port only
+/// needs to hand callers *something* that carries the located word text without pulling in
+/// the real type's full accessor set (`getContext`/`getStart`/`isEmpty`) up front; only
+/// `getWord()` is consumed here, so only that accessor is declared.
+pub trait WordLocationLike {
+    /// Returns the located word text (or the empty string for an empty/`None` location).
+    fn word(&self) -> &str;
+}
