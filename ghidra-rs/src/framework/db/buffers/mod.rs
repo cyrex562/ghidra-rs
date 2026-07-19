@@ -1,5 +1,7 @@
 use crate::framework::db::buffer::DataBuffer;
+pub mod block_stream;
 pub mod local_buffer_file;
+pub use block_stream::BlockStream;
 pub use local_buffer_file::LocalBufferFile;
 
 use std::io;

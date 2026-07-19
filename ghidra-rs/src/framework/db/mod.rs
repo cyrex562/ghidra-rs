@@ -28,7 +28,7 @@ pub mod util;
 
 pub use buffer::{Buffer, DataBuffer};
 pub use buffer_mgr::BufferMgr;
-pub use buffers::{BufferFile, LocalBufferFile};
+pub use buffers::{BlockStream, BufferFile, LocalBufferFile};
 pub use chained_buffer::ChainedBuffer;
 pub use db_change_set::DBChangeSet;
 pub use db_field_iterator::DBFieldIterator;
