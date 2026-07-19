@@ -3,6 +3,7 @@ pub mod addable_long_double_hashtable;
 pub mod addable_long_int_hashtable;
 pub mod dependency_graph;
 pub mod path;
+pub mod vertex;
 
 pub use abstract_dependency_graph::{AbstractDependencyGraph, CycleDetectedError};
 pub use dependency_graph::DependencyGraph;
@@ -12,3 +13,5 @@ pub use addable_long_double_hashtable::AddableLongDoubleHashtable;
 pub use addable_long_int_hashtable::AddableLongIntHashtable;
 #[allow(deprecated)]
 pub use path::Path;
+#[allow(deprecated)]
+pub use vertex::Vertex;

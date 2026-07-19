@@ -11849,7 +11849,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/KeyedObject.ja
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/KeyedObjectFactory.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Path.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/SimpleWeightedDigraph.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Vertex.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Vertex.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util graph
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/VertexSet.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/WeightedDigraph.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/Attribute.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util graph attributes 
