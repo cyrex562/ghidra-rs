@@ -10,6 +10,7 @@ pub mod model;
 pub mod module_initializer;
 pub mod options;
 pub mod os;
+pub mod platform;
 pub mod plugintool;
 pub mod pluggable_service_registry_exception;
 pub mod project;
@@ -27,6 +28,7 @@ pub use data::{CheckinHandler, DomainObjectDBChangeSet, DomainObjectFileListener
 pub use log4j_error_logger::Log4jErrorLogger;
 pub use module_initializer::ModuleInitializer;
 pub use os::OperatingSystem;
+pub use platform::Platform;
 pub use pluggable_service_registry_exception::PluggableServiceRegistryException;
 pub use plugintool::{ServiceListener, ServiceProvider};
 pub use project::ProjectDataService;

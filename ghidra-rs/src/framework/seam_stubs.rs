@@ -185,3 +185,10 @@ pub trait LocalFileSystem {}
 /// [`Project`](crate::framework::model::Project) before the real class is ported. `Project` only
 /// ever passes this type through as an opaque value, so no members are needed yet.
 pub trait SaveState {}
+
+/// Placeholder for `ghidra.framework.Architecture`, referenced by
+/// [`Platform`](crate::framework::Platform) before the real (Java `enum`) type is ported.
+/// `Platform` only ever returns this type and formats it via `Display` (mirroring
+/// `Platform.toString()`, which concatenates `operatingSystem.toString()` and
+/// `architecture.toString()`), so no other members are needed yet.
+pub trait Architecture: std::fmt::Display {}
