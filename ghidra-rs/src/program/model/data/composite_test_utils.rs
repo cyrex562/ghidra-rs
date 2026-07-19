@@ -199,7 +199,9 @@ mod tests {
             match &self.child_path {
                 Some(path) => Box::new(Leaf {
                     path_name: path.clone(),
-                    display_name: path.clone(),
+                    // Display name excludes the category path (as in real Ghidra), so the
+                    // full path string appears exactly once per composite dump.
+                    display_name: path.trim_start_matches('/').to_string(),
                 }),
                 None => Box::new(PlainDataType),
             }
@@ -247,7 +249,10 @@ mod tests {
     fn assert_expected_composite_panics_on_length_mismatch() {
         let outer = Outer { components: vec![] };
         let expected = dump(&outer, false);
-        let truncated = &expected[..expected.len() - 1];
+        // Both sides are trimmed inside assert_expected_composite, so a mismatch must come
+        // from dropping a non-whitespace char (not just the trailing newline).
+        let trimmed = expected.trim_end();
+        let truncated = &trimmed[..trimmed.len() - 1];
         assert_expected_composite("test", truncated, &outer);
     }
 }

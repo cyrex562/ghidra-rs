@@ -116,7 +116,9 @@ impl GhidraRandomAccessFile {
     pub fn read_byte(&mut self) -> io::Result<u8> {
         self.check_open()?;
         self.ensure(1)?;
-        Ok(self.buffer[self.buffer_offset as usize])
+        let b = self.buffer[self.buffer_offset as usize];
+        self.buffer_offset += 1;
+        Ok(b)
     }
 
     /// Reads `buf.len()` bytes of data from this file, filling `buf`
@@ -201,7 +203,7 @@ impl GhidraRandomAccessFile {
                 file.seek(SeekFrom::Start(self.buffer_file_start_index))?;
                 let bytes_read = file.read(&mut self.buffer)?;
                 self.buffer_offset = 0;
-                if bytes_read == 0 {
+                if bytes_read < bytes_needed {
                     return Err(io::Error::new(
                         io::ErrorKind::UnexpectedEof,
                         "end of file reached",

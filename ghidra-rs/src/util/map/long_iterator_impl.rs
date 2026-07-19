@@ -34,10 +34,14 @@ impl<'a> LongIteratorImpl<'a> {
     /// [`LongIterator::next`]; if `before` is false, `start` will be the first index
     /// returned from a call to [`LongIterator::previous`].
     pub fn with_start_before(pm: &'a dyn ValueMapLike, start: i64, before: bool) -> Self {
-        let start = if before { start } else { start + 1 };
+        // Java: this.start = before ? start : (start + 1); current = start;
+        // `current` keeps the original start; the start field takes the adjusted value.
+        // Java `long` arithmetic wraps on overflow, so use wrapping_add to match
+        // (e.g. start == i64::MAX with before == false).
+        let field_start = if before { start } else { start.wrapping_add(1) };
         let iter = Self {
             pm,
-            start,
+            start: field_start,
             end: 0,
             has_boundaries: false,
             current: Cell::new(start),

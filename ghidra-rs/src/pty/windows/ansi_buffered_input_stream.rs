@@ -74,6 +74,11 @@ impl ByteBuf {
     fn put(&mut self, b: u8) {
         self.data[self.position] = b;
         self.position += 1;
+        // Java's ByteBuffer.put would overflow at the limit; this growable buffer
+        // instead extends the limit so appends past the end grow the line.
+        if self.position > self.limit {
+            self.limit = self.position;
+        }
     }
 
     fn put_at(&mut self, index: usize, b: u8) {
@@ -571,7 +576,13 @@ impl<R: Read> AnsiBufferedInputStream<R> {
                 let pos = self.line_buf.position;
                 self.line_buf.fill(0, pos + 1, 0);
             }
-            2 => self.line_buf.fill_all(0),
+            2 => {
+                // Erase the entire line. For this single-line model, clearing the whole
+                // line resets it to empty so any following text is rewritten from column 0
+                // instead of trailing behind the now-erased cursor position.
+                self.line_buf.fill_all(0);
+                self.line_buf.set_limit(0);
+            }
             _ => {}
         }
     }

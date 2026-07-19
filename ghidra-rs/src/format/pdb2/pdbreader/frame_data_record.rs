@@ -183,8 +183,8 @@ mod tests {
 
     #[test]
     fn parse_decodes_bitfields() {
-        // reserved = 0b1_1_1_101 (SEH=1, EH=0, isFunctionStart=1, remaining bits=0b1101)
-        let reserved: u32 = 0x01 | (0x00 << 1) | (0x01 << 2) | (0x1a << 3);
+        // SEH=1 (bit0), EH=0 (bit1), isFunctionStart=1 (bit2), remaining reserved bits = 0x03
+        let reserved: u32 = 0x01 | (0x00 << 1) | (0x01 << 2) | (0x03 << 3);
         let mut bytes = vec![
             0x00, 0x00, 0x00, 0x00, // rvaStart
             0x00, 0x00, 0x00, 0x00, // numBlockBytes

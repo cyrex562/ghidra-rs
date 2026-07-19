@@ -102,7 +102,11 @@ impl Zlib {
             deflater.write_all(decompressed_bytes).expect("in-memory write cannot fail");
             deflater.finish().expect("in-memory write cannot fail")
         } else {
-            let mut deflater = ZlibEncoder::new(Vec::new(), Compression::none());
+            // Java uses Deflater level 0, which still emits a 32K-window zlib
+            // header (0x78 0x01). flate2's Compression::none() instead selects a
+            // reduced window (header 0x08...), so use level 1 to match Java's
+            // observable zlib header while remaining a valid zlib stream.
+            let mut deflater = ZlibEncoder::new(Vec::new(), Compression::new(1));
             deflater.write_all(decompressed_bytes).expect("in-memory write cannot fail");
             deflater.finish().expect("in-memory write cannot fail")
         }

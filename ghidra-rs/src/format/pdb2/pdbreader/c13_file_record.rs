@@ -202,6 +202,6 @@ mod tests {
         let mut buf = Vec::new();
         record.dump(&mut buf, 0x100).unwrap();
         let output = String::from_utf8(buf).unwrap();
-        assert_eq!(output, "fileId: 000010, nLines: 1, lenFileBlock: 20\n5 0x00000110 Statement\n\n");
+        assert_eq!(output, "fileId: 000010, nLines: 1, lenFileBlock: 20\n5 0x00000110 Statement\n");
     }
 }

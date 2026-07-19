@@ -1054,7 +1054,8 @@ mod tests {
     fn trim_to_max_and_middle() {
         assert_eq!("hello world".trim_to_max(8), "hello...");
         assert_eq!("hello".trim_to_max(8), "hello");
-        assert_eq!("abcdefghij".trim_middle(6), "ab...j");
+        // Java trimMiddle keeps toKeep/2 on the left and rounds the odd char onto the right.
+        assert_eq!("abcdefghij".trim_middle(6), "a...ij");
     }
 
     #[test]
@@ -1101,7 +1102,8 @@ mod tests {
     fn to_string_with_indent_handles_none_and_display() {
         assert_eq!(to_string_with_indent::<String>(None), "null");
         let value = 42i32;
-        assert_eq!(to_string_with_indent(Some(&value)), "42");
+        // Java toStringWithIndent indents each line with a tab (indentLines(_, "\t")).
+        assert_eq!(to_string_with_indent(Some(&value)), "\t42");
     }
 
     #[test]

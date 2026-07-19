@@ -203,8 +203,11 @@ mod tests {
     }
 
     fn mock() -> MockSleighBase {
+        let mut r0 = SleighSymbol::with_name(Location::new("test.sla", 1), "r0");
+        // Assign a real (non-zero) symbol id so a lookup of the unused id 0 misses.
+        r0.id = 1;
         MockSleighBase {
-            symbols: vec![SleighSymbol::with_name(Location::new("test.sla", 1), "r0")],
+            symbols: vec![r0],
             initialized: true,
             user_ops: vec!["callother0".to_string()],
         }

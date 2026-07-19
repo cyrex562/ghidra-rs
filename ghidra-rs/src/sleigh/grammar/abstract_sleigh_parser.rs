@@ -138,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "bailout")]
+    #[should_panic(expected = "custom bail message")]
     fn bail_throws_bailout_exception() {
         let parser = AbstractSleighParser::new();
         let _ = parser.bail("custom bail message");
