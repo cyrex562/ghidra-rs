@@ -19,7 +19,7 @@ DONE	trait	11	8	1	generic	Ghidra/Framework/Generic/src/main/java/generic/util/Pe
 DONE	trait	12	65	2	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/Platform.java
 DONE	trait	12	88	1	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/CustomOption.java
 DONE	trait	11	103	2	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/OptionsChangeListener.java
-TODO	trait	30	400	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/StringUtilities.java
+DONE	trait	30	400	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/StringUtilities.java
 TODO	trait	36	249	2	framework	Ghidra/Framework/DB/src/main/java/db/PrimitiveField.java
 TODO	trait	48	57	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferFile.java
 TODO	trait	51	30	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BlockStream.java
