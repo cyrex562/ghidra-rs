@@ -3,6 +3,7 @@ pub mod addable_long_double_hashtable;
 pub mod addable_long_int_hashtable;
 pub mod dependency_graph;
 pub mod edge;
+pub mod graph_iterator;
 pub mod key_indexable_set;
 pub mod keyed_object;
 pub mod path;
@@ -16,6 +17,8 @@ pub use addable_long_double_hashtable::AddableLongDoubleHashtable;
 pub use addable_long_int_hashtable::AddableLongIntHashtable;
 #[allow(deprecated)]
 pub use edge::Edge;
+#[allow(deprecated)]
+pub use graph_iterator::{ConcurrentModificationError, GraphIterator};
 #[allow(deprecated)]
 pub use key_indexable_set::KeyIndexableSet;
 #[allow(deprecated)]
