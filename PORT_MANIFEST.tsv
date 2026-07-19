@@ -11617,7 +11617,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/MergeSortingIterato
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/MultiIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/Path.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterator.java	DONE	orig_src Ghidra Framework Generic src main java generic util 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterators.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterators.java	DONE	orig_src Ghidra Framework Generic src main java generic util
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/WindowUtilities.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/WrappingPeekableIterator.java	TODO	orig_src Ghidra Framework Generic src main java generic util 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/util/ZipArchiveBuilder.java	DONE	orig_src Ghidra Framework Generic src main java generic util 
