@@ -71,10 +71,11 @@ pub trait OptionsEditor {}
 /// only ever passes this type through as an opaque value, so no members are needed yet.
 pub trait HelpLocation {}
 
-/// Placeholder for `ghidra.framework.options.CustomOption`, referenced by
-/// [`Options`](crate::framework::options::Options) before the real interface is ported. `Options`
-/// only ever passes this type through as an opaque value, so no members are needed yet.
-pub trait CustomOption {}
+/// Placeholder for `ghidra.framework.options.GProperties`, referenced by
+/// [`CustomOption`](crate::framework::options::CustomOption) before the real class is ported.
+/// `CustomOption` only ever passes this type through as an opaque value, so no members are
+/// needed yet.
+pub trait GProperties {}
 
 /// Placeholder for `ghidra.framework.options.ActionTrigger`, referenced by
 /// [`Options`](crate::framework::options::Options) before the real class is ported. `Options`
