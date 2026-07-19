@@ -28,7 +28,7 @@ DONE	trait	51	34	3	framework	Ghidra/Framework/DB/src/main/java/db/buffers/InputB
 DONE	trait	51	31	3	framework	Ghidra/Framework/DB/src/main/java/db/buffers/OutputBlockStream.java
 DONE	trait	50	29	6	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferFileHandle.java
 DONE	trait	49	29	6	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferFileAdapter.java
-TODO	trait	49	32	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferFileManager.java
+DONE	trait	49	32	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferFileManager.java
 TODO	trait	55	35	2	framework	Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFile.java
 TODO	trait	53	26	5	framework	Ghidra/Framework/DB/src/main/java/db/buffers/ChangeMapFile.java
 TODO	trait	52	28	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/ChangeMap.java
