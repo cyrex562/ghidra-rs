@@ -187,3 +187,5 @@ ts	stub_class	referenced_by
 2026-07-18T22:35:00Z	VertexSetLike	DirectedGraph
 2026-07-18T23:00:00Z	Architecture	Platform
 2026-07-18T23:15:00Z	GProperties	CustomOption
+2026-07-18T23:45:00Z	ToolOptions	OptionsChangeListener
+2026-07-18T23:45:00Z	OptionsVetoException	OptionsChangeListener
