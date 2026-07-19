@@ -191,3 +191,4 @@ ts	stub_class	referenced_by
 2026-07-18T23:45:00Z	OptionsVetoException	OptionsChangeListener
 2026-07-19T00:10:00Z	WordLocationLike	StringUtilities
 2026-07-19T00:30:00Z	BufferFileBlock	InputBlockStream
+2026-07-19T01:15:00Z	LocalBufferFileLike	ChangeMapFile
