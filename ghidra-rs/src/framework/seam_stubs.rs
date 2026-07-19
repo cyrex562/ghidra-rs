@@ -204,6 +204,15 @@ pub trait OptionsVetoException {}
 /// ported. `InputBlockStream` only ever returns this type, so no members are needed yet.
 pub trait BufferFileBlock {}
 
+/// Placeholder for the file-identity surface of `db.buffers.LocalBufferFile`, referenced by
+/// [`ChangeMapFile`](crate::framework::db::buffers::ChangeMapFile) before the real class exposes
+/// its file id. `ChangeMapFile::is_valid_for` only ever compares file ids, so no other members
+/// are needed yet.
+pub trait LocalBufferFileLike {
+    /// Returns the unique identifier for this buffer file.
+    fn get_file_id(&self) -> u64;
+}
+
 /// Placeholder for `ghidra.framework.Architecture`, referenced by
 /// [`Platform`](crate::framework::Platform) before the real (Java `enum`) type is ported.
 /// `Platform` only ever returns this type and formats it via `Display` (mirroring
