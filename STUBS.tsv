@@ -52,7 +52,6 @@ ts	stub_class	referenced_by
 2026-07-07T01:00:00Z	PropertyEditor	Options
 2026-07-07T01:00:00Z	OptionsEditor	Options
 2026-07-07T01:00:00Z	HelpLocation	Options
-2026-07-07T01:00:00Z	CustomOption	Options
 2026-07-07T01:00:00Z	ActionTrigger	Options
 2026-07-07T01:00:00Z	Color	Options
 2026-07-07T01:00:00Z	Font	Options
@@ -187,3 +186,4 @@ ts	stub_class	referenced_by
 2026-07-18T22:35:00Z	IntegerAttributeLike	DirectedGraph
 2026-07-18T22:35:00Z	VertexSetLike	DirectedGraph
 2026-07-18T23:00:00Z	Architecture	Platform
+2026-07-18T23:15:00Z	GProperties	CustomOption

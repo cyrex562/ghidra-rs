@@ -1,8 +1,8 @@
 use std::any::Any;
 
+use crate::framework::options::custom_option::CustomOption;
 use crate::framework::seam_stubs::{
-    ActionTrigger, Color, CustomOption, Font, HelpLocation, KeyStroke, OptionType, OptionsEditor,
-    PropertyEditor,
+    ActionTrigger, Color, Font, HelpLocation, KeyStroke, OptionType, OptionsEditor, PropertyEditor,
 };
 use crate::util::function::Supplier;
 
