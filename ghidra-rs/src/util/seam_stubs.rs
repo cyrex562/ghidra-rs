@@ -2,6 +2,7 @@
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
 use super::datastruct::NoSuchIndexException;
+use super::graph::keyed_object::KeyedObject;
 
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}
@@ -30,4 +31,18 @@ pub trait ValueMapLike {
 
     /// Get the previous index (exclusive of `index`) where a property value exists.
     fn get_previous_property_index(&self, index: i64) -> Result<i64, NoSuchIndexException>;
+}
+
+/// Placeholder for `ghidra.util.graph.GraphIterator`, needed by
+/// [`crate::util::graph::KeyIndexableSet`].
+#[allow(deprecated)]
+pub trait GraphIteratorLike<T: KeyedObject> {
+    /// Returns true if the iterator has more elements.
+    fn has_next(&self) -> bool;
+
+    /// Returns the next element in the iteration.
+    fn next(&mut self) -> Option<T>;
+
+    /// Removes the last-returned object from the backing set.
+    fn remove(&mut self) -> bool;
 }
