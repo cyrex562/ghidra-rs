@@ -3,6 +3,7 @@ pub mod addable_long_double_hashtable;
 pub mod addable_long_int_hashtable;
 pub mod attributes;
 pub mod dependency_graph;
+pub mod depth_first_search;
 pub mod directed_graph;
 pub mod edge;
 pub mod edge_set;
@@ -20,6 +21,8 @@ pub use addable_long_double_hashtable::AddableLongDoubleHashtable;
 pub use addable_long_int_hashtable::AddableLongIntHashtable;
 #[allow(deprecated)]
 pub use attributes::AttributeManager;
+#[allow(deprecated)]
+pub use depth_first_search::DepthFirstSearch;
 #[allow(deprecated)]
 pub use directed_graph::{verts_to_referent_set, DirectedGraph};
 #[allow(deprecated)]
