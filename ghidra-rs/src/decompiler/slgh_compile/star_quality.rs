@@ -45,7 +45,7 @@ mod tests {
         let loc = Location::new("test.sleigh", 10);
         let sq = StarQuality::new(loc);
 
-        assert_eq!(sq.get_id(), None);
+        assert!(sq.get_id().is_none());
         assert_eq!(sq.get_size(), 0);
     }
 

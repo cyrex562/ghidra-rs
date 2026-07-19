@@ -226,7 +226,7 @@ mod tests {
         let space = MockUniqueSpace;
         let dyn_space: &dyn UniqueSpace = &space;
         let mut encoder = RecordingEncoder::default();
-        dyn_space.encode(&mut encoder).unwrap();
+        UniqueSpace::encode(dyn_space, &mut encoder).unwrap();
         assert_eq!(encoder.opened, vec!["space_unique"]);
         assert_eq!(encoder.closed, vec!["space_unique"]);
         assert_eq!(encoder.bools, vec![true]);

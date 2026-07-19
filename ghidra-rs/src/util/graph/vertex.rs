@@ -135,7 +135,7 @@ mod tests {
         let b = MockVertex { key: 5, referent: Some("b".to_string()) };
         let a_ref: &dyn Vertex = &a;
         let b_ref: &dyn Vertex = &b;
-        assert_eq!(a_ref, b_ref);
+        assert!(a_ref == b_ref);
     }
 
     #[test]

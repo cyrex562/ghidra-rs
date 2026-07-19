@@ -90,6 +90,6 @@ mod tests {
     #[test]
     fn next_reports_concurrent_modification() {
         let mut it = MockIterator { remaining: vec![1], pos: 0, modified: true };
-        assert_eq!(it.next(), Err(ConcurrentModificationError));
+        assert!(matches!(it.next(), Err(ConcurrentModificationError)));
     }
 }

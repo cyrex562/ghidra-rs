@@ -90,6 +90,45 @@ mod tests {
         fn get_stack_space(&self) -> Option<&dyn AddrSpace> {
             None
         }
+
+        fn get_unique_space(&self) -> Option<&dyn AddrSpace> {
+            None
+        }
+
+        fn num_spaces(&self) -> i32 {
+            0
+        }
+
+        fn get_space(&self, _i: i32) -> &dyn AddrSpace {
+            unimplemented!("StubTranslate::get_space")
+        }
+
+        fn no_high_ptr(&self) -> &dyn crate::decompiler::seam_stubs::RangeList {
+            unimplemented!("StubTranslate::no_high_ptr")
+        }
+
+        fn instruction_length(&self, _baseaddr: &crate::program::model::address::Address) -> i32 {
+            0
+        }
+
+        fn print_assembly(
+            &self,
+            _out: &mut dyn std::io::Write,
+            _size: i32,
+            _baseaddr: &crate::program::model::address::Address,
+        ) -> std::io::Result<i32> {
+            Ok(0)
+        }
+    }
+
+    impl crate::decompiler::translate::BasicSpaceProvider for StubTranslate {
+        fn get_default_space(&self) -> &dyn AddrSpace {
+            unimplemented!("StubTranslate::get_default_space")
+        }
+
+        fn get_constant_space(&self) -> &dyn AddrSpace {
+            unimplemented!("StubTranslate::get_constant_space")
+        }
     }
 
     struct MockAddrSpace;
@@ -103,7 +142,7 @@ mod tests {
         }
 
         fn get_type(&self) -> SpaceType {
-            SpaceType::Processor
+            SpaceType::IptrProcessor
         }
 
         fn get_delay(&self) -> i32 {

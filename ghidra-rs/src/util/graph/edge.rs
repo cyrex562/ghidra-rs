@@ -116,7 +116,7 @@ mod tests {
         let a_ref: &dyn Edge = &a;
         let b_ref: &dyn Edge = &b;
         let c_ref: &dyn Edge = &c;
-        assert_eq!(a_ref, b_ref);
+        assert!(a_ref == b_ref);
         assert_eq!(a_ref.cmp(c_ref), Ordering::Less);
         assert_eq!(c_ref.cmp(a_ref), Ordering::Greater);
     }

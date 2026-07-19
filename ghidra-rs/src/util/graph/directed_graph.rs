@@ -536,6 +536,7 @@ mod tests {
     use super::*;
     use crate::util::exception::NoValueException;
     use crate::util::graph::graph_iterator::ConcurrentModificationError;
+    use crate::util::graph::key_indexable_set::KeyIndexableSet;
     use crate::util::graph::keyed_object::KeyedObject;
     use crate::util::seam_stubs::AttributeLike;
     use std::hash::Hasher;

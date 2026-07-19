@@ -26,7 +26,7 @@ mod tests {
 
     #[test]
     fn create_tracked_context() {
-        let space = Arc::new(AddressSpace::default());
+        let space = AddressSpace::new("ram", 32, 1, crate::program::model::address::AddressSpaceType::Ram, 0);
         let loc = VarnodeData {
             space: space.clone(),
             offset: 0x1000,
@@ -41,7 +41,7 @@ mod tests {
 
     #[test]
     fn tracked_context_clone() {
-        let space = Arc::new(AddressSpace::default());
+        let space = AddressSpace::new("ram", 32, 1, crate::program::model::address::AddressSpaceType::Ram, 0);
         let loc = VarnodeData {
             space,
             offset: 0x2000,
@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn tracked_context_negative_value() {
-        let space = Arc::new(AddressSpace::default());
+        let space = AddressSpace::new("ram", 32, 1, crate::program::model::address::AddressSpaceType::Ram, 0);
         let loc = VarnodeData {
             space,
             offset: 0x0,

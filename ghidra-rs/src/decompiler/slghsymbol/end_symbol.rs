@@ -148,63 +148,14 @@ mod tests {
         Location::new("test.sla", 1)
     }
 
-    struct MockAddressSpace;
-    impl AddressSpace for MockAddressSpace {
-        fn name(&self) -> &str {
-            "const"
-        }
-
-        fn space_type(&self) -> crate::program::model::address::AddressSpaceType {
-            crate::program::model::address::AddressSpaceType::Constant
-        }
-
-        fn address_size(&self) -> u8 {
-            8
-        }
-
-        fn word_size(&self) -> u8 {
-            1
-        }
-
-        fn size(&self) -> u64 {
-            0x1000000
-        }
-
-        fn is_loaded(&self) -> bool {
-            true
-        }
-
-        fn is_memory(&self) -> bool {
-            false
-        }
-
-        fn is_register(&self) -> bool {
-            false
-        }
-
-        fn is_constant(&self) -> bool {
-            true
-        }
-
-        fn is_unique(&self) -> bool {
-            false
-        }
-
-        fn is_other(&self) -> bool {
-            false
-        }
-
-        fn id(&self) -> i32 {
-            5
-        }
-
-        fn physical_space(&self) -> Option<Arc<dyn AddressSpace>> {
-            None
-        }
-
-        fn contains(&self, _offset: u64) -> bool {
-            true
-        }
+    fn mock_space() -> Arc<AddressSpace> {
+        AddressSpace::new(
+            "const",
+            8,
+            1,
+            crate::program::model::address::AddressSpaceType::Constant,
+            0,
+        )
     }
 
     #[test]
@@ -216,7 +167,7 @@ mod tests {
 
     #[test]
     fn with_name_sets_name() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let end = EndSymbol::with_name(loc(), "inst_next", space);
         assert_eq!(end.symbol_type(), SymbolType::EndSymbol);
         assert_eq!(end.symbol().name(), "inst_next");
@@ -224,7 +175,7 @@ mod tests {
 
     #[test]
     fn get_varnode_returns_varnode_tpl() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let end = EndSymbol::with_name(loc(), "inst_next", space);
         let _varnode = end.get_varnode();
     }
@@ -238,7 +189,7 @@ mod tests {
 
     #[test]
     fn get_pattern_expression_returns_pattern() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let end = EndSymbol::with_name(loc(), "inst_next", space);
         let _pattern = end.get_pattern_expression();
     }
@@ -252,7 +203,7 @@ mod tests {
 
     #[test]
     fn clone_creates_independent_instance() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let end1 = EndSymbol::with_name(loc(), "inst_next", space);
         let end2 = end1.clone();
         assert_eq!(end1.symbol_type(), end2.symbol_type());
@@ -261,7 +212,7 @@ mod tests {
 
     #[test]
     fn triple_symbol_trait_provides_pattern_expression() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let end = EndSymbol::with_name(loc(), "inst_next", space);
         let dyn_symbol: &dyn TripleSymbol = &end;
         let _pattern = dyn_symbol.get_pattern_expression();
@@ -269,10 +220,10 @@ mod tests {
 
     #[test]
     fn const_space_is_preserved() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let end = EndSymbol::with_name(loc(), "inst_next", space);
         let varnode = end.get_varnode();
-        let varnode_tpl = varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
+        let varnode_tpl = &*varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
         let vt = unsafe { &*varnode_tpl };
         assert!(vt.space.value_spaceid.is_some());
         assert_eq!(vt.offset.tp, ConstTplType::JNext);
@@ -323,7 +274,7 @@ mod tests {
                 Ok(())
             }
 
-            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &dyn crate::program::model::address::AddressSpace) -> io::Result<()> {
+            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &crate::program::model::address::AddressSpace) -> io::Result<()> {
                 Ok(())
             }
 
@@ -398,7 +349,7 @@ mod tests {
                 Ok(())
             }
 
-            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &dyn crate::program::model::address::AddressSpace) -> io::Result<()> {
+            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &crate::program::model::address::AddressSpace) -> io::Result<()> {
                 Ok(())
             }
 
@@ -420,7 +371,7 @@ mod tests {
             }
         }
 
-        let mut end = EndSymbol::with_name(loc(), "inst_next", Arc::new(MockAddressSpace));
+        let mut end = EndSymbol::with_name(loc(), "inst_next", mock_space());
         end.symbol_mut().id = 4;
         let mut encoder = RecordingEncoder { writes: Vec::new() };
         end.encode_header(&mut encoder).unwrap();

@@ -305,6 +305,6 @@ mod tests {
         sym.encode(&mut encoder).unwrap();
         assert_eq!(encoder.opened, vec!["valuemap_sym"]);
         assert_eq!(encoder.closed, vec!["valuemap_sym"]);
-        assert_eq!(encoder.signed_ints, vec![]);
+        assert_eq!(encoder.signed_ints, Vec::<i64>::new());
     }
 }

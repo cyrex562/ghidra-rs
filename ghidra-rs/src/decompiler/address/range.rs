@@ -180,7 +180,7 @@ mod tests {
         }
 
         fn get_type(&self) -> crate::decompiler::space::SpaceType {
-            crate::decompiler::space::SpaceType::IPTR_INTERNAL
+            crate::decompiler::space::SpaceType::IptrInternal
         }
 
         fn get_delay(&self) -> i32 {
@@ -266,6 +266,6 @@ mod tests {
         let a = Range::new(spc.clone(), 0x1000, 0x2000);
         let b = Range::new(spc.clone(), 0x1000, 0x5000);
         assert_eq!(a.cmp(&b), Ordering::Equal);
-        assert_eq!(a, b);
+        assert!(a == b);
     }
 }

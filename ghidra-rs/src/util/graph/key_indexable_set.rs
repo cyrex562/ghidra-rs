@@ -143,6 +143,7 @@ mod tests {
         let mut iter = set.iterator();
         assert!(iter.has_next());
         assert_eq!(iter.next().map(|o| o.key), Some(1));
+        drop(iter);
 
         assert!(set.remove(&MockKeyedObject { key: 1 }));
         assert_eq!(set.size(), 0);

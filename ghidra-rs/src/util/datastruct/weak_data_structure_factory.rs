@@ -28,7 +28,7 @@ mod tests {
         items: Vec<T>,
     }
 
-    impl<T> WeakSet<T> for MockWeakSet<T> {}
+    impl<T: Send + Sync> WeakSet<T> for MockWeakSet<T> {}
 
     /// Trivial mock factory proving `WeakDataStructureFactory` is object-safe and
     /// usable behind `Box<dyn WeakDataStructureFactory<T>>`.

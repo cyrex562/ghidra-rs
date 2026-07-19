@@ -190,7 +190,7 @@ mod tests {
         }
 
         fn get_type(&self) -> crate::decompiler::space::SpaceType {
-            crate::decompiler::space::SpaceType::IPTR_INTERNAL
+            crate::decompiler::space::SpaceType::IptrInternal
         }
 
         fn get_delay(&self) -> i32 {

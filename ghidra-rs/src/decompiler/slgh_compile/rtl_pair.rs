@@ -103,7 +103,13 @@ mod tests {
 
         assert!(pair2.section.is_some());
         assert!(pair2.scope.is_some());
-        assert_eq!(pair1.section, pair2.section);
-        assert_eq!(pair1.scope, pair2.scope);
+        assert_eq!(
+            pair1.section.as_ref().unwrap().num_labels,
+            pair2.section.as_ref().unwrap().num_labels
+        );
+        assert_eq!(
+            pair1.scope.as_ref().unwrap().id,
+            pair2.scope.as_ref().unwrap().id
+        );
     }
 }

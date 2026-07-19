@@ -100,68 +100,19 @@ mod tests {
         Location::new("test.sla", 1)
     }
 
-    struct MockAddressSpace;
-    impl AddressSpace for MockAddressSpace {
-        fn name(&self) -> &str {
-            "const"
-        }
-
-        fn space_type(&self) -> crate::program::model::address::AddressSpaceType {
-            crate::program::model::address::AddressSpaceType::Constant
-        }
-
-        fn address_size(&self) -> u8 {
-            8
-        }
-
-        fn word_size(&self) -> u8 {
-            1
-        }
-
-        fn size(&self) -> u64 {
-            0x1000000
-        }
-
-        fn is_loaded(&self) -> bool {
-            true
-        }
-
-        fn is_memory(&self) -> bool {
-            false
-        }
-
-        fn is_register(&self) -> bool {
-            false
-        }
-
-        fn is_constant(&self) -> bool {
-            true
-        }
-
-        fn is_unique(&self) -> bool {
-            false
-        }
-
-        fn is_other(&self) -> bool {
-            false
-        }
-
-        fn id(&self) -> i32 {
-            5
-        }
-
-        fn physical_space(&self) -> Option<Arc<dyn AddressSpace>> {
-            None
-        }
-
-        fn contains(&self, _offset: u64) -> bool {
-            true
-        }
+    fn mock_space() -> Arc<AddressSpace> {
+        AddressSpace::new(
+            "const",
+            8,
+            1,
+            crate::program::model::address::AddressSpaceType::Constant,
+            0,
+        )
     }
 
     #[test]
     fn new_creates_symbol() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs = FlowRefSymbol::new(loc(), "flow_ref", space);
         assert_eq!(frs.symbol_type(), SymbolType::FlowrefSymbol);
         assert_eq!(frs.patternless().name(), "flow_ref");
@@ -169,28 +120,28 @@ mod tests {
 
     #[test]
     fn symbol_type_is_flowref() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs = FlowRefSymbol::new(loc(), "test", space);
         assert_eq!(frs.symbol_type(), SymbolType::FlowrefSymbol);
     }
 
     #[test]
     fn get_varnode_returns_varnode_tpl() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs = FlowRefSymbol::new(loc(), "test", space);
         let _varnode = frs.get_varnode();
     }
 
     #[test]
     fn get_pattern_expression_returns_pattern() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs = FlowRefSymbol::new(loc(), "test", space);
         let _pattern = frs.get_pattern_expression();
     }
 
     #[test]
     fn clone_creates_independent_instance() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs1 = FlowRefSymbol::new(loc(), "test", space);
         let frs2 = frs1.clone();
         assert_eq!(frs1.symbol_type(), frs2.symbol_type());
@@ -199,7 +150,7 @@ mod tests {
 
     #[test]
     fn triple_symbol_trait_provides_pattern_expression() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs = FlowRefSymbol::new(loc(), "test", space);
         let dyn_symbol: &dyn TripleSymbol = &frs;
         let _pattern = dyn_symbol.get_pattern_expression();
@@ -207,20 +158,20 @@ mod tests {
 
     #[test]
     fn const_space_is_preserved() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs = FlowRefSymbol::new(loc(), "test", space.clone());
         let varnode = frs.get_varnode();
-        let varnode_tpl = varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
+        let varnode_tpl = &*varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
         let vt = unsafe { &*varnode_tpl };
         assert!(vt.space.value_spaceid.is_some());
     }
 
     #[test]
     fn varnode_offset_uses_jflowref_type() {
-        let space = Arc::new(MockAddressSpace);
+        let space = mock_space();
         let frs = FlowRefSymbol::new(loc(), "test", space);
         let varnode = frs.get_varnode();
-        let varnode_tpl = varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
+        let varnode_tpl = &*varnode as *const dyn VarnodeTplTrait as *const VarnodeTpl;
         let vt = unsafe { &*varnode_tpl };
         assert_eq!(vt.offset.tp, ConstTplType::JFlowRef);
     }

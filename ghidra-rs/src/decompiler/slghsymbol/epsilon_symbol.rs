@@ -182,7 +182,7 @@ mod tests {
                 Ok(())
             }
 
-            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &dyn crate::program::model::address::AddressSpace) -> io::Result<()> {
+            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &crate::program::model::address::AddressSpace) -> io::Result<()> {
                 Ok(())
             }
 
@@ -259,7 +259,7 @@ mod tests {
                 Ok(())
             }
 
-            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &dyn crate::program::model::address::AddressSpace) -> io::Result<()> {
+            fn write_space(&mut self, _attrib_id: AttributeId, _spc: &crate::program::model::address::AddressSpace) -> io::Result<()> {
                 Ok(())
             }
 
