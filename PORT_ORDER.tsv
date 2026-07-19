@@ -1219,7 +1219,7 @@ TODO	trait	11	41	8	framework	Ghidra/Features/Base/src/main/java/ghidra/framework
 TODO	trait	10	301	31	util	Ghidra/Features/Base/src/main/java/ghidra/util/GhidraJarBuilder.java
 TODO	trait	9	13	58	util	Ghidra/Framework/Generic/src/test/java/ghidra/util/datastruct/ListenerSetTest.java
 TODO	trait	8	3	81	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ValueStoragePage.java
-TODO	trait	7	5	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ValueMap.java
+TODO	trait	7	5	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ValueMap.java
 TODO	trait	6	3	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ObjectValueMap.java
 TODO	trait	5	1034	6	program	Ghidra/Features/Base/src/test/java/ghidra/program/model/address/AddressObjectMapTest.java
 TODO	trait	4	302	29	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressIteratorAdapter.java
@@ -1851,7 +1851,6 @@ TODO	trait	0	0	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra
 TODO	trait	0	0	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/function/StackDepthChangeListener.java
 TODO	trait	0	0	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/bean/SelectLanguagePanelListener.java
 TODO	trait	0	0	1	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/plugin/FunctionComparisonProviderListener.java
-DONE	struct	8	1	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/LongIteratorImpl.java
 TODO	struct	13	79	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/WeakSet.java
 TODO	struct	12	15	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ThreadUnsafeWeakSet.java
 TODO	struct	11	14	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ThreadSafeListenerStorage.java
