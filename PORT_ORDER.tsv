@@ -10,7 +10,7 @@ DONE	trait	14	13	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph
 DONE	trait	13	19	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/KeyedObject.java
 DONE	trait	12	12	3	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Edge.java
 DONE	trait	15	14	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/KeyIndexableSet.java
-TODO	trait	13	10	3	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/GraphIterator.java
+DONE	trait	13	10	3	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/GraphIterator.java
 TODO	trait	12	7	6	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/EdgeSet.java
 TODO	trait	12	9	8	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/attributes/AttributeManager.java
 TODO	trait	11	10	14	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/DirectedGraph.java
