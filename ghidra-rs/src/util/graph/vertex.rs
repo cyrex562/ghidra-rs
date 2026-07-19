@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use crate::util::seam_stubs::KeyedObject;
+use crate::util::graph::keyed_object::KeyedObject;
 
 /// A vertex tied to an optional referent value, identified by a unique key.
 ///

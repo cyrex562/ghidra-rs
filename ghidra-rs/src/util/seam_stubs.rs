@@ -16,14 +16,6 @@ pub trait Location: Send + Sync {}
 /// this is a marker trait until the real `WeakSet` family is ported.
 pub trait WeakSet<T>: Send + Sync {}
 
-/// Placeholder for `ghidra.util.graph.KeyedObject`, needed by [`crate::util::graph::Vertex`].
-///
-/// The real interface is a single-method marker (`long key()`); that is all `Vertex` needs.
-pub trait KeyedObject: Send + Sync {
-    /// Returns the key for this `KeyedObject`.
-    fn key(&self) -> i64;
-}
-
 /// Placeholder for `ghidra.util.map.ValueMap`, needed by
 /// [`crate::util::map::LongIteratorImpl`].
 ///
