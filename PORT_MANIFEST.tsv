@@ -9898,7 +9898,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyRecordNode.java	TODO	orig_sr
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarRecNode.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BlockStream.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BlockStreamHandle.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
-orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BufferFile.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
+orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BufferFile.java	DONE	orig_src Ghidra Framework DB src main java db buffers 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BufferFileAdapter.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BufferFileBlock.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/BufferFileHandle.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
