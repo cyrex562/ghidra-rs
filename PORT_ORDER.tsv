@@ -6,7 +6,7 @@ DONE	trait	9	14	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datast
 DONE	trait	9	25	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/FixedSizeHashMap.java
 DONE	trait	11	13	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/AbstractDependencyGraph.java
 DONE	trait	10	9	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/DependencyGraph.java
-TODO	trait	14	13	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Vertex.java
+DONE	trait	14	13	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Vertex.java
 TODO	trait	13	19	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/KeyedObject.java
 TODO	trait	12	12	3	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/Edge.java
 TODO	trait	15	14	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/graph/KeyIndexableSet.java
