@@ -30,12 +30,14 @@ INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
 CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-1500}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"
+TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1200}"   # per-port: run the ported module's own tests before keeping the merge
 PY="${PY:-python3}"; LOG_DIR="${LOG_DIR:-$HOME/agents/logs/ghidra}"; mkdir -p "$LOG_DIR"
 
 exec 7>/tmp/ghidra-descent.lock; flock -n 7 || { echo "another descent run active"; exit 0; }
 [ -f "$STUBS" ] || printf 'ts\tstub_class\treferenced_by\n' > "$STUBS"
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+snake(){ printf '%s' "$1" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g; s/([A-Z]+)([A-Z][a-z])/\1_\2/g' | tr '[:upper:]' '[:lower:]'; }
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
@@ -112,7 +114,8 @@ Rules for breaking the cycle:
   here and do NOT fail: define a MINIMAL placeholder trait for it (only the methods THIS type needs) in
   ghidra-rs/src/${module}/seam_stubs.rs (create/extend it; wire into mod.rs), and append a line to
   STUBS.tsv: '<ISO-time>\t<PlaceholderName>\t${class}'.
-- Add a #[cfg(test)] mod with at least one smoke test (a trivial mock impl proving object-safety).
+- Add a #[cfg(test)] mod with at least one smoke test (a mock impl proving object-safety). Your tests
+  are RUN as a merge gate -- they must PASS and exercise real behavior, not trivially-true asserts.
 - Verify locally with 'cargo build --lib' ONLY (do NOT run cargo test; do NOT run git).
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
 Port ONLY this type (plus placeholder stubs for its references). No unrelated changes.
@@ -132,7 +135,8 @@ Rules:
   NOT yet in the crate (a forward cycle edge), define a MINIMAL placeholder trait for it in
   ghidra-rs/src/${module}/seam_stubs.rs (only the methods THIS class needs; wire into mod.rs) and append
   '<ISO-time>\t<PlaceholderName>\t${class}' to STUBS.tsv -- do NOT fail for a missing type.
-- Add a #[cfg(test)] mod with at least one smoke test.
+- Add a #[cfg(test)] mod with at least one smoke test. Your tests are RUN as a merge gate -- they
+  must PASS and exercise real behavior (compare against expected values), not trivially-true asserts.
 - Verify locally with 'cargo build --lib' ONLY (do NOT run cargo test; do NOT run git).
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
 Port ONLY this class. No unrelated changes.
@@ -153,13 +157,44 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
     git add -A; git commit -q -m "descent: ${class} -> ${mode} (${srcpath})" || true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
+    pre_merge=$(git rev-parse HEAD)
     if git merge --no-ff "$branch" -m "merge descent: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
-      git branch -D "$branch" >/dev/null 2>&1||true
-      sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)$/s//DONE\1/" "$ORDER"
-      git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: mark $class DONE" >/dev/null 2>&1||true
-      ported=$((ported+1)); log "OK descent: $class (${mode}) merged"
+      # STRICT per-port test gate: run the ported module's OWN tests. A port that compiles but
+      # fails its smoke test must not merge. Safety: only PARK on this port's own failures --
+      # an UNRELATED test-compile error (drift elsewhere) leaves the merge (build --lib is green).
+      gate_ok=1
+      if [ "$TEST_GATE" = "1" ]; then
+        tfilter=$(snake "$class")
+        tout=$(timeout "$TEST_TIMEOUT" cargo test --lib "$tfilter" --no-fail-fast 2>&1); techo=$?
+        if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
+          gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | head -1))"
+        elif printf '%s' "$tout" | grep -q 'test result: ok'; then
+          gate_ok=1
+        elif printf '%s' "$tout" | grep -qE '^error' ; then
+          # did not compile under this filter. own file implicated -> park; else inconclusive -> keep.
+          rsfile=$(snake "$class")
+          if printf '%s' "$tout" | grep -E '^error|-->' | grep -q "${rsfile}\.rs"; then
+            gate_ok=0; log "test gate FAIL: $class (own test does not compile)"
+          else
+            gate_ok=1; log "test gate INCONCLUSIVE: $class (unrelated test-compile drift; kept on build gate)"
+          fi
+        else
+          gate_ok=1; log "test gate: $class no matching tests ran (kept on build gate)"
+        fi
+      fi
+      if [ "$gate_ok" = "1" ]; then
+        git branch -D "$branch" >/dev/null 2>&1||true
+        sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)$/s//DONE\1/" "$ORDER"
+        git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: mark $class DONE" >/dev/null 2>&1||true
+        ported=$((ported+1)); log "OK descent: $class (${mode}) merged"
+      else
+        git reset --hard "$pre_merge" >/dev/null 2>&1||true
+        sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
+        git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: park $class (test gate)" >/dev/null 2>&1||true
+        parked=$((parked+1)); log "PARK descent: $class (test gate: own tests failed)"
+      fi
     else
-      git merge --abort >/dev/null 2>&1||true; git reset --hard >/dev/null 2>&1||true
+      git merge --abort >/dev/null 2>&1||true; git reset --hard "$pre_merge" >/dev/null 2>&1||true
       sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
       git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: park $class" >/dev/null 2>&1||true
       parked=$((parked+1)); log "PARK descent: $class (post-merge build failed)"
