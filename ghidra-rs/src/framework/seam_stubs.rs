@@ -187,6 +187,18 @@ pub trait LocalFileSystem {}
 /// ever passes this type through as an opaque value, so no members are needed yet.
 pub trait SaveState {}
 
+/// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
+/// [`OptionsChangeListener`](crate::framework::options::OptionsChangeListener) before the real
+/// class is ported. `OptionsChangeListener` only ever passes this type through as an opaque
+/// value, so no members are needed yet.
+pub trait ToolOptions {}
+
+/// Placeholder for `ghidra.util.bean.opteditor.OptionsVetoException`, referenced by
+/// [`OptionsChangeListener`](crate::framework::options::OptionsChangeListener) before the real
+/// class is ported. `OptionsChangeListener` only ever returns this type as an error, so no
+/// members are needed yet.
+pub trait OptionsVetoException {}
+
 /// Placeholder for `ghidra.framework.Architecture`, referenced by
 /// [`Platform`](crate::framework::Platform) before the real (Java `enum`) type is ported.
 /// `Platform` only ever returns this type and formats it via `Display` (mirroring
