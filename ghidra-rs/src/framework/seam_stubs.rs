@@ -199,6 +199,11 @@ pub trait ToolOptions {}
 /// members are needed yet.
 pub trait OptionsVetoException {}
 
+/// Placeholder for `db.buffers.BufferFileBlock`, referenced by
+/// [`InputBlockStream`](crate::framework::db::buffers::InputBlockStream) before the real class is
+/// ported. `InputBlockStream` only ever returns this type, so no members are needed yet.
+pub trait BufferFileBlock {}
+
 /// Placeholder for `ghidra.framework.Architecture`, referenced by
 /// [`Platform`](crate::framework::Platform) before the real (Java `enum`) type is ported.
 /// `Platform` only ever returns this type and formats it via `Display` (mirroring
