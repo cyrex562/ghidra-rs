@@ -249,12 +249,6 @@ pub trait LocalBufferFileLike {
     fn get_file_id(&self) -> u64;
 }
 
-/// Placeholder for `ghidra.framework.store.FolderItem`, referenced by
-/// [`DatabaseItem`](crate::framework::store::DatabaseItem) before the real interface is ported
-/// (`DatabaseItem extends FolderItem` in Java). `DatabaseItem` only needs the supertrait
-/// relationship to preserve the is-a bound for future implementors, so no members are needed yet.
-pub trait FolderItem {}
-
 /// Placeholder for `ghidra.framework.store.db.VersionedDatabase`, referenced by
 /// [`VersionedDBListener`](crate::framework::store::VersionedDBListener) before the real class is
 /// ported. `VersionedDBListener` only ever passes this type through as an opaque value, so no
