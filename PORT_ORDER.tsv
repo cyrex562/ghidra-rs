@@ -21,7 +21,7 @@ DONE	trait	73	34	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/fr
 DONE	trait	80	14	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/timer/GTimerMonitor.java
 DONE	trait	79	18	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/timer/GTimer.java
 DONE	trait	81	1044	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/SegmentedAddress.java
-TODO	trait	80	305	35	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeIterators.java
+DONE	trait	80	305	35	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeIterators.java
 TODO	trait	79	304	35	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AbstractAddressSetView.java
 TODO	trait	77	2	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/db/VersionedDBListener.java
 TODO	trait	75	24	22	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/local/LocalFolderItem.java
