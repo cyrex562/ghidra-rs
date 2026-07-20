@@ -224,12 +224,6 @@ pub trait Database {}
 /// `ToolManager` only ever registers/unregisters this listener, so no members are needed yet.
 pub trait WorkspaceChangeListener {}
 
-/// Placeholder for `ghidra.framework.store.local.LocalFileSystem`, referenced by
-/// [`ProjectData`](crate::framework::model::ProjectData) before the real class is ported.
-/// `ProjectData` only needs this type to identify itself via [`std::any::TypeId`] (standing in
-/// for Java's `Class<? extends LocalFileSystem>`), so no members are needed yet.
-pub trait LocalFileSystem {}
-
 /// Placeholder for `ghidra.framework.options.SaveState`, referenced by
 /// [`Project`](crate::framework::model::Project) before the real class is ported. `Project` only
 /// ever passes this type through as an opaque value, so no members are needed yet.

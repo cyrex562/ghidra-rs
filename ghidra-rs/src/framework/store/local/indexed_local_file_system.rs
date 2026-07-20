@@ -2,7 +2,8 @@ use std::io;
 
 use thiserror::Error;
 
-use crate::framework::seam_stubs::{FolderItem, LocalFileSystem};
+use crate::framework::seam_stubs::FolderItem;
+use crate::framework::store::local::LocalFileSystem;
 use crate::util::exception::InvalidNameException;
 
 /// Maximum item/folder name length enforced by this filesystem implementation (value is
