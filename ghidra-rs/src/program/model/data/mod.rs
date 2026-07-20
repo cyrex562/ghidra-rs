@@ -33,6 +33,7 @@ pub mod data_type_transferable;
 pub mod data_type_with_charset;
 pub mod default_annotation_handler;
 pub mod domain_file_based_data_type_manager;
+pub mod dword_data_type;
 pub mod dynamic;
 pub mod dynamic_data_type;
 pub mod endian_settings_definition;

@@ -565,3 +565,9 @@ pub trait CodeBlock {}
 /// no members are needed yet.
 pub trait FlowType {}
 
+/// Placeholder for `ghidra.program.model.data.SignedDWordDataType`, referenced by
+/// [`DWordDataType`](crate::program::model::data::dword_data_type::DWordDataType)
+/// before the real class is ported. `DWordDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait SignedDWordDataType {}
+
