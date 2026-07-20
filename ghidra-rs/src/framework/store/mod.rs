@@ -14,7 +14,7 @@ pub mod version;
 
 pub use data_file_handle::DataFileHandle;
 pub use database_item::DatabaseItem;
-pub use db::VersionedDBListener;
+pub use db::{PrivateDatabase, VersionedDBListener};
 pub use exclusive_checkout_exception::ExclusiveCheckoutException;
 pub use file_id_factory::FileIDFactory;
 pub use file_system_listener::FileSystemListener;
