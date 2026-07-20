@@ -94,7 +94,7 @@ DONE	trait	75	1254	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	74	1241	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CompositeDataTypeImpl.java
 DONE	trait	75	1248	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ShortDataType.java
 DONE	trait	79	151	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/AttributeId.java
-TODO	trait	82	122	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/BlockGraph.java
+DONE	trait	82	122	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/BlockGraph.java
 TODO	trait	80	115	15	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/BlockMap.java
 TODO	trait	79	115	35	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeBlockBasic.java
 TODO	trait	108	5	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/PreprocessorDefinitions.java
