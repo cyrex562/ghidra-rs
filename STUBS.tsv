@@ -197,3 +197,4 @@ ts	stub_class	referenced_by
 2026-07-19T03:00:00Z	LongKeyInteriorNode	LongKeyRecordNode
 2026-07-19T04:00:00Z	TwoWayBreakdownFactory	AddressRangeIterators
 2026-07-19T04:00:00Z	UnionAddressRangeIteratorFactory	AddressRangeIterators
+2026-07-19T05:00:00Z	VersionedDatabase	VersionedDBListener

@@ -267,6 +267,12 @@ pub trait LocalBufferFileLike {
 /// relationship to preserve the is-a bound for future implementors, so no members are needed yet.
 pub trait FolderItem {}
 
+/// Placeholder for `ghidra.framework.store.db.VersionedDatabase`, referenced by
+/// [`VersionedDBListener`](crate::framework::store::VersionedDBListener) before the real class is
+/// ported. `VersionedDBListener` only ever passes this type through as an opaque value, so no
+/// members are needed yet.
+pub trait VersionedDatabase {}
+
 /// Placeholder for `ghidra.framework.Architecture`, referenced by
 /// [`Platform`](crate::framework::Platform) before the real (Java `enum`) type is ported.
 /// `Platform` only ever returns this type and formats it via `Display` (mirroring

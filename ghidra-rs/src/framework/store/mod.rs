@@ -1,5 +1,6 @@
 pub mod data_file_handle;
 pub mod database_item;
+pub mod db;
 pub mod exclusive_checkout_exception;
 pub mod file_id_factory;
 pub mod file_system_listener;
@@ -13,6 +14,7 @@ pub mod version;
 
 pub use data_file_handle::DataFileHandle;
 pub use database_item::DatabaseItem;
+pub use db::VersionedDBListener;
 pub use exclusive_checkout_exception::ExclusiveCheckoutException;
 pub use file_id_factory::FileIDFactory;
 pub use file_system_listener::FileSystemListener;
