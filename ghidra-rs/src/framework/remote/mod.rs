@@ -1,5 +1,6 @@
 pub mod anonymous_callback;
 pub mod ghidra_principal;
+pub mod remote_repository_server_handle;
 pub mod repository_change_event;
 pub mod repository_handle;
 pub mod repository_server_handle;
@@ -11,6 +12,7 @@ pub mod user;
 
 pub use anonymous_callback::AnonymousCallback;
 pub use ghidra_principal::GhidraPrincipal;
+pub use remote_repository_server_handle::RemoteRepositoryServerHandle;
 pub use repository_change_event::{EventType, RepositoryChangeEvent};
 pub use repository_handle::{client_check_period, RepositoryHandle, RepositoryNameError};
 pub use repository_server_handle::RepositoryServerHandle;
