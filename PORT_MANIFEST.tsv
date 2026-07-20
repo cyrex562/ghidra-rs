@@ -14732,7 +14732,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/GhidraLaunchable.java	TOD
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/GhidraLauncher.java	TODO	orig_src Ghidra Framework Utility src main java ghidra 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/GhidraTestApplicationLayout.java	TODO	orig_src Ghidra Framework Utility src main java ghidra 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/framework/ApplicationIdentifier.java	TODO	orig_src Ghidra Framework Utility src main java ghidra framework 
-orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/framework/ApplicationProperties.java	TODO	orig_src Ghidra Framework Utility src main java ghidra framework 
+orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/framework/ApplicationProperties.java	DONE	orig_src Ghidra Framework Utility src main java ghidra framework
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/framework/ApplicationVersion.java	DONE	orig_src Ghidra Framework Utility src main java ghidra framework 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/framework/GModule.java	TODO	orig_src Ghidra Framework Utility src main java ghidra framework 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/framework/OperatingSystem.java	TODO	orig_src Ghidra Framework Utility src main java ghidra framework 
