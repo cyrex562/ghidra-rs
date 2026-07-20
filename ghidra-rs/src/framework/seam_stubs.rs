@@ -191,11 +191,13 @@ pub trait JdomElement {}
 /// `ToolTemplate` only ever returns this type, so no members are needed yet.
 pub trait PluginTool {}
 
-/// Placeholder for `ghidra.framework.client.RepositoryAdapter`, referenced by
-/// [`ProjectManager`](crate::framework::model::ProjectManager) before the real class is ported.
-/// `ProjectManager` only ever passes this type through as an opaque value, so no members are
-/// needed yet.
-pub trait RepositoryAdapter {}
+/// Placeholder for `ghidra.framework.client.RemoteAdapterListener`, referenced by
+/// [`RepositoryAdapter`](crate::framework::client::RepositoryAdapter) before the real interface is
+/// ported. `RepositoryAdapter` only ever registers/unregisters instances of this listener as an
+/// opaque value (its single member, `connectionStateChanged`, is invoked internally by
+/// `RepositoryAdapter.fireStateChanged()`, which is not itself part of the ported public trait
+/// surface), so no members are needed yet.
+pub trait RemoteAdapterListener {}
 
 /// Placeholder for `ghidra.framework.client.RepositoryServerAdapter`, referenced by
 /// [`ProjectManager`](crate::framework::model::ProjectManager) before the real class is ported.

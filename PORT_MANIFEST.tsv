@@ -11384,7 +11384,7 @@ orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/Headl
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/NotConnectedException.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework client 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/PasswordClientAuthenticator.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework client 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RemoteAdapterListener.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework client 
-orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RepositoryAdapter.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework client 
+orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RepositoryAdapter.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework client 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RepositoryChangeDispatcher.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework client 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RepositoryNotFoundException.java	DONE	orig_src Ghidra Framework FileSystem src main java ghidra framework client 
 orig_src/Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RepositoryServerAdapter.java	TODO	orig_src Ghidra Framework FileSystem src main java ghidra framework client 

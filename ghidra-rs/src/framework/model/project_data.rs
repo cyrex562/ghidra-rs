@@ -3,13 +3,14 @@ use std::io;
 
 use thiserror::Error;
 
+use crate::framework::client::RepositoryAdapter;
 use crate::framework::model::domain_file::DomainFile;
 use crate::framework::model::domain_file_filter::DomainFileFilter;
 use crate::framework::model::domain_folder::DomainFolder;
 use crate::framework::model::domain_folder_change_listener::DomainFolderChangeListener;
 use crate::framework::model::domain_folder_filter::DomainFolderFilter;
 use crate::framework::remote::User;
-use crate::framework::seam_stubs::{ProjectLocator, RepositoryAdapter};
+use crate::framework::seam_stubs::ProjectLocator;
 use crate::framework::store::local::LocalFileSystem;
 use crate::util::exception::{CancelledException, InvalidNameException};
 use crate::util::task::TaskMonitor;
