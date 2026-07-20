@@ -204,3 +204,4 @@ ts	stub_class	referenced_by
 2026-07-20T02:00:00Z	ApplicationLike	GenericRunInfo
 2026-07-20T02:00:00Z	LegacyUserSettingsLocator	GenericRunInfo
 2026-07-20T02:00:00Z	PreferencesLike	GenericRunInfo
+2026-07-20T00:00:00Z	FixedKeyNode	FixedKeyVarRecNode

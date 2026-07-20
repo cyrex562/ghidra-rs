@@ -9860,7 +9860,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyFixedRecNode.java	TODO	ori
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyInteriorNode.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyNode.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyRecordNode.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyVarRecNode.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/FixedKeyVarRecNode.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FixedRecNode.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/IllegalFieldAccessException.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/IndexField.java	DONE	orig_src Ghidra Framework DB src main java db

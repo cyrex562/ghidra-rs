@@ -369,6 +369,14 @@ pub trait RepositoryItem {}
 /// needed here either.
 pub trait AuthCallback {}
 
+/// Placeholder for `db.FixedKeyNode`, the abstract BTree-node superclass (itself implementing
+/// `db.FieldKeyNode`) referenced by
+/// [`FixedKeyVarRecNode`](crate::framework::db::fixed_key_var_rec_node::FixedKeyVarRecNode) as the
+/// return type of `updateRecord`, before the real class is ported. `FixedKeyVarRecNode` only ever
+/// returns this type opaquely as "the root, which may have changed", so no members beyond its
+/// `FieldKeyNode` supertrait are needed yet.
+pub trait FixedKeyNode: crate::framework::db::field_key_node::FieldKeyNode {}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
