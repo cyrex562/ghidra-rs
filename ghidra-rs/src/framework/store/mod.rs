@@ -1,5 +1,6 @@
 pub mod checkout_type;
 pub mod data_file_handle;
+pub mod data_file_item;
 pub mod database_item;
 pub mod db;
 pub mod exclusive_checkout_exception;
@@ -17,6 +18,7 @@ pub mod version;
 
 pub use checkout_type::{get_checkout_type, CheckoutType, Exclusive, Normal, Transient};
 pub use data_file_handle::DataFileHandle;
+pub use data_file_item::DataFileItem;
 pub use database_item::DatabaseItem;
 pub use db::{PackedDatabase, PrivateDatabase, VersionedDBListener};
 pub use exclusive_checkout_exception::ExclusiveCheckoutException;
