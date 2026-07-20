@@ -1,3 +1,4 @@
+pub mod application_identifier;
 pub mod application_properties;
 pub mod client;
 pub mod cmd;
@@ -24,6 +25,7 @@ pub mod shutdown_priority;
 pub mod store;
 pub mod version;
 
+pub use application_identifier::ApplicationIdentifier;
 pub use application_properties::ApplicationProperties;
 pub use cmd::Command;
 pub use data::{CheckinHandler, DomainObjectDBChangeSet, DomainObjectFileListener, OpenMode};
