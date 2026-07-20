@@ -4,7 +4,7 @@ DONE	trait	52	27	2	framework	Ghidra/Framework/DB/src/main/java/db/buffers/Manage
 DONE	trait	51	38	7	framework	Ghidra/Framework/DB/src/main/java/db/buffers/LocalBufferFile.java
 DONE	trait	49	26	2	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferNode.java
 DONE	trait	55	5	1	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/ResourceFileFilter.java
-TODO	trait	54	4	2	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/Resource.java
+DONE	trait	54	4	2	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/Resource.java
 TODO	trait	66	35	2	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/DatabaseItem.java
 TODO	trait	67	36	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/FileSystemListener.java
 TODO	trait	69	24	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/RemoteBufferFileHandle.java
