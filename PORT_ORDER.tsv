@@ -85,7 +85,7 @@ DONE	trait	67	51	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 DONE	trait	66	50	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockReferenceIterator.java
 DONE	trait	70	1259	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DWordDataType.java
 DONE	trait	70	1252	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/IntegerDataType.java
-TODO	trait	72	1241	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerTypedefBuilder.java
+DONE	trait	72	1241	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerTypedefBuilder.java
 TODO	trait	71	1245	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerType.java
 TODO	trait	76	17	1	pcode	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcode/floatformat/BigFloat.java
 TODO	trait	75	1250	16	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractFloatDataType.java
