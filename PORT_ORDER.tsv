@@ -10,7 +10,7 @@ DONE	trait	67	36	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/fr
 DONE	trait	69	24	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/RemoteBufferFileHandle.java
 DONE	trait	69	25	2	framework	Ghidra/Framework/DB/src/main/java/db/buffers/RemoteManagedBufferFileHandle.java
 DONE	trait	72	247	5	framework	Ghidra/Framework/DB/src/main/java/db/IndexField.java
-TODO	trait	78	247	10	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyRecordNode.java
+DONE	trait	78	247	10	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyRecordNode.java
 TODO	trait	77	248	6	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyNode.java
 TODO	trait	76	245	6	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyInteriorNode.java
 TODO	trait	75	244	7	framework	Ghidra/Framework/DB/src/main/java/db/VarKeyInteriorNode.java
