@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	79	115	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeBlockBasic.java
+DONE	trait	79	115	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeBlockBasic.java
 TODO	trait	108	5	1	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/PreprocessorDefinitions.java
 TODO	trait	111	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int16TDataType.java
 TODO	trait	111	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int32TDataType.java
