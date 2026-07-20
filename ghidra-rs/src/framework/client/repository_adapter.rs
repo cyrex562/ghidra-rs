@@ -1,12 +1,11 @@
 use std::io;
 
+use crate::framework::client::remote_adapter_listener::RemoteAdapterListener;
 use crate::framework::client::repository_server_adapter::RepositoryServerAdapter;
 use crate::framework::db::buffers::ManagedBufferFileHandle;
 use crate::framework::model::server_info::ServerInfo;
 use crate::framework::remote::{RepositoryNameError, User};
-use crate::framework::seam_stubs::{
-    CheckoutType, ItemCheckoutStatus, RemoteAdapterListener, RepositoryItem,
-};
+use crate::framework::seam_stubs::{CheckoutType, ItemCheckoutStatus, RepositoryItem};
 use crate::framework::store::{DataFileHandle, FileSystemListener, ItemVersion};
 
 /// Builds the `io::Error` returned by every default method below.
