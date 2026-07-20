@@ -199,11 +199,6 @@ pub trait PluginTool {}
 /// surface), so no members are needed yet.
 pub trait RemoteAdapterListener {}
 
-/// Placeholder for `ghidra.framework.client.RepositoryServerAdapter`, referenced by
-/// [`ProjectManager`](crate::framework::model::ProjectManager) before the real class is ported.
-/// `ProjectManager` only ever returns this type, so no members are needed yet.
-pub trait RepositoryServerAdapter {}
-
 /// Placeholder for `ghidra.framework.model.ToolChest`, referenced by
 /// [`ProjectManager`](crate::framework::model::ProjectManager) before the real interface is
 /// ported. `ProjectManager` only ever returns this type, so no members are needed yet.
