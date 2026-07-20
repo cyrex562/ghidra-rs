@@ -134,6 +134,36 @@ impl TwoWayBreakdownEntry {
     }
 }
 
+/// Placeholder for `ghidra.framework.ApplicationProperties`, needed by
+/// [`crate::util::application_utilities::ApplicationUtilities`].
+///
+/// `ApplicationProperties` extends `java.util.Properties` and carries the application's full
+/// name/version/release/build-date key set; only the accessor consumed by `ApplicationUtilities`
+/// is declared here, the real port carries the rest.
+pub trait ApplicationPropertiesLike {
+    /// Returns the application's name (empty string if undefined), mirroring
+    /// `ApplicationProperties.getApplicationName()`.
+    fn application_name(&self) -> String;
+}
+
+/// Placeholder for `ghidra.framework.ApplicationIdentifier`, needed by
+/// [`crate::util::application_utilities::ApplicationUtilities`].
+///
+/// The real `ApplicationIdentifier` is constructed *from* an `ApplicationProperties`, and its
+/// constructor itself calls `ApplicationUtilities.normalizeApplicationName` -- the other half of
+/// the dependency cycle this port breaks. Because a placeholder trait cannot stand in for a
+/// constructor, `ApplicationUtilities` methods that need an identifier take an already-built one
+/// as a parameter rather than building it internally from `ApplicationPropertiesLike`; only the
+/// two accessors consumed there are declared here.
+pub trait ApplicationIdentifierLike {
+    /// Returns the application name component, mirroring `getApplicationName()`.
+    fn application_name(&self) -> String;
+
+    /// Returns the full versioned identifier (`name_version_releaseName`), mirroring
+    /// `toString()`.
+    fn versioned_name(&self) -> String;
+}
+
 /// Placeholder for `ghidra.util.TwoWayBreakdownAddressRangeIterator`, needed by
 /// [`crate::util::address_range_iterators::AddressRangeIteratorFactory`].
 ///

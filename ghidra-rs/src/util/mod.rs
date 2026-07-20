@@ -1,5 +1,6 @@
 pub mod abstract_address_set_view;
 pub mod address_range_comparators;
+pub mod application_utilities;
 pub mod address_range_iterators;
 pub mod conv;
 pub mod date_utils;
@@ -91,6 +92,9 @@ pub mod dbg_msg_tracer;
 pub mod language_utilities;
 
 pub use address_range_comparators::AddressRangeComparators;
+pub use application_utilities::{
+    ApplicationUtilities, PROPERTY_CACHE_DIR, PROPERTY_SETTINGS_DIR, PROPERTY_TEMP_DIR,
+};
 pub use address_range_iterators::{AddressRangeIteratorFactory, DefaultAddressRangeIteratorFactory, WrappingAddressRangeIterator};
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;

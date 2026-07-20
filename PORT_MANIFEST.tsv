@@ -14782,7 +14782,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/utilities/util/reflection/Reflec
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/AppCleaner.java	TODO	orig_src Ghidra Framework Utility src main java utility application 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/ApplicationLayout.java	TODO	orig_src Ghidra Framework Utility src main java utility application 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/ApplicationSettings.java	TODO	orig_src Ghidra Framework Utility src main java utility application 
-orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/ApplicationUtilities.java	TODO	orig_src Ghidra Framework Utility src main java utility application 
+orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/ApplicationUtilities.java	DONE	orig_src Ghidra Framework Utility src main java utility application
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/DummyApplicationLayout.java	TODO	orig_src Ghidra Framework Utility src main java utility application 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/application/XdgUtils.java	DONE	orig_src Ghidra Framework Utility src main java utility application 
 orig_src/Ghidra/Framework/Utility/src/main/java/utility/function/Callback.java	DONE	orig_src Ghidra Framework Utility src main java utility function 
