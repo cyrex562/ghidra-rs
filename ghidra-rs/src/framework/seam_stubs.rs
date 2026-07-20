@@ -287,6 +287,14 @@ pub trait TempDatabaseCleaner {
 /// ported. `RepositoryHandle` only ever returns this type, so no members are needed yet.
 pub trait RepositoryItem {}
 
+/// Placeholder for `javax.security.auth.callback.Callback`, referenced by
+/// [`GhidraServerHandle`](crate::framework::remote::GhidraServerHandle) before a Rust equivalent
+/// exists. `Callback` is itself a marker interface with no members in `javax.security.auth`, and
+/// `GhidraServerHandle` only ever passes implementors through as opaque values (returned from
+/// `getAuthenticationCallbacks()` and accepted by `getRepositoryServer()`), so no members are
+/// needed here either.
+pub trait AuthCallback {}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
