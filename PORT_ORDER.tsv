@@ -54,7 +54,7 @@ DONE	trait	52	271	4	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/R
 DONE	trait	51	52	3	framework	Ghidra/Framework/Utility/src/main/java/ghidra/framework/ApplicationProperties.java
 DONE	trait	50	40	3	framework	Ghidra/Framework/Utility/src/main/java/ghidra/framework/ApplicationIdentifier.java
 DONE	trait	49	51	5	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/GenericRunInfo.java
-TODO	trait	48	35	28	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferMgr.java
+DONE	trait	48	35	28	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferMgr.java
 TODO	trait	47	75	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/DataBuffer.java
 TODO	trait	46	243	9	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyVarRecNode.java
 TODO	trait	45	245	11	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyRecordNode.java
