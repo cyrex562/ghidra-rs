@@ -3,6 +3,8 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::docking::settings::settings::Settings;
+use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
@@ -10,6 +12,7 @@ use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
+use crate::program::model::mem::MemoryAccessException;
 use std::fmt;
 use std::sync::Arc;
 
@@ -59,6 +62,37 @@ pub trait MemBuffer {
     /// until `Memory`'s address-set queries and `MemBuffer.getAddress()` are ported.
     fn is_at_initialized_memory_address(&self) -> bool {
         false
+    }
+
+    /// Stands in for `MemBuffer.getByte(int)`, used by
+    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
+    /// real interface is ported.
+    fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+        let _ = offset;
+        Err(MemoryAccessException::default())
+    }
+
+    /// Stands in for `MemBuffer.getUnsignedByte(int)`, used by
+    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
+    /// real interface is ported.
+    fn get_unsigned_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
+        self.get_byte(offset).map(|b| b as u8)
+    }
+
+    /// Stands in for `MemBuffer.getShort(int)`, used by
+    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
+    /// real interface is ported.
+    fn get_short(&self, offset: i32) -> Result<i16, MemoryAccessException> {
+        let _ = offset;
+        Err(MemoryAccessException::default())
+    }
+
+    /// Stands in for `MemBuffer.getInt(int)`, used by
+    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
+    /// real interface is ported.
+    fn get_int(&self, offset: i32) -> Result<i32, MemoryAccessException> {
+        let _ = offset;
+        Err(MemoryAccessException::default())
     }
 }
 
@@ -440,4 +474,60 @@ pub trait FileBytes {}
 /// before the real class is ported. `MemoryBlockSourceInfo` only ever returns this type opaquely,
 /// so no members are needed yet.
 pub trait ByteMappingScheme {}
+
+/// Placeholder for `ghidra.program.model.data.CharsetSettingsDefinition`, referenced by
+/// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)
+/// before the real class is ported. Only the `CHARSET` singleton and its `getCharset` accessor
+/// are modeled; it also implements [`SettingsDefinition`] with the real name/storage
+/// key/description so it can be placed alongside genuine settings definitions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CharsetSettingsDefinition;
+
+impl CharsetSettingsDefinition {
+    /// The singleton instance of this settings definition.
+    pub const CHARSET: CharsetSettingsDefinition = CharsetSettingsDefinition;
+
+    /// Stands in for `CharsetSettingsDefinition.getCharset(Settings, String)`.
+    pub fn get_charset(&self, settings: &dyn Settings, default_value: &str) -> String {
+        settings
+            .get_string("charset")
+            .unwrap_or_else(|| default_value.to_string())
+    }
+}
+
+impl SettingsDefinition for CharsetSettingsDefinition {
+    fn get_name(&self) -> String {
+        "Charset".to_string()
+    }
+
+    fn get_storage_key(&self) -> String {
+        "charset".to_string()
+    }
+
+    fn get_description(&self) -> String {
+        "Character set".to_string()
+    }
+
+    fn has_value(&self, settings: &dyn Settings) -> bool {
+        settings.get_value("charset").is_some()
+    }
+
+    fn get_value_string(&self, settings: &dyn Settings) -> Option<String> {
+        settings.get_string("charset")
+    }
+
+    fn clear(&self, settings: &mut dyn Settings) {
+        settings.clear_setting("charset");
+    }
+}
+
+/// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF16`, referenced by
+/// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)
+/// before the real class is ported.
+pub const CHARSET_UTF16: &str = "UTF-16";
+
+/// Placeholder for `ghidra.util.charset.CharsetInfoManager.UTF32`, referenced by
+/// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType)
+/// before the real class is ported.
+pub const CHARSET_UTF32: &str = "UTF-32";
 
