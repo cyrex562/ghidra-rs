@@ -552,3 +552,9 @@ pub trait ProgramOverlayAddressSpace {
     fn invalidate(&self);
 }
 
+/// Placeholder for `ghidra.program.model.block.CodeBlock`, referenced by
+/// [`CodeBlockIterator`](crate::program::model::block::code_block_iterator::CodeBlockIterator)
+/// before the real interface is ported. `CodeBlockIterator` only ever yields this type
+/// opaquely, so no members are needed yet.
+pub trait CodeBlock {}
+
