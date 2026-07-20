@@ -1,6 +1,7 @@
 pub mod buffer;
 pub mod buffer_mgr;
 pub mod buffers;
+pub mod byte_field;
 pub mod chained_buffer;
 pub mod database;
 pub mod db_buffer;
@@ -42,6 +43,7 @@ pub mod var_key_node;
 pub use buffer::{Buffer, DataBuffer};
 pub use buffer_mgr::BufferMgr;
 pub use buffers::{BlockStream, BufferFile, LocalBufferFile};
+pub use byte_field::ByteField;
 pub use chained_buffer::ChainedBuffer;
 pub use database::{Database, OpenError};
 pub use db_buffer::DBBuffer;
