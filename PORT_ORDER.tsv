@@ -36,7 +36,7 @@ DONE	trait	66	33	2	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/fr
 DONE	trait	65	12	16	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryHandle.java
 DONE	trait	65	8	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryServerHandle.java
 DONE	trait	64	9	2	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RemoteRepositoryServerHandle.java
-TODO	trait	63	14	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/GhidraServerHandle.java
+DONE	trait	63	14	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/GhidraServerHandle.java
 TODO	trait	62	34	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/CheckoutType.java
 TODO	trait	61	45	3	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/FolderItem.java
 TODO	trait	60	36	2	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/DataFileItem.java
