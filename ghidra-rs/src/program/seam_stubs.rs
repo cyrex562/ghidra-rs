@@ -652,3 +652,9 @@ pub trait SignedWordDataType {}
 /// `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait UnsignedIntegerDataType {}
 
+/// Placeholder for `ghidra.program.model.data.UnsignedShortDataType`, referenced by
+/// [`ShortDataType`](crate::program::model::data::short_data_type::ShortDataType)
+/// before the real class is ported. `ShortDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedShortDataType {}
+
