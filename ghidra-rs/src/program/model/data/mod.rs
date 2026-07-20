@@ -14,6 +14,7 @@ pub mod category_path;
 pub mod char_data_type;
 pub mod component_offset_settings_definition;
 pub mod composite;
+pub mod composite_data_type_impl;
 pub mod composite_internal;
 pub mod composite_test_utils;
 pub mod custom_format;
