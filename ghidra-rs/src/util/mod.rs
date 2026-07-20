@@ -145,7 +145,7 @@ pub use signedness_format_mode::SignednessFormatMode;
 pub use string_format::StringFormat;
 pub use string_utilities::StringUtilities;
 pub use universal_id::UniversalID;
-pub use classfinder::{ClassFileInfo, ClassExclusionFilter, ClassFilter, ClassLocation, ExtensionPoint};
+pub use classfinder::{ClassDir, ClassFileInfo, ClassExclusionFilter, ClassFilter, ClassLocation, ExtensionPoint};
 pub use compiler_constraint::CompilerConstraint;
 pub use constraint::ProgramConstraint;
 pub use language_constraint::LanguageConstraint;
