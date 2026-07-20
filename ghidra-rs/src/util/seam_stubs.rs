@@ -11,6 +11,14 @@ use crate::program::model::address::{AddressRange, AddressRangeIterator};
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}
 
+/// Placeholder for `ghidra.util.filechooser.GhidraFileChooserModel`, needed by
+/// [`crate::util::filechooser::GhidraFileFilter`].
+///
+/// `GhidraFileFilter.accept` only ever receives the model to hand it along to filter
+/// implementations; the interface itself never calls a method on it, so this is a marker
+/// trait until the real model is ported.
+pub trait GhidraFileChooserModelLike: Send + Sync {}
+
 /// Placeholder for `ghidra.util.Location`, needed by [`crate::util::Issue`].
 pub trait Location: Send + Sync {}
 
