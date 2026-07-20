@@ -1,4 +1,4 @@
-use crate::framework::seam_stubs::Database;
+use crate::framework::db::database::Database;
 
 /// Facilitates listener notification when new database versions are created.
 pub trait DBFileListener {
@@ -9,9 +9,43 @@ pub trait DBFileListener {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::db::database::OpenError;
+    use crate::framework::db::db_handle::DBHandle;
+    use crate::util::task::TaskMonitor;
+    use std::io;
 
     struct StubDatabase;
-    impl Database for StubDatabase {}
+    impl Database for StubDatabase {
+        fn last_modified(&self) -> i64 {
+            0
+        }
+
+        fn get_current_version(&self) -> i32 {
+            0
+        }
+
+        fn open(&self, _monitor: Option<&dyn TaskMonitor>) -> Result<DBHandle, OpenError> {
+            Ok(DBHandle::new()?)
+        }
+
+        fn open_for_update(
+            &self,
+            _monitor: Option<&dyn TaskMonitor>,
+        ) -> Result<DBHandle, OpenError> {
+            Err(OpenError::Io(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Update use not permitted",
+            )))
+        }
+
+        fn length(&self) -> io::Result<u64> {
+            Ok(0)
+        }
+
+        fn refresh(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
 
     struct MockListener {
         last_version: std::cell::Cell<Option<i32>>,

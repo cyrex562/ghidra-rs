@@ -4,7 +4,7 @@ use std::path::Path;
 use thiserror::Error;
 
 use crate::framework::db::buffers::ManagedBufferFile;
-use crate::framework::seam_stubs::Database;
+use crate::framework::db::database::Database;
 use crate::framework::store::local::OutputItemError;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -23,8 +23,8 @@ pub enum UpdateCheckoutCopyError {
 /// A non-versioned database.
 ///
 /// Mirrors `ghidra.framework.store.db.PrivateDatabase`, which extends `db.Database`; that
-/// relationship is preserved via the [`Database`](crate::framework::seam_stubs::Database)
-/// supertrait placeholder (`db.Database` has not been ported yet).
+/// relationship is preserved via the [`Database`](crate::framework::db::database::Database)
+/// supertrait.
 ///
 /// Constructors and the static `createDatabase` factory are not represented as trait methods,
 /// since Rust traits cannot express `Self`-returning constructors while remaining object-safe.
@@ -110,6 +110,8 @@ pub trait PrivateDatabase: Database {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::db::database::OpenError;
+    use crate::framework::db::db_handle::DBHandle;
     use std::cell::{Cell, RefCell};
 
     #[derive(Default)]
@@ -118,9 +120,38 @@ mod tests {
         recoverable: Cell<bool>,
         dir: RefCell<std::path::PathBuf>,
         cumulative_change_cleared: Cell<bool>,
+        current_version: Cell<i32>,
     }
 
-    impl Database for MockPrivateDatabase {}
+    impl Database for MockPrivateDatabase {
+        fn last_modified(&self) -> i64 {
+            0
+        }
+
+        fn get_current_version(&self) -> i32 {
+            self.current_version.get()
+        }
+
+        fn open(&self, _monitor: Option<&dyn TaskMonitor>) -> Result<DBHandle, OpenError> {
+            Ok(DBHandle::new()?)
+        }
+
+        fn open_for_update(
+            &self,
+            _monitor: Option<&dyn TaskMonitor>,
+        ) -> Result<DBHandle, OpenError> {
+            Ok(DBHandle::new()?)
+        }
+
+        fn length(&self) -> io::Result<u64> {
+            Ok(0)
+        }
+
+        fn refresh(&mut self) -> io::Result<()> {
+            self.current_version.set(self.current_version.get() + 1);
+            Ok(())
+        }
+    }
 
     impl PrivateDatabase for MockPrivateDatabase {
         fn set_is_checkout_copy(&mut self, state: bool) {
