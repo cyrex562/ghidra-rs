@@ -15,6 +15,7 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::mem::MemoryAccessException;
+use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
@@ -781,30 +782,72 @@ pub trait PcodeBlock {
     fn as_block_copy(&self) -> Option<&dyn BlockCopy> {
         None
     }
+
+    /// Stands in for the inherited `parent` field getter (`PcodeBlock.getParent()`), used by
+    /// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
+    /// to walk up from a goto's root block by the recorded depth. Defaults to `None`, matching an
+    /// unparented (e.g. top-level) block.
+    fn get_parent(&self) -> Option<Arc<dyn PcodeBlock>> {
+        None
+    }
+
+    /// Returns this block viewed as a [`BlockGoto`] when it is one. Mirrors the `instanceof
+    /// BlockGoto` check in `BlockMap.resolveGotoReferences`. Defaults to `None`.
+    fn as_block_goto(&self) -> Option<&dyn BlockGoto> {
+        None
+    }
+
+    /// Returns this block viewed as a [`BlockIfGoto`] when it is one. Mirrors the `instanceof
+    /// BlockIfGoto` check in `BlockMap.resolveGotoReferences`. Defaults to `None`.
+    fn as_block_if_goto(&self) -> Option<&dyn BlockIfGoto> {
+        None
+    }
+
+    /// Returns this block viewed as a [`BlockMultiGoto`] when it is one. Mirrors the `instanceof
+    /// BlockMultiGoto` check in `BlockMap.resolveGotoReferences`. Defaults to `None`.
+    fn as_block_multi_goto(&self) -> Option<&dyn BlockMultiGoto> {
+        None
+    }
 }
 
-/// Placeholder for `ghidra.program.model.pcode.BlockMap`, referenced by
-/// [`BlockGraph`](crate::program::model::pcode::block_graph::BlockGraph)'s `decodeBody` override
-/// before the real class is ported. Exposes only the members that override needs: constructing
-/// a nested child resolver (`new BlockMap(resolver)`), creating a new block by element name
-/// (`createBlock`), and sorting/finalizing the level's block list (`sortLevelList`).
-/// `resolveGotoReferences` is also exposed since it is part of the same decode contract
-/// (`BlockGraph.decode(Decoder)`), even though this placeholder cannot construct the top-level
-/// `BlockMap` itself (see
-/// [`BlockGraph::decode_graph`](crate::program::model::pcode::block_graph::BlockGraph::decode_graph)).
-pub trait BlockMap {
-    /// Stands in for `new BlockMap(BlockMap parent)`: build a child resolver nested under this
-    /// one.
-    fn new_child(&self) -> Box<dyn BlockMap>;
-
-    /// Stands in for `BlockMap.createBlock(String name, int index)`.
-    fn create_block(&self, name: &str, index: i32) -> Arc<dyn PcodeBlock>;
-
-    /// Stands in for `BlockMap.sortLevelList()`.
-    fn sort_level_list(&self);
-
-    /// Stands in for `BlockMap.resolveGotoReferences()`.
-    fn resolve_goto_references(&self);
+/// Stands in for `PcodeBlock.nameToType(String)`, used by
+/// [`BlockMap::create_block`](crate::program::model::pcode::block_map::BlockMap::create_block) to
+/// resolve an XML element name back to a block type tag. Returns `-1` for an unrecognized name,
+/// mirroring the Java method's fallthrough (including its "basic" gap: `nameToType` never
+/// recognizes the name `typeToName` produces for [`PCODE_BLOCK_BASIC`]).
+pub fn pcode_block_name_to_type(name: &str) -> i32 {
+    match name.chars().next() {
+        Some('c') => PCODE_BLOCK_COPY,
+        Some('d') => PCODE_BLOCK_DOWHILE,
+        Some('g') => {
+            if name == "goto" {
+                PCODE_BLOCK_GOTO
+            } else {
+                PCODE_BLOCK_GRAPH
+            }
+        }
+        Some('i') => {
+            if name == "ifelse" {
+                PCODE_BLOCK_IFELSE
+            } else if name == "infloop" {
+                PCODE_BLOCK_INFLOOP
+            } else {
+                PCODE_BLOCK_IFGOTO
+            }
+        }
+        Some('l') => PCODE_BLOCK_LIST,
+        Some('m') => PCODE_BLOCK_MULTIGOTO,
+        Some('p') => {
+            if name == "properif" {
+                PCODE_BLOCK_PROPERIF
+            } else {
+                PCODE_BLOCK_PLAIN
+            }
+        }
+        Some('s') => PCODE_BLOCK_SWITCH,
+        Some('w') => PCODE_BLOCK_WHILEDO,
+        _ => -1,
+    }
 }
 
 /// Placeholder for `ghidra.program.model.pcode.BlockCopy`, referenced by
@@ -826,5 +869,29 @@ pub trait BlockCopy {
 
     /// Stands in for the protected `BlockCopy.set(Object, Address)`.
     fn set(&self, r: Option<Arc<dyn Any + Send + Sync>>, addr: Address);
+}
+
+/// Placeholder for `ghidra.program.model.pcode.BlockGoto`, referenced by
+/// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
+/// before the real class is ported. Exposes only the setter that method needs.
+pub trait BlockGoto {
+    /// Stands in for `BlockGoto.setGotoTarget(PcodeBlock)`.
+    fn set_goto_target(&self, target: Arc<dyn PcodeBlock>);
+}
+
+/// Placeholder for `ghidra.program.model.pcode.BlockIfGoto`, referenced by
+/// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
+/// before the real class is ported. Exposes only the setter that method needs.
+pub trait BlockIfGoto {
+    /// Stands in for `BlockIfGoto.setGotoTarget(PcodeBlock)`.
+    fn set_goto_target(&self, target: Arc<dyn PcodeBlock>);
+}
+
+/// Placeholder for `ghidra.program.model.pcode.BlockMultiGoto`, referenced by
+/// [`BlockMap::resolve_goto_references`](crate::program::model::pcode::block_map::BlockMap::resolve_goto_references)
+/// before the real class is ported. Exposes only the mutator that method needs.
+pub trait BlockMultiGoto {
+    /// Stands in for `BlockMultiGoto.addGotoTarget(PcodeBlock)`.
+    fn add_goto_target(&self, target: Arc<dyn PcodeBlock>);
 }
 
