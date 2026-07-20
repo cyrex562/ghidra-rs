@@ -81,7 +81,7 @@ DONE	trait	60	30	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/filechoos
 DONE	trait	61	45	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/OverlayRegionSupplier.java
 DONE	trait	60	54	32	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/ProgramAddressFactory.java
 DONE	trait	66	46	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockIterator.java
-TODO	trait	67	51	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockReference.java
+DONE	trait	67	51	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockReference.java
 TODO	trait	66	50	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockReferenceIterator.java
 TODO	trait	70	1259	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DWordDataType.java
 TODO	trait	70	1252	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/IntegerDataType.java
