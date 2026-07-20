@@ -71,7 +71,7 @@ DONE	trait	35	250	4	framework	Ghidra/Framework/DB/src/main/java/db/ByteField.jav
 DONE	trait	34	279	10	framework	Ghidra/Framework/DB/src/main/java/db/Schema.java
 DONE	trait	33	257	4	framework	Ghidra/Framework/DB/src/main/java/db/BinaryField.java
 DONE	trait	32	312	15	framework	Ghidra/Framework/DB/src/main/java/db/Field.java
-TODO	trait	31	410	3	framework	Ghidra/Framework/DB/src/main/java/db/DBRecord.java
+DONE	trait	31	410	3	framework	Ghidra/Framework/DB/src/main/java/db/DBRecord.java
 TODO	trait	32	51	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/DbFactory.java
 TODO	trait	31	55	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/DbCache.java
 TODO	trait	30	74	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/DbObject.java
