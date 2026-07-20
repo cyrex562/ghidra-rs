@@ -301,7 +301,19 @@ mod tests {
         }
     }
 
-    impl FixedKeyNode for MockInteriorNode {}
+    impl FixedKeyNode for MockInteriorNode {
+        fn get_key_field(&self, _index: i32) -> Field {
+            self.leftmost_key.clone()
+        }
+
+        fn is_consistent(
+            &self,
+            _table_name: &str,
+            _monitor: &dyn TaskMonitor,
+        ) -> io::Result<bool> {
+            Ok(true)
+        }
+    }
 
     #[derive(Clone)]
     struct MockLeaf {
