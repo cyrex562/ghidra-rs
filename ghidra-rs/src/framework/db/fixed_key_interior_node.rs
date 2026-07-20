@@ -2,19 +2,18 @@ use std::io;
 
 use super::field::Field;
 use super::field_key_interior_node::FieldKeyInteriorNode;
-use crate::framework::seam_stubs::{FixedKeyInteriorNodeLike, FixedKeyNode};
+use super::fixed_key_node::FixedKeyNode;
+use crate::framework::seam_stubs::FixedKeyInteriorNodeLike;
 use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
 
 /// Stores a BTree node for use as an interior node when searching for Table records within the
 /// database, keyed by fixed-length binary `Field` values.
 ///
-/// Mirrors `db.FixedKeyInteriorNode`, which extends `FixedKeyNode` and implements
+/// Mirrors `db.FixedKeyInteriorNode`, which extends [`FixedKeyNode`] and implements
 /// [`FieldKeyInteriorNode`] -- selected as a dependency-cycle cut-point. The `FixedKeyNode`
-/// superclass it extends (shared node header layout, the `parent` field, `getRoot()`) is not yet
-/// ported, so it is referenced opaquely via the
-/// [`FixedKeyNode`](crate::framework::seam_stubs::FixedKeyNode) stub in
-/// [`seam_stubs`](crate::framework::seam_stubs), extended here with the `getKeyField`/
+/// superclass it extends (shared node header layout, the `parent` field, `getRoot()`) is ported
+/// as [`FixedKeyNode`](crate::framework::db::fixed_key_node::FixedKeyNode), whose `getKeyField`/
 /// `isConsistent` members this type calls on itself and on its children. Low-level buffer layout
 /// methods (offset/entry bookkeeping, node splitting/balancing) are implementation details of the
 /// concrete buffer-backed struct and are not part of this trait; only the surface other node
