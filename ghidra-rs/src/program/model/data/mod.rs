@@ -47,6 +47,7 @@ pub mod generic_calling_convention;
 pub mod icategory;
 pub mod illegal_rename_exception;
 pub mod invalid_data_type_exception;
+pub mod integer_data_type;
 pub mod integer_data_type_test;
 pub mod internal_data_type_component;
 pub mod invalidated_listener;
