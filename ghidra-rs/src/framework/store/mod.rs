@@ -7,6 +7,7 @@ pub mod file_system_synchronizer;
 pub mod folder_not_empty_exception;
 pub mod lock_exception;
 pub mod local;
+pub mod text_data_item;
 pub mod version;
 
 pub use data_file_handle::DataFileHandle;
@@ -18,4 +19,5 @@ pub use file_system_synchronizer::FileSystemSynchronizer;
 pub use folder_not_empty_exception::FolderNotEmptyException;
 pub use lock_exception::LockException;
 pub use local::DataDirectoryException;
+pub use text_data_item::TextDataItem;
 pub use version::ItemVersion;
