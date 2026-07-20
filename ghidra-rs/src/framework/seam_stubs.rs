@@ -377,6 +377,40 @@ pub trait AuthCallback {}
 /// `FieldKeyNode` supertrait are needed yet.
 pub trait FixedKeyNode: crate::framework::db::field_key_node::FieldKeyNode {}
 
+/// Placeholder for `db.FixedKeyInteriorNode`, the concrete BTree interior-node subclass of
+/// `db.FixedKeyNode` (and implementor of the already-ported
+/// [`FieldKeyInteriorNode`](crate::framework::db::field_key_interior_node::FieldKeyInteriorNode))
+/// referenced by
+/// [`FixedKeyRecordNode`](crate::framework::db::fixed_key_record_node::FixedKeyRecordNode) as the
+/// type of its inherited `parent` field, before the real class is ported. Exposes only the
+/// package-private members `FixedKeyRecordNode` calls directly on its parent: `isLeftmostKey`,
+/// `isRightmostKey`, `insert`, and `deleteChild`; `keyChanged` is inherited from the
+/// `FieldKeyInteriorNode` supertrait it already implements in Java.
+pub trait FixedKeyInteriorNodeLike:
+    crate::framework::db::field_key_interior_node::FieldKeyInteriorNode
+{
+    /// Determine if the specified key corresponds to the leftmost key within the tree.
+    fn is_leftmost_key(&self, key: &crate::framework::db::field::Field) -> bool;
+
+    /// Determine if the specified key corresponds to the rightmost key within the tree.
+    fn is_rightmost_key(&self, key: &crate::framework::db::field::Field) -> bool;
+
+    /// Insert a new child node (key and buffer id) into this interior node. Returns the root
+    /// node, which may have changed.
+    fn insert(
+        &mut self,
+        id: i32,
+        key: &crate::framework::db::field::Field,
+    ) -> std::io::Result<Box<dyn FixedKeyNode>>;
+
+    /// Callback method allowing a child node to remove itself from this parent. Returns the root
+    /// node, which may have changed.
+    fn delete_child(
+        &mut self,
+        key: &crate::framework::db::field::Field,
+    ) -> std::io::Result<Box<dyn FixedKeyNode>>;
+}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
