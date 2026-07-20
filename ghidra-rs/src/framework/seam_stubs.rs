@@ -273,3 +273,22 @@ pub trait FolderItem {}
 /// `Platform.toString()`, which concatenates `operatingSystem.toString()` and
 /// `architecture.toString()`), so no other members are needed yet.
 pub trait Architecture: std::fmt::Display {}
+
+/// Placeholder for `db.VarKeyNode`, the abstract BTree-node superclass referenced by
+/// [`VarKeyInteriorNode`](crate::framework::db::var_key_interior_node::VarKeyInteriorNode) before
+/// the real class is ported (`VarKeyInteriorNode extends VarKeyNode` in Java, and `VarKeyNode
+/// implements FieldKeyNode`). Exposes only the inherited members `VarKeyInteriorNode` calls or
+/// overrides on a child/self node reference: `getKeyField(int)` and `isConsistent(String,
+/// TaskMonitor)` (folded to a plain `io::Result` here since `VarKeyInteriorNode`'s own
+/// consistency walk needs a uniform signature to recurse into either an interior or leaf child).
+pub trait VarKeyNode: crate::framework::db::field_key_node::FieldKeyNode {
+    /// Get the key value at a specific index.
+    fn get_key_field(&self, index: i32) -> std::io::Result<crate::framework::db::field::Field>;
+
+    /// Check the consistency of this node and all of its children.
+    fn is_consistent(
+        &self,
+        table_name: &str,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> std::io::Result<bool>;
+}
