@@ -9840,7 +9840,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/DBBuffer.java	TODO	orig_src Ghidra
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBChangeSet.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBFieldIterator.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBFileListener.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/DBHandle.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/DBHandle.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBInitializer.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBListener.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/DBLongIterator.java	DONE	orig_src Ghidra Framework DB src main java db 
