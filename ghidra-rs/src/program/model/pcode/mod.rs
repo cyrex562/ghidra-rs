@@ -10,6 +10,7 @@ pub mod linked_byte_buffer;
 pub mod list_linked;
 pub mod packed;
 pub mod packed_bytes;
+pub mod pcode_block_basic;
 pub mod pcode_exception;
 pub mod string_ingest;
 
@@ -29,6 +30,7 @@ pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition}
 pub use list_linked::{LinkedIter, ListLinked};
 pub use packed::PackedDecode;
 pub use packed_bytes::PackedBytes;
+pub use pcode_block_basic::PcodeBlockBasic;
 pub use pcode_exception::PcodeException;
 pub use string_ingest::StringIngest;
 

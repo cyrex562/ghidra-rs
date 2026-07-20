@@ -19,6 +19,8 @@ use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
+use crate::program::model::pcode::list_linked::LinkedIter;
+use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
 use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
@@ -893,5 +895,21 @@ pub trait BlockIfGoto {
 pub trait BlockMultiGoto {
     /// Stands in for `BlockMultiGoto.addGotoTarget(PcodeBlock)`.
     fn add_goto_target(&self, target: Arc<dyn PcodeBlock>);
+}
+
+/// Placeholder for `ghidra.program.model.pcode.PcodeOpAST`, referenced by
+/// [`PcodeBlockBasic`](crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic) (which
+/// downcasts each `PcodeOp` it stores to this subtype on every insert/remove, to set/read the
+/// op's parent block and its cursor position within the block's op list) before the real class is
+/// ported. Exposes only the members `PcodeBlockBasic`'s insertion/removal logic touches.
+pub trait PcodeOpAst {
+    /// Stands in for the protected `PcodeOpAST.setParent(PcodeBlockBasic)`.
+    fn set_parent(&self, parent: Option<Arc<dyn PcodeBlockBasic>>);
+
+    /// Stands in for the protected `PcodeOpAST.setBasicIter(Iterator<PcodeOp>)`.
+    fn set_basic_iter(&self, iter: LinkedIter);
+
+    /// Stands in for the protected `PcodeOpAST.getBasicIter()`.
+    fn get_basic_iter(&self) -> LinkedIter;
 }
 
