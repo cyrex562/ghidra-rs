@@ -3,6 +3,97 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use std::path::PathBuf;
+
+use crate::framework::application_properties::ApplicationProperties;
+use crate::generic::jar::ResourceFile;
+
+/// Placeholder for `utility.application.ApplicationLayout`, referenced by
+/// [`GenericRunInfo`](crate::framework::generic_run_info::GenericRunInfo) before the real class is
+/// ported. `GenericRunInfo` only ever reads the application properties and installation directory
+/// off of the layout returned by [`ApplicationLike::application_layout`], so no other members are
+/// needed yet.
+pub trait ApplicationLayoutLike {
+    /// Gets the application properties from the application layout, mirroring
+    /// `ApplicationLayout.getApplicationProperties()`.
+    fn application_properties(&self) -> &dyn ApplicationProperties;
+
+    /// Gets the application installation directory from the application layout, mirroring
+    /// `ApplicationLayout.getApplicationInstallationDir()` (`None` if not set, matching the Java
+    /// method's documented `null` return).
+    fn application_installation_dir(&self) -> Option<&ResourceFile>;
+}
+
+/// Placeholder for `ghidra.framework.Application`, referenced by
+/// [`GenericRunInfo`](crate::framework::generic_run_info::GenericRunInfo) before the real
+/// (static-method-only) class is ported. Only the three accessors `GenericRunInfo` calls are
+/// declared here; the real port carries application initialization, module discovery, and the
+/// rest of `Application`'s static surface.
+pub trait ApplicationLike {
+    /// Gets the application layout, mirroring `Application.getApplicationLayout()`.
+    fn application_layout(&self) -> Box<dyn ApplicationLayoutLike>;
+
+    /// Gets the user's current settings directory, mirroring
+    /// `Application.getUserSettingsDirectory()`.
+    fn user_settings_directory(&self) -> PathBuf;
+
+    /// Gets the application's name, mirroring `Application.getName()`.
+    fn name(&self) -> String;
+}
+
+/// Placeholder for the static
+/// `utility.application.ApplicationUtilities.getLegacyUserSettingsDir(ApplicationProperties, ResourceFile)`
+/// utility method, referenced by
+/// [`GenericRunInfo`](crate::framework::generic_run_info::GenericRunInfo) before a concrete
+/// `ApplicationUtilities` implementation exists that `GenericRunInfo` can call directly without
+/// re-introducing the package-level import cycle that method sits at one end of (see
+/// [`crate::util::application_utilities::ApplicationUtilities`]'s own cycle-breaking doc comment).
+/// Mirrors the Java method's contract of returning `None` in place of a thrown
+/// `FileNotFoundException` (the one case `GenericRunInfo` catches and ignores).
+pub trait LegacyUserSettingsLocator {
+    /// Computes the legacy (pre-Ghidra 11.1) user settings directory for the given application
+    /// properties and installation directory, or `None` if it could not be determined.
+    fn legacy_user_settings_dir(
+        &self,
+        application_properties: &dyn ApplicationProperties,
+        installation_dir: Option<&ResourceFile>,
+    ) -> Option<PathBuf>;
+}
+
+/// Placeholder for `ghidra.framework.preferences.Preferences.APPLICATION_PREFERENCES_FILENAME`,
+/// referenced by [`GenericRunInfo`](crate::framework::generic_run_info::GenericRunInfo) before the
+/// real class is ported.
+pub const PREFERENCES_APPLICATION_PREFERENCES_FILENAME: &str = "preferences";
+
+/// Placeholder for `ghidra.framework.preferences.Preferences.PROJECT_DIRECTORY`, referenced by
+/// [`GenericRunInfo`](crate::framework::generic_run_info::GenericRunInfo) before the real class is
+/// ported.
+pub const PREFERENCES_PROJECT_DIRECTORY: &str = "ProjectDirectory";
+
+/// Placeholder for `ghidra.framework.preferences.Preferences`, referenced by
+/// [`GenericRunInfo`](crate::framework::generic_run_info::GenericRunInfo) before the real
+/// (static-method-only) class is ported; that class in turn calls
+/// `GenericRunInfo.getPreviousApplicationSettingsFile()` from its own `store()`/`clear()` methods,
+/// so the two classes form the cycle this seam breaks. Only the get/set accessors `GenericRunInfo`
+/// calls are declared here; the real port carries the rest of `Preferences`'s static surface
+/// (property-file persistence, plugin paths, etc). Methods take `&self` rather than `&mut self`
+/// since the Java original models a single shared, globally-mutable property store rather than
+/// per-instance state; implementations are expected to back this with interior mutability.
+pub trait PreferencesLike {
+    /// Gets the property with the given name, optionally falling back to the last used
+    /// installation's value when `use_historical_value` is true and no current value is set,
+    /// mirroring `Preferences.getProperty(String, String, boolean)`.
+    fn get_property(
+        &self,
+        name: &str,
+        default_value: Option<&str>,
+        use_historical_value: bool,
+    ) -> Option<String>;
+
+    /// Sets the property value, mirroring `Preferences.setProperty(String, String)`.
+    fn set_property(&self, name: &str, value: &str);
+}
+
 /// Placeholder for `ghidra.framework.data.DomainObjectAdapterDB`, referenced by
 /// [`TransactionListener`](crate::framework::model::TransactionListener) before the real class is
 /// ported. `TransactionListener` only ever passes this type through as an opaque value, so no
