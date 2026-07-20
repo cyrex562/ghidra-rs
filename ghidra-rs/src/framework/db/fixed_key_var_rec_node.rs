@@ -107,7 +107,19 @@ mod tests {
         }
     }
 
-    impl FixedKeyNode for MockRoot {}
+    impl FixedKeyNode for MockRoot {
+        fn get_key_field(&self, _index: i32) -> Field {
+            Field::Long(None)
+        }
+
+        fn is_consistent(
+            &self,
+            _table_name: &str,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> io::Result<bool> {
+            Ok(true)
+        }
+    }
 
     #[derive(Clone)]
     struct MockFixedKeyVarRecNode {

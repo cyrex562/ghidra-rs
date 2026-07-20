@@ -372,10 +372,27 @@ pub trait AuthCallback {}
 /// Placeholder for `db.FixedKeyNode`, the abstract BTree-node superclass (itself implementing
 /// `db.FieldKeyNode`) referenced by
 /// [`FixedKeyVarRecNode`](crate::framework::db::fixed_key_var_rec_node::FixedKeyVarRecNode) as the
-/// return type of `updateRecord`, before the real class is ported. `FixedKeyVarRecNode` only ever
-/// returns this type opaquely as "the root, which may have changed", so no members beyond its
-/// `FieldKeyNode` supertrait are needed yet.
-pub trait FixedKeyNode: crate::framework::db::field_key_node::FieldKeyNode {}
+/// return type of `updateRecord`, and by
+/// [`FixedKeyInteriorNode`](crate::framework::db::fixed_key_interior_node::FixedKeyInteriorNode)
+/// as both its own supertrait and the type of the children it fetches, before the real class is
+/// ported. `FixedKeyVarRecNode` only ever returns this type opaquely as "the root, which may have
+/// changed", so no members were needed for it alone; `FixedKeyInteriorNode`'s `isConsistent`
+/// additionally needs the final `getKeyField(int)` accessor (mirrored here as `get_key_field`)
+/// and the abstract `BTreeNode.isConsistent` override (mirrored here as `is_consistent`) on
+/// whatever child node -- interior or leaf -- it recurses into.
+pub trait FixedKeyNode: crate::framework::db::field_key_node::FieldKeyNode {
+    /// Get the Field-wrapped key value at a specific index, mirroring the final
+    /// `FixedKeyNode.getKeyField(int)` method.
+    fn get_key_field(&self, index: i32) -> crate::framework::db::field::Field;
+
+    /// Check the consistency of this node and all of its children, mirroring
+    /// `BTreeNode.isConsistent(String, TaskMonitor)`.
+    fn is_consistent(
+        &self,
+        table_name: &str,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> std::io::Result<bool>;
+}
 
 /// Placeholder for `db.FixedKeyInteriorNode`, the concrete BTree interior-node subclass of
 /// `db.FixedKeyNode` (and implementor of the already-ported
