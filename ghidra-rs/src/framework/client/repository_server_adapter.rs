@@ -2,9 +2,9 @@ use std::io;
 
 use thiserror::Error;
 
+use crate::framework::client::remote_adapter_listener::RemoteAdapterListener;
 use crate::framework::client::RepositoryAdapter;
 use crate::framework::model::server_info::ServerInfo;
-use crate::framework::seam_stubs::RemoteAdapterListener;
 use crate::util::exception::{DuplicateNameException, UserAccessException};
 
 /// Builds the `io::Error` returned by every default method below.
