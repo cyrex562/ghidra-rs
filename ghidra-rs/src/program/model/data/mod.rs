@@ -82,4 +82,5 @@ pub mod typedef;
 pub mod typedef_settings_definition;
 pub mod union;
 pub mod union_internal;
+pub mod word_data_type;
 pub mod isf;
