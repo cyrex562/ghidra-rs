@@ -24,7 +24,7 @@ DONE	trait	81	1044	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	80	305	35	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressRangeIterators.java
 DONE	trait	79	304	35	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AbstractAddressSetView.java
 DONE	trait	77	2	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/db/VersionedDBListener.java
-TODO	trait	75	24	22	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/local/LocalFolderItem.java
+DONE	trait	75	24	22	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/local/LocalFolderItem.java
 TODO	trait	73	14	60	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/local/IndexedLocalFileSystem.java
 TODO	trait	72	53	79	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/local/LocalFileSystem.java
 TODO	trait	71	241	12	framework	Ghidra/Framework/FileSystem/src/test/java/db/RecoveryDBTest.java
