@@ -119,6 +119,10 @@ pub const ELEM_SPACE_BASE: ElementId = ElementId::new("space_base", 115);
 pub const ELEM_SPACE_OVERLAY: ElementId = ElementId::new("space_overlay", 116);
 pub const ELEM_TRUNCATE_SPACE: ElementId = ElementId::new("truncate_space", 117);
 pub const ELEM_OP: ElementId = ElementId::new("op", 118);
+// Real Ghidra id is 102 (`ElementId.java`'s `ELEM_BHEAD`), but that collides with this file's
+// own `ELEM_OFF_EL` at 102 under its internal (non-wire-compatible) numbering scheme, so it is
+// renumbered to continue the local counter above instead.
+pub const ELEM_BHEAD: ElementId = ElementId::new("bhead", 119);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
