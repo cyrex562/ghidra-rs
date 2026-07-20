@@ -554,7 +554,14 @@ pub trait ProgramOverlayAddressSpace {
 
 /// Placeholder for `ghidra.program.model.block.CodeBlock`, referenced by
 /// [`CodeBlockIterator`](crate::program::model::block::code_block_iterator::CodeBlockIterator)
-/// before the real interface is ported. `CodeBlockIterator` only ever yields this type
-/// opaquely, so no members are needed yet.
+/// and [`CodeBlockReference`](crate::program::model::block::code_block_reference::CodeBlockReference)
+/// before the real interface is ported. Neither caller invokes methods on this type, so no
+/// members are needed yet.
 pub trait CodeBlock {}
+
+/// Placeholder for `ghidra.program.model.symbol.FlowType`, referenced by
+/// [`CodeBlockReference`](crate::program::model::block::code_block_reference::CodeBlockReference)
+/// before the real enum is ported. `CodeBlockReference` only ever returns this type opaquely, so
+/// no members are needed yet.
+pub trait FlowType {}
 
