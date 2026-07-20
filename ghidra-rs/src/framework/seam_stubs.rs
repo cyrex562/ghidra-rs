@@ -268,6 +268,20 @@ pub trait VersionedDatabase {}
 /// `architecture.toString()`), so no other members are needed yet.
 pub trait Architecture: std::fmt::Display {}
 
+/// Placeholder for the static `ghidra.framework.store.db.PackedDatabase.cleanupOldTempDatabases()`
+/// utility method, referenced by
+/// [`FileSystemInitializer`](crate::framework::store::FileSystemInitializer) before a concrete
+/// `store::db` implementation exists to call it directly. The
+/// [`PackedDatabase`](crate::framework::store::db::PackedDatabase) trait intentionally omits
+/// static/factory methods to remain object-safe, so this seam exposes just the one operation
+/// `FileSystemInitializer::run()` needs, keeping `store` decoupled from any concrete `store::db`
+/// type.
+pub trait TempDatabaseCleaner {
+    /// Deletes any temporary unpacked database directories left over from prior packed-database
+    /// use which are no longer in use (e.g., left behind by an abnormal process termination).
+    fn cleanup_old_temp_databases(&self);
+}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
