@@ -8,6 +8,7 @@ pub mod folder_not_empty_exception;
 pub mod lock_exception;
 pub mod local;
 pub mod text_data_item;
+pub mod unknown_folder_item;
 pub mod version;
 
 pub use data_file_handle::DataFileHandle;
@@ -20,4 +21,5 @@ pub use folder_not_empty_exception::FolderNotEmptyException;
 pub use lock_exception::LockException;
 pub use local::DataDirectoryException;
 pub use text_data_item::TextDataItem;
+pub use unknown_folder_item::UnknownFolderItem;
 pub use version::ItemVersion;
