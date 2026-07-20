@@ -3,6 +3,8 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::framework::db::DBRecord;
+use crate::program::database::db_cache::DbCacheHandle;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
@@ -442,8 +444,32 @@ pub trait FileBytes {}
 pub trait ByteMappingScheme {}
 
 /// Placeholder for `ghidra.program.database.DbObject`, referenced by
-/// [`DbFactory`](crate::program::database::db_factory::DbFactory)
-/// before the real class is ported. `DbFactory` only ever produces/returns this type opaquely,
-/// so no members are needed yet.
-pub trait DbObject {}
+/// [`DbFactory`](crate::program::database::db_factory::DbFactory) and
+/// [`DbCache`](crate::program::database::db_cache::DbCache)
+/// before the real class is ported. Exposes the subset of `DbObject`'s API that `DbCache` calls
+/// directly: cache bookkeeping, key access, validity/refresh checks, and the deleted/invalid
+/// state transitions.
+pub trait DbObject: Send + Sync {
+    /// Stands in for `DbObject.setCache(DbCache<?>)`. This is a special method for setting the
+    /// cache and should ONLY be called by `DbCache` when an object is added to the cache.
+    fn set_cache(&self, cache: Arc<dyn DbCacheHandle>);
+
+    /// Stands in for `DbObject.getKey()`.
+    fn get_key(&self) -> i64;
+
+    /// Stands in for `DbObject.isValid()`.
+    fn is_valid(&self) -> bool;
+
+    /// Stands in for `DbObject.refreshIfNeeded()`.
+    fn refresh_if_needed(&self) -> bool;
+
+    /// Stands in for `DbObject.refreshIfNeeded(DBRecord)`.
+    fn refresh_if_needed_with_record(&self, record: &DBRecord) -> bool;
+
+    /// Stands in for `DbObject.setDeleted()`.
+    fn set_deleted(&self);
+
+    /// Stands in for `DbObject.setInvalid()`.
+    fn set_invalid(&self);
+}
 

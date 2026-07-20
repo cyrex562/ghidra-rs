@@ -31,7 +31,35 @@ mod tests {
         key: i64,
     }
 
-    impl DbObject for MockDbObject {}
+    impl DbObject for MockDbObject {
+        fn set_cache(&self, _cache: Arc<dyn crate::program::database::db_cache::DbCacheHandle>) {
+            // not exercised by these tests
+        }
+
+        fn get_key(&self) -> i64 {
+            self.key
+        }
+
+        fn is_valid(&self) -> bool {
+            true
+        }
+
+        fn refresh_if_needed(&self) -> bool {
+            true
+        }
+
+        fn refresh_if_needed_with_record(&self, _record: &DBRecord) -> bool {
+            true
+        }
+
+        fn set_deleted(&self) {
+            // not exercised by these tests
+        }
+
+        fn set_invalid(&self) {
+            // not exercised by these tests
+        }
+    }
 
     struct MockDbFactory {
         schema: Arc<Schema>,
