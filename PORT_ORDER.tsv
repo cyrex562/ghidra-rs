@@ -59,7 +59,7 @@ DONE	trait	47	75	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/DataBu
 DONE	trait	46	243	9	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyVarRecNode.java
 DONE	trait	45	245	11	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyRecordNode.java
 DONE	trait	44	244	8	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyInteriorNode.java
-TODO	trait	43	247	5	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyNode.java
+DONE	trait	43	247	5	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyNode.java
 TODO	trait	42	243	7	framework	Ghidra/Framework/DB/src/main/java/db/FixedKeyFixedRecNode.java
 TODO	trait	41	258	21	framework	Ghidra/Framework/DB/src/main/java/db/NodeMgr.java
 TODO	trait	40	243	26	framework	Ghidra/Framework/DB/src/main/java/db/DBParms.java
