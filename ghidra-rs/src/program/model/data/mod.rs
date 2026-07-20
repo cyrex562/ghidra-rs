@@ -62,6 +62,7 @@ pub mod parameter_definition;
 pub mod playable;
 pub mod png_resource;
 pub mod pointer;
+pub mod pointer_typedef_builder;
 pub mod program_based_data_type_manager;
 pub mod project_archive_based_data_type_manager;
 pub mod render_unicode_settings_definition;
