@@ -5,6 +5,7 @@ pub mod database_item;
 pub mod db;
 pub mod exclusive_checkout_exception;
 pub mod file_id_factory;
+pub mod file_system;
 pub mod file_system_initializer;
 pub mod file_system_listener;
 pub mod file_system_synchronizer;
@@ -23,6 +24,9 @@ pub use database_item::DatabaseItem;
 pub use db::{PackedDatabase, PrivateDatabase, VersionedDBListener};
 pub use exclusive_checkout_exception::ExclusiveCheckoutException;
 pub use file_id_factory::FileIDFactory;
+pub use file_system::{
+    normalize_path, FileSystem, FileSystemCreateError, FileSystemError, SEPARATOR, SEPARATOR_CHAR,
+};
 pub use file_system_initializer::FileSystemInitializer;
 pub use file_system_listener::FileSystemListener;
 pub use file_system_synchronizer::FileSystemSynchronizer;
