@@ -12325,7 +12325,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/bean/GGlassPanePainter.j
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/bean/opteditor/OptionsVetoException.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util bean opteditor 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/filechooser/ExtensionFileFilter.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util filechooser 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/filechooser/GhidraFileChooserModel.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util filechooser 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/filechooser/GhidraFileFilter.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util filechooser 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/filechooser/GhidraFileFilter.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util filechooser 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/HTMLElement.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util html 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/HtmlLineSplitter.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util html 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/html/PreservingWhitespaceHandler.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util html
