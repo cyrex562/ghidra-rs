@@ -1,6 +1,7 @@
 pub mod bookmark;
 pub mod code;
 pub mod data;
+pub mod db_cache;
 pub mod db_factory;
 pub mod function;
 pub mod manager_db;
@@ -17,6 +18,7 @@ pub mod util;
 
 pub use bookmark::OldBookmark;
 pub use code::StringDiff;
+pub use db_cache::{DbCache, DbCacheHandle};
 pub use db_factory::DbFactory;
 pub use function::OverlappingFunctionException;
 pub use manager_db::ManagerDB;
