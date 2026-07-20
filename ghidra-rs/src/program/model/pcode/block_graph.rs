@@ -1,8 +1,9 @@
+use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::{ATTRIB_INDEX, ATTRIB_TYPE, ELEM_BHEAD};
-use crate::program::seam_stubs::{pcode_block_type_to_name, BlockMap, PcodeBlock};
+use crate::program::seam_stubs::{pcode_block_type_to_name, PcodeBlock};
 use std::io;
 use std::sync::Arc;
 
@@ -13,10 +14,11 @@ use std::sync::Arc;
 ///
 /// The Java class `extends PcodeBlock`, which is not yet ported; see the
 /// [`PcodeBlock`](crate::program::seam_stubs::PcodeBlock) placeholder (declared as this trait's
-/// supertrait bound) for what is stubbed out and why. `BlockCopy` and `BlockMap`, referenced by
-/// [`transfer_object_ref`](BlockGraph::transfer_object_ref) and
-/// [`block_graph_decode_body`](BlockGraph::block_graph_decode_body) respectively, are likewise
-/// stubbed in [`crate::program::seam_stubs`].
+/// supertrait bound) for what is stubbed out and why. `BlockCopy`, referenced by
+/// [`transfer_object_ref`](BlockGraph::transfer_object_ref), is likewise stubbed in
+/// [`crate::program::seam_stubs`]. [`BlockMap`](crate::program::model::pcode::block_map::BlockMap),
+/// referenced by [`block_graph_decode_body`](BlockGraph::block_graph_decode_body), has its own
+/// real port at `crate::program::model::pcode::block_map`.
 ///
 /// Container state (the block list and `maxindex`) is exposed as abstract accessor methods
 /// (`get_size`/`get_block`/`push_block`/`get_max_index`/`set_max_index`) that a concrete
@@ -38,8 +40,9 @@ use std::sync::Arc;
 /// [`decode_graph`](BlockGraph::decode_graph) (port of `BlockGraph.decode(Decoder)`) is left as a
 /// required method: the real implementation constructs a top-level `BlockMap` directly from the
 /// decoder's `AddressFactory` (`new BlockMap(decoder.getAddressFactory())`), which needs a
-/// concrete `BlockMap` constructor that the [`BlockMap`] placeholder does not provide (it only
-/// models building a *child* resolver from an existing one, via `BlockMap::new_child`).
+/// concrete `BlockMap` constructor that the [`BlockMap`] trait does not provide (it only models
+/// building a *child* resolver from an existing one, via `BlockMap::new_child`; a top-level
+/// constructor is a concrete-type detail for whatever struct implements this trait).
 pub trait BlockGraph: PcodeBlock {
     /// Port of the private `list` field's size (`BlockGraph.getSize()`).
     fn get_size(&self) -> usize;

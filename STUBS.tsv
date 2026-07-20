@@ -217,5 +217,8 @@ ts	stub_class	referenced_by
 2026-07-20T12:00:00Z	SignedWordDataType	WordDataType
 2026-07-20T13:00:00Z	UnsignedShortDataType	ShortDataType
 2026-07-20T14:00:00Z	PcodeBlock	BlockGraph
-2026-07-20T14:00:00Z	BlockMap	BlockGraph
 2026-07-20T14:00:00Z	BlockCopy	BlockGraph
+2026-07-20T15:00:00Z	PcodeBlock	BlockMap
+2026-07-20T15:00:00Z	BlockGoto	BlockMap
+2026-07-20T15:00:00Z	BlockIfGoto	BlockMap
+2026-07-20T15:00:00Z	BlockMultiGoto	BlockMap

@@ -1,4 +1,5 @@
 pub mod block_graph;
+pub mod block_map;
 pub mod byte_ingest;
 pub mod cached_encoder;
 pub mod decoder;
@@ -17,6 +18,7 @@ use std::fmt;
 use std::sync::Arc;
 
 pub use block_graph::BlockGraph;
+pub use block_map::BlockMap;
 pub use byte_ingest::ByteIngest;
 pub use cached_encoder::CachedEncoder;
 pub use decoder::{Decoder, DecoderError};
