@@ -8,6 +8,7 @@ pub mod change_map_file;
 pub mod input_block_stream;
 pub mod local_buffer_file;
 pub mod managed_buffer_file;
+pub mod managed_buffer_file_handle;
 pub mod output_block_stream;
 pub use block_stream::BlockStream;
 pub use block_stream_handle::BlockStreamHandle;
@@ -18,6 +19,7 @@ pub use change_map_file::ChangeMapFile;
 pub use input_block_stream::InputBlockStream;
 pub use local_buffer_file::LocalBufferFile;
 pub use managed_buffer_file::ManagedBufferFile;
+pub use managed_buffer_file_handle::ManagedBufferFileHandle;
 pub use output_block_stream::OutputBlockStream;
 
 use std::io;
