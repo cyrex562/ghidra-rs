@@ -1,6 +1,7 @@
 pub mod anonymous_callback;
 pub mod ghidra_principal;
 pub mod ghidra_server_handle;
+pub mod remote_repository_handle;
 pub mod remote_repository_server_handle;
 pub mod repository_change_event;
 pub mod repository_handle;
@@ -18,6 +19,7 @@ pub use ghidra_server_handle::{
     BIND_NAME, BIND_NAME_PREFIX, DEFAULT_PORT, GHIDRA_BIND_VERSION,
     MIN_CLIENT_INTERFACE_VERSION, SERVER_INTERFACE_VERSION, SERVER_MIN_CLIENT_INTERFACE_VERSION,
 };
+pub use remote_repository_handle::RemoteRepositoryHandle;
 pub use remote_repository_server_handle::RemoteRepositoryServerHandle;
 pub use repository_change_event::{EventType, RepositoryChangeEvent};
 pub use repository_handle::{client_check_period, RepositoryHandle, RepositoryNameError};
