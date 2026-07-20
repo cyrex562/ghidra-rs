@@ -9881,7 +9881,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/PrimitiveField.java	DONE	orig_src 
 orig_src/Ghidra/Framework/DB/src/main/java/db/RecordIterator.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/RecordNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/RecordTranslator.java	DONE	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/Schema.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/Schema.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/ShortField.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/SparseRecord.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/StringField.java	TODO	orig_src Ghidra Framework DB src main java db 
