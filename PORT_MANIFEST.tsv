@@ -12351,7 +12351,7 @@ orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/DummyCancellableTas
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/SwingRunnable.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util task 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/SwingUpdateManager.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util task 
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/Task.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util task 
-orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/TaskListener.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util task 
+orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/TaskListener.java	DONE	orig_src Ghidra Framework Gui src main java ghidra util task
 orig_src/Ghidra/Framework/Gui/src/main/java/ghidra/util/task/UnknownProgressWrappingTaskMonitor.java	TODO	orig_src Ghidra Framework Gui src main java ghidra util task 
 orig_src/Ghidra/Framework/Gui/src/main/java/gui/event/MouseBinding.java	TODO	orig_src Ghidra Framework Gui src main java gui event 
 orig_src/Ghidra/Framework/Gui/src/main/java/resources/IconProvider.java	TODO	orig_src Ghidra Framework Gui src main java resources 
