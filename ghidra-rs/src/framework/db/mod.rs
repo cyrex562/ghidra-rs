@@ -28,6 +28,7 @@ pub mod table;
 pub mod test_speed;
 pub mod util;
 pub mod var_key_interior_node;
+pub mod var_key_node;
 
 pub use buffer::{Buffer, DataBuffer};
 pub use buffer_mgr::BufferMgr;
@@ -55,6 +56,7 @@ pub use record_translator::RecordTranslator;
 pub use schema::Schema;
 pub use table::Table;
 pub use var_key_interior_node::VarKeyInteriorNode;
+pub use var_key_node::VarKeyNode;
 
 pub trait RecordIterator {
     fn next(&mut self) -> std::io::Result<Option<DBRecord>>;

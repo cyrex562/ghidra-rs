@@ -3,7 +3,7 @@ use std::io;
 use super::field::Field;
 use super::field_key_interior_node::FieldKeyInteriorNode;
 use super::nodes::BTreeNode;
-use crate::framework::seam_stubs::VarKeyNode;
+use super::var_key_node::VarKeyNode;
 use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
 
@@ -239,11 +239,15 @@ mod tests {
         fn get_key_field(&self, _index: i32) -> io::Result<Field> {
             Ok(self.key.clone())
         }
+        fn get_root(&self) -> Box<dyn VarKeyNode> {
+            Box::new(self.clone())
+        }
         fn is_consistent(&self, _table_name: &str, _monitor: &dyn TaskMonitor) -> io::Result<bool> {
             Ok(true)
         }
     }
 
+    #[derive(Clone)]
     struct MockInterior {
         buffer_id: i32,
         children: Vec<MockLeaf>,
@@ -297,6 +301,9 @@ mod tests {
     impl VarKeyNode for MockInterior {
         fn get_key_field(&self, index: i32) -> io::Result<Field> {
             Ok(self.children[index as usize].key.clone())
+        }
+        fn get_root(&self) -> Box<dyn VarKeyNode> {
+            Box::new(self.clone())
         }
         fn is_consistent(&self, table_name: &str, monitor: &dyn TaskMonitor) -> io::Result<bool> {
             check_consistency(self, table_name, monitor)
