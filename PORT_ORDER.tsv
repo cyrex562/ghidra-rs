@@ -1,6 +1,6 @@
 status	mode	depth	fanin	rem	module	path
 DONE	trait	53	29	1	framework	Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFileHandle.java
-TODO	trait	52	27	2	framework	Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFileAdapter.java
+DONE	trait	52	27	2	framework	Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFileAdapter.java
 TODO	trait	51	38	7	framework	Ghidra/Framework/DB/src/main/java/db/buffers/LocalBufferFile.java
 TODO	trait	49	26	2	framework	Ghidra/Framework/DB/src/main/java/db/buffers/BufferNode.java
 TODO	trait	55	5	1	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/ResourceFileFilter.java
