@@ -191,6 +191,7 @@ pub const ATTRIB_I: AttributeId = AttributeId::new("i", 52);
 pub const ATTRIB_NUMCT: AttributeId = AttributeId::new("numct", 53);
 pub const ATTRIB_SECTION: AttributeId = AttributeId::new("section", 54);
 pub const ATTRIB_LABELS: AttributeId = AttributeId::new("labels", 55);
+pub const ATTRIB_LAST: AttributeId = AttributeId::new("last", 56);
 
 pub const ATTRIB_OFFSET: AttributeId = AttributeId::new("offset", 16); // Alias for ATTRIB_BASE? No, SlaFormat uses 16 for TABLE
 pub const ATTRIB_VALUE: AttributeId = AttributeId::new("value", 25); // Alias for ATTRIB_SOURCE?
