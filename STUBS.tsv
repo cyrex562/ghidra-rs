@@ -207,3 +207,4 @@ ts	stub_class	referenced_by
 2026-07-20T00:00:00Z	FixedKeyInteriorNodeLike	FixedKeyRecordNode
 2026-07-20T03:30:00Z	CharsetSettingsDefinition	CharDataType
 2026-07-20T04:00:00Z	GhidraFileChooserModelLike	GhidraFileFilter
+2026-07-20T07:36:42Z	ProgramOverlayAddressSpace	ProgramAddressFactory
