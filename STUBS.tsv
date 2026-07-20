@@ -215,3 +215,4 @@ ts	stub_class	referenced_by
 2026-07-20T11:00:00Z	FloatFormat	BigFloat
 2026-07-20T12:30:00Z	FloatFormat	AbstractFloatDataType
 2026-07-20T12:00:00Z	SignedWordDataType	WordDataType
+2026-07-20T13:00:00Z	UnsignedShortDataType	ShortDataType
