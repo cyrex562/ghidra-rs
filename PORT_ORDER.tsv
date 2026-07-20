@@ -14,7 +14,7 @@ DONE	trait	78	247	10	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyRecor
 DONE	trait	77	248	6	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyNode.java
 DONE	trait	76	245	6	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyInteriorNode.java
 DONE	trait	75	244	7	framework	Ghidra/Framework/DB/src/main/java/db/VarKeyInteriorNode.java
-TODO	trait	74	248	5	framework	Ghidra/Framework/DB/src/main/java/db/VarKeyNode.java
+DONE	trait	74	248	5	framework	Ghidra/Framework/DB/src/main/java/db/VarKeyNode.java
 TODO	trait	71	242	7	framework	Ghidra/Framework/DB/src/main/java/db/FieldIndexTable.java
 TODO	trait	73	34	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/TextDataItem.java
 TODO	trait	73	34	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/UnknownFolderItem.java
