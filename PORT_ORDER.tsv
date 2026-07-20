@@ -30,7 +30,7 @@ DONE	trait	72	53	79	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/f
 DONE	trait	71	241	12	framework	Ghidra/Framework/FileSystem/src/test/java/db/RecoveryDBTest.java
 DONE	trait	70	4	94	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/db/PrivateDatabase.java
 DONE	trait	69	24	9	framework	Ghidra/Framework/FileSystem/src/test.slow/java/db/buffers/RecoveryFileTest.java
-TODO	trait	68	250	24	framework	Ghidra/Framework/DB/src/main/java/db/Database.java
+DONE	trait	68	250	24	framework	Ghidra/Framework/DB/src/main/java/db/Database.java
 TODO	trait	67	20	90	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/db/PackedDatabase.java
 TODO	trait	66	33	2	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/FileSystemInitializer.java
 TODO	trait	65	12	16	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/RepositoryHandle.java
