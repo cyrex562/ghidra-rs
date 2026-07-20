@@ -13,6 +13,7 @@ pub mod managed_buffer_file_adapter;
 pub mod managed_buffer_file_handle;
 pub mod output_block_stream;
 pub mod remote_buffer_file_handle;
+pub mod remote_managed_buffer_file_handle;
 pub use block_stream::BlockStream;
 pub use block_stream_handle::BlockStreamHandle;
 pub use buffer_file_adapter::BufferFileAdapter;
@@ -27,6 +28,7 @@ pub use managed_buffer_file_adapter::ManagedBufferFileAdapter;
 pub use managed_buffer_file_handle::ManagedBufferFileHandle;
 pub use output_block_stream::OutputBlockStream;
 pub use remote_buffer_file_handle::RemoteBufferFileHandle;
+pub use remote_managed_buffer_file_handle::RemoteManagedBufferFileHandle;
 
 use std::io;
 
