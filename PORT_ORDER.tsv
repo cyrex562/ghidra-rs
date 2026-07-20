@@ -47,7 +47,7 @@ DONE	trait	64	118	1	util	Ghidra/Framework/Gui/src/main/java/ghidra/util/task/Tas
 DONE	trait	62	35	10	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RepositoryServerAdapter.java
 DONE	trait	61	30	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/client/RemoteAdapterListener.java
 DONE	trait	59	68	9	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/FileSystem.java
-TODO	trait	58	19	3	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/local/ItemPropertyFile.java
+DONE	trait	58	19	3	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/local/ItemPropertyFile.java
 TODO	trait	57	304	3	util	Ghidra/Framework/FileSystem/src/main/java/ghidra/util/PropertyFile.java
 TODO	trait	55	13	19	util	Ghidra/Framework/Utility/src/main/java/utility/application/ApplicationUtilities.java
 TODO	trait	52	271	4	generic	Ghidra/Framework/Utility/src/main/java/generic/jar/ResourceFile.java
