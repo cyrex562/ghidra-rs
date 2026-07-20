@@ -9913,7 +9913,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/InputBlockStream.java	DONE
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/LocalBufferFile.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/LocalManagedBufferFile.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFile.java	DONE	orig_src Ghidra Framework DB src main java db buffers 
-orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFileAdapter.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
+orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFileAdapter.java	DONE	orig_src Ghidra Framework DB src main java db buffers
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/ManagedBufferFileHandle.java	DONE	orig_src Ghidra Framework DB src main java db buffers
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/OutputBlockStream.java	DONE	orig_src Ghidra Framework DB src main java db buffers
 orig_src/Ghidra/Framework/DB/src/main/java/db/buffers/RecoveryFile.java	TODO	orig_src Ghidra Framework DB src main java db buffers 
