@@ -13,14 +13,13 @@ use crate::program::model::data::data_type_dependency_exception::DataTypeDepende
 use crate::program::model::data::data_type_manager_change_listener::DataTypeManagerChangeListener;
 use crate::program::model::data::invalidated_listener::InvalidatedListener;
 use crate::program::model::data::pointer::Pointer;
+use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::data::structure::Structure;
 use crate::program::model::lang::ProgramArchitecture;
 use crate::program::database::map::AddressMap;
-use crate::program::seam_stubs::{
-    DataTypePath, PointerTypedefBuilder, PrototypeModel, Transaction,
-};
+use crate::program::seam_stubs::{DataTypePath, PrototypeModel, Transaction};
 use crate::util::exception::{CancelledException, InvalidNameException};
 use crate::util::function::{ExceptionalCallback, ExceptionalSupplier};
 use crate::util::task::TaskMonitor;

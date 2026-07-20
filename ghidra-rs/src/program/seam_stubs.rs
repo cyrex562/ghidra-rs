@@ -37,10 +37,21 @@ pub trait VariableStorage {}
 /// no members are needed yet.
 pub trait StandAloneDataTypeManager {}
 
-/// Placeholder for `ghidra.program.model.data.PointerTypedefBuilder`, referenced by
-/// [`Pointer`](crate::program::model::data::pointer::Pointer)
-/// before the real class is ported.
-pub trait PointerTypedefBuilder {}
+/// Placeholder for `ghidra.program.model.data.PointerType`, referenced by
+/// [`PointerTypedefBuilder`](crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder)
+/// before the real enum is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PointerType {
+    /// Normal absolute pointer offset.
+    #[default]
+    Default,
+    /// Pointer offset relative to program image base.
+    ImageBaseRelative,
+    /// Pointer offset relative to pointer storage address.
+    Relative,
+    /// Pointer offset corresponds to file offset within an associated file.
+    FileOffset,
+}
 
 /// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
 /// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset),
