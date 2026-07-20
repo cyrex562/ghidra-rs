@@ -66,6 +66,54 @@ pub trait PropertyEditor {}
 /// only ever passes this type through as an opaque value, so no members are needed yet.
 pub trait OptionsEditor {}
 
+/// Placeholder for `db.LongKeyNode`, the abstract BTree-node superclass referenced by
+/// [`LongKeyRecordNode`](crate::framework::db::long_key_record_node::LongKeyRecordNode) before
+/// the real class is ported (`LongKeyRecordNode extends LongKeyNode` in Java). Exposes only the
+/// inherited members `LongKeyRecordNode` calls or overrides: `getParent()`, `getKey(int)`,
+/// `getRoot()`, and `getLeafNode(long)`.
+pub trait LongKeyNode: crate::framework::db::nodes::BTreeNode {
+    /// Get the parent node, or `None` if this is the root.
+    fn get_parent(&self) -> Option<Box<dyn LongKeyInteriorNode>>;
+
+    /// Get the key value at a specific index.
+    fn get_key(&self, index: i32) -> i64;
+
+    /// Get the root for this node's tree. If no parent has been set, this node is assumed to be
+    /// the root.
+    fn get_root(&self) -> Box<dyn LongKeyNode>;
+
+    /// Get the leaf node which contains the specified key.
+    fn get_leaf_node(
+        &self,
+        key: i64,
+    ) -> std::io::Result<Box<dyn crate::framework::db::long_key_record_node::LongKeyRecordNode>>;
+}
+
+/// Placeholder for `db.LongKeyInteriorNode`, referenced by
+/// [`LongKeyRecordNode`](crate::framework::db::long_key_record_node::LongKeyRecordNode) before
+/// the real class is ported (`LongKeyRecordNode.getParent()` returns this type, and its
+/// `isConsistent`/`putRecord`/`deleteRecord`/`split`/`appendLeaf`/`removeLeaf` bodies call back
+/// into it). Exposes only the parent-callback members `LongKeyRecordNode` needs:
+/// `isLeftmostKey`, `isRightmostKey`, `insert`, `deleteChild`, and `keyChanged`.
+pub trait LongKeyInteriorNode {
+    /// Determine if the specified key corresponds to the leftmost key within the tree.
+    fn is_leftmost_key(&self, key: i64) -> bool;
+
+    /// Determine if the specified key corresponds to the rightmost key within the tree.
+    fn is_rightmost_key(&self, key: i64) -> bool;
+
+    /// Insert a new child node (key and buffer id) into this interior node. Returns the root
+    /// node, which may have changed.
+    fn insert(&mut self, id: i32, key: i64) -> std::io::Result<Box<dyn LongKeyNode>>;
+
+    /// Callback method allowing a child node to remove itself from this parent. Returns the root
+    /// node, which may have changed.
+    fn delete_child(&mut self, key: i64) -> std::io::Result<Box<dyn LongKeyNode>>;
+
+    /// Callback method for when a child node's leftmost key changes.
+    fn key_changed(&mut self, old_key: i64, new_key: i64);
+}
+
 /// Placeholder for `ghidra.util.HelpLocation`, referenced by
 /// [`Options`](crate::framework::options::Options) before the real class is ported. `Options`
 /// only ever passes this type through as an opaque value, so no members are needed yet.
