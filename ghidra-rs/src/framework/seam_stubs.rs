@@ -369,33 +369,9 @@ pub trait RepositoryItem {}
 /// needed here either.
 pub trait AuthCallback {}
 
-/// Placeholder for `db.FixedKeyNode`, the abstract BTree-node superclass (itself implementing
-/// `db.FieldKeyNode`) referenced by
-/// [`FixedKeyVarRecNode`](crate::framework::db::fixed_key_var_rec_node::FixedKeyVarRecNode) as the
-/// return type of `updateRecord`, and by
-/// [`FixedKeyInteriorNode`](crate::framework::db::fixed_key_interior_node::FixedKeyInteriorNode)
-/// as both its own supertrait and the type of the children it fetches, before the real class is
-/// ported. `FixedKeyVarRecNode` only ever returns this type opaquely as "the root, which may have
-/// changed", so no members were needed for it alone; `FixedKeyInteriorNode`'s `isConsistent`
-/// additionally needs the final `getKeyField(int)` accessor (mirrored here as `get_key_field`)
-/// and the abstract `BTreeNode.isConsistent` override (mirrored here as `is_consistent`) on
-/// whatever child node -- interior or leaf -- it recurses into.
-pub trait FixedKeyNode: crate::framework::db::field_key_node::FieldKeyNode {
-    /// Get the Field-wrapped key value at a specific index, mirroring the final
-    /// `FixedKeyNode.getKeyField(int)` method.
-    fn get_key_field(&self, index: i32) -> crate::framework::db::field::Field;
-
-    /// Check the consistency of this node and all of its children, mirroring
-    /// `BTreeNode.isConsistent(String, TaskMonitor)`.
-    fn is_consistent(
-        &self,
-        table_name: &str,
-        monitor: &dyn crate::util::task::TaskMonitor,
-    ) -> std::io::Result<bool>;
-}
-
-/// Placeholder for `db.FixedKeyInteriorNode`, the concrete BTree interior-node subclass of
-/// `db.FixedKeyNode` (and implementor of the already-ported
+/// Placeholder for `db.FixedKeyInteriorNode`, the concrete BTree interior-node subclass of the
+/// ported [`FixedKeyNode`](crate::framework::db::fixed_key_node::FixedKeyNode) (and implementor
+/// of the already-ported
 /// [`FieldKeyInteriorNode`](crate::framework::db::field_key_interior_node::FieldKeyInteriorNode))
 /// referenced by
 /// [`FixedKeyRecordNode`](crate::framework::db::fixed_key_record_node::FixedKeyRecordNode) as the
@@ -418,14 +394,14 @@ pub trait FixedKeyInteriorNodeLike:
         &mut self,
         id: i32,
         key: &crate::framework::db::field::Field,
-    ) -> std::io::Result<Box<dyn FixedKeyNode>>;
+    ) -> std::io::Result<Box<dyn crate::framework::db::fixed_key_node::FixedKeyNode>>;
 
     /// Callback method allowing a child node to remove itself from this parent. Returns the root
     /// node, which may have changed.
     fn delete_child(
         &mut self,
         key: &crate::framework::db::field::Field,
-    ) -> std::io::Result<Box<dyn FixedKeyNode>>;
+    ) -> std::io::Result<Box<dyn crate::framework::db::fixed_key_node::FixedKeyNode>>;
 }
 
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by

@@ -1,8 +1,8 @@
 use std::io;
 
 use super::field_key_record_node::FieldKeyRecordNode;
+use super::fixed_key_node::FixedKeyNode;
 use super::record::DBRecord;
-use crate::framework::seam_stubs::FixedKeyNode;
 
 /// A BTree leaf node which utilizes fixed-length key values and stores variable-length records.
 ///
@@ -11,8 +11,8 @@ use crate::framework::seam_stubs::FixedKeyNode;
 /// cut-point. Only the members declared or overridden directly within `FixedKeyVarRecNode.java`
 /// are modeled here — the `FixedKeyRecordNode`/`FixedKeyNode` superclasses it extends (which carry
 /// the shared BTree leaf-linking and split/insert orchestration logic) are out of scope for this
-/// port; the root-node type they return is referenced opaquely via the [`FixedKeyNode`] stub in
-/// [`seam_stubs`](crate::framework::seam_stubs).
+/// port; the root-node type they return is the ported
+/// [`FixedKeyNode`](crate::framework::db::fixed_key_node::FixedKeyNode) trait.
 pub trait FixedKeyVarRecNode: FieldKeyRecordNode {
     /// Create a new leaf and add it to the node manager. The new leaf's parent is unknown.
     fn create_new_leaf(

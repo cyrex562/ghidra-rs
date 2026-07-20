@@ -4,8 +4,9 @@ use thiserror::Error;
 
 use super::field::Field;
 use super::field_key_record_node::FieldKeyRecordNode;
+use super::fixed_key_node::FixedKeyNode;
 use super::record::DBRecord;
-use crate::framework::seam_stubs::{FixedKeyInteriorNodeLike, FixedKeyNode};
+use crate::framework::seam_stubs::FixedKeyInteriorNodeLike;
 use crate::util::exception::CancelledException;
 use crate::util::msg::Msg;
 use crate::util::task::TaskMonitor;
@@ -22,23 +23,22 @@ pub enum ConsistencyCheckError {
 /// An abstract implementation of a BTree leaf node which utilizes fixed-length binary key values
 /// and stores records.
 ///
-/// Mirrors `db.FixedKeyRecordNode`, which extends `FixedKeyNode` and implements
+/// Mirrors `db.FixedKeyRecordNode`, which extends [`FixedKeyNode`] and implements
 /// [`FieldKeyRecordNode`] -- selected as a dependency-cycle cut-point. The `FixedKeyNode`
-/// superclass it extends (shared node header layout, the `parent` field, `getRoot()`) and the
-/// concrete `FixedKeyInteriorNode` parent-node type it calls back into are not yet ported, so both
-/// are referenced opaquely via the
-/// [`FixedKeyNode`](crate::framework::seam_stubs::FixedKeyNode) and
-/// [`FixedKeyInteriorNodeLike`](crate::framework::seam_stubs::FixedKeyInteriorNodeLike) stubs in
+/// superclass it extends (shared node header layout, the `parent` field, `getRoot()`) is ported as
+/// [`FixedKeyNode`](crate::framework::db::fixed_key_node::FixedKeyNode); the concrete
+/// `FixedKeyInteriorNode` parent-node type it calls back into is not yet ported, so it is
+/// referenced opaquely via the
+/// [`FixedKeyInteriorNodeLike`](crate::framework::seam_stubs::FixedKeyInteriorNodeLike) stub in
 /// [`seam_stubs`](crate::framework::seam_stubs). Members already declared on the
 /// [`FieldKeyRecordNode`] supertrait (`putRecord`, `deleteRecord`, `getRecordBefore`/`After`/
 /// `AtOrBefore`/`AtOrAfter`, leaf-sibling accessors, `removeLeaf`, etc.) are inherited as-is
 /// rather than redeclared here -- Rust has no covariant override for a same-named supertrait
 /// method, so only members declared or overridden directly within `FixedKeyRecordNode.java` (or
-/// inherited from the not-yet-ported `FixedKeyNode` and needed by those members) are modeled as
-/// new trait items.
+/// inherited from `FixedKeyNode` and needed by those members) are modeled as new trait items.
 pub trait FixedKeyRecordNode: FieldKeyRecordNode {
-    /// Get the Field-wrapped key value at a specific index, mirroring the inherited (and not yet
-    /// ported) `FixedKeyNode.getKeyField(int)` final method that `isConsistent`, `split`, and
+    /// Get the Field-wrapped key value at a specific index, mirroring the inherited
+    /// `FixedKeyNode.getKeyField(int)` final method that `isConsistent`, `split`, and
     /// `appendLeaf` call directly.
     fn get_key_field(&self, index: i32) -> Field;
 
