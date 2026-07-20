@@ -48,7 +48,7 @@ git pull --ff-only >/dev/null 2>&1 || true
 log "descent preflight: cargo build --lib"
 timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>/dev/null || { log "integration not green -- abort"; exit 1; }
 # baseline test-crate compile health -- the backstop parks any port that RAISES this count
-TEST_ERR_BASE=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error' || echo 0)
+TEST_ERR_BASE=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error'); TEST_ERR_BASE=${TEST_ERR_BASE:-0}
 log "preflight test-compile baseline: ${TEST_ERR_BASE} errors"
 
 # refresh the leaf-first order against the current manifest (unless disabled)
@@ -182,7 +182,7 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
       gate_ok=1
       if [ "$TEST_GATE" = "1" ]; then
         tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
-        terr=$(printf '%s' "$tout" | grep -cE '^error' || echo 0)
+        terr=$(printf '%s' "$tout" | grep -cE '^error'); terr=${terr:-0}
         if [ "$terr" -gt "$TEST_ERR_BASE" ]; then
           gate_ok=0; log "test gate FAIL: $class introduced $((terr-TEST_ERR_BASE)) test-compile error(s) (base ${TEST_ERR_BASE} -> ${terr})"
         elif printf '%s' "$tout" | grep -q 'test result: FAILED'; then
