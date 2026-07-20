@@ -9892,7 +9892,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/TerminatedTransactionException.jav
 orig_src/Ghidra/Framework/DB/src/main/java/db/TestSpeed.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Transaction.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TranslatedRecordIterator.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyInteriorNode.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyInteriorNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyNode.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarKeyRecordNode.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/VarRecNode.java	TODO	orig_src Ghidra Framework DB src main java db 
