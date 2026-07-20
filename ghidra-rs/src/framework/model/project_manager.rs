@@ -2,10 +2,9 @@ use std::io;
 
 use thiserror::Error;
 
+use crate::framework::client::RepositoryAdapter;
 use crate::framework::model::Project;
-use crate::framework::seam_stubs::{
-    ProjectLocator, RepositoryAdapter, RepositoryServerAdapter, ToolChest,
-};
+use crate::framework::seam_stubs::{ProjectLocator, RepositoryServerAdapter, ToolChest};
 use crate::framework::store::LockException;
 use crate::framework::model::server_info::ServerInfo;
 use crate::util::exception::{NotFoundException, NotOwnerException};
