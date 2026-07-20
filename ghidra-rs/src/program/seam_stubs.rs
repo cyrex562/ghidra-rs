@@ -531,3 +531,24 @@ pub const CHARSET_UTF16: &str = "UTF-16";
 /// before the real class is ported.
 pub const CHARSET_UTF32: &str = "UTF-32";
 
+/// Placeholder for `ghidra.program.database.ProgramOverlayAddressSpace`, referenced by
+/// [`ProgramAddressFactory`](crate::program::database::program_address_factory::ProgramAddressFactory)
+/// before the real class is ported. Only the accessors that `ProgramAddressFactory` calls
+/// directly are modeled: its ordered key and (display) name, used to detect a stale overlay
+/// condition, and the ability to invalidate its cached defined region.
+pub trait ProgramOverlayAddressSpace {
+    /// Stands in for `ProgramOverlayAddressSpace.getOrderedKey()` (inherited from
+    /// `OverlayAddressSpace`). This is the unique, DB-stable key used internally to identify the
+    /// overlay space, which may drift from [`ProgramOverlayAddressSpace::get_name`] after a
+    /// rename.
+    fn get_ordered_key(&self) -> &str;
+
+    /// Stands in for `ProgramOverlayAddressSpace.getName()`, the current display name of the
+    /// overlay space.
+    fn get_name(&self) -> &str;
+
+    /// Stands in for `ProgramOverlayAddressSpace.invalidate()`, which clears the cached defined
+    /// address set so it will be recomputed via `OverlayRegionSupplier` on next access.
+    fn invalidate(&self);
+}
+
