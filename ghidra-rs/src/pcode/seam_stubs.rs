@@ -5,6 +5,7 @@
 //! See `STUBS.tsv` for provenance.
 
 use crate::pcode::exec::pcode_arithmetic::Purpose;
+use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
 
 /// Placeholder for `ghidra.pcode.exec.PcodeExecutorStatePiece.Reason`, referenced by
 /// [`Purpose`](crate::pcode::exec::pcode_arithmetic::Purpose) before the real class is ported.
@@ -52,3 +53,22 @@ impl std::fmt::Display for ConcretionError {
 }
 
 impl std::error::Error for ConcretionError {}
+
+/// Placeholder for `ghidra.pcode.floatformat.FloatFormat`, referenced by
+/// [`BigFloat::to_display_string_with_format`](crate::pcode::floatformat::big_float::BigFloat::to_display_string_with_format)
+/// before the real class is ported. Exposes only the members that method needs: the rounding
+/// context used to format a decimal string, encoding a value to its bit pattern (`BigInteger` in
+/// Java, `i128` here per the crate-wide convention), and decoding a formatted decimal back into a
+/// value to check whether a shortened string still round-trips.
+pub trait FloatFormat {
+    /// Port of `FloatFormat.getDisplayContext()`.
+    fn get_display_context(&self) -> MathContext;
+
+    /// Port of `FloatFormat.getEncoding(BigFloat)`.
+    fn get_encoding(&self, value: &dyn BigFloat) -> i128;
+
+    /// Port of `FloatFormat.getBigFloat(BigDecimal)`. Takes `f64` rather than `BigDecimal`,
+    /// matching how [`BigFloat::to_big_decimal`](crate::pcode::floatformat::big_float::BigFloat::to_big_decimal)
+    /// represents that Java type here.
+    fn get_big_float(&self, value: f64) -> Box<dyn BigFloat>;
+}
