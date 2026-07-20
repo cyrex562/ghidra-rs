@@ -1,11 +1,13 @@
 use crate::util::exception::CancelledException;
 
 pub mod monitored_runnable;
+pub mod swing_runnable;
 pub mod cancellable_iterator;
 pub mod task_monitor_splitter;
 pub mod issue_listener;
 
 pub use monitored_runnable::MonitoredRunnable;
+pub use swing_runnable::SwingRunnable;
 pub use cancellable_iterator::CancellableIterator;
 pub use task_monitor_splitter::{split_task_monitor, MONITOR_SIZE};
 pub use issue_listener::IssueListener;
