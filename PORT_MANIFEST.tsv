@@ -14723,7 +14723,7 @@ orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarEntryRootNode.jav
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/JarResource.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/Resource.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/ResourceFile.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
-orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/ResourceFileFilter.java	TODO	orig_src Ghidra Framework Utility src main java generic jar 
+orig_src/Ghidra/Framework/Utility/src/main/java/generic/jar/ResourceFileFilter.java	DONE	orig_src Ghidra Framework Utility src main java generic jar 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/Ghidra.java	TODO	orig_src Ghidra Framework Utility src main java ghidra 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/GhidraApplicationLayout.java	TODO	orig_src Ghidra Framework Utility src main java ghidra 
 orig_src/Ghidra/Framework/Utility/src/main/java/ghidra/GhidraClassLoader.java	TODO	orig_src Ghidra Framework Utility src main java ghidra 
