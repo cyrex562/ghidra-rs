@@ -2,8 +2,8 @@ use std::io;
 
 use thiserror::Error;
 
-use crate::framework::seam_stubs::{CheckoutType, FolderItem, ItemCheckoutStatus};
-use crate::framework::store::ItemVersion;
+use crate::framework::seam_stubs::{CheckoutType, ItemCheckoutStatus};
+use crate::framework::store::{FolderItem, ItemVersion};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -223,7 +223,10 @@ pub trait LocalFolderItem: FolderItem {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::store::checkout_type::CheckoutType as RealCheckoutType;
+    use crate::framework::store::local::OutputItemError;
     use std::cell::Cell;
+    use std::path::Path;
 
     struct MockItemCheckoutStatus;
     impl ItemCheckoutStatus for MockItemCheckoutStatus {}
@@ -239,7 +242,194 @@ mod tests {
         min_version: i32,
     }
 
-    impl FolderItem for MockLocalFolderItem {}
+    impl FolderItem for MockLocalFolderItem {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+
+        fn get_file_id(&self) -> Option<String> {
+            None
+        }
+
+        fn reset_file_id(&mut self) -> io::Result<String> {
+            Ok("new-file-id".to_string())
+        }
+
+        fn length(&self) -> io::Result<i64> {
+            Ok(0)
+        }
+
+        fn get_content_type(&self) -> String {
+            self.content_type.clone()
+        }
+
+        fn get_parent_path(&self) -> String {
+            "/".to_string()
+        }
+
+        fn get_path_name(&self) -> String {
+            format!("/{}", self.name)
+        }
+
+        fn is_read_only(&self) -> bool {
+            self.read_only
+        }
+
+        fn set_read_only(&mut self, state: bool) -> io::Result<()> {
+            self.read_only = state;
+            Ok(())
+        }
+
+        fn get_content_type_version(&self) -> i32 {
+            1
+        }
+
+        fn set_content_type_version(&mut self, _version: i32) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn last_modified(&self) -> i64 {
+            0
+        }
+
+        fn get_current_version(&self) -> i32 {
+            self.current_version
+        }
+
+        fn is_checked_out(&self) -> bool {
+            self.checkout_id.get() != -1
+        }
+
+        fn is_checked_out_exclusive(&self) -> bool {
+            false
+        }
+
+        fn is_versioned(&self) -> io::Result<bool> {
+            Ok(self.versioned)
+        }
+
+        fn get_checkout_id(&self) -> io::Result<i64> {
+            Ok(self.checkout_id.get())
+        }
+
+        fn get_checkout_version(&self) -> io::Result<i32> {
+            Ok(-1)
+        }
+
+        fn get_local_checkout_version(&self) -> i32 {
+            -1
+        }
+
+        fn set_checkout(
+            &mut self,
+            checkout_id: i64,
+            _exclusive: bool,
+            _checkout_version: i32,
+            _local_version: i32,
+        ) -> io::Result<()> {
+            self.checkout_id.set(checkout_id);
+            Ok(())
+        }
+
+        fn clear_checkout(&mut self) -> io::Result<()> {
+            self.checkout_id.set(-1);
+            Ok(())
+        }
+
+        fn delete(&mut self, version: i32, _user: &str) -> io::Result<()> {
+            if version != -1 && version != self.min_version && version != self.current_version {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "only the oldest or latest version may be deleted",
+                ));
+            }
+            Ok(())
+        }
+
+        fn get_versions(&self) -> io::Result<Option<Vec<ItemVersion>>> {
+            if !self.versioned {
+                return Ok(None);
+            }
+            Ok(Some(vec![ItemVersion::new(
+                self.current_version,
+                0,
+                "alice",
+                "initial",
+            )]))
+        }
+
+        fn checkout(
+            &mut self,
+            _checkout_type: &dyn RealCheckoutType,
+            _user: &str,
+            _project_path: &str,
+        ) -> io::Result<Option<Box<dyn ItemCheckoutStatus>>> {
+            if !self.versioned {
+                return Err(io::Error::new(io::ErrorKind::Unsupported, "not versioned"));
+            }
+            Ok(Some(Box::new(MockItemCheckoutStatus)))
+        }
+
+        fn terminate_checkout(&mut self, _checkout_id: i64, _notify: bool) -> io::Result<()> {
+            self.checkout_id.set(-1);
+            Ok(())
+        }
+
+        fn has_checkouts(&self) -> io::Result<bool> {
+            Ok(self.checkout_id.get() != -1)
+        }
+
+        fn can_recover(&self) -> bool {
+            false
+        }
+
+        fn get_checkout(&self, checkout_id: i64) -> io::Result<Option<Box<dyn ItemCheckoutStatus>>> {
+            if checkout_id == self.checkout_id.get() {
+                Ok(Some(Box::new(MockItemCheckoutStatus)))
+            } else {
+                Ok(None)
+            }
+        }
+
+        fn get_checkouts(&self) -> io::Result<Vec<Box<dyn ItemCheckoutStatus>>> {
+            if self.checkout_id.get() == -1 {
+                Ok(Vec::new())
+            } else {
+                Ok(vec![Box::new(MockItemCheckoutStatus)])
+            }
+        }
+
+        fn is_checkin_active(&self) -> io::Result<bool> {
+            Ok(false)
+        }
+
+        fn update_checkout_version(
+            &mut self,
+            _checkout_id: i64,
+            _checkout_version: i32,
+            _user: &str,
+        ) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn output(
+            &self,
+            _output_file: &Path,
+            _version: i32,
+            monitor: &dyn TaskMonitor,
+        ) -> Result<(), OutputItemError> {
+            if monitor.is_cancelled() {
+                return Err(OutputItemError::Cancelled(CancelledException::new(
+                    "output cancelled",
+                )));
+            }
+            Ok(())
+        }
+
+        fn refresh(&mut self) -> io::Result<Option<Box<dyn FolderItem>>> {
+            Ok(None)
+        }
+    }
 
     impl LocalFolderItem for MockLocalFolderItem {
         fn refresh(&mut self) -> io::Result<bool> {

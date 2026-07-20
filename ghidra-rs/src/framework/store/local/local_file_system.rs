@@ -4,9 +4,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use thiserror::Error;
 
 use crate::framework::db::buffers::{BufferFile, ManagedBufferFile};
-use crate::framework::seam_stubs::FolderItem;
 use crate::framework::store::local::{FileSystemOpError, RepositoryLogger};
-use crate::framework::store::FileSystemListener;
+use crate::framework::store::{FileSystemListener, FolderItem};
 use crate::util::exception::{CancelledException, InvalidNameException};
 use crate::util::task::TaskMonitor;
 
@@ -448,7 +447,165 @@ mod tests {
 
     #[derive(Default)]
     struct MockFolderItem;
-    impl FolderItem for MockFolderItem {}
+    impl FolderItem for MockFolderItem {
+        fn get_name(&self) -> String {
+            "MockFolderItem".to_string()
+        }
+
+        fn get_file_id(&self) -> Option<String> {
+            None
+        }
+
+        fn reset_file_id(&mut self) -> io::Result<String> {
+            Ok("new-file-id".to_string())
+        }
+
+        fn length(&self) -> io::Result<i64> {
+            Ok(0)
+        }
+
+        fn get_content_type(&self) -> String {
+            "Program".to_string()
+        }
+
+        fn get_parent_path(&self) -> String {
+            "/".to_string()
+        }
+
+        fn get_path_name(&self) -> String {
+            "/MockFolderItem".to_string()
+        }
+
+        fn is_read_only(&self) -> bool {
+            false
+        }
+
+        fn set_read_only(&mut self, _state: bool) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn get_content_type_version(&self) -> i32 {
+            1
+        }
+
+        fn set_content_type_version(&mut self, _version: i32) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn last_modified(&self) -> i64 {
+            0
+        }
+
+        fn get_current_version(&self) -> i32 {
+            1
+        }
+
+        fn is_checked_out(&self) -> bool {
+            false
+        }
+
+        fn is_checked_out_exclusive(&self) -> bool {
+            false
+        }
+
+        fn is_versioned(&self) -> io::Result<bool> {
+            Ok(false)
+        }
+
+        fn get_checkout_id(&self) -> io::Result<i64> {
+            Ok(crate::framework::store::folder_item::DEFAULT_CHECKOUT_ID)
+        }
+
+        fn get_checkout_version(&self) -> io::Result<i32> {
+            Ok(-1)
+        }
+
+        fn get_local_checkout_version(&self) -> i32 {
+            -1
+        }
+
+        fn set_checkout(
+            &mut self,
+            _checkout_id: i64,
+            _exclusive: bool,
+            _checkout_version: i32,
+            _local_version: i32,
+        ) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn clear_checkout(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn delete(&mut self, _version: i32, _user: &str) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn get_versions(&self) -> io::Result<Option<Vec<crate::framework::store::ItemVersion>>> {
+            Ok(None)
+        }
+
+        fn checkout(
+            &mut self,
+            _checkout_type: &dyn crate::framework::store::checkout_type::CheckoutType,
+            _user: &str,
+            _project_path: &str,
+        ) -> io::Result<Option<Box<dyn crate::framework::seam_stubs::ItemCheckoutStatus>>> {
+            Err(io::Error::new(io::ErrorKind::Unsupported, "not versioned"))
+        }
+
+        fn terminate_checkout(&mut self, _checkout_id: i64, _notify: bool) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn has_checkouts(&self) -> io::Result<bool> {
+            Ok(false)
+        }
+
+        fn can_recover(&self) -> bool {
+            false
+        }
+
+        fn get_checkout(
+            &self,
+            _checkout_id: i64,
+        ) -> io::Result<Option<Box<dyn crate::framework::seam_stubs::ItemCheckoutStatus>>> {
+            Ok(None)
+        }
+
+        fn get_checkouts(
+            &self,
+        ) -> io::Result<Vec<Box<dyn crate::framework::seam_stubs::ItemCheckoutStatus>>> {
+            Ok(Vec::new())
+        }
+
+        fn is_checkin_active(&self) -> io::Result<bool> {
+            Ok(false)
+        }
+
+        fn update_checkout_version(
+            &mut self,
+            _checkout_id: i64,
+            _checkout_version: i32,
+            _user: &str,
+        ) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn output(
+            &self,
+            _output_file: &std::path::Path,
+            _version: i32,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<(), crate::framework::store::local::OutputItemError> {
+            Ok(())
+        }
+
+        fn refresh(&mut self) -> io::Result<Option<Box<dyn FolderItem>>> {
+            Ok(None)
+        }
+    }
 
     #[derive(Default)]
     struct MockLocalFileSystem {
