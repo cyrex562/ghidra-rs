@@ -1,3 +1,4 @@
+pub mod block_graph;
 pub mod byte_ingest;
 pub mod cached_encoder;
 pub mod decoder;
@@ -15,6 +16,7 @@ use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
 use std::sync::Arc;
 
+pub use block_graph::BlockGraph;
 pub use byte_ingest::ByteIngest;
 pub use cached_encoder::CachedEncoder;
 pub use decoder::{Decoder, DecoderError};
