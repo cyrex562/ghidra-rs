@@ -198,4 +198,3 @@ ts	stub_class	referenced_by
 2026-07-20T00:00:00Z	TempDatabaseCleaner	FileSystemInitializer
 2026-07-20T00:00:00Z	RepositoryItem	RepositoryHandle
 2026-07-20T00:15:00Z	AuthCallback	GhidraServerHandle
-2026-07-20T00:30:00Z	PropertyFile	ItemPropertyFile

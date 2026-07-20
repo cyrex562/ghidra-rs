@@ -292,29 +292,3 @@ pub enum CheckoutType {
     /// only permitted for remote versioned file systems which support its use.
     Transient,
 }
-
-/// Placeholder for `ghidra.util.PropertyFile`, referenced by
-/// [`ItemPropertyFile`](crate::framework::store::local::ItemPropertyFile) before the real class is
-/// ported (`ItemPropertyFile extends PropertyFile` in Java). Exposes only the members
-/// `ItemPropertyFile` calls: `getString`/`putString` (used by its `getFileID`/`setFileID`) and
-/// the 2-arg `moveTo` (called via `super.moveTo(...)` from `ItemPropertyFile`'s own move method).
-pub trait PropertyFile {
-    /// Return the string value with the given `property_name`, or `default_value` if the
-    /// property is not present.
-    fn get_string(&self, property_name: &str, default_value: Option<&str>) -> Option<String>;
-
-    /// Assign the string value to the given `property_name`. Passing `None` removes the
-    /// property, mirroring `putString(name, null)`.
-    fn put_string(&mut self, property_name: &str, value: Option<&str>);
-
-    /// Move this property file's underlying storage to `new_storage_parent`/`new_storage_name`.
-    ///
-    /// # Errors
-    /// Returns an error if a file with `new_storage_name` already exists at
-    /// `new_storage_parent` (mirrors `DuplicateFileException`), or if an IO error occurs.
-    fn move_to(
-        &mut self,
-        new_storage_parent: &std::path::Path,
-        new_storage_name: &str,
-    ) -> std::io::Result<()>;
-}
