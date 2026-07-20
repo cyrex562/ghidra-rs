@@ -441,3 +441,9 @@ pub trait FileBytes {}
 /// so no members are needed yet.
 pub trait ByteMappingScheme {}
 
+/// Placeholder for `ghidra.program.database.DbObject`, referenced by
+/// [`DbFactory`](crate::program::database::db_factory::DbFactory)
+/// before the real class is ported. `DbFactory` only ever produces/returns this type opaquely,
+/// so no members are needed yet.
+pub trait DbObject {}
+

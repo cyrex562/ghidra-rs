@@ -1,6 +1,7 @@
 pub mod bookmark;
 pub mod code;
 pub mod data;
+pub mod db_factory;
 pub mod function;
 pub mod manager_db;
 pub mod map;
@@ -16,6 +17,7 @@ pub mod util;
 
 pub use bookmark::OldBookmark;
 pub use code::StringDiff;
+pub use db_factory::DbFactory;
 pub use function::OverlappingFunctionException;
 pub use manager_db::ManagerDB;
 pub use merge_program_generator::MergeProgramGenerator;
