@@ -5,6 +5,8 @@
 
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
+use crate::pcode::floatformat::big_float::BigFloat;
+use crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
@@ -105,6 +107,62 @@ pub trait MemBuffer {
         let _ = offset;
         Err(MemoryAccessException::default())
     }
+
+    /// Stands in for `MemBuffer.getBytes(byte[], int)`, used by
+    /// [`AbstractFloatDataType`](crate::program::model::data::abstract_float_data_type::AbstractFloatDataType)
+    /// before the real interface is ported. Returns the number of bytes actually copied into
+    /// `buffer` starting at `offset`, mirroring the Java method's `int` return (rather than
+    /// throwing, unlike the single-value getters above). Named `get_bytes_into` rather than
+    /// `get_bytes` to avoid an ambiguous-method clash with the unrelated, already-ported
+    /// `CodeUnit::get_bytes(&self) -> Result<Vec<u8>, MemoryAccessException>`.
+    fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        let _ = (buffer, offset);
+        0
+    }
+
+    /// Stands in for `MemBuffer.isBigEndian()`, used by
+    /// [`AbstractFloatDataType`](crate::program::model::data::abstract_float_data_type::AbstractFloatDataType)
+    /// before the real interface is ported.
+    fn is_big_endian(&self) -> bool {
+        false
+    }
+}
+
+/// Placeholder for `ghidra.pcode.floatformat.FloatFormat`, referenced by
+/// [`AbstractFloatDataType`](crate::program::model::data::abstract_float_data_type::AbstractFloatDataType)
+/// before the real class is ported. Exposes only the members that type's default methods need:
+/// decoding raw bytes to a [`BigFloat`], encoding a [`BigFloat`]/`f64` back to bytes, parsing and
+/// rounding a decimal string, and rendering a [`BigFloat`] as a decimal string.
+///
+/// This is a second, independently minimal placeholder for the same eventual Java class as
+/// [`crate::pcode::seam_stubs::FloatFormat`] (which only covers what `BigFloat`'s own
+/// `to_display_string_with_format` needs); the two should be consolidated into one real
+/// `FloatFormat` port once that class is ported.
+pub trait FloatFormat {
+    /// Stands in for `FloatFormat.decodeBigFloat(long)`.
+    fn decode_big_float(&self, value: i64) -> Result<Box<dyn BigFloat>, UnsupportedFloatFormatException>;
+
+    /// Stands in for `FloatFormat.decodeBigFloat(BigInteger)`.
+    fn decode_big_float_from_big_integer(
+        &self,
+        value: i128,
+    ) -> Result<Box<dyn BigFloat>, UnsupportedFloatFormatException>;
+
+    /// Stands in for `FloatFormat.getEncoding(double)`.
+    fn get_encoding(&self, value: f64) -> i64;
+
+    /// Stands in for `FloatFormat.getEncoding(BigFloat)`.
+    fn get_encoding_big_float(&self, value: &dyn BigFloat) -> i128;
+
+    /// Stands in for `FloatFormat.getBigFloat(String)`.
+    fn get_big_float(&self, repr: &str) -> Box<dyn BigFloat>;
+
+    /// Stands in for `FloatFormat.round(BigFloat)`, which rounds `value` in place to this
+    /// format's precision (distinct from `BigFloat`'s own no-argument `round`).
+    fn round(&self, value: &mut dyn BigFloat);
+
+    /// Stands in for `FloatFormat.toDecimalString(BigFloat, boolean)`.
+    fn to_decimal_string(&self, value: &dyn BigFloat, use_english: bool) -> String;
 }
 
 /// Placeholder for `ghidra.program.model.data.StringDataInstance`, referenced by
