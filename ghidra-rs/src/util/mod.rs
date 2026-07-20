@@ -1,3 +1,4 @@
+pub mod abstract_address_set_view;
 pub mod address_range_comparators;
 pub mod address_range_iterators;
 pub mod conv;
