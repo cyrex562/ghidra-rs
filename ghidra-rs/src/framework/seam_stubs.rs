@@ -213,12 +213,6 @@ pub trait ToolChest {}
 /// needed yet.
 pub trait ToolAssociationInfo {}
 
-/// Placeholder for `db.Database`, referenced by
-/// [`DBFileListener`](crate::framework::db::DBFileListener) before the real class is ported.
-/// `DBFileListener` only ever passes this type through as an opaque value, so no members are
-/// needed yet.
-pub trait Database {}
-
 /// Placeholder for `ghidra.framework.model.WorkspaceChangeListener`, referenced by
 /// [`ToolManager`](crate::framework::model::ToolManager) before the real interface is ported.
 /// `ToolManager` only ever registers/unregisters this listener, so no members are needed yet.
