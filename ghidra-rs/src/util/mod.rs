@@ -1,4 +1,5 @@
 pub mod address_range_comparators;
+pub mod address_range_iterators;
 pub mod conv;
 pub mod date_utils;
 pub mod disposable;
@@ -88,6 +89,7 @@ pub mod dbg_msg_tracer;
 pub mod language_utilities;
 
 pub use address_range_comparators::AddressRangeComparators;
+pub use address_range_iterators::{AddressRangeIteratorFactory, DefaultAddressRangeIteratorFactory, WrappingAddressRangeIterator};
 pub use async_fence::AsyncFence;
 pub use count_latch::CountLatch;
 pub use data_converter::{swap_bytes, DataConverter};
