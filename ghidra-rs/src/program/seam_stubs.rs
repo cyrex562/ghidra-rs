@@ -571,3 +571,9 @@ pub trait FlowType {}
 /// `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait SignedDWordDataType {}
 
+/// Placeholder for `ghidra.program.model.data.UnsignedIntegerDataType`, referenced by
+/// [`IntegerDataType`](crate::program::model::data::integer_data_type::IntegerDataType)
+/// before the real class is ported. `IntegerDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedIntegerDataType {}
+
