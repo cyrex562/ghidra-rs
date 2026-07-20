@@ -6,6 +6,7 @@ use super::exception::NoValueException;
 use super::graph::key_indexable_set::KeyIndexableSet;
 use super::graph::keyed_object::KeyedObject;
 use super::graph::vertex::Vertex;
+use crate::program::model::address::{AddressRange, AddressRangeIterator};
 
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}
@@ -97,4 +98,71 @@ pub trait VertexSetLike<V: Vertex>: KeyIndexableSet<V> {
 pub trait WordLocationLike {
     /// Returns the located word text (or the empty string for an empty/`None` location).
     fn word(&self) -> &str;
+}
+
+/// Placeholder for `ghidra.util.TwoWayBreakdownAddressRangeIterator.Which`, needed by
+/// [`crate::util::address_range_iterators::AddressRangeIteratorFactory`].
+///
+/// Stands in for the yielded `Map.Entry<AddressRange, Which>` pairs. `Which` in the Java
+/// original is a 3-valued enum (`LEFT`, `RIGHT`, `BOTH`) with `inSubtract`/`inXor`/
+/// `inIntersect` query methods; those are represented directly as flags here rather than
+/// pulling in the real breakdown iterator.
+pub struct TwoWayBreakdownEntry {
+    pub range: AddressRange,
+    /// Only the first (`a`) operand included this range (`Which::LEFT`).
+    pub in_a_only: bool,
+    /// Only the second (`b`) operand included this range (`Which::RIGHT`).
+    pub in_b_only: bool,
+    /// Both operands included this range (`Which::BOTH`).
+    pub in_both: bool,
+}
+
+impl TwoWayBreakdownEntry {
+    /// Mirrors `Which.inSubtract`: included in `a - b`.
+    pub fn in_subtract(&self) -> bool {
+        self.in_a_only
+    }
+
+    /// Mirrors `Which.inXor`: included in the symmetric difference `a xor b`.
+    pub fn in_xor(&self) -> bool {
+        self.in_a_only || self.in_b_only
+    }
+
+    /// Mirrors `Which.inIntersect`: included in `a ∩ b`.
+    pub fn in_intersect(&self) -> bool {
+        self.in_both
+    }
+}
+
+/// Placeholder for `ghidra.util.TwoWayBreakdownAddressRangeIterator`, needed by
+/// [`crate::util::address_range_iterators::AddressRangeIteratorFactory`].
+///
+/// Only the construction contract is declared: given two forward- or backward-ordered
+/// `AddressRange` iterators, classify every range as belonging to the first iterator only,
+/// the second only, or both. The real port carries the lazy merge-scan algorithm that
+/// computes this.
+pub trait TwoWayBreakdownFactory {
+    /// Builds the breakdown of `a` and `b` into per-range membership entries.
+    fn build_breakdown(
+        &self,
+        a: Box<dyn Iterator<Item = AddressRange>>,
+        b: Box<dyn Iterator<Item = AddressRange>>,
+        forward: bool,
+    ) -> Box<dyn Iterator<Item = TwoWayBreakdownEntry>>;
+}
+
+/// Placeholder for `ghidra.util.UnionAddressRangeIterator`, needed by
+/// [`crate::util::address_range_iterators::AddressRangeIteratorFactory`].
+///
+/// Only the construction contract is declared: coalesce the ranges from one or more
+/// `AddressRange` iterators into their lazily-computed union. The real port carries the
+/// merge algorithm; once ported it will itself implement [`AddressRangeIterator`] and can
+/// satisfy this trait directly.
+pub trait UnionAddressRangeIteratorFactory {
+    /// Builds the union of the ranges produced by `iterators`.
+    fn build_union(
+        &self,
+        iterators: Vec<Box<dyn Iterator<Item = AddressRange>>>,
+        forward: bool,
+    ) -> Box<dyn AddressRangeIterator>;
 }
