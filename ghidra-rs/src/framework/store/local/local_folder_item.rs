@@ -30,27 +30,26 @@ pub enum UpdateCheckoutError {
 /// state not yet ported (property file, checkout manager, history manager, owning file system)
 /// are left for the concrete subclass ports (`LocalDataFileItem`, `LocalDatabaseItem`, etc.) to
 /// implement directly once `LocalFileSystem` and friends exist.
+/// Property file key for the stored file type.
+pub const FILE_TYPE: &str = "FILE_TYPE";
+/// Property file key for the read-only flag.
+pub const READ_ONLY: &str = "READ_ONLY";
+/// Property file key for the content type.
+pub const CONTENT_TYPE: &str = "CONTENT_TYPE";
+/// Property file key for the checkout id.
+pub const CHECKOUT_ID: &str = "CHECKOUT_ID";
+/// Property file key for the exclusive-checkout flag.
+pub const EXCLUSIVE_CHECKOUT: &str = "EXCLUSIVE";
+/// Property file key for the checkout version.
+pub const CHECKOUT_VERSION: &str = "CHECKOUT_VERSION";
+/// Property file key for the local checkout version.
+pub const LOCAL_CHECKOUT_VERSION: &str = "LOCAL_CHECKOUT_VERSION";
+/// Property file key for the content type version.
+pub const CONTENT_TYPE_VERSION: &str = "CONTENT_TYPE_VERSION";
+/// File extension used for an item's hidden data directory.
+pub const DATA_DIR_EXTENSION: &str = ".db";
+
 pub trait LocalFolderItem: FolderItem {
-    /// Property file key for the stored file type.
-    const FILE_TYPE: &'static str = "FILE_TYPE";
-    /// Property file key for the read-only flag.
-    const READ_ONLY: &'static str = "READ_ONLY";
-    /// Property file key for the content type.
-    const CONTENT_TYPE: &'static str = "CONTENT_TYPE";
-    /// Property file key for the checkout id.
-    const CHECKOUT_ID: &'static str = "CHECKOUT_ID";
-    /// Property file key for the exclusive-checkout flag.
-    const EXCLUSIVE_CHECKOUT: &'static str = "EXCLUSIVE";
-    /// Property file key for the checkout version.
-    const CHECKOUT_VERSION: &'static str = "CHECKOUT_VERSION";
-    /// Property file key for the local checkout version.
-    const LOCAL_CHECKOUT_VERSION: &'static str = "LOCAL_CHECKOUT_VERSION";
-    /// Property file key for the content type version.
-    const CONTENT_TYPE_VERSION: &'static str = "CONTENT_TYPE_VERSION";
-
-    /// File extension used for an item's hidden data directory.
-    const DATA_DIR_EXTENSION: &'static str = ".db";
-
     /// Refreshes this item's cached state from its underlying property file (and data
     /// directory, if applicable). Returns `false` if the item no longer exists on disk.
     fn refresh(&mut self) -> io::Result<bool>;
@@ -637,31 +636,38 @@ mod tests {
             ..Default::default()
         });
 
-        assert_eq!(item.get_name(), "MyProgram");
-        assert_eq!(item.get_path_name(), "/MyProgram");
-        assert!(item.is_versioned().unwrap());
-        assert!(!item.has_checkouts());
+        // `LocalFolderItem` redeclares several `FolderItem` methods (with narrower return
+        // types), so calls through a value known to implement both traits are ambiguous and
+        // must be disambiguated to the `LocalFolderItem` variant under test.
+        assert_eq!(LocalFolderItem::get_name(&*item), "MyProgram");
+        assert_eq!(LocalFolderItem::get_path_name(&*item), "/MyProgram");
+        assert!(LocalFolderItem::is_versioned(&*item).unwrap());
+        assert!(!LocalFolderItem::has_checkouts(&*item));
 
         // Only the oldest or latest version may be deleted.
-        assert!(item.delete(2, "alice").is_err());
-        assert!(item.delete(3, "alice").is_ok());
+        assert!(LocalFolderItem::delete(&mut *item, 2, "alice").is_err());
+        assert!(LocalFolderItem::delete(&mut *item, 3, "alice").is_ok());
 
-        let status = item
-            .checkout(CheckoutType::Normal, "alice", "/repo/MyProgram")
-            .unwrap();
+        let status =
+            LocalFolderItem::checkout(&mut *item, CheckoutType::Normal, "alice", "/repo/MyProgram")
+                .unwrap();
         assert!(status.is_some());
 
-        let exclusive = item
-            .checkout(CheckoutType::Exclusive, "alice", "/repo/MyProgram")
-            .unwrap();
+        let exclusive = LocalFolderItem::checkout(
+            &mut *item,
+            CheckoutType::Exclusive,
+            "alice",
+            "/repo/MyProgram",
+        )
+        .unwrap();
         assert!(exclusive.is_none());
 
-        assert!(item.set_checkout(1, false, 1, 0).is_ok());
-        assert!(item.has_checkouts());
-        assert!(item.clear_checkout().is_ok());
-        assert!(!item.has_checkouts());
+        assert!(LocalFolderItem::set_checkout(&mut *item, 1, false, 1, 0).is_ok());
+        assert!(LocalFolderItem::has_checkouts(&*item));
+        assert!(LocalFolderItem::clear_checkout(&mut *item).is_ok());
+        assert!(!LocalFolderItem::has_checkouts(&*item));
 
-        let versions = item.get_versions().unwrap();
+        let versions = LocalFolderItem::get_versions(&*item).unwrap();
         assert_eq!(versions.len(), 1);
         assert_eq!(versions[0].user(), "alice");
     }
@@ -669,6 +675,6 @@ mod tests {
     #[test]
     fn test_local_folder_item_non_versioned_rejects_get_versions() {
         let item: Box<dyn LocalFolderItem> = Box::new(MockLocalFolderItem::default());
-        assert!(item.get_versions().is_err());
+        assert!(LocalFolderItem::get_versions(&*item).is_err());
     }
 }

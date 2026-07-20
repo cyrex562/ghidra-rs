@@ -347,10 +347,13 @@ mod tests {
     fn create_block_resolves_type_and_tracks_leaves() {
         let map = MockBlockMap::new(address_factory());
         let basic = map.create_block("basic", 7);
-        assert_eq!(basic.get_block_type(), PCODE_BLOCK_BASIC);
+        // "basic" is unreachable via nameToType (matches the real Java gap: PcodeBlock.nameToType
+        // has no 'b' case and returns -1), so resolve_block falls through to the unresolved
+        // sentinel type -1 rather than PCODE_BLOCK_BASIC.
+        assert_eq!(basic.get_block_type(), -1);
         assert_eq!(basic.get_index(), 7);
-        // "basic" is unreachable via nameToType (matches the real Java gap), so it should NOT be
-        // added to the leaf list; only "plain"/"copy" round-trip through createBlock as leaves.
+        // Because "basic" did not resolve, it should NOT be added to the leaf list; only
+        // "plain"/"copy" round-trip through createBlock as leaves.
         assert_eq!(map.leaf_list_len(), 0);
 
         let plain = map.create_block("plain", 9);

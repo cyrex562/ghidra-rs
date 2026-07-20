@@ -4,10 +4,10 @@ use crate::framework::store::FolderItem;
 /// failure.
 ///
 /// Mirrors `ghidra.framework.store.UnknownFolderItem`, which extends `FolderItem`.
-pub trait UnknownFolderItem: FolderItem {
-    /// Content type string used for folder items whose storage type is unknown.
-    const UNKNOWN_CONTENT_TYPE: &'static str = "Unknown-File";
+/// Content type string used for folder items whose storage type is unknown.
+pub const UNKNOWN_CONTENT_TYPE: &str = "Unknown-File";
 
+pub trait UnknownFolderItem: FolderItem {
     /// Get the file type: `FolderItem::DATABASE_FILE_TYPE`, `FolderItem::DATAFILE_FILE_TYPE`, or
     /// `FolderItem::LINK_FILE_TYPE`.
     ///
@@ -206,6 +206,6 @@ mod tests {
 
     #[test]
     fn test_unknown_content_type_constant() {
-        assert_eq!(MockUnknownFolderItem::UNKNOWN_CONTENT_TYPE, "Unknown-File");
+        assert_eq!(UNKNOWN_CONTENT_TYPE, "Unknown-File");
     }
 }

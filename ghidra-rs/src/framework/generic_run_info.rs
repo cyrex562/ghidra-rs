@@ -432,10 +432,13 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).unwrap();
 
-        let user_settings_dir = root.join(".ghidra_ghidra_11.2_U");
-        let older_dir = root.join(".ghidra_ghidra_11.1_U");
-        let newer_dir = root.join(".ghidra_ghidra_11.0_U");
-        let test_dir = root.join(format!(".ghidra_ghidra_11.3_U{TEST_DIRECTORY_SUFFIX}"));
+        // Settings dir names follow the `<appname>_<version>_<release>` layout that both the
+        // non-legacy directory collector (prefix = normalized app name, no leading dot) and the
+        // application-identifier parser expect.
+        let user_settings_dir = root.join("ghidra_11.2_U");
+        let older_dir = root.join("ghidra_11.1_U");
+        let newer_dir = root.join("ghidra_11.0_U");
+        let test_dir = root.join(format!("ghidra_11.3_U{TEST_DIRECTORY_SUFFIX}"));
 
         fs::create_dir_all(&user_settings_dir).unwrap();
         touch_dir_with_prefs_mtime(&older_dir, 100);
@@ -457,7 +460,7 @@ mod tests {
         // Prove object-safety: this trait can be used behind a trait object.
         let boxed: Box<dyn GenericRunInfo> = Box::new(run_info);
 
-        let all_dirs = boxed.get_user_settings_dirs_by_time();
+        let all_dirs = boxed.get_previous_application_settings_dirs_by_time();
         let _ = fs::remove_dir_all(&root);
 
         // newer_dir has the later mtime, so it must sort before older_dir; the current

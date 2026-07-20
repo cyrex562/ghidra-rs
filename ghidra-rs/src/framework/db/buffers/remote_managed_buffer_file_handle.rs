@@ -23,9 +23,10 @@ impl<T: ManagedBufferFileHandle + ?Sized> RemoteManagedBufferFileHandle for T {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::framework::db::buffer::DataBuffer;
+    use crate::framework::db::buffer::{Buffer, DataBuffer};
     use crate::framework::db::buffers::{
-        BlockStreamHandle, BufferFileHandle, InputBlockStream, OutputBlockStream,
+        BlockStreamHandle, BufferFileHandle, InputBlockStream, ManagedBufferFileHandle,
+        OutputBlockStream,
     };
     use crate::framework::seam_stubs::BufferFileBlock;
     use crate::util::task::TaskMonitor;
@@ -280,8 +281,12 @@ mod tests {
         let buf = handle.get(7).unwrap();
         assert_eq!(buf.get_id(), 7);
         assert!(handle.put(&buf, 7).is_ok());
-        assert!(handle.get_input_block_stream(&[1, 2, 3]).is_ok());
-        assert!(handle.get_input_block_stream_handle(&[1, 2, 3]).is_ok());
+        assert!(
+            ManagedBufferFileHandle::get_input_block_stream(&*handle, &[1, 2, 3]).is_ok()
+        );
+        assert!(
+            ManagedBufferFileHandle::get_input_block_stream_handle(&*handle, &[1, 2, 3]).is_ok()
+        );
         assert!(handle.delete().unwrap());
         assert!(handle.dispose().is_ok());
         assert!(handle.close().is_ok());

@@ -396,10 +396,13 @@ mod tests {
         assert!(handle.get_save_change_data_file().unwrap().is_none());
         assert_eq!(handle.get_forward_mod_map_data(1).unwrap(), vec![0xFF, 0x00]);
 
-        let mut stream = handle.get_input_block_stream(&[1, 2, 3]).unwrap();
+        let mut stream =
+            ManagedBufferFileHandle::get_input_block_stream(&*handle, &[1, 2, 3]).unwrap();
         assert!(stream.includes_header_block());
         assert!(stream.read_block().unwrap().is_some());
 
-        assert!(handle.get_input_block_stream_handle(&[1, 2, 3]).is_ok());
+        assert!(
+            ManagedBufferFileHandle::get_input_block_stream_handle(&*handle, &[1, 2, 3]).is_ok()
+        );
     }
 }

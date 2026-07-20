@@ -259,11 +259,11 @@ mod tests {
         assert!(item.open_for_update(-1).is_err());
 
         assert_eq!(
-            item.open_version(-1).unwrap_err().kind(),
+            item.open_version(-1).err().unwrap().kind(),
             io::ErrorKind::InvalidInput
         );
         assert_eq!(
-            item.open_for_update(-2).unwrap_err().kind(),
+            item.open_for_update(-2).err().unwrap().kind(),
             io::ErrorKind::InvalidInput
         );
     }

@@ -200,7 +200,7 @@ mod tests {
         assert!(callbacks.is_some());
         let callbacks = callbacks.unwrap();
 
-        let err = server.get_repository_server(None, Some(&callbacks)).unwrap_err();
+        let err = server.get_repository_server(None, Some(&callbacks)).err().unwrap();
         assert!(matches!(err, GhidraServerHandleError::FailedLogin(_)));
 
         let principals = vec![GhidraPrincipal::new("alice")];

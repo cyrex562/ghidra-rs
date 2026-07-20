@@ -307,6 +307,7 @@ pub trait LongKeyRecordNode: RecordNode + LongKeyNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::db::nodes::BTreeNode;
     use crate::framework::db::{DBHandle, FieldType};
     use crate::framework::seam_stubs::LongKeyInteriorNode;
     use crate::util::task::DummyMonitor;

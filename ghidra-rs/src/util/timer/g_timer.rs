@@ -45,15 +45,23 @@ pub trait GTimer: Send + Sync {
 struct GTimerTask {
     cancelled: Arc<AtomicBool>,
     ran: Arc<AtomicBool>,
+    /// Whether this task was scheduled for repeated execution. Mirrors the distinction
+    /// `java.util.TimerTask.cancel()` makes: a one-shot task that has already run can no
+    /// longer be cancelled, but a repeating task can always be cancelled to prevent further
+    /// executions.
+    repeating: bool,
 }
 
 impl GTimerMonitor for GTimerTask {
     fn cancel(&self) -> bool {
-        if self.ran.load(Ordering::SeqCst) {
+        // A one-shot task that has already executed cannot be cancelled (matches
+        // java.util.TimerTask.cancel returning false in that case). A repeating task can be
+        // cancelled at any time to stop future executions.
+        if !self.repeating && self.ran.load(Ordering::SeqCst) {
             return false;
         }
-        self.cancelled.store(true, Ordering::SeqCst);
-        true
+        // Returns false if the task was already cancelled.
+        !self.cancelled.swap(true, Ordering::SeqCst)
     }
 
     fn did_run(&self) -> bool {
@@ -105,7 +113,7 @@ impl GTimer for StdGTimer {
             thread_ran.store(true, Ordering::SeqCst);
         });
 
-        Box::new(GTimerTask { cancelled, ran })
+        Box::new(GTimerTask { cancelled, ran, repeating: false })
     }
 
     fn schedule_repeating_runnable(
@@ -136,7 +144,7 @@ impl GTimer for StdGTimer {
             }
         });
 
-        Box::new(GTimerTask { cancelled, ran })
+        Box::new(GTimerTask { cancelled, ran, repeating: true })
     }
 }
 
@@ -161,6 +169,7 @@ mod tests {
             Box::new(GTimerTask {
                 cancelled: Arc::new(AtomicBool::new(false)),
                 ran: Arc::new(AtomicBool::new(true)),
+                repeating: false,
             })
         }
 

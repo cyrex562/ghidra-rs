@@ -384,7 +384,7 @@ mod tests {
         assert_eq!(handle.get_name().unwrap(), "Repo2");
         assert_eq!(server.get_repository_names().unwrap().len(), 2);
 
-        let err = server.create_repository("Repo2").unwrap_err();
+        let err = server.create_repository("Repo2").err().unwrap();
         assert_eq!(err.kind(), io::ErrorKind::Other);
 
         server.delete_repository("Repo2").unwrap();

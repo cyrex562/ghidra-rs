@@ -293,9 +293,17 @@ mod tests {
 
     #[test]
     fn multi_undo_loses_growth_and_modifications() {
+        // Reproduce the multi-undo scenario directly rather than via
+        // `test_recovery_after_multi_undo`, which validates and then `take()`s `reopened`
+        // (leaving it `None`), so that the reopened state remains available to inspect here.
         let mut mock = MockRecoveryFileTest::new();
         mock.set_up().unwrap();
-        mock.test_recovery_after_multi_undo().unwrap();
+        mock.init();
+        for _ in 0..4 {
+            assert!(mock.undo());
+        }
+        mock.take_recovery_snapshot();
+        mock.reopen();
         let state = mock.reopened.as_ref().unwrap();
         assert_eq!(state.len(), ORIG_CNT);
         assert!(state.iter().all(Option::is_some));

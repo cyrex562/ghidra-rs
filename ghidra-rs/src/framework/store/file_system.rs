@@ -756,7 +756,7 @@ mod tests {
         assert!(matches!(err, FileSystemError::Io(e) if e.kind() == io::ErrorKind::NotFound));
 
         assert_eq!(
-            fs.get_item_by_file_id("abc").unwrap_err().kind(),
+            fs.get_item_by_file_id("abc").err().unwrap().kind(),
             io::ErrorKind::Unsupported
         );
     }
@@ -764,8 +764,8 @@ mod tests {
     #[test]
     fn test_listener_notified_on_item_creation() {
         let mut fs = MockFileSystem::default();
-        struct RecordingListener<'a>(&'a RefCell<Vec<String>>);
-        impl FileSystemListener for RecordingListener<'_> {
+        struct RecordingListener(std::rc::Rc<RefCell<Vec<String>>>);
+        impl FileSystemListener for RecordingListener {
             fn folder_created(&self, _parent_path: &str, _name: &str) {}
             fn item_created(&self, parent_path: &str, name: &str) {
                 self.0.borrow_mut().push(format!("item_created:{parent_path}:{name}"));
@@ -779,8 +779,8 @@ mod tests {
             fn item_changed(&self, _parent_path: &str, _item_name: &str) {}
             fn synchronize(&self) {}
         }
-        let events = RefCell::new(Vec::new());
-        fs.add_file_system_listener(Box::new(RecordingListener(&events)));
+        let events = std::rc::Rc::new(RefCell::new(Vec::new()));
+        fs.add_file_system_listener(Box::new(RecordingListener(events.clone())));
         let _ = fs.create_text_data_item(SEPARATOR, "note", None, "Text", "hi", None, None);
         assert_eq!(events.borrow().as_slice(), &["item_created:/:note".to_string()]);
     }

@@ -666,7 +666,7 @@ mod tests {
         assert!(fs.get_item("/", "x").unwrap().is_none());
         assert!(!fs.file_exists("/", "x"));
         assert_eq!(
-            fs.get_item_by_file_id("abc").unwrap_err().kind(),
+            fs.get_item_by_file_id("abc").err().unwrap().kind(),
             io::ErrorKind::Unsupported
         );
     }
@@ -689,7 +689,8 @@ mod tests {
         let mut more_data: &[u8] = b"x";
         let err = fs
             .create_data_file("/", "bad:name", &mut more_data, None, "Program", &DummyMonitor)
-            .unwrap_err();
+            .err()
+            .unwrap();
         assert!(matches!(err, CreateItemError::InvalidName(_)));
         assert!(!fs.file_exists("/", "bad:name"));
     }
@@ -700,7 +701,8 @@ mod tests {
         let mut data: &[u8] = b"hello";
         let err = fs
             .create_data_file("/", "prog.gzf", &mut data, None, "Program", &DummyMonitor)
-            .unwrap_err();
+            .err()
+            .unwrap();
         assert!(matches!(err, CreateItemError::Io(_)));
     }
 

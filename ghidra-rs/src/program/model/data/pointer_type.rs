@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn value_of_rejects_unknown_value() {
-        let err = value_of(99).unwrap_err();
+        let err = value_of(99).err().unwrap();
         assert_eq!(err, NoSuchPointerTypeValue(99));
         assert_eq!(err.to_string(), "unknown type value: 99");
     }

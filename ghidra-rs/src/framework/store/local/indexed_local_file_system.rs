@@ -483,10 +483,11 @@ mod tests {
                 .get_mut(new_folder_path)
                 .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "destination not found"))?;
             if !dest.insert(new_name.to_string()) {
-                return Err(FileSystemOpError::Io(
+                return Err(FileSystemOpError::Io(io::Error::new(
+                    io::ErrorKind::AlreadyExists,
                     DuplicateFileException::new(format!("item already exists: {new_name}"))
-                        .into(),
-                ));
+                        .to_string(),
+                )));
             }
             Ok(())
         }
@@ -524,6 +525,14 @@ mod tests {
         concrete
             .items
             .insert("/ProgramA".to_string(), BTreeSet::from(["file.gzf".to_string()]));
+        // A second folder holding an identically-named item, used to exercise the
+        // duplicate-destination path below (a single item cannot occupy two folders at once
+        // because moves are destructive).
+        concrete.folders.insert("/Src".to_string(), BTreeSet::new());
+        concrete.folders.get_mut("/").unwrap().insert("Src".to_string());
+        concrete
+            .items
+            .insert("/Src".to_string(), BTreeSet::from(["file.gzf".to_string()]));
 
         let mut fs: Box<dyn IndexedLocalFileSystem> = Box::new(concrete);
 
@@ -539,9 +548,10 @@ mod tests {
         fs.create_folder("/", "Dest").unwrap();
         // Re-creating an existing folder is a silent no-op, matching Java's behavior.
         fs.create_folder("/", "Dest").unwrap();
-        assert_eq!(fs.get_folder_names("/").unwrap().len(), 2);
+        // "/" now holds ProgramA, Src, and the freshly created Dest.
+        assert_eq!(fs.get_folder_names("/").unwrap().len(), 3);
 
-        assert_eq!(fs.get_item_count().unwrap(), 1);
+        assert_eq!(fs.get_item_count().unwrap(), 2);
         let items = fs.get_items("/ProgramA").unwrap();
         assert_eq!(items.len(), 1);
         assert!(items[0].is_some());
@@ -554,13 +564,17 @@ mod tests {
         assert!(fs.get_items("/ProgramA").unwrap().is_empty());
         assert_eq!(fs.get_item_names("/Dest", true).unwrap(), vec!["file.gzf".to_string()]);
 
-        // Moving into an occupied destination fails with a duplicate error.
-        fs.move_item("/Dest", "file.gzf", "/ProgramA", "file.gzf")
-            .unwrap();
+        // Moving into an occupied destination fails with a duplicate error: /Dest already
+        // holds "file.gzf" (moved there above), and /Src holds its own "file.gzf".
         let err = fs
-            .move_item("/ProgramA", "file.gzf", "/Dest", "file.gzf")
+            .move_item("/Src", "file.gzf", "/Dest", "file.gzf")
             .unwrap_err();
         assert!(matches!(err, FileSystemOpError::Io(_)));
+
+        // Move the item back out of Dest so ProgramA holds it again for the deletion checks
+        // below (Dest becomes empty).
+        fs.move_item("/Dest", "file.gzf", "/ProgramA", "file.gzf")
+            .unwrap();
 
         // Moving a non-existent item reports not-found.
         let err = fs
@@ -568,7 +582,7 @@ mod tests {
             .unwrap_err();
         assert!(matches!(err, FileSystemOpError::Io(_)));
 
-        // ProgramA is now empty (its item was moved to Dest above) and can be deleted.
+        // Move ProgramA's item into Dest, emptying ProgramA so it can be deleted.
         fs.move_item("/ProgramA", "file.gzf", "/Dest", "moved.gzf")
             .unwrap();
         assert!(fs.delete_folder("/ProgramA").is_ok());

@@ -274,7 +274,11 @@ mod tests {
         ) -> String {
             self.value.to_string()
         }
-        fn to_display_string_with_format(&self, _format: &dyn FloatFormat, _compact: bool) -> String {
+        fn to_display_string_with_format(
+            &self,
+            _format: &dyn crate::pcode::seam_stubs::FloatFormat,
+            _compact: bool,
+        ) -> String {
             self.value.to_string()
         }
         fn zero(fracbits: i32, expbits: i32, sign: i32) -> Self {

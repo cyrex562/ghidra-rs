@@ -178,6 +178,46 @@ mod tests {
         }
     }
 
+    impl BufferFile for MockManagedBufferFileAdapter {
+        fn is_read_only(&self) -> bool {
+            self.read_only
+        }
+        fn set_read_only(&mut self) -> io::Result<bool> {
+            Ok(true)
+        }
+        fn get_buffer_size(&self) -> usize {
+            4096
+        }
+        fn get_index_count(&self) -> usize {
+            0
+        }
+        fn get_free_indexes(&self) -> Vec<i32> {
+            Vec::new()
+        }
+        fn set_free_indexes(&mut self, _indexes: &[i32]) -> io::Result<()> {
+            Ok(())
+        }
+        fn get_parameter(&self, _name: &str) -> Option<i32> {
+            None
+        }
+        fn set_parameter(&mut self, _name: &str, _value: i32) {}
+        fn get_parameter_names(&self) -> Vec<String> {
+            Vec::new()
+        }
+        fn get(&self, index: i32) -> io::Result<DataBuffer> {
+            Ok(DataBuffer::from_data(index, vec![0u8; 4]))
+        }
+        fn put(&mut self, _buf: &DataBuffer, _index: i32) -> io::Result<()> {
+            Ok(())
+        }
+        fn close(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+        fn delete(&mut self) -> io::Result<bool> {
+            Ok(!self.read_only)
+        }
+    }
+
     impl ManagedBufferFile for MockManagedBufferFileAdapter {
         fn get_next_change_data_file(
             &mut self,
@@ -230,7 +270,7 @@ mod tests {
         let mut adapter: Box<dyn ManagedBufferFileAdapter> =
             Box::new(MockManagedBufferFileAdapter { read_only: false, remote: true, checkin_id: 9 });
 
-        assert!(!adapter.is_read_only().unwrap());
+        assert!(!BufferFileAdapter::is_read_only(&*adapter).unwrap());
         assert!(adapter.is_remote());
         assert_eq!(adapter.get_checkin_id().unwrap(), 9);
         assert!(adapter.can_save().unwrap());
@@ -244,7 +284,9 @@ mod tests {
         let monitor = DummyMonitor;
 
         // Adapter-specific stream, keyed by the change map.
-        let mut change_stream = adapter.get_input_block_stream(&[1, 2, 3], &monitor).unwrap();
+        let mut change_stream =
+            ManagedBufferFileAdapter::get_input_block_stream(&*adapter, &[1, 2, 3], &monitor)
+                .unwrap();
         assert!(change_stream.read_block().unwrap().is_some());
         assert!(change_stream.read_block().unwrap().is_some());
         assert!(change_stream.read_block().unwrap().is_some());

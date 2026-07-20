@@ -54,13 +54,23 @@ mod tests {
         /// What a re-opened handle would see: `None` until `set_up`, then the state as of the
         /// last recovery snapshot (or the saved state, once `save` is simulated).
         reopened: Option<(Vec<bool>, Vec<bool>)>,
+        /// Whether the pending work has been flushed to the primary database via `save`. Once
+        /// saved, no recovery is needed even though a recovery snapshot still exists (mirrors
+        /// `DBHandle.canRecover` returning false after a successful save/commit).
+        saved: bool,
     }
 
     const RECORD_COUNT: usize = 10;
 
     impl MockRecoveryDbTest {
         fn new() -> Self {
-            Self { history: Vec::new(), current: 0, recovery_point: None, reopened: None }
+            Self {
+                history: Vec::new(),
+                current: 0,
+                recovery_point: None,
+                reopened: None,
+                saved: false,
+            }
         }
 
         fn current_state(&self) -> &(Vec<bool>, Vec<bool>) {
@@ -74,6 +84,7 @@ mod tests {
         }
 
         fn init(&mut self) {
+            self.saved = false;
             let empty = vec![false; RECORD_COUNT];
             self.history = vec![(empty.clone(), empty.clone())];
             self.current = 0;
@@ -131,7 +142,9 @@ mod tests {
         }
 
         fn can_recover(&self) -> bool {
-            self.recovery_point.map(|p| p != self.current).unwrap_or(false)
+            // Recovery is possible when a recovery snapshot exists and the pending work has not
+            // yet been flushed to the primary database via `save`.
+            self.recovery_point.is_some() && !self.saved
         }
 
         /// Simulate closing the handle and re-opening it: a real re-open recovers up through the
@@ -144,6 +157,7 @@ mod tests {
         fn save(&mut self) {
             self.reopened = Some(self.current_state().clone());
             self.recovery_point = Some(self.current);
+            self.saved = true;
         }
     }
 
@@ -169,6 +183,7 @@ mod tests {
             self.current = 0;
             self.recovery_point = None;
             self.reopened = None;
+            self.saved = false;
             Ok(())
         }
 

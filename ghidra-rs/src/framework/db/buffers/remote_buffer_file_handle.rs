@@ -20,7 +20,7 @@ impl<T: BufferFileHandle + ?Sized> RemoteBufferFileHandle for T {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::framework::db::buffer::DataBuffer;
+    use crate::framework::db::buffer::{Buffer, DataBuffer};
     use crate::framework::db::buffers::{BlockStreamHandle, InputBlockStream, OutputBlockStream};
     use crate::framework::seam_stubs::BufferFileBlock;
     use crate::util::task::TaskMonitor;

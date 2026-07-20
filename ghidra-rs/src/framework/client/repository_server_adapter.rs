@@ -284,7 +284,7 @@ mod tests {
         server.create_repository("Repo1").unwrap();
         assert_eq!(server.get_repository_names().unwrap(), vec!["Repo1".to_string()]);
 
-        let err = server.create_repository("Repo1").unwrap_err();
+        let err = server.create_repository("Repo1").err().unwrap();
         assert!(matches!(err, CreateRepositoryError::Duplicate(_)));
 
         server.delete_repository("Repo1").unwrap();

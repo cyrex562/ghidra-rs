@@ -173,7 +173,7 @@ mod tests {
         assert!(matches!(err, DeleteError::ReadOnly(_)));
         assert!(!db.deleted.get());
 
-        let err = db.open_for_update(None).unwrap_err();
+        let err = db.open_for_update(None).err().unwrap();
         assert!(matches!(err, OpenError::Io(_)));
     }
 }

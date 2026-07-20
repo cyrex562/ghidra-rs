@@ -541,7 +541,11 @@ mod tests {
         let found = mock.find_default_application_root_dirs();
         let _ = std::fs::remove_dir_all(&root);
 
-        assert!(found.is_empty(), "expected no root dir to be found, got {found:?}");
+        assert!(
+            found.is_empty(),
+            "expected no root dir to be found, got {} dirs",
+            found.len()
+        );
     }
 
     #[test]

@@ -89,9 +89,9 @@ mod tests {
             if self.remaining == 0 {
                 return Err(CancelledException("no more references".to_string()));
             }
-            let source = Address::new(self.space.clone(), 0x1000 * self.remaining as u64);
+            let source = Address::new(self.space.clone(), 0x1000 * self.remaining as i64);
             self.remaining -= 1;
-            let destination = Address::new(self.space.clone(), 0x1000 * self.remaining as u64);
+            let destination = Address::new(self.space.clone(), 0x1000 * self.remaining as i64);
             Ok(Box::new(MockCodeBlockReference {
                 source,
                 destination,

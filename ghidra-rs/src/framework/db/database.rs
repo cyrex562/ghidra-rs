@@ -150,7 +150,7 @@ mod tests {
             update_allowed: false,
         };
 
-        let err = db.open_for_update(None).unwrap_err();
+        let err = db.open_for_update(None).err().unwrap();
         assert!(matches!(err, OpenError::Io(_)));
     }
 }

@@ -477,7 +477,9 @@ mod tests {
             monitor: &dyn TaskMonitor,
         ) -> Result<(), OutputItemError> {
             if monitor.is_cancelled() {
-                return Err(OutputItemError::Cancelled(Default::default()));
+                return Err(OutputItemError::Cancelled(
+                    crate::util::exception::CancelledException::default(),
+                ));
             }
             Ok(())
         }
@@ -502,6 +504,37 @@ mod tests {
         }
         fn set_progress(&self, _value: i64) {}
         fn initialize(&self, _max: i64) {}
+        fn set_maximum(&self, _max: i64) {}
+        fn get_maximum(&self) -> i64 {
+            0
+        }
+        fn set_indeterminate(&self, _indeterminate: bool) {}
+        fn is_indeterminate(&self) -> bool {
+            false
+        }
+        fn check_cancelled(&self) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+        fn increment_progress(&self, _amount: i64) {}
+        fn get_progress(&self) -> i64 {
+            -1
+        }
+        fn cancel(&self) {}
+        fn add_cancelled_listener(
+            &self,
+            _listener: Box<dyn crate::util::task::CancelledListener>,
+        ) {
+        }
+        fn remove_cancelled_listener(
+            &self,
+            _listener: &dyn crate::util::task::CancelledListener,
+        ) {
+        }
+        fn set_cancel_enabled(&self, _enabled: bool) {}
+        fn is_cancel_enabled(&self) -> bool {
+            true
+        }
+        fn clear_cancelled(&self) {}
     }
 
     #[test]

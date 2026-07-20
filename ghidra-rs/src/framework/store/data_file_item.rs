@@ -36,9 +36,10 @@ mod tests {
     use super::*;
     use std::cell::RefCell;
     use std::io::{Cursor, Read as _, Write as _};
+    use std::rc::Rc;
 
     struct MockDataFileItem {
-        versions: RefCell<Vec<Vec<u8>>>,
+        versions: Rc<RefCell<Vec<Vec<u8>>>>,
     }
 
     impl FolderItem for MockDataFileItem {
@@ -213,7 +214,7 @@ mod tests {
             self.versions.borrow_mut().push(Vec::new());
             let index = self.versions.borrow().len() - 1;
             Ok(Box::new(MockOutputStream {
-                versions: &self.versions,
+                versions: self.versions.clone(),
                 index,
             }))
         }
@@ -227,12 +228,12 @@ mod tests {
         }
     }
 
-    struct MockOutputStream<'a> {
-        versions: &'a RefCell<Vec<Vec<u8>>>,
+    struct MockOutputStream {
+        versions: Rc<RefCell<Vec<Vec<u8>>>>,
         index: usize,
     }
 
-    impl io::Write for MockOutputStream<'_> {
+    impl io::Write for MockOutputStream {
         fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
             self.versions.borrow_mut()[self.index].extend_from_slice(buf);
             Ok(buf.len())
@@ -246,16 +247,16 @@ mod tests {
     #[test]
     fn test_missing_data_file_reports_not_found() {
         let item = MockDataFileItem {
-            versions: RefCell::new(Vec::new()),
+            versions: Rc::new(RefCell::new(Vec::new())),
         };
-        let err = item.get_input_stream().unwrap_err();
+        let err = item.get_input_stream().err().unwrap();
         assert_eq!(err.kind(), io::ErrorKind::NotFound);
     }
 
     #[test]
     fn test_object_safety_and_write_read_roundtrip() {
         let item: Box<dyn DataFileItem> = Box::new(MockDataFileItem {
-            versions: RefCell::new(Vec::new()),
+            versions: Rc::new(RefCell::new(Vec::new())),
         });
 
         {
@@ -272,7 +273,7 @@ mod tests {
     #[test]
     fn test_get_input_stream_for_version_selects_correct_version() {
         let item: Box<dyn DataFileItem> = Box::new(MockDataFileItem {
-            versions: RefCell::new(Vec::new()),
+            versions: Rc::new(RefCell::new(Vec::new())),
         });
 
         item.get_output_stream().unwrap().write_all(b"v0").unwrap();
