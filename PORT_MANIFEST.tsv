@@ -9885,7 +9885,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/Schema.java	TODO	orig_src Ghidra F
 orig_src/Ghidra/Framework/DB/src/main/java/db/ShortField.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/SparseRecord.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/StringField.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/Table.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/Table.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TableRecord.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TableStatistics.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/TerminatedTransactionException.java	TODO	orig_src Ghidra Framework DB src main java db 
