@@ -1,6 +1,6 @@
 use crate::framework::db::DBRecord;
+use crate::program::database::db_object::DbObject;
 use crate::program::model::address::key_range::KeyRange;
-use crate::program::seam_stubs::DbObject;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -148,72 +148,32 @@ impl<T: DbObject> DbCache<T> for DummyDbCache<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::database::db_object::DbObjectState;
     use std::collections::HashMap;
-    use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
+    use std::sync::atomic::{AtomicI32, Ordering};
     use std::sync::Mutex;
 
+    /// A database object whose `refresh()` always succeeds, mirroring a concrete `DbObject`
+    /// subclass that can always reconstruct its state from the database.
     struct MockDbObject {
-        key: i64,
-        deleted: AtomicBool,
-        last_valid_mod_count: AtomicI32,
-        cache: Mutex<Option<Arc<dyn DbCacheHandle>>>,
+        state: DbObjectState,
     }
 
     impl MockDbObject {
         fn new(key: i64) -> Self {
             MockDbObject {
-                key,
-                deleted: AtomicBool::new(false),
-                last_valid_mod_count: AtomicI32::new(INVALID_COUNT),
-                cache: Mutex::new(None),
+                state: DbObjectState::new(key),
             }
         }
     }
 
     impl DbObject for MockDbObject {
-        fn set_cache(&self, cache: Arc<dyn DbCacheHandle>) {
-            self.last_valid_mod_count
-                .store(cache.get_modification_count(), Ordering::SeqCst);
-            *self.cache.lock().unwrap() = Some(cache);
+        fn state(&self) -> &DbObjectState {
+            &self.state
         }
 
-        fn get_key(&self) -> i64 {
-            self.key
-        }
-
-        fn is_valid(&self) -> bool {
-            if self.deleted.load(Ordering::SeqCst) {
-                return false;
-            }
-            match self.cache.lock().unwrap().as_ref() {
-                Some(cache) => {
-                    self.last_valid_mod_count.load(Ordering::SeqCst) == cache.get_modification_count()
-                }
-                None => false,
-            }
-        }
-
-        fn refresh_if_needed(&self) -> bool {
-            if self.deleted.load(Ordering::SeqCst) {
-                return false;
-            }
-            if let Some(cache) = self.cache.lock().unwrap().as_ref() {
-                self.last_valid_mod_count
-                    .store(cache.get_modification_count(), Ordering::SeqCst);
-            }
+        fn refresh(&self, _record: Option<&DBRecord>) -> bool {
             true
-        }
-
-        fn refresh_if_needed_with_record(&self, _record: &DBRecord) -> bool {
-            self.refresh_if_needed()
-        }
-
-        fn set_deleted(&self) {
-            self.deleted.store(true, Ordering::SeqCst);
-        }
-
-        fn set_invalid(&self) {
-            self.last_valid_mod_count.store(INVALID_COUNT, Ordering::SeqCst);
         }
     }
 

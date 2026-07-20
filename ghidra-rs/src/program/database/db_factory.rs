@@ -1,5 +1,5 @@
 use crate::framework::db::DBRecord;
-use crate::program::seam_stubs::DbObject;
+use crate::program::database::db_object::DbObject;
 
 /// Interface for factories that create `DbObject`s. Required by `DbCache`.
 ///
@@ -25,39 +25,20 @@ pub trait DbFactory<T: DbObject> {
 mod tests {
     use super::*;
     use crate::framework::db::{Field, FieldType, Schema};
+    use crate::program::database::db_object::DbObjectState;
     use std::sync::Arc;
 
     struct MockDbObject {
-        key: i64,
+        state: DbObjectState,
     }
 
     impl DbObject for MockDbObject {
-        fn set_cache(&self, _cache: Arc<dyn crate::program::database::db_cache::DbCacheHandle>) {
-            // not exercised by these tests
+        fn state(&self) -> &DbObjectState {
+            &self.state
         }
 
-        fn get_key(&self) -> i64 {
-            self.key
-        }
-
-        fn is_valid(&self) -> bool {
+        fn refresh(&self, _record: Option<&DBRecord>) -> bool {
             true
-        }
-
-        fn refresh_if_needed(&self) -> bool {
-            true
-        }
-
-        fn refresh_if_needed_with_record(&self, _record: &DBRecord) -> bool {
-            true
-        }
-
-        fn set_deleted(&self) {
-            // not exercised by these tests
-        }
-
-        fn set_invalid(&self) {
-            // not exercised by these tests
         }
     }
 
@@ -70,7 +51,9 @@ mod tests {
             if key < 0 {
                 return None;
             }
-            Some(MockDbObject { key })
+            Some(MockDbObject {
+                state: DbObjectState::new(key),
+            })
         }
 
         fn instantiate_from_record(&self, record: &DBRecord) -> MockDbObject {
@@ -78,7 +61,9 @@ mod tests {
                 Field::Long(Some(value)) => *value,
                 _ => -1,
             };
-            MockDbObject { key }
+            MockDbObject {
+                state: DbObjectState::new(key),
+            }
         }
     }
 
@@ -99,7 +84,7 @@ mod tests {
     fn instantiate_by_key_returns_object() {
         let factory = make_factory();
         let obj = factory.instantiate(42).expect("expected an object");
-        assert_eq!(obj.key, 42);
+        assert_eq!(obj.get_key(), 42);
     }
 
     #[test]
@@ -113,6 +98,6 @@ mod tests {
         let factory = make_factory();
         let record = DBRecord::new(factory.schema.clone(), Field::Long(Some(7)));
         let obj = factory.instantiate_from_record(&record);
-        assert_eq!(obj.key, 7);
+        assert_eq!(obj.get_key(), 7);
     }
 }
