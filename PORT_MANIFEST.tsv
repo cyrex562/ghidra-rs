@@ -9850,7 +9850,7 @@ orig_src/Ghidra/Framework/DB/src/main/java/db/DBRollbackException.java	DONE	orig
 orig_src/Ghidra/Framework/DB/src/main/java/db/Database.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/DatabaseUtils.java	TODO	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/Field.java	TODO	orig_src Ghidra Framework DB src main java db 
-orig_src/Ghidra/Framework/DB/src/main/java/db/FieldIndexTable.java	TODO	orig_src Ghidra Framework DB src main java db 
+orig_src/Ghidra/Framework/DB/src/main/java/db/FieldIndexTable.java	DONE	orig_src Ghidra Framework DB src main java db 
 orig_src/Ghidra/Framework/DB/src/main/java/db/FieldKeyInteriorNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FieldKeyNode.java	DONE	orig_src Ghidra Framework DB src main java db
 orig_src/Ghidra/Framework/DB/src/main/java/db/FieldKeyRecordNode.java	DONE	orig_src Ghidra Framework DB src main java db
