@@ -198,3 +198,4 @@ ts	stub_class	referenced_by
 2026-07-19T05:00:00Z	VersionedDatabase	VersionedDBListener
 2026-07-19T06:00:00Z	CheckoutType	LocalFolderItem
 2026-07-20T00:00:00Z	TempDatabaseCleaner	FileSystemInitializer
+2026-07-20T00:00:00Z	RepositoryItem	RepositoryHandle

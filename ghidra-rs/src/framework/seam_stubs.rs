@@ -282,6 +282,11 @@ pub trait TempDatabaseCleaner {
     fn cleanup_old_temp_databases(&self);
 }
 
+/// Placeholder for `ghidra.framework.remote.RepositoryItem`, referenced by
+/// [`RepositoryHandle`](crate::framework::remote::RepositoryHandle) before the real class is
+/// ported. `RepositoryHandle` only ever returns this type, so no members are needed yet.
+pub trait RepositoryItem {}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
