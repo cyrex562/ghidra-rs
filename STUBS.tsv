@@ -99,7 +99,6 @@ ts	stub_class	referenced_by
 2026-07-08T21:00:00Z	PluginTool	ToolTemplate
 2026-07-08T22:00:00Z	LanguageNotFoundException	LanguageProvider
 2026-07-08T23:30:00Z	RepositoryAdapter	ProjectManager
-2026-07-08T23:30:00Z	RepositoryServerAdapter	ProjectManager
 2026-07-08T23:30:00Z	ToolChest	ProjectManager
 2026-07-08T23:45:00Z	ToolAssociationInfo	ToolServices
 2026-07-08T23:50:00Z	PrototypePieces	ParamList

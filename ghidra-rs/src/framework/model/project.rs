@@ -2,7 +2,7 @@ use std::any::TypeId;
 use std::io;
 use std::path::PathBuf;
 
-use crate::framework::client::RepositoryAdapter;
+use crate::framework::client::{RepositoryAdapter, RepositoryServerAdapter};
 use crate::framework::model::domain_file::DomainFile;
 use crate::framework::model::domain_object::DomainObjectConsumer;
 use crate::framework::model::project_data::ProjectData;
@@ -17,8 +17,8 @@ use crate::framework::model::tool_services::ToolServices;
 use crate::framework::model::tool_template::ToolTemplate;
 use crate::framework::model::workspace::Workspace;
 use crate::framework::seam_stubs::{
-    PluginTool, ProjectLocator, RepositoryServerAdapter, SaveState, ToolAssociationInfo,
-    ToolChest as StubToolChest, WorkspaceChangeListener,
+    PluginTool, ProjectLocator, SaveState, ToolAssociationInfo, ToolChest as StubToolChest,
+    WorkspaceChangeListener,
 };
 use crate::util::exception::DuplicateNameException;
 
