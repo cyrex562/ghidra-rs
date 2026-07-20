@@ -16,7 +16,7 @@ DONE	trait	76	245	6	framework	Ghidra/Framework/DB/src/main/java/db/LongKeyInteri
 DONE	trait	75	244	7	framework	Ghidra/Framework/DB/src/main/java/db/VarKeyInteriorNode.java
 DONE	trait	74	248	5	framework	Ghidra/Framework/DB/src/main/java/db/VarKeyNode.java
 DONE	trait	71	242	7	framework	Ghidra/Framework/DB/src/main/java/db/FieldIndexTable.java
-TODO	trait	73	34	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/TextDataItem.java
+DONE	trait	73	34	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/TextDataItem.java
 TODO	trait	73	34	1	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/store/UnknownFolderItem.java
 TODO	trait	80	14	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/timer/GTimerMonitor.java
 TODO	trait	79	18	2	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/timer/GTimer.java
