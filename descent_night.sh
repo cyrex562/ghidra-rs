@@ -29,15 +29,16 @@ MANIFEST="PORT_MANIFEST.tsv"; ORDER="PORT_ORDER.tsv"; STUBS="STUBS.tsv"
 INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
-CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-1500}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"
-TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1200}"   # per-port: run the ported module's own tests before keeping the merge
+CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-2400}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"
+TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"   # backstop: verify test crate stays green after merge
+OVERALL_HOURS="${OVERALL_HOURS:-7}"                                 # wall-clock cap; loop stops after this many hours regardless of DESCENT_MAX
 PY="${PY:-python3}"; LOG_DIR="${LOG_DIR:-$HOME/agents/logs/ghidra}"; mkdir -p "$LOG_DIR"
+START_EPOCH=$(date +%s)
 
 exec 7>/tmp/ghidra-descent.lock; flock -n 7 || { echo "another descent run active"; exit 0; }
 [ -f "$STUBS" ] || printf 'ts\tstub_class\treferenced_by\n' > "$STUBS"
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
-snake(){ printf '%s' "$1" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g; s/([A-Z]+)([A-Z][a-z])/\1_\2/g' | tr '[:upper:]' '[:lower:]'; }
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
@@ -46,6 +47,9 @@ git pull --ff-only >/dev/null 2>&1 || true
 
 log "descent preflight: cargo build --lib"
 timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>/dev/null || { log "integration not green -- abort"; exit 1; }
+# baseline test-crate compile health -- the backstop parks any port that RAISES this count
+TEST_ERR_BASE=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error' || echo 0)
+log "preflight test-compile baseline: ${TEST_ERR_BASE} errors"
 
 # refresh the leaf-first order against the current manifest (unless disabled)
 if [ "$REGEN" = "1" ] && [ -z "${DESCENT_ONLY:-}" ]; then
@@ -60,6 +64,9 @@ log "descent start: MODEL=$MODEL DESCENT_MAX=$DESCENT_MAX (DONE so far: $(grep -
 
 DESCENT_ONLY="${DESCENT_ONLY:-}"   # optional: space-separated class names, processed in that order
 for ((i=1;i<=DESCENT_MAX;i++)); do
+  # wall-clock cap: the port-write-test-fix loop is slower per class, so bound the night
+  elapsed_h=$(( ($(date +%s) - START_EPOCH) / 3600 ))
+  if [ "$elapsed_h" -ge "$OVERALL_HOURS" ]; then log "OVERALL_HOURS=${OVERALL_HOURS} reached -- stopping."; break; fi
   if [ -n "$DESCENT_ONLY" ]; then
     next=""; mode=""
     for want in $DESCENT_ONLY; do
@@ -114,11 +121,15 @@ Rules for breaking the cycle:
   here and do NOT fail: define a MINIMAL placeholder trait for it (only the methods THIS type needs) in
   ghidra-rs/src/${module}/seam_stubs.rs (create/extend it; wire into mod.rs), and append a line to
   STUBS.tsv: '<ISO-time>\t<PlaceholderName>\t${class}'.
-- Add a #[cfg(test)] mod with at least one smoke test (a mock impl proving object-safety). Your tests
-  are RUN as a merge gate -- they must PASS and exercise real behavior, not trivially-true asserts.
-- Verify locally with 'cargo build --lib' ONLY (do NOT run cargo test; do NOT run git).
+- Add a #[cfg(test)] mod with at least one smoke test (a mock impl proving object-safety) that
+  exercises real behavior, not trivially-true asserts.
+- MANDATORY test-green loop before finishing: (1) 'cargo build --lib' must pass; (2) 'cargo test --lib
+  --no-run' must compile with ZERO errors -- if your trait/signature change broke EXISTING test code
+  elsewhere (stale mocks, dyn-safety, ambiguous methods), you MUST update that test code to match;
+  (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test -> read failures -> fix ->
+  repeat until BOTH compile clean AND all tests pass. Do NOT run git.
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
-Port ONLY this type (plus placeholder stubs for its references). No unrelated changes.
+Port this type (plus placeholder stubs for its references) and fix any test code your change breaks.
 If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
   else
     prompt="Port the Java class at ${srcpath} to idiomatic Rust (struct + impl).
@@ -135,16 +146,19 @@ Rules:
   NOT yet in the crate (a forward cycle edge), define a MINIMAL placeholder trait for it in
   ghidra-rs/src/${module}/seam_stubs.rs (only the methods THIS class needs; wire into mod.rs) and append
   '<ISO-time>\t<PlaceholderName>\t${class}' to STUBS.tsv -- do NOT fail for a missing type.
-- Add a #[cfg(test)] mod with at least one smoke test. Your tests are RUN as a merge gate -- they
-  must PASS and exercise real behavior (compare against expected values), not trivially-true asserts.
-- Verify locally with 'cargo build --lib' ONLY (do NOT run cargo test; do NOT run git).
+- Add a #[cfg(test)] mod with at least one smoke test that compares against expected values from the
+  Java behavior, not trivially-true asserts.
+- MANDATORY test-green loop before finishing: (1) 'cargo build --lib' must pass; (2) 'cargo test --lib
+  --no-run' must compile with ZERO errors -- if your change broke EXISTING test code elsewhere, update
+  that test code to match; (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test ->
+  read failures -> fix -> repeat until BOTH compile clean AND all tests pass. Do NOT run git.
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
-Port ONLY this class. No unrelated changes.
+Port this class and fix any test code your change breaks.
 If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
   fi
 
   timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" --model "$MODEL" --permission-mode acceptEdits \
-    --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*)" \
+    --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*),Bash(cargo test*)" \
     --output-format json >"$jlog" 2>>"$log"; rc=$?
   "$PY" -c 'import json,sys;print(json.load(open(sys.argv[1])).get("result",""))' "$jlog" >>"$log" 2>/dev/null||true
   iserr=$("$PY" -c 'import json,sys;print(1 if json.load(open(sys.argv[1])).get("is_error") else 0)' "$jlog" 2>/dev/null||echo 1)
@@ -159,27 +173,22 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     pre_merge=$(git rev-parse HEAD)
     if git merge --no-ff "$branch" -m "merge descent: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
-      # STRICT per-port test gate: run the ported module's OWN tests. A port that compiles but
-      # fails its smoke test must not merge. Safety: only PARK on this port's own failures --
-      # an UNRELATED test-compile error (drift elsewhere) leaves the merge (build --lib is green).
+      # BACKSTOP test gate: the model is now responsible for leaving the WHOLE test crate green
+      # (build + test --no-run clean + suite passing). This verifies it. It parks a port that:
+      #   * RAISES the test-compile error count above the run's baseline (introduced drift), or
+      #   * leaves any test FAILING.
+      # Baselined against preflight (TEST_ERR_BASE) so pre-existing, not-yet-repaired drift can't
+      # mass-park otherwise-good ports; once the crate is clean (base 0) the gate is strict.
       gate_ok=1
       if [ "$TEST_GATE" = "1" ]; then
-        tfilter=$(snake "$class")
-        tout=$(timeout "$TEST_TIMEOUT" cargo test --lib "$tfilter" --no-fail-fast 2>&1); techo=$?
-        if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
-          gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | head -1))"
-        elif printf '%s' "$tout" | grep -q 'test result: ok'; then
-          gate_ok=1
-        elif printf '%s' "$tout" | grep -qE '^error' ; then
-          # did not compile under this filter. own file implicated -> park; else inconclusive -> keep.
-          rsfile=$(snake "$class")
-          if printf '%s' "$tout" | grep -E '^error|-->' | grep -q "${rsfile}\.rs"; then
-            gate_ok=0; log "test gate FAIL: $class (own test does not compile)"
-          else
-            gate_ok=1; log "test gate INCONCLUSIVE: $class (unrelated test-compile drift; kept on build gate)"
-          fi
+        tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
+        terr=$(printf '%s' "$tout" | grep -cE '^error' || echo 0)
+        if [ "$terr" -gt "$TEST_ERR_BASE" ]; then
+          gate_ok=0; log "test gate FAIL: $class introduced $((terr-TEST_ERR_BASE)) test-compile error(s) (base ${TEST_ERR_BASE} -> ${terr})"
+        elif printf '%s' "$tout" | grep -q 'test result: FAILED'; then
+          gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | tail -1) in suite)"
         else
-          gate_ok=1; log "test gate: $class no matching tests ran (kept on build gate)"
+          log "test gate OK: $class (test crate compiles, suite green)"
         fi
       fi
       if [ "$gate_ok" = "1" ]; then
@@ -191,7 +200,7 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
         git reset --hard "$pre_merge" >/dev/null 2>&1||true
         sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
         git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: park $class (test gate)" >/dev/null 2>&1||true
-        parked=$((parked+1)); log "PARK descent: $class (test gate: own tests failed)"
+        parked=$((parked+1)); log "PARK descent: $class (test gate: introduced test drift/failures)"
       fi
     else
       git merge --abort >/dev/null 2>&1||true; git reset --hard "$pre_merge" >/dev/null 2>&1||true
