@@ -1,3 +1,4 @@
+pub mod binary_field;
 pub mod buffer;
 pub mod buffer_mgr;
 pub mod buffers;
@@ -40,6 +41,7 @@ pub mod util;
 pub mod var_key_interior_node;
 pub mod var_key_node;
 
+pub use binary_field::BinaryField;
 pub use buffer::{Buffer, DataBuffer};
 pub use buffer_mgr::BufferMgr;
 pub use buffers::{BlockStream, BufferFile, LocalBufferFile};
