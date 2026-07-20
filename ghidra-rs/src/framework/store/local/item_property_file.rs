@@ -1,8 +1,8 @@
 use std::io;
 use std::path::Path;
 
-use crate::framework::seam_stubs::PropertyFile;
 use crate::framework::store::SEPARATOR_CHAR;
+use crate::util::property_file::PropertyFile;
 
 /// Property file key used to store the associated item's file id.
 const FILE_ID_PROPERTY: &str = "FILE_ID";
@@ -11,8 +11,8 @@ const FILE_ID_PROPERTY: &str = "FILE_ID";
 /// limited information related to a logical folder item.
 ///
 /// Mirrors `ghidra.framework.store.local.ItemPropertyFile`, which extends `ghidra.util.PropertyFile`
-/// (ported here as the [`PropertyFile`] supertrait placeholder, see `seam_stubs`). This port maps
-/// the Java class to an object-safe trait so implementations can be depended on via
+/// (ported here as the [`PropertyFile`] supertrait, see [`crate::util::property_file`]). This port
+/// maps the Java class to an object-safe trait so implementations can be depended on via
 /// `Box<dyn ItemPropertyFile>`/`Arc<dyn ItemPropertyFile>` rather than any single concrete type,
 /// breaking a dependency cycle at this cut-point.
 ///
@@ -99,6 +99,30 @@ mod tests {
     }
 
     impl PropertyFile for MockItemPropertyFile {
+        fn is_read_only(&self) -> bool {
+            false
+        }
+
+        fn get_parent_storage_directory(&self) -> PathBuf {
+            self.storage_parent.clone()
+        }
+
+        fn get_storage_name(&self) -> String {
+            self.storage_name.clone()
+        }
+
+        fn get_int(&self, _property_name: &str, default_value: i32) -> i32 {
+            default_value
+        }
+
+        fn put_int(&mut self, _property_name: &str, _value: i32) {}
+
+        fn get_long(&self, _property_name: &str, default_value: i64) -> i64 {
+            default_value
+        }
+
+        fn put_long(&mut self, _property_name: &str, _value: i64) {}
+
         fn get_string(&self, property_name: &str, default_value: Option<&str>) -> Option<String> {
             self.properties
                 .get(property_name)
@@ -117,6 +141,28 @@ mod tests {
             }
         }
 
+        fn get_boolean(&self, _property_name: &str, default_value: bool) -> bool {
+            default_value
+        }
+
+        fn put_boolean(&mut self, _property_name: &str, _value: bool) {}
+
+        fn remove(&mut self, property_name: &str) {
+            self.properties.remove(property_name);
+        }
+
+        fn last_modified(&self) -> i64 {
+            0
+        }
+
+        fn write_state(&self) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn read_state(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+
         fn move_to(&mut self, new_storage_parent: &Path, new_storage_name: &str) -> io::Result<()> {
             let dest = new_storage_parent.join(new_storage_name);
             if self.occupied.contains(&dest) {
@@ -129,6 +175,12 @@ mod tests {
             self.storage_name = new_storage_name.to_string();
             Ok(())
         }
+
+        fn exists(&self) -> bool {
+            true
+        }
+
+        fn delete(&self) {}
     }
 
     impl ItemPropertyFile for MockItemPropertyFile {
