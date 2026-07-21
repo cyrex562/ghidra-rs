@@ -300,9 +300,131 @@ pub trait ToolAssociationInfo {}
 pub trait PropertyChangeEvent {}
 
 /// Placeholder for `ghidra.framework.options.SaveState`, referenced by
-/// [`Project`](crate::framework::model::Project) before the real class is ported. `Project` only
-/// ever passes this type through as an opaque value, so no members are needed yet.
-pub trait SaveState {}
+/// [`Project`](crate::framework::model::Project) (as an opaque pass-through value) and by
+/// [`AutoConfigState`](crate::framework::plugintool::auto_config_state)'s `ConfigFieldCodec`
+/// implementations (which need its typed get/put accessors) before the real class is ported.
+/// Mirrors the subset of `SaveState`'s get/put accessor pairs the ported codecs call; the real
+/// port also carries XML (de)serialization and nested-state support that no ported caller needs
+/// yet.
+pub trait SaveState {
+    /// Returns whether a value has been stored under `name`, mirroring `SaveState.hasValue`.
+    fn has_value(&self, name: &str) -> bool;
+
+    /// Gets a `boolean` value, mirroring `SaveState.getBoolean`.
+    fn get_boolean(&self, name: &str, default_value: bool) -> bool;
+    /// Stores a `boolean` value, mirroring `SaveState.putBoolean`.
+    fn put_boolean(&mut self, name: &str, value: bool);
+
+    /// Gets a `byte` value, mirroring `SaveState.getByte`.
+    fn get_byte(&self, name: &str, default_value: i8) -> i8;
+    /// Stores a `byte` value, mirroring `SaveState.putByte`.
+    fn put_byte(&mut self, name: &str, value: i8);
+
+    /// Gets a `short` value, mirroring `SaveState.getShort`.
+    fn get_short(&self, name: &str, default_value: i16) -> i16;
+    /// Stores a `short` value, mirroring `SaveState.putShort`.
+    fn put_short(&mut self, name: &str, value: i16);
+
+    /// Gets an `int` value, mirroring `SaveState.getInt`.
+    fn get_int(&self, name: &str, default_value: i32) -> i32;
+    /// Stores an `int` value, mirroring `SaveState.putInt`.
+    fn put_int(&mut self, name: &str, value: i32);
+
+    /// Gets a `long` value, mirroring `SaveState.getLong`.
+    fn get_long(&self, name: &str, default_value: i64) -> i64;
+    /// Stores a `long` value, mirroring `SaveState.putLong`.
+    fn put_long(&mut self, name: &str, value: i64);
+
+    /// Gets a `float` value, mirroring `SaveState.getFloat`.
+    fn get_float(&self, name: &str, default_value: f32) -> f32;
+    /// Stores a `float` value, mirroring `SaveState.putFloat`.
+    fn put_float(&mut self, name: &str, value: f32);
+
+    /// Gets a `double` value, mirroring `SaveState.getDouble`.
+    fn get_double(&self, name: &str, default_value: f64) -> f64;
+    /// Stores a `double` value, mirroring `SaveState.putDouble`.
+    fn put_double(&mut self, name: &str, value: f64);
+
+    /// Gets a `String` value, mirroring `SaveState.getString`.
+    fn get_string(&self, name: &str, default_value: Option<&str>) -> Option<String>;
+    /// Stores a `String` value, mirroring `SaveState.putString`.
+    fn put_string(&mut self, name: &str, value: Option<&str>);
+
+    /// Gets a `boolean[]` value, mirroring `SaveState.getBooleans`.
+    fn get_booleans(&self, name: &str, default_value: Option<&[bool]>) -> Option<Vec<bool>>;
+    /// Stores a `boolean[]` value, mirroring `SaveState.putBooleans`.
+    fn put_booleans(&mut self, name: &str, value: Option<&[bool]>);
+
+    /// Gets a `byte[]` value, mirroring `SaveState.getBytes`.
+    fn get_bytes(&self, name: &str, default_value: Option<&[u8]>) -> Option<Vec<u8>>;
+    /// Stores a `byte[]` value, mirroring `SaveState.putBytes`.
+    fn put_bytes(&mut self, name: &str, value: Option<&[u8]>);
+
+    /// Gets a `short[]` value, mirroring `SaveState.getShorts`.
+    fn get_shorts(&self, name: &str, default_value: Option<&[i16]>) -> Option<Vec<i16>>;
+    /// Stores a `short[]` value, mirroring `SaveState.putShorts`.
+    fn put_shorts(&mut self, name: &str, value: Option<&[i16]>);
+
+    /// Gets an `int[]` value, mirroring `SaveState.getInts`.
+    fn get_ints(&self, name: &str, default_value: Option<&[i32]>) -> Option<Vec<i32>>;
+    /// Stores an `int[]` value, mirroring `SaveState.putInts`.
+    fn put_ints(&mut self, name: &str, value: Option<&[i32]>);
+
+    /// Gets a `long[]` value, mirroring `SaveState.getLongs`.
+    fn get_longs(&self, name: &str, default_value: Option<&[i64]>) -> Option<Vec<i64>>;
+    /// Stores a `long[]` value, mirroring `SaveState.putLongs`.
+    fn put_longs(&mut self, name: &str, value: Option<&[i64]>);
+
+    /// Gets a `float[]` value, mirroring `SaveState.getFloats`.
+    fn get_floats(&self, name: &str, default_value: Option<&[f32]>) -> Option<Vec<f32>>;
+    /// Stores a `float[]` value, mirroring `SaveState.putFloats`.
+    fn put_floats(&mut self, name: &str, value: Option<&[f32]>);
+
+    /// Gets a `double[]` value, mirroring `SaveState.getDoubles`.
+    fn get_doubles(&self, name: &str, default_value: Option<&[f64]>) -> Option<Vec<f64>>;
+    /// Stores a `double[]` value, mirroring `SaveState.putDoubles`.
+    fn put_doubles(&mut self, name: &str, value: Option<&[f64]>);
+
+    /// Gets a `String[]` value, mirroring `SaveState.getStrings`.
+    fn get_strings(&self, name: &str, default_value: Option<&[String]>) -> Option<Vec<String>>;
+    /// Stores a `String[]` value, mirroring `SaveState.putStrings`.
+    fn put_strings(&mut self, name: &str, value: Option<&[String]>);
+
+    /// Gets a `File` value, mirroring `SaveState.getFile`.
+    fn get_file(
+        &self,
+        name: &str,
+        default_value: Option<&std::path::Path>,
+    ) -> Option<std::path::PathBuf>;
+    /// Stores a `File` value, mirroring `SaveState.putFile`.
+    fn put_file(&mut self, name: &str, value: Option<&std::path::Path>);
+
+    /// Gets an enum constant's name, mirroring `SaveState.getEnum` (which in Java resolves the
+    /// stored name back to a `T` via reflection on the caller-supplied default's class; here the
+    /// name/value mapping is instead the ported
+    /// [`EnumConfigFieldCodec`](crate::framework::plugintool::auto_config_state::EnumConfigFieldCodec)'s
+    /// job).
+    fn get_enum_name(&self, name: &str) -> Option<String>;
+    /// Stores an enum constant's name, mirroring `SaveState.putEnum`.
+    fn put_enum_name(&mut self, name: &str, value: Option<&str>);
+}
+
+/// Placeholder for `ghidra.async.AsyncReference`, referenced by
+/// [`AutoConfigState`](crate::framework::plugintool::auto_config_state)'s
+/// `GenericAsyncConfigFieldCodec` before the real class is ported. `GenericAsyncConfigFieldCodec`
+/// only ever reads the current value and sets a new one on an existing reference (never
+/// constructs one), so only `get`/`set` are declared here. Java's `AsyncReference` is a single
+/// mutable object shared by reference (its `set` also notifies listeners and completes pending
+/// futures, none of which any ported caller needs yet), so `set` takes `&self` here too, with the
+/// expectation that implementations back it with interior mutability -- matching the convention
+/// already used by [`PreferencesLike`].
+pub trait AsyncReferenceLike<T> {
+    /// Gets the current value, mirroring `AsyncReference.get()`.
+    fn get(&self) -> T;
+
+    /// Sets a new value (with no change-cause), mirroring `AsyncReference.set(value, null)`.
+    fn set(&self, value: T);
+}
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`OptionsChangeListener`](crate::framework::options::OptionsChangeListener) before the real
