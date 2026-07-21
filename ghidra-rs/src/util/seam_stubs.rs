@@ -1,6 +1,7 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use super::async_utils::AsyncExecutor;
 use super::datastruct::NoSuchIndexException;
 use super::exception::NoValueException;
 use super::graph::key_indexable_set::KeyIndexableSet;
@@ -141,6 +142,15 @@ impl TwoWayBreakdownEntry {
         self.in_both
     }
 }
+
+/// Placeholder for `ghidra.async.SwingExecutorService`, needed by
+/// [`crate::util::async_utils::AsyncUtils::swing_executor`].
+///
+/// The real type wraps `SwingUtilities.invokeLater`/`Swing.runIfSwingOrRunLater` to dispatch
+/// commands onto the UI thread. Until it and a UI-thread runtime concept are ported,
+/// `AsyncUtils::swing_executor` returns a plain [`AsyncExecutor`] that runs synchronously; a
+/// real implementation should satisfy this marker too.
+pub trait SwingExecutorServiceLike: AsyncExecutor {}
 
 /// Placeholder for `ghidra.framework.ApplicationProperties`, needed by
 /// [`crate::util::application_utilities::ApplicationUtilities`].
