@@ -149,7 +149,24 @@ mod tests {
     use super::*;
 
     struct MockUserManager;
-    impl UserManagerLike for MockUserManager {}
+    impl UserManagerLike for MockUserManager {
+        fn can_set_password(&self, _username: &str) -> bool {
+            false
+        }
+
+        fn get_password_expiration(&self, _username: &str) -> i64 {
+            -1
+        }
+
+        fn set_password(
+            &self,
+            _username: &str,
+            _salted_sha256_password_hash: &[u8],
+            _is_temporary: bool,
+        ) -> std::io::Result<bool> {
+            Ok(false)
+        }
+    }
 
     /// Authenticates against a fixed username/password pair pulled out of the callback slice by
     /// type, exercising both static helpers and proving `AuthenticationModule` is object-safe.
