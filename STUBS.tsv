@@ -241,3 +241,6 @@ ts	stub_class	referenced_by
 2026-07-21T04:02:03Z	PluginPackageLike	DefaultPluginPackagingProvider
 2026-07-21T04:02:03Z	PluginDescriptionLike	DefaultPluginPackagingProvider
 2026-07-21T05:00:00Z	UserManagerLike	AuthenticationModule
+2026-07-21T05:30:00Z	KeyManagerFactoryLike	DefaultSSLContextInitializer
+2026-07-21T05:30:00Z	TrustManagerFactoryLike	DefaultSSLContextInitializer
+2026-07-21T05:30:00Z	HttpClientsLike	DefaultSSLContextInitializer
