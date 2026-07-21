@@ -13,7 +13,7 @@ DONE	trait	111	1244	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/LongLongDataType.java
 PARK	trait	113	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerSizedIntegerDataType.java
 DONE	trait	128	1245	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/QWordDataType.java
-TODO	trait	144	3	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/OrPattern.java
+DONE	trait	144	3	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/OrPattern.java
 TODO	trait	143	3	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/ContextPattern.java
 TODO	trait	142	2	8	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/CombinePattern.java
 TODO	trait	141	21	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/DisjointPattern.java
