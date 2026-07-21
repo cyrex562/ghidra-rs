@@ -270,12 +270,56 @@ pub trait ToolIconURL {}
 pub trait ImageIcon {}
 
 /// Placeholder for `org.jdom2.Element`, referenced by
-/// [`ToolTemplate`](crate::framework::model::ToolTemplate) before a Rust equivalent exists.
-/// Distinct from [`crate::util::xml::XmlElement`], which mirrors the unrelated
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) and
+/// [`PluginsConfiguration`](crate::framework::plugintool::PluginsConfiguration) before a Rust
+/// equivalent exists. Distinct from [`crate::util::xml::XmlElement`], which mirrors the unrelated
 /// `ghidra.xml.XmlElement` pull-parser interface; `org.jdom2.Element` is a DOM-style tree node.
-/// `ToolTemplate` only ever passes this type through as an opaque value, so no members are needed
-/// yet.
-pub trait JdomElement {}
+///
+/// `ToolTemplate` only ever passes this type through as an opaque value, so all methods default
+/// to inert no-ops; `PluginsConfiguration` is the first port that actually builds/reads an
+/// element tree (`savePluginsToXml`/`getPluginClassNames`), so it overrides all of them. Rust has
+/// no free-standing `new Element(name)` constructor call through a trait object, so
+/// [`new_child`](JdomElement::new_child) doubles as the virtual constructor: implementations
+/// create a detached child of their own concrete type, which the caller then fills in and attaches
+/// with [`add_content`](JdomElement::add_content).
+pub trait JdomElement {
+    /// Creates a new, detached child element with the given tag name, mirroring `new
+    /// Element(String)`. Defaults to an inert placeholder that ignores all further calls.
+    fn new_child(&self, _name: &str) -> Box<dyn JdomElement> {
+        Box::new(NullJdomElement)
+    }
+
+    /// Gets this element's own tag name, mirroring `Element.getName()`. Returns an empty string
+    /// by default.
+    fn tag_name(&self) -> String {
+        String::new()
+    }
+
+    /// Sets an attribute on this element, mirroring `Element.setAttribute(String, String)`.
+    /// No-op by default.
+    fn set_attribute(&mut self, _name: &str, _value: &str) {}
+
+    /// Gets the value of an attribute on this element, mirroring
+    /// `Element.getAttributeValue(String)`. Returns `None` by default.
+    fn attribute_value(&self, _name: &str) -> Option<String> {
+        None
+    }
+
+    /// Adds a child element as content of this element, mirroring `Element.addContent(Content)`.
+    /// No-op by default.
+    fn add_content(&mut self, _child: Box<dyn JdomElement>) {}
+
+    /// Gets this element's direct children with the given tag name, mirroring
+    /// `Element.getChildren(String)`. Returns empty by default.
+    fn children(&self, _name: &str) -> Vec<&dyn JdomElement> {
+        Vec::new()
+    }
+}
+
+/// Inert fallback [`JdomElement`] used by [`JdomElement::new_child`]'s default body. Carries no
+/// state; every method uses the trait's own no-op defaults.
+struct NullJdomElement;
+impl JdomElement for NullJdomElement {}
 
 /// Placeholder for `ghidra.framework.plugintool.PluginTool`, referenced by
 /// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real class is ported.
@@ -528,10 +572,19 @@ pub trait FixedKeyInteriorNodeLike:
 }
 
 /// Placeholder for `ghidra.framework.plugintool.Plugin`, referenced by
-/// [`PluginInstaller`](crate::framework::plugintool::PluginInstaller) before the real class is
-/// ported. `PluginInstaller` only ever returns/accepts this type as an opaque value, so no
-/// members are needed yet.
-pub trait PluginLike {}
+/// [`PluginInstaller`](crate::framework::plugintool::PluginInstaller) and
+/// [`PluginsConfiguration`](crate::framework::plugintool::PluginsConfiguration) before the real
+/// class is ported. `PluginInstaller` only ever returns/accepts this type as an opaque value.
+/// `PluginsConfiguration::save_plugins_to_xml` additionally needs the plugin's class name
+/// (`plugin.getClass().getName()`) to look up its `PluginDescription`, so `plugin_class_name` is
+/// declared with a default (empty-string) body -- implementations that only used the opaque form
+/// are unaffected, and real implementations override it.
+pub trait PluginLike {
+    /// Fully-qualified name of this plugin's class, mirroring `getClass().getName()`.
+    fn plugin_class_name(&self) -> String {
+        String::new()
+    }
+}
 
 /// Placeholder for `ghidra.framework.plugintool.testplugins.CircularServiceA`, referenced by
 /// [`CircularPluginA`](crate::framework::plugintool::testplugins::CircularPluginA) before the real
