@@ -16,7 +16,7 @@ DONE	trait	128	1245	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	144	3	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/OrPattern.java
 DONE	trait	143	3	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/ContextPattern.java
 DONE	trait	142	2	8	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/CombinePattern.java
-TODO	trait	141	21	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/DisjointPattern.java
+DONE	trait	141	21	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/DisjointPattern.java
 TODO	trait	169	250	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/AbstractDomainObjectListenerBuilder.java
 TODO	trait	171	250	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/WorkspaceChangeListener.java
 TODO	trait	171	249	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/XmlDataReader.java
