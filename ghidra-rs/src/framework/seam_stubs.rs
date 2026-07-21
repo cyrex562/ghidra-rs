@@ -529,12 +529,18 @@ pub trait TempDatabaseCleaner {
 pub trait RepositoryItem {}
 
 /// Placeholder for `javax.security.auth.callback.Callback`, referenced by
-/// [`GhidraServerHandle`](crate::framework::remote::GhidraServerHandle) before a Rust equivalent
-/// exists. `Callback` is itself a marker interface with no members in `javax.security.auth`, and
-/// `GhidraServerHandle` only ever passes implementors through as opaque values (returned from
-/// `getAuthenticationCallbacks()` and accepted by `getRepositoryServer()`), so no members are
-/// needed here either.
-pub trait AuthCallback {}
+/// [`GhidraServerHandle`](crate::framework::remote::GhidraServerHandle) and
+/// [`AuthenticationModule`](crate::server::security::AuthenticationModule) before a Rust
+/// equivalent exists. `Callback` is itself a marker interface with no members in
+/// `javax.security.auth`, and most callers only ever pass implementors through as opaque values
+/// (returned from `getAuthenticationCallbacks()` and accepted by `getRepositoryServer()`). The
+/// one exception is `AuthenticationModule.getFirstCallbackOfType`, a generic static utility that
+/// looks a callback up by its exact runtime class; `as_any` supplies the equivalent capability
+/// in Rust via [`Any::downcast_ref`].
+pub trait AuthCallback: std::any::Any {
+    /// Returns `self` as `&dyn Any`, enabling exact-type lookup via `downcast_ref`.
+    fn as_any(&self) -> &dyn std::any::Any;
+}
 
 /// Placeholder for `db.FixedKeyInteriorNode`, the concrete BTree interior-node subclass of the
 /// ported [`FixedKeyNode`](crate::framework::db::fixed_key_node::FixedKeyNode) (and implementor

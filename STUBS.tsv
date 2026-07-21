@@ -240,3 +240,4 @@ ts	stub_class	referenced_by
 2026-07-20T23:55:00Z	CircularServiceALike	CircularPluginA
 2026-07-21T04:02:03Z	PluginPackageLike	DefaultPluginPackagingProvider
 2026-07-21T04:02:03Z	PluginDescriptionLike	DefaultPluginPackagingProvider
+2026-07-21T05:00:00Z	UserManagerLike	AuthenticationModule
