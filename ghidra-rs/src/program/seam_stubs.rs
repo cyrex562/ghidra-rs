@@ -719,6 +719,12 @@ pub trait UnsignedInteger7DataType {}
 /// `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait UnsignedLongDataType {}
 
+/// Placeholder for `ghidra.program.model.data.UnsignedLongLongDataType`, referenced by
+/// [`LongLongDataType`](crate::program::model::data::long_long_data_type::LongLongDataType)
+/// before the real class is ported. `LongLongDataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedLongLongDataType {}
+
 /// Port of `ghidra.program.model.pcode.PcodeBlock`'s `PLAIN`..`INFLOOP` type-tag constants and
 /// its `typeToName` static helper, referenced by
 /// [`BlockGraph`](crate::program::model::pcode::block_graph::BlockGraph)'s `encodeBody` override
