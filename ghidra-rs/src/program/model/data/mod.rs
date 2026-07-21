@@ -51,6 +51,7 @@ pub mod icategory;
 pub mod illegal_rename_exception;
 pub mod int16_t_data_type;
 pub mod int64_t_data_type;
+pub mod int8_t_data_type;
 pub mod invalid_data_type_exception;
 pub mod integer_data_type;
 pub mod integer_data_type_test;
