@@ -25,3 +25,33 @@ pub trait RemoteBlockStreamHandleLike: Send + Sync {
     /// Determine if a connection has not yet been requested for this handle.
     fn is_pending(&self) -> bool;
 }
+
+/// Placeholder for `ghidra.server.store.RepositoryFolder`, needed by
+/// [`RepositoryFile`](crate::server::store::repository_file::RepositoryFile) before the real
+/// class is ported.
+///
+/// The two Java classes form a direct dependency cycle: `RepositoryFolder` holds a `fileMap` of
+/// `RepositoryFile`s and calls back into them, while `RepositoryFile.getParent()` returns its
+/// owning `RepositoryFolder` and `RepositoryFile.moveTo()` takes a new `RepositoryFolder` as its
+/// destination. `RepositoryFile` was selected as the cycle cut-point, so this placeholder captures
+/// only the members `RepositoryFile` needs from its folder: the pathname (used to build its own
+/// `getPathname()`, and to report old/new paths on a move) and the two package-private
+/// notification callbacks (`fileDeleted`, `fileMoved`) a `RepositoryFile` implementation invokes
+/// on its former parent after a delete or move completes.
+pub trait RepositoryFolderLike: Send + Sync {
+    /// Returns the folder's path within the repository.
+    fn get_pathname(&self) -> String;
+
+    /// Notifies this folder that the given file has been deleted, so it can be dropped from the
+    /// folder's cached file map.
+    fn file_deleted(&self, file: &dyn crate::server::store::repository_file::RepositoryFile);
+
+    /// Notifies this folder that the given file (previously named `old_name`) has moved to
+    /// `new_folder`, so it can be dropped from the folder's cached file map.
+    fn file_moved(
+        &self,
+        file: &dyn crate::server::store::repository_file::RepositoryFile,
+        old_name: &str,
+        new_folder: &dyn RepositoryFolderLike,
+    );
+}
