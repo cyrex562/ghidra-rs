@@ -1,3 +1,4 @@
+pub mod abstract_domain_object_listener_builder;
 pub mod aborted_transaction_listener;
 pub mod change_set;
 pub mod default_domain_file_filter;
@@ -40,6 +41,10 @@ pub mod transaction_listener;
 pub mod user_data;
 pub mod workspace;
 
+pub use abstract_domain_object_listener_builder::{
+    AbstractDomainObjectListenerBuilder, AnyBuilder, BooleanSupplier, EachBuilder, EventConsumer,
+    EventTypeList, ListenerBuilderState, RecordConsumer, RecordEventConsumer,
+};
 pub use aborted_transaction_listener::AbortedTransactionListener;
 pub use change_set::ChangeSet;
 pub use default_domain_file_filter::DefaultDomainFileFilter;
