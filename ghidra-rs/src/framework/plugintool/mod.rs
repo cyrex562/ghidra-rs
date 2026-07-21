@@ -1,6 +1,7 @@
 pub mod annotation;
 pub mod auto_config_state;
 pub mod busy_tool_exception;
+pub mod default_plugin_packaging_provider;
 pub mod generic_stand_alone_application;
 pub mod plugin_event;
 pub mod plugin_info;
@@ -20,6 +21,7 @@ pub mod util;
 
 pub use auto_config_state::{ClassStateHandler, ConfigFieldCodec, EnumLike, PathIsDir, PathIsFile};
 pub use busy_tool_exception::BusyToolException;
+pub use default_plugin_packaging_provider::DefaultPluginPackagingProvider;
 pub use generic_stand_alone_application::GenericStandAloneApplication;
 pub use plugin_event::{PluginEvent, PluginEventBehavior, EXTERNAL_SOURCE_NAME};
 pub use plugin_info::PluginInfo;

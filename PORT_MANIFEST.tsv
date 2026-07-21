@@ -12753,7 +12753,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/model/XmlDataRe
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/BusyToolException.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ComponentProviderAdapter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/DefaultPluginInstaller.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/DefaultPluginPackagingProvider.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/DefaultPluginPackagingProvider.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/GenericStandAloneApplication.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework plugintool
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/ModalPluginTool.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Plugin.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework plugintool 

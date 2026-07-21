@@ -543,6 +543,23 @@ pub trait PluginLike {}
 /// own `defaultProvider` association.
 pub trait CircularServiceALike {}
 
+/// Placeholder for `ghidra.framework.plugintool.util.PluginPackage`, referenced by
+/// [`DefaultPluginPackagingProvider`](crate::framework::plugintool::default_plugin_packaging_provider::DefaultPluginPackagingProvider)
+/// before the real (abstract, `Comparable`) class is ported. `DefaultPluginPackagingProvider`
+/// itself only ever passes this type through as an opaque value; `name` is included anyway since
+/// it mirrors `PluginPackage.getName()`, the property implementations need to identify which
+/// package was passed to `getPluginDescriptions(PluginPackage)`.
+pub trait PluginPackageLike {
+    /// Gets the name of this plugin package, mirroring `PluginPackage.getName()`.
+    fn name(&self) -> String;
+}
+
+/// Placeholder for `ghidra.framework.plugintool.util.PluginDescription`, referenced by
+/// [`DefaultPluginPackagingProvider`](crate::framework::plugintool::default_plugin_packaging_provider::DefaultPluginPackagingProvider)
+/// before the real class is ported. `DefaultPluginPackagingProvider` only ever passes this type
+/// through as an opaque value, so no members are needed yet.
+pub trait PluginDescriptionLike {}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
