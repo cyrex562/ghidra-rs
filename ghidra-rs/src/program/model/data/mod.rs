@@ -64,6 +64,7 @@ pub mod internal_data_type_component;
 pub mod invalidated_listener;
 pub mod leb128;
 pub mod long_data_type;
+pub mod long_long_data_type;
 pub mod mem_buffer_image_input_stream;
 pub mod mutability_settings_definition;
 pub mod offset_mask_settings_definition;

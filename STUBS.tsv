@@ -232,3 +232,4 @@ ts	stub_class	referenced_by
 2026-07-20T23:55:00Z	UnsignedInteger6DataType	Integer6DataType
 2026-07-20T23:56:00Z	UnsignedInteger7DataType	Integer7DataType
 2026-07-20T23:58:00Z	UnsignedLongDataType	LongDataType
+2026-07-20T23:59:00Z	UnsignedLongLongDataType	LongLongDataType
