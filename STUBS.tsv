@@ -247,3 +247,4 @@ ts	stub_class	referenced_by
 2026-07-21T04:37:31Z	RemoteBlockStreamHandleLike	BlockStreamServer
 2026-07-21T06:00:00Z	RepositoryFolderLike	RepositoryFile
 2026-07-21T04:57:17Z	RepositoryLike	RepositoryHandleImpl
+2026-07-21T05:04:41Z	RepositoryManagerLike	RepositoryServerHandleImpl
