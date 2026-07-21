@@ -43,7 +43,7 @@ DONE	trait	196	6	31	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/ser
 DONE	trait	197	4	26	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/store/RepositoryFile.java
 DONE	trait	196	5	15	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/RepositoryHandleImpl.java
 DONE	trait	195	2	7	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/RepositoryServerHandleImpl.java
-TODO	trait	194	13	6	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/RepositoryManager.java
+DONE	trait	194	13	6	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/RepositoryManager.java
 TODO	trait	193	11	28	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/Repository.java
 TODO	trait	192	4	5	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/CommandProcessor.java
 TODO	trait	191	3	61	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/ServerAdmin.java
