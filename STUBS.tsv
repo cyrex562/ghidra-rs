@@ -226,3 +226,4 @@ ts	stub_class	referenced_by
 2026-07-20T16:30:00Z	UInt16TDataType	Int16TDataType
 2026-07-20T22:15:00Z	UInt64TDataType	Int64TDataType
 2026-07-20T23:00:00Z	UInt8TDataType	Int8TDataType
+2026-07-20T23:30:00Z	UnsignedInteger16DataType	Integer16DataType

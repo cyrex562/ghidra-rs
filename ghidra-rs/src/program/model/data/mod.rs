@@ -50,6 +50,7 @@ pub mod generic_calling_convention;
 pub mod icategory;
 pub mod illegal_rename_exception;
 pub mod int16_t_data_type;
+pub mod integer16_data_type;
 pub mod int64_t_data_type;
 pub mod int8_t_data_type;
 pub mod invalid_data_type_exception;
