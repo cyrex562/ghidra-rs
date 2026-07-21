@@ -235,3 +235,4 @@ ts	stub_class	referenced_by
 2026-07-21T00:01:00Z	SignedQWordDataType	QWordDataType
 2026-07-21T00:05:00Z	PropertyChangeEvent	WorkspaceChangeListener
 2026-07-21T00:10:00Z	SwingExecutorServiceLike	AsyncUtils
+2026-07-21T03:20:18Z	AsyncReferenceLike	AutoConfigState
