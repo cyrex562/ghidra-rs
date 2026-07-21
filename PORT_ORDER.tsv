@@ -4,7 +4,7 @@ DONE	trait	111	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 PARK	trait	111	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int32TDataType.java
 DONE	trait	111	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int64TDataType.java
 DONE	trait	111	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int8TDataType.java
-TODO	trait	111	1241	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer16DataType.java
+DONE	trait	111	1241	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer16DataType.java
 TODO	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer3DataType.java
 TODO	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer5DataType.java
 TODO	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer6DataType.java
