@@ -5,7 +5,8 @@
 //! object-safe trait (mirroring the `PluginPackagingProvider` interface it implements) rather than
 //! as a concrete implementation tied to `PluginsConfiguration`.
 
-use crate::framework::seam_stubs::{PluginDescriptionLike, PluginPackageLike};
+use crate::framework::plugintool::util::PluginDescription;
+use crate::framework::seam_stubs::PluginPackageLike;
 
 /// Provides `PluginPackage`s and plugin descriptions to clients.
 ///
@@ -17,18 +18,18 @@ pub trait DefaultPluginPackagingProvider {
     fn get_plugin_packages(&self) -> Vec<Box<dyn PluginPackageLike>>;
 
     /// Returns all loaded (non-hidden) plugin descriptions, mirroring `getPluginDescriptions()`.
-    fn get_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescriptionLike>>;
+    fn get_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescription>>;
 
     /// Returns the plugin description for the given plugin class name, or `None` if there is no
     /// such description, mirroring `getPluginDescription(String)`.
-    fn get_plugin_description(&self, plugin_class_name: &str) -> Option<Box<dyn PluginDescriptionLike>>;
+    fn get_plugin_description(&self, plugin_class_name: &str) -> Option<Box<dyn PluginDescription>>;
 
     /// Gets all plugin descriptions for the given plugin package, mirroring
     /// `getPluginDescriptions(PluginPackage)`.
     fn get_plugin_descriptions_for_package(
         &self,
         plugin_package: &dyn PluginPackageLike,
-    ) -> Vec<Box<dyn PluginDescriptionLike>>;
+    ) -> Vec<Box<dyn PluginDescription>>;
 
     /// Returns the plugin package used to house all unstable plugins, mirroring
     /// `getUnstablePluginPackage()`.
@@ -36,7 +37,7 @@ pub trait DefaultPluginPackagingProvider {
 
     /// Returns all unstable plugin package descriptions, mirroring
     /// `getUnstablePluginDescriptions()`.
-    fn get_unstable_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescriptionLike>>;
+    fn get_unstable_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescription>>;
 }
 
 #[cfg(test)]
@@ -60,7 +61,71 @@ mod tests {
         unstable: bool,
     }
 
-    impl PluginDescriptionLike for MockDescription {}
+    impl PluginDescription for MockDescription {
+        fn plugin_class_name(&self) -> String {
+            self.class_name.clone()
+        }
+
+        fn name(&self) -> String {
+            self.class_name.rsplit(['.', '$']).next().unwrap_or(&self.class_name).to_string()
+        }
+
+        fn short_description(&self) -> String {
+            "no description".to_string()
+        }
+
+        fn description(&self) -> String {
+            "no description".to_string()
+        }
+
+        fn category(&self) -> String {
+            "NO_CATEGORY".to_string()
+        }
+
+        fn status(&self) -> crate::framework::plugintool::util::PluginStatus {
+            if self.unstable {
+                crate::framework::plugintool::util::PluginStatus::Unstable
+            } else {
+                crate::framework::plugintool::util::PluginStatus::Released
+            }
+        }
+
+        fn plugin_package(&self) -> Box<dyn PluginPackageLike> {
+            Box::new(MockPackage { name: self.package_name.clone() })
+        }
+
+        fn is_slow_installation(&self) -> bool {
+            false
+        }
+
+        fn services_required(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn services_provided(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn events_consumed(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn events_produced(&self) -> Vec<String> {
+            Vec::new()
+        }
+
+        fn source_location(&self) -> String {
+            String::new()
+        }
+
+        fn module_name(&self) -> String {
+            String::new()
+        }
+
+        fn is_in_extension(&self) -> bool {
+            false
+        }
+    }
 
     #[derive(Default)]
     struct MockPackagingProvider {
@@ -77,7 +142,7 @@ mod tests {
                 .collect()
         }
 
-        fn get_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescriptionLike>> {
+        fn get_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescription>> {
             self.descriptions
                 .iter()
                 .map(|d| {
@@ -85,7 +150,7 @@ mod tests {
                         class_name: d.class_name.clone(),
                         package_name: d.package_name.clone(),
                         unstable: d.unstable,
-                    }) as Box<dyn PluginDescriptionLike>
+                    }) as Box<dyn PluginDescription>
                 })
                 .collect()
         }
@@ -93,7 +158,7 @@ mod tests {
         fn get_plugin_description(
             &self,
             plugin_class_name: &str,
-        ) -> Option<Box<dyn PluginDescriptionLike>> {
+        ) -> Option<Box<dyn PluginDescription>> {
             self.descriptions
                 .iter()
                 .find(|d| d.class_name == plugin_class_name)
@@ -102,14 +167,14 @@ mod tests {
                         class_name: d.class_name.clone(),
                         package_name: d.package_name.clone(),
                         unstable: d.unstable,
-                    }) as Box<dyn PluginDescriptionLike>
+                    }) as Box<dyn PluginDescription>
                 })
         }
 
         fn get_plugin_descriptions_for_package(
             &self,
             plugin_package: &dyn PluginPackageLike,
-        ) -> Vec<Box<dyn PluginDescriptionLike>> {
+        ) -> Vec<Box<dyn PluginDescription>> {
             let package_name = plugin_package.name();
             self.descriptions
                 .iter()
@@ -119,7 +184,7 @@ mod tests {
                         class_name: d.class_name.clone(),
                         package_name: d.package_name.clone(),
                         unstable: d.unstable,
-                    }) as Box<dyn PluginDescriptionLike>
+                    }) as Box<dyn PluginDescription>
                 })
                 .collect()
         }
@@ -128,7 +193,7 @@ mod tests {
             Box::new(MockPackage { name: "Experimental".to_string() })
         }
 
-        fn get_unstable_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescriptionLike>> {
+        fn get_unstable_plugin_descriptions(&self) -> Vec<Box<dyn PluginDescription>> {
             self.descriptions
                 .iter()
                 .filter(|d| d.unstable)
@@ -137,7 +202,7 @@ mod tests {
                         class_name: d.class_name.clone(),
                         package_name: d.package_name.clone(),
                         unstable: d.unstable,
-                    }) as Box<dyn PluginDescriptionLike>
+                    }) as Box<dyn PluginDescription>
                 })
                 .collect()
         }
