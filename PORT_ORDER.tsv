@@ -29,7 +29,7 @@ DONE	trait	194	2	30	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghi
 DONE	trait	197	4	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/DiamondServiceD.java
 DONE	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/DiamondServiceB.java
 DONE	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/DiamondServiceC.java
-TODO	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/InitFailServiceB.java
+DONE	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/InitFailServiceB.java
 TODO	trait	195	3	1	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/MissingDepServiceB.java
 TODO	trait	193	211	27	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/PluginManagerTest.java
 TODO	trait	192	29	28	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginUtils.java
