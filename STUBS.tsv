@@ -228,3 +228,4 @@ ts	stub_class	referenced_by
 2026-07-20T23:00:00Z	UInt8TDataType	Int8TDataType
 2026-07-20T23:30:00Z	UnsignedInteger16DataType	Integer16DataType
 2026-07-20T23:45:00Z	UnsignedInteger3DataType	Integer3DataType
+2026-07-20T23:50:00Z	UnsignedInteger5DataType	Integer5DataType

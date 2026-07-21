@@ -695,6 +695,12 @@ pub trait UInt8TDataType {}
 /// (from `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait UnsignedInteger3DataType {}
 
+/// Placeholder for `ghidra.program.model.data.UnsignedInteger5DataType`, referenced by
+/// [`Integer5DataType`](crate::program::model::data::integer5_data_type::Integer5DataType)
+/// before the real class is ported. `Integer5DataType` only ever returns this type opaquely
+/// (from `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UnsignedInteger5DataType {}
+
 /// Port of `ghidra.program.model.pcode.PcodeBlock`'s `PLAIN`..`INFLOOP` type-tag constants and
 /// its `typeToName` static helper, referenced by
 /// [`BlockGraph`](crate::program::model::pcode::block_graph::BlockGraph)'s `encodeBody` override
