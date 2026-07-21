@@ -647,6 +647,12 @@ pub trait FlowType {}
 /// `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait SignedDWordDataType {}
 
+/// Placeholder for `ghidra.program.model.data.SignedQWordDataType`, referenced by
+/// [`QWordDataType`](crate::program::model::data::qword_data_type::QWordDataType)
+/// before the real class is ported. `QWordDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait SignedQWordDataType {}
+
 /// Placeholder for `ghidra.program.model.data.SignedWordDataType`, referenced by
 /// [`WordDataType`](crate::program::model::data::word_data_type::WordDataType)
 /// before the real class is ported. `WordDataType` only ever returns this type opaquely (from
