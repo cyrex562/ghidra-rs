@@ -55,3 +55,21 @@ pub trait RepositoryFolderLike: Send + Sync {
         new_folder: &dyn RepositoryFolderLike,
     );
 }
+
+/// Placeholder for `ghidra.server.Repository`, needed by
+/// [`RepositoryHandleImpl`](crate::server::remote::repository_handle_impl::RepositoryHandleImpl).
+///
+/// `Repository` holds an `ArrayList<RepositoryHandleImpl>` and calls `checkHandle`/
+/// `dispatchEvents`/`dispose` directly on the concrete type, while `RepositoryHandleImpl` holds a
+/// `Repository` field and calls back into it. `RepositoryHandleImpl` was selected as the cycle
+/// cut-point, so this placeholder captures only the members reached through
+/// `RepositoryHandleImpl::get_repository()` by its (not yet ported) sibling classes
+/// `RemoteBufferFileImpl`/`RemoteManagedBufferFileImpl`: logging a message against an optional
+/// folder/item path and user, and reading the repository's name.
+pub trait RepositoryLike: Send + Sync {
+    /// Append a log entry associated with an optional folder/item path and optional user.
+    fn log(&self, path: Option<&str>, msg: &str, user: Option<&str>);
+
+    /// Returns the name of this repository.
+    fn get_name(&self) -> String;
+}
