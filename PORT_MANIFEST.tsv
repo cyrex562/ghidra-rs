@@ -7693,7 +7693,7 @@ orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/Reposit
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/RepositoryServerHandleImpl.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/ServerPortFactory.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server remote 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/AnonymousAuthenticationModule.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server security 
-orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/AuthenticationModule.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server security 
+orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/AuthenticationModule.java	DONE	orig_src Ghidra Features GhidraServer src main java ghidra server security
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/JAASAuthenticationModule.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server security 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/Krb5ActiveDirectoryAuthenticationModule.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server security 
 orig_src/Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/PKIAuthenticationModule.java	TODO	orig_src Ghidra Features GhidraServer src main java ghidra server security 

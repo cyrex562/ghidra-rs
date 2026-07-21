@@ -92,7 +92,11 @@ mod tests {
 
     struct MockCallback;
 
-    impl AuthCallback for MockCallback {}
+    impl AuthCallback for MockCallback {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+    }
 
     struct MockRepositoryServerHandle {
         repositories: RefCell<Vec<String>>,
