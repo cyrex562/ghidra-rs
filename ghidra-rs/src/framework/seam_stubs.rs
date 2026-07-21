@@ -527,6 +527,12 @@ pub trait FixedKeyInteriorNodeLike:
     ) -> std::io::Result<Box<dyn crate::framework::db::fixed_key_node::FixedKeyNode>>;
 }
 
+/// Placeholder for `ghidra.framework.plugintool.Plugin`, referenced by
+/// [`PluginInstaller`](crate::framework::plugintool::PluginInstaller) before the real class is
+/// ported. `PluginInstaller` only ever returns/accepts this type as an opaque value, so no
+/// members are needed yet.
+pub trait PluginLike {}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
