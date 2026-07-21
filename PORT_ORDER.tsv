@@ -32,7 +32,7 @@ DONE	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghid
 DONE	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/InitFailServiceB.java
 DONE	trait	195	3	1	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/MissingDepServiceB.java
 DONE	trait	193	211	27	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/PluginManagerTest.java
-TODO	trait	192	29	28	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginUtils.java
+DONE	trait	192	29	28	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginUtils.java
 TODO	trait	191	205	11	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/DefaultPluginPackagingProvider.java
 TODO	trait	190	30	32	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginDescription.java
 TODO	trait	189	221	12	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginsConfiguration.java
