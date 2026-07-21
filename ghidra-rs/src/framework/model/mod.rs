@@ -41,6 +41,7 @@ pub mod transaction_listener;
 pub mod user_data;
 pub mod workspace;
 pub mod workspace_change_listener;
+pub mod xml_data_reader;
 
 pub use abstract_domain_object_listener_builder::{
     AbstractDomainObjectListenerBuilder, AnyBuilder, BooleanSupplier, EachBuilder, EventConsumer,
@@ -98,3 +99,4 @@ pub use transaction_listener::TransactionListener;
 pub use user_data::UserData;
 pub use workspace::Workspace;
 pub use workspace_change_listener::WorkspaceChangeListener;
+pub use xml_data_reader::{AddXmlObjectError, XmlDataReader};
