@@ -49,6 +49,7 @@ pub mod function_definition;
 pub mod generic_calling_convention;
 pub mod icategory;
 pub mod illegal_rename_exception;
+pub mod int16_t_data_type;
 pub mod invalid_data_type_exception;
 pub mod integer_data_type;
 pub mod integer_data_type_test;
