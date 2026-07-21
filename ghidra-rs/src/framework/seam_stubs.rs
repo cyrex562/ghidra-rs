@@ -293,10 +293,11 @@ pub trait ToolChest {}
 /// needed yet.
 pub trait ToolAssociationInfo {}
 
-/// Placeholder for `ghidra.framework.model.WorkspaceChangeListener`, referenced by
-/// [`ToolManager`](crate::framework::model::ToolManager) before the real interface is ported.
-/// `ToolManager` only ever registers/unregisters this listener, so no members are needed yet.
-pub trait WorkspaceChangeListener {}
+/// Placeholder for `java.beans.PropertyChangeEvent`, referenced by
+/// [`WorkspaceChangeListener`](crate::framework::model::WorkspaceChangeListener) before a Rust
+/// equivalent exists. `WorkspaceChangeListener` only ever passes this type through as an opaque
+/// value to `property_change`, so no members are needed yet.
+pub trait PropertyChangeEvent {}
 
 /// Placeholder for `ghidra.framework.options.SaveState`, referenced by
 /// [`Project`](crate::framework::model::Project) before the real class is ported. `Project` only

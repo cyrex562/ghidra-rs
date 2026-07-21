@@ -111,7 +111,6 @@ ts	stub_class	referenced_by
 2026-07-09T23:36:00Z	ControlMode	DebuggerControlService
 2026-07-09T23:36:00Z	DebuggerCoordinates	DebuggerControlService
 2026-07-09T23:42:00Z	ProgramLocation	StringTranslationService
-2026-07-09T23:48:00Z	WorkspaceChangeListener	ToolManager
 2026-07-10T10:22:43Z	Guid	PdbByteReader
 2026-07-10T10:22:43Z	AbstractPdb	PdbByteReader
 2026-07-10T10:22:43Z	PdbReaderOptions	PdbByteReader
@@ -234,3 +233,4 @@ ts	stub_class	referenced_by
 2026-07-20T23:58:00Z	UnsignedLongDataType	LongDataType
 2026-07-20T23:59:00Z	UnsignedLongLongDataType	LongLongDataType
 2026-07-21T00:01:00Z	SignedQWordDataType	QWordDataType
+2026-07-21T00:05:00Z	PropertyChangeEvent	WorkspaceChangeListener

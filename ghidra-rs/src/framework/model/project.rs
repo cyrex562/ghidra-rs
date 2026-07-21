@@ -16,9 +16,9 @@ use crate::framework::model::tool_manager::ToolManager;
 use crate::framework::model::tool_services::ToolServices;
 use crate::framework::model::tool_template::ToolTemplate;
 use crate::framework::model::workspace::Workspace;
+use crate::framework::model::workspace_change_listener::WorkspaceChangeListener;
 use crate::framework::seam_stubs::{
     PluginTool, ProjectLocator, SaveState, ToolAssociationInfo, ToolChest as StubToolChest,
-    WorkspaceChangeListener,
 };
 use crate::util::exception::DuplicateNameException;
 
