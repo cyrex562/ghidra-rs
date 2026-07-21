@@ -26,7 +26,7 @@ DONE	trait	192	206	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/fra
 DONE	trait	195	206	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginWithTransientState.java
 DONE	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/CircularServiceB.java
 DONE	trait	194	2	30	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/CircularPluginA.java
-TODO	trait	197	4	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/DiamondServiceD.java
+DONE	trait	197	4	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/DiamondServiceD.java
 TODO	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/DiamondServiceB.java
 TODO	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/DiamondServiceC.java
 TODO	trait	195	3	2	framework	Ghidra/Test/IntegrationTest/src/test.slow/java/ghidra/framework/plugintool/testplugins/InitFailServiceB.java
