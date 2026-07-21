@@ -10,7 +10,7 @@ DONE	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer6DataType.java
 DONE	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer7DataType.java
 DONE	trait	111	1244	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/LongDataType.java
-TODO	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/LongLongDataType.java
+DONE	trait	111	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/LongLongDataType.java
 TODO	trait	113	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerSizedIntegerDataType.java
 TODO	trait	128	1245	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/QWordDataType.java
 TODO	trait	144	3	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/OrPattern.java
