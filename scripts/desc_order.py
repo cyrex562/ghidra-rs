@@ -57,6 +57,13 @@ def is_ui(rel):
     return r
 
 
+def is_test_path(rel):
+    """Ghidra Java *test* sourcesets (src/test, src/test.slow, src/test.abstract, ...).
+    These test-fixture classes exercise Java internals; production Rust never depends on
+    them, so porting them is wasted effort -- exclude from the frontier like UI."""
+    return "/src/test/" in rel or "/src/test." in rel
+
+
 def kind_is_interface(rel):
     try:
         s = open(os.path.join(REPO, "orig_src", rel), encoding="utf-8", errors="ignore").read(8000)
@@ -85,7 +92,8 @@ def main():
     def in_scope(f):
         d = by.get(f)
         return bool(d and not d["done"]
-                    and portlib.module_for(portlib.package_of(f)) and not is_ui(f))
+                    and portlib.module_for(portlib.package_of(f))
+                    and not is_ui(f) and not is_test_path(f))
 
     nodes = [d["file"] for d in data if in_scope(d["file"])]
     nset = set(nodes)
