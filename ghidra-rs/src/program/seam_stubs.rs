@@ -677,6 +677,12 @@ pub trait UInt16TDataType {}
 /// `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait UInt64TDataType {}
 
+/// Placeholder for `ghidra.program.model.data.UInt8TDataType`, referenced by
+/// [`Int8TDataType`](crate::program::model::data::int8_t_data_type::Int8TDataType)
+/// before the real class is ported. `Int8TDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UInt8TDataType {}
+
 /// Port of `ghidra.program.model.pcode.PcodeBlock`'s `PLAIN`..`INFLOOP` type-tag constants and
 /// its `typeToName` static helper, referenced by
 /// [`BlockGraph`](crate::program::model::pcode::block_graph::BlockGraph)'s `encodeBody` override
