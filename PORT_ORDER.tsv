@@ -37,7 +37,7 @@ DONE	trait	191	205	11	framework	Ghidra/Framework/Project/src/main/java/ghidra/fr
 DONE	trait	190	30	32	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/util/PluginDescription.java
 DONE	trait	189	221	12	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginsConfiguration.java
 DONE	trait	198	6	1	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/AuthenticationModule.java
-TODO	trait	198	8	3	net	Ghidra/Framework/Generic/src/main/java/ghidra/net/DefaultSSLContextInitializer.java
+DONE	trait	198	8	3	net	Ghidra/Framework/Generic/src/main/java/ghidra/net/DefaultSSLContextInitializer.java
 TODO	trait	197	6	2	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/stream/BlockStreamServer.java
 TODO	trait	196	6	31	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/remote/GhidraServer.java
 TODO	trait	197	4	26	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/store/RepositoryFile.java
