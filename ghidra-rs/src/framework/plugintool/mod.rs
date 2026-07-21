@@ -31,6 +31,6 @@ pub use service_provider_decorator::ServiceProviderDecorator;
 pub use service_provider_stub::ServiceProviderStub;
 pub use test_dummy_service_provider::TestDummyServiceProvider;
 pub use testing_plugin::TestingPlugin;
-pub use testplugins::{CircularPluginA, CircularServiceB, DiamondServiceD};
+pub use testplugins::{CircularPluginA, CircularServiceB, DiamondServiceC, DiamondServiceD};
 pub use tool_event_name::ToolEventName;
 pub use util::{PluginPackageState, ServiceListener};
