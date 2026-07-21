@@ -13,6 +13,7 @@ pub mod service_provider_decorator;
 pub mod service_provider_stub;
 pub mod test_dummy_service_provider;
 pub mod testing_plugin;
+pub mod testplugins;
 pub mod tool_event_name;
 pub mod util;
 
@@ -30,5 +31,6 @@ pub use service_provider_decorator::ServiceProviderDecorator;
 pub use service_provider_stub::ServiceProviderStub;
 pub use test_dummy_service_provider::TestDummyServiceProvider;
 pub use testing_plugin::TestingPlugin;
+pub use testplugins::CircularServiceB;
 pub use tool_event_name::ToolEventName;
 pub use util::{PluginPackageState, ServiceListener};
