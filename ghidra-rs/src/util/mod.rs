@@ -16,6 +16,7 @@ pub mod ghidra_little_endian_data_converter;
 pub mod async_fence;
 pub mod async_lazy_value;
 pub mod async_pairing_queue;
+pub mod async_utils;
 pub mod disposed_exception;
 pub mod ascii;
 pub mod charset;
@@ -107,6 +108,10 @@ pub use little_endian_data_converter::LittleEndianDataConverter;
 pub use ghidra_little_endian_data_converter::GhidraLittleEndianDataConverter;
 pub use async_lazy_value::{ArcError, AsyncLazyValue, Completer};
 pub use async_pairing_queue::AsyncPairingQueue;
+pub use async_utils::{
+    copy_to, nil, AsyncExecutor, AsyncUtils, DefaultAsyncUtils, DirectExecutor, FrameworkExecutor,
+    WrappedError,
+};
 pub use disposed_exception::DisposedException;
 pub use datastruct::{Duo, Range, Side, WeakValueHashMap, WeakValueTreeMap};
 pub use lock::Lock;
