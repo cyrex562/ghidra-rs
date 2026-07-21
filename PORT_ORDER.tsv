@@ -19,7 +19,7 @@ DONE	trait	142	2	8	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/ap
 DONE	trait	141	21	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/pattern/DisjointPattern.java
 DONE	trait	169	250	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/AbstractDomainObjectListenerBuilder.java
 DONE	trait	171	250	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/WorkspaceChangeListener.java
-TODO	trait	171	249	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/XmlDataReader.java
+DONE	trait	171	249	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/XmlDataReader.java
 TODO	trait	190	31	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/async/AsyncUtils.java
 TODO	trait	186	204	2	framework	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/plugintool/AutoConfigState.java
 TODO	trait	192	206	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/PluginInstaller.java
