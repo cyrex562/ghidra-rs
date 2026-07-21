@@ -13932,7 +13932,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/da
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/IndexedDynamicDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int16TDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int32TDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int64TDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int64TDataType.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int8TDataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer16DataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Integer3DataType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model data 
