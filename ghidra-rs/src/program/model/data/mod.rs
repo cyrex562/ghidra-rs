@@ -54,6 +54,7 @@ pub mod integer16_data_type;
 pub mod integer3_data_type;
 pub mod integer5_data_type;
 pub mod integer6_data_type;
+pub mod integer7_data_type;
 pub mod int64_t_data_type;
 pub mod int8_t_data_type;
 pub mod invalid_data_type_exception;
