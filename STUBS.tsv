@@ -237,3 +237,4 @@ ts	stub_class	referenced_by
 2026-07-21T00:10:00Z	SwingExecutorServiceLike	AsyncUtils
 2026-07-21T03:20:18Z	AsyncReferenceLike	AutoConfigState
 2026-07-21T03:25:00Z	PluginLike	PluginInstaller
+2026-07-20T23:55:00Z	CircularServiceALike	CircularPluginA

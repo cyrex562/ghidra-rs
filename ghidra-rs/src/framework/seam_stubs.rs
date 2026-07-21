@@ -533,6 +533,16 @@ pub trait FixedKeyInteriorNodeLike:
 /// members are needed yet.
 pub trait PluginLike {}
 
+/// Placeholder for `ghidra.framework.plugintool.testplugins.CircularServiceA`, referenced by
+/// [`CircularPluginA`](crate::framework::plugintool::testplugins::CircularPluginA) before the real
+/// interface is ported. Mirrors `CircularServiceA`, an empty service interface (annotated
+/// `@ServiceInfo(defaultProvider = CircularPluginA.class, description = "Test service")`), so this
+/// trait declares no methods; the default-provider association is recorded only in this doc
+/// comment rather than as a code dependency, matching how the already-ported
+/// [`CircularServiceB`](crate::framework::plugintool::testplugins::CircularServiceB) records its
+/// own `defaultProvider` association.
+pub trait CircularServiceALike {}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
