@@ -27,7 +27,7 @@ DONE	trait	164	111	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	169	6	9	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/protorules/DatatypeFilter.java
 DONE	trait	167	6	9	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/protorules/QualifierFilter.java
 DONE	trait	169	14	16	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SymbolTable.java
-TODO	trait	171	8	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiMapSTL.java
+DONE	trait	171	8	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiMapSTL.java
 TODO	trait	171	8	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiSetSTL.java
 TODO	trait	172	9	2	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ListSTL.java
 TODO	trait	171	10	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ListIterator.java
