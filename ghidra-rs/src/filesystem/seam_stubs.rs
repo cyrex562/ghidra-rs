@@ -55,3 +55,11 @@ pub trait FileAttributesLike {
 /// `FileSystemRef` (with its `dup()`/`close()` callbacks into the owning ref manager) is
 /// ported.
 pub trait FileSystemRefLike: PartialEq {}
+
+/// Placeholder for `ghidra.formats.gfilesystem.FileSystemService`, needed by
+/// [`crate::filesystem::gfilesystem::factory::g_file_system_factory_byte_provider::GFileSystemFactoryByteProvider::create`].
+///
+/// `create()` only forwards this value to the filesystem being constructed; it never calls a
+/// method on it itself, so this is an empty marker trait until the real `FileSystemService` is
+/// ported.
+pub trait FileSystemServiceLike {}
