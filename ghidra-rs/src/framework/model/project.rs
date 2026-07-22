@@ -6,6 +6,7 @@ use crate::framework::client::{RepositoryAdapter, RepositoryServerAdapter};
 use crate::framework::model::domain_file::DomainFile;
 use crate::framework::model::domain_object::DomainObjectConsumer;
 use crate::framework::model::project_data::ProjectData;
+use crate::framework::model::project_locator::ProjectLocator;
 use crate::framework::model::project_manager::{OpenProjectError, ProjectManager};
 use crate::framework::model::project_view_listener::ProjectViewListener;
 use crate::framework::model::server_info::ServerInfo;
@@ -18,7 +19,7 @@ use crate::framework::model::tool_template::ToolTemplate;
 use crate::framework::model::workspace::Workspace;
 use crate::framework::model::workspace_change_listener::WorkspaceChangeListener;
 use crate::framework::seam_stubs::{
-    PluginTool, ProjectLocator, SaveState, ToolAssociationInfo, ToolChest as StubToolChest,
+    PluginTool, SaveState, ToolAssociationInfo, ToolChest as StubToolChest,
 };
 use crate::util::exception::DuplicateNameException;
 

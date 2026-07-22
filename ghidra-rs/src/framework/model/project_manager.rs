@@ -3,10 +3,11 @@ use std::io;
 use thiserror::Error;
 
 use crate::framework::client::{RepositoryAdapter, RepositoryServerAdapter};
-use crate::framework::model::Project;
-use crate::framework::seam_stubs::{ProjectLocator, ToolChest};
-use crate::framework::store::LockException;
+use crate::framework::model::project_locator::ProjectLocator;
 use crate::framework::model::server_info::ServerInfo;
+use crate::framework::model::Project;
+use crate::framework::seam_stubs::ToolChest;
+use crate::framework::store::LockException;
 use crate::util::exception::{NotFoundException, NotOwnerException};
 
 /// Default extension for tool config files.

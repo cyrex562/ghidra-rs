@@ -24,6 +24,7 @@ pub mod linked_domain_file;
 pub mod project;
 pub mod project_data;
 pub mod project_listener;
+pub mod project_locator;
 pub mod project_manager;
 pub mod project_view_listener;
 pub mod runtime_io_exception;
@@ -78,6 +79,7 @@ pub use linked_domain_file::LinkedDomainFile;
 pub use project::Project;
 pub use project_data::ProjectData;
 pub use project_listener::ProjectListener;
+pub use project_locator::{is_project_dir, ProjectLocator, PROJECT_DIR_SUFFIX, PROJECT_FILE_SUFFIX};
 pub use project_manager::{
     OpenProjectError, ProjectManager, APPLICATION_TOOLS_DIR_NAME, APPLICATION_TOOL_EXTENSION,
 };
