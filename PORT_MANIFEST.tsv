@@ -5130,7 +5130,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/F
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemFactoryMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemInfoRec.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemBaseFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactory.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactoryByteProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactoryIgnore.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemProbe.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory
