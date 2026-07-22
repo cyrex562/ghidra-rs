@@ -284,6 +284,57 @@ pub use crate::program::model::listing::stack_frame::StackFrame;
 /// before the real interface is ported.
 pub trait VariableFilter {}
 
+/// Placeholder for `ghidra.program.model.lang.InstructionError.InstructionErrorType`, referenced
+/// by [`InstructionBlock`](crate::program::model::lang::instruction_block::InstructionBlock)
+/// before the real `InstructionError` class is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InstructionErrorType {
+    /// Duplicate instruction detected while instructions were being added to program.
+    Duplicate,
+    /// Conflict with existing instruction detected while instructions were being added to
+    /// program.
+    InstructionConflict,
+    /// Conflict with existing data detected while instructions were being added to program.
+    DataConflict,
+    /// Offcut conflict with existing instruction detected while instructions were being added to
+    /// program.
+    OffcutInstruction,
+    /// Instruction parsing failed at the conflict address.
+    Parse,
+    /// Instruction parsing failed at the conflict address due to a memory error.
+    Memory,
+    /// Instruction contains an unaligned flow which is indicative of a language problem.
+    FlowAlignment,
+}
+
+impl InstructionErrorType {
+    /// Stands in for `InstructionErrorType.isConflict`: true if this error type is associated
+    /// with a conflict with an existing code unit (instruction or data).
+    pub fn is_conflict(self) -> bool {
+        matches!(
+            self,
+            InstructionErrorType::Duplicate
+                | InstructionErrorType::InstructionConflict
+                | InstructionErrorType::DataConflict
+                | InstructionErrorType::OffcutInstruction
+        )
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.InstructionError`, referenced by
+/// [`InstructionBlock`](crate::program::model::lang::instruction_block::InstructionBlock) before
+/// the real class is ported. The real class's constructor takes the owning `InstructionBlock`
+/// back (`new InstructionError(this, type, ...)`), which is the source of the cycle
+/// `InstructionBlock` was cut at; `InstructionBlock` itself never calls a method on the error it
+/// holds (only constructs and opaquely returns it), so no members are needed yet.
+pub trait InstructionError {}
+
+/// Placeholder for `ghidra.program.model.lang.InstructionBlockFlow`, referenced by
+/// [`InstructionBlock`](crate::program::model::lang::instruction_block::InstructionBlock) before
+/// the real class is ported. `InstructionBlock` only ever stores and returns this type opaquely,
+/// so no members are needed yet.
+pub trait InstructionBlockFlow {}
+
 /// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
 /// [`ProgramContext`](crate::program::model::listing::program_context::ProgramContext) (which
 /// only ever passes this type through) and by

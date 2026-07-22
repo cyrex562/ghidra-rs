@@ -256,3 +256,6 @@ ts	stub_class	referenced_by
 2026-07-21T07:00:00Z	PluginLike	AutoService
 2026-07-22T00:00:00Z	UInt32TDataType	Int32TDataType
 2026-07-22T00:00:00Z	UnsignedPointerSizedIntegerDataType	PointerSizedIntegerDataType
+2026-07-22T00:00:00Z	InstructionErrorType	InstructionBlock
+2026-07-22T00:00:00Z	InstructionError	InstructionBlock
+2026-07-22T00:00:00Z	InstructionBlockFlow	InstructionBlock
