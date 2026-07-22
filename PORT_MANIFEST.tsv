@@ -5227,7 +5227,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/model/listing/CodeUni
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressIteratorConverter.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressRangeIteratorConverter.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslationException.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslator.java	DONE	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/CombinedAddressRangeIterator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ContextEvaluator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ContextEvaluatorAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
