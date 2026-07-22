@@ -45,3 +45,13 @@ pub trait FileAttributesLike {
     /// The explicit `FileType` attribute, if the filesystem recorded one.
     fn file_type_attr(&self) -> Option<FileType>;
 }
+
+/// Placeholder for `ghidra.formats.gfilesystem.FileSystemRef`, needed by
+/// [`crate::filesystem::gfilesystem::file_system_ref_manager::FileSystemRefManager`]'s
+/// `create`/`release`/`can_close`.
+///
+/// Those methods never call a method on the refs they hand out, only compare identity
+/// (Java uses `==`), so this seam requires nothing beyond [`PartialEq`] until the real
+/// `FileSystemRef` (with its `dup()`/`close()` callbacks into the owning ref manager) is
+/// ported.
+pub trait FileSystemRefLike: PartialEq {}
