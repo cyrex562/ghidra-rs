@@ -2,3 +2,4 @@ pub mod file_system_factory_dependency_exception;
 pub mod g_file_system_factory;
 pub mod g_file_system_factory_byte_provider;
 pub mod g_file_system_probe;
+pub mod g_file_system_probe_byte_provider;
