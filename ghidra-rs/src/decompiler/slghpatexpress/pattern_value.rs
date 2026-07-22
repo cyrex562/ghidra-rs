@@ -168,7 +168,7 @@ mod tests {
         let value = FixedValue { min: 1, max: 5 };
         let mut mins = Vec::new();
         let mut maxs = Vec::new();
-        value.get_min_max(&mut mins, &mut maxs);
+        PatternValue::get_min_max(&value, &mut mins, &mut maxs);
         assert_eq!(mins, vec![1]);
         assert_eq!(maxs, vec![5]);
     }
@@ -178,7 +178,7 @@ mod tests {
         let value = FixedValue { min: 0, max: 0 };
         let replace = vec![10, 20, 30];
         let mut listpos = MutableInt::new(1);
-        let res = value.get_sub_value(&replace, &mut listpos);
+        let res = PatternValue::get_sub_value(&value, &replace, &mut listpos);
         assert_eq!(res, 20);
         assert_eq!(listpos.get(), 2);
     }
@@ -187,7 +187,7 @@ mod tests {
     fn list_values_appends_self() {
         let value = FixedValue { min: 0, max: 0 };
         let mut list: Vec<&dyn PatternValue> = Vec::new();
-        value.list_values(&mut list);
+        PatternValue::list_values(&value, &mut list);
         assert_eq!(list.len(), 1);
     }
 }
