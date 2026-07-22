@@ -425,7 +425,7 @@ mod tests {
         let value = OperandValue::with_operand(loc(), 0, mock_constructor(operand));
         let replace = vec![1, 2, 3];
         let mut listpos = MutableInt::new(0);
-        let result = value.get_sub_value(&replace, &mut listpos);
+        let result = PatternValue::get_sub_value(&value, &replace, &mut listpos);
         assert_eq!(result, 99);
         assert_eq!(listpos.get(), 1);
     }

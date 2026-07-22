@@ -196,7 +196,7 @@ mod tests {
         let value = symbol.get_pattern_value();
         let replace = vec![7, 8, 9];
         let mut listpos = MutableInt::new(0);
-        let res = value.get_sub_value(&replace, &mut listpos);
+        let res = PatternValue::get_sub_value(value, &replace, &mut listpos);
         assert_eq!(res, 7);
         assert_eq!(listpos.get(), 1);
     }
