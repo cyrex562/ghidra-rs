@@ -7,7 +7,8 @@ use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::pcode::floatformat::big_float::BigFloat;
 use crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException;
-use crate::program::model::address::Address;
+use crate::program::model::address::{Address, AddressSpace};
+use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::endian::Endian;
@@ -571,24 +572,82 @@ impl ExternalLanguageCompilerSpecQuery {
 }
 
 /// Placeholder for `ghidra.program.model.lang.PrototypePieces`, referenced by
-/// [`ParamList`](crate::program::model::lang::param_list::ParamList)
-/// before the real class is ported. `ParamList::assign_map` only ever passes this type through,
-/// so no members are needed yet.
-#[derive(Debug, Default, Clone)]
-pub struct PrototypePieces;
+/// [`ParamList`](crate::program::model::lang::param_list::ParamList) and
+/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
+/// before the real class is ported. Only the `outtype` (return data-type) field is modeled, since
+/// that is the only member either interface reads; the `model`/`intypes`/`firstVarArgSlot` fields
+/// are omitted until something needs them. `Debug` is intentionally not derived since `DataType`
+/// has no `Debug` supertrait yet.
+#[derive(Default, Clone)]
+pub struct PrototypePieces {
+    /// Return data-type of the prototype (`PrototypePieces.outtype`).
+    pub outtype: Option<Arc<dyn DataType>>,
+}
 
 /// Placeholder for `ghidra.program.model.lang.ParameterPieces`, referenced by
-/// [`ParamList`](crate::program::model::lang::param_list::ParamList)
-/// before the real class is ported. `ParamList::assign_map` only ever appends this type to its
-/// result list, so no members are needed yet.
-#[derive(Debug, Default, Clone)]
-pub struct ParameterPieces;
+/// [`ParamList`](crate::program::model::lang::param_list::ParamList) and
+/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
+/// before the real class is ported. Only the `type`/`isIndirect`/`hiddenReturnPtr` fields are
+/// modeled, since those are the only members `ParamListStandardOut::assign_map_out` reads or
+/// writes; `address`, `joinPieces`, and `isThisPointer` are omitted until something needs them.
+/// `Debug` is intentionally not derived since `DataType` has no `Debug` supertrait yet.
+#[derive(Default, Clone)]
+pub struct ParameterPieces {
+    /// The data-type of the parameter (`ParameterPieces.type`; renamed since `type` is a Rust
+    /// keyword).
+    pub data_type: Option<Arc<dyn DataType>>,
+    /// True if parameter is an indirect pointer to the actual parameter
+    /// (`ParameterPieces.isIndirect`).
+    pub is_indirect: bool,
+    /// True if this is an input pointer to return storage (`ParameterPieces.hiddenReturnPtr`).
+    pub hidden_return_ptr: bool,
+}
 
 /// Placeholder for `ghidra.program.model.lang.ParamListStandard`, referenced by
-/// [`AssignAction`](crate::program::model::lang::protorules::assign_action::AssignAction)
+/// [`AssignAction`](crate::program::model::lang::protorules::assign_action::AssignAction) and
+/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
 /// before the real class is ported. `AssignAction::clone_box` only ever receives this type
-/// opaquely, to be stored by concrete implementations, so no members are needed yet.
-pub trait ParamListStandardLike {}
+/// opaquely, but `ParamListStandardOut::assign_map_out` needs the inherited `numgroup`,
+/// `spacebase`, and `assignAddress` behavior, so those are modeled here as provided methods with
+/// placeholder defaults; real implementations are expected to override them.
+pub trait ParamListStandardLike {
+    /// Number of parameter "groups" in this parameter convention (`ParamListStandard.numgroup`).
+    fn num_group(&self) -> i32 {
+        0
+    }
+
+    /// Space containing relative offset parameters (`ParamListStandard.spacebase`), or `None`.
+    fn spacebase(&self) -> Option<Arc<AddressSpace>> {
+        None
+    }
+
+    /// Inherited address-assignment behavior (`ParamListStandard.assignAddress`). Defaults to
+    /// always failing, since no concrete resource list is available in this placeholder.
+    fn assign_address(
+        &self,
+        dt: &Arc<dyn DataType>,
+        proto: &PrototypePieces,
+        pos: i32,
+        dt_manager: &dyn DataTypeManager,
+        status: &mut [i32],
+        res: &mut ParameterPieces,
+    ) -> i32 {
+        let _ = (dt, proto, pos, dt_manager, status, res);
+        crate::program::model::lang::protorules::assign_action::FAIL
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.VoidDataType`'s static `isVoidDataType` helper,
+/// referenced by
+/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
+/// before the real class is ported. The Java method also unwraps a `TypeDef` to its base type
+/// before testing; that step is omitted here since it needs supertrait downcasting this crate
+/// does not rely on elsewhere; any real `VoidDataType` port should override
+/// [`DataType::is_void_type`](crate::program::model::data::data_type::DataType::is_void_type) so
+/// this check keeps working unchanged.
+pub fn is_void_data_type(dt: Option<&dyn DataType>) -> bool {
+    dt.is_some_and(DataType::is_void_type)
+}
 
 /// Placeholder for `ghidra.program.database.mem.FileBytes`, referenced by
 /// [`MemoryBlockSourceInfo`](crate::program::model::mem::memory_block_source_info::MemoryBlockSourceInfo)
