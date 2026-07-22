@@ -23,7 +23,11 @@ pub trait CachedEncoder: Encoder {
     ///
     /// # Errors
     /// Returns an error for problems during the write operation
-    fn write_to<W: io::Write>(&self, writer: &mut W) -> io::Result<()>;
+    ///
+    /// Takes `&mut dyn io::Write` (rather than a generic `W: io::Write`, as the original port had)
+    /// so that this trait — and [`PatchEncoder`](super::PatchEncoder), which extends it — remain
+    /// object safe.
+    fn write_to(&self, writer: &mut dyn io::Write) -> io::Result<()>;
 }
 
 #[cfg(test)]
@@ -161,7 +165,7 @@ mod tests {
             self.bytes.is_empty()
         }
 
-        fn write_to<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+        fn write_to(&self, writer: &mut dyn io::Write) -> io::Result<()> {
             writer.write_all(&self.bytes)
         }
     }

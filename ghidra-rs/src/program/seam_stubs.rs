@@ -375,12 +375,6 @@ pub trait Mask {}
 /// through, so no members are needed yet.
 pub trait PcodeOverride {}
 
-/// Placeholder for `ghidra.program.model.pcode.PatchEncoder`, referenced by
-/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
-/// before the real interface is ported. `InstructionPrototype` only ever passes this type
-/// through, so no members are needed yet.
-pub trait PatchEncoder {}
-
 /// Placeholder for `ghidra.program.model.lang.InstructionContext`, referenced by
 /// [`Instruction`](crate::program::model::listing::instruction::Instruction)
 /// before the real interface is ported. `Instruction` only ever passes this type through (via
