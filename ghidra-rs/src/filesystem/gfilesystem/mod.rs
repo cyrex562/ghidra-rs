@@ -4,6 +4,7 @@ pub mod factory;
 pub mod fileinfo;
 pub mod file_cache_name_index;
 pub mod file_system_event_listener;
+pub mod file_system_ref_manager;
 pub mod fs_utilities;
 pub mod g_file;
 pub mod g_file_impl;
