@@ -96,12 +96,6 @@ pub trait PreferencesLike {
     fn set_property(&self, name: &str, value: &str);
 }
 
-/// Placeholder for `ghidra.framework.data.DomainObjectAdapterDB`, referenced by
-/// [`TransactionListener`](crate::framework::model::TransactionListener) before the real class is
-/// ported. `TransactionListener` only ever passes this type through as an opaque value, so no
-/// members are needed yet.
-pub trait DomainObjectAdapterDB {}
-
 /// Placeholder for `ghidra.framework.data.LinkHandler`, referenced by
 /// [`DomainFolder`](crate::framework::model::DomainFolder) before the real class is ported.
 /// `DomainFolder` only ever passes this type through as an opaque value, so no members are needed

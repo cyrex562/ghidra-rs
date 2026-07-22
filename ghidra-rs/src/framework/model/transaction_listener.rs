@@ -1,5 +1,5 @@
+use crate::framework::data::domain_object_adapter_db::DomainObjectAdapterDB;
 use crate::framework::model::transaction_info::TransactionInfo;
-use crate::framework::seam_stubs::DomainObjectAdapterDB;
 
 /// An interface for listening to transactions.
 ///
@@ -24,10 +24,26 @@ pub trait TransactionListener {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::db::util::ErrorHandler;
+    use crate::framework::db::DBHandle;
+    use crate::framework::model::domain_object::DomainObject;
     use crate::framework::model::transaction_info::TransactionStatus;
 
-    struct MockDomainObjectAdapterDB;
-    impl DomainObjectAdapterDB for MockDomainObjectAdapterDB {}
+    struct MockDomainObjectAdapterDB {
+        dbh: DBHandle,
+    }
+
+    impl DomainObject for MockDomainObjectAdapterDB {}
+
+    impl ErrorHandler for MockDomainObjectAdapterDB {
+        fn db_error(&self, _e: std::io::Error) {}
+    }
+
+    impl DomainObjectAdapterDB for MockDomainObjectAdapterDB {
+        fn get_db_handle(&self) -> &DBHandle {
+            &self.dbh
+        }
+    }
 
     struct MockTransactionInfo;
     impl TransactionInfo for MockTransactionInfo {
@@ -86,7 +102,9 @@ mod tests {
     fn usable_as_trait_object() {
         let mut listener = RecordingListener::default();
         let dyn_listener: &mut dyn TransactionListener = &mut listener;
-        let domain_obj = MockDomainObjectAdapterDB;
+        let domain_obj = MockDomainObjectAdapterDB {
+            dbh: DBHandle::new().unwrap(),
+        };
         let tx = MockTransactionInfo;
 
         dyn_listener.transaction_started(&domain_obj, &tx);

@@ -29,7 +29,10 @@ pub mod version;
 pub use application_identifier::ApplicationIdentifier;
 pub use application_properties::ApplicationProperties;
 pub use cmd::Command;
-pub use data::{CheckinHandler, DomainObjectDBChangeSet, DomainObjectFileListener, OpenMode};
+pub use data::{
+    CheckinHandler, DomainObjectAdapterDB, DomainObjectDBChangeSet, DomainObjectFileListener,
+    OpenMode,
+};
 pub use generic_run_info::GenericRunInfo;
 pub use log4j_error_logger::Log4jErrorLogger;
 pub use module_initializer::ModuleInitializer;
