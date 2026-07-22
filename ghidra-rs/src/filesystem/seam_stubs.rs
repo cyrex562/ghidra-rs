@@ -1,6 +1,8 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
+
 /// Placeholder for `ghidra.formats.gfilesystem.GFileSystem`, needed by
 /// [`crate::filesystem::gfilesystem::factory::g_file_system_factory::GFileSystemFactory`].
 ///
@@ -16,4 +18,30 @@ pub trait GFileSystemLike {}
 /// validation, category grouping, ordinal display ordering) is ported separately.
 pub trait FileAttributeTypeLike {
     fn display_name(&self) -> &str;
+}
+
+/// Placeholder for `ghidra.formats.gfilesystem.FSRLRoot`, needed by
+/// [`crate::filesystem::gfilesystem::g_file_system::GFileSystem::get_fsrl`].
+///
+/// `GFileSystem` never calls a method on the `FSRLRoot` it returns -- it only stores and
+/// hands the value back to callers -- so this is an empty marker trait until the real
+/// `FSRLRoot` is ported.
+pub trait FsrlRootLike {}
+
+/// Placeholder for `ghidra.formats.gfilesystem.FileSystemRefManager`, needed by
+/// [`crate::filesystem::gfilesystem::g_file_system::GFileSystem::get_ref_manager`].
+///
+/// Like [`FsrlRootLike`], `GFileSystem` only returns this value to callers and never calls a
+/// method on it itself, so this is an empty marker trait.
+pub trait FileSystemRefManagerLike {}
+
+/// Placeholder for `ghidra.formats.gfilesystem.fileinfo.FileAttributes`, needed by
+/// [`crate::filesystem::gfilesystem::g_file_system::GFileSystem::get_file_attributes`].
+///
+/// Only exposes the single lookup that `GFileSystem`'s default `getFileType()` needs
+/// (`attrs.get(FileAttributeType.FILE_TYPE_ATTR, FileType.class, ...)`); the full attribute
+/// container (arbitrary keyed values, merging, read-only wrapping) is ported separately.
+pub trait FileAttributesLike {
+    /// The explicit `FileType` attribute, if the filesystem recorded one.
+    fn file_type_attr(&self) -> Option<FileType>;
 }
