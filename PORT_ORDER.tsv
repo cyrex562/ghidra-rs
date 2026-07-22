@@ -46,7 +46,7 @@ DONE	trait	171	9	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/
 DONE	trait	170	55	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/annotations/FileSystemInfo.java
 PARK	trait	171	15	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributeType.java
 DONE	trait	170	17	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttribute.java
-TODO	trait	169	118	10	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystem.java
+DONE	trait	169	118	10	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystem.java
 TODO	trait	168	100	4	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRefManager.java
 TODO	trait	167	101	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRef.java
 TODO	trait	169	94	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileHashProvider.java
