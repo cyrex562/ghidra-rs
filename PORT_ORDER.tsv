@@ -69,7 +69,7 @@ DONE	trait	167	22	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 PARK	trait	169	177	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguageTranslatorFactoryMinion.java
 DONE	trait	167	193	60	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguageTranslator.java
 DONE	trait	166	34	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressMapDB.java
-TODO	trait	167	7	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/RecordFilter.java
+DONE	trait	167	7	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/RecordFilter.java
 TODO	trait	167	27	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/AddressSetPropertyMap.java
 TODO	trait	167	17	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/CompositeDataTypeElementInfo.java
 TODO	trait	166	7	119	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/properties/DBPropertyMapManager.java
