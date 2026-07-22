@@ -54,7 +54,7 @@ DONE	trait	169	92	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats
 DONE	trait	172	27	26	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactoryByteProvider.java
 DONE	trait	172	18	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemProbeByteProvider.java
 DONE	trait	172	15	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemProbeBytesOnly.java
-TODO	trait	170	5	3	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactoryIgnore.java
+DONE	trait	170	5	3	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactoryIgnore.java
 TODO	trait	169	94	14	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/LocalFileSystem.java
 TODO	trait	167	5	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemInfoRec.java
 TODO	trait	166	93	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemProbeConflictResolver.java
