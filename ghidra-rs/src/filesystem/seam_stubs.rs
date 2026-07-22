@@ -1,6 +1,7 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use crate::filesystem::gfilesystem::factory::file_system_info_rec::FileSystemInfoRec;
 use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
 
 /// Placeholder for `ghidra.formats.gfilesystem.GFileSystem`, needed by
@@ -63,3 +64,20 @@ pub trait FileSystemRefLike: PartialEq {}
 /// method on it itself, so this is an empty marker trait until the real `FileSystemService` is
 /// ported.
 pub trait FileSystemServiceLike {}
+
+/// Placeholder for `docking.widgets.SelectFromListDialog`, needed by
+/// [`crate::filesystem::gfilesystem::file_system_probe_conflict_resolver::GuiPickerResolver`]
+/// (the Rust equivalent of `FileSystemProbeConflictResolver.GUI_PICKER`) to prompt the user to
+/// choose a filesystem from a GUI list.
+///
+/// The Java static method takes an arbitrary list plus a `Function` reference used to extract
+/// a display label; since `FileSystemInfoRec` already exposes `get_description` for that
+/// purpose, this seam only needs the candidate list itself.
+pub trait SelectFromListDialogLike<FSTYPE: GFileSystemLike> {
+    fn select_from_list<'a>(
+        &self,
+        choices: &[&'a dyn FileSystemInfoRec<FSTYPE>],
+        title: &str,
+        message: &str,
+    ) -> Option<&'a dyn FileSystemInfoRec<FSTYPE>>;
+}
