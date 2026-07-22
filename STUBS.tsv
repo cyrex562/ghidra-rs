@@ -262,3 +262,4 @@ ts	stub_class	referenced_by
 2026-07-22T06:00:00Z	SubtableSymbol	SleighCompile
 2026-07-22T06:00:00Z	TokenSymbol	SleighCompile
 2026-07-22T06:00:00Z	Constructor	SleighCompile
+2026-07-22T07:00:00Z	ParamListStandardLike	AssignAction

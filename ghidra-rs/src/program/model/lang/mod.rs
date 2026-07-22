@@ -77,7 +77,7 @@ pub use processor_context::ProcessorContext;
 pub use processor_context_view::ProcessorContextView;
 pub use processor_not_found_exception::ProcessorNotFoundException;
 pub use program_architecture::ProgramArchitecture;
-pub use protorules::{DatatypeFilter, QualifierFilter};
+pub use protorules::{AssignAction, DatatypeFilter, QualifierFilter};
 pub use register::{Register, RegisterRef, WeakRegisterRef};
 pub use register_translator::RegisterTranslator;
 pub use register_tree::{RegisterTree, RegisterTreeRef, WeakRegisterTreeRef};
