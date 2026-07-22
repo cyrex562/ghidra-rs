@@ -278,3 +278,4 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	LocalFileSystemLike	FileSystemService
 2026-07-22T00:00:00Z	FileCacheEntryLike	FileSystemService
 2026-07-22T00:00:00Z	FileCacheEntryBuilderLike	FileSystemService
+2026-07-22T14:00:00Z	FsrlRootLike	FSRL
