@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	16	3	76	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ValueStoragePage.java
+DONE	trait	16	3	76	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ValueStoragePage.java
 TODO	trait	15	5	1	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/map/ValueMap.java
 TODO	trait	86	1267	11	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Undefined.java
 TODO	trait	102	8	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/TransientProjectData.java
