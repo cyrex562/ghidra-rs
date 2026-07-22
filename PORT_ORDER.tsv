@@ -50,7 +50,7 @@ DONE	trait	169	118	10	filesystem	Ghidra/Features/Base/src/main/java/ghidra/forma
 DONE	trait	168	100	4	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRefManager.java
 DONE	trait	167	101	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemRef.java
 DONE	trait	169	94	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileHashProvider.java
-TODO	trait	169	92	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemProgramProvider.java
+DONE	trait	169	92	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemProgramProvider.java
 TODO	trait	172	27	26	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactoryByteProvider.java
 TODO	trait	172	18	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemProbeByteProvider.java
 TODO	trait	172	15	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemProbeBytesOnly.java
