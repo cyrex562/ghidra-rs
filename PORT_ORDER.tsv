@@ -30,7 +30,7 @@ DONE	trait	169	14	16	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/
 DONE	trait	171	8	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiMapSTL.java
 DONE	trait	171	8	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ComparableMultiSetSTL.java
 DONE	trait	172	9	2	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ListSTL.java
-TODO	trait	171	10	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ListIterator.java
+DONE	trait	171	10	1	generic	Ghidra/Framework/Generic/src/main/java/generic/stl/ListIterator.java
 TODO	trait	177	7	8	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/context/ContextSet.java
 TODO	trait	175	12	6	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/FamilySymbol.java
 TODO	trait	174	8	7	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/context/ConstructState.java
