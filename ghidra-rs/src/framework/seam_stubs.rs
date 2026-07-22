@@ -613,6 +613,22 @@ pub trait PluginPackageLike {
     fn name(&self) -> String;
 }
 
+/// Placeholder for `ghidra.framework.protocol.ghidra.TransientProjectManager`, referenced by
+/// [`TransientProjectData`](crate::framework::protocol::ghidra::TransientProjectData) before the
+/// real (cache-owning) class is ported. `TransientProjectData::forced_dispose` only ever calls
+/// back into it to remove itself from the manager's cache, so only that one callback is declared
+/// here.
+pub trait TransientProjectManagerLike {
+    /// Removes the given transient project data from the manager's cache, keyed by repository
+    /// info, mirroring `TransientProjectManager.cleanupProjectData(RepositoryInfo,
+    /// TransientProjectData)`.
+    fn cleanup_project_data(
+        &self,
+        repository_info: &crate::framework::protocol::ghidra::RepositoryInfo,
+        project_data: &dyn crate::framework::protocol::ghidra::TransientProjectData,
+    );
+}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
