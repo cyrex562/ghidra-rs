@@ -64,7 +64,7 @@ DONE	trait	166	3	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/
 DONE	trait	165	124	43	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemService.java
 DONE	trait	164	164	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRL.java
 DONE	trait	163	82	19	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loader.java
-TODO	trait	162	56	41	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loaded.java
+DONE	trait	162	56	41	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loaded.java
 TODO	trait	167	22	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/map/AddressMapDBAdapter.java
 TODO	trait	169	177	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguageTranslatorFactoryMinion.java
 TODO	trait	167	193	60	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguageTranslator.java
