@@ -35,7 +35,7 @@ DONE	trait	177	7	8	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	175	12	6	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/FamilySymbol.java
 DONE	trait	174	8	7	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/context/ConstructState.java
 DONE	trait	173	4	2	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghpatexpress/EqualEquation.java
-TODO	trait	172	11	6	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/ContextOp.java
+DONE	trait	172	11	6	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slghsymbol/ContextOp.java
 TODO	trait	170	9	56	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/SleighCompile.java
 TODO	trait	169	2	8	decompiler	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ConsistencyChecker.java
 TODO	trait	166	13	74	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/protorules/AssignAction.java
