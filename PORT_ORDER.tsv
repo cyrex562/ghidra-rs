@@ -10,7 +10,7 @@ DONE	trait	97	11	10	framework	Ghidra/Framework/Project/src/main/java/ghidra/fram
 DONE	trait	95	6	4	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/DefaultGhidraProtocolHandler.java
 DONE	trait	94	8	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/GhidraProtocolHandler.java
 DONE	trait	93	60	14	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/GhidraURL.java
-TODO	trait	92	275	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectLocator.java
+DONE	trait	92	275	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectLocator.java
 TODO	trait	96	343	82	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Plugin.java
 TODO	trait	95	210	3	framework	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/plugintool/AutoService.java
 TODO	trait	91	56	66	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectAdapterDB.java
