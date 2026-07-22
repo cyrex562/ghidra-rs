@@ -8,6 +8,7 @@ pub mod file_system_ref;
 pub mod file_system_ref_manager;
 pub mod fs_utilities;
 pub mod g_file;
+pub mod g_file_hash_provider;
 pub mod g_file_impl;
 pub mod g_file_system;
 pub mod g_file_system_iterator;
