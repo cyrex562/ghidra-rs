@@ -19,7 +19,7 @@ DONE	trait	111	102	18	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 DONE	trait	112	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int32TDataType.java
 DONE	trait	114	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerSizedIntegerDataType.java
 PARK	trait	119	1239	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureFactory.java
-TODO	trait	132	309	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java
+DONE	trait	132	309	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java
 TODO	trait	150	111	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/GlobalSymbolMap.java
 TODO	trait	160	185	29	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslator.java
 TODO	trait	166	109	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PatchEncoder.java
