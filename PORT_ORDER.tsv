@@ -43,7 +43,7 @@ PARK	trait	165	306	240	program	Ghidra/Framework/SoftwareModeling/src/main/java/g
 DONE	trait	164	306	212	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamListStandardOut.java
 DONE	trait	163	305	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamListRegisterOut.java
 DONE	trait	171	9	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactory.java
-TODO	trait	170	55	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/annotations/FileSystemInfo.java
+DONE	trait	170	55	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/annotations/FileSystemInfo.java
 TODO	trait	171	15	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributeType.java
 TODO	trait	170	17	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttribute.java
 TODO	trait	169	118	10	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystem.java
