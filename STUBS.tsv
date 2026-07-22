@@ -259,3 +259,4 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	InstructionErrorType	InstructionBlock
 2026-07-22T00:00:00Z	InstructionError	InstructionBlock
 2026-07-22T00:00:00Z	InstructionBlockFlow	InstructionBlock
+2026-07-22T00:00:00Z	HighSymbol	GlobalSymbolMap
