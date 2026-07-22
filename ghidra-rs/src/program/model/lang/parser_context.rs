@@ -150,7 +150,7 @@ mod tests {
             &self,
             _operand_index: i32,
             _context: &dyn crate::program::model::lang::InstructionContext,
-            _override_: Option<&dyn crate::program::seam_stubs::PcodeOverride>,
+            _override_: Option<&dyn crate::program::model::pcode::PcodeOverride>,
         ) -> crate::program::model::symbol::RefType {
             unimplemented!()
         }
@@ -170,7 +170,7 @@ mod tests {
         fn get_pcode(
             &self,
             _context: &dyn crate::program::model::lang::InstructionContext,
-            _override_: Option<&dyn crate::program::seam_stubs::PcodeOverride>,
+            _override_: Option<&dyn crate::program::model::pcode::PcodeOverride>,
         ) -> Vec<crate::program::model::pcode::PcodeOp> {
             Vec::new()
         }
@@ -179,7 +179,7 @@ mod tests {
             &self,
             _encoder: &mut dyn crate::program::model::pcode::PatchEncoder,
             _context: &dyn crate::program::model::lang::InstructionContext,
-            _override_: Option<&dyn crate::program::seam_stubs::PcodeOverride>,
+            _override_: Option<&dyn crate::program::model::pcode::PcodeOverride>,
         ) -> io::Result<()> {
             Ok(())
         }
