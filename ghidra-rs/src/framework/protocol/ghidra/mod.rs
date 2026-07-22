@@ -1,8 +1,10 @@
+pub mod ghidra_protocol_connector;
 pub mod ghidra_url_connection;
 pub mod repository_info;
 pub mod ghidra_url_result_handler;
 pub mod transient_project_data;
 
+pub use ghidra_protocol_connector::GhidraProtocolConnector;
 pub use ghidra_url_connection::{
     GhidraURLConnection, GhidraURLContent, SetReadOnlyError, StatusCode,
     GHIDRA_WRAPPED_CONTENT, REPOSITORY_SERVER_CONTENT,
