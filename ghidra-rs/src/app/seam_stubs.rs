@@ -351,3 +351,34 @@ pub trait TraceMemoryRegion {}
 /// is ported. `DataTypeManagerService` only ever passes this type through as a parameter, so no
 /// members are needed yet.
 pub trait TreePath {}
+
+/// Placeholder for `ghidra.app.util.bin.ByteProvider`, referenced by
+/// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
+/// `Loader`'s default `get_preferred_file_name` only ever calls `getFSRL()`/`getName()`, so no
+/// other members are needed yet.
+pub trait ByteProviderLike {
+    /// Stands in for `ByteProvider.getFSRL()`.
+    fn get_fsrl(&self) -> Option<Box<dyn crate::filesystem::gfilesystem::fsrl::Fsrl>>;
+
+    /// Stands in for `ByteProvider.getName()`.
+    fn get_name(&self) -> Option<String>;
+}
+
+/// Placeholder for `ghidra.app.util.Option`, referenced by
+/// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
+/// `Loader` only ever passes lists of this type through as a parameter/return value, so no
+/// members are needed yet.
+pub trait OptionLike {}
+
+/// Placeholder for `ghidra.app.util.opinion.LoadSpec`, referenced by
+/// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
+/// `Loader` only ever passes this type through as a parameter/return value, so no members are
+/// needed yet.
+pub trait LoadSpecLike {}
+
+/// Placeholder for `ghidra.app.util.opinion.LoadResults`, referenced by
+/// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported. Java's
+/// `LoadResults<? extends DomainObject>` wildcard generic is dropped, since this crate has no
+/// generic parameter to substitute yet. `Loader` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait LoadResultsLike {}
