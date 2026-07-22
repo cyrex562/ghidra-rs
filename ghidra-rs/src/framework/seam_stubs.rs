@@ -106,32 +106,6 @@ pub trait DomainObjectAdapterDB {}
 /// yet.
 pub trait LinkHandler {}
 
-/// Placeholder for `ghidra.framework.model.ProjectLocator`, referenced by
-/// [`DomainFile`](crate::framework::model::DomainFile) before the real class is ported.
-/// `DomainFile` only ever returns this type, so no members are needed yet.
-///
-/// Extended by [`GhidraURL`](crate::framework::protocol::ghidra::GhidraURL), which additionally
-/// needs to check whether a locator's on-disk project files exist (`ProjectLocator.exists()`) and
-/// to resolve a locator back to its root project URL (`ProjectLocator.getURL()`) when
-/// building/reading Ghidra URLs. Both new methods default to the same "nothing here" answer
-/// already implied by existing placeholder implementors (`UnknownProjectLocator`/
-/// `FallbackProjectLocator`/`NoProjectLocator`), so none of those need updating.
-pub trait ProjectLocator {
-    /// Determine if the project directory and marker file exist, mirroring
-    /// `ProjectLocator.exists()`. Defaults to `false`, matching the "nothing here" semantics of
-    /// this crate's existing placeholder locators.
-    fn exists(&self) -> bool {
-        false
-    }
-
-    /// Gets the URL for this project, mirroring `ProjectLocator.getURL()`. Defaults to an empty
-    /// string, matching the "nothing here" semantics of this crate's existing placeholder
-    /// locators.
-    fn url(&self) -> String {
-        String::new()
-    }
-}
-
 /// Placeholder for `ghidra.framework.store.Version`, referenced by
 /// [`DomainFile`](crate::framework::model::DomainFile) before the real class is ported.
 /// `DomainFile` only ever returns a list of these, so no members are needed yet.

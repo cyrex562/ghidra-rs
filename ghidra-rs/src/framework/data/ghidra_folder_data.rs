@@ -5,9 +5,9 @@ use crate::framework::model::domain_folder::{
     CopyError, CreateFileError, CreateFolderError, DeleteError, MoveError, SetNameError,
 };
 use crate::framework::model::{
-    DomainFile, DomainFolder, DomainFolderChangeListener, DomainObject, ProjectData,
+    DomainFile, DomainFolder, DomainFolderChangeListener, DomainObject, ProjectData, ProjectLocator,
 };
-use crate::framework::seam_stubs::{GhidraFileDataLike, LinkHandler, ProjectLocator};
+use crate::framework::seam_stubs::{GhidraFileDataLike, LinkHandler};
 use crate::framework::store::local::LocalFileSystem;
 use crate::framework::store::{FileSystem, SEPARATOR};
 use crate::util::task::TaskMonitor;

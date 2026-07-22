@@ -1,7 +1,8 @@
 use std::io;
 
+use crate::framework::model::ProjectLocator;
 use crate::framework::remote::DEFAULT_PORT;
-use crate::framework::seam_stubs::{GhidraUrlHandlerLike, ProjectLocator};
+use crate::framework::seam_stubs::GhidraUrlHandlerLike;
 use crate::util::NamingUtilities;
 
 /// The Ghidra URL scheme name, mirroring `GhidraURL.PROTOCOL`.

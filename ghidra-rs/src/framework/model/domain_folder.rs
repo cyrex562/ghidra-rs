@@ -7,7 +7,8 @@ use thiserror::Error;
 use crate::framework::model::domain_file::DomainFile;
 use crate::framework::model::domain_object::DomainObject;
 use crate::framework::model::project_data::ProjectData;
-use crate::framework::seam_stubs::{LinkHandler, ProjectLocator};
+use crate::framework::model::project_locator::ProjectLocator;
+use crate::framework::seam_stubs::LinkHandler;
 use crate::framework::store::FolderNotEmptyException;
 use crate::util::exception::{
     CancelledException, DuplicateFileException, FileInUseException, InvalidNameException,
