@@ -60,7 +60,7 @@ DONE	trait	167	5	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/
 DONE	trait	166	93	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemProbeConflictResolver.java
 DONE	trait	168	9	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/CryptoSession.java
 DONE	trait	167	5	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PasswordProvider.java
-TODO	trait	166	3	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/CachedPasswordProvider.java
+DONE	trait	166	3	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/CachedPasswordProvider.java
 TODO	trait	165	124	43	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemService.java
 TODO	trait	164	164	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FSRL.java
 TODO	trait	163	82	19	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loader.java
