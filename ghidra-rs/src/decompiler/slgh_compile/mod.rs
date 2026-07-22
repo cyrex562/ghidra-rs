@@ -1,3 +1,4 @@
+pub mod consistency_checker;
 pub mod directory_visitor;
 pub mod error_warning_reporter;
 pub mod expr_tree;
@@ -13,6 +14,7 @@ pub mod space_class;
 pub mod space_quality;
 pub mod star_quality;
 
+pub use consistency_checker::ConsistencyChecker;
 pub use directory_visitor::DirectoryVisitor;
 pub use error_warning_reporter::ErrorWarningReporter;
 pub use expr_tree::{append_params, ExprTree};
