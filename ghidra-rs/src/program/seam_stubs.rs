@@ -1032,6 +1032,16 @@ pub trait BlockMultiGoto {
     fn add_goto_target(&self, target: Arc<dyn PcodeBlock>);
 }
 
+/// Placeholder for `ghidra.program.model.pcode.HighSymbol`, referenced by
+/// [`GlobalSymbolMap`](crate::program::model::pcode::global_symbol_map::GlobalSymbolMap) before
+/// the real class is ported. `GlobalSymbolMap` only ever reads the id used to key its lookup maps
+/// and reconcile its next-available synthetic id counter (`insertSymbol`'s use of
+/// `HighSymbol.getId()`/`HighSymbol.ID_BASE`), so no other members are needed yet.
+pub trait HighSymbol: Send + Sync {
+    /// Stands in for `HighSymbol.getId()`.
+    fn get_id(&self) -> i64;
+}
+
 /// Placeholder for `ghidra.program.model.pcode.PcodeOpAST`, referenced by
 /// [`PcodeBlockBasic`](crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic) (which
 /// downcasts each `PcodeOp` it stores to this subtype on every insert/remove, to set/read the
