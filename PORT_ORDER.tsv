@@ -22,7 +22,7 @@ PARK	trait	119	1239	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/g
 DONE	trait	132	309	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java
 DONE	trait	150	111	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/GlobalSymbolMap.java
 DONE	trait	160	185	29	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressTranslator.java
-TODO	trait	166	109	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PatchEncoder.java
+DONE	trait	166	109	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PatchEncoder.java
 TODO	trait	164	111	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeOverride.java
 TODO	trait	169	6	9	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/protorules/DatatypeFilter.java
 TODO	trait	167	6	9	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/protorules/QualifierFilter.java
