@@ -629,6 +629,15 @@ pub trait TransientProjectManagerLike {
     );
 }
 
+/// Placeholder for `ghidra.framework.data.GhidraFileData`, referenced by
+/// [`GhidraFolderData`](crate::framework::data::GhidraFolderData) before the real class is
+/// ported. `GhidraFolderData` only ever returns this type as an opaque value (from
+/// `get_file_data`), so no members are needed yet. Unlike `GhidraFolder`/`GhidraFile` (which
+/// implement the already-ported `DomainFolder`/`DomainFile` interfaces and so are represented by
+/// those trait objects directly), `GhidraFileData` implements no such interface, hence this
+/// dedicated marker.
+pub trait GhidraFileDataLike {}
+
 /// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
 /// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
 /// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which

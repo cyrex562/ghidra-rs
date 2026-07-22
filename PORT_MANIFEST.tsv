@@ -12510,7 +12510,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/FolderLink
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/GhidraFile.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/GhidraFileData.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/GhidraFolder.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/GhidraFolderData.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/GhidraFolderData.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework data
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/LinkHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/LinkedGhidraFile.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/data/LinkedGhidraFolder.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework data 
