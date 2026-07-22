@@ -12831,7 +12831,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/To
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/WorkspaceImpl.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/ContentTypeQueryTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/DefaultGhidraProtocolConnector.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/DefaultGhidraProtocolHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/DefaultGhidraProtocolHandler.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/DefaultLocalGhidraProtocolConnector.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/GhidraProtocolConnector.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/GhidraProtocolHandler.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra 
