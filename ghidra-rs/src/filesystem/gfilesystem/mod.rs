@@ -1,3 +1,4 @@
+pub mod annotations;
 pub mod crypto;
 pub mod factory;
 pub mod fileinfo;
