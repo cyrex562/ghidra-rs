@@ -252,3 +252,6 @@ ts	stub_class	referenced_by
 2026-07-21T06:30:00Z	GhidraFileDataLike	GhidraFolderData
 2026-07-22T02:50:37Z	GhidraURLWrappedContentLike	GhidraURLConnection
 2026-07-21T03:16:26Z	GhidraUrlHandlerLike	GhidraURL
+2026-07-21T07:00:00Z	AutoServiceListenerLike	AutoService
+2026-07-21T07:00:00Z	PluginTool	AutoService
+2026-07-21T07:00:00Z	PluginLike	AutoService

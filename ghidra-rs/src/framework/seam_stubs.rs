@@ -3,7 +3,9 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use std::any::Any;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::framework::application_properties::ApplicationProperties;
 use crate::generic::jar::ResourceFile;
@@ -319,7 +321,34 @@ impl JdomElement for NullJdomElement {}
 /// Placeholder for `ghidra.framework.plugintool.PluginTool`, referenced by
 /// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real class is ported.
 /// `ToolTemplate` only ever returns this type, so no members are needed yet.
-pub trait PluginTool {}
+///
+/// Extended for [`AutoService`](crate::framework::plugintool::AutoService), which additionally
+/// needs the two `ServiceProvider` members `PluginTool` inherits in Java (`getService`,
+/// `addServiceListener`) to query already-available services and register for future ones.
+/// Both take `&self`, matching the convention already used by [`PreferencesLike`], since the real
+/// `PluginTool` is a single shared, mutable object rather than per-call state; both default to
+/// inert no-ops so existing opaque-placeholder implementors are unaffected.
+pub trait PluginTool {
+    /// Returns the service implementing `iface`, if currently provided, mirroring
+    /// `PluginTool.getService(Class<?>)`.
+    fn get_service(&self, _iface: &str) -> Option<Arc<dyn Any + Send + Sync>> {
+        None
+    }
+
+    /// Registers a listener to be notified when services are added to or removed from this tool,
+    /// mirroring `PluginTool.addServiceListener(ServiceListener)`.
+    fn add_service_listener(
+        &self,
+        _listener: Arc<dyn crate::framework::plugintool::util::ServiceListener>,
+    ) {
+    }
+}
+
+/// Inert fallback [`PluginTool`] used by [`PluginLike::tool`]'s default body, mirroring how
+/// [`NullJdomElement`] backs [`JdomElement::new_child`]'s default. Carries no state; every method
+/// uses the trait's own no-op defaults.
+struct NullPluginTool;
+impl PluginTool for NullPluginTool {}
 
 /// Placeholder for `ghidra.framework.model.ToolChest`, referenced by
 /// [`ProjectManager`](crate::framework::model::ProjectManager) before the real interface is
@@ -580,10 +609,25 @@ pub trait FixedKeyInteriorNodeLike:
 /// (`plugin.getClass().getName()`) to look up its `PluginDescription`, so `plugin_class_name` is
 /// declared with a default (empty-string) body -- implementations that only used the opaque form
 /// are unaffected, and real implementations override it.
+///
+/// Extended for [`AutoService`](crate::framework::plugintool::AutoService), which additionally
+/// needs `registerServiceProvided` (to register a provided service) and `getTool` (to resolve the
+/// tool for the `wireServicesConsumed(Plugin, Object)` overload). Both default to inert
+/// no-ops/placeholders so existing opaque-placeholder implementors are unaffected;
+/// `register_service_provided` takes `&self` for the same reason `PluginTool`'s members do.
 pub trait PluginLike {
     /// Fully-qualified name of this plugin's class, mirroring `getClass().getName()`.
     fn plugin_class_name(&self) -> String {
         String::new()
+    }
+
+    /// Registers `service` as this plugin's implementation of `iface`, mirroring
+    /// `Plugin.registerServiceProvided(Class<?>, Object)`.
+    fn register_service_provided(&self, _iface: &str, _service: Arc<dyn Any + Send + Sync>) {}
+
+    /// Gets this plugin's parent tool, mirroring `Plugin.getTool()`.
+    fn tool(&self) -> Arc<dyn PluginTool> {
+        Arc::new(NullPluginTool)
     }
 }
 
@@ -667,4 +711,23 @@ pub enum CheckoutType {
     /// Similar to `Exclusive`, but only persists while the associated client connection is alive;
     /// only permitted for remote versioned file systems which support its use.
     Transient,
+}
+
+/// Placeholder for `ghidra.framework.plugintool.util.AutoServiceListener`, referenced by
+/// [`AutoService`](crate::framework::plugintool::AutoService) before the real class is ported. In
+/// Java, `AutoServiceListener<R>` reflectively discovers every `@AutoServiceConsumed`-annotated
+/// field/method on a receiver's class (and its superclasses/interfaces) to build a
+/// `ReceiverProfile`, then uses that profile to push newly-(un)available services into the
+/// receiver, and to answer `notifyCurrentServices(PluginTool)` by querying the tool for each
+/// consumed interface it already knows about. Rust has no field reflection, so `AutoService` leaves
+/// discovery and application of services entirely to implementations of this trait; `AutoService`
+/// itself only needs the one operation it calls directly on the listener,
+/// `notify_current_services` (a real `AutoServiceListener` also implements `ServiceListener`
+/// directly, so it can be registered with the tool; here [`AutoService::listener_for`] returns both
+/// views of one implementor instead, since Rust trait objects cannot be upcast to an unrelated
+/// trait).
+pub trait AutoServiceListenerLike: Send + Sync {
+    /// Pushes every currently-available service this listener already knows its receiver consumes,
+    /// mirroring `AutoServiceListener.notifyCurrentServices(PluginTool)`.
+    fn notify_current_services(&self, tool: &dyn PluginTool);
 }

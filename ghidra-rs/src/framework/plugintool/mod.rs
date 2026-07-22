@@ -1,5 +1,6 @@
 pub mod annotation;
 pub mod auto_config_state;
+pub mod auto_service;
 pub mod busy_tool_exception;
 pub mod default_plugin_packaging_provider;
 pub mod generic_stand_alone_application;
@@ -21,6 +22,7 @@ pub mod tool_event_name;
 pub mod util;
 
 pub use auto_config_state::{ClassStateHandler, ConfigFieldCodec, EnumLike, PathIsDir, PathIsFile};
+pub use auto_service::{AutoService, Wiring};
 pub use busy_tool_exception::BusyToolException;
 pub use default_plugin_packaging_provider::DefaultPluginPackagingProvider;
 pub use generic_stand_alone_application::GenericStandAloneApplication;
