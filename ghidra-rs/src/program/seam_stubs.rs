@@ -46,6 +46,12 @@ pub trait VariableStorage {}
 /// no members are needed yet.
 pub trait StandAloneDataTypeManager {}
 
+/// Placeholder for `ghidra.program.model.data.DefaultDataType`, referenced by
+/// [`Undefined::is_undefined`](crate::program::model::data::undefined::is_undefined) (via
+/// `DataType::is_default_data_type`) before the real class is ported. `Undefined` only ever
+/// checks `instanceof DefaultDataType`, so no members are needed yet.
+pub trait DefaultDataType {}
+
 /// Placeholder for `ghidra.program.model.data.PointerType`, referenced by
 /// [`PointerTypedefBuilder`](crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder)
 /// before the real enum is ported.
