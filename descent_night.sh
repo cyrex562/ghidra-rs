@@ -181,14 +181,24 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
       # mass-park otherwise-good ports; once the crate is clean (base 0) the gate is strict.
       gate_ok=1
       if [ "$TEST_GATE" = "1" ]; then
-        tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
-        terr=$(printf '%s' "$tout" | grep -cE '^error'); terr=${terr:-0}
+        # 1) COMPILE check via --no-run (SAME command as TEST_ERR_BASE). Must not count runtime test
+        #    output: `cargo test` RUNS tests, and a passing test that merely prints a line starting
+        #    with "error" would inflate a bare `grep ^error` -> false park (this happened 2026-07-21:
+        #    6 good ports parked with an identical "base 0 -> 2"). --no-run never runs tests.
+        terr=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error'); terr=${terr:-0}
+        if [ "$terr" -gt "$TEST_ERR_BASE" ]; then    # retry once -- absorb transient incremental-compile errors
+          terr=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error'); terr=${terr:-0}
+        fi
         if [ "$terr" -gt "$TEST_ERR_BASE" ]; then
-          gate_ok=0; log "test gate FAIL: $class introduced $((terr-TEST_ERR_BASE)) test-compile error(s) (base ${TEST_ERR_BASE} -> ${terr})"
-        elif printf '%s' "$tout" | grep -q 'test result: FAILED'; then
-          gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | tail -1) in suite)"
+          gate_ok=0; log "test gate FAIL: $class introduced $((terr-TEST_ERR_BASE)) test-compile error(s) (base ${TEST_ERR_BASE} -> ${terr}, confirmed on retry)"
         else
-          log "test gate OK: $class (test crate compiles, suite green)"
+          # 2) RUNTIME check: run the suite; park only on a genuine 'test result: FAILED'.
+          tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
+          if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
+            gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | tail -1) in suite)"
+          else
+            log "test gate OK: $class (test crate compiles, suite green)"
+          fi
         fi
       fi
       if [ "$gate_ok" = "1" ]; then
