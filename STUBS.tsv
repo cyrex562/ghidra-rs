@@ -279,3 +279,7 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	FileCacheEntryLike	FileSystemService
 2026-07-22T00:00:00Z	FileCacheEntryBuilderLike	FileSystemService
 2026-07-22T14:00:00Z	FsrlRootLike	FSRL
+2026-07-22T00:00:00Z	ByteProviderLike	Loader
+2026-07-22T00:00:00Z	OptionLike	Loader
+2026-07-22T00:00:00Z	LoadSpecLike	Loader
+2026-07-22T00:00:00Z	LoadResultsLike	Loader
