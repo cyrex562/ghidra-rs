@@ -1,4 +1,5 @@
 pub mod file_system_factory_dependency_exception;
+pub mod file_system_info_rec;
 pub mod g_file_system_factory;
 pub mod g_file_system_factory_byte_provider;
 pub mod g_file_system_factory_ignore;
