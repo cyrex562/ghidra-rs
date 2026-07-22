@@ -16,7 +16,7 @@ DONE	trait	95	210	3	framework	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/fr
 DONE	trait	91	56	66	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DomainObjectAdapterDB.java
 DONE	trait	109	55	29	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/ManagerDB.java
 DONE	trait	111	102	18	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/SymbolPath.java
-TODO	trait	112	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int32TDataType.java
+DONE	trait	112	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Int32TDataType.java
 TODO	trait	114	1239	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerSizedIntegerDataType.java
 TODO	trait	119	1239	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureFactory.java
 TODO	trait	132	309	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java
