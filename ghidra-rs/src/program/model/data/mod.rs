@@ -93,6 +93,7 @@ pub mod terminated_settings_definition;
 pub mod translation_settings_definition;
 pub mod typedef;
 pub mod typedef_settings_definition;
+pub mod undefined;
 pub mod union;
 pub mod union_internal;
 pub mod word_data_type;

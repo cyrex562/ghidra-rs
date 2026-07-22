@@ -465,6 +465,30 @@ pub trait DataType {
         false
     }
 
+    /// Stands in for `instanceof ghidra.program.model.data.DefaultDataType`, used by
+    /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Backed by a
+    /// minimal [`DefaultDataType`](crate::program::seam_stubs::DefaultDataType) placeholder
+    /// marker trait since the real `DefaultDataType` class is not yet ported; see `STUBS.tsv`.
+    fn is_default_data_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof Undefined`, used by
+    /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Implementors of
+    /// [`Undefined`](crate::program::model::data::undefined::Undefined) are expected to override
+    /// this to return `true`.
+    fn is_undefined_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `dt instanceof Array ? (Array) dt : null`, used by
+    /// [`is_undefined_array`](crate::program::model::data::undefined::is_undefined_array) to
+    /// recover an array's element type. Mirrors the existing `into_composite`/
+    /// `into_array_stringable` downcast stand-ins.
+    fn into_array(self: Box<Self>) -> Option<Box<dyn crate::program::model::data::array::Array>> {
+        None
+    }
+
     /// Stands in for `dt instanceof Composite ? (Composite) dt : null`, used by
     /// [`CompositeTestUtils::dump`](crate::program::model::data::composite_test_utils::dump) to
     /// recurse into a component's data type only when it is itself a composite.
