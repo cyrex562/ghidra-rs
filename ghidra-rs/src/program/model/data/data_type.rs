@@ -481,6 +481,15 @@ pub trait DataType {
         false
     }
 
+    /// Stands in for `instanceof VoidDataType`, used by the
+    /// [`is_void_data_type`](crate::program::seam_stubs::is_void_data_type) placeholder for
+    /// `VoidDataType.isVoidDataType`, since the real `VoidDataType` class is not yet ported; see
+    /// `STUBS.tsv`. Implementors representing the `void` type are expected to override this to
+    /// return `true`.
+    fn is_void_type(&self) -> bool {
+        false
+    }
+
     /// Stands in for `dt instanceof Array ? (Array) dt : null`, used by
     /// [`is_undefined_array`](crate::program::model::data::undefined::is_undefined_array) to
     /// recover an array's element type. Mirrors the existing `into_composite`/

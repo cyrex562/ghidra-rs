@@ -166,6 +166,17 @@ impl AddressSpace {
         self._unique
     }
 
+    /// Port of `AbstractAddressSpace.getPointerSize`: the number of bytes needed to hold an
+    /// offset into this space.
+    pub fn pointer_size(&self) -> i32 {
+        let ptr_size = self.size / 8;
+        if self.size % 8 != 0 {
+            ptr_size + 1
+        } else {
+            ptr_size
+        }
+    }
+
     pub fn min_offset(&self) -> i64 {
         self._min_offset
     }
