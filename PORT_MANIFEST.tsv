@@ -5124,7 +5124,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/Cr
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/CryptoProviders.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/CryptoSession.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PasswordDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PasswordProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PasswordProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PopupGUIPasswordProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem crypto 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemFactoryDependencyException.java	DONE	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemFactoryMgr.java	TODO	orig_src Ghidra Features Base src main java ghidra formats gfilesystem factory 
