@@ -56,7 +56,7 @@ DONE	trait	172	18	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats
 DONE	trait	172	15	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemProbeBytesOnly.java
 DONE	trait	170	5	3	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/GFileSystemFactoryIgnore.java
 DONE	trait	169	94	14	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/LocalFileSystem.java
-TODO	trait	167	5	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemInfoRec.java
+DONE	trait	167	5	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/factory/FileSystemInfoRec.java
 TODO	trait	166	93	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemProbeConflictResolver.java
 TODO	trait	168	9	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/CryptoSession.java
 TODO	trait	167	5	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/crypto/PasswordProvider.java
