@@ -3821,7 +3821,7 @@ TODO	struct	23	1	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 TODO	struct	23	1	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/UnimplementedOpGen.java
 TODO	struct	19	3	7	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOnePassage.java
 TODO	struct	2	94	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemIndexHelper.java
-TODO	struct	3	15	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributeType.java
+DONE	struct	3	15	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributeType.java
 TODO	struct	1	93	3	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/SingleFileSystemIndexHelper.java
 TODO	struct	0	96	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractSinglePayloadFileSystem.java
 TODO	struct	0	96	3	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemBase.java
