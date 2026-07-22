@@ -156,7 +156,7 @@ pub use classfinder::{ClassDir, ClassFileInfo, ClassExclusionFilter, ClassFilter
 pub use compiler_constraint::CompilerConstraint;
 pub use constraint::ProgramConstraint;
 pub use language_constraint::LanguageConstraint;
-pub use map::{TypeMismatchException, ValueStoragePageIndex};
+pub use map::{TypeMismatchException, ValueStoragePage, ValueStoragePageIndex};
 pub use log_listener::LogListener;
 pub use log_panel_appender::LogPanelAppender;
 pub use manual_entry::ManualEntry;
