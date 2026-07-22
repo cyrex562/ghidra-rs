@@ -107,3 +107,28 @@ pub trait CachedFsrlLike: FsrlLike {
     /// Mirrors `FSRL.getMD5()`.
     fn fsrl_md5(&self) -> Option<String>;
 }
+
+/// Placeholder for `ghidra.formats.gfilesystem.LocalFileSystem` (distinct from the unrelated,
+/// already-ported `ghidra.framework.store.local.LocalFileSystem`), needed by
+/// [`crate::filesystem::gfilesystem::file_system_service::FileSystemService::get_local_fs`].
+///
+/// `FileSystemService` only ever hands this value back to its own caller
+/// (`getLocalFS()`); it never calls a method on it internally (its own `isLocal`/
+/// `getLocalFSRL` are ported as separate trait methods, not as default bodies that delegate
+/// through this seam), so this is an empty marker trait until the real `LocalFileSystem` is
+/// ported.
+pub trait LocalFileSystemLike {}
+
+/// Placeholder for `ghidra.formats.gfilesystem.FileCache.FileCacheEntry`, needed by
+/// [`crate::filesystem::gfilesystem::file_system_service::FileSystemService::get_named_temp_file`].
+///
+/// Only ever passed through as an opaque handle to a previously-created temp file, so this is
+/// an empty marker trait until the real `FileCache`/`FileCacheEntry` are ported.
+pub trait FileCacheEntryLike {}
+
+/// Placeholder for `ghidra.formats.gfilesystem.FileCache.FileCacheEntryBuilder`, needed by
+/// [`crate::filesystem::gfilesystem::file_system_service::FileSystemService::create_temp_file`].
+///
+/// Only ever returned to the caller to be filled in and finished, so this is an empty marker
+/// trait until the real `FileCache`/`FileCacheEntryBuilder` are ported.
+pub trait FileCacheEntryBuilderLike {}

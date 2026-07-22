@@ -7,6 +7,7 @@ pub mod file_system_event_listener;
 pub mod file_system_probe_conflict_resolver;
 pub mod file_system_ref;
 pub mod file_system_ref_manager;
+pub mod file_system_service;
 pub mod fs_utilities;
 pub mod g_file;
 pub mod g_file_hash_provider;
