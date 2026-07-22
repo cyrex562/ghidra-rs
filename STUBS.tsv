@@ -265,3 +265,4 @@ ts	stub_class	referenced_by
 2026-07-22T07:00:00Z	ParamListStandardLike	AssignAction
 2026-07-22T06:21:33Z	ParamListStandardLike	ParamListStandardOut
 2026-07-22T06:21:33Z	VoidDataType.isVoidDataType	ParamListStandardOut
+2026-07-22T06:28:30Z	GFileSystemLike	GFileSystemFactory
