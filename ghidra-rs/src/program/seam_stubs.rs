@@ -689,6 +689,12 @@ pub trait UInt16TDataType {}
 /// `getOppositeSignednessDataType()`), so no members are needed yet.
 pub trait UInt64TDataType {}
 
+/// Placeholder for `ghidra.program.model.data.UInt32TDataType`, referenced by
+/// [`Int32TDataType`](crate::program::model::data::int32_t_data_type::Int32TDataType)
+/// before the real class is ported. `Int32TDataType` only ever returns this type opaquely (from
+/// `getOppositeSignednessDataType()`), so no members are needed yet.
+pub trait UInt32TDataType {}
+
 /// Placeholder for `ghidra.program.model.data.UnsignedInteger16DataType`, referenced by
 /// [`Integer16DataType`](crate::program::model::data::integer16_data_type::Integer16DataType)
 /// before the real class is ported. `Integer16DataType` only ever returns this type opaquely
