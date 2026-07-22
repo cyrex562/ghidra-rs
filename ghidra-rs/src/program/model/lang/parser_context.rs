@@ -177,7 +177,7 @@ mod tests {
 
         fn get_pcode_packed(
             &self,
-            _encoder: &mut dyn crate::program::seam_stubs::PatchEncoder,
+            _encoder: &mut dyn crate::program::model::pcode::PatchEncoder,
             _context: &dyn crate::program::model::lang::InstructionContext,
             _override_: Option<&dyn crate::program::seam_stubs::PcodeOverride>,
         ) -> io::Result<()> {
