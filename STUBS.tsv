@@ -274,3 +274,4 @@ ts	stub_class	referenced_by
 2026-07-22T11:00:00Z	FileSystemServiceLike	GFileSystemFactoryByteProvider
 2026-07-22T12:00:00Z	SelectFromListDialogLike	FileSystemProbeConflictResolver
 2026-07-22T13:00:00Z	FsrlLike	CryptoSession
+2026-07-22T07:49:33Z	CachedFsrlLike	CachedPasswordProvider

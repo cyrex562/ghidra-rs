@@ -89,3 +89,21 @@ pub trait SelectFromListDialogLike<FSTYPE: GFileSystemLike> {
 /// never calls a method on it -- so this is an empty marker trait until the real `FSRL` is
 /// ported.
 pub trait FsrlLike {}
+
+/// Placeholder for `ghidra.formats.gfilesystem.FSRL`, needed by
+/// [`crate::filesystem::gfilesystem::crypto::cached_password_provider::CachedPasswordProvider`].
+///
+/// Unlike [`FsrlLike`]'s opaque-key usage elsewhere, `CachedPasswordProvider` actually calls
+/// `toString()`, `toPrettyString()`, `getName()` and `getMD5()` on the `FSRL` to index cached
+/// passwords under multiple aliases. Rather than widen `FsrlLike` (and break its existing
+/// empty-impl callers), this extends it with just the four accessors this type needs.
+pub trait CachedFsrlLike: FsrlLike {
+    /// Mirrors `FSRL.toString()`.
+    fn fsrl_string(&self) -> String;
+    /// Mirrors `FSRL.toPrettyString()`.
+    fn fsrl_pretty_string(&self) -> String;
+    /// Mirrors `FSRL.getName()`.
+    fn fsrl_name(&self) -> String;
+    /// Mirrors `FSRL.getMD5()`.
+    fn fsrl_md5(&self) -> Option<String>;
+}
