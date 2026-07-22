@@ -81,3 +81,11 @@ pub trait SelectFromListDialogLike<FSTYPE: GFileSystemLike> {
         message: &str,
     ) -> Option<&'a dyn FileSystemInfoRec<FSTYPE>>;
 }
+
+/// Placeholder for `ghidra.formats.gfilesystem.FSRL`, needed by
+/// [`crate::filesystem::gfilesystem::crypto::crypto_session::CryptoSession`].
+///
+/// `CryptoSession` only ever passes the `FSRL` through as an opaque lookup/cache key -- it
+/// never calls a method on it -- so this is an empty marker trait until the real `FSRL` is
+/// ported.
+pub trait FsrlLike {}
