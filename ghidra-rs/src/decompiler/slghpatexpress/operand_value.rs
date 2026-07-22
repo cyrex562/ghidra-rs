@@ -160,6 +160,53 @@ mod tests {
         fn id(&self) -> u64 {
             self.id
         }
+
+        fn num_operands(&self) -> i32 {
+            1
+        }
+
+        fn add_operand(&mut self, sym: OperandSymbol) -> i32 {
+            self.operand = sym;
+            0
+        }
+
+        fn add_invisible_operand(&mut self, sym: OperandSymbol) -> i32 {
+            self.operand = sym;
+            0
+        }
+
+        fn get_operand_mut(&mut self, _index: i32) -> &mut OperandSymbol {
+            &mut self.operand
+        }
+
+        fn set_source_file_index(&mut self, _index: i32) {}
+
+        fn add_equation(
+            &mut self,
+            _pateq: Box<dyn crate::decompiler::slghpatexpress::PatternEquationOps>,
+        ) {
+        }
+
+        fn remove_trailing_space(&mut self) {}
+
+        fn add_context(
+            &mut self,
+            _contvec: Vec<Box<dyn crate::decompiler::slghsymbol::ContextChange>>,
+        ) {
+        }
+
+        fn set_main_section(
+            &mut self,
+            _section: Option<crate::program::model::lang::sleigh::template::ConstructTpl>,
+        ) {
+        }
+
+        fn set_named_section(
+            &mut self,
+            _section: crate::program::model::lang::sleigh::template::ConstructTpl,
+            _index: i32,
+        ) {
+        }
     }
 
     fn loc() -> Location {

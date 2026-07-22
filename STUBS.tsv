@@ -259,3 +259,6 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	InstructionBlockFlow	InstructionBlock
 2026-07-22T00:00:00Z	HighSymbol	GlobalSymbolMap
 2026-07-22T05:20:07Z	ConstructState	ContextSet
+2026-07-22T06:00:00Z	SubtableSymbol	SleighCompile
+2026-07-22T06:00:00Z	TokenSymbol	SleighCompile
+2026-07-22T06:00:00Z	Constructor	SleighCompile
