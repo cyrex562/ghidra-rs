@@ -266,3 +266,4 @@ ts	stub_class	referenced_by
 2026-07-22T06:21:33Z	ParamListStandardLike	ParamListStandardOut
 2026-07-22T06:21:33Z	VoidDataType.isVoidDataType	ParamListStandardOut
 2026-07-22T06:28:30Z	GFileSystemLike	GFileSystemFactory
+2026-07-22T06:38:48Z	FileAttributeTypeLike	FileAttribute

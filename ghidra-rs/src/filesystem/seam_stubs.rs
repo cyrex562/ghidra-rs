@@ -8,3 +8,12 @@
 /// generic bound (`FSTYPE extends GFileSystem`); no methods are ever called on it here, so
 /// this is a marker trait until the real `GFileSystem` is ported.
 pub trait GFileSystemLike {}
+
+/// Placeholder for `ghidra.formats.gfilesystem.fileinfo.FileAttributeType`, needed by
+/// [`crate::filesystem::gfilesystem::fileinfo::file_attribute::FileAttributeLike`].
+///
+/// Only exposes the display name lookup that `FileAttribute` needs; the full enum (value-type
+/// validation, category grouping, ordinal display ordering) is ported separately.
+pub trait FileAttributeTypeLike {
+    fn display_name(&self) -> &str;
+}
