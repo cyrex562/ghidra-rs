@@ -15,7 +15,7 @@
 //!
 //! This type was selected as a dependency-cycle cut-point; several of the core types it
 //! references (`HighFunction`, `HighSymbol`, `HighVariable`, `LocalSymbolMap`,
-//! `FunctionPrototype`, `DynamicEntry`, `DataTypeSymbol`, `UnionFacetSymbol`, and the DB-backed
+//! `DynamicEntry`, `DataTypeSymbol`, `UnionFacetSymbol`, and the DB-backed
 //! `ParameterImpl`/`ReturnParameterImpl`/`LocalVariableImpl` trio) are not yet ported; minimal
 //! placeholders for them live in [`crate::program::seam_stubs`] (see `STUBS.tsv`). A handful of
 //! sub-steps that need mutable `SymbolTable`/`Listing`/`ReferenceManager` access via a `Program`

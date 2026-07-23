@@ -22,6 +22,7 @@ use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
+use crate::program::model::pcode::function_prototype::FunctionPrototype;
 use crate::program::model::pcode::global_symbol_map::GlobalSymbolMap;
 use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::pcode::Varnode;
@@ -1845,31 +1846,19 @@ pub fn high_function_find_create_override_space(
     None
 }
 
-/// Placeholder for `ghidra.program.model.pcode.FunctionPrototype`, referenced by [`HighFunction`]
-/// and
-/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
-/// before the real class is ported.
-pub trait FunctionPrototype: Send + Sync {
-    /// Stands in for `FunctionPrototype.getModelName()`.
-    fn get_model_name(&self) -> Option<String> {
-        None
-    }
+/// Placeholder for `ghidra.program.model.pcode.PcodeDataTypeManager`, referenced by
+/// [`FunctionPrototype`](crate::program::model::pcode::function_prototype::FunctionPrototype)'s
+/// `encode_prototype` before the real class is ported. `FunctionPrototype::encode_prototype` only
+/// ever passes this type through opaquely (the real serialization logic is left to concrete
+/// implementors), so no members are needed yet.
+pub trait PcodeDataTypeManager {}
 
-    /// Stands in for `FunctionPrototype.isVarArg()`.
-    fn is_var_arg(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `FunctionPrototype.getReturnStorage()`.
-    fn get_return_storage(&self) -> Box<dyn VariableStorage> {
-        Box::new(PlaceholderVariableStorage)
-    }
-
-    /// Stands in for `FunctionPrototype.getReturnType()`.
-    fn get_return_type(&self) -> Option<Box<dyn DataType>> {
-        None
-    }
-}
+/// Placeholder for `ghidra.program.model.pcode.PcodeFactory`, referenced by
+/// [`FunctionPrototype`](crate::program::model::pcode::function_prototype::FunctionPrototype)'s
+/// `decode_prototype` before the real class is ported. `FunctionPrototype::decode_prototype` only
+/// ever passes this type through opaquely (the real deserialization logic is left to concrete
+/// implementors), so no members are needed yet.
+pub trait PcodeFactory {}
 
 /// Placeholder for `ghidra.program.model.pcode.LocalSymbolMap`, referenced by [`HighFunction`]
 /// before the real class is ported. Exposes only the parameter accessors
