@@ -99,6 +99,8 @@ pub const ELEM_CONST_FLOWREF_SIZE: ElementId = ElementId::new("const_flowref_siz
 pub const ELEM_CONST_FLOWDEST: ElementId = ElementId::new("const_flowdest", 87);
 pub const ELEM_CONST_FLOWDEST_SIZE: ElementId = ElementId::new("const_flowdest_size", 88);
 
+pub const ELEM_INST: ElementId = ElementId::new("inst", 98);
+
 // Added legacy or missing IDs if needed, but keeping SlaFormat primary
 pub const ELEM_DATA: ElementId = ElementId::new("data", 100); // Dummy for now if not in SlaFormat
 pub const ELEM_INPUT: ElementId = ElementId::new("input", 101);
