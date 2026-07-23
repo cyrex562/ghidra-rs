@@ -301,7 +301,6 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	LanguageTranslatorFactory	LanguageVersionException
 2026-07-23T00:00:00Z	TripleSymbol	SleighParserContext
 2026-07-23T00:00:00Z	HighFunction	HighFunctionDBUtil
-2026-07-23T00:00:00Z	FunctionPrototype	HighFunctionDBUtil
 2026-07-23T00:00:00Z	LocalSymbolMap	HighFunctionDBUtil
 2026-07-23T00:00:00Z	HighVariable	HighFunctionDBUtil
 2026-07-23T00:00:00Z	DataTypeSymbol	HighFunctionDBUtil
@@ -316,3 +315,5 @@ ts	stub_class	referenced_by
 2026-07-23T18:00:00Z	HighFunction	HighConstant
 2026-07-23T18:00:00Z	HighSymbol	HighConstant
 2026-07-23T18:00:00Z	LocalSymbolMap	HighConstant
+2026-07-23T19:00:00Z	PcodeDataTypeManager	FunctionPrototype
+2026-07-23T19:00:00Z	PcodeFactory	FunctionPrototype
