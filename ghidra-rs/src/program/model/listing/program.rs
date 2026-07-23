@@ -1,7 +1,7 @@
 use crate::framework::model::DomainObject;
 use crate::program::model::address::{AddressFactory, AddressSet, AddressSetView};
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
-use crate::program::model::listing::Listing;
+use crate::program::model::listing::{Listing, ProgramContext};
 use crate::program::model::symbol::{EquateTable, ExternalManager, ReferenceManager, SymbolTable};
 use std::sync::Arc;
 
@@ -80,6 +80,12 @@ pub trait Program: DomainObject + Send + Sync {
     ///
     /// Returns the register with the given name, or `None` if not found.
     fn get_register(&self, _name: &str) -> Option<RegisterRef> {
+        None
+    }
+
+    /// Get the program context (register value ranges keyed by address) associated with this
+    /// program's language.
+    fn get_program_context(&mut self) -> Option<&mut dyn ProgramContext> {
         None
     }
 }
