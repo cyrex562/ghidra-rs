@@ -13,6 +13,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
+use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::mem::MemoryAccessException;
@@ -24,6 +25,7 @@ use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
+use crate::program::util::language_translator::LanguageTranslator;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 use std::any::Any;
@@ -1425,4 +1427,43 @@ pub enum OffsetFieldType {
 /// through opaquely (as the varnode-level register/memory state accumulated while flowing
 /// constants), so no members are needed yet.
 pub trait VarnodeContext {}
+
+/// Placeholder for the `ghidra.program.util.OldLanguageFactory` singleton, referenced by
+/// [`LanguageVersionException::check`](crate::program::model::lang::language_version_exception::check)
+/// before the real factory is ported. The Java method reaches through
+/// `OldLanguageFactory.getOldLanguageFactory().getOldLanguage(id, version)`; only that single
+/// lookup is exposed here, taken as a parameter instead of a static singleton getter.
+pub trait OldLanguageFactory {
+    /// Returns the old-language stub matching `language_id` at `language_version`, or `None` if
+    /// no such stub exists to facilitate an upgrade translation.
+    fn get_old_language(
+        &self,
+        language_id: &LanguageID,
+        language_version: i32,
+    ) -> Option<Arc<dyn Language>>;
+}
+
+/// Placeholder for the `ghidra.program.util.LanguageTranslatorFactory` singleton, referenced by
+/// [`LanguageVersionException::check`](crate::program::model::lang::language_version_exception::check)
+/// and
+/// [`LanguageVersionException::check_for_language_change`](crate::program::model::lang::language_version_exception::check_for_language_change)
+/// before the real factory is ported. Java overloads `getLanguageTranslator` on parameter types
+/// (`Language, Language` vs. `LanguageID, int`); Rust gives each overload its own method name.
+pub trait LanguageTranslatorFactory {
+    /// Returns a translator that upgrades `old_language` to `new_language`, or `None` if no such
+    /// translator is registered.
+    fn get_language_translator_for_languages(
+        &self,
+        old_language: &Arc<dyn Language>,
+        new_language: &Arc<dyn Language>,
+    ) -> Option<Arc<dyn LanguageTranslator>>;
+
+    /// Returns a translator that upgrades the language identified by `language_id` from
+    /// `language_version`, or `None` if no such translator is registered.
+    fn get_language_translator_for_version(
+        &self,
+        language_id: &LanguageID,
+        language_version: i32,
+    ) -> Option<Arc<dyn LanguageTranslator>>;
+}
 
