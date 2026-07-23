@@ -49,7 +49,7 @@ DONE	trait	143	16	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/a
 DONE	trait	142	34	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/OpTplWalker.java
 DONE	trait	141	11	53	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/expression/OperandValue.java
 DONE	trait	140	53	20	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/expression/PatternExpression.java
-TODO	trait	139	36	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextOp.java
+DONE	trait	139	36	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextOp.java
 TODO	trait	138	19	34	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/TripleSymbol.java
 TODO	trait	137	35	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextCommit.java
 TODO	trait	136	26	35	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SubtableSymbol.java

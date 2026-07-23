@@ -13097,7 +13097,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/proce
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextCache.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextChange.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextCommit.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextOp.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextOp.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/DecisionNode.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/FixedHandle.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ModuleDefinitionsAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin processors sleigh 
