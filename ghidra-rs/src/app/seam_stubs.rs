@@ -406,3 +406,25 @@ pub trait TripleSymbol: Send + Sync {
         walker: &mut crate::program::model::lang::sleigh::ParserWalker,
     );
 }
+
+/// Placeholder for `ghidra.app.plugin.processors.sleigh.ConstructState`, referenced by
+/// [`OpTplWalker`](crate::app::plugin::processors::sleigh::op_tpl_walker::OpTplWalker) before the
+/// real class is ported. Java's `ConstructState` exposes direct `getConstructor()`/
+/// `getSubState(int)`/`getParent()` pointer-style navigation of an already-built parse tree; the
+/// crate's existing `program::model::lang::sleigh::walker::ConstructState` models a different
+/// traversal shape (a flat `Vec<ConstructState>` arena addressed by index, built for
+/// `ParserWalker`) that doesn't support this directly, so this seam models only the three
+/// accessors `OpTplWalker` needs, in terms of the already-ported
+/// [`Constructor`](crate::program::model::lang::sleigh::constructor::Constructor).
+pub trait ConstructState: Send + Sync {
+    /// Stands in for `ConstructState.getConstructor()`.
+    fn constructor(
+        &self,
+    ) -> Option<std::sync::Arc<crate::program::model::lang::sleigh::constructor::Constructor>>;
+
+    /// Stands in for `ConstructState.getSubState(int)`.
+    fn sub_state(&self, index: i32) -> std::sync::Arc<dyn ConstructState>;
+
+    /// Stands in for `ConstructState.getParent()`.
+    fn parent(&self) -> Option<std::sync::Arc<dyn ConstructState>>;
+}
