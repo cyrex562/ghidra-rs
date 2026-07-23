@@ -14502,7 +14502,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Pro
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/ProgramLocationComparator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/ProgramTask.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/ProgramUtilities.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RangeMapAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RangeMapAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RefRepeatCommentFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RegisterFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RegisterTransitionFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
