@@ -1,3 +1,4 @@
+pub mod pcode_emit_objects;
 pub mod pcode_emit_packed;
 pub mod sleigh_exception;
 pub mod sleigh_file_exception;
