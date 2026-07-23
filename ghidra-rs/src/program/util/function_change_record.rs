@@ -125,7 +125,8 @@ mod tests {
     use crate::program::model::symbol::{
         ExternalLocation, Namespace, NamespaceType, SourceType, Symbol,
     };
-    use crate::program::seam_stubs::{PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+    use crate::program::model::lang::prototype_model::PrototypeModel;
+    use crate::program::seam_stubs::{StackFrame, VariableFilter, VariableStorage};
     use crate::program::database::function::OverlappingFunctionException;
     use crate::util::exception::InvalidInputException;
     use crate::util::task::TaskMonitor;

@@ -7,7 +7,8 @@ use crate::program::model::address::{Address, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};
 use crate::program::model::symbol::{ExternalLocation, Namespace, NamespaceType, SourceType};
-use crate::program::seam_stubs::{PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+use crate::program::model::lang::prototype_model::PrototypeModel;
+use crate::program::seam_stubs::{StackFrame, VariableFilter, VariableStorage};
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::util::task::TaskMonitor;
 

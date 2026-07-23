@@ -113,7 +113,7 @@ mod tests {
 
         fn get_calling_convention(
             &self,
-        ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
 

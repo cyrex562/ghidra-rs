@@ -11,7 +11,7 @@ use crate::program::model::listing::{
     CreateFunctionError, Function, FunctionIterator, FunctionTagManager, Program, Variable,
 };
 use crate::program::model::symbol::{Namespace, SourceType};
-use crate::program::seam_stubs::PrototypeModel;
+use crate::program::model::lang::prototype_model::PrototypeModel;
 
 /// The manager for functions.
 ///

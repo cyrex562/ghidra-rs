@@ -131,7 +131,8 @@ mod tests {
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::program::model::listing::parameter::Parameter;
     use crate::program::model::pcode::Encoder;
-    use crate::program::seam_stubs::{PcodeInjectLibrary, PrototypeModel};
+    use crate::program::model::lang::prototype_model::PrototypeModel;
+    use crate::program::seam_stubs::PcodeInjectLibrary;
     use std::cell::RefCell;
     use std::collections::{HashMap, HashSet};
     use std::sync::Arc;

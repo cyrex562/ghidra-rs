@@ -127,9 +127,10 @@ mod tests {
     use crate::program::model::lang::ProcessorContextView;
     use crate::program::model::symbol::{ExternalLocation, Namespace, NamespaceType};
     use crate::program::model::util::PropertyMap;
+    use crate::program::model::lang::prototype_model::PrototypeModel;
     use crate::program::seam_stubs::{
         CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
-        FunctionIterator, InstructionIterator, InstructionSet, MemBuffer, PrototypeModel, StackFrame,
+        FunctionIterator, InstructionIterator, InstructionSet, MemBuffer, StackFrame,
         VariableFilter, VariableStorage,
     };
     use crate::program::util::CodeUnitInsertionException;

@@ -96,8 +96,9 @@ mod tests {
     use crate::program::model::symbol::{
         ExternalLocation, ExternalReference, Namespace, Reference, SourceType, Symbol, SymbolType,
     };
+    use crate::program::model::lang::prototype_model::PrototypeModel;
     use crate::program::seam_stubs::{
-        AddressCorrelationRangeLike, CommentType, PrototypeModel, RefType as SeamRefType,
+        AddressCorrelationRangeLike, CommentType, RefType as SeamRefType,
         Reference as SeamReference, StackFrame, VariableFilter, VariableStorage,
     };
     use crate::util::exception::{CancelledException, InvalidInputException};

@@ -14135,7 +14135,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/la
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ProcessorNotFoundException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ProgramArchitecture.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ProgramProcessorContext.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypeModel.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypeModel.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypeModelError.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypeModelMerged.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypePieces.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model lang 

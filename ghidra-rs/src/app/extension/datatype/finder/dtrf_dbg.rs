@@ -144,7 +144,8 @@ mod tests {
         FunctionSignature, FunctionTag, FunctionUpdateType, Parameter, Program, Variable,
     };
     use crate::program::model::symbol::{ExternalLocation, Namespace, SourceType, Symbol};
-    use crate::program::seam_stubs::{PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+    use crate::program::model::lang::prototype_model::PrototypeModel;
+    use crate::program::seam_stubs::{StackFrame, VariableFilter, VariableStorage};
     use crate::program::database::function::OverlappingFunctionException;
     use crate::program::model::address::AddressSetView;
     use crate::util::exception::InvalidInputException;

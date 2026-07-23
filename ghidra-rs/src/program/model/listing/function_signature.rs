@@ -1,6 +1,6 @@
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::parameter_definition::ParameterDefinition;
-use crate::program::seam_stubs::PrototypeModel;
+use crate::program::model::lang::prototype_model::PrototypeModel;
 
 /// Display string used in a formatted prototype string for a non-returning function.
 pub const NORETURN_DISPLAY_STRING: &str = "noreturn";

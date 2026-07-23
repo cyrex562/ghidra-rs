@@ -252,11 +252,6 @@ pub trait Reference {}
 /// before the real enum is ported.
 pub trait GenericCallingConvention {}
 
-/// Placeholder for `ghidra.program.model.lang.PrototypeModel`, referenced by
-/// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
-/// before the real class is ported.
-pub trait PrototypeModel {}
-
 /// Placeholder for `db.Transaction`, referenced by
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
 /// before the real class is ported.

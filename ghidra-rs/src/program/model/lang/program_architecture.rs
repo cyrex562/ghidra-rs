@@ -45,7 +45,8 @@ mod tests {
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
     use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
     use crate::program::model::pcode::Encoder;
-    use crate::program::seam_stubs::{PcodeInjectLibrary, PrototypeModel};
+    use crate::program::model::lang::prototype_model::PrototypeModel;
+    use crate::program::seam_stubs::PcodeInjectLibrary;
     use std::collections::HashSet;
     use std::sync::Arc;
 
