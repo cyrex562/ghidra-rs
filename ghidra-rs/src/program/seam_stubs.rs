@@ -1271,3 +1271,22 @@ pub trait PcodeOpAst {
     fn get_basic_iter(&self) -> LinkedIter;
 }
 
+/// Placeholder for `ghidra.program.model.util.DataTypeInfo`, referenced (as a superclass) by
+/// [`CompositeDataTypeElementInfo`](crate::program::model::util::composite_data_type_element_info::CompositeDataTypeElementInfo)
+/// before the real class is ported. Exposes only the three getters that superclass provides.
+/// The Java `dataTypeHandle` field is `Object`, used purely for display and identity comparison
+/// (`Object.equals`/`toString`); it is represented here as `Arc<dyn Display + Send + Sync>`,
+/// matching the repo's convention (see
+/// [`verts_to_referent_set`](crate::util::graph::directed_graph::verts_to_referent_set)) of
+/// standing in for `Object.equals`/`hashCode` with the value's `Display` form.
+pub trait DataTypeInfoLike {
+    /// Stands in for `DataTypeInfo.getDataTypeHandle()`.
+    fn get_data_type_handle(&self) -> Arc<dyn fmt::Display + Send + Sync>;
+
+    /// Stands in for `DataTypeInfo.getDataTypeLength()`.
+    fn get_data_type_length(&self) -> i32;
+
+    /// Stands in for `DataTypeInfo.getDataTypeAlignment()`.
+    fn get_data_type_alignment(&self) -> i32;
+}
+
