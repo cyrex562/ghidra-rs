@@ -1426,10 +1426,3 @@ pub enum OffsetFieldType {
 /// constants), so no members are needed yet.
 pub trait VarnodeContext {}
 
-/// Placeholder for `ghidra.program.util.ContextEvaluator`, referenced by
-/// [`SymbolicPropogator`](crate::program::util::symbolic_propogator::SymbolicPropogator)
-/// before the real interface is ported. `SymbolicPropogator`'s trait methods only ever pass this
-/// type through opaquely (as a caller-supplied callback for the constant-flow evaluation), so no
-/// members are needed yet.
-pub trait ContextEvaluator {}
-
