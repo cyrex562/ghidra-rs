@@ -7,7 +7,7 @@ use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::pcode::floatformat::big_float::BigFloat;
 use crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException;
-use crate::program::model::address::{Address, AddressSpace};
+use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
@@ -1310,5 +1310,20 @@ pub trait AddressKeyIteratorLike {
     /// Stands in for `DBLongIterator.previous()`, returning `None` rather than throwing
     /// `NoSuchElementException`.
     fn previous(&mut self) -> Option<i64>;
+}
+
+/// Placeholder for `ghidra.program.util.AddressCorrelationRange`, referenced by
+/// [`AddressCorrelation`](crate::program::util::address_correlation::AddressCorrelation)'s
+/// `getCorrelatedDestinationRange` before the real class is ported. Models the three accessors
+/// the Java class exposes (`getMinAddress`/`getRange`/`getCorrelatorName`).
+pub trait AddressCorrelationRangeLike: Send + Sync {
+    /// Stands in for `AddressCorrelationRange.getMinAddress()`.
+    fn min_address(&self) -> Address;
+
+    /// Stands in for `AddressCorrelationRange.getRange()`.
+    fn range(&self) -> AddressRange;
+
+    /// Stands in for `AddressCorrelationRange.getCorrelatorName()`.
+    fn correlator_name(&self) -> String;
 }
 
