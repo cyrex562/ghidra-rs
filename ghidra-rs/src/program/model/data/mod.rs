@@ -90,6 +90,7 @@ pub mod short_data_type;
 pub mod source_archive;
 pub mod string_layout_enum;
 pub mod structure;
+pub mod structure_factory;
 pub mod structure_internal;
 pub mod terminated_settings_definition;
 pub mod translation_settings_definition;

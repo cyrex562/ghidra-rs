@@ -398,9 +398,19 @@ pub trait CodeUnitIterator {}
 
 /// Placeholder for `ghidra.program.model.listing.InstructionIterator`, referenced by
 /// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported. `Listing` only ever returns this type, so no members are
-/// needed yet.
-pub trait InstructionIterator {}
+/// before the real interface is ported.
+///
+/// [`has_next`](Self::has_next) was added for
+/// [`StructureFactory`](crate::program::model::data::structure_factory::StructureFactory), which
+/// needs to check whether a candidate address range already contains instructions (mirrors
+/// `InstructionIterator.hasNext()`, inherited from `java.util.Iterator`). Defaults to `false` so
+/// existing bare `impl InstructionIterator for Foo {}` blocks keep compiling unmodified.
+pub trait InstructionIterator {
+    /// Stands in for `InstructionIterator.hasNext()`.
+    fn has_next(&self) -> bool {
+        false
+    }
+}
 
 /// Placeholder for `ghidra.program.model.listing.DataIterator`, referenced by
 /// [`Listing`](crate::program::model::listing::listing::Listing)
