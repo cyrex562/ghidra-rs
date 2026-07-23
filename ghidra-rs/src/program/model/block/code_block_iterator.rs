@@ -61,7 +61,20 @@ mod tests {
 
     struct MockCodeBlock;
 
-    impl CodeBlock for MockCodeBlock {}
+    impl CodeBlock for MockCodeBlock {
+        fn get_model(&self) -> Box<dyn crate::program::seam_stubs::CodeBlockModel> {
+            unimplemented!()
+        }
+        fn get_destinations(
+            &self,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<
+            Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
+            CancelledException,
+        > {
+            unimplemented!()
+        }
+    }
 
     /// A mock iterator over a fixed count of blocks, proving `CodeBlockIterator` is object-safe
     /// and that a `CancelledException` from `has_next`/`next` behaves like the Java contract.

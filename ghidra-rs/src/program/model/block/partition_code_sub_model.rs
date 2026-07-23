@@ -440,7 +440,21 @@ mod tests {
         code_unit_count: i64,
     }
 
-    impl CodeBlockModel for MModel {}
+    impl CodeBlockModel for MModel {
+        fn get_basic_block_model(&self) -> Box<dyn CodeBlockModel> {
+            unimplemented!()
+        }
+        fn get_code_blocks_containing(
+            &self,
+            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<
+            Box<dyn crate::program::model::block::code_block_iterator::CodeBlockIterator>,
+            CancelledException,
+        > {
+            unimplemented!()
+        }
+    }
 
     impl SubroutineBlockModel for MModel {
         fn get_base_subroutine_model(&self) -> Box<dyn SubroutineBlockModel> {

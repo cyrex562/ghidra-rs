@@ -604,6 +604,10 @@ impl Address {
         self.space.space_type() == AddressSpaceType::None && self.space.size() == 0
     }
 
+    pub fn is_external_address(&self) -> bool {
+        self.space.space_type() == AddressSpaceType::External
+    }
+
     pub fn to_string_with_prefix(&self, prefix: &str) -> String {
         if self.is_special_address() {
             return self.space.name().to_string();

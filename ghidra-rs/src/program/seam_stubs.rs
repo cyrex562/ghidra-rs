@@ -21,7 +21,11 @@ use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::list_linked::LinkedIter;
+use crate::program::model::block::code_block_iterator::CodeBlockIterator;
+use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
 use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
@@ -899,17 +903,58 @@ pub trait ProgramOverlayAddressSpace {
 }
 
 /// Placeholder for `ghidra.program.model.block.CodeBlock`, referenced by
-/// [`CodeBlockIterator`](crate::program::model::block::code_block_iterator::CodeBlockIterator)
-/// and [`CodeBlockReference`](crate::program::model::block::code_block_reference::CodeBlockReference)
-/// before the real interface is ported. Neither caller invokes methods on this type, so no
-/// members are needed yet.
-pub trait CodeBlock {}
+/// [`CodeBlockIterator`](crate::program::model::block::code_block_iterator::CodeBlockIterator),
+/// [`CodeBlockReference`](crate::program::model::block::code_block_reference::CodeBlockReference),
+/// and
+/// [`SubroutineDestReferenceIterator`](crate::program::model::block::subroutine_dest_reference_iterator)
+/// before the real interface is ported. `get_min_address`/`contains` default to the values for an
+/// empty/unbounded block so pre-existing bare `impl CodeBlock for Foo {}` blocks keep compiling;
+/// `get_model`/`get_destinations` are left required since there is no generic placeholder
+/// `CodeBlockModel`/`CodeBlockReferenceIterator` to hand back.
+pub trait CodeBlock {
+    /// Stands in for `CodeBlock.getMinAddress()`.
+    fn get_min_address(&self) -> Option<Address> {
+        None
+    }
+
+    /// Stands in for `CodeBlock.getModel()`.
+    fn get_model(&self) -> Box<dyn CodeBlockModel>;
+
+    /// Stands in for `CodeBlock.contains(Address)`.
+    fn contains(&self, address: &Address) -> bool {
+        let _ = address;
+        false
+    }
+
+    /// Stands in for `CodeBlock.getDestinations(TaskMonitor)`.
+    fn get_destinations(
+        &self,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException>;
+}
 
 /// Placeholder for `ghidra.program.model.symbol.FlowType`, referenced by
 /// [`CodeBlockReference`](crate::program::model::block::code_block_reference::CodeBlockReference)
-/// before the real enum is ported. `CodeBlockReference` only ever returns this type opaquely, so
-/// no members are needed yet.
-pub trait FlowType {}
+/// and
+/// [`SubroutineDestReferenceIterator`](crate::program::model::block::subroutine_dest_reference_iterator)
+/// before the real enum is ported. All members default to `false` so pre-existing bare
+/// `impl FlowType for Foo {}` blocks keep compiling.
+pub trait FlowType {
+    /// Stands in for `FlowType.isCall()`.
+    fn is_call(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `FlowType.isJump()`.
+    fn is_jump(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `FlowType.isFallthrough()`.
+    fn is_fallthrough(&self) -> bool {
+        false
+    }
+}
 
 /// Placeholder for `ghidra.program.model.data.SignedDWordDataType`, referenced by
 /// [`DWordDataType`](crate::program::model::data::dword_data_type::DWordDataType)
@@ -1329,10 +1374,28 @@ pub trait AddressCorrelationRangeLike: Send + Sync {
 
 /// Placeholder for `ghidra.program.model.block.CodeBlockModel`, referenced (as a supertrait) by
 /// [`SubroutineBlockModel`](crate::program::model::block::subroutine_block_model::SubroutineBlockModel)
-/// before the real interface is ported. `SubroutineBlockModel` only extends this interface
-/// without calling any of its members, so no members are needed yet. This is an independent,
-/// minimal placeholder from the identically-named `CodeBlockModel` in
-/// [`crate::app::seam_stubs`] (used by `BlockModelService`); the two should be consolidated once
-/// the real `CodeBlockModel` is ported.
-pub trait CodeBlockModel {}
+/// and used by
+/// [`SubroutineDestReferenceIterator`](crate::program::model::block::subroutine_dest_reference_iterator)
+/// before the real interface is ported. `externals_included` defaults to `false` so pre-existing
+/// bare `impl CodeBlockModel for Foo {}` blocks keep compiling; `get_basic_block_model`/
+/// `get_code_blocks_containing` are left required since there is no generic placeholder
+/// `CodeBlockModel`/`CodeBlockIterator` to hand back. This is an independent, minimal placeholder
+/// from the identically-named `CodeBlockModel` in [`crate::app::seam_stubs`] (used by
+/// `BlockModelService`); the two should be consolidated once the real `CodeBlockModel` is ported.
+pub trait CodeBlockModel {
+    /// Stands in for `CodeBlockModel.externalsIncluded()`.
+    fn externals_included(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `CodeBlockModel.getBasicBlockModel()`.
+    fn get_basic_block_model(&self) -> Box<dyn CodeBlockModel>;
+
+    /// Stands in for `CodeBlockModel.getCodeBlocksContaining(CodeBlock, TaskMonitor)`.
+    fn get_code_blocks_containing(
+        &self,
+        block: &dyn CodeBlock,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Box<dyn CodeBlockIterator>, CancelledException>;
+}
 
