@@ -388,3 +388,21 @@ pub trait LoadResultsLike {}
 /// the real class is ported. `PseudoFlowProcessor` only ever passes this type through as a
 /// parameter, so no members are needed yet.
 pub trait PseudoInstructionLike {}
+
+/// Placeholder for `ghidra.app.plugin.processors.sleigh.symbol.TripleSymbol`, referenced by
+/// [`SleighParserContext`](crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext)
+/// before the real class is ported. This is distinct from the identically-named
+/// `TripleSymbol` in [`crate::decompiler::slghsymbol::triple_symbol`] (a port of
+/// `ghidra.pcodeCPort.slghsymbol.TripleSymbol`, a different Java class) and the symbol structs in
+/// [`crate::program::model::lang::sleigh::symbol`] (which model the `.sla` decoder's symbol
+/// table, also a different Java class). Only the one method `SleighParserContext::apply_commits`
+/// needs -- resolving this symbol's storage location for a pending context commit -- is modeled.
+pub trait TripleSymbol: Send + Sync {
+    /// Stands in for `TripleSymbol.getFixedHandle(FixedHandle, ParserWalker)`, which resolves
+    /// `hand` to this symbol's storage location within the given parse tree walk.
+    fn get_fixed_handle(
+        &self,
+        hand: &mut crate::program::model::lang::sleigh::FixedHandle,
+        walker: &mut crate::program::model::lang::sleigh::ParserWalker,
+    );
+}
