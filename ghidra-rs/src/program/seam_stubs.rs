@@ -1327,3 +1327,12 @@ pub trait AddressCorrelationRangeLike: Send + Sync {
     fn correlator_name(&self) -> String;
 }
 
+/// Placeholder for `ghidra.program.model.block.CodeBlockModel`, referenced (as a supertrait) by
+/// [`SubroutineBlockModel`](crate::program::model::block::subroutine_block_model::SubroutineBlockModel)
+/// before the real interface is ported. `SubroutineBlockModel` only extends this interface
+/// without calling any of its members, so no members are needed yet. This is an independent,
+/// minimal placeholder from the identically-named `CodeBlockModel` in
+/// [`crate::app::seam_stubs`] (used by `BlockModelService`); the two should be consolidated once
+/// the real `CodeBlockModel` is ported.
+pub trait CodeBlockModel {}
+
