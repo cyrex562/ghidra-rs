@@ -195,7 +195,13 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
           # 2) RUNTIME check: run the suite; park only on a genuine 'test result: FAILED'.
           tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
           if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
-            gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | tail -1) in suite)"
+            # retry once -- the full-suite gate can catch an unrelated FLAKY test (parallel global
+            # state); a real regression fails again (2026-07-22: HighParamID/SpecExtension false-parked
+            # on a flake -- their branches pass 0-failed on re-run).
+            tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
+          fi
+          if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
+            gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | tail -1) in suite, confirmed on retry)"
           else
             log "test gate OK: $class (test crate compiles, suite green)"
           fi
