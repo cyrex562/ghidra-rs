@@ -43,7 +43,20 @@ mod tests {
 
     struct MockCodeBlock;
 
-    impl CodeBlock for MockCodeBlock {}
+    impl CodeBlock for MockCodeBlock {
+        fn get_model(&self) -> Box<dyn crate::program::seam_stubs::CodeBlockModel> {
+            unimplemented!()
+        }
+        fn get_destinations(
+            &self,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<
+            Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
+            crate::util::exception::CancelledException,
+        > {
+            unimplemented!()
+        }
+    }
 
     struct MockFlowType;
 
