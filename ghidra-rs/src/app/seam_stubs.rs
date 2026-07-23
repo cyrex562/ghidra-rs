@@ -382,3 +382,9 @@ pub trait LoadSpecLike {}
 /// generic parameter to substitute yet. `Loader` only ever returns this type opaquely, so no
 /// members are needed yet.
 pub trait LoadResultsLike {}
+
+/// Placeholder for `ghidra.app.util.PseudoInstruction`, referenced by
+/// [`PseudoFlowProcessor`](crate::app::util::pseudo_flow_processor::PseudoFlowProcessor) before
+/// the real class is ported. `PseudoFlowProcessor` only ever passes this type through as a
+/// parameter, so no members are needed yet.
+pub trait PseudoInstructionLike {}

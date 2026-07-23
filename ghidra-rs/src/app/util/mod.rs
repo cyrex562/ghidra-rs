@@ -17,6 +17,7 @@ pub mod option_exception;
 pub mod pcode_inject;
 pub mod pdb;
 pub mod pseudo_data;
+pub mod pseudo_flow_processor;
 pub mod query;
 pub mod permissions;
 pub mod recognizer;
