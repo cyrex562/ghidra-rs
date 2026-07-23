@@ -48,7 +48,7 @@ DONE	trait	144	11	33	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/
 DONE	trait	143	16	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/template/ConstructTpl.java
 DONE	trait	142	34	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/OpTplWalker.java
 DONE	trait	141	11	53	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/expression/OperandValue.java
-TODO	trait	140	53	20	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/expression/PatternExpression.java
+DONE	trait	140	53	20	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/expression/PatternExpression.java
 TODO	trait	139	36	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextOp.java
 TODO	trait	138	19	34	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/TripleSymbol.java
 TODO	trait	137	35	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextCommit.java
