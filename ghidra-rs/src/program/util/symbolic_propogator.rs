@@ -3,15 +3,16 @@
 //! Simulates the flow of constants (and register-relative values) through a subroutine's
 //! p-code, creating references and recording register values along the way. The Java class is a
 //! large, deeply stateful engine (an `applyPcode` interpreter loop, per-address instruction/pcode
-//! caches, a saved-flow-state stack, etc.) built directly on top of two other unported classes:
-//! `VarnodeContext` (the register/memory value store the interpreter reads and writes) and
-//! `ContextEvaluator` (a caller-supplied callback interface). Both are modeled here with the
-//! minimal opaque placeholders
-//! [`VarnodeContext`](crate::program::seam_stubs::VarnodeContext) and
-//! [`ContextEvaluator`](crate::program::seam_stubs::ContextEvaluator) in
-//! [`crate::program::seam_stubs`], since this type's own trait methods only ever pass them
-//! through (never call a method on them) -- the real interpreter body that *would* call into
-//! them belongs to the eventual concrete implementation, not to this trait's default methods.
+//! caches, a saved-flow-state stack, etc.) built directly on top of two other classes:
+//! `VarnodeContext` (the register/memory value store the interpreter reads and writes), still
+//! modeled here with the minimal opaque placeholder
+//! [`VarnodeContext`](crate::program::seam_stubs::VarnodeContext) in
+//! [`crate::program::seam_stubs`], and
+//! [`ContextEvaluator`](crate::program::util::context_evaluator::ContextEvaluator) (a
+//! caller-supplied callback interface), which has since been ported as a real trait. This type's
+//! own trait methods only ever pass both through opaquely (never call a method on them) -- the
+//! real interpreter body that *would* call into them belongs to the eventual concrete
+//! implementation, not to this trait's default methods.
 //!
 //! This type was selected as a dependency-cycle cut-point, so it is ported here as a trait
 //! rather than a struct. Every Java overload set becomes one Rust method with a disambiguating
@@ -36,7 +37,8 @@ use crate::program::model::lang::register::{Register, RegisterRef};
 use crate::program::model::listing::{Function, Instruction};
 use crate::program::model::pcode::{PcodeOp, Varnode};
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{ContextEvaluator, VarnodeContext};
+use crate::program::seam_stubs::VarnodeContext;
+use crate::program::util::context_evaluator::ContextEvaluator;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -436,7 +438,92 @@ mod tests {
     }
 
     struct StubEvaluator;
-    impl ContextEvaluator for StubEvaluator {}
+    impl ContextEvaluator for StubEvaluator {
+        fn evaluate_context_before(
+            &mut self,
+            _context: &mut dyn VarnodeContext,
+            _instr: &dyn Instruction,
+        ) -> bool {
+            false
+        }
+
+        fn evaluate_context(
+            &mut self,
+            _context: &mut dyn VarnodeContext,
+            _instr: &dyn Instruction,
+        ) -> bool {
+            false
+        }
+
+        fn evaluate_reference(
+            &mut self,
+            _context: &mut dyn VarnodeContext,
+            _instr: &dyn Instruction,
+            _pcodeop: i32,
+            _address: &Address,
+            _size: i32,
+            _data_type: Option<&dyn DataType>,
+            _ref_type: RefType,
+        ) -> bool {
+            true
+        }
+
+        fn evaluate_constant(
+            &mut self,
+            _context: &mut dyn VarnodeContext,
+            _instr: &dyn Instruction,
+            _pcodeop: i32,
+            constant: &Address,
+            _size: i32,
+            _data_type: Option<&dyn DataType>,
+            _ref_type: RefType,
+        ) -> Option<Address> {
+            Some(constant.clone())
+        }
+
+        fn evaluate_destination(
+            &mut self,
+            _context: &mut dyn VarnodeContext,
+            _instruction: &dyn Instruction,
+        ) -> bool {
+            false
+        }
+
+        fn evaluate_return(
+            &mut self,
+            _ret_vn: &Varnode,
+            _context: &mut dyn VarnodeContext,
+            _instruction: &dyn Instruction,
+        ) -> bool {
+            false
+        }
+
+        fn unknown_value(
+            &mut self,
+            _context: &mut dyn VarnodeContext,
+            _instruction: &dyn Instruction,
+            _node: &Varnode,
+        ) -> Option<i64> {
+            None
+        }
+
+        fn follow_false_conditional_branches(&self) -> bool {
+            false
+        }
+
+        fn evaluate_symbolic_reference(
+            &mut self,
+            _context: &mut dyn VarnodeContext,
+            _instr: &dyn Instruction,
+            _address: &Address,
+        ) -> bool {
+            true
+        }
+
+        fn allow_access(&mut self, _context: &mut dyn VarnodeContext, _addr: &Address) -> bool {
+            true
+        }
+    }
 
     struct StubVarnodeContext;
     impl VarnodeContext for StubVarnodeContext {}
