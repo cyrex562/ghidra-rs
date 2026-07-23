@@ -28,7 +28,7 @@ DONE	trait	161	177	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	165	7	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/SettingsDBAdapter.java
 DONE	trait	161	47	226	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoData.java
 DONE	trait	161	46	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoFlowProcessor.java
-TODO	trait	160	82	130	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoDisassembler.java
+DONE	trait	160	82	130	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoDisassembler.java
 TODO	trait	159	191	430	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/SymbolicPropogator.java
 TODO	trait	158	184	4	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ContextEvaluator.java
 TODO	trait	157	304	154	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/LanguageVersionException.java
