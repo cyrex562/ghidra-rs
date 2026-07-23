@@ -11,7 +11,7 @@ DONE	trait	164	6	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 DONE	trait	166	182	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RangeMapAdapter.java
 DONE	trait	162	184	208	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramMerge.java
 DONE	trait	161	178	40	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/FunctionMerge.java
-TODO	trait	161	192	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AddressCorrelation.java
+DONE	trait	161	192	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AddressCorrelation.java
 TODO	trait	162	177	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/DiscoverableAddressCorrelator.java
 TODO	trait	161	180	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AddressCorrelator.java
 TODO	trait	165	6	4	generic	Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionValue.java
