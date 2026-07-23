@@ -1,6 +1,6 @@
 status	mode	depth	fanin	rem	module	path
 DONE	trait	103	41	119	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/data/DefaultProjectData.java
-TODO	trait	105	343	82	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Plugin.java
+DONE	trait	105	343	82	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Plugin.java
 TODO	trait	119	1239	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureFactory.java
 TODO	trait	163	306	234	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamListStandard.java
 TODO	trait	167	27	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/AddressSetPropertyMap.java
