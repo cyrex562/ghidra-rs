@@ -707,6 +707,19 @@ pub enum CheckoutType {
     Transient,
 }
 
+/// Placeholder for `ghidra.framework.data.ProjectLock`, referenced by
+/// [`DefaultProjectData`](crate::framework::data::DefaultProjectData) before the real class is
+/// ported. `DefaultProjectData::is_locked` only ever constructs a fresh lock for a given
+/// `ProjectLocator` and immediately queries whether it is held, so only that one query is
+/// declared here; construction itself is left to implementations, mirroring how
+/// [`PropertyFile`](crate::util::property_file::PropertyFile)'s construction is
+/// implementation-specific rather than part of that trait's contract.
+pub trait ProjectLockLike {
+    /// Determine if this represents a currently held project lock, mirroring
+    /// `ProjectLock.isLocked()`.
+    fn is_locked(&self) -> bool;
+}
+
 /// Placeholder for `ghidra.framework.plugintool.util.AutoServiceListener`, referenced by
 /// [`AutoService`](crate::framework::plugintool::AutoService) before the real class is ported. In
 /// Java, `AutoServiceListener<R>` reflectively discovers every `@AutoServiceConsumed`-annotated
