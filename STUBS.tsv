@@ -298,3 +298,5 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	OffsetFieldType	OffsetFieldLocation
 2026-07-23T00:00:00Z	PseudoInstructionLike	PseudoFlowProcessor
 2026-07-23T00:00:00Z	VarnodeContext	SymbolicPropogator
+2026-07-23T00:00:00Z	OldLanguageFactory	LanguageVersionException
+2026-07-23T00:00:00Z	LanguageTranslatorFactory	LanguageVersionException
