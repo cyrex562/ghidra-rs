@@ -55,7 +55,7 @@ DONE	trait	137	35	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/a
 DONE	trait	136	26	35	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/symbol/SubtableSymbol.java
 DONE	trait	135	36	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/DecisionNode.java
 DONE	trait	134	40	194	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighInstructionPrototype.java
-TODO	trait	133	53	111	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighDebugLogger.java
+DONE	trait	133	53	111	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighDebugLogger.java
 TODO	trait	132	178	21	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/InstructionUtils.java
 TODO	trait	131	308	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionError.java
 TODO	trait	130	4	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/disassemble/DisassemblerConflictHandler.java
