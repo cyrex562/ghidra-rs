@@ -1290,3 +1290,25 @@ pub trait DataTypeInfoLike {
     fn get_data_type_alignment(&self) -> i32;
 }
 
+/// Placeholder for `ghidra.program.database.map.AddressKeyIterator`, referenced by
+/// [`PropertyMapDB`](crate::program::database::properties::property_map_db::PropertyMapDB)'s
+/// `getAddressKeyIterator` overloads before the real class is ported. Models the `DBLongIterator`
+/// surface `AddressKeyIterator` implements (`hasNext`/`hasPrevious`/`next`/`previous`),
+/// translating Java's `NoSuchElementException` from `next`/`previous` into `None` returns; the
+/// `delete()` member of `DBLongIterator` is omitted since no current caller needs it.
+pub trait AddressKeyIteratorLike {
+    /// Stands in for `DBLongIterator.hasNext()`.
+    fn has_next(&mut self) -> bool;
+
+    /// Stands in for `DBLongIterator.hasPrevious()`.
+    fn has_previous(&mut self) -> bool;
+
+    /// Stands in for `DBLongIterator.next()`, returning `None` rather than throwing
+    /// `NoSuchElementException`.
+    fn next(&mut self) -> Option<i64>;
+
+    /// Stands in for `DBLongIterator.previous()`, returning `None` rather than throwing
+    /// `NoSuchElementException`.
+    fn previous(&mut self) -> Option<i64>;
+}
+

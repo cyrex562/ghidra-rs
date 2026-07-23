@@ -31,4 +31,7 @@ pub use overlay_region_supplier::OverlayRegionSupplier;
 pub use program_address_factory::{CheckOverlayNameError, ProgramAddressFactory};
 pub use program_db::ProgramDB;
 pub use program_modifier_listener::ProgramModifierListener;
-pub use properties::{DBPropertyMapManager, PropertiesDBAdapter, ProgramReadyError, TestSaveable};
+pub use properties::{
+    get_table_name, DBPropertyMapManager, PropertiesDBAdapter, ProgramReadyError, PropertyMapDB,
+    TestSaveable, PROPERTY_TABLE_PREFIX,
+};
