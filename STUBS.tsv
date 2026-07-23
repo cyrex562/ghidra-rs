@@ -312,3 +312,7 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	LocalVariableImpl	HighFunctionDBUtil
 2026-07-23T00:00:00Z	VariableUtilities	HighFunctionDBUtil
 2026-07-23T00:00:00Z	Undefined	HighFunctionDBUtil
+2026-07-23T18:00:00Z	HighVariable	HighConstant
+2026-07-23T18:00:00Z	HighFunction	HighConstant
+2026-07-23T18:00:00Z	HighSymbol	HighConstant
+2026-07-23T18:00:00Z	LocalSymbolMap	HighConstant

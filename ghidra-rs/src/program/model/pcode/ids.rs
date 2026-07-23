@@ -207,4 +207,7 @@ pub const ATTRIB_THISBEFORERETPOINTER: AttributeId =
     AttributeId::new("thisbeforeretpointer", 58);
 pub const ATTRIB_KILLEDBYCALL: AttributeId = AttributeId::new("killedbycall", 59);
 pub const ATTRIB_SEPARATEFLOAT: AttributeId = AttributeId::new("separatefloat", 60);
+// Real Ghidra id is 68 (`AttributeId.java`'s `ATTRIB_SYMREF`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_SYMREF: AttributeId = AttributeId::new("symref", 61);
 pub const ATTRIB_UNKNOWN: AttributeId = AttributeId::new("XMLunknown", 159);

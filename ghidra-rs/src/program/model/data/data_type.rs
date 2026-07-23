@@ -472,6 +472,21 @@ pub trait DataType {
         false
     }
 
+    /// Stands in for `instanceof AbstractIntegerDataType`, used by
+    /// [`HighConstant::get_scalar`](crate::program::model::pcode::high_constant::HighConstant::get_scalar)'s
+    /// port of `HighConstant.getScalar()`. Implementors representing an abstract integer type are
+    /// expected to override this (and [`is_signed_integer_type`](Self::is_signed_integer_type)) to
+    /// return `true`/their signedness.
+    fn is_integer_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `((AbstractIntegerDataType) dt).isSigned()`, used by the same port as
+    /// [`is_integer_type`](Self::is_integer_type); only meaningful when that returns `true`.
+    fn is_signed_integer_type(&self) -> bool {
+        false
+    }
+
     /// Stands in for `instanceof ghidra.program.model.data.DefaultDataType`, used by
     /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Backed by a
     /// minimal [`DefaultDataType`](crate::program::seam_stubs::DefaultDataType) placeholder

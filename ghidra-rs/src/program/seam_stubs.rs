@@ -22,6 +22,7 @@ use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
+use crate::program::model::pcode::global_symbol_map::GlobalSymbolMap;
 use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::pcode::Varnode;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
@@ -1815,6 +1816,21 @@ pub trait HighFunction: Send + Sync {
 
     /// Stands in for `HighFunction.getLocalSymbolMap()`.
     fn get_local_symbol_map(&self) -> Box<dyn LocalSymbolMap>;
+
+    /// Stands in for `HighFunction.getGlobalSymbolMap()`, used by
+    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
+    /// Left required since there is no sensible placeholder `GlobalSymbolMap` to hand back (its
+    /// `new_symbol`/`populate_symbol` mutators have no meaningful default behavior).
+    fn get_global_symbol_map(&self) -> Arc<dyn GlobalSymbolMap>;
+
+    /// Stands in for `HighFunction.getPCAddress(Varnode)`, used by
+    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
+    /// Defaults to `None`, mirroring a `HighFunction` that cannot resolve the defining p-code
+    /// op's address for the given representative varnode.
+    fn get_pc_address(&self, representative: &Varnode) -> Option<Address> {
+        let _ = representative;
+        None
+    }
 }
 
 /// Stands in for the static `HighFunction.findCreateOverrideSpace(Function)`, used by
@@ -1874,6 +1890,14 @@ pub trait LocalSymbolMap: Send + Sync {
     fn get_symbols(&self) -> Vec<Arc<dyn HighSymbol>> {
         Vec::new()
     }
+
+    /// Stands in for `LocalSymbolMap.getSymbol(long)`, used by
+    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
+    /// Defaults to `None`, mirroring a symbol reference id with no matching local symbol.
+    fn get_symbol(&self, id: i64) -> Option<Arc<dyn HighSymbol>> {
+        let _ = id;
+        None
+    }
 }
 
 /// Placeholder for `ghidra.program.model.pcode.HighVariable`, referenced by
@@ -1896,6 +1920,35 @@ pub trait HighVariable: Send + Sync {
     /// parameter are expected to override this to return their slot.
     fn as_param_slot(&self) -> Option<i32> {
         None
+    }
+
+    /// Stands in for `HighVariable.getHighFunction()`, used by
+    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
+    /// Left required since there is no sensible placeholder `HighFunction` to hand back.
+    fn get_high_function(&self) -> Arc<dyn HighFunction>;
+
+    /// Stands in for `HighVariable.getDataType()`, used by
+    /// [`HighConstant::get_scalar`](crate::program::model::pcode::high_constant::HighConstant::get_scalar).
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        Box::new(PlaceholderDataType)
+    }
+
+    /// Stands in for `HighVariable.getSize()`, used by
+    /// [`HighConstant::get_scalar`](crate::program::model::pcode::high_constant::HighConstant::get_scalar).
+    /// Defaults to the representative varnode's size, matching the real class's usual
+    /// `getSize() == getRepresentative().getSize()` invariant.
+    fn get_size(&self) -> i32 {
+        self.get_representative().get_size()
+    }
+
+    /// Stands in for the package-private `HighVariable.decodeInstances(Decoder)`, used by
+    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
+    /// The real method decodes the representative and any merged "instance" varnodes from the
+    /// stream; that decoding logic belongs to `HighVariable` itself, which is not yet ported, so
+    /// this defaults to a no-op that consumes nothing from the stream.
+    fn decode_instances(&mut self, decoder: &dyn Decoder) -> Result<(), DecoderException> {
+        let _ = decoder;
+        Ok(())
     }
 }
 
