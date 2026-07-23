@@ -16,6 +16,7 @@ pub mod opinion;
 pub mod option_exception;
 pub mod pcode_inject;
 pub mod pdb;
+pub mod pseudo_data;
 pub mod query;
 pub mod permissions;
 pub mod recognizer;
