@@ -293,3 +293,4 @@ ts	stub_class	referenced_by
 2026-07-22T17:00:00Z	AddressCorrelationRangeLike	AddressCorrelation
 2026-07-23T00:00:00Z	ExpressionValueLike	ExpressionEvaluator
 2026-07-23T00:00:00Z	ExpressionException	ExpressionEvaluator
+2026-07-23T00:00:00Z	CodeBlockModel	SubroutineBlockModel
