@@ -11516,7 +11516,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionEl
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionEvaluator.java	DONE	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionException.java	TODO	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionGrouper.java	TODO	orig_src Ghidra Framework Generic src main java generic expressions 
-orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionOperator.java	TODO	orig_src Ghidra Framework Generic src main java generic expressions 
+orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionOperator.java	DONE	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/ExpressionValue.java	DONE	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/expressions/LongExpressionValue.java	TODO	orig_src Ghidra Framework Generic src main java generic expressions 
 orig_src/Ghidra/Framework/Generic/src/main/java/generic/hash/AbstractMessageDigest.java	DONE	orig_src Ghidra Framework Generic src main java generic hash
