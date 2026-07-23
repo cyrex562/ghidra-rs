@@ -14486,7 +14486,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Lis
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/MemoryBlockStartFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/MnemonicFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/MoreLabelFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OffsetFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OffsetFieldLocation.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OffsetFieldType.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OldLanguage.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OldLanguageFactory.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
