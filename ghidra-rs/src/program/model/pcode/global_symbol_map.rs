@@ -82,6 +82,10 @@ mod tests {
         fn get_id(&self) -> i64 {
             self.id
         }
+
+        fn get_high_function(&self) -> Arc<dyn crate::program::seam_stubs::HighFunction> {
+            unimplemented!("not needed for this smoke test")
+        }
     }
 
     /// Mirrors `GlobalSymbolMap`'s real fields (`addrMappedSymbols`, `symbolMap`,

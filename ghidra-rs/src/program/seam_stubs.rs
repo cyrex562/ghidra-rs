@@ -16,12 +16,14 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
+use crate::program::model::listing::Function;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::list_linked::LinkedIter;
+use crate::program::model::pcode::Varnode;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
@@ -45,7 +47,437 @@ pub trait DataTypeManagerOwner {
 /// Placeholder for `ghidra.program.model.listing.VariableStorage`, referenced by
 /// [`Variable`](crate::program::model::listing::variable::Variable)
 /// before the real class is ported.
-pub trait VariableStorage {}
+///
+/// Grown (all with defaults, so pre-existing bare `impl VariableStorage for Foo {}` blocks keep
+/// compiling) to also cover the query surface
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// needs before the real class is ported.
+pub trait VariableStorage {
+    /// Stands in for `VariableStorage.isHashStorage()`.
+    fn is_hash_storage(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `VariableStorage.isMemoryStorage()`.
+    fn is_memory_storage(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `VariableStorage.getFirstVarnode()`.
+    fn get_first_varnode(&self) -> Option<Varnode> {
+        None
+    }
+
+    /// Stands in for `VariableStorage.intersects(VariableStorage)`. Defaults to "does not
+    /// intersect", mirroring storage in an unrelated location.
+    fn intersects(&self, other: &dyn VariableStorage) -> bool {
+        let _ = other;
+        false
+    }
+
+    /// Stands in for `VariableStorage.equals(Object)`, compared by an implementation-defined key
+    /// (the real class compares varnode lists). Defaults to `false`.
+    fn storage_equals(&self, other: &dyn VariableStorage) -> bool {
+        let _ = other;
+        false
+    }
+}
+
+/// Trivial placeholder implementing [`VariableStorage`], used as a default return value by stub
+/// traits/methods (e.g. [`HighSymbol::get_storage`], [`FunctionPrototype::get_return_storage`])
+/// whose real Java counterparts always return concrete storage; also stands in for
+/// `VariableStorage.UNASSIGNED_STORAGE`. Not a port of any specific Java class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PlaceholderVariableStorage;
+
+impl VariableStorage for PlaceholderVariableStorage {}
+
+/// Minimal [`VariableStorage`] backing [`DynamicEntry::get_storage`] and
+/// [`HighFunctionDBUtil::write_union_facet`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_union_facet):
+/// reports itself as hash-addressed storage keyed by `hash`, mirroring how real hash-space
+/// storage encodes its dynamic hash. Not a port of any specific Java class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HashVariableStorage(pub i64);
+
+impl VariableStorage for HashVariableStorage {
+    fn is_hash_storage(&self) -> bool {
+        true
+    }
+}
+
+/// Rust-ergonomics helper letting multiple independent `Box<dyn DataType>` handles share one
+/// underlying value, since `dyn DataType` has no `Clone` bound. Not a port of any specific Java
+/// class; used where Java code reuses the same `DataType` object reference across several calls
+/// (e.g. assigning the same data type to every variable in a merge set).
+struct SharedDataType(Arc<dyn DataType>);
+
+impl DataType for SharedDataType {
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
+
+    fn get_length(&self) -> i32 {
+        self.0.get_length()
+    }
+
+    fn is_void_type(&self) -> bool {
+        self.0.is_void_type()
+    }
+
+    fn is_equivalent(&self, dt: &dyn DataType) -> bool {
+        self.0.is_equivalent(dt)
+    }
+
+    fn clone_data_type(&self, dtm: &dyn DataTypeManager) -> Box<dyn DataType> {
+        self.0.clone_data_type(dtm)
+    }
+}
+
+/// Hands back a fresh `Box<dyn DataType>` sharing `data_type`'s underlying value. See
+/// [`SharedDataType`].
+pub fn share_data_type(data_type: &Arc<dyn DataType>) -> Box<dyn DataType> {
+    Box::new(SharedDataType(data_type.clone()))
+}
+
+/// Rust-ergonomics helper letting multiple independent `Box<dyn VariableStorage>` handles share
+/// one underlying value, since `dyn VariableStorage` has no `Clone` bound. Not a port of any
+/// specific Java class. See [`SharedDataType`] for the `DataType` analogue.
+struct SharedVariableStorage(Arc<dyn VariableStorage>);
+
+impl VariableStorage for SharedVariableStorage {
+    fn is_hash_storage(&self) -> bool {
+        self.0.is_hash_storage()
+    }
+
+    fn is_memory_storage(&self) -> bool {
+        self.0.is_memory_storage()
+    }
+
+    fn get_first_varnode(&self) -> Option<Varnode> {
+        self.0.get_first_varnode()
+    }
+
+    fn intersects(&self, other: &dyn VariableStorage) -> bool {
+        self.0.intersects(other)
+    }
+
+    fn storage_equals(&self, other: &dyn VariableStorage) -> bool {
+        self.0.storage_equals(other)
+    }
+}
+
+/// Hands back a fresh `Box<dyn VariableStorage>` sharing `storage`'s underlying value. See
+/// [`SharedVariableStorage`].
+pub fn share_variable_storage(storage: &Arc<dyn VariableStorage>) -> Box<dyn VariableStorage> {
+    Box::new(SharedVariableStorage(storage.clone()))
+}
+
+/// Trivial fixed-length placeholder implementing [`DataType`], used as a default return value by
+/// stub traits (e.g. [`HighSymbol::get_data_type`]) whose real Java counterparts always return a
+/// concrete data type. Not a port of any specific Java class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PlaceholderDataType;
+
+impl DataType for PlaceholderDataType {}
+
+/// Stands in for `Undefined.getUndefinedDataType(int)`, referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real `Undefined1..8DataType` family is ported. Represents an opaque fixed-length
+/// "undefined" data type of the requested length.
+pub fn undefined_data_type(length: i32) -> Box<dyn DataType> {
+    struct UndefinedDataTypePlaceholder(i32);
+
+    impl DataType for UndefinedDataTypePlaceholder {
+        fn get_name(&self) -> String {
+            format!("undefined{}", self.0)
+        }
+
+        fn get_length(&self) -> i32 {
+            self.0
+        }
+
+        fn is_undefined_type(&self) -> bool {
+            true
+        }
+    }
+
+    Box::new(UndefinedDataTypePlaceholder(length))
+}
+
+/// Placeholder for `ghidra.program.model.lang.VariableUtilities`'s static `resizeStorage`,
+/// referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class (and its storage-resizing algorithm) is ported. Returns `storage`
+/// unchanged, mirroring an implementation that could not find room to grow/shrink.
+pub fn resize_storage(
+    storage: Box<dyn VariableStorage>,
+    data_type: &dyn DataType,
+    align: bool,
+    function: &dyn Function,
+) -> Box<dyn VariableStorage> {
+    let _ = (data_type, align, function);
+    storage
+}
+
+/// Placeholder for `ghidra.program.model.pcode.DynamicEntry`, referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class (and the `DynamicHash` algorithm backing its static `build` factory) are
+/// ported. Computes a placeholder hash directly from the representative varnode's address/space
+/// rather than running the real `DynamicHash` algorithm, which is out of scope for this
+/// placeholder; this keeps the value stable and specific to a given varnode without needing the
+/// real hashing scheme.
+#[derive(Debug, Clone)]
+pub struct DynamicEntry {
+    hash: i64,
+    pc_address: Option<Address>,
+}
+
+impl DynamicEntry {
+    /// Stands in for the static `DynamicEntry.build(Varnode)`.
+    pub fn build(representative: &Varnode) -> Self {
+        DynamicEntry {
+            hash: representative.get_offset() ^ ((representative.get_space_id() as i64) << 32),
+            pc_address: Some(representative.get_address().clone()),
+        }
+    }
+
+    /// Stands in for `DynamicEntry.getStorage()`.
+    pub fn get_storage(&self) -> Box<dyn VariableStorage> {
+        Box::new(HashVariableStorage(self.hash))
+    }
+
+    /// Stands in for `DynamicEntry.getPCAdress()`.
+    pub fn get_pc_address(&self) -> Option<Address> {
+        self.pc_address.clone()
+    }
+
+    /// Stands in for `DynamicEntry.getHash()`.
+    #[allow(dead_code)]
+    pub fn get_hash(&self) -> i64 {
+        self.hash
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.UnionFacetSymbol`, referenced by
+/// [`HighFunctionDBUtil::write_union_facet`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_union_facet)
+/// before the real class is ported. Exposes only the static naming/type-check helpers that method
+/// needs; the real class's DB persistence is handled directly by `write_union_facet` via the
+/// [`DatabaseVariableImpl`] stub.
+pub mod union_facet_symbol {
+    use super::{Address, DataType};
+
+    /// Stands in for `UnionFacetSymbol.BASENAME`.
+    pub const BASENAME: &str = "unionfacet";
+
+    /// Stands in for `UnionFacetSymbol.isUnionType(DataType)`.
+    pub fn is_union_type(dt: &dyn DataType) -> bool {
+        dt.is_union()
+    }
+
+    /// Stands in for `UnionFacetSymbol.buildSymbolName(int, Address, boolean)`.
+    pub fn build_symbol_name(field_num: i32, addr: &Address, is_addr: bool) -> String {
+        if is_addr {
+            format!("{BASENAME}_{addr}")
+        } else {
+            format!("{BASENAME}_{field_num}")
+        }
+    }
+}
+
+/// Placeholder covering three unported, DB-backed Java classes referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil):
+/// `ghidra.program.database.function.ParameterDB`'s construction helper `ParameterImpl`, and
+/// `ReturnParameterImpl`/`LocalVariableImpl`. All three are simple, not-yet-persisted
+/// `Variable` value holders passed into `Function.updateFunction`/`addLocalVariable`, so one
+/// struct covers their shared shape (name, first-use offset, data type, storage, owning
+/// program).
+pub struct DatabaseVariableImpl {
+    name: Option<String>,
+    first_use_offset: i32,
+    data_type: Arc<dyn DataType>,
+    storage: Arc<dyn VariableStorage>,
+    program: Arc<dyn crate::program::model::listing::Program>,
+    comment: Option<String>,
+}
+
+impl DatabaseVariableImpl {
+    /// Constructs a new, not-yet-persisted variable value. `name` of `None` mirrors the Java
+    /// constructors' default-name behavior (`new ParameterImpl(name, ...)` /
+    /// `new LocalVariableImpl(null, ...)`).
+    pub fn new(
+        name: Option<String>,
+        first_use_offset: i32,
+        data_type: Box<dyn DataType>,
+        storage: Box<dyn VariableStorage>,
+        program: Arc<dyn crate::program::model::listing::Program>,
+    ) -> Self {
+        DatabaseVariableImpl {
+            name,
+            first_use_offset,
+            data_type: Arc::from(data_type),
+            storage: Arc::from(storage),
+            program,
+            comment: None,
+        }
+    }
+}
+
+impl crate::program::model::listing::Variable for DatabaseVariableImpl {
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        share_data_type(&self.data_type)
+    }
+
+    fn set_data_type_with_storage(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        storage: Box<dyn VariableStorage>,
+        _force: bool,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::util::exception::InvalidInputException> {
+        self.data_type = Arc::from(data_type);
+        self.storage = Arc::from(storage);
+        Ok(())
+    }
+
+    fn set_data_type(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::util::exception::InvalidInputException> {
+        self.data_type = Arc::from(data_type);
+        Ok(())
+    }
+
+    fn set_data_type_aligned(
+        &mut self,
+        data_type: Box<dyn DataType>,
+        _align_stack: bool,
+        _force: bool,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::util::exception::InvalidInputException> {
+        self.data_type = Arc::from(data_type);
+        Ok(())
+    }
+
+    fn get_name(&self) -> Option<String> {
+        self.name.clone()
+    }
+
+    fn get_length(&self) -> i32 {
+        self.data_type.get_length()
+    }
+
+    fn is_valid(&self) -> bool {
+        true
+    }
+
+    fn get_function(&self) -> Option<Box<dyn Function>> {
+        None
+    }
+
+    fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
+        self.program.clone()
+    }
+
+    fn get_source(&self) -> crate::program::model::symbol::SourceType {
+        crate::program::model::symbol::SourceType::UserDefined
+    }
+
+    fn set_name(
+        &mut self,
+        name: &str,
+        _source: crate::program::model::symbol::SourceType,
+    ) -> Result<(), crate::program::model::listing::variable::SetVariableNameError> {
+        self.name = Some(name.to_string());
+        Ok(())
+    }
+
+    fn get_comment(&self) -> Option<String> {
+        self.comment.clone()
+    }
+
+    fn set_comment(&mut self, comment: Option<String>) {
+        self.comment = comment;
+    }
+
+    fn get_variable_storage(&self) -> Option<Box<dyn VariableStorage>> {
+        Some(share_variable_storage(&self.storage))
+    }
+
+    fn get_first_storage_varnode(&self) -> Option<Varnode> {
+        self.storage.get_first_varnode()
+    }
+
+    fn get_last_storage_varnode(&self) -> Option<Varnode> {
+        self.storage.get_first_varnode()
+    }
+
+    fn is_stack_variable(&self) -> bool {
+        false
+    }
+
+    fn has_stack_storage(&self) -> bool {
+        false
+    }
+
+    fn is_register_variable(&self) -> bool {
+        false
+    }
+
+    fn get_register(&self) -> Option<RegisterRef> {
+        None
+    }
+
+    fn get_registers(&self) -> Option<Vec<RegisterRef>> {
+        None
+    }
+
+    fn get_min_address(&self) -> Option<Address> {
+        self.storage
+            .get_first_varnode()
+            .map(|vn| vn.get_address().clone())
+    }
+
+    fn get_stack_offset(
+        &self,
+    ) -> Result<i32, crate::program::model::listing::variable::UnsupportedOperationError> {
+        Err(crate::program::model::listing::variable::UnsupportedOperationError(
+            "not a simple stack variable".to_string(),
+        ))
+    }
+
+    fn is_memory_variable(&self) -> bool {
+        self.storage.is_memory_storage()
+    }
+
+    fn is_unique_variable(&self) -> bool {
+        self.storage.is_hash_storage()
+    }
+
+    fn is_compound_variable(&self) -> bool {
+        false
+    }
+
+    fn has_assigned_storage(&self) -> bool {
+        true
+    }
+
+    fn get_first_use_offset(&self) -> i32 {
+        self.first_use_offset
+    }
+
+    fn get_symbol(&self) -> Option<Arc<dyn crate::program::model::symbol::Symbol>> {
+        None
+    }
+
+    fn is_equivalent(&self, variable: &dyn crate::program::model::listing::Variable) -> bool {
+        self.get_name() == variable.get_name() && self.get_length() == variable.get_length()
+    }
+
+    fn compare_to(&self, other: &dyn crate::program::model::listing::Variable) -> std::cmp::Ordering {
+        self.get_name().cmp(&other.get_name())
+    }
+}
 
 /// Placeholder for `ghidra.program.model.data.StandAloneDataTypeManager`, referenced by
 /// [`DataTypeArchive`](crate::program::model::listing::data_type_archive::DataTypeArchive)
@@ -1288,13 +1720,215 @@ pub trait BlockMultiGoto {
 }
 
 /// Placeholder for `ghidra.program.model.pcode.HighSymbol`, referenced by
-/// [`GlobalSymbolMap`](crate::program::model::pcode::global_symbol_map::GlobalSymbolMap) before
-/// the real class is ported. `GlobalSymbolMap` only ever reads the id used to key its lookup maps
-/// and reconcile its next-available synthetic id counter (`insertSymbol`'s use of
-/// `HighSymbol.getId()`/`HighSymbol.ID_BASE`), so no other members are needed yet.
+/// [`GlobalSymbolMap`](crate::program::model::pcode::global_symbol_map::GlobalSymbolMap) and
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class is ported. `GlobalSymbolMap` only ever reads the id used to key its
+/// lookup maps and reconcile its next-available synthetic id counter (`insertSymbol`'s use of
+/// `HighSymbol.getId()`/`HighSymbol.ID_BASE`). The remaining accessors were added for
+/// `HighFunctionDBUtil`, all defaulted so `GlobalSymbolMap`'s existing bare impls keep compiling;
+/// `get_high_function` is left required since there is no sensible placeholder `HighFunction` to
+/// hand back.
 pub trait HighSymbol: Send + Sync {
     /// Stands in for `HighSymbol.getId()`.
     fn get_id(&self) -> i64;
+
+    /// Stands in for `HighSymbol.getHighFunction()`.
+    fn get_high_function(&self) -> Arc<dyn HighFunction>;
+
+    /// Stands in for `HighSymbol.getName()`.
+    fn get_name(&self) -> String {
+        String::new()
+    }
+
+    /// Stands in for `HighSymbol.getDataType()`.
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        Box::new(PlaceholderDataType)
+    }
+
+    /// Stands in for `HighSymbol.getSize()`.
+    fn get_size(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `HighSymbol.getStorage()`.
+    fn get_storage(&self) -> Box<dyn VariableStorage> {
+        Box::new(PlaceholderVariableStorage)
+    }
+
+    /// Stands in for `HighSymbol.getPCAddress()`.
+    fn get_pc_address(&self) -> Option<Address> {
+        None
+    }
+
+    /// Stands in for `HighSymbol.getHighVariable()`.
+    fn get_high_variable(&self) -> Option<Box<dyn HighVariable>> {
+        None
+    }
+
+    /// Stands in for `HighSymbol.isParameter()`.
+    fn is_parameter(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `HighSymbol.isGlobal()`.
+    fn is_global(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `((HighParam) highSymbol.getHighVariable()).getSlot()`, narrowed onto
+    /// `HighSymbol` itself as `HighSymbol.getCategoryIndex()` (the parameter slot a `HighSymbol`
+    /// occupies), since the real `HighParam` downcast is not modeled separately here.
+    fn get_category_index(&self) -> i32 {
+        0
+    }
+
+    /// Simplified stand-in for `symbol.getFirstWholeMap() instanceof DynamicEntry ?
+    /// ((DynamicEntry) symbol.getFirstWholeMap()).getHash() : null`, used by
+    /// `HighFunctionDBUtil`'s private `isValidUniqueVariable` helper. The real `SymbolEntry`/
+    /// `DynamicEntry` class hierarchy is not modeled separately here; implementors backed by a
+    /// dynamic (hash-addressed) entry are expected to override this to return that entry's hash.
+    fn get_dynamic_hash(&self) -> Option<i64> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.HighFunction`, referenced by
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class is ported. Exposes only the accessors that utility's default methods
+/// read: the underlying database [`Function`] being annotated, the decompiler's recovered
+/// parameter/return model, the compiler spec used to resolve calling-convention names, and the
+/// local variable/parameter symbol table. `get_function`/`get_compiler_spec`/
+/// `get_local_symbol_map` are left required since there is no sensible placeholder `Function`/
+/// `CompilerSpec`/`LocalSymbolMap` to hand back.
+pub trait HighFunction: Send + Sync {
+    /// Stands in for `HighFunction.getFunction()`.
+    fn get_function(&self) -> Box<dyn Function>;
+
+    /// Stands in for `HighFunction.getFunctionPrototype()`. Defaults to `None`, mirroring a
+    /// `HighFunction` built without a recovered prototype.
+    fn get_function_prototype(&self) -> Option<Box<dyn FunctionPrototype>> {
+        None
+    }
+
+    /// Stands in for `HighFunction.getCompilerSpec()`.
+    fn get_compiler_spec(&self) -> Box<dyn crate::program::model::lang::CompilerSpec>;
+
+    /// Stands in for `HighFunction.getLocalSymbolMap()`.
+    fn get_local_symbol_map(&self) -> Box<dyn LocalSymbolMap>;
+}
+
+/// Stands in for the static `HighFunction.findCreateOverrideSpace(Function)`, used by
+/// [`HighFunctionDBUtil::write_override`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_override)
+/// before the real `HighFunction` (and the DB-backed "override" namespace it creates on demand)
+/// are ported. Always returns `None` (mirroring a database that cannot create the namespace)
+/// until the real lookup/creation logic is available.
+pub fn high_function_find_create_override_space(
+    function: &mut dyn Function,
+) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
+    let _ = function;
+    None
+}
+
+/// Placeholder for `ghidra.program.model.pcode.FunctionPrototype`, referenced by [`HighFunction`]
+/// and
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class is ported.
+pub trait FunctionPrototype: Send + Sync {
+    /// Stands in for `FunctionPrototype.getModelName()`.
+    fn get_model_name(&self) -> Option<String> {
+        None
+    }
+
+    /// Stands in for `FunctionPrototype.isVarArg()`.
+    fn is_var_arg(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `FunctionPrototype.getReturnStorage()`.
+    fn get_return_storage(&self) -> Box<dyn VariableStorage> {
+        Box::new(PlaceholderVariableStorage)
+    }
+
+    /// Stands in for `FunctionPrototype.getReturnType()`.
+    fn get_return_type(&self) -> Option<Box<dyn DataType>> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.LocalSymbolMap`, referenced by [`HighFunction`]
+/// before the real class is ported. Exposes only the parameter accessors
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// needs; `get_param_symbol` is left required since there is no sensible placeholder `HighSymbol`
+/// to hand back.
+pub trait LocalSymbolMap: Send + Sync {
+    /// Stands in for `LocalSymbolMap.getNumParams()`.
+    fn get_num_params(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `LocalSymbolMap.getParamSymbol(int)`.
+    fn get_param_symbol(&self, index: i32) -> Arc<dyn HighSymbol>;
+
+    /// Stands in for `LocalSymbolMap.getSymbols()`. Modeled as a `Vec` snapshot rather than an
+    /// `Iterator<HighSymbol>`, since the current callers collect it eagerly regardless.
+    fn get_symbols(&self) -> Vec<Arc<dyn HighSymbol>> {
+        Vec::new()
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.HighVariable`, referenced by
+/// [`HighSymbol::get_high_variable`] and
+/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
+/// before the real class is ported.
+pub trait HighVariable: Send + Sync {
+    /// Stands in for `HighVariable.requiresDynamicStorage()`.
+    fn requires_dynamic_storage(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `HighVariable.getRepresentative()`.
+    fn get_representative(&self) -> Varnode;
+
+    /// Simplified stand-in for `highVar instanceof HighParam ? ((HighParam)
+    /// highVar).getSlot() : null`, used by
+    /// [`HighFunctionDBUtil::get_function_variable`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::get_function_variable).
+    /// The real `HighParam` subtype is not modeled separately here; implementors representing a
+    /// parameter are expected to override this to return their slot.
+    fn as_param_slot(&self) -> Option<i32> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.DataTypeSymbol`, referenced by
+/// [`HighFunctionDBUtil::write_override`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_override)
+/// and
+/// [`HighFunctionDBUtil::read_override`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::read_override)
+/// before the real class is ported.
+pub trait DataTypeSymbol: Send + Sync {
+    /// Stands in for `DataTypeSymbol.getDataType()`.
+    fn get_data_type(&self) -> Box<dyn DataType>;
+}
+
+/// Stands in for the static `DataTypeSymbol.readSymbol(String, Symbol)`. Always returns `None`
+/// (mirroring no override symbol found) until the real DB-backed lookup is ported.
+pub fn read_data_type_symbol(
+    category: &str,
+    sym: &dyn crate::program::model::symbol::Symbol,
+) -> Option<Box<dyn DataTypeSymbol>> {
+    let _ = (category, sym);
+    None
+}
+
+/// Stands in for constructing a `FunctionDefinitionDataType` from a [`FunctionSignature`] and
+/// persisting it via `new DataTypeSymbol(fsig, "prt", AUTO_CAT).writeSymbol(...)`. Always
+/// succeeds as a no-op until the real `DataTypeSymbol`/`FunctionDefinitionDataType` classes are
+/// ported.
+pub fn write_data_type_symbol_override(
+    namespace: &dyn crate::program::model::symbol::Namespace,
+    callsite: Address,
+    sig: &dyn crate::program::model::listing::FunctionSignature,
+) {
+    let _ = (namespace, callsite, sig);
 }
 
 /// Placeholder for `ghidra.program.model.pcode.PcodeOpAST`, referenced by
