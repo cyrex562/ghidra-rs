@@ -289,3 +289,4 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	ParamEntryLike	ParamListStandard
 2026-07-22T00:00:00Z	ModelRuleLike	ParamListStandard
 2026-07-22T15:00:00Z	DataTypeInfoLike	CompositeDataTypeElementInfo
+2026-07-22T16:00:00Z	AddressKeyIteratorLike	PropertyMapDB
