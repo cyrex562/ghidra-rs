@@ -286,3 +286,5 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	ProjectLockLike	DefaultProjectData
 2026-07-22T09:00:00Z	PluginTool	Plugin
 2026-07-22T00:00:00Z	InstructionIterator.has_next	StructureFactory
+2026-07-22T00:00:00Z	ParamEntryLike	ParamListStandard
+2026-07-22T00:00:00Z	ModelRuleLike	ParamListStandard

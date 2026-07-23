@@ -111,6 +111,7 @@ mod tests {
         let list = FirstFitOnly;
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockVoidDataType)),
+            ..Default::default()
         };
         let mut res = Vec::new();
 
@@ -126,6 +127,7 @@ mod tests {
         let list = FirstFitOnly;
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockIntDataType { length: 4 })),
+            ..Default::default()
         };
         let mut res = Vec::new();
 
@@ -144,6 +146,7 @@ mod tests {
         let list = FirstFitOnly;
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockIntDataType { length: 64 })),
+            ..Default::default()
         };
         let mut res = Vec::new();
 
@@ -159,6 +162,7 @@ mod tests {
         let list: Box<dyn ParamListRegisterOut> = Box::new(FirstFitOnly);
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockIntDataType { length: 4 })),
+            ..Default::default()
         };
         let mut res = Vec::new();
 

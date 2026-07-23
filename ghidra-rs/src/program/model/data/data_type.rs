@@ -465,6 +465,13 @@ pub trait DataType {
         false
     }
 
+    /// Stands in for `instanceof AbstractFloatDataType`, used by
+    /// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)'s
+    /// port of `ParamEntry.getBasicTypeClass`.
+    fn is_floating_point(&self) -> bool {
+        false
+    }
+
     /// Stands in for `instanceof ghidra.program.model.data.DefaultDataType`, used by
     /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Backed by a
     /// minimal [`DefaultDataType`](crate::program::seam_stubs::DefaultDataType) placeholder

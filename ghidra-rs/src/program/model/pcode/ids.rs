@@ -123,6 +123,9 @@ pub const ELEM_OP: ElementId = ElementId::new("op", 118);
 // own `ELEM_OFF_EL` at 102 under its internal (non-wire-compatible) numbering scheme, so it is
 // renumbered to continue the local counter above instead.
 pub const ELEM_BHEAD: ElementId = ElementId::new("bhead", 119);
+// Real Ghidra id is 160 (`ElementId.java`'s `ELEM_GROUP`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_GROUP: ElementId = ElementId::new("group", 120);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
@@ -197,4 +200,11 @@ pub const ATTRIB_OFFSET: AttributeId = AttributeId::new("offset", 16); // Alias 
 pub const ATTRIB_VALUE: AttributeId = AttributeId::new("value", 25); // Alias for ATTRIB_SOURCE?
 pub const ATTRIB_TYPE: AttributeId = AttributeId::new("type", 22); // Alias for ATTRIB_PARENT?
 pub const ATTRIB_SIGNED: AttributeId = AttributeId::new("signed", 57);
+// Real Ghidra ids are 208/119/125 (`AttributeId.java`'s `ATTRIB_THISBEFORERETPOINTER`/
+// `ATTRIB_KILLEDBYCALL`/`ATTRIB_SEPARATEFLOAT`), continuing the local counter above instead per
+// the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_THISBEFORERETPOINTER: AttributeId =
+    AttributeId::new("thisbeforeretpointer", 58);
+pub const ATTRIB_KILLEDBYCALL: AttributeId = AttributeId::new("killedbycall", 59);
+pub const ATTRIB_SEPARATEFLOAT: AttributeId = AttributeId::new("separatefloat", 60);
 pub const ATTRIB_UNKNOWN: AttributeId = AttributeId::new("XMLunknown", 159);
