@@ -189,6 +189,7 @@ mod tests {
         };
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockVoidDataType)),
+            ..Default::default()
         };
         let mut res = Vec::new();
 
@@ -206,6 +207,7 @@ mod tests {
         };
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockIntDataType { length: 64 })),
+            ..Default::default()
         };
         let mut res = Vec::new();
 
@@ -225,6 +227,7 @@ mod tests {
         };
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockIntDataType { length: 64 })),
+            ..Default::default()
         };
         let mut res = Vec::new();
 
@@ -241,6 +244,7 @@ mod tests {
         });
         let proto = PrototypePieces {
             outtype: Some(Arc::new(MockIntDataType { length: 4 })),
+            ..Default::default()
         };
         let mut res = Vec::new();
 

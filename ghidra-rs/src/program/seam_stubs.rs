@@ -582,25 +582,31 @@ impl ExternalLanguageCompilerSpecQuery {
 }
 
 /// Placeholder for `ghidra.program.model.lang.PrototypePieces`, referenced by
-/// [`ParamList`](crate::program::model::lang::param_list::ParamList) and
-/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
-/// before the real class is ported. Only the `outtype` (return data-type) field is modeled, since
-/// that is the only member either interface reads; the `model`/`intypes`/`firstVarArgSlot` fields
-/// are omitted until something needs them. `Debug` is intentionally not derived since `DataType`
-/// has no `Debug` supertrait yet.
+/// [`ParamList`](crate::program::model::lang::param_list::ParamList),
+/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut),
+/// and
+/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
+/// before the real class is ported. Only the `outtype` (return data-type) and `intypes` (input
+/// data-types) fields are modeled, since those are the only members those interfaces read; the
+/// `model`/`firstVarArgSlot` fields are omitted until something needs them. `Debug` is
+/// intentionally not derived since `DataType` has no `Debug` supertrait yet.
 #[derive(Default, Clone)]
 pub struct PrototypePieces {
     /// Return data-type of the prototype (`PrototypePieces.outtype`).
     pub outtype: Option<Arc<dyn DataType>>,
+    /// Input data-types of the prototype, in parameter order (`PrototypePieces.intypes`).
+    pub intypes: Vec<Arc<dyn DataType>>,
 }
 
 /// Placeholder for `ghidra.program.model.lang.ParameterPieces`, referenced by
-/// [`ParamList`](crate::program::model::lang::param_list::ParamList) and
-/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
-/// before the real class is ported. Only the `type`/`isIndirect`/`hiddenReturnPtr` fields are
-/// modeled, since those are the only members `ParamListStandardOut::assign_map_out` reads or
-/// writes; `address`, `joinPieces`, and `isThisPointer` are omitted until something needs them.
-/// `Debug` is intentionally not derived since `DataType` has no `Debug` supertrait yet.
+/// [`ParamList`](crate::program::model::lang::param_list::ParamList),
+/// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut),
+/// and
+/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
+/// before the real class is ported. Only the `type`/`isIndirect`/`hiddenReturnPtr`/`address`
+/// fields are modeled, since those are the only members those interfaces read or write;
+/// `joinPieces` and `isThisPointer` are omitted until something needs them. `Debug` is
+/// intentionally not derived since `DataType` has no `Debug` supertrait yet.
 #[derive(Default, Clone)]
 pub struct ParameterPieces {
     /// The data-type of the parameter (`ParameterPieces.type`; renamed since `type` is a Rust
@@ -611,6 +617,9 @@ pub struct ParameterPieces {
     pub is_indirect: bool,
     /// True if this is an input pointer to return storage (`ParameterPieces.hiddenReturnPtr`).
     pub hidden_return_ptr: bool,
+    /// The starting address of the parameter's storage, or `None` if not yet assigned
+    /// (`ParameterPieces.address`).
+    pub address: Option<Address>,
 }
 
 /// Placeholder for `ghidra.program.model.lang.ParamListStandard`, referenced by
@@ -644,6 +653,147 @@ pub trait ParamListStandardLike {
     ) -> i32 {
         let _ = (dt, proto, pos, dt_manager, status, res);
         crate::program::model::lang::protorules::assign_action::FAIL
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.ParamEntry`, referenced by
+/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
+/// before the real class is ported. Exposes only the accessors that trait's default methods
+/// read (and the one method, `get_addr_by_slot`, that mutates a [`ParameterPieces`]); the real
+/// slot-allocation algorithm, XML restore, and join-space handling live on the concrete class.
+pub trait ParamEntryLike {
+    /// Stands in for `ParamEntry.getSpace()`. Left required since there is no universally
+    /// sensible placeholder address space.
+    fn get_space(&self) -> Arc<AddressSpace>;
+
+    /// Stands in for `ParamEntry.getGroup()`.
+    fn get_group(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `ParamEntry.getAllGroups()`.
+    fn get_all_groups(&self) -> Vec<i32> {
+        vec![self.get_group()]
+    }
+
+    /// Stands in for `ParamEntry.getMinSize()`.
+    fn get_min_size(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `ParamEntry.getSize()`.
+    fn get_size(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `ParamEntry.getAlign()`.
+    fn get_align(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `ParamEntry.getAddressBase()`.
+    fn get_address_base(&self) -> i64 {
+        0
+    }
+
+    /// Stands in for `ParamEntry.getType()`.
+    fn get_type(&self) -> crate::program::model::lang::storage_class::StorageClass {
+        crate::program::model::lang::storage_class::StorageClass::General
+    }
+
+    /// Stands in for `ParamEntry.isExclusion()`.
+    fn is_exclusion(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `ParamEntry.isReverseStack()`.
+    fn is_reverse_stack(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `ParamEntry.isGrouped()`.
+    fn is_grouped(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `ParamEntry.isBigEndian()`.
+    fn is_big_endian(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `ParamEntry.justifiedContain(Address, int)`. Defaults to "does not
+    /// contain", mirroring an entry in an unrelated address space.
+    fn justified_contain(&self, loc: &Address, size: i32) -> i32 {
+        let _ = (loc, size);
+        -1
+    }
+
+    /// Stands in for `ParamEntry.getSlot(Address, int)`.
+    fn get_slot(&self, loc: &Address, skip: i32) -> i32 {
+        let _ = (loc, skip);
+        0
+    }
+
+    /// Stands in for `ParamEntry.getAddrBySlot(int, int, int, ParameterPieces)`; the real method
+    /// allocates from consumed resource slots and writes the resulting address into
+    /// `param.address`. This default never finds room (leaves `param.address` as `None`),
+    /// mirroring an entry with no free slots.
+    fn get_addr_by_slot(
+        &self,
+        slot_num: i32,
+        size: i32,
+        align: i32,
+        param: &mut ParameterPieces,
+    ) -> i32 {
+        let _ = (size, align);
+        param.address = None;
+        slot_num
+    }
+
+    /// Stands in for `ParamEntry.encode(Encoder)`.
+    fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
+        let _ = encoder;
+        Ok(())
+    }
+
+    /// Stands in for `ParamEntry.isEquivalent(ParamEntry)`.
+    fn is_equivalent(&self, other: &dyn ParamEntryLike) -> bool {
+        let _ = other;
+        false
+    }
+}
+
+/// Placeholder for `ghidra.program.model.lang.protorules.ModelRule`, referenced by
+/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
+/// before the real class is ported. Exposes only the members that trait's default methods need;
+/// `DatatypeFilter`/`QualifierFilter`/precondition and side-effect `AssignAction` handling live
+/// on the concrete class.
+pub trait ModelRuleLike {
+    /// Stands in for `ModelRule.assignAddress(...)`. Defaults to always failing, mirroring a
+    /// rule whose filter never matches.
+    fn assign_address(
+        &self,
+        dt: &Arc<dyn DataType>,
+        proto: &PrototypePieces,
+        pos: i32,
+        dt_manager: &dyn DataTypeManager,
+        status: &mut [i32],
+        res: &mut ParameterPieces,
+    ) -> i32 {
+        let _ = (dt, proto, pos, dt_manager, status, res);
+        crate::program::model::lang::protorules::assign_action::FAIL
+    }
+
+    /// Stands in for `ModelRule.encode(Encoder)`.
+    fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
+        let _ = encoder;
+        Ok(())
+    }
+
+    /// Stands in for `ModelRule.isEquivalent(ModelRule)`.
+    fn is_equivalent(&self, other: &dyn ModelRuleLike) -> bool {
+        let _ = other;
+        false
     }
 }
 
