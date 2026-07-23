@@ -31,4 +31,4 @@ pub use overlay_region_supplier::OverlayRegionSupplier;
 pub use program_address_factory::{CheckOverlayNameError, ProgramAddressFactory};
 pub use program_db::ProgramDB;
 pub use program_modifier_listener::ProgramModifierListener;
-pub use properties::{PropertiesDBAdapter, TestSaveable};
+pub use properties::{DBPropertyMapManager, PropertiesDBAdapter, ProgramReadyError, TestSaveable};
