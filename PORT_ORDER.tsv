@@ -7,7 +7,7 @@ DONE	trait	167	27	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	167	17	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/CompositeDataTypeElementInfo.java
 DONE	trait	166	7	118	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/properties/DBPropertyMapManager.java
 DONE	trait	165	9	98	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/properties/PropertyMapDB.java
-TODO	trait	164	6	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/properties/UnsupportedMapDB.java
+DONE	trait	164	6	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/properties/UnsupportedMapDB.java
 TODO	trait	166	182	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RangeMapAdapter.java
 TODO	trait	162	184	208	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramMerge.java
 TODO	trait	161	178	40	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/FunctionMerge.java
