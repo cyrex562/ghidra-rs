@@ -14473,7 +14473,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Fun
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/GroupPath.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/IndentFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/InstructionMaskValueFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/InstructionUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/InstructionUtils.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LabelFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguagePostUpgradeInstructionHandler.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguageTranslator.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
