@@ -36,7 +36,7 @@ PARK	trait	156	108	285	program	Ghidra/Framework/SoftwareModeling/src/main/java/g
 DONE	trait	155	306	66	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InvalidPrototype.java
 DONE	trait	154	40	99	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighParserContext.java
 PARK	trait	153	60	166	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/SpecExtension.java
-TODO	trait	152	353	326	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypeModel.java
+DONE	trait	152	353	326	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/PrototypeModel.java
 TODO	trait	151	122	284	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunctionDBUtil.java
 TODO	trait	150	111	10	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighConstant.java
 TODO	trait	149	34	66	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/PcodeEmitPacked.java
