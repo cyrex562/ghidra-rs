@@ -42,7 +42,7 @@ DONE	trait	150	111	10	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	149	34	66	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/PcodeEmitPacked.java
 DONE	trait	148	312	107	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadSleigh.java
 DONE	trait	147	306	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadCallfixup.java
-TODO	trait	146	111	285	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/FunctionPrototype.java
+DONE	trait	146	111	285	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/FunctionPrototype.java
 TODO	trait	145	34	66	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/PcodeEmitObjects.java
 TODO	trait	144	11	33	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/template/HandleTpl.java
 TODO	trait	143	16	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/template/ConstructTpl.java
