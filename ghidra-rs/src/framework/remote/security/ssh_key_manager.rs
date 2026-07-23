@@ -493,6 +493,14 @@ mod tests {
     use std::cell::RefCell;
     use std::io::Cursor;
 
+    // Tests that read/write the process-global PASSWORD_PROVIDER must not run concurrently:
+    // one test installs a provider while another asserts none is installed -> a flaky race.
+    // Serialize them behind one poison-tolerant lock (each takes `let _s = serial();`).
+    static SERIAL: Mutex<()> = Mutex::new(());
+    fn serial() -> std::sync::MutexGuard<'static, ()> {
+        SERIAL.lock().unwrap_or_else(|p| p.into_inner())
+    }
+
     struct StaticPasswordProvider {
         password: RefCell<Option<Vec<char>>>,
     }
@@ -635,6 +643,8 @@ mod tests {
 
     #[test]
     fn test_get_ssh_private_key_from_reader_returns_password_required_when_encrypted_and_no_provider() {
+        let _s = serial();
+        *PASSWORD_PROVIDER.lock().unwrap() = None; // ensure no provider leaked in from another test
         // A syntactically valid encrypted RSA PEM (contents need not decrypt to a real key
         // for this test since PasswordRequired should be returned before decryption).
         let pem = "-----BEGIN RSA PRIVATE KEY-----\n\
@@ -649,10 +659,14 @@ AAAA\n\
 
     #[test]
     fn test_password_provider_round_trip_via_set_protected_key_store_password_provider() {
+        let _s = serial();
         install_password(Some("hunter42"));
-        let guard = PASSWORD_PROVIDER.lock().unwrap();
-        let provider = guard.as_ref().expect("provider installed");
-        let password = provider.get_key_store_password("test", false).expect("password");
-        assert_eq!(password.iter().collect::<String>(), "hunter42");
+        {
+            let guard = PASSWORD_PROVIDER.lock().unwrap();
+            let provider = guard.as_ref().expect("provider installed");
+            let password = provider.get_key_store_password("test", false).expect("password");
+            assert_eq!(password.iter().collect::<String>(), "hunter42");
+        }
+        *PASSWORD_PROVIDER.lock().unwrap() = None; // don't leak the provider to other tests
     }
 }
