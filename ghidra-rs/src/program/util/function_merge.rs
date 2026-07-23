@@ -93,7 +93,8 @@ mod tests {
     use crate::program::model::listing::function::{FunctionEditError, SetFunctionNameError};
     use crate::program::model::listing::{Function, FunctionSignature, FunctionTag, Parameter, Program, Variable};
     use crate::program::model::symbol::{ExternalLocation, Namespace, Reference, Symbol, SymbolType};
-    use crate::program::seam_stubs::{CommentType, PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+    use crate::program::model::lang::prototype_model::PrototypeModel;
+    use crate::program::seam_stubs::{CommentType, StackFrame, VariableFilter, VariableStorage};
     use crate::program::util::{FunctionMemberRenameError, MemoryMergeError};
     use crate::framework::model::DomainObject;
     use crate::framework::store::LockException;

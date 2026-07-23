@@ -231,7 +231,7 @@ mod tests {
 
                 fn get_calling_convention(
                     &self,
-                ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+                ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
                     None
                 }
 
@@ -479,7 +479,7 @@ mod tests {
 
         fn set_custom_variable_storage(&mut self, _has_custom_variable_storage: bool) {}
 
-        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+        fn get_calling_convention(&self) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
 

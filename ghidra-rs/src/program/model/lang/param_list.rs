@@ -147,21 +147,21 @@ mod tests {
         }
         fn get_calling_conventions(
             &self,
-        ) -> Vec<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+        ) -> Vec<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
             Vec::new()
         }
         fn get_calling_convention(
             &self,
             _name: &str,
-        ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
-        fn get_all_models(&self) -> Vec<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+        fn get_all_models(&self) -> Vec<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
             Vec::new()
         }
         fn get_default_calling_convention(
             &self,
-        ) -> Option<Box<dyn crate::program::seam_stubs::PrototypeModel>> {
+        ) -> Option<Box<dyn crate::program::model::lang::prototype_model::PrototypeModel>> {
             None
         }
         fn get_decompiler_output_language(
@@ -172,7 +172,7 @@ mod tests {
         fn get_prototype_evaluation_model(
             &self,
             _model_type: crate::program::model::lang::compiler_spec::EvaluationModelType,
-        ) -> Box<dyn crate::program::seam_stubs::PrototypeModel> {
+        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
             unimplemented!()
         }
         fn is_global(&self, _addr: &Address) -> bool {
@@ -191,13 +191,13 @@ mod tests {
         fn match_convention(
             &self,
             _convention_name: &str,
-        ) -> Box<dyn crate::program::seam_stubs::PrototypeModel> {
+        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
             unimplemented!()
         }
         fn find_best_calling_convention(
             &self,
             _params: &[&dyn crate::program::model::listing::parameter::Parameter],
-        ) -> Box<dyn crate::program::seam_stubs::PrototypeModel> {
+        ) -> Box<dyn crate::program::model::lang::prototype_model::PrototypeModel> {
             unimplemented!()
         }
         fn has_property(&self, _key: &str) -> bool {

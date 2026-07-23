@@ -95,7 +95,8 @@ mod tests {
     };
     use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Program, Variable};
     use crate::program::model::symbol::{ExternalLocation, Namespace, SourceType, Symbol};
-    use crate::program::seam_stubs::{PrototypeModel, StackFrame, VariableFilter, VariableStorage};
+    use crate::program::model::lang::prototype_model::PrototypeModel;
+    use crate::program::seam_stubs::{StackFrame, VariableFilter, VariableStorage};
     use crate::util::exception::InvalidInputException;
 
     fn mock_address(offset: i64) -> Address {
