@@ -1,3 +1,4 @@
+pub mod address_correlation;
 pub mod change_manager;
 pub mod change_manager_adapter;
 pub mod code_unit_container;
@@ -32,6 +33,7 @@ pub mod string_property_map;
 pub mod user_data_change_record;
 pub mod void_property_map;
 
+pub use address_correlation::AddressCorrelation;
 pub use change_manager::ChangeManager;
 pub use change_manager_adapter::ChangeManagerAdapter;
 pub use code_unit_container::CodeUnitContainer;
