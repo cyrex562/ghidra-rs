@@ -23,7 +23,7 @@ DONE	trait	165	38	78	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	164	37	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/SubroutineDestReferenceIterator.java
 DONE	trait	163	40	53	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/MultEntSubModel.java
 DONE	trait	163	36	53	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/OverlapCodeSubModel.java
-TODO	trait	162	177	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguageTranslatorFactoryMinion.java
+DONE	trait	162	177	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/LanguageTranslatorFactoryMinion.java
 TODO	trait	161	177	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/OffsetFieldLocation.java
 TODO	trait	165	7	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/SettingsDBAdapter.java
 TODO	trait	161	47	226	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/PseudoData.java
