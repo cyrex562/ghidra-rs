@@ -1419,3 +1419,17 @@ pub enum OffsetFieldType {
     MemoryBlock,
 }
 
+/// Placeholder for `ghidra.program.util.VarnodeContext`, referenced by
+/// [`SymbolicPropogator`](crate::program::util::symbolic_propogator::SymbolicPropogator)
+/// before the real class is ported. `SymbolicPropogator`'s trait methods only ever pass this type
+/// through opaquely (as the varnode-level register/memory state accumulated while flowing
+/// constants), so no members are needed yet.
+pub trait VarnodeContext {}
+
+/// Placeholder for `ghidra.program.util.ContextEvaluator`, referenced by
+/// [`SymbolicPropogator`](crate::program::util::symbolic_propogator::SymbolicPropogator)
+/// before the real interface is ported. `SymbolicPropogator`'s trait methods only ever pass this
+/// type through opaquely (as a caller-supplied callback for the constant-flow evaluation), so no
+/// members are needed yet.
+pub trait ContextEvaluator {}
+

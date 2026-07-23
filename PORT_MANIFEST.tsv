@@ -5259,7 +5259,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramMergeFilt
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramMergeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/ProgramSelection.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/SymbolMerge.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/SymbolicPropogator.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/SymbolicPropogator.java	DONE	orig_src Ghidra Features Base src main java ghidra program util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/VarnodeContext.java	TODO	orig_src Ghidra Features Base src main java ghidra program util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/string/AbstractStringSearcher.java	TODO	orig_src Ghidra Features Base src main java ghidra program util string 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/program/util/string/FoundString.java	TODO	orig_src Ghidra Features Base src main java ghidra program util string 
