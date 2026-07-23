@@ -835,7 +835,6 @@ TODO	trait	3	12	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/em
 TODO	trait	2	10	52	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitBytesPcodeExecutorStatePiece.java
 TODO	trait	1	21	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitBytesPcodeExecutorState.java
 TODO	trait	0	99	155	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/JitCodeGenerator.java
-TODO	trait	2	43	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributes.java
 TODO	trait	3	21	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramBasedDynamicTableColumn.java
 TODO	trait	2	32	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramLocationTableColumn.java
 TODO	trait	0	90	88	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/ProgramLocationTableRowMapper.java
@@ -1502,7 +1501,7 @@ TODO	trait	0	1	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra
 TODO	trait	0	1	1	util	Ghidra/Features/Base/src/main/java/ghidra/base/graph/VertexExpansionListener.java
 TODO	trait	0	1	1	feature	Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/decompile/DiffClangHighlightListener.java
 TODO	trait	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/analyzer/DexHeaderFormatAnalyzer.java
-TODO	trait	0	1	25	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cart/CartFileSystem.java
+TODO	trait	0	1	24	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cart/CartFileSystem.java
 TODO	trait	0	1	21	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/coff/CoffArchiveFileSystem.java
 TODO	trait	0	1	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/complzss/CompLzssFileSystem.java
 TODO	trait	0	1	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/cpio/CpioFileSystem.java
@@ -1516,8 +1515,8 @@ TODO	trait	0	1	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 TODO	trait	0	1	21	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/omf/OmfArchiveFileSystem.java
 TODO	trait	0	1	21	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/omf51/Omf51ArchiveFileSystem.java
 TODO	trait	0	1	27	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/squashfs/SquashFileSystem.java
-TODO	trait	0	1	19	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/tar/TarFileSystem.java
-TODO	trait	0	1	39	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2FileSystem.java
+TODO	trait	0	1	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/tar/TarFileSystem.java
+TODO	trait	0	1	38	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/yaffs2/YAFFS2FileSystem.java
 TODO	trait	0	1	6	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zstd/ZstdFileSystem.java
 TODO	trait	0	1	16	graph	Ghidra/Features/GraphServices/src/main/java/ghidra/graph/export/ExportAttributedGraphDisplay.java
 TODO	trait	1	1	1	script	Ghidra/Features/PyGhidra/src/main/java/ghidra/pyghidra/PythonFieldExposer.java
@@ -3821,7 +3820,7 @@ TODO	struct	23	1	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 TODO	struct	23	1	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/UnimplementedOpGen.java
 TODO	struct	19	3	7	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOnePassage.java
 TODO	struct	2	94	2	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemIndexHelper.java
-DONE	struct	3	15	1	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributeType.java
+TODO	struct	2	43	0	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/fileinfo/FileAttributes.java
 TODO	struct	1	93	3	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/SingleFileSystemIndexHelper.java
 TODO	struct	0	96	5	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/AbstractSinglePayloadFileSystem.java
 TODO	struct	0	96	3	filesystem	Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemBase.java
@@ -4403,7 +4402,7 @@ TODO	struct	40	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 TODO	struct	42	1	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/recognizer/RecognizerService.java
 TODO	struct	42	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipCustomInitializer.java
 TODO	struct	41	2	19	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipFileSystemFactory.java
-TODO	struct	41	1	19	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemBuiltin.java
+TODO	struct	41	1	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemBuiltin.java
 TODO	struct	38	30	11	app	Ghidra/Features/FileFormats/src/main/java/ghidra/app/util/opinion/ApkLoader.java
 TODO	struct	38	30	6	app	Ghidra/Features/FileFormats/src/main/java/ghidra/app/util/opinion/CDexLoader.java
 TODO	struct	39	32	37	app	Ghidra/Features/FileFormats/src/main/java/ghidra/app/util/opinion/MachoExtractProgramBuilder.java
@@ -5333,7 +5332,7 @@ TODO	struct	2	15	52	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feat
 TODO	struct	3	14	2	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidDBUtils.java
 TODO	struct	0	24	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/CheckoutInfo.java
 TODO	struct	0	23	8	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/values/GhidraValuesMap.java
-TODO	struct	0	23	21	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/FSBFileNode.java
+TODO	struct	0	23	20	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/FSBFileNode.java
 TODO	struct	0	23	2	sarif	Ghidra/Features/Sarif/src/main/java/sarif/SarifProgramOptions.java
 TODO	struct	0	23	15	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/FindCheckoutsTableModel.java
 TODO	struct	0	23	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/VersionHistoryTableModel.java
@@ -7048,7 +7047,7 @@ TODO	struct	0	1	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 TODO	struct	0	1	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/img3/Img3Util.java
 TODO	struct	0	1	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/png/CrushedPNGUtil.java
 TODO	struct	0	1	32	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/prelink/GFileSystemLoadKernelTask.java
-TODO	struct	0	1	185	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/prelink/MachoPrelinkFileSystem.java
+TODO	struct	0	1	184	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/prelink/MachoPrelinkFileSystem.java
 TODO	struct	1	1	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/iso9660/ISO9660FileSystemFactory.java
 TODO	struct	1	1	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/java/JavaClassDecompilerFileSystemFactory.java
 TODO	struct	0	1	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/lzfse/LzfseCliToolWrapper.java
@@ -7296,8 +7295,8 @@ TODO	struct	0	0	34	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 TODO	struct	0	0	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/apk/ApkFileSystem.java
 TODO	struct	0	0	224	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/BootImage.java
 TODO	struct	0	0	29	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/BootImageAnalyzer.java
-TODO	struct	0	0	22	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/BootImageFileSystem.java
-TODO	struct	0	0	21	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/VendorBootImageFileSystem.java
+TODO	struct	0	0	21	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/BootImageFileSystem.java
+TODO	struct	0	0	20	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootimg/VendorBootImageFileSystem.java
 TODO	struct	0	0	85	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderAnalyzer.java
 TODO	struct	0	0	38	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/bootldr/AndroidBootLoaderFileSystem.java
 TODO	struct	0	0	19	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/DexToSmaliFileSystem.java
@@ -7351,7 +7350,7 @@ TODO	struct	0	0	27	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 TODO	struct	0	0	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/ipsw/IpswFileSystem.java
 TODO	struct	0	0	40	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/png/CrushedPNGFileSystem.java
 TODO	struct	0	0	20	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/prelink/MachoPrelinkFSBFileHandler.java
-TODO	struct	0	0	42	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ubi/UniversalBinaryFileSystem.java
+TODO	struct	0	0	41	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ubi/UniversalBinaryFileSystem.java
 TODO	struct	0	0	36	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/analyzer/FidAnalyzer.java
 TODO	struct	0	0	3	server	Ghidra/Features/GhidraServer/src/main/java/ghidra/server/security/loginmodule/ExternalProgramLoginModule.java
 TODO	struct	0	0	3	graph	Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/plugin/context/FcgVertexActionContext.java
