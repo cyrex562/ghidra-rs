@@ -322,11 +322,23 @@ impl JdomElement for NullJdomElement {}
 /// Both take `&self`, matching the convention already used by [`PreferencesLike`], since the real
 /// `PluginTool` is a single shared, mutable object rather than per-call state; both default to
 /// inert no-ops so existing opaque-placeholder implementors are unaffected.
+///
+/// Extended again for [`Plugin`](crate::framework::plugintool::Plugin), which additionally needs
+/// `getServices(Class<?>)` (all active providers of a service, used by
+/// `Plugin::is_only_provider_of_service`) and `firePluginEvent(PluginEvent)` (used by
+/// `Plugin::fire_plugin_event`). Both default to inert placeholders for the same reason as
+/// above.
 pub trait PluginTool {
     /// Returns the service implementing `iface`, if currently provided, mirroring
     /// `PluginTool.getService(Class<?>)`.
     fn get_service(&self, _iface: &str) -> Option<Arc<dyn Any + Send + Sync>> {
         None
+    }
+
+    /// Returns every currently active provider of `iface`, mirroring
+    /// `PluginTool.getServices(Class<?>)`.
+    fn get_services(&self, _iface: &str) -> Vec<Arc<dyn Any + Send + Sync>> {
+        Vec::new()
     }
 
     /// Registers a listener to be notified when services are added to or removed from this tool,
@@ -336,6 +348,10 @@ pub trait PluginTool {
         _listener: Arc<dyn crate::framework::plugintool::util::ServiceListener>,
     ) {
     }
+
+    /// Notifies all other plugins interested in receiving the given event, mirroring
+    /// `PluginTool.firePluginEvent(PluginEvent)`.
+    fn fire_plugin_event(&self, _event: crate::framework::plugintool::PluginEvent) {}
 }
 
 /// Inert fallback [`PluginTool`] used by [`PluginLike::tool`]'s default body, mirroring how

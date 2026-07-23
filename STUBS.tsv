@@ -284,3 +284,4 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	LoadSpecLike	Loader
 2026-07-22T00:00:00Z	LoadResultsLike	Loader
 2026-07-22T00:00:00Z	ProjectLockLike	DefaultProjectData
+2026-07-22T09:00:00Z	PluginTool	Plugin
