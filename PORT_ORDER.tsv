@@ -3,7 +3,7 @@ DONE	trait	103	41	119	framework	Ghidra/Framework/Project/src/main/java/ghidra/fr
 DONE	trait	105	343	82	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/plugintool/Plugin.java
 DONE	trait	119	1239	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureFactory.java
 DONE	trait	163	306	234	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamListStandard.java
-TODO	trait	167	27	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/AddressSetPropertyMap.java
+DONE	trait	167	27	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/AddressSetPropertyMap.java
 TODO	trait	167	17	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/CompositeDataTypeElementInfo.java
 TODO	trait	166	7	118	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/properties/DBPropertyMapManager.java
 TODO	trait	165	9	98	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/properties/PropertyMapDB.java
