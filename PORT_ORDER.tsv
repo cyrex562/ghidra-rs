@@ -50,7 +50,7 @@ DONE	trait	126	2	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	127	8	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDBAdapter.java
 DONE	trait	129	9	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateRefDBAdapter.java
 DONE	trait	127	14	141	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateManager.java
-TODO	trait	126	6	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDB.java
+DONE	trait	126	6	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDB.java
 TODO	trait	125	15	602	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionManagerDB.java
 TODO	trait	124	41	23	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/FunctionSymbol.java
 TODO	trait	123	13	23	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/CodeSymbol.java
