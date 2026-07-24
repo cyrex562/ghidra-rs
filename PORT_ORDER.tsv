@@ -42,7 +42,7 @@ DONE	trait	129	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	128	4	146	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleManager.java
 DONE	trait	127	8	77	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/TreeManager.java
 DONE	trait	126	44	116	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/ListingDB.java
-TODO	trait	126	7	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionAdapter.java
+DONE	trait	126	7	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionAdapter.java
 TODO	trait	127	4	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionTagAdapter.java
 TODO	trait	127	3	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionTagMappingAdapter.java
 TODO	trait	126	4	113	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionTagManagerDB.java
