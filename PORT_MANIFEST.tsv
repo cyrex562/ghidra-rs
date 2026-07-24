@@ -13582,7 +13582,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleDBAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleDBAdapterV1.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ParentChildDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ParentChildDBAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ProgramTreeDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database module 

@@ -325,3 +325,5 @@ ts	stub_class	referenced_by
 2026-07-24T00:05:00Z	NamespaceManager	LibraryDB
 2026-07-24T00:10:00Z	NamespaceSymbol	NamespaceDB
 2026-07-24T00:15:00Z	PrototypeManagerProgram	PrototypeManager
+2026-07-24T01:00:00Z	ModuleDB	ModuleManager
+2026-07-24T01:00:00Z	FragmentDB	ModuleManager
