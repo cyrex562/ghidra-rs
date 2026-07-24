@@ -13629,7 +13629,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ReferenceDBManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ShiftedReferenceDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/StackReferenceDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ToAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ToAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ToAdapterSharedTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ToAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ToAdapterV1.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database references 
