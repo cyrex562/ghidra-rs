@@ -321,3 +321,5 @@ ts	stub_class	referenced_by
 2026-07-23T22:00:00Z	AddressXML	ParamEntry
 2026-07-23T23:00:00Z	ProjectDataTypeManager	DataTypeArchiveDB
 2026-07-23T23:05:00Z	DataTypeArchiveDbChangeSet	DataTypeArchiveDB
+2026-07-24T00:00:00Z	LibrarySymbol	LibraryDB
+2026-07-24T00:05:00Z	NamespaceManager	LibraryDB

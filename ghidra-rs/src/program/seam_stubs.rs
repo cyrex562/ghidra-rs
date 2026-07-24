@@ -7,7 +7,7 @@ use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::pcode::floatformat::big_float::BigFloat;
 use crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException;
-use crate::program::model::address::{Address, AddressRange, AddressSpace};
+use crate::program::model::address::{Address, AddressRange, AddressSetView, AddressSpace};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
@@ -29,6 +29,7 @@ use crate::program::model::pcode::Varnode;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
+use crate::program::model::symbol::{Namespace, SetParentNamespaceError, Symbol};
 use crate::program::util::language_translator::LanguageTranslator;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -2137,5 +2138,77 @@ pub trait ParamMeasure {
     fn get_rank(&self) -> Option<i32> {
         None
     }
+}
+
+/// Placeholder for `ghidra.program.database.symbol.LibrarySymbol`, referenced by
+/// [`LibraryDb`](crate::program::database::symbol::library_db::LibraryDb) before the real class
+/// (a `SymbolDB` subclass) is ported. Exposes only the members `LibraryDB` calls on its `symbol`
+/// field: viewing itself as a plain [`Symbol`] (`as_symbol`, mirroring
+/// [`Namespace::as_library`](crate::program::model::symbol::Namespace::as_library) since Rust
+/// trait objects cannot be upcast to an unrelated trait object without extra machinery), the
+/// `Symbol`/`SymbolDB` accessors `LibraryDB` reads directly (`getName()`, `getID()`,
+/// `getParentNamespace()`, `SymbolDB.getName(boolean)`), and the `LibrarySymbol`-specific
+/// `setNamespace`/`getExternalLibraryPath`/`setExternalLibraryPath` members.
+pub trait LibrarySymbol: Send + Sync {
+    /// Stands in for treating this `LibrarySymbol` as a plain `Symbol`, used by
+    /// `LibraryDB.getSymbol()`.
+    fn as_symbol(&self) -> Arc<dyn Symbol>;
+
+    /// Stands in for `Symbol.getName()` (inherited from `SymbolDB`), used by
+    /// `LibraryDB.getName()`.
+    fn get_name(&self) -> String;
+
+    /// Stands in for `Symbol.getID()` (inherited from `SymbolDB`), used by `LibraryDB.getID()`.
+    fn get_id(&self) -> i64;
+
+    /// Stands in for `Symbol.getParentNamespace()` (inherited from `SymbolDB`), used by
+    /// `LibraryDB.getParentNamespace()`.
+    fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>>;
+
+    /// Stands in for `SymbolDB.getName(boolean)`, used by `LibraryDB.getName(boolean)`.
+    fn get_name_with_path(&self, include_namespace_path: bool) -> String;
+
+    /// Stands in for `Symbol.setNamespace(Namespace)`, used by
+    /// `LibraryDB.setParentNamespace(Namespace)`. Takes `&self` (rather than `&mut self`) since
+    /// real `SymbolDB`-backed symbols mutate their underlying database record through interior
+    /// locking shared across every handle to the same row, not exclusive Rust ownership.
+    fn set_namespace(
+        &self,
+        parent_namespace: Arc<dyn Namespace>,
+    ) -> Result<(), SetParentNamespaceError>;
+
+    /// Stands in for `LibrarySymbol.getExternalLibraryPath()`, used by
+    /// `LibraryDB.getAssociatedProgramPath()`.
+    fn get_external_library_path(&self) -> Option<String>;
+
+    /// Stands in for `LibrarySymbol.setExternalLibraryPath(String)`, used by
+    /// `LibraryDB.setAssociatedProgramPath(String)`.
+    fn set_external_library_path(
+        &self,
+        library_path: Option<&str>,
+    ) -> Result<(), crate::util::exception::InvalidInputException>;
+}
+
+/// Placeholder for `ghidra.program.database.symbol.NamespaceManager`, referenced by
+/// [`LibraryDb`](crate::program::database::symbol::library_db::LibraryDb) before the real class
+/// is ported. Exposes only `getAddressSet(Namespace)`, the sole member `LibraryDB.getBody()`
+/// calls. Not to be confused with
+/// [`NamespaceManagerDB`](crate::program::database::symbol::namespace_manager::NamespaceManagerDB),
+/// an unrelated address-range-to-namespace-id table helper already in this crate.
+pub trait NamespaceManager: Send + Sync {
+    /// Stands in for `NamespaceManager.getAddressSet(Namespace)`.
+    fn get_address_set(&self, namespace: &dyn Namespace) -> Box<dyn AddressSetView>;
+}
+
+/// Default body implementors of [`LibraryDb::get_body`](crate::program::database::symbol::library_db::LibraryDb::get_body)
+/// may use, mirroring `NamespaceManager.getAddressSet(this)`. Takes `namespace` explicitly since
+/// a default method on `LibraryDb` itself cannot produce a `&dyn Namespace` view of its own
+/// `&self` (that requires `Self` to be a concrete, known type, which is only true once
+/// implemented on a concrete struct).
+pub fn get_body_via_namespace_manager(
+    namespace_manager: &dyn NamespaceManager,
+    namespace: &dyn Namespace,
+) -> Box<dyn AddressSetView> {
+    namespace_manager.get_address_set(namespace)
 }
 
