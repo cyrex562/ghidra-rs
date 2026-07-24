@@ -1,4 +1,5 @@
 pub mod function_adapter;
+pub mod function_tag_adapter;
 pub mod overlapping_function_exception;
 
 pub use function_adapter::{
@@ -8,4 +9,5 @@ pub use function_adapter::{
     FUNCTION_SIGNATURE_SOURCE_SHIFT, FUNCTION_VARARG_FLAG, RETURN_DATA_TYPE_ID_COL,
     RETURN_STORAGE_COL, STACK_LOCAL_SIZE_COL, STACK_PURGE_COL, STACK_RETURN_OFFSET_COL,
 };
+pub use function_tag_adapter::{FunctionTagAdapter, COMMENT_COL, NAME_COL};
 pub use overlapping_function_exception::OverlappingFunctionException;
