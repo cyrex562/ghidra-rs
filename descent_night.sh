@@ -31,6 +31,7 @@ PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
 CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-2400}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"
 TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"   # backstop: verify test crate stays green after merge
+API_RETRIES="${API_RETRIES:-2}"                                     # retry a class on TRANSIENT API failure before aborting the run
 OVERALL_HOURS="${OVERALL_HOURS:-7}"                                 # wall-clock cap; loop stops after this many hours regardless of DESCENT_MAX
 PY="${PY:-python3}"; LOG_DIR="${LOG_DIR:-$HOME/agents/logs/ghidra}"; mkdir -p "$LOG_DIR"
 START_EPOCH=$(date +%s)
@@ -157,16 +158,30 @@ Port this class and fix any test code your change breaks.
 If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
   fi
 
-  timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" --model "$MODEL" --permission-mode acceptEdits \
-    --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*),Bash(cargo test*)" \
-    --output-format json >"$jlog" 2>>"$log"; rc=$?
-  "$PY" -c 'import json,sys;print(json.load(open(sys.argv[1])).get("result",""))' "$jlog" >>"$log" 2>/dev/null||true
-  iserr=$("$PY" -c 'import json,sys;print(1 if json.load(open(sys.argv[1])).get("is_error") else 0)' "$jlog" 2>/dev/null||echo 1)
+  # Invoke the porter with bounded retry on TRANSIENT API failure (e.g. "connection closed
+  # mid-response" cost ~1h of window 2026-07-23). rc=124 is a per-port TIMEOUT, not an API error --
+  # let it fall through to the build/park path. Only a persistent failure (all attempts) aborts the run.
+  api_fail=0
+  for try in $(seq 0 "$API_RETRIES"); do
+    if [ "$try" -gt 0 ]; then
+      log "API retry ${try}/${API_RETRIES} for $class (transient failure)"
+      git checkout -f "$INTEGRATION" >/dev/null 2>&1; git reset --hard >/dev/null 2>&1
+      git clean -fdq >/dev/null 2>&1   # drop partial-port untracked files (target/ is ignored, kept)
+      git branch -D "$branch" >/dev/null 2>&1||true; git switch -c "$branch" >/dev/null 2>&1
+    fi
+    timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" --model "$MODEL" --permission-mode acceptEdits \
+      --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*),Bash(cargo test*)" \
+      --output-format json >"$jlog" 2>>"$log"; rc=$?
+    "$PY" -c 'import json,sys;print(json.load(open(sys.argv[1])).get("result",""))' "$jlog" >>"$log" 2>/dev/null||true
+    iserr=$("$PY" -c 'import json,sys;print(1 if json.load(open(sys.argv[1])).get("is_error") else 0)' "$jlog" 2>/dev/null||echo 1)
+    if [ "$rc" -eq 124 ] || { [ "$rc" -eq 0 ] && [ "$iserr" != "1" ]; }; then api_fail=0; break; fi
+    api_fail=1
+  done
 
   status=$(grep -F "$srcpath"$'\t' "$MANIFEST" | head -1 | cut -f2 | tr -d '[:space:]')
-  if [ "$rc" -ne 124 ] && { [ "$rc" -ne 0 ] || [ "$iserr" = "1" ]; }; then
-    log "API failure on $class -- stopping run (not parking)."; git checkout -f "$INTEGRATION" >/dev/null 2>&1
-    git branch -D "$branch" >/dev/null 2>&1||true; break
+  if [ "$api_fail" = "1" ]; then
+    log "API failure on $class after $((API_RETRIES+1)) attempts -- stopping run (not parking)."
+    git checkout -f "$INTEGRATION" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1||true; break
   fi
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
     git add -A; git commit -q -m "descent: ${class} -> ${mode} (${srcpath})" || true
