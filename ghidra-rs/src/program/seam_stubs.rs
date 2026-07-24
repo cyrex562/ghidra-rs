@@ -35,6 +35,7 @@ use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 use std::any::Any;
 use std::fmt;
+use std::io;
 use std::sync::Arc;
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
@@ -2254,5 +2255,26 @@ pub trait NamespaceSymbol: Send + Sync {
     /// Stands in for `Symbol.isExternal()` (inherited from `SymbolDB`), used by
     /// `NamespaceDB.isExternal()`.
     fn is_external(&self) -> bool;
+}
+
+/// Placeholder for the subset of `ghidra.program.database.ProgramDB`'s API that
+/// [`PrototypeManager`](crate::program::database::code::PrototypeManager) needs from its owning
+/// program, before the real `ProgramDB` port (currently a bare struct implementing only
+/// [`crate::program::model::listing::Program`]) exposes these members.
+pub trait PrototypeManagerProgram {
+    /// Stands in for `ProgramDB.getLanguage()`.
+    fn get_language(&self) -> Arc<dyn Language>;
+
+    /// Stands in for `Program.getProgramContext()`, narrowed to a non-`mut` shared handle since
+    /// `PrototypeManager` only ever reads from it.
+    fn get_program_context(
+        &self,
+    ) -> Option<Arc<dyn crate::program::model::listing::ProgramContext>>;
+
+    /// Stands in for `ProgramDB.isLanguageUpgradePending()`.
+    fn is_language_upgrade_pending(&self) -> bool;
+
+    /// Stands in for `ProgramDB.dbError(IOException)`.
+    fn db_error(&self, err: &io::Error);
 }
 
