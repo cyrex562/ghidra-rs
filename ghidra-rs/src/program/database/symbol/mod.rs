@@ -3,6 +3,7 @@ pub mod equate_db;
 pub mod equate_db_adapter;
 pub mod equate_manager;
 pub mod equate_ref_db_adapter;
+pub mod function_symbol;
 pub mod label_history_adapter;
 pub mod library_db;
 pub mod namespace_db;
@@ -23,6 +24,7 @@ pub use equate_manager::{
     DATATYPE_TAG, ERROR_TAG, FORMAT_DELIMITER,
 };
 pub use equate_ref_db_adapter::{EquateRefDBAdapter, MoveAddressRangeError};
+pub use function_symbol::FunctionSymbol;
 pub use label_history_adapter::LabelHistoryAdapter;
 pub use library_db::LibraryDb;
 pub use namespace_db::NamespaceDb;
