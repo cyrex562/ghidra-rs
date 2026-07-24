@@ -16,7 +16,7 @@ DONE	trait	137	6	80	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	136	8	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/RefListV0.java
 DONE	trait	135	2	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/RefListFlagsV0.java
 DONE	trait	134	3	73	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/BigRefListV0.java
-TODO	trait	133	11	65	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/RefList.java
+DONE	trait	133	11	65	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/RefList.java
 TODO	trait	131	3	79	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/FromAdapter.java
 TODO	trait	137	10	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/Query.java
 TODO	trait	135	9	19	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/ClassSymbol.java
