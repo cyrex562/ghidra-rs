@@ -3,9 +3,12 @@ use crate::framework::db::{DBHandle, Field, FieldType, Schema};
 use crate::program::database::map::AddressMapDB;
 use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
 use crate::program::database::symbol::symbol_db::SymbolDB;
+use crate::program::database::symbol::variable_storage_manager::VariableStorageManager;
 use crate::program::database::ManagerDB;
-use crate::program::model::address::Address;
-use crate::program::model::symbol::{SourceType, Symbol, SymbolTable, SymbolType};
+use crate::program::model::address::{Address, AddressSpace};
+use crate::program::model::listing::Library;
+use crate::program::model::symbol::{SourceType, Symbol, SymbolIterator, SymbolTable, SymbolType};
+use crate::program::seam_stubs::VariableStorage;
 use std::io;
 use std::sync::{Arc, RwLock};
 
@@ -266,6 +269,65 @@ impl ManagerDB for SymbolManagerDB {
     }
 }
 
+/// Port of `ghidra.program.database.symbol.SymbolManager` as a trait (cycle cut-point).
+///
+/// The Java class is a ~3500-line concrete `SymbolTable`/`ManagerDB` implementation that directly
+/// wires together a dozen other DB-backed managers (`ReferenceDBManager`, `NamespaceManager`,
+/// `VariableStorageManagerDB`, `ExternalManagerDB`, `FunctionManagerDB`, `CodeManager`,
+/// `ProgramDB`, ...), several of which are themselves unported and would otherwise pull this port
+/// back into a `SymbolManager`/`ProgramDB`/`NamespaceManager` cycle.
+///
+/// `SymbolManagerDb` captures the class's own public surface -- the parts not already covered by
+/// the already-ported [`SymbolTable`] and [`ManagerDB`] interfaces it implements -- against
+/// already-ported trait objects ([`VariableStorageManager`], [`Library`], [`SymbolIterator`]) so a
+/// concrete implementor can be added later without reintroducing the cycle. Method names mirror
+/// the corresponding `SymbolManager` Java methods (`snake_case`d).
+pub trait SymbolManagerDb: SymbolTable + ManagerDB {
+    /// Accessor for the backing variable storage manager (`SymbolManager.variableStorageMgr`).
+    fn variable_storage_manager(&self) -> Arc<dyn VariableStorageManager + Send + Sync>;
+
+    /// Stands in for `SymbolManager.findVariableStorageAddress(VariableStorage)`.
+    fn find_variable_storage_address(
+        &self,
+        storage: &dyn VariableStorage,
+    ) -> io::Result<Option<Address>> {
+        self.variable_storage_manager()
+            .get_variable_storage_address(storage, false)
+    }
+
+    /// Stands in for `SymbolManager.getLibrarySymbol(String)`.
+    fn get_library_symbol(&self, name: &str) -> io::Result<Option<Arc<dyn Symbol>>>;
+
+    /// Stands in for `SymbolManager.getMaxSymbolAddress(AddressSpace)`.
+    fn get_max_symbol_address(&self, space: &AddressSpace) -> Option<Address>;
+
+    /// Stands in for `SymbolManager.namespaceRemoved(long)`.
+    fn namespace_removed(&mut self, namespace_id: i64) -> io::Result<()>;
+
+    /// Stands in for `SymbolManager.moveSymbolsAt(Address, Address)`. Only the symbol address is
+    /// changed; references must be moved separately.
+    fn move_symbols_at(&mut self, old_addr: &Address, new_addr: &Address) -> io::Result<()>;
+
+    /// Stands in for `SymbolManager.getDynamicSymbolID(Address)`.
+    fn get_dynamic_symbol_id(&self, addr: &Address) -> i64;
+
+    /// Stands in for `SymbolManager.getExternalSymbolByOriginalImportName(Library, String)`.
+    /// `library` of `None` mirrors the Java overload's nullable "ignore" constraint.
+    fn get_external_symbol_by_original_import_name(
+        &self,
+        library: Option<&dyn Library>,
+        ext_label: &str,
+    ) -> Box<dyn SymbolIterator>;
+
+    /// Stands in for `SymbolManager.getExternalSymbolByMemoryAddress(Library, Address)`. `library`
+    /// of `None` mirrors the Java overload's nullable "ignore" constraint.
+    fn get_external_symbol_by_memory_address(
+        &self,
+        library: Option<&dyn Library>,
+        ext_prog_addr: &Address,
+    ) -> Box<dyn SymbolIterator>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -295,5 +357,254 @@ mod tests {
 
         let fetched = manager.get_symbol(sym.get_id()).unwrap().unwrap();
         assert_eq!(fetched.get_name(), "MyLabel");
+    }
+
+    struct MockVariableStorageManager {
+        slot: std::sync::Mutex<Option<Address>>,
+    }
+
+    impl VariableStorageManager for MockVariableStorageManager {
+        fn get_variable_storage_address(
+            &self,
+            _storage: &dyn VariableStorage,
+            create: bool,
+        ) -> io::Result<Option<Address>> {
+            let mut slot = self.slot.lock().unwrap();
+            if let Some(addr) = slot.clone() {
+                return Ok(Some(addr));
+            }
+            if !create {
+                return Ok(None);
+            }
+            let space = AddressSpace::new("const", 32, 1, AddressSpaceType::Constant, 0);
+            let addr = Address::new(space, 0);
+            *slot = Some(addr.clone());
+            Ok(Some(addr))
+        }
+    }
+
+    struct MockSymbolManagerDb {
+        symbols: RwLock<Vec<Arc<dyn Symbol>>>,
+        var_storage: Arc<dyn VariableStorageManager + Send + Sync>,
+        removed_namespaces: RwLock<Vec<i64>>,
+    }
+
+    impl MockSymbolManagerDb {
+        fn new() -> Self {
+            MockSymbolManagerDb {
+                symbols: RwLock::new(Vec::new()),
+                var_storage: Arc::new(MockVariableStorageManager {
+                    slot: std::sync::Mutex::new(None),
+                }),
+                removed_namespaces: RwLock::new(Vec::new()),
+            }
+        }
+    }
+
+    impl SymbolTable for MockSymbolManagerDb {
+        fn create_label(
+            &mut self,
+            addr: &Address,
+            name: &str,
+            source: SourceType,
+        ) -> io::Result<Arc<dyn Symbol>> {
+            let mut symbols = self.symbols.write().unwrap();
+            let id = symbols.len() as i64 + 1;
+            let sym: Arc<dyn Symbol> = Arc::new(SymbolDB::new(
+                id,
+                name.to_string(),
+                addr.clone(),
+                SymbolType::Label,
+                0,
+                true,
+                source,
+            ));
+            symbols.push(sym.clone());
+            Ok(sym)
+        }
+
+        fn get_symbol(&self, id: i64) -> io::Result<Option<Arc<dyn Symbol>>> {
+            Ok(self
+                .symbols
+                .read()
+                .unwrap()
+                .iter()
+                .find(|s| s.get_id() == id)
+                .cloned())
+        }
+
+        fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>> {
+            Ok(self
+                .symbols
+                .read()
+                .unwrap()
+                .iter()
+                .filter(|s| s.get_address().offset() == addr.offset())
+                .cloned()
+                .collect())
+        }
+    }
+
+    impl ManagerDB for MockSymbolManagerDb {
+        fn invalidate_cache(&mut self, _all: bool) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn delete_address_range(
+            &mut self,
+            _start_addr: &Address,
+            _end_addr: &Address,
+        ) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn move_address_range(
+            &mut self,
+            _from_addr: &Address,
+            _to_addr: &Address,
+            _length: u64,
+        ) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl SymbolManagerDb for MockSymbolManagerDb {
+        fn variable_storage_manager(&self) -> Arc<dyn VariableStorageManager + Send + Sync> {
+            self.var_storage.clone()
+        }
+
+        fn get_library_symbol(&self, name: &str) -> io::Result<Option<Arc<dyn Symbol>>> {
+            Ok(self
+                .symbols
+                .read()
+                .unwrap()
+                .iter()
+                .find(|s| s.get_symbol_type() == SymbolType::Library && s.get_name() == name)
+                .cloned())
+        }
+
+        fn get_max_symbol_address(&self, space: &AddressSpace) -> Option<Address> {
+            self.symbols
+                .read()
+                .unwrap()
+                .iter()
+                .map(|s| s.get_address())
+                .filter(|a| a.space().as_ref() == space)
+                .max_by_key(|a| a.offset())
+        }
+
+        fn namespace_removed(&mut self, namespace_id: i64) -> io::Result<()> {
+            self.symbols
+                .write()
+                .unwrap()
+                .retain(|s| s.get_parent_id() != namespace_id);
+            self.removed_namespaces.write().unwrap().push(namespace_id);
+            Ok(())
+        }
+
+        fn move_symbols_at(&mut self, old_addr: &Address, new_addr: &Address) -> io::Result<()> {
+            let mut symbols = self.symbols.write().unwrap();
+            let moved: Vec<Arc<dyn Symbol>> = symbols
+                .iter()
+                .filter(|s| s.get_address().offset() == old_addr.offset())
+                .map(|s| {
+                    let moved_sym: Arc<dyn Symbol> = Arc::new(SymbolDB::new(
+                        s.get_id(),
+                        s.get_name().to_string(),
+                        new_addr.clone(),
+                        s.get_symbol_type(),
+                        s.get_parent_id(),
+                        s.is_primary(),
+                        s.get_source(),
+                    ));
+                    moved_sym
+                })
+                .collect();
+            symbols.retain(|s| s.get_address().offset() != old_addr.offset());
+            symbols.extend(moved);
+            Ok(())
+        }
+
+        fn get_dynamic_symbol_id(&self, addr: &Address) -> i64 {
+            addr.offset() | (0x40i64 << 56)
+        }
+
+        fn get_external_symbol_by_original_import_name(
+            &self,
+            _library: Option<&dyn Library>,
+            ext_label: &str,
+        ) -> Box<dyn SymbolIterator> {
+            let matches: Vec<Arc<dyn Symbol>> = self
+                .symbols
+                .read()
+                .unwrap()
+                .iter()
+                .filter(|s| s.get_name() == ext_label)
+                .cloned()
+                .collect();
+            Box::new(crate::program::model::symbol::SymbolIteratorAdapter::new(
+                matches,
+            ))
+        }
+
+        fn get_external_symbol_by_memory_address(
+            &self,
+            _library: Option<&dyn Library>,
+            ext_prog_addr: &Address,
+        ) -> Box<dyn SymbolIterator> {
+            let matches: Vec<Arc<dyn Symbol>> = self
+                .symbols
+                .read()
+                .unwrap()
+                .iter()
+                .filter(|s| s.get_address().offset() == ext_prog_addr.offset())
+                .cloned()
+                .collect();
+            Box::new(crate::program::model::symbol::SymbolIteratorAdapter::new(
+                matches,
+            ))
+        }
+    }
+
+    #[test]
+    fn trait_object_usage_is_object_safe() {
+        let space = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
+        let mut mgr: Box<dyn SymbolManagerDb> = Box::new(MockSymbolManagerDb::new());
+
+        let addr1 = Address::new(space.clone(), 0x1000);
+        let addr2 = Address::new(space.clone(), 0x2000);
+
+        mgr.create_label(&addr1, "foo", SourceType::UserDefined)
+            .unwrap();
+        mgr.create_label(&addr2, "libentry", SourceType::UserDefined)
+            .unwrap();
+
+        assert_eq!(
+            mgr.get_max_symbol_address(&space).unwrap().offset(),
+            0x2000
+        );
+
+        mgr.move_symbols_at(&addr1, &addr2).unwrap();
+        assert!(mgr.get_symbols(&addr1).unwrap().is_empty());
+        assert_eq!(mgr.get_symbols(&addr2).unwrap().len(), 2);
+
+        let mut it = mgr.get_external_symbol_by_original_import_name(None, "libentry");
+        assert!(it.has_next());
+
+        let allocated = mgr
+            .variable_storage_manager()
+            .get_variable_storage_address(&crate::program::seam_stubs::PlaceholderVariableStorage, true)
+            .unwrap()
+            .unwrap();
+        let found = mgr
+            .find_variable_storage_address(&crate::program::seam_stubs::PlaceholderVariableStorage)
+            .unwrap()
+            .unwrap();
+        assert_eq!(allocated, found);
+
+        mgr.namespace_removed(0).unwrap();
+        assert!(mgr.get_symbols(&addr2).unwrap().is_empty());
+
+        assert_eq!(mgr.get_dynamic_symbol_id(&addr1), addr1.offset() | (0x40i64 << 56));
     }
 }

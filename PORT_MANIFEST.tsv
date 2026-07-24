@@ -13692,7 +13692,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDatabaseAdapterV3.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDatabaseAdapterV4.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDatabaseAdapterV5.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolManager.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/TypeFilteredSymbolIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/VariableStorageDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/VariableStorageDBAdapterNoTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
