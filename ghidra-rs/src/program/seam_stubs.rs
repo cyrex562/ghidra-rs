@@ -2201,14 +2201,58 @@ pub trait NamespaceManager: Send + Sync {
 }
 
 /// Default body implementors of [`LibraryDb::get_body`](crate::program::database::symbol::library_db::LibraryDb::get_body)
+/// and [`NamespaceDb::get_body`](crate::program::database::symbol::namespace_db::NamespaceDb::get_body)
 /// may use, mirroring `NamespaceManager.getAddressSet(this)`. Takes `namespace` explicitly since
-/// a default method on `LibraryDb` itself cannot produce a `&dyn Namespace` view of its own
-/// `&self` (that requires `Self` to be a concrete, known type, which is only true once
+/// a default method on `LibraryDb`/`NamespaceDb` itself cannot produce a `&dyn Namespace` view of
+/// its own `&self` (that requires `Self` to be a concrete, known type, which is only true once
 /// implemented on a concrete struct).
 pub fn get_body_via_namespace_manager(
     namespace_manager: &dyn NamespaceManager,
     namespace: &dyn Namespace,
 ) -> Box<dyn AddressSetView> {
     namespace_manager.get_address_set(namespace)
+}
+
+/// Placeholder for `ghidra.program.database.symbol.NamespaceSymbol`, referenced by
+/// [`NamespaceDb`](crate::program::database::symbol::namespace_db::NamespaceDb) before the real
+/// class (a `SymbolDB` subclass) is ported. Exposes only the members `NamespaceDB` calls on its
+/// `symbol` field: viewing itself as a plain [`Symbol`] (`as_symbol`, mirroring
+/// [`LibrarySymbol::as_symbol`] since Rust trait objects cannot be upcast to an unrelated trait
+/// object without extra machinery), the `Symbol`/`SymbolDB` accessors it reads directly
+/// (`getName()`, `getID()`, `getParentNamespace()`, `SymbolDB.getName(boolean)`,
+/// `isExternal()`), and `setNamespace`. Distinct from [`LibrarySymbol`] (which additionally
+/// exposes the external-library-path accessors that only `LibrarySymbol` has); the two
+/// placeholders otherwise mirror each other.
+pub trait NamespaceSymbol: Send + Sync {
+    /// Stands in for treating this `NamespaceSymbol` as a plain `Symbol`, used by
+    /// `NamespaceDB.getSymbol()`.
+    fn as_symbol(&self) -> Arc<dyn Symbol>;
+
+    /// Stands in for `Symbol.getName()` (inherited from `SymbolDB`), used by
+    /// `NamespaceDB.getName()`.
+    fn get_name(&self) -> String;
+
+    /// Stands in for `Symbol.getID()` (inherited from `SymbolDB`), used by `NamespaceDB.getID()`.
+    fn get_id(&self) -> i64;
+
+    /// Stands in for `Symbol.getParentNamespace()` (inherited from `SymbolDB`), used by
+    /// `NamespaceDB.getParentNamespace()`.
+    fn get_parent_namespace(&self) -> Option<Arc<dyn Namespace>>;
+
+    /// Stands in for `SymbolDB.getName(boolean)`, used by `NamespaceDB.getName(boolean)`.
+    fn get_name_with_path(&self, include_namespace_path: bool) -> String;
+
+    /// Stands in for `Symbol.setNamespace(Namespace)`, used by
+    /// `NamespaceDB.setParentNamespace(Namespace)`. Takes `&self` (rather than `&mut self`) since
+    /// real `SymbolDB`-backed symbols mutate their underlying database record through interior
+    /// locking shared across every handle to the same row, not exclusive Rust ownership.
+    fn set_namespace(
+        &self,
+        parent_namespace: Arc<dyn Namespace>,
+    ) -> Result<(), SetParentNamespaceError>;
+
+    /// Stands in for `Symbol.isExternal()` (inherited from `SymbolDB`), used by
+    /// `NamespaceDB.isExternal()`.
+    fn is_external(&self) -> bool;
 }
 
