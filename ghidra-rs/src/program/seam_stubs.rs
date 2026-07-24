@@ -487,6 +487,26 @@ impl crate::program::model::listing::Variable for DatabaseVariableImpl {
 /// no members are needed yet.
 pub trait StandAloneDataTypeManager {}
 
+/// Placeholder for `ghidra.program.database.ProjectDataTypeManager`, referenced by
+/// [`DataTypeArchiveDB::get_data_type_manager`](crate::program::database::data_type_archive_db::DataTypeArchiveDB::get_data_type_manager)
+/// before the real class is ported. Extends [`StandAloneDataTypeManager`] per the Java class
+/// hierarchy (`ProjectDataTypeManager extends StandAloneDataTypeManager`);
+/// `DataTypeArchiveDB` only ever returns this type opaquely, so no members are needed yet.
+pub trait ProjectDataTypeManager: StandAloneDataTypeManager {}
+
+/// Placeholder for `ghidra.program.database.DataTypeArchiveDBChangeSet`, referenced by
+/// [`DataTypeArchiveDB::get_changes`](crate::program::database::data_type_archive_db::DataTypeArchiveDB::get_changes)
+/// (narrowing
+/// [`DataTypeArchive::get_changes`](crate::program::model::listing::data_type_archive::DataTypeArchive::get_changes)'s
+/// return type) before the real class is ported. Combines the two already-ported traits its Java
+/// counterpart implements (`DataTypeArchiveChangeSet`, `DomainObjectDBChangeSet`); no additional
+/// members are needed since `DataTypeArchiveDB` only ever returns this type opaquely.
+pub trait DataTypeArchiveDbChangeSet:
+    crate::program::model::listing::data_type_archive_change_set::DataTypeArchiveChangeSet
+    + crate::framework::data::domain_object_db_change_set::DomainObjectDBChangeSet
+{
+}
+
 /// Placeholder for `ghidra.program.model.data.DefaultDataType`, referenced by
 /// [`Undefined::is_undefined`](crate::program::model::data::undefined::is_undefined) (via
 /// `DataType::is_default_data_type`) before the real class is ported. `Undefined` only ever

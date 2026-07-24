@@ -1,6 +1,7 @@
 pub mod bookmark;
 pub mod code;
 pub mod data;
+pub mod data_type_archive_db;
 pub mod db_cache;
 pub mod db_factory;
 pub mod db_object;
@@ -21,6 +22,7 @@ pub mod util;
 
 pub use bookmark::OldBookmark;
 pub use code::StringDiff;
+pub use data_type_archive_db::DataTypeArchiveDB;
 pub use db_cache::{DbCache, DbCacheHandle};
 pub use db_factory::DbFactory;
 pub use db_object::{DbObject, DbObjectState};

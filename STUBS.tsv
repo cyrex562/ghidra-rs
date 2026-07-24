@@ -319,3 +319,5 @@ ts	stub_class	referenced_by
 2026-07-23T20:00:00Z	ConstructState	OpTplWalker
 2026-07-23T21:00:00Z	ParamMeasure	HighParamID
 2026-07-23T22:00:00Z	AddressXML	ParamEntry
+2026-07-23T23:00:00Z	ProjectDataTypeManager	DataTypeArchiveDB
+2026-07-23T23:05:00Z	DataTypeArchiveDbChangeSet	DataTypeArchiveDB
