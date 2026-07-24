@@ -24,7 +24,7 @@ DONE	trait	137	8	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	137	10	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/VariableStorageManager.java
 DONE	trait	135	8	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/LabelHistoryAdapter.java
 DONE	trait	135	7	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/LibraryDB.java
-TODO	trait	135	7	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/NamespaceDB.java
+DONE	trait	135	7	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/NamespaceDB.java
 TODO	trait	134	26	249	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolManager.java
 TODO	trait	132	18	115	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDatabaseAdapter.java
 TODO	trait	131	18	24	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/SymbolDB.java
