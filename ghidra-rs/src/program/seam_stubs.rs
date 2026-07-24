@@ -16,7 +16,7 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
-use crate::program::model::listing::Function;
+use crate::program::model::listing::{Function, FunctionTag};
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
@@ -2290,4 +2290,35 @@ pub trait ModuleDB: crate::program::model::listing::ProgramModule {}
 /// `ghidra.program.database.module.FragmentDB implements ProgramFragment`, before the real class
 /// is ported.
 pub trait FragmentDB: crate::program::model::listing::ProgramFragment {}
+
+/// Placeholder for the subset of `ghidra.program.database.ProgramDB`'s API that
+/// [`FunctionTagManagerDb`](crate::program::database::function::FunctionTagManagerDb) needs from
+/// its owning program, before the real `ProgramDB` port (currently a bare struct implementing
+/// only [`crate::program::model::listing::Program`]) exposes these members: reporting an IO
+/// error, firing `ChangeManager` notifications for a tag being created/edited/deleted, and
+/// invalidating cached function tags (folding in `ProgramDB.getFunctionManager()
+/// .functionTagsChanged()`, since `FunctionManagerDB` is not yet ported either). All methods take
+/// `&self` (rather than `&mut self`), mirroring [`PrototypeManagerProgram`]'s and
+/// `NamespaceManager`'s `Symbol::set_namespace`, since a real `ProgramDB` mutates its change-event
+/// bookkeeping through interior locking, not exclusive Rust ownership.
+pub trait FunctionTagManagerProgram {
+    /// Stands in for `ProgramDB.dbError(IOException)`.
+    fn db_error(&self, err: &io::Error);
+
+    /// Stands in for `ProgramDB.tagCreated(FunctionTag, ProgramEvent)`, called with
+    /// `ProgramEvent.FUNCTION_TAG_CREATED`.
+    fn tag_created(&self, tag: &dyn FunctionTag);
+
+    /// Stands in for `ProgramDB.tagChanged(FunctionTag, ProgramEvent, Object, Object)`, called
+    /// with `ProgramEvent.FUNCTION_TAG_CHANGED` when a tag's name or comment is edited.
+    fn tag_changed(&self, tag: &dyn FunctionTag, old_value: &str, new_value: &str);
+
+    /// Stands in for `ProgramDB.tagChanged(FunctionTag, ProgramEvent, Object, Object)`, called
+    /// with `ProgramEvent.FUNCTION_TAG_DELETED` (Java passes `tag` as both the affected object and
+    /// the old value, and `null` as the new value).
+    fn tag_deleted(&self, tag: &dyn FunctionTag);
+
+    /// Stands in for `ProgramDB.getFunctionManager().functionTagsChanged()`.
+    fn function_tags_changed(&self);
+}
 
