@@ -31,7 +31,7 @@ DONE	trait	131	18	24	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	130	6	163	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/references/ReferenceDBManager.java
 DONE	trait	129	5	156	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CodeUnitDB.java
 DONE	trait	130	4	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/InstDBAdapter.java
-TODO	trait	128	3	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CommentHistoryAdapter.java
+DONE	trait	128	3	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CommentHistoryAdapter.java
 TODO	trait	129	3	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/ProtoDBAdapter.java
 TODO	trait	128	3	102	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/PrototypeManager.java
 TODO	trait	127	18	529	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CodeManager.java
