@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	130	4	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/disassemble/DisassemblerConflictHandler.java
+DONE	trait	130	4	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/disassemble/DisassemblerConflictHandler.java
 TODO	trait	132	108	278	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighParamID.java
 TODO	trait	131	306	272	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamEntry.java
 TODO	trait	127	72	65	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/CreateFunctionCmd.java
