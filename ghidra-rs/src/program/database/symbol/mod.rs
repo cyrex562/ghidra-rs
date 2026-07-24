@@ -1,4 +1,5 @@
 pub mod class_symbol;
+pub mod label_history_adapter;
 pub mod namespace_manager;
 pub mod overlapping_namespace_exception;
 pub mod symbol_db;
@@ -7,6 +8,7 @@ pub mod variable_storage_db_adapter;
 pub mod variable_storage_manager;
 
 pub use class_symbol::ClassSymbol;
+pub use label_history_adapter::LabelHistoryAdapter;
 pub use namespace_manager::NamespaceManagerDB;
 pub use overlapping_namespace_exception::OverlappingNamespaceException;
 pub use symbol_db::SymbolDB;
