@@ -1,5 +1,6 @@
 pub mod class_symbol;
 pub mod equate_db_adapter;
+pub mod equate_ref_db_adapter;
 pub mod label_history_adapter;
 pub mod library_db;
 pub mod namespace_db;
@@ -13,6 +14,7 @@ pub mod variable_storage_manager;
 
 pub use class_symbol::ClassSymbol;
 pub use equate_db_adapter::{EquateDBAdapter, GetRecordKeyError};
+pub use equate_ref_db_adapter::{EquateRefDBAdapter, MoveAddressRangeError};
 pub use label_history_adapter::LabelHistoryAdapter;
 pub use library_db::LibraryDb;
 pub use namespace_db::NamespaceDb;
