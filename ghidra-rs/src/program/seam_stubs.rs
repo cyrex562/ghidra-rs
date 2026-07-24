@@ -2139,10 +2139,3 @@ pub trait ParamMeasure {
     }
 }
 
-/// Placeholder for `ghidra.program.database.references.RefList`, referenced by
-/// [`ToAdapter`](crate::program::database::references::to_adapter::ToAdapter) before the real
-/// class is ported. `ToAdapter` only ever constructs and opaquely returns this type (the concrete
-/// `ToAdapterV1`/`ToAdapterV0`/`ToAdapterSharedTable` subclasses that inspect its contents are not
-/// ported either), so no members are needed yet.
-pub trait RefList {}
-

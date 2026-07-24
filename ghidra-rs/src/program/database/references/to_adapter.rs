@@ -20,15 +20,13 @@
 //! left for whichever concrete subclass is ported first, since they describe that subclass's own
 //! table layout rather than the trait's dynamic-dispatch surface.
 //!
-//! `RefList` is not yet ported, so a minimal placeholder trait for it lives in
-//! [`crate::program::seam_stubs`] (see `STUBS.tsv`).
+//! `RefList` is now ported (see `ref_list.rs`).
 
 use std::io;
 
-use crate::program::database::references::RecordAdapter;
+use crate::program::database::references::{RecordAdapter, RefList};
 use crate::program::database::ProgramDB;
 use crate::program::model::address::{Address, AddressIterator, AddressSetView, AddressSpace};
-use crate::program::seam_stubs::RefList;
 
 /// Adapter storing, per destination address, the list of references that point to it.
 ///
@@ -133,15 +131,118 @@ pub trait ToAdapter: RecordAdapter {
 mod tests {
     use super::*;
     use crate::framework::db::{DBRecord, Field, FieldType, Schema};
+    use crate::program::database::db_object::{DbObject, DbObjectState};
+    use crate::program::database::references::EmptyMemReferenceIterator;
     use crate::program::model::address::AddressSpaceType;
+    use crate::program::model::symbol::{RefType, Reference, ReferenceIterator, SourceType};
     use std::collections::HashMap;
     use std::sync::Arc;
 
+    /// An opaque stand-in: `ToAdapter` only ever constructs and returns a `RefList`, it never
+    /// inspects one, so this mock tracks just enough (`to`-address offsets) to prove round-trip
+    /// storage without needing a real reference-list implementation.
     struct MockRefList {
         refs: Vec<i64>,
+        state: DbObjectState,
     }
 
-    impl RefList for MockRefList {}
+    impl MockRefList {
+        fn new() -> Self {
+            MockRefList {
+                refs: Vec::new(),
+                state: DbObjectState::new(0),
+            }
+        }
+    }
+
+    impl DbObject for MockRefList {
+        fn state(&self) -> &DbObjectState {
+            &self.state
+        }
+
+        fn refresh(&self, _record: Option<&DBRecord>) -> bool {
+            true
+        }
+    }
+
+    impl RefList for MockRefList {
+        fn add_ref(
+            &mut self,
+            _from_addr: &Address,
+            to_addr: &Address,
+            _ref_type: RefType,
+            _op_index: i32,
+            _symbol_id: i64,
+            _is_primary: bool,
+            _source: SourceType,
+            _is_offset: bool,
+            _is_shift: bool,
+            _offset_or_shift: i64,
+        ) -> io::Result<()> {
+            self.refs.push(to_addr.offset());
+            Ok(())
+        }
+
+        fn update_ref_type(
+            &mut self,
+            _addr: &Address,
+            _op_index: i32,
+            _ref_type: RefType,
+        ) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn get_ref(&self, _address: &Address, _op_index: i32) -> Option<Arc<dyn Reference>> {
+            None
+        }
+
+        fn remove_ref(&mut self, addr: &Address, _op_index: i32) -> io::Result<bool> {
+            let before = self.refs.len();
+            self.refs.retain(|offset| *offset != addr.offset());
+            Ok(self.refs.len() != before)
+        }
+
+        fn is_empty(&self) -> bool {
+            self.refs.is_empty()
+        }
+
+        fn set_primary(&mut self, _reference: &dyn Reference, _is_primary: bool) -> io::Result<bool> {
+            Ok(false)
+        }
+
+        fn get_refs(&self) -> Box<dyn ReferenceIterator> {
+            Box::new(EmptyMemReferenceIterator)
+        }
+
+        fn get_all_refs(&self) -> Vec<Arc<dyn Reference>> {
+            Vec::new()
+        }
+
+        fn get_num_refs(&self) -> i32 {
+            self.refs.len() as i32
+        }
+
+        fn get_primary_ref(&self, _op_index: i32) -> Option<Arc<dyn Reference>> {
+            None
+        }
+
+        fn remove_all(&mut self) -> io::Result<()> {
+            self.refs.clear();
+            Ok(())
+        }
+
+        fn set_symbol_id(&mut self, _reference: &dyn Reference, _symbol_id: i64) -> io::Result<bool> {
+            Ok(false)
+        }
+
+        fn has_reference(&self, _op_index: i32) -> bool {
+            !self.refs.is_empty()
+        }
+
+        fn get_reference_level(&self) -> i8 {
+            -1
+        }
+    }
 
     fn test_schema() -> Arc<Schema> {
         Arc::new(Schema::new(
@@ -222,8 +323,8 @@ mod tests {
             to_addr: &Address,
         ) -> io::Result<Box<dyn RefList>> {
             let key = to_addr.offset();
-            self.ref_lists.insert(key, MockRefList { refs: Vec::new() });
-            Ok(Box::new(MockRefList { refs: Vec::new() }))
+            self.ref_lists.insert(key, MockRefList::new());
+            Ok(Box::new(MockRefList::new()))
         }
 
         fn get_ref_list(
@@ -233,10 +334,11 @@ mod tests {
             _to_addr: i64,
         ) -> io::Result<Option<Box<dyn RefList>>> {
             let key = to.offset();
-            Ok(self
-                .ref_lists
-                .get(&key)
-                .map(|list| Box::new(MockRefList { refs: list.refs.clone() }) as Box<dyn RefList>))
+            Ok(self.ref_lists.get(&key).map(|list| {
+                let mut cloned = MockRefList::new();
+                cloned.refs = list.refs.clone();
+                Box::new(cloned) as Box<dyn RefList>
+            }))
         }
 
         fn has_ref_to(&self, to_addr: i64) -> io::Result<bool> {

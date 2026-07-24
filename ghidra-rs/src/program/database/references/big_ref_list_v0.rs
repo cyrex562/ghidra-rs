@@ -9,13 +9,14 @@
 //! scale.
 //!
 //! This class was selected as a dependency-cycle cut-point, so it is ported here as a trait rather
-//! than a concrete struct. `BigRefListV0`'s abstract-method overrides (inherited from `RefList`,
-//! the same base class `RefListV0` implements) map directly to trait methods: `addRef`/
-//! `getAllRefs`/`getNumRefs`/`hasReference`/`getPrimaryRef`/`getRef`/`getRefs`/`isEmpty`/
-//! `getReferenceLevel`/`removeAll`/`removeRef`/`setPrimary`/`setSymbolID`/`updateRefType`, plus the
-//! package-private bulk-insert helpers `addRefs(ReferenceIterator)` and `addRefs(Reference[])` (both
-//! overloads exist here, unlike `RefListV0` which only has the array form) used by the
-//! `RefList.checkRefListSize` promotion path and by `ToAdapter`/`FromAdapter` upgrade paths.
+//! than a concrete struct. `BigRefListV0`'s abstract-method overrides are inherited from
+//! `RefList` (the same base class `RefListV0` implements): `addRef`/`getAllRefs`/`getNumRefs`/
+//! `hasReference`/`getPrimaryRef`/`getRef`/`getRefs`/`isEmpty`/`getReferenceLevel`/`removeAll`/
+//! `removeRef`/`setPrimary`/`setSymbolID`/`updateRefType`, all declared on the [`RefList`]
+//! supertrait. This trait only adds the package-private bulk-insert helpers
+//! `addRefs(ReferenceIterator)` and `addRefs(Reference[])` (both overloads exist here, unlike
+//! `RefListV0` which only has the array form) used by the `RefList.checkRefListSize` promotion
+//! path and by `ToAdapter`/`FromAdapter` upgrade paths.
 //!
 //! Not ported here: the two static factory methods (`createNew`/`createExisting`), the private
 //! constructors, the private per-row table helpers (`appendRef`/`getRef(DBRecord)`/
@@ -24,21 +25,18 @@
 //! the contract rather than the dynamic-dispatch surface other in-package classes call through —
 //! the same convention `RefListV0` already uses for its own byte-codec helpers. `checkRefListSize`
 //! is also not ported: `BigRefListV0`'s override is a trivial no-op (`return this;`, since a
-//! `BigRefListV0` is already as big as it gets), and the real logic lives on the `RefList` base
-//! class's still-unported default method, which additionally needs `DbCache<RefList>` — deferred
-//! until `RefList` itself is ported, mirroring why `RefListV0` also leaves it out.
+//! `BigRefListV0` is already as big as it gets), and the real logic lives on `RefList`'s own
+//! still-unported default method (see `ref_list.rs`'s module docs for why).
 //!
-//! `RefList` is not yet ported (still `TODO` in `PORT_MANIFEST.tsv`), so this trait extends the
-//! existing minimal placeholder trait for it in [`crate::program::seam_stubs`] (see `STUBS.tsv`),
-//! mirroring the Java `BigRefListV0 extends RefList` relationship and reusing the same stub
+//! `RefList` is now ported (see `ref_list.rs`), so this trait declares it as a supertrait,
+//! mirroring the Java `BigRefListV0 extends RefList` relationship and reusing the same supertrait
 //! `RefListV0` already extends.
 
 use std::io;
 use std::sync::Arc;
 
-use crate::program::model::address::Address;
-use crate::program::model::symbol::{RefType, Reference, ReferenceIterator, SourceType};
-use crate::program::seam_stubs::RefList;
+use crate::program::database::references::RefList;
+use crate::program::model::symbol::{Reference, ReferenceIterator};
 
 /// The one-row-per-reference list for a single address (either outgoing "from" references or
 /// incoming "to" references, depending on how the owning adapter constructed it), used once the
@@ -49,28 +47,6 @@ use crate::program::seam_stubs::RefList;
 /// intentionally left out (the static factories, the private per-row table helpers, the nested
 /// iterator class, and `checkRefListSize`).
 pub trait BigRefListV0: RefList {
-    /// Appends a single new reference. Stands in for
-    /// `BigRefListV0.addRef(Address, Address, RefType, int, long, boolean, SourceType, boolean,
-    /// boolean, long)`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if there was a problem accessing the database.
-    #[allow(clippy::too_many_arguments)]
-    fn add_ref(
-        &mut self,
-        from_addr: &Address,
-        to_addr: &Address,
-        ref_type: RefType,
-        op_index: i32,
-        symbol_id: i64,
-        is_primary: bool,
-        source: SourceType,
-        is_offset: bool,
-        is_shift: bool,
-        offset_or_shift: i64,
-    ) -> io::Result<()>;
-
     /// Appends every reference produced by `ref_iter` in one pass. Stands in for
     /// `BigRefListV0.addRefs(ReferenceIterator)`, used by the `RefList.checkRefListSize`
     /// promotion path to bulk-copy an existing list's references into a newly promoted
@@ -88,89 +64,14 @@ pub trait BigRefListV0: RefList {
     ///
     /// Returns an error if there was a problem accessing the database.
     fn add_refs(&mut self, refs: &[Arc<dyn Reference>]) -> io::Result<()>;
-
-    /// Returns every reference currently stored in this list. Stands in for
-    /// `BigRefListV0.getAllRefs()`.
-    fn get_all_refs(&self) -> Vec<Arc<dyn Reference>>;
-
-    /// Returns the number of references stored in this list. Stands in for
-    /// `BigRefListV0.getNumRefs()`.
-    fn get_num_refs(&self) -> i32;
-
-    /// Returns true if `op_index` has a corresponding reference. Only meaningful for "from" lists,
-    /// mirroring the Java doc note ("This is only of value for the From Refs"). Stands in for
-    /// `BigRefListV0.hasReference(int)`.
-    fn has_reference(&self, op_index: i32) -> bool;
-
-    /// Returns the primary reference for `op_index`, if any. Stands in for
-    /// `BigRefListV0.getPrimaryRef(int)`.
-    fn get_primary_ref(&self, op_index: i32) -> Option<Arc<dyn Reference>>;
-
-    /// Returns the reference to/from `ref_address` (depending on list direction) at `op_index`, if
-    /// any. Stands in for `BigRefListV0.getRef(Address, int)`.
-    fn get_ref(&self, ref_address: &Address, op_index: i32) -> Option<Arc<dyn Reference>>;
-
-    /// Returns an iterator over every reference in this list. Stands in for
-    /// `BigRefListV0.getRefs()`.
-    fn get_refs(&self) -> Box<dyn ReferenceIterator>;
-
-    /// Returns true if this list holds no references. Stands in for `BigRefListV0.isEmpty()`.
-    fn is_empty(&self) -> bool;
-
-    /// Returns this list's cached reference level (used to prioritize which reference wins a
-    /// symbol's primary label), or `-1` if unset. Stands in for `BigRefListV0.getReferenceLevel()`.
-    fn get_reference_level(&self) -> i8;
-
-    /// Empties this list, discarding all references. Stands in for `BigRefListV0.removeAll()`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if there was a problem accessing the database.
-    fn remove_all(&mut self) -> io::Result<()>;
-
-    /// Removes the reference to/from `delete_addr` at `op_index`, if present, returning whether one
-    /// was removed. Stands in for `BigRefListV0.removeRef(Address, int)`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if there was a problem accessing the database.
-    fn remove_ref(&mut self, delete_addr: &Address, op_index: i32) -> io::Result<bool>;
-
-    /// Sets or clears `reference`'s primary flag, returning whether a change was made (`false` when
-    /// `is_primary` already matched). Stands in for `BigRefListV0.setPrimary(Reference, boolean)`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if there was a problem accessing the database.
-    fn set_primary(&mut self, reference: &dyn Reference, is_primary: bool) -> io::Result<bool>;
-
-    /// Sets `reference`'s associated symbol ID, returning whether a change was made. Stands in for
-    /// `BigRefListV0.setSymbolID(Reference, long)`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if there was a problem accessing the database.
-    fn set_symbol_id(&mut self, reference: &dyn Reference, symbol_id: i64) -> io::Result<bool>;
-
-    /// Changes the reference type of the reference to/from `change_addr` at `op_index`. Stands in
-    /// for `BigRefListV0.updateRefType(Address, int, RefType)`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if there was a problem accessing the database.
-    fn update_ref_type(
-        &mut self,
-        change_addr: &Address,
-        op_index: i32,
-        ref_type: RefType,
-    ) -> io::Result<()>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::database::db_object::{DbObject, DbObjectState};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::symbol::ReferenceIteratorAdapter;
+    use crate::program::model::symbol::{RefType, ReferenceIteratorAdapter, SourceType};
 
     struct MockReference {
         from: Address,
@@ -256,6 +157,7 @@ mod tests {
     /// prove the trait is object-safe and behaves like the Java class for the mutation/query pairs
     /// that matter (including the `ReferenceIterator`-driven bulk insert `RefListV0` doesn't have).
     struct MockBigRefListV0 {
+        state: DbObjectState,
         refs: Vec<Arc<dyn Reference>>,
         ref_level: i8,
     }
@@ -263,15 +165,24 @@ mod tests {
     impl MockBigRefListV0 {
         fn new() -> Self {
             MockBigRefListV0 {
+                state: DbObjectState::new(0),
                 refs: Vec::new(),
                 ref_level: -1,
             }
         }
     }
 
-    impl RefList for MockBigRefListV0 {}
+    impl DbObject for MockBigRefListV0 {
+        fn state(&self) -> &DbObjectState {
+            &self.state
+        }
 
-    impl BigRefListV0 for MockBigRefListV0 {
+        fn refresh(&self, _record: Option<&crate::framework::db::DBRecord>) -> bool {
+            true
+        }
+    }
+
+    impl RefList for MockBigRefListV0 {
         fn add_ref(
             &mut self,
             from_addr: &Address,
@@ -294,18 +205,6 @@ mod tests {
                 is_primary,
                 symbol_id,
             }));
-            Ok(())
-        }
-
-        fn add_refs_from_iter(&mut self, ref_iter: &mut dyn ReferenceIterator) -> io::Result<()> {
-            while let Some(r) = ref_iter.next_reference() {
-                self.refs.push(r);
-            }
-            Ok(())
-        }
-
-        fn add_refs(&mut self, refs: &[Arc<dyn Reference>]) -> io::Result<()> {
-            self.refs.extend(refs.iter().cloned());
             Ok(())
         }
 
@@ -422,6 +321,20 @@ mod tests {
                     });
                 }
             }
+            Ok(())
+        }
+    }
+
+    impl BigRefListV0 for MockBigRefListV0 {
+        fn add_refs_from_iter(&mut self, ref_iter: &mut dyn ReferenceIterator) -> io::Result<()> {
+            while let Some(r) = ref_iter.next_reference() {
+                self.refs.push(r);
+            }
+            Ok(())
+        }
+
+        fn add_refs(&mut self, refs: &[Arc<dyn Reference>]) -> io::Result<()> {
+            self.refs.extend(refs.iter().cloned());
             Ok(())
         }
     }
