@@ -2138,3 +2138,30 @@ pub trait LanguageTranslatorFactory {
     ) -> Option<Arc<dyn LanguageTranslator>>;
 }
 
+/// Placeholder for `ghidra.program.model.pcode.ParamMeasure`, referenced by
+/// [`HighParamID`](crate::program::model::pcode::high_param_id::HighParamID)
+/// before the real class is ported. Exposes only `isEmpty`/`getVarnode`/`getDataType`/`getRank`,
+/// the members `HighParamID` itself calls. Defaults mirror a freshly constructed (not yet
+/// decoded) `ParamMeasure`, whose fields are all `null` until `ParamMeasure.decode` runs.
+pub trait ParamMeasure {
+    /// Stands in for `ParamMeasure.isEmpty()`.
+    fn is_empty(&self) -> bool {
+        true
+    }
+
+    /// Stands in for `ParamMeasure.getVarnode()`.
+    fn get_varnode(&self) -> Option<Varnode> {
+        None
+    }
+
+    /// Stands in for `ParamMeasure.getDataType()`.
+    fn get_data_type(&self) -> Option<Box<dyn DataType>> {
+        None
+    }
+
+    /// Stands in for `ParamMeasure.getRank()`.
+    fn get_rank(&self) -> Option<i32> {
+        None
+    }
+}
+
