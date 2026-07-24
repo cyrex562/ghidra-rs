@@ -13,6 +13,7 @@ pub mod merge_program_generator;
 pub mod overlay_region_supplier;
 pub mod overlay_space_db_adapter;
 pub mod program_address_factory;
+pub mod program_compiler_spec;
 pub mod program_db;
 pub mod program_modifier_listener;
 pub mod properties;
@@ -33,6 +34,7 @@ pub use merge_program_generator::MergeProgramGenerator;
 pub use overlay_region_supplier::OverlayRegionSupplier;
 pub use overlay_space_db_adapter::{CreateOverlaySpaceError, OverlaySpaceDBAdapter};
 pub use program_address_factory::{CheckOverlayNameError, ProgramAddressFactory};
+pub use program_compiler_spec::{enable_java_language_decompilation, ProgramCompilerSpec};
 pub use program_db::ProgramDB;
 pub use program_modifier_listener::ProgramModifierListener;
 pub use properties::{
