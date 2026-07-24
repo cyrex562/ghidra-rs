@@ -13422,7 +13422,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/InstDBAdapterV1.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/InstructionDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/InstructionRecordIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/ProtoDBAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/ProtoDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/ProtoDBAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/ProtoDBAdapterV1.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/PrototypeManager.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
