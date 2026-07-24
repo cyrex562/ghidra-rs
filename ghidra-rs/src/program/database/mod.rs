@@ -10,6 +10,7 @@ pub mod manager_db;
 pub mod map;
 pub mod mem;
 pub mod merge_program_generator;
+pub mod module;
 pub mod overlay_region_supplier;
 pub mod overlay_space_db_adapter;
 pub mod program_address_factory;
