@@ -285,7 +285,6 @@ ts	stub_class	referenced_by
 2026-07-22T00:00:00Z	ProjectLockLike	DefaultProjectData
 2026-07-22T09:00:00Z	PluginTool	Plugin
 2026-07-22T00:00:00Z	InstructionIterator.has_next	StructureFactory
-2026-07-22T00:00:00Z	ParamEntryLike	ParamListStandard
 2026-07-22T00:00:00Z	ModelRuleLike	ParamListStandard
 2026-07-22T15:00:00Z	DataTypeInfoLike	CompositeDataTypeElementInfo
 2026-07-22T16:00:00Z	AddressKeyIteratorLike	PropertyMapDB
@@ -319,3 +318,4 @@ ts	stub_class	referenced_by
 2026-07-23T19:00:00Z	PcodeFactory	FunctionPrototype
 2026-07-23T20:00:00Z	ConstructState	OpTplWalker
 2026-07-23T21:00:00Z	ParamMeasure	HighParamID
+2026-07-23T22:00:00Z	AddressXML	ParamEntry

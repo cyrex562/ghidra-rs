@@ -1040,8 +1040,13 @@ pub struct PrototypePieces {
 /// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
 /// before the real class is ported. Only the `type`/`isIndirect`/`hiddenReturnPtr`/`address`
 /// fields are modeled, since those are the only members those interfaces read or write;
-/// `joinPieces` and `isThisPointer` are omitted until something needs them. `Debug` is
-/// intentionally not derived since `DataType` has no `Debug` supertrait yet.
+/// `isThisPointer` is omitted until something needs it. `Debug` is intentionally not derived
+/// since `DataType` has no `Debug` supertrait yet.
+///
+/// Grown (with a default of `None`, so pre-existing `ParameterPieces::default()`/struct-update
+/// call sites keep compiling) to also cover `joinPieces`, which
+/// [`ParamEntry::get_addr_by_slot_justified`](crate::program::model::lang::param_entry::ParamEntry::get_addr_by_slot_justified)
+/// needs to report a "join" space allocation's component pieces.
 #[derive(Default, Clone)]
 pub struct ParameterPieces {
     /// The data-type of the parameter (`ParameterPieces.type`; renamed since `type` is a Rust
@@ -1055,6 +1060,62 @@ pub struct ParameterPieces {
     /// The starting address of the parameter's storage, or `None` if not yet assigned
     /// (`ParameterPieces.address`).
     pub address: Option<Address>,
+    /// If non-`None`, multiple pieces stitched together for a single logical value
+    /// (`ParameterPieces.joinPieces`).
+    pub join_pieces: Option<Vec<Varnode>>,
+}
+
+/// Placeholder for `ghidra.program.model.pcode.AddressXML`, referenced by
+/// [`ParamEntry::encode`](crate::program::model::lang::param_entry::ParamEntry::encode) before
+/// the real class is ported. Only the piece of behavior `ParamEntry::encode` needs -- writing a
+/// sized (and optionally "join") address as an `<addr>` element -- is modeled; XML restore and
+/// the real class's full piece-encoding wire format (`AddressXML.encode(Encoder, Varnode[],
+/// long)`, which needs `Varnode.encodePiece` and the `VARIABLE_SPACE`/`ATTRIB_LOGICALSIZE`
+/// machinery) are left to the real port. This placeholder's join encoding is a simplified stand
+/// in (it writes the overall joined range's space/offset/size, not a per-piece breakdown).
+pub struct AddressXML {
+    space: Arc<AddressSpace>,
+    offset: i64,
+    size: i32,
+    join_pieces: Option<Vec<Varnode>>,
+}
+
+impl AddressXML {
+    /// Stands in for `new AddressXML(AddressSpace, long, int)`.
+    pub fn new(space: Arc<AddressSpace>, offset: i64, size: i32) -> Self {
+        Self { space, offset, size, join_pieces: None }
+    }
+
+    /// Stands in for `new AddressXML(AddressSpace, long, int, Varnode[])`.
+    pub fn with_join(space: Arc<AddressSpace>, offset: i64, size: i32, join_pieces: Vec<Varnode>) -> Self {
+        Self { space, offset, size, join_pieces: Some(join_pieces) }
+    }
+
+    /// Stands in for `AddressXML.encode(Encoder)`.
+    pub fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
+        encoder.open_element(crate::program::model::pcode::ELEM_ADDR)?;
+        if self.join_pieces.is_none() {
+            encoder.write_space(crate::program::model::pcode::ATTRIB_SPACE, self.space.as_ref())?;
+            encoder.write_unsigned_integer(
+                crate::program::model::pcode::ATTRIB_OFFSET,
+                self.offset as u64,
+            )?;
+            if self.size != 0 {
+                encoder
+                    .write_signed_integer(crate::program::model::pcode::ATTRIB_SIZE, self.size as i64)?;
+            }
+        } else {
+            encoder.write_space(crate::program::model::pcode::ATTRIB_SPACE, self.space.as_ref())?;
+            encoder.write_unsigned_integer(
+                crate::program::model::pcode::ATTRIB_OFFSET,
+                self.offset as u64,
+            )?;
+            encoder
+                .write_signed_integer(crate::program::model::pcode::ATTRIB_SIZE, self.size as i64)?;
+        }
+        encoder.close_element(crate::program::model::pcode::ELEM_ADDR)?;
+        Ok(())
+    }
 }
 
 /// Placeholder for `ghidra.program.model.lang.ParamListStandard`, referenced by
@@ -1088,113 +1149,6 @@ pub trait ParamListStandardLike {
     ) -> i32 {
         let _ = (dt, proto, pos, dt_manager, status, res);
         crate::program::model::lang::protorules::assign_action::FAIL
-    }
-}
-
-/// Placeholder for `ghidra.program.model.lang.ParamEntry`, referenced by
-/// [`ParamListStandard`](crate::program::model::lang::param_list_standard::ParamListStandard)
-/// before the real class is ported. Exposes only the accessors that trait's default methods
-/// read (and the one method, `get_addr_by_slot`, that mutates a [`ParameterPieces`]); the real
-/// slot-allocation algorithm, XML restore, and join-space handling live on the concrete class.
-pub trait ParamEntryLike {
-    /// Stands in for `ParamEntry.getSpace()`. Left required since there is no universally
-    /// sensible placeholder address space.
-    fn get_space(&self) -> Arc<AddressSpace>;
-
-    /// Stands in for `ParamEntry.getGroup()`.
-    fn get_group(&self) -> i32 {
-        0
-    }
-
-    /// Stands in for `ParamEntry.getAllGroups()`.
-    fn get_all_groups(&self) -> Vec<i32> {
-        vec![self.get_group()]
-    }
-
-    /// Stands in for `ParamEntry.getMinSize()`.
-    fn get_min_size(&self) -> i32 {
-        0
-    }
-
-    /// Stands in for `ParamEntry.getSize()`.
-    fn get_size(&self) -> i32 {
-        0
-    }
-
-    /// Stands in for `ParamEntry.getAlign()`.
-    fn get_align(&self) -> i32 {
-        0
-    }
-
-    /// Stands in for `ParamEntry.getAddressBase()`.
-    fn get_address_base(&self) -> i64 {
-        0
-    }
-
-    /// Stands in for `ParamEntry.getType()`.
-    fn get_type(&self) -> crate::program::model::lang::storage_class::StorageClass {
-        crate::program::model::lang::storage_class::StorageClass::General
-    }
-
-    /// Stands in for `ParamEntry.isExclusion()`.
-    fn is_exclusion(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `ParamEntry.isReverseStack()`.
-    fn is_reverse_stack(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `ParamEntry.isGrouped()`.
-    fn is_grouped(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `ParamEntry.isBigEndian()`.
-    fn is_big_endian(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `ParamEntry.justifiedContain(Address, int)`. Defaults to "does not
-    /// contain", mirroring an entry in an unrelated address space.
-    fn justified_contain(&self, loc: &Address, size: i32) -> i32 {
-        let _ = (loc, size);
-        -1
-    }
-
-    /// Stands in for `ParamEntry.getSlot(Address, int)`.
-    fn get_slot(&self, loc: &Address, skip: i32) -> i32 {
-        let _ = (loc, skip);
-        0
-    }
-
-    /// Stands in for `ParamEntry.getAddrBySlot(int, int, int, ParameterPieces)`; the real method
-    /// allocates from consumed resource slots and writes the resulting address into
-    /// `param.address`. This default never finds room (leaves `param.address` as `None`),
-    /// mirroring an entry with no free slots.
-    fn get_addr_by_slot(
-        &self,
-        slot_num: i32,
-        size: i32,
-        align: i32,
-        param: &mut ParameterPieces,
-    ) -> i32 {
-        let _ = (size, align);
-        param.address = None;
-        slot_num
-    }
-
-    /// Stands in for `ParamEntry.encode(Encoder)`.
-    fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
-        let _ = encoder;
-        Ok(())
-    }
-
-    /// Stands in for `ParamEntry.isEquivalent(ParamEntry)`.
-    fn is_equivalent(&self, other: &dyn ParamEntryLike) -> bool {
-        let _ = other;
-        false
     }
 }
 

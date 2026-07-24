@@ -128,6 +128,9 @@ pub const ELEM_BHEAD: ElementId = ElementId::new("bhead", 119);
 // Real Ghidra id is 160 (`ElementId.java`'s `ELEM_GROUP`), continuing the local counter above
 // instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
 pub const ELEM_GROUP: ElementId = ElementId::new("group", 120);
+// Real Ghidra id is 168 (`ElementId.java`'s `ELEM_PENTRY`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_PENTRY: ElementId = ElementId::new("pentry", 121);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
@@ -212,4 +215,11 @@ pub const ATTRIB_SEPARATEFLOAT: AttributeId = AttributeId::new("separatefloat", 
 // Real Ghidra id is 68 (`AttributeId.java`'s `ATTRIB_SYMREF`), continuing the local counter above
 // instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
 pub const ATTRIB_SYMREF: AttributeId = AttributeId::new("symref", 61);
+// Real Ghidra ids are 121/120/149/116 (`AttributeId.java`'s `ATTRIB_MINSIZE`/`ATTRIB_MAXSIZE`/
+// `ATTRIB_STORAGE`/`ATTRIB_EXTENSION`), continuing the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_MINSIZE: AttributeId = AttributeId::new("minsize", 62);
+pub const ATTRIB_MAXSIZE: AttributeId = AttributeId::new("maxsize", 63);
+pub const ATTRIB_STORAGE: AttributeId = AttributeId::new("storage", 64);
+pub const ATTRIB_EXTENSION: AttributeId = AttributeId::new("extension", 65);
 pub const ATTRIB_UNKNOWN: AttributeId = AttributeId::new("XMLunknown", 159);

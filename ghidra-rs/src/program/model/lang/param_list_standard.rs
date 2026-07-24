@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::param_entry::ParamEntry;
 use crate::program::model::lang::param_list::{ParamList, WithSlotRec};
 use crate::program::model::lang::protorules::assign_action;
 use crate::program::model::lang::storage_class::StorageClass;
@@ -10,12 +11,12 @@ use crate::program::model::pcode::{
     Encoder, ATTRIB_KILLEDBYCALL, ATTRIB_SEPARATEFLOAT, ATTRIB_THISBEFORERETPOINTER, ELEM_GROUP,
     ELEM_INPUT, ELEM_OUTPUT,
 };
-use crate::program::seam_stubs::{ModelRuleLike, ParamEntryLike, ParameterPieces, PrototypePieces};
+use crate::program::seam_stubs::{ModelRuleLike, ParameterPieces, PrototypePieces};
 
 /// Classify a data-type for the purpose of picking a storage resource.
 ///
 /// Port of the static helper `ghidra.program.model.lang.ParamEntry.getBasicTypeClass`. Lives
-/// here rather than on [`ParamEntryLike`] since it only inspects the data-type, not any
+/// here rather than on [`ParamEntry`] since it only inspects the data-type, not any
 /// particular parameter-entry instance.
 pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
     if tp.is_typedef() {
@@ -34,7 +35,7 @@ pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
 
 /// Standard analysis for parameter lists.
 ///
-/// A list of resources ([`ParamEntryLike`] entries) describing possible storage locations for a
+/// A list of resources ([`ParamEntry`] entries) describing possible storage locations for a
 /// function's parameters (or return value), plus [`ModelRuleLike`] rules controlling how
 /// addresses get assigned to a given parameter's data-type.
 ///
@@ -47,13 +48,14 @@ pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
 /// `assignAddress`, `getNumParamEntry`, `getEntry`, `isBigEndian`, `extractTiles`,
 /// `extractStack`) are unique to this class, so they keep their original names.
 ///
-/// `encode` is provided (`encode_std`) since it only depends on the already-ported `Encoder` and
-/// the [`ParamEntryLike`]/[`ModelRuleLike`] placeholders. `restoreXml` is NOT provided: it
-/// constructs new `ParamEntry`/`ModelRule` instances from an XML stream (including
+/// `encode` is provided (`encode_std`) since it only depends on the already-ported `Encoder`,
+/// the real [`ParamEntry`] port, and the [`ModelRuleLike`] placeholder. `restoreXml` is NOT
+/// provided: it constructs new `ParamEntry`/`ModelRule` instances from an XML stream (including
 /// `SizeRestrictedFilter`/`ConvertToPointer` for the `pointermax` attribute), which needs those
 /// classes' real constructors, not just accessors on an opaque placeholder trait object. It
 /// remains an abstract, required method inherited from [`ParamList`], to be implemented once
-/// `ParamEntry`/`ModelRule` are ported. Likewise `getPotentialRegisterStorage` is not provided:
+/// `ModelRule` (and the `AddressXML` join-parsing it also needs) are ported. Likewise
+/// `getPotentialRegisterStorage` is not provided:
 /// the real method constructs `VariableStorage` instances, and the
 /// [`VariableStorage`](crate::program::seam_stubs::VariableStorage) placeholder is an empty
 /// marker trait with no constructor.
@@ -61,7 +63,7 @@ pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
 /// Port of `ghidra.program.model.lang.ParamListStandard`.
 pub trait ParamListStandard: ParamList {
     /// The resource list, in order (`ParamListStandard.entry`).
-    fn entries(&self) -> &[Box<dyn ParamEntryLike>];
+    fn entries(&self) -> &[Box<dyn ParamEntry>];
 
     /// Rules to apply when assigning addresses (`ParamListStandard.modelRules`).
     fn model_rules(&self) -> &[Box<dyn ModelRuleLike>];
@@ -175,7 +177,7 @@ pub trait ParamListStandard: ParamList {
         self.assign_address_fallback(store, dt, false, status, res)
     }
 
-    /// The number of [`ParamEntryLike`] entries in this list.
+    /// The number of [`ParamEntry`] entries in this list.
     ///
     /// Port of `ParamListStandard.getNumParamEntry`.
     fn get_num_param_entry(&self) -> usize {
@@ -185,7 +187,7 @@ pub trait ParamListStandard: ParamList {
     /// Within this list, get the entry at the given index.
     ///
     /// Port of `ParamListStandard.getEntry`.
-    fn get_entry(&self, index: usize) -> &dyn ParamEntryLike {
+    fn get_entry(&self, index: usize) -> &dyn ParamEntry {
         self.entries()[index].as_ref()
     }
 
@@ -337,7 +339,7 @@ pub trait ParamListStandard: ParamList {
     /// Extract all entries that have the given storage class and are single registers.
     ///
     /// Port of `ParamListStandard.extractTiles`.
-    fn extract_tiles(&self, res_type: StorageClass) -> Vec<&dyn ParamEntryLike> {
+    fn extract_tiles(&self, res_type: StorageClass) -> Vec<&dyn ParamEntry> {
         self.entries()
             .iter()
             .filter(|e| e.is_exclusion() && e.get_all_groups().len() == 1 && e.get_type() == res_type)
@@ -348,7 +350,7 @@ pub trait ParamListStandard: ParamList {
     /// If there is an entry corresponding to the stack resource in this list, return it.
     ///
     /// Port of `ParamListStandard.extractStack`.
-    fn extract_stack(&self) -> Option<&dyn ParamEntryLike> {
+    fn extract_stack(&self) -> Option<&dyn ParamEntry> {
         self.entries()
             .iter()
             .rev()
@@ -413,7 +415,7 @@ mod tests {
         capacity: i32,
     }
 
-    impl ParamEntryLike for MockEntry {
+    impl ParamEntry for MockEntry {
         fn get_space(&self) -> Arc<AddressSpace> {
             self.space.clone()
         }
@@ -466,7 +468,7 @@ mod tests {
             param.address = Some(Address::new(self.space.clone(), offset));
             slot_num + 1
         }
-        fn is_equivalent(&self, other: &dyn ParamEntryLike) -> bool {
+        fn is_equivalent(&self, other: &dyn ParamEntry) -> bool {
             self.get_group() == other.get_group() && self.get_type() == other.get_type()
         }
     }
@@ -511,12 +513,12 @@ mod tests {
     }
 
     struct MockParamListStandard {
-        entries: Vec<Box<dyn ParamEntryLike>>,
+        entries: Vec<Box<dyn ParamEntry>>,
         model_rules: Vec<Box<dyn ModelRuleLike>>,
     }
 
     impl ParamListStandard for MockParamListStandard {
-        fn entries(&self) -> &[Box<dyn ParamEntryLike>] {
+        fn entries(&self) -> &[Box<dyn ParamEntry>] {
             &self.entries
         }
         fn model_rules(&self) -> &[Box<dyn ModelRuleLike>] {
@@ -562,7 +564,7 @@ mod tests {
         where
             Self: Sized,
         {
-            unimplemented!("XML restore needs ported ParamEntry/ModelRule constructors")
+            unimplemented!("XML restore needs a ported ModelRule constructor and AddressXML")
         }
 
         fn get_potential_register_storage(&self, _prog: &dyn Program) -> Vec<Box<dyn VariableStorage>> {
