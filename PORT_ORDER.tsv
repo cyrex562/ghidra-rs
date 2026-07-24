@@ -49,7 +49,7 @@ DONE	trait	126	4	113	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	126	2	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/ThunkFunctionAdapter.java
 DONE	trait	127	8	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDBAdapter.java
 DONE	trait	129	9	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateRefDBAdapter.java
-TODO	trait	127	14	141	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateManager.java
+DONE	trait	127	14	141	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateManager.java
 TODO	trait	126	6	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDB.java
 TODO	trait	125	15	602	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionManagerDB.java
 TODO	trait	124	41	23	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/FunctionSymbol.java
