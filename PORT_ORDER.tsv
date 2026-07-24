@@ -3,7 +3,7 @@ DONE	trait	130	4	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 DONE	trait	132	108	278	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighParamID.java
 DONE	trait	131	306	272	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ParamEntry.java
 DONE	trait	127	72	65	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/CreateFunctionCmd.java
-TODO	trait	126	51	51	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/DataTypeArchiveDB.java
+DONE	trait	126	51	51	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/DataTypeArchiveDB.java
 TODO	trait	126	54	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/IntRangeMap.java
 TODO	trait	127	13	77	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/util/AddressRangeMapDB.java
 TODO	trait	128	46	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/OverlaySpaceDBAdapter.java
