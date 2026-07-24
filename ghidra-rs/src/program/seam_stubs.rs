@@ -1768,6 +1768,16 @@ pub trait HighSymbol: Send + Sync {
     fn get_dynamic_hash(&self) -> Option<i64> {
         None
     }
+
+    /// Stands in for `HighSymbol.decode(Decoder)`, used by
+    /// [`HighCodeSymbol::decode`](crate::program::model::pcode::high_code_symbol::HighCodeSymbol::decode)'s
+    /// default body. The real method decodes header attributes, resolves the datatype, and builds
+    /// the mapping entry list from the stream; that logic belongs to `HighSymbol` itself, which is
+    /// not yet ported, so this defaults to a no-op that consumes nothing from the stream.
+    fn decode(&mut self, decoder: &dyn Decoder) -> Result<(), DecoderException> {
+        let _ = decoder;
+        Ok(())
+    }
 }
 
 /// Placeholder for `ghidra.program.model.pcode.HighFunction`, referenced by
