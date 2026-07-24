@@ -16,6 +16,6 @@ pub use namespace_db::NamespaceDb;
 pub use namespace_manager::NamespaceManagerDB;
 pub use overlapping_namespace_exception::OverlappingNamespaceException;
 pub use symbol_db::SymbolDB;
-pub use symbol_manager::SymbolManagerDB;
+pub use symbol_manager::{SymbolManagerDb, SymbolManagerDB};
 pub use variable_storage_db_adapter::VariableStorageDBAdapter;
 pub use variable_storage_manager::VariableStorageManager;
