@@ -13401,7 +13401,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CodeUnitDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CodeUnitKeyIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CodeUnitRecordIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CommentHistoryAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CommentHistoryAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CommentHistoryAdapterNoTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CommentHistoryAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CommentTypeFilterAddressIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database code 
