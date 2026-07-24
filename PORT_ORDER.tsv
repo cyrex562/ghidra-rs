@@ -36,7 +36,7 @@ DONE	trait	129	3	0	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 DONE	trait	128	3	102	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/PrototypeManager.java
 DONE	trait	127	18	529	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/code/CodeManager.java
 DONE	trait	130	4	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/FragmentDBAdapter.java
-TODO	trait	130	6	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ParentChildDBAdapter.java
+DONE	trait	130	6	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ParentChildDBAdapter.java
 TODO	trait	130	4	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleDBAdapter.java
 TODO	trait	129	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ProgramTreeDBAdapter.java
 TODO	trait	128	4	146	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/module/ModuleManager.java
