@@ -1,5 +1,6 @@
 pub mod class_symbol;
 pub mod equate_db_adapter;
+pub mod equate_manager;
 pub mod equate_ref_db_adapter;
 pub mod label_history_adapter;
 pub mod library_db;
@@ -14,6 +15,11 @@ pub mod variable_storage_manager;
 
 pub use class_symbol::ClassSymbol;
 pub use equate_db_adapter::{EquateDBAdapter, GetRecordKeyError};
+pub use equate_manager::{
+    format_name_for_equate, format_name_for_equate_error, get_data_type_uuid,
+    get_equate_value_from_formatted_name, validate_equate_name, CreateEquateError, EquateManager,
+    DATATYPE_TAG, ERROR_TAG, FORMAT_DELIMITER,
+};
 pub use equate_ref_db_adapter::{EquateRefDBAdapter, MoveAddressRangeError};
 pub use label_history_adapter::LabelHistoryAdapter;
 pub use library_db::LibraryDb;
