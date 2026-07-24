@@ -13660,7 +13660,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/UserDataPathTransformer.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database sourcemap 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/AddressSetFilteredSymbolIterator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/ClassSymbol.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/CodeSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/CodeSymbol.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/symbol/EquateDBAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database symbol 

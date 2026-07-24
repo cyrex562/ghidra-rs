@@ -1,4 +1,5 @@
 pub mod class_symbol;
+pub mod code_symbol;
 pub mod equate_db;
 pub mod equate_db_adapter;
 pub mod equate_manager;
@@ -16,6 +17,7 @@ pub mod variable_storage_db_adapter;
 pub mod variable_storage_manager;
 
 pub use class_symbol::ClassSymbol;
+pub use code_symbol::{CodeSymbol, CodeSymbolObject};
 pub use equate_db::{EquateDb, RenameEquateError};
 pub use equate_db_adapter::{EquateDBAdapter, GetRecordKeyError};
 pub use equate_manager::{
