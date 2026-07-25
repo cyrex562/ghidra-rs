@@ -2,6 +2,7 @@ pub mod array_db;
 pub mod array_db_adapter;
 pub mod builtin_db_adapter;
 pub mod calling_convention_db_adapter;
+pub mod category_db_adapter;
 pub mod enum_signed_state;
 pub mod lazy_loading_caching_map;
 pub mod merge;
@@ -14,6 +15,7 @@ pub use calling_convention_db_adapter::{
     CallingConventionDBAdapter, DEFAULT_CALLING_CONVENTION_ID, FIRST_CALLING_CONVENTION_ID,
     UNKNOWN_CALLING_CONVENTION_ID,
 };
+pub use category_db_adapter::{CategoryDBAdapter, CATEGORY_NAME_COL, CATEGORY_PARENT_COL};
 pub use enum_signed_state::EnumSignedState;
 pub use lazy_loading_caching_map::LazyLoadingCachingMap;
 pub use merge::DataTypeMergeException;
