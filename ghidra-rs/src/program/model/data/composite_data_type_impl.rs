@@ -583,10 +583,12 @@ fn check_valid_name(name: &str) -> Result<(), InvalidNameException> {
 }
 
 /// Port of the static `DataTypeComponentImpl.getPreferredComponentLength(DataType, int)`, used by
-/// [`CompositeDataTypeImpl::composite_impl_preferred_component_length`]. See the module-level
-/// documentation for why `is_dynamic_with_specifiable_length` stands in for `(dataType
-/// instanceof Dynamic dynamic) && dynamic.canSpecifyLength()`.
-fn preferred_component_length_for_data_type(
+/// [`CompositeDataTypeImpl::composite_impl_preferred_component_length`] and (since the Java
+/// `CompositeDB.getPreferredComponentLength` body is identical up to this shared tail call) by
+/// [`CompositeDb`](crate::program::database::data::composite_db::CompositeDb)'s own port of that
+/// method. See the module-level documentation for why `is_dynamic_with_specifiable_length` stands
+/// in for `(dataType instanceof Dynamic dynamic) && dynamic.canSpecifyLength()`.
+pub(crate) fn preferred_component_length_for_data_type(
     data_type: &dyn DataType,
     is_dynamic_with_specifiable_length: bool,
     length: i32,
