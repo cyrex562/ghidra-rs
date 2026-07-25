@@ -16,7 +16,7 @@ use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::language_id::LanguageID;
 use crate::program::model::lang::register::{Register, RegisterRef};
-use crate::program::model::listing::{Function, FunctionTag};
+use crate::program::model::listing::{Function, FunctionTag, Program};
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::block_map::BlockMap;
 use crate::program::model::pcode::decoder::Decoder;
@@ -2436,5 +2436,23 @@ pub trait FunctionTagManagerProgram {
 
     /// Stands in for `ProgramDB.getFunctionManager().functionTagsChanged()`.
     fn function_tags_changed(&self);
+}
+
+/// Placeholder for `ghidra.program.database.external.ExternalManagerDB`, referenced by
+/// [`ExternalLocationDb`](crate::program::database::external::external_location_db::ExternalLocationDb)
+/// before the real class (which itself constructs `ExternalLocationDB` instances and reaches back
+/// into `SymbolManager`/`NamespaceManagerDB`/`FunctionManagerDB`) is ported -- that mutual
+/// construction is exactly what made both classes cycle cut-points. Exposes only the single member
+/// `ExternalLocationDB`'s default methods need directly: the owning program, used to resolve/assign
+/// data types via its `DataTypeManager`. The other `ExternalManagerDB` member `ExternalLocationDB`
+/// relies on -- `createFunction(ExternalLocation)` -- is instead modeled as a required method
+/// directly on `ExternalLocationDb` itself
+/// ([`ext_manager_create_function`](crate::program::database::external::external_location_db::ExternalLocationDb::ext_manager_create_function)),
+/// since satisfying it requires passing `this` back to the manager -- a self-referential call a
+/// generic placeholder trait can't express any more cleanly than the concrete implementor's own
+/// method body will.
+pub trait ExternalManagerDb: Send + Sync {
+    /// Stands in for `ExternalManagerDB.getProgram()`.
+    fn get_program(&self) -> Arc<dyn Program>;
 }
 

@@ -13514,7 +13514,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/merge/EnumMerger.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data merge 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/merge/StructureMerger.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data merge 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/merge/UnionMerger.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data merge 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/ExternalLocationDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database external 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/ExternalLocationDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database external 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/ExternalManagerDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database external 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/OldExtNameAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database external 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/OldExtRefAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database external 
