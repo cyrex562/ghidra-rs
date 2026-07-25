@@ -32,16 +32,3 @@ impl ExpressionException {
         Self(message.into())
     }
 }
-
-/// Placeholder for `generic.util.datastruct.SortedList`, needed by
-/// [`crate::generic::util::datastruct::value_sorted_map::ValueSortedMap::values`].
-///
-/// `SortedList` is itself an unported interface (`SortedList<E> extends
-/// ValueSortedMap.LesserList<E>`, adding `lowerIndex`/`floorIndex`/`ceilingIndex`/
-/// `higherIndex`). `ValueSortedMap`'s own interface only returns the type from `values()` and
-/// never calls those extra navigation methods itself, so this placeholder adds nothing beyond
-/// the already-ported `LesserList<V>` supertrait it needs to be a usable collection view.
-pub trait SortedListPlaceholder<V>:
-    crate::generic::util::datastruct::value_sorted_map::LesserList<V>
-{
-}
