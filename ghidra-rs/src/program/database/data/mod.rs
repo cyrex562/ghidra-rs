@@ -15,6 +15,7 @@ pub mod function_definition_db_adapter;
 pub mod function_parameter_adapter;
 pub mod lazy_loading_caching_map;
 pub mod merge;
+pub mod parent_child_adapter;
 pub mod settings_db_adapter;
 pub mod structure_db;
 
@@ -63,5 +64,6 @@ pub use function_parameter_adapter::{
 };
 pub use lazy_loading_caching_map::LazyLoadingCachingMap;
 pub use merge::DataTypeMergeException;
+pub use parent_child_adapter::{ParentChildAdapter, PARENT_CHILD_TABLE_NAME};
 pub use settings_db_adapter::{SettingsDBAdapter, SettingsDeleteError};
 pub use structure_db::StructureDb;
