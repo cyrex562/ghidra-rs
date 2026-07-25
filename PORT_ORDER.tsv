@@ -37,7 +37,7 @@ DONE	trait	102	8	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	101	4	210	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/EnumDB.java
 DONE	trait	102	8	50	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/FunctionDefinitionDBAdapter.java
 DONE	trait	102	8	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/FunctionParameterAdapter.java
-TODO	trait	101	4	259	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/FunctionDefinitionDB.java
+DONE	trait	101	4	259	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/FunctionDefinitionDB.java
 TODO	trait	101	5	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ParentChildAdapter.java
 TODO	trait	102	7	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerDBAdapter.java
 TODO	trait	101	4	208	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerDB.java
