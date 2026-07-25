@@ -26,6 +26,8 @@ REPO="${REPO_DIR:-$HOME/Projects/ghidra-rs}"; cd "$REPO" || exit 1
 MODEL="${MODEL:-sonnet}"
 DESCENT_MAX="${DESCENT_MAX:-6}"
 MANIFEST="PORT_MANIFEST.tsv"; ORDER="PORT_ORDER.tsv"; STUBS="STUBS.tsv"
+DESCENT_PARKED="DESCENT_PARKED.tsv"   # durable park-list: classes too big for the nightly loop (timeouts);
+                                      # excluded from the regenerated order, worked interactively in daytime
 INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
@@ -38,6 +40,7 @@ START_EPOCH=$(date +%s)
 
 exec 7>/tmp/ghidra-descent.lock; flock -n 7 || { echo "another descent run active"; exit 0; }
 [ -f "$STUBS" ] || printf 'ts\tstub_class\treferenced_by\n' > "$STUBS"
+[ -f "$DESCENT_PARKED" ] || printf 'ts\treason\tpath\n' > "$DESCENT_PARKED"
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
@@ -188,6 +191,16 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
   if [ "$api_fail" = "1" ]; then
     log "API failure on $class after $((API_RETRIES+1)) attempts -- stopping run (not parking)."
     git checkout -f "$INTEGRATION" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1||true; break
+  fi
+  # TIMEOUT (rc=124): too big for the nightly loop. DURABLE-park -> record in DESCENT_PARKED (excluded
+  # from future regenerated orders) so it stops re-burning spend nightly; work it interactively later.
+  if [ "$rc" -eq 124 ]; then
+    log "TIMEOUT on $class (${CLAUDE_TIMEOUT}s) -- durable-park for interactive follow-up."
+    git checkout -f "$INTEGRATION" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1||true
+    printf '%s\ttimeout\t%s\n' "$(date '+%Y-%m-%dT%H:%M')" "$next" >> "$DESCENT_PARKED"
+    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
+    git add "$DESCENT_PARKED" "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: durable-park $class (timeout)" >/dev/null 2>&1||true
+    parked=$((parked+1)); continue
   fi
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
     git add -A; git commit -q -m "descent: ${class} -> ${mode} (${srcpath})" || true

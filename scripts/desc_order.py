@@ -89,11 +89,23 @@ def main():
         for dep in d["dependencies"]:
             fanin[dep] = fanin.get(dep, 0) + 1
 
+    # durable-parked classes (timeouts too big for the nightly loop) -- exclude so they don't
+    # re-burn spend nightly; they're worked interactively (see DESCENT_PARKED.tsv).
+    parked = set()
+    pk = os.path.join(REPO, "DESCENT_PARKED.tsv")
+    if os.path.exists(pk):
+        for i, l in enumerate(open(pk, encoding="utf-8")):
+            if i == 0:
+                continue
+            c = l.rstrip("\n").split("\t")
+            if len(c) >= 3:
+                parked.add(c[2])
+
     def in_scope(f):
         d = by.get(f)
         return bool(d and not d["done"]
                     and portlib.module_for(portlib.package_of(f))
-                    and not is_ui(f) and not is_test_path(f))
+                    and not is_ui(f) and not is_test_path(f) and f not in parked)
 
     nodes = [d["file"] for d in data if in_scope(d["file"])]
     nset = set(nodes)
