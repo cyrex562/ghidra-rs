@@ -54,7 +54,7 @@ DONE	trait	93	204	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	92	191	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AddressFieldLocation.java
 DONE	trait	91	20	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/nav/NavigatableRemovalListener.java
 DONE	trait	92	15	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/DataLocationListContext.java
-TODO	trait	94	15	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigationActionContext.java
+DONE	trait	94	15	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigationActionContext.java
 TODO	trait	93	51	6	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigatableActionContext.java
 TODO	trait	93	18	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/RestrictedAddressSetContext.java
 TODO	trait	92	18	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/ProgramLocationSupplierContext.java
