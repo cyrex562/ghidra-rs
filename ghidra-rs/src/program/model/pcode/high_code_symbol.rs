@@ -76,7 +76,7 @@ mod tests {
     use crate::program::model::pcode::ids::{AttributeId, ElementId};
     use crate::program::model::symbol::{Namespace, SourceType, Symbol, SymbolType};
     use crate::app::seam_stubs::ProgramLocation;
-    use crate::program::seam_stubs::HighFunction;
+    use crate::program::model::pcode::high_function::HighFunction;
     use std::sync::Arc;
 
     fn ram_addr(offset: i64) -> Address {
@@ -157,6 +157,12 @@ mod tests {
         fn get_function(&self) -> Box<dyn crate::program::model::listing::Function> {
             unimplemented!("not needed for this smoke test")
         }
+        fn get_id(&self) -> i64 {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_language(&self) -> Box<dyn crate::program::model::lang::Language> {
+            unimplemented!("not needed for this smoke test")
+        }
         fn get_compiler_spec(&self) -> Box<dyn crate::program::model::lang::CompilerSpec> {
             unimplemented!("not needed for this smoke test")
         }
@@ -166,6 +172,36 @@ mod tests {
         fn get_global_symbol_map(
             &self,
         ) -> Arc<dyn crate::program::model::pcode::global_symbol_map::GlobalSymbolMap> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn grab_from_function(&mut self, _override_extrapop: i32, _include_default_names: bool, _do_override: bool) {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn decode(
+            &mut self,
+            _decoder: &dyn crate::program::model::pcode::decoder::Decoder,
+        ) -> Result<(), crate::program::model::pcode::decoder_exception::DecoderException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn split_out_merge_group(
+            &mut self,
+            _high: Box<dyn crate::program::seam_stubs::HighVariable>,
+            _vn: &crate::program::model::pcode::Varnode,
+        ) -> Result<Box<dyn crate::program::seam_stubs::HighVariable>, crate::program::model::pcode::pcode_exception::PcodeException>
+        {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn encode(
+            &self,
+            _encoder: &mut dyn crate::program::model::pcode::encoder::Encoder,
+            _id: i64,
+            _namespace: &dyn crate::program::model::symbol::Namespace,
+            _entry_point: Option<crate::program::model::address::Address>,
+            _size: i32,
+        ) -> std::io::Result<()> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn set_volatile(&mut self, _vn: &crate::program::model::pcode::Varnode, _val: bool) {
             unimplemented!("not needed for this smoke test")
         }
     }

@@ -14299,7 +14299,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pc
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighCodeSymbol.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighConstant.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighExternalSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunction.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunction.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunctionDBUtil.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunctionShellSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunctionSymbol.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model pcode 

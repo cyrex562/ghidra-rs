@@ -186,7 +186,7 @@ mod tests {
     use crate::program::model::address::{AddressFactory, AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::pcode::ids::{AttributeId, ElementId};
-    use crate::program::seam_stubs::HighFunction;
+    use crate::program::model::pcode::high_function::HighFunction;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     fn ram_space() -> Arc<AddressSpace> {

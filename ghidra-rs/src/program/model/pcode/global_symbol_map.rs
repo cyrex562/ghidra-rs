@@ -83,7 +83,7 @@ mod tests {
             self.id
         }
 
-        fn get_high_function(&self) -> Arc<dyn crate::program::seam_stubs::HighFunction> {
+        fn get_high_function(&self) -> Arc<dyn crate::program::model::pcode::high_function::HighFunction> {
             unimplemented!("not needed for this smoke test")
         }
     }

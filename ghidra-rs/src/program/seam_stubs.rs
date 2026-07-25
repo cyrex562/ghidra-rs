@@ -24,6 +24,7 @@ use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::function_prototype::FunctionPrototype;
 use crate::program::model::pcode::global_symbol_map::GlobalSymbolMap;
+use crate::program::model::pcode::high_function::HighFunction;
 use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::pcode::Varnode;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
@@ -1886,58 +1887,6 @@ pub trait HighSymbol: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.program.model.pcode.HighFunction`, referenced by
-/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
-/// before the real class is ported. Exposes only the accessors that utility's default methods
-/// read: the underlying database [`Function`] being annotated, the decompiler's recovered
-/// parameter/return model, the compiler spec used to resolve calling-convention names, and the
-/// local variable/parameter symbol table. `get_function`/`get_compiler_spec`/
-/// `get_local_symbol_map` are left required since there is no sensible placeholder `Function`/
-/// `CompilerSpec`/`LocalSymbolMap` to hand back.
-pub trait HighFunction: Send + Sync {
-    /// Stands in for `HighFunction.getFunction()`.
-    fn get_function(&self) -> Box<dyn Function>;
-
-    /// Stands in for `HighFunction.getFunctionPrototype()`. Defaults to `None`, mirroring a
-    /// `HighFunction` built without a recovered prototype.
-    fn get_function_prototype(&self) -> Option<Box<dyn FunctionPrototype>> {
-        None
-    }
-
-    /// Stands in for `HighFunction.getCompilerSpec()`.
-    fn get_compiler_spec(&self) -> Box<dyn crate::program::model::lang::CompilerSpec>;
-
-    /// Stands in for `HighFunction.getLocalSymbolMap()`.
-    fn get_local_symbol_map(&self) -> Box<dyn LocalSymbolMap>;
-
-    /// Stands in for `HighFunction.getGlobalSymbolMap()`, used by
-    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
-    /// Left required since there is no sensible placeholder `GlobalSymbolMap` to hand back (its
-    /// `new_symbol`/`populate_symbol` mutators have no meaningful default behavior).
-    fn get_global_symbol_map(&self) -> Arc<dyn GlobalSymbolMap>;
-
-    /// Stands in for `HighFunction.getPCAddress(Varnode)`, used by
-    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
-    /// Defaults to `None`, mirroring a `HighFunction` that cannot resolve the defining p-code
-    /// op's address for the given representative varnode.
-    fn get_pc_address(&self, representative: &Varnode) -> Option<Address> {
-        let _ = representative;
-        None
-    }
-}
-
-/// Stands in for the static `HighFunction.findCreateOverrideSpace(Function)`, used by
-/// [`HighFunctionDBUtil::write_override`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_override)
-/// before the real `HighFunction` (and the DB-backed "override" namespace it creates on demand)
-/// are ported. Always returns `None` (mirroring a database that cannot create the namespace)
-/// until the real lookup/creation logic is available.
-pub fn high_function_find_create_override_space(
-    function: &mut dyn Function,
-) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
-    let _ = function;
-    None
-}
-
 /// Placeholder for `ghidra.program.model.pcode.PcodeDataTypeManager`, referenced by
 /// [`FunctionPrototype`](crate::program::model::pcode::function_prototype::FunctionPrototype)'s
 /// `encode_prototype` before the real class is ported. `FunctionPrototype::encode_prototype` only
@@ -1952,11 +1901,16 @@ pub trait PcodeDataTypeManager {}
 /// implementors), so no members are needed yet.
 pub trait PcodeFactory {}
 
-/// Placeholder for `ghidra.program.model.pcode.LocalSymbolMap`, referenced by [`HighFunction`]
-/// before the real class is ported. Exposes only the parameter accessors
+/// Placeholder for `ghidra.program.model.pcode.LocalSymbolMap`, referenced by
+/// [`HighFunction`](crate::program::model::pcode::high_function::HighFunction) before the real
+/// class is ported. Exposes only the parameter accessors
 /// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
 /// needs; `get_param_symbol` is left required since there is no sensible placeholder `HighSymbol`
 /// to hand back.
+///
+/// Grown (with a default, so pre-existing bare `impl LocalSymbolMap for Foo {}` blocks keep
+/// compiling) with [`find_local`](Self::find_local) for
+/// [`HighFunction::get_mapped_symbol`](crate::program::model::pcode::high_function::HighFunction::get_mapped_symbol).
 pub trait LocalSymbolMap: Send + Sync {
     /// Stands in for `LocalSymbolMap.getNumParams()`.
     fn get_num_params(&self) -> i32 {
@@ -1979,7 +1933,20 @@ pub trait LocalSymbolMap: Send + Sync {
         let _ = id;
         None
     }
+
+    /// Stands in for `LocalSymbolMap.findLocal(Address, Address)`. Defaults to `None`, mirroring
+    /// an address with no matching local variable mapping.
+    fn find_local(&self, addr: &Address, pcaddr: &Address) -> Option<Arc<dyn HighSymbol>> {
+        let _ = (addr, pcaddr);
+        None
+    }
 }
+
+/// Placeholder for `ghidra.program.model.pcode.JumpTable`, referenced by
+/// [`HighFunction`](crate::program::model::pcode::high_function::HighFunction) before the real
+/// class is ported. `HighFunction` only ever returns this type opaquely (via
+/// `get_jump_tables`), so no members are needed yet.
+pub trait JumpTable: Send + Sync {}
 
 /// Placeholder for `ghidra.program.model.pcode.HighVariable`, referenced by
 /// [`HighSymbol::get_high_variable`] and
