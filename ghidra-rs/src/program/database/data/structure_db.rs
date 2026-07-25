@@ -24,14 +24,15 @@
 //! `StructureDB`'s constructor also takes a `DataTypeManagerDB` directly (used pervasively for
 //! `dbError`, `getResolvedID`, deferred type replacement/deletion, etc.), which is the actual
 //! `StructureDB` <-> `DataTypeManagerDB` construction-time cycle this port cuts. It is modeled,
-//! same as [`ArrayDb`](super::array_db::ArrayDb), via the minimal placeholder
-//! [`DataTypeManagerDb`](crate::program::seam_stubs::DataTypeManagerDb) (see `STUBS.tsv`).
+//! same as [`ArrayDb`](super::array_db::ArrayDb), via the
+//! [`DataTypeManagerDb`](crate::program::database::data::data_type_manager_db::DataTypeManagerDb)
+//! trait.
 
 use std::sync::Arc;
 
 use crate::framework::db::DBRecord;
+use crate::program::database::data::data_type_manager_db::DataTypeManagerDb;
 use crate::program::model::data::structure_internal::StructureInternal;
-use crate::program::seam_stubs::DataTypeManagerDb;
 
 /// Database implementation of the [`StructureInternal`] interface.
 ///

@@ -21,14 +21,14 @@
 //! is itself the not-yet-ported `DataTypeManagerDB`; `ArrayDB`'s constructor takes it directly and
 //! `DataTypeManagerDB` in turn constructs `ArrayDB` instances, which is the actual
 //! `ArrayDB` <-> `DataTypeManagerDB` construction-time cycle this port cuts. It is modeled via the
-//! minimal placeholder
-//! [`DataTypeManagerDb`](crate::program::seam_stubs::DataTypeManagerDb) (see `STUBS.tsv`).
+//! minimal placeholder-turned-trait
+//! [`DataTypeManagerDb`](crate::program::database::data::data_type_manager_db::DataTypeManagerDb).
 
 use std::sync::Arc;
 
 use crate::framework::db::DBRecord;
+use crate::program::database::data::data_type_manager_db::DataTypeManagerDb;
 use crate::program::model::data::array::Array;
-use crate::program::seam_stubs::DataTypeManagerDb;
 
 /// Database implementation of the [`Array`] interface.
 ///
