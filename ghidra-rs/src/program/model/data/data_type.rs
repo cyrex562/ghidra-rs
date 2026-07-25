@@ -528,6 +528,32 @@ pub trait DataType {
     ) -> Option<Box<dyn crate::program::model::data::composite::Composite>> {
         None
     }
+
+    /// Stands in for `dt instanceof Pointer ? (Pointer) dt : null`, used by
+    /// [`NoisyStructureBuilder::add_data_type`](crate::program::model::data::noisy_structure_builder::NoisyStructureBuilder::add_data_type).
+    /// A by-reference sibling of [`into_array_stringable`](Self::into_array_stringable)/
+    /// [`into_composite`](Self::into_composite) (which consume `Box<Self>`): that caller only
+    /// ever holds an `Arc<dyn DataType>`, from which a `Box<Self>` cannot be recovered, so the
+    /// downcast is exposed by reference instead.
+    fn as_pointer(&self) -> Option<&dyn crate::program::model::data::pointer::Pointer> {
+        None
+    }
+
+    /// Stands in for `dt instanceof Structure ? (Structure) dt : null`, used by the same port to
+    /// check whether a pointer-reference target is an already-populated Structure. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_structure(&self) -> Option<&dyn crate::program::model::data::structure::Structure> {
+        None
+    }
+
+    /// Stands in for `dt instanceof PartialUnion ? (PartialUnion) dt : null`, used by the same
+    /// port. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather than
+    /// by-value.
+    fn as_partial_union(
+        &self,
+    ) -> Option<&dyn crate::program::model::pcode::partial_union::PartialUnion> {
+        None
+    }
 }
 
 /// Trivial fallback used by this trait's default methods where the Java interface has no
