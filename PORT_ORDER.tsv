@@ -18,7 +18,7 @@ DONE	trait	102	1066	77	program	Ghidra/Framework/SoftwareModeling/src/main/java/g
 DONE	trait	101	43	90	program	Ghidra/Features/Base/src/main/java/ghidra/program/database/GhidraProgramMultiUserMergeManagerFactory.java
 DONE	trait	102	26	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/GImplicitDirectedGraph.java
 DONE	trait	101	48	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/GDirectedGraph.java
-TODO	trait	107	5	1	generic	Ghidra/Framework/Generic/src/main/java/ghidra/generic/util/datastruct/ValueSortedMap.java
+DONE	trait	107	5	1	generic	Ghidra/Framework/Generic/src/main/java/ghidra/generic/util/datastruct/ValueSortedMap.java
 TODO	trait	106	3	1	generic	Ghidra/Framework/Generic/src/main/java/ghidra/generic/util/datastruct/SortedList.java
 TODO	trait	102	5	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/FindPathsAlgorithm.java
 TODO	trait	101	32	15	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/GraphAlgorithms.java
