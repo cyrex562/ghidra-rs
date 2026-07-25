@@ -8,6 +8,7 @@ pub mod composite_db;
 pub mod composite_db_adapter;
 pub mod enum_db_adapter;
 pub mod enum_signed_state;
+pub mod enum_value_db_adapter;
 pub mod lazy_loading_caching_map;
 pub mod merge;
 pub mod settings_db_adapter;
@@ -39,6 +40,10 @@ pub use enum_db_adapter::{
     ENUM_UNIVERSAL_DT_ID_COL,
 };
 pub use enum_signed_state::EnumSignedState;
+pub use enum_value_db_adapter::{
+    EnumValueDBAdapter, ENUMVAL_COMMENT_COL, ENUMVAL_ID_COL, ENUMVAL_NAME_COL, ENUMVAL_VALUE_COL,
+    ENUM_VALUE_TABLE_NAME,
+};
 pub use lazy_loading_caching_map::LazyLoadingCachingMap;
 pub use merge::DataTypeMergeException;
 pub use settings_db_adapter::{SettingsDBAdapter, SettingsDeleteError};
