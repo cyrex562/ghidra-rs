@@ -22,7 +22,7 @@
 //!     `dataMgr` field. `DataTypeManagerDB` constructs `FunctionDefinitionDB` instances (handing
 //!     them their adapters and manager back-reference), and `FunctionDefinitionDB` holds a
 //!     reference back to that same manager -- the mutual construction-time dependency that makes
-//!     it a cycle cut-point, modeled via the [`DataTypeManagerDb`] placeholder (see `STUBS.tsv`).
+//!     it a cycle cut-point, modeled via the [`DataTypeManagerDb`] trait.
 //!
 //! One real algorithm is ported here as a default-bodied method:
 //!   - [`FunctionDefinitionDb::function_definition_db_prototype_string`] -- port of
@@ -51,12 +51,12 @@
 use std::sync::Arc;
 
 use crate::framework::db::DBRecord;
+use crate::program::database::data::data_type_manager_db::DataTypeManagerDb;
 use crate::program::model::data::function_definition::FunctionDefinition;
 use crate::program::model::listing::function::UNKNOWN_CALLING_CONVENTION_STRING;
 use crate::program::model::listing::function_signature::{
     FunctionSignature, NORETURN_DISPLAY_STRING, VAR_ARGS_DISPLAY_STRING, VOID_PARAM_DISPLAY_STRING,
 };
-use crate::program::seam_stubs::DataTypeManagerDb;
 
 /// Database implementation of the [`FunctionDefinition`] interface.
 ///

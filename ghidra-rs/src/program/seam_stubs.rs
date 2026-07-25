@@ -2376,26 +2376,3 @@ pub trait DomainObjectMergeManager {
     fn as_any(&self) -> &dyn Any;
 }
 
-/// Placeholder for `ghidra.program.database.data.DataTypeManagerDB`, referenced by
-/// [`ArrayDb`](crate::program::database::data::array_db::ArrayDb) before the real class is
-/// ported. `DataTypeManagerDB implements DataTypeManager`, so this extends the already-ported
-/// [`DataTypeManager`] trait rather than re-declaring its methods, and adds only the
-/// package-private bookkeeping hooks `ArrayDB` calls directly on its owning manager
-/// (`dbError`, `addDataTypeToReplace`, `addDataTypeToDelete`), which are not part of the public
-/// `DataTypeManager` contract. This mutual construction-time dependency (`DataTypeManagerDB`
-/// constructs `ArrayDB` instances, and `ArrayDB` holds a reference back to its owning
-/// `DataTypeManagerDB`) is what makes `ArrayDB` a dependency-cycle cut-point in Java.
-pub trait DataTypeManagerDb: DataTypeManager {
-    /// Stands in for `DataTypeManagerDB.dbError(IOException)`.
-    fn db_error(&mut self, error: io::Error);
-
-    /// Stands in for `DataTypeManagerDB.addDataTypeToReplace(DataTypeDB, DataType)`: schedules
-    /// `replacement` to be substituted for the datatype identified by `data_type_id` (its
-    /// resolved ID) once the current lock is released, avoiding a duplicate-array conflict.
-    fn add_data_type_to_replace(&mut self, data_type_id: i64, replacement: Box<dyn DataType>);
-
-    /// Stands in for `DataTypeManagerDB.addDataTypeToDelete(DataTypeDB, long)`: schedules the
-    /// datatype identified by `data_type_id` for deletion once the current lock is released.
-    fn add_data_type_to_delete(&mut self, data_type_id: i64);
-}
-

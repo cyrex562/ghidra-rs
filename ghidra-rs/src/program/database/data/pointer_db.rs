@@ -20,14 +20,15 @@
 //! `dbError`, `getResolvedID`, deferred type replacement/deletion, etc.), which is the actual
 //! `PointerDB` <-> `DataTypeManagerDB` construction-time cycle this port cuts. It is modeled,
 //! same as [`ArrayDb`](super::array_db::ArrayDb)/[`StructureDb`](super::structure_db::StructureDb),
-//! via the minimal placeholder
-//! [`DataTypeManagerDb`](crate::program::seam_stubs::DataTypeManagerDb) (see `STUBS.tsv`).
+//! via the
+//! [`DataTypeManagerDb`](crate::program::database::data::data_type_manager_db::DataTypeManagerDb)
+//! trait.
 
 use std::sync::Arc;
 
 use crate::framework::db::DBRecord;
+use crate::program::database::data::data_type_manager_db::DataTypeManagerDb;
 use crate::program::model::data::pointer::Pointer;
-use crate::program::seam_stubs::DataTypeManagerDb;
 
 /// Database implementation of the [`Pointer`] interface.
 ///
