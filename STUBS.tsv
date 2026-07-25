@@ -331,3 +331,4 @@ ts	stub_class	referenced_by
 2026-07-25T00:00:00Z	VariableSymbolDb	FunctionDB
 2026-07-25T01:00:00Z	JumpTable	HighFunction
 2026-07-25T02:00:00Z	DomainObjectMergeManager	GhidraProgramMultiUserMergeManagerFactory
+2026-07-25T05:01:01Z	SortedListPlaceholder	ValueSortedMap
