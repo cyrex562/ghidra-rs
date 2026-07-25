@@ -10,6 +10,7 @@ pub mod enum_db;
 pub mod enum_db_adapter;
 pub mod enum_signed_state;
 pub mod enum_value_db_adapter;
+pub mod function_definition_db_adapter;
 pub mod lazy_loading_caching_map;
 pub mod merge;
 pub mod settings_db_adapter;
@@ -45,6 +46,13 @@ pub use enum_signed_state::EnumSignedState;
 pub use enum_value_db_adapter::{
     EnumValueDBAdapter, ENUMVAL_COMMENT_COL, ENUMVAL_ID_COL, ENUMVAL_NAME_COL, ENUMVAL_VALUE_COL,
     ENUM_VALUE_TABLE_NAME,
+};
+pub use function_definition_db_adapter::{
+    get_generic_calling_convention_name, FunctionDefinitionDBAdapter, FUNCTION_DEF_CALLCONV_COL,
+    FUNCTION_DEF_CAT_ID_COL, FUNCTION_DEF_COMMENT_COL, FUNCTION_DEF_FLAGS_COL,
+    FUNCTION_DEF_LAST_CHANGE_TIME_COL, FUNCTION_DEF_NAME_COL, FUNCTION_DEF_NORETURN_FLAG,
+    FUNCTION_DEF_RETURN_ID_COL, FUNCTION_DEF_SOURCE_ARCHIVE_ID_COL, FUNCTION_DEF_SOURCE_DT_ID_COL,
+    FUNCTION_DEF_SOURCE_SYNC_TIME_COL, FUNCTION_DEF_TABLE_NAME, FUNCTION_DEF_VARARG_FLAG,
 };
 pub use lazy_loading_caching_map::LazyLoadingCachingMap;
 pub use merge::DataTypeMergeException;
