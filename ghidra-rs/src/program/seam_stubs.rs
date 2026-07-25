@@ -2374,3 +2374,21 @@ pub trait DomainObjectMergeManager {
     fn as_any(&self) -> &dyn Any;
 }
 
+/// Placeholder for `ghidra.GhidraApplicationLayout`, referenced by
+/// [`DataTypeArchiveIdDumper`](crate::program::model::data::data_type_archive_id_dumper::DataTypeArchiveIdDumper)
+/// before the real class is ported. `DataTypeArchiveIdDumper.launch()` only ever receives this
+/// type and forwards it opaquely to `Application.initializeApplication`, never inspecting it, so
+/// this placeholder needs no members.
+pub trait GhidraApplicationLayout {}
+
+/// Placeholder for `ghidra.GhidraLaunchable`, referenced by
+/// [`DataTypeArchiveIdDumper`](crate::program::model::data::data_type_archive_id_dumper::DataTypeArchiveIdDumper)
+/// (`implements GhidraLaunchable`) before the real interface is ported. Mirrors the single
+/// `launch(GhidraApplicationLayout, String[])` method the Java interface declares; the checked
+/// `throws Exception` is narrowed to `io::Error` since `DataTypeArchiveIdDumper.launch()`'s body
+/// only ever throws `IOException`.
+pub trait GhidraLaunchable {
+    /// Stands in for `GhidraLaunchable.launch(GhidraApplicationLayout, String[])`.
+    fn launch(&mut self, layout: &dyn GhidraApplicationLayout, args: &[String]) -> io::Result<()>;
+}
+
