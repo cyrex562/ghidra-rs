@@ -23,7 +23,7 @@ mod graph_mvc_test;
 #[cfg(test)]
 mod graph_path_test;
 
-pub use algo::{GraphAlgorithmStatusListener, SorterException, Status};
+pub use algo::{FindPathsAlgorithm, GraphAlgorithmStatusListener, SorterException, Status};
 pub use deg_shared_config::DegSharedConfig;
 pub use event::VisualGraphChangeListener;
 pub use fcg_direction::FcgDirection;
