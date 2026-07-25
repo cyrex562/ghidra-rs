@@ -11,6 +11,7 @@ pub mod g_edge_weight_metric;
 pub mod g_implicit_directed_graph;
 pub mod g_vertex;
 pub mod g_weighted_edge;
+pub mod graph_algorithms;
 pub mod graph_path;
 pub mod graph_path_set;
 pub mod job;
@@ -35,6 +36,7 @@ pub use g_edge_weight_metric::{natural_metric, unit_metric, GEdgeWeightMetric, N
 pub use g_implicit_directed_graph::GImplicitDirectedGraph;
 pub use g_vertex::GVertex;
 pub use g_weighted_edge::GWeightedEdge;
+pub use graph_algorithms::{GraphAlgorithms, TimeoutMonitorError};
 pub use graph_path::GraphPath;
 pub use graph_path_set::GraphPathSet;
 pub use job::{AbstractAnimator, Animator, AnimatorBehavior, TimingTarget};
