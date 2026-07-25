@@ -512,6 +512,39 @@ pub trait DataType {
         false
     }
 
+    /// Stands in for `instanceof BitFieldDataType`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before the real `BitFieldDataType` class is ported. Implementors representing a bitfield
+    /// are expected to override this to return `true`.
+    fn is_bit_field_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof Dynamic`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before the real `Dynamic` interface is ported. Implementors representing a dynamically
+    /// sized data type are expected to override this to return `true`.
+    fn is_dynamic_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof FactoryDataType`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before the real `FactoryDataType` interface is ported. Implementors representing a
+    /// factory-produced data type are expected to override this to return `true`.
+    fn is_factory_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof FunctionDefinition`, used by
+    /// [`VariableUtilities::check_data_type`](crate::program::model::listing::variable_utilities::VariableUtilities::check_data_type)
+    /// before a downcast from `&dyn DataType` to `&dyn FunctionDefinition` is available.
+    /// Implementors representing a function-signature data type are expected to override this to
+    /// return `true`.
+    fn is_function_definition_type(&self) -> bool {
+        false
+    }
+
     /// Stands in for `dt instanceof Array ? (Array) dt : null`, used by
     /// [`is_undefined_array`](crate::program::model::data::undefined::is_undefined_array) to
     /// recover an array's element type. Mirrors the existing `into_composite`/

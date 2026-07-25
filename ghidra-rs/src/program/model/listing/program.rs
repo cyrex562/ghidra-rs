@@ -1,6 +1,7 @@
 use crate::framework::model::DomainObject;
-use crate::program::model::address::{AddressFactory, AddressSet, AddressSetView};
+use crate::program::model::address::{Address, AddressFactory, AddressSet, AddressSetView};
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
 use crate::program::model::listing::{FunctionManager, Listing, ProgramContext};
 use crate::program::model::symbol::{EquateTable, ExternalManager, ReferenceManager, SymbolTable};
@@ -97,6 +98,25 @@ pub trait Program: DomainObject + Send + Sync {
     ///
     /// Returns the register with the given name, or `None` if not found.
     fn get_register(&self, _name: &str) -> Option<RegisterRef> {
+        None
+    }
+
+    /// Get the register whose storage covers the given address, or `None` if `address` does not
+    /// correspond to a register.
+    ///
+    /// Stands in for `Program.getRegister(Varnode)`/`Program.getRegister(Address)`, used by
+    /// [`VariableUtilities`](crate::program::model::listing::variable_utilities::VariableUtilities)
+    /// before a full register/address map is ported.
+    fn get_register_at(&self, _address: &Address) -> Option<RegisterRef> {
+        None
+    }
+
+    /// Get the compiler specification associated with this program's language, if known.
+    ///
+    /// Stands in for `Program.getCompilerSpec()`, used by
+    /// [`VariableUtilities`](crate::program::model::listing::variable_utilities::VariableUtilities)
+    /// before `ProgramDB`'s architecture wiring is ported.
+    fn get_compiler_spec(&self) -> Option<Box<dyn CompilerSpec>> {
         None
     }
 
