@@ -21,6 +21,7 @@ pub mod pointer_db_adapter;
 pub mod settings_db_adapter;
 pub mod source_archive_adapter;
 pub mod structure_db;
+pub mod typedef_db_adapter;
 
 pub use array_db::ArrayDb;
 pub use array_db_adapter::ArrayDBAdapter;
@@ -79,3 +80,9 @@ pub use source_archive_adapter::{
     SOURCE_ARCHIVE_TABLE_NAME,
 };
 pub use structure_db::StructureDb;
+pub use typedef_db_adapter::{
+    TypedefDBAdapter, TYPEDEF_CAT_COL, TYPEDEF_DT_ID_COL, TYPEDEF_FLAGS_COL,
+    TYPEDEF_FLAG_AUTONAME, TYPEDEF_LAST_CHANGE_TIME_COL, TYPEDEF_NAME_COL,
+    TYPEDEF_SOURCE_ARCHIVE_ID_COL, TYPEDEF_SOURCE_SYNC_TIME_COL, TYPEDEF_TABLE_NAME,
+    TYPEDEF_UNIVERSAL_DT_ID_COL,
+};
