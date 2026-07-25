@@ -15,9 +15,10 @@
 //! `MemorySymbol` superclass-chain state those traits also needed.
 //!
 //! `ExternalManagerDB`, by contrast, is a genuinely separate referenced core type (composition, not
-//! superclass state), so it gets an actual minimal placeholder --
-//! [`ExternalManagerDb`](crate::program::seam_stubs::ExternalManagerDb) in `seam_stubs.rs` -- for
-//! the one member ([`ExternalManagerDb::get_program`]) this trait's default methods call directly.
+//! superclass state), so it is ported alongside this class as its own trait,
+//! [`ExternalManagerDb`](crate::program::database::external::external_manager_db::ExternalManagerDb)
+//! (`external_manager_db.rs`) -- this trait's default methods only ever call its
+//! [`get_program`](ExternalManagerDb::get_program) directly.
 //! `ExternalManagerDB.createFunction(ExternalLocation)` is instead modeled as a required method
 //! directly on this trait ([`ext_manager_create_function`](ExternalLocationDb::ext_manager_create_function)),
 //! since satisfying it means passing `this` back to the manager -- something a concrete implementor
@@ -51,7 +52,7 @@ use crate::program::model::symbol::{
     ExternalLocation, Namespace, SetExternalLocationError, SourceType, Symbol, SymbolType,
     DELIMITER,
 };
-use crate::program::seam_stubs::ExternalManagerDb;
+use crate::program::database::external::external_manager_db::ExternalManagerDb;
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::program::model::listing::CircularDependencyException;
 
@@ -530,6 +531,11 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::listing::Program;
+    use crate::program::model::symbol::{
+        AddExternalLibraryNameError, AddExternalLocationInLibraryError,
+        EmptyExternalLocationIterator, ExternalLocationIterator, ExternalManager,
+        UpdateExternalLibraryNameError,
+    };
 
     fn ram_space() -> Arc<AddressSpace> {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1)
@@ -673,9 +679,149 @@ mod tests {
         program: Arc<dyn Program>,
     }
 
+    impl ExternalManager for MockExternalManagerDb {
+        fn get_external_library_names(&self) -> Vec<String> {
+            Vec::new()
+        }
+        fn get_libraries(&self) -> Vec<Arc<dyn Library>> {
+            Vec::new()
+        }
+        fn get_external_library(&self, _library_name: &str) -> Option<Arc<dyn Library>> {
+            None
+        }
+        fn remove_external_library(&mut self, _library_name: &str) -> bool {
+            false
+        }
+        fn get_external_library_path(&self, _library_name: &str) -> Option<String> {
+            None
+        }
+        fn set_external_path(
+            &mut self,
+            _library_name: &str,
+            _pathname: Option<&str>,
+            _user_defined: bool,
+        ) -> Result<(), InvalidInputException> {
+            Ok(())
+        }
+        fn get_library_ordinal(&self, _library_name: &str) -> i32 {
+            -1
+        }
+        fn set_library_ordinal(&mut self, _library_name: &str, _ordinal: i32) -> i32 {
+            -1
+        }
+        fn update_external_library_name(
+            &mut self,
+            _old_name: &str,
+            _new_name: &str,
+            _source: SourceType,
+        ) -> Result<bool, UpdateExternalLibraryNameError> {
+            Ok(false)
+        }
+        fn get_external_locations_for_library(
+            &self,
+            _library_name: &str,
+        ) -> Box<dyn ExternalLocationIterator> {
+            Box::new(EmptyExternalLocationIterator)
+        }
+        fn get_external_locations_at_address(
+            &self,
+            _memory_address: &Address,
+        ) -> Box<dyn ExternalLocationIterator> {
+            Box::new(EmptyExternalLocationIterator)
+        }
+        fn get_external_locations_by_label(
+            &self,
+            _library_name: Option<&str>,
+            _label: &str,
+        ) -> Vec<Arc<dyn ExternalLocation>> {
+            Vec::new()
+        }
+        fn get_external_locations_in_namespace(
+            &self,
+            _namespace: Option<Arc<dyn Namespace>>,
+            _label: &str,
+        ) -> Vec<Arc<dyn ExternalLocation>> {
+            Vec::new()
+        }
+        fn get_unique_external_location(
+            &self,
+            _library_name: Option<&str>,
+            _label: &str,
+        ) -> Option<Arc<dyn ExternalLocation>> {
+            None
+        }
+        fn get_unique_external_location_in_namespace(
+            &self,
+            _namespace: Option<Arc<dyn Namespace>>,
+            _label: &str,
+        ) -> Option<Arc<dyn ExternalLocation>> {
+            None
+        }
+        fn get_external_location(
+            &self,
+            _symbol: Arc<dyn Symbol>,
+        ) -> Option<Arc<dyn ExternalLocation>> {
+            None
+        }
+        fn contains(&self, _library_name: &str) -> bool {
+            false
+        }
+        fn add_external_library_name(
+            &mut self,
+            _library_name: &str,
+            _source: SourceType,
+        ) -> Result<Arc<dyn Library>, AddExternalLibraryNameError> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn add_ext_location_in_library(
+            &mut self,
+            _library_name: &str,
+            _ext_label: Option<&str>,
+            _ext_addr: Option<Address>,
+            _source_type: SourceType,
+        ) -> Result<Arc<dyn ExternalLocation>, AddExternalLocationInLibraryError> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn add_ext_location_in_namespace_reuse(
+            &mut self,
+            _ext_namespace: Arc<dyn Namespace>,
+            _ext_label: Option<&str>,
+            _ext_addr: Option<Address>,
+            _source_type: SourceType,
+            _reuse_existing: bool,
+        ) -> Result<Arc<dyn ExternalLocation>, InvalidInputException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn add_ext_function_in_library(
+            &mut self,
+            _library_name: &str,
+            _ext_label: Option<&str>,
+            _ext_addr: Option<Address>,
+            _source_type: SourceType,
+        ) -> Result<Arc<dyn ExternalLocation>, AddExternalLocationInLibraryError> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn add_ext_function_in_namespace_reuse(
+            &mut self,
+            _ext_namespace: Arc<dyn Namespace>,
+            _ext_label: Option<&str>,
+            _ext_addr: Option<Address>,
+            _source_type: SourceType,
+            _reuse_existing: bool,
+        ) -> Result<Arc<dyn ExternalLocation>, InvalidInputException> {
+            unimplemented!("not needed for this smoke test")
+        }
+    }
+
     impl ExternalManagerDb for MockExternalManagerDb {
         fn get_program(&self) -> Arc<dyn Program> {
             self.program.clone()
+        }
+        fn get_ext_location(&self, _external_addr: &Address) -> Option<Arc<dyn ExternalLocation>> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn remove_external_location(&mut self, _external_addr: &Address) -> bool {
+            unimplemented!("not needed for this smoke test")
         }
     }
 

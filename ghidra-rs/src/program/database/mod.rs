@@ -31,7 +31,7 @@ pub use data_type_archive_db::DataTypeArchiveDB;
 pub use db_cache::{DbCache, DbCacheHandle};
 pub use db_factory::DbFactory;
 pub use db_object::{DbObject, DbObjectState};
-pub use external::{ExternalLocationDb, SetSymbolNameAndNamespaceError};
+pub use external::{ExternalLocationDb, ExternalManagerDb, SetSymbolNameAndNamespaceError};
 pub use function::OverlappingFunctionException;
 pub use listing_db::ListingDB;
 pub use manager_db::ManagerDB;
