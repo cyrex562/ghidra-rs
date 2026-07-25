@@ -898,9 +898,20 @@ pub trait CodeUnitComments {}
 /// Placeholder for `ghidra.program.model.lang.Processor`, referenced by
 /// [`Language`](crate::program::model::lang::language::Language) and
 /// [`LanguageDescription`](crate::program::model::lang::language_description::LanguageDescription)
-/// before the real class is ported. `Language` only ever returns this type opaquely, so no
-/// members are needed yet.
-pub trait Processor {}
+/// before the real class is ported.
+///
+/// Grown (with a default, so pre-existing bare `impl Processor for Foo {}` blocks keep compiling)
+/// to also expose the processor name, which
+/// [`ProgramArchitectureTranslator`](crate::program::model::data::program_architecture_translator::ProgramArchitectureTranslator)
+/// needs to reproduce `Processor.equals`/`toString`'s name-based comparison when checking that two
+/// languages share the same processor.
+pub trait Processor {
+    /// Stands in for `Processor.toString()`, which returns the processor's name and backs its
+    /// `equals`/`hashCode`.
+    fn name(&self) -> String {
+        String::new()
+    }
+}
 
 /// Placeholder for `ghidra.program.model.lang.AddressLabelInfo`, referenced by
 /// [`Language`](crate::program::model::lang::language::Language)
