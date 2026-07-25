@@ -217,7 +217,11 @@ mod tests {
     }
 
     struct MockNavigatable;
-    impl Navigatable for MockNavigatable {}
+    impl Navigatable for MockNavigatable {
+        fn is_connected(&self) -> bool {
+            false
+        }
+    }
 
     struct MockExternalLocation;
     impl ExternalLocation for MockExternalLocation {}
