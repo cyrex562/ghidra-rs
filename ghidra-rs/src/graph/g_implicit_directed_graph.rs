@@ -1,5 +1,5 @@
+use super::g_directed_graph::GDirectedGraph;
 use super::g_edge::GEdge;
-use super::seam_stubs::GDirectedGraph;
 
 /// A directed graph that need not be constructed explicitly.
 ///
@@ -84,7 +84,90 @@ mod tests {
         edges: Vec<Edge>,
     }
 
-    impl GDirectedGraph<i32, Edge> for ExplicitCopy {}
+    impl GImplicitDirectedGraph<i32, Edge> for ExplicitCopy {
+        fn get_in_edges(&self, v: &i32) -> Vec<Edge> {
+            self.edges.iter().filter(|e| &e.end == v).cloned().collect()
+        }
+
+        fn get_out_edges(&self, v: &i32) -> Vec<Edge> {
+            self.edges.iter().filter(|e| &e.start == v).cloned().collect()
+        }
+
+        fn copy(&self) -> Box<dyn GDirectedGraph<i32, Edge>> {
+            Box::new(ExplicitCopy { edges: self.edges.clone() })
+        }
+    }
+
+    impl GDirectedGraph<i32, Edge> for ExplicitCopy {
+        fn add_vertex(&mut self, _v: i32) -> bool {
+            false
+        }
+
+        fn remove_vertex(&mut self, v: &i32) -> bool {
+            let before = self.edges.len();
+            self.edges.retain(|e| &e.start != v && &e.end != v);
+            self.edges.len() != before
+        }
+
+        fn add_edge(&mut self, e: Edge) {
+            self.edges.push(e);
+        }
+
+        fn remove_edge(&mut self, e: &Edge) -> bool {
+            let before = self.edges.len();
+            self.edges.retain(|x| x != e);
+            self.edges.len() != before
+        }
+
+        fn find_edge(&self, start: &i32, end: &i32) -> Option<Edge> {
+            self.edges.iter().find(|e| &e.start == start && &e.end == end).cloned()
+        }
+
+        fn get_vertices(&self) -> Vec<i32> {
+            let mut vertices: Vec<i32> = Vec::new();
+            for e in &self.edges {
+                if !vertices.contains(&e.start) {
+                    vertices.push(e.start);
+                }
+                if !vertices.contains(&e.end) {
+                    vertices.push(e.end);
+                }
+            }
+            vertices
+        }
+
+        fn get_edges(&self) -> Vec<Edge> {
+            self.edges.clone()
+        }
+
+        fn contains_vertex(&self, v: &i32) -> bool {
+            self.edges.iter().any(|e| &e.start == v || &e.end == v)
+        }
+
+        fn contains_edge(&self, e: &Edge) -> bool {
+            self.edges.contains(e)
+        }
+
+        fn contains_edge_between(&self, from: &i32, to: &i32) -> bool {
+            self.edges.iter().any(|e| &e.start == from && &e.end == to)
+        }
+
+        fn is_empty(&self) -> bool {
+            self.edges.is_empty()
+        }
+
+        fn get_vertex_count(&self) -> usize {
+            self.get_vertices().len()
+        }
+
+        fn get_edge_count(&self) -> usize {
+            self.edges.len()
+        }
+
+        fn empty_copy(&self) -> Box<dyn GDirectedGraph<i32, Edge>> {
+            Box::new(ExplicitCopy { edges: Vec::new() })
+        }
+    }
 
     /// A tiny implicit graph over a fixed adjacency map, computed lazily on demand.
     struct MockGraph {
