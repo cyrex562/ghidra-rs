@@ -515,6 +515,18 @@ pub trait DataTypeArchiveDbChangeSet:
 /// checks `instanceof DefaultDataType`, so no members are needed yet.
 pub trait DefaultDataType {}
 
+/// Placeholder for `ghidra.program.model.data.MetaDataType`, referenced by
+/// [`NoisyStructureBuilder::add_data_type`](crate::program::model::data::noisy_structure_builder::NoisyStructureBuilder::add_data_type)
+/// via its static `getMostSpecificDataType(DataType, DataType)` helper, used to decide which of
+/// two datatypes occupying the same offset/length should win. Not yet ported; only the one
+/// comparison `NoisyStructureBuilder` needs is modeled here (as a boolean outcome rather than the
+/// real method's `DataType`-typed return, since the caller only ever tests `result == candidate`).
+pub trait MetaDataType {
+    /// Returns `true` if `candidate` should replace `existing` as the more specific dataType.
+    /// Stands in for `MetaDataType.getMostSpecificDataType(existing, candidate) == candidate`.
+    fn is_more_specific(&self, existing: &dyn DataType, candidate: &dyn DataType) -> bool;
+}
+
 /// Placeholder for `ghidra.program.model.data.PointerType`, referenced by
 /// [`PointerTypedefBuilder`](crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder)
 /// before the real enum is ported.
