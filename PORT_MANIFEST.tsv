@@ -2189,7 +2189,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/ListingActionCont
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/ListingContextAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigatableActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigatableContextAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigationActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigationActionContext.java	DONE	orig_src Ghidra Features Base src main java ghidra app context 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/ProgramActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/ProgramContextAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/context/ProgramLocationActionContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app context 
