@@ -2364,3 +2364,15 @@ pub trait FunctionTagManagerProgram {
 /// [`Symbol`] trait, with no extra members.
 pub trait VariableSymbolDb: Symbol {}
 
+/// Placeholder for `ghidra.app.merge.DomainObjectMergeManager`, referenced by
+/// [`GhidraProgramMultiUserMergeManagerFactory`](crate::program::database::ghidra_program_multi_user_merge_manager_factory::GhidraProgramMultiUserMergeManagerFactory)
+/// before the real class is ported. That factory only ever constructs and opaquely returns this
+/// type, so no domain members are needed yet; `as_any` is exposed purely so callers/tests can
+/// downcast to a concrete implementation, mirroring the `as_any` pattern used by other opaque
+/// placeholder return types in this crate (e.g.
+/// [`crate::program::database::references::ref_list::RefList::as_any`]).
+pub trait DomainObjectMergeManager {
+    /// Enables downcasting to a concrete merge manager implementation.
+    fn as_any(&self) -> &dyn Any;
+}
+
