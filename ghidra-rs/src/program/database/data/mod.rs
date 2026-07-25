@@ -6,6 +6,7 @@ pub mod category_db_adapter;
 pub mod component_db_adapter;
 pub mod composite_db;
 pub mod composite_db_adapter;
+pub mod enum_db_adapter;
 pub mod enum_signed_state;
 pub mod lazy_loading_caching_map;
 pub mod merge;
@@ -31,6 +32,11 @@ pub use composite_db_adapter::{
     COMPOSITE_MIN_ALIGN_COL, COMPOSITE_NAME_COL, COMPOSITE_NUM_COMPONENTS_COL,
     COMPOSITE_PACKING_COL, COMPOSITE_SOURCE_ARCHIVE_ID_COL, COMPOSITE_SOURCE_SYNC_TIME_COL,
     COMPOSITE_TABLE_NAME, COMPOSITE_UNIVERSAL_DT_ID_COL, FLEX_ARRAY_ELIMINATION_SCHEMA_VERSION,
+};
+pub use enum_db_adapter::{
+    EnumDBAdapter, ENUM_CAT_COL, ENUM_COMMENT_COL, ENUM_LAST_CHANGE_TIME_COL, ENUM_NAME_COL,
+    ENUM_SIZE_COL, ENUM_SOURCE_ARCHIVE_ID_COL, ENUM_SOURCE_SYNC_TIME_COL, ENUM_TABLE_NAME,
+    ENUM_UNIVERSAL_DT_ID_COL,
 };
 pub use enum_signed_state::EnumSignedState;
 pub use lazy_loading_caching_map::LazyLoadingCachingMap;
