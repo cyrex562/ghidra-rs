@@ -128,7 +128,10 @@ Rules for breaking the cycle:
   --no-run' must compile with ZERO errors -- if your trait/signature change broke EXISTING test code
   elsewhere (stale mocks, dyn-safety, ambiguous methods), you MUST update that test code to match;
   (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test -> read failures -> fix ->
-  repeat until BOTH compile clean AND all tests pass. Do NOT run git.
+  repeat until BOTH compile clean AND all tests pass. Do NOT run git. Run cargo SYNCHRONOUSLY
+  and wait for each command to finish -- this is a SINGLE-SHOT non-interactive session: never
+  background a command, schedule a wakeup, or defer work to "report back later". Everything,
+  including the final passing test run, must complete within this turn before you stop.
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
 Port this type (plus placeholder stubs for its references) and fix any test code your change breaks.
 If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
@@ -152,7 +155,10 @@ Rules:
 - MANDATORY test-green loop before finishing: (1) 'cargo build --lib' must pass; (2) 'cargo test --lib
   --no-run' must compile with ZERO errors -- if your change broke EXISTING test code elsewhere, update
   that test code to match; (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test ->
-  read failures -> fix -> repeat until BOTH compile clean AND all tests pass. Do NOT run git.
+  read failures -> fix -> repeat until BOTH compile clean AND all tests pass. Do NOT run git. Run cargo SYNCHRONOUSLY
+  and wait for each command to finish -- this is a SINGLE-SHOT non-interactive session: never
+  background a command, schedule a wakeup, or defer work to "report back later". Everything,
+  including the final passing test run, must complete within this turn before you stop.
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
 Port this class and fix any test code your change breaks.
 If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
