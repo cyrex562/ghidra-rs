@@ -334,3 +334,4 @@ ts	stub_class	referenced_by
 2026-07-25T05:01:01Z	SortedListPlaceholder	ValueSortedMap
 2026-07-25T06:00:00Z	GraphNavigatorSeam	GraphAlgorithms
 2026-07-25T06:05:00Z	TimeoutTaskMonitorSeam	GraphAlgorithms
+2026-07-25T07:00:00Z	DataTypeManagerDb	ArrayDB
