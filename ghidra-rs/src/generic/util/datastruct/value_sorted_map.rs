@@ -1,4 +1,4 @@
-use crate::generic::seam_stubs::SortedListPlaceholder;
+use crate::generic::util::datastruct::sorted_list::SortedList;
 use crate::util::ListIterator;
 
 /// A minimal analogue of `java.util.List`, restricted to the subset of methods that
@@ -126,7 +126,7 @@ pub trait ValueSortedMap<K, V> {
     /// Returns `true` if the entry's position changed.
     fn update(&mut self, key: &K) -> bool;
 
-    fn values(&self) -> Box<dyn SortedListPlaceholder<V> + '_>;
+    fn values(&self) -> Box<dyn SortedList<V> + '_>;
 
     fn is_empty(&self) -> bool;
 
@@ -367,7 +367,23 @@ mod tests {
             }
         }
     }
-    impl SortedListPlaceholder<i32> for ValuesList {}
+    impl SortedList<i32> for ValuesList {
+        fn lower_index(&self, element: &i32) -> i64 {
+            self.values.iter().rposition(|v| v < element).map(|i| i as i64).unwrap_or(-1)
+        }
+
+        fn floor_index(&self, element: &i32) -> i64 {
+            self.values.iter().rposition(|v| v <= element).map(|i| i as i64).unwrap_or(-1)
+        }
+
+        fn ceiling_index(&self, element: &i32) -> i64 {
+            self.values.iter().position(|v| v >= element).map(|i| i as i64).unwrap_or(-1)
+        }
+
+        fn higher_index(&self, element: &i32) -> i64 {
+            self.values.iter().position(|v| v > element).map(|i| i as i64).unwrap_or(-1)
+        }
+    }
 
     impl ValueSortedMap<&'static str, i32> for SimpleValueSortedMap {
         fn put(&mut self, key: &'static str, value: i32) -> Option<i32> {
@@ -471,7 +487,7 @@ mod tests {
             }
         }
 
-        fn values(&self) -> Box<dyn SortedListPlaceholder<i32> + '_> {
+        fn values(&self) -> Box<dyn SortedList<i32> + '_> {
             Box::new(ValuesList { values: self.entries.iter().map(|(_, v)| *v).collect() })
         }
 
