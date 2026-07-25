@@ -2,12 +2,11 @@
 //!
 //! A constant that has been given a data type (like a constant that is really a pointer).
 //!
-//! The Java class `extends HighVariable`, whose real port is not complete yet (only a minimal
-//! placeholder lives at [`crate::program::seam_stubs::HighVariable`]); this type was selected as
-//! a dependency-cycle cut-point, so it is promoted straight to a trait with that placeholder as
-//! its supertrait bound. The placeholder was grown with `get_high_function`/`get_data_type`/
-//! `get_size`/`decode_instances` (all the inherited `HighVariable` members this class actually
-//! calls) so this trait's default methods have something to build on; see `STUBS.tsv`.
+//! The Java class `extends HighVariable`. [`HighVariable`] has since been ported as its own trait
+//! (see [`crate::program::model::pcode::high_variable`]); back when this module was written it
+//! was still a placeholder grown with `get_high_function`/`get_data_type`/`get_size`/
+//! `decode_instances` (all the inherited `HighVariable` members this class actually calls), which
+//! now live as real methods on the ported trait.
 //!
 //! [`HighSymbol`] is likewise only a minimal placeholder. [`HighFunction`] has since been ported
 //! as its own trait (see [`crate::program::model::pcode::high_function`]); back when this module
@@ -35,7 +34,8 @@ use crate::program::model::pcode::Varnode;
 use crate::program::model::address::Address;
 use crate::program::model::scalar::Scalar;
 use crate::program::model::pcode::high_function::HighFunction;
-use crate::program::seam_stubs::{HighSymbol, HighVariable};
+use crate::program::model::pcode::high_variable::HighVariable;
+use crate::program::seam_stubs::HighSymbol;
 
 /// A constant that has been given a data type (like a constant that is really a pointer). Port of
 /// `ghidra.program.model.pcode.HighConstant`.
@@ -294,6 +294,16 @@ mod tests {
         fn get_data_type(&self) -> Box<dyn DataType> {
             (self.data_type)()
         }
+        fn get_symbol(&self) -> Option<Arc<dyn HighSymbol>> {
+            self.symbol.clone()
+        }
+        fn set_representative(&mut self, rep: Varnode) {
+            self.representative = rep;
+        }
+        fn set_instances(&mut self, _instances: Vec<Varnode>) {}
+        fn decode(&mut self, _decoder: &dyn Decoder) -> Result<(), DecoderException> {
+            unimplemented!("not needed for this smoke test")
+        }
     }
 
     impl HighConstant for MockHighConstant {
@@ -417,9 +427,9 @@ mod tests {
         };
 
         let obj: &mut dyn HighConstant = &mut constant;
-        obj.decode(&decoder).expect("decode should succeed");
+        HighConstant::decode(obj, &decoder).expect("decode should succeed");
 
-        assert_eq!(obj.get_symbol().expect("symbol should resolve").get_id(), 99);
+        assert_eq!(HighConstant::get_symbol(obj).expect("symbol should resolve").get_id(), 99);
         assert_eq!(obj.get_pc_address(), Some(pc));
     }
 
@@ -445,9 +455,9 @@ mod tests {
             emitted: AtomicBool::new(false),
         };
 
-        constant.decode(&decoder).expect("decode should succeed");
+        HighConstant::decode(&mut constant, &decoder).expect("decode should succeed");
 
-        assert!(constant.get_symbol().is_none());
+        assert!(HighConstant::get_symbol(&constant).is_none());
         assert_eq!(constant.get_pc_address(), Some(pc));
     }
 

@@ -25,6 +25,7 @@ use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::function_prototype::FunctionPrototype;
 use crate::program::model::pcode::global_symbol_map::GlobalSymbolMap;
 use crate::program::model::pcode::high_function::HighFunction;
+use crate::program::model::pcode::high_variable::HighVariable;
 use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::pcode::Varnode;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
@@ -1947,58 +1948,6 @@ pub trait LocalSymbolMap: Send + Sync {
 /// class is ported. `HighFunction` only ever returns this type opaquely (via
 /// `get_jump_tables`), so no members are needed yet.
 pub trait JumpTable: Send + Sync {}
-
-/// Placeholder for `ghidra.program.model.pcode.HighVariable`, referenced by
-/// [`HighSymbol::get_high_variable`] and
-/// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
-/// before the real class is ported.
-pub trait HighVariable: Send + Sync {
-    /// Stands in for `HighVariable.requiresDynamicStorage()`.
-    fn requires_dynamic_storage(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `HighVariable.getRepresentative()`.
-    fn get_representative(&self) -> Varnode;
-
-    /// Simplified stand-in for `highVar instanceof HighParam ? ((HighParam)
-    /// highVar).getSlot() : null`, used by
-    /// [`HighFunctionDBUtil::get_function_variable`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::get_function_variable).
-    /// The real `HighParam` subtype is not modeled separately here; implementors representing a
-    /// parameter are expected to override this to return their slot.
-    fn as_param_slot(&self) -> Option<i32> {
-        None
-    }
-
-    /// Stands in for `HighVariable.getHighFunction()`, used by
-    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
-    /// Left required since there is no sensible placeholder `HighFunction` to hand back.
-    fn get_high_function(&self) -> Arc<dyn HighFunction>;
-
-    /// Stands in for `HighVariable.getDataType()`, used by
-    /// [`HighConstant::get_scalar`](crate::program::model::pcode::high_constant::HighConstant::get_scalar).
-    fn get_data_type(&self) -> Box<dyn DataType> {
-        Box::new(PlaceholderDataType)
-    }
-
-    /// Stands in for `HighVariable.getSize()`, used by
-    /// [`HighConstant::get_scalar`](crate::program::model::pcode::high_constant::HighConstant::get_scalar).
-    /// Defaults to the representative varnode's size, matching the real class's usual
-    /// `getSize() == getRepresentative().getSize()` invariant.
-    fn get_size(&self) -> i32 {
-        self.get_representative().get_size()
-    }
-
-    /// Stands in for the package-private `HighVariable.decodeInstances(Decoder)`, used by
-    /// [`HighConstant::decode`](crate::program::model::pcode::high_constant::HighConstant::decode).
-    /// The real method decodes the representative and any merged "instance" varnodes from the
-    /// stream; that decoding logic belongs to `HighVariable` itself, which is not yet ported, so
-    /// this defaults to a no-op that consumes nothing from the stream.
-    fn decode_instances(&mut self, decoder: &dyn Decoder) -> Result<(), DecoderException> {
-        let _ = decoder;
-        Ok(())
-    }
-}
 
 /// Placeholder for `ghidra.program.model.data.DataTypeSymbol`, referenced by
 /// [`HighFunctionDBUtil::write_override`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil::write_override)

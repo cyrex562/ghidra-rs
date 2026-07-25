@@ -69,11 +69,12 @@ use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::function_prototype::FunctionPrototype;
 use crate::program::model::pcode::global_symbol_map::GlobalSymbolMap;
+use crate::program::model::pcode::high_variable::HighVariable;
 use crate::program::model::pcode::ids::{ATTRIB_CONTENT, ATTRIB_ID, ATTRIB_LABEL, ELEM_PARENT, ELEM_VAL};
 use crate::program::model::pcode::pcode_exception::PcodeException;
 use crate::program::model::pcode::Varnode;
 use crate::program::model::symbol::{NameTransformer, Namespace, NamespaceType};
-use crate::program::seam_stubs::{HighSymbol, HighVariable, JumpTable, LocalSymbolMap};
+use crate::program::seam_stubs::{HighSymbol, JumpTable, LocalSymbolMap};
 
 /// Port of `HighFunction.DECOMPILER_TAG_MAP`. Not re-exported from the `pcode` module root since
 /// it would collide with the identically-named
