@@ -56,6 +56,14 @@ pub trait DataTypeManagerOwner {
 /// compiling) to also cover the query surface
 /// [`HighFunctionDBUtil`](crate::program::model::pcode::high_function_db_util::HighFunctionDBUtil)
 /// needs before the real class is ported.
+///
+/// Grown again (see `STUBS.tsv`) to cover the varnode-list/resize surface
+/// [`VariableUtilities`](crate::program::model::listing::variable_utilities::VariableUtilities)
+/// needs before the real class (with its `BAD_STORAGE`/`UNASSIGNED_STORAGE`/`VOID_STORAGE`
+/// singletons and full varnode-list backing) is ported. [`get_varnodes`](Self::get_varnodes),
+/// [`size`](Self::size), and [`is_valid`](Self::is_valid) default off of
+/// [`get_first_varnode`](Self::get_first_varnode) so pre-existing implementors keep compiling
+/// unmodified.
 pub trait VariableStorage {
     /// Stands in for `VariableStorage.isHashStorage()`.
     fn is_hash_storage(&self) -> bool {
@@ -84,6 +92,81 @@ pub trait VariableStorage {
     fn storage_equals(&self, other: &dyn VariableStorage) -> bool {
         let _ = other;
         false
+    }
+
+    /// Stands in for `VariableStorage.getVarnodes()`. Defaults to the single varnode reported by
+    /// [`get_first_varnode`](Self::get_first_varnode) (if any), so pre-existing single-varnode
+    /// implementors report a consistent answer without needing to override this.
+    fn get_varnodes(&self) -> Vec<Varnode> {
+        self.get_first_varnode().into_iter().collect()
+    }
+
+    /// Stands in for `VariableStorage.isValid()`. Defaults to "has at least one varnode", which
+    /// matches how `BAD_STORAGE`/`UNASSIGNED_STORAGE`-style empty placeholders are meant to be
+    /// treated by callers such as `VariableUtilities.checkStorage` (which explicitly lets invalid
+    /// storage pass through unchanged).
+    fn is_valid(&self) -> bool {
+        !self.get_varnodes().is_empty()
+    }
+
+    /// Stands in for `VariableStorage.size()`: the total byte length across all storage varnodes.
+    fn size(&self) -> i32 {
+        self.get_varnodes().iter().map(Varnode::get_size).sum()
+    }
+
+    /// Stands in for `VariableStorage.isUniqueStorage()`: `true` if this is a single varnode
+    /// located in the unique (temporary) address space.
+    fn is_unique_storage(&self) -> bool {
+        matches!(self.get_varnodes().as_slice(), [vn] if vn.is_unique())
+    }
+
+    /// Stands in for `VariableStorage.isConstantStorage()`: `true` if this is a single varnode
+    /// located in the constant address space.
+    fn is_constant_storage(&self) -> bool {
+        matches!(self.get_varnodes().as_slice(), [vn] if vn.is_constant())
+    }
+
+    /// Stands in for `VariableStorage.isRegisterStorage()`: `true` if this is a single varnode
+    /// located in the register address space.
+    fn is_register_storage(&self) -> bool {
+        matches!(self.get_varnodes().as_slice(), [vn] if vn.is_register())
+    }
+
+    /// Stands in for `VariableStorage.getRegister()`. Defaults to `None`; overridden by storage
+    /// backed by an actual register lookup.
+    fn get_register(&self) -> Option<RegisterRef> {
+        None
+    }
+
+    /// Stands in for `VariableStorage.getAutoParameterType()`. Defaults to `None` (not an
+    /// auto-parameter).
+    fn get_auto_parameter_type(&self) -> Option<crate::program::model::listing::AutoParameterType> {
+        None
+    }
+
+    /// Stands in for the `new VariableStorage(ProgramArchitecture, Varnode...)` family of
+    /// constructors used throughout `VariableUtilities` to build resized/derived storage.
+    /// Defaults to a fresh [`VarnodeListStorage`] backed by `varnodes`, which is enough for
+    /// query-only callers; storage backed by a real database record should override this to
+    /// persist the new varnode list instead.
+    fn with_varnodes(&self, varnodes: Vec<Varnode>) -> Box<dyn VariableStorage> {
+        Box::new(VarnodeListStorage(varnodes))
+    }
+}
+
+/// Minimal, purely in-memory [`VariableStorage`] backed by an explicit varnode list. Used as the
+/// default result of [`VariableStorage::with_varnodes`], mirroring
+/// `new VariableStorage(ProgramArchitecture, Varnode...)`. Not a port of any specific Java class.
+#[derive(Debug, Clone, Default)]
+pub struct VarnodeListStorage(pub Vec<Varnode>);
+
+impl VariableStorage for VarnodeListStorage {
+    fn get_first_varnode(&self) -> Option<Varnode> {
+        self.0.first().cloned()
+    }
+
+    fn get_varnodes(&self) -> Vec<Varnode> {
+        self.0.clone()
     }
 }
 

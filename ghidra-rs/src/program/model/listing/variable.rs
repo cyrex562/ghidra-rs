@@ -216,6 +216,16 @@ pub trait Variable {
     fn is_auto_parameter(&self) -> bool {
         false
     }
+
+    /// Returns this variable's ordinal if it is a [`Parameter`](crate::program::model::listing::Parameter),
+    /// or `None` otherwise. Stands in for the `instanceof Parameter` check (followed by
+    /// `((Parameter) v).getOrdinal()`) used by
+    /// [`VariableUtilities::compare`](crate::program::model::listing::variable_utilities::VariableUtilities::compare)
+    /// before a downcast from `&dyn Variable` to `&dyn Parameter` is available. `Parameter`
+    /// implementors are expected to override this to return `Some(self.get_ordinal())`.
+    fn parameter_ordinal(&self) -> Option<i32> {
+        None
+    }
 }
 
 #[cfg(test)]

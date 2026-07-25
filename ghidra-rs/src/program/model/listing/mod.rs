@@ -55,6 +55,7 @@ pub mod thunk_function;
 pub mod variable;
 pub mod variable_filter;
 pub mod variable_size_exception;
+pub mod variable_utilities;
 
 pub use address_change_set::AddressChangeSet;
 pub use auto_parameter_type::AutoParameterType;
@@ -125,3 +126,4 @@ pub use variable_filter::{
     RegisterVariableFilter, StackVariableFilter, UniqueVariableFilter, VariableFilter,
 };
 pub use variable_size_exception::VariableSizeException;
+pub use variable_utilities::{VariableConflictHandler, VariableUtilities};
