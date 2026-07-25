@@ -10,7 +10,7 @@ DONE	trait	111	1069	256	program	Ghidra/Framework/SoftwareModeling/src/main/java/
 DONE	trait	109	3	39	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/ExternalLocationDB.java
 DONE	trait	108	15	98	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/ExternalManagerDB.java
 DONE	trait	107	16	375	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionDB.java
-TODO	trait	106	158	78	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunction.java
+DONE	trait	106	158	78	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighFunction.java
 TODO	trait	105	126	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighVariable.java
 TODO	trait	104	342	34	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/Varnode.java
 TODO	trait	103	307	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/DynamicVariableStorage.java
