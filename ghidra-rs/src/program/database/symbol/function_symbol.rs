@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use crate::app::seam_stubs::ProgramLocation;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Function;
 use crate::program::model::symbol::{
     get_default_external_function_name, Namespace, Reference, SetParentNamespaceError, Symbol,
     SourceType, SymbolType, ThunkReference,
 };
+use crate::program::util::ProgramLocation;
 use crate::util::task::TaskMonitor;
 
 /// Symbol class for functions.

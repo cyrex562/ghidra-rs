@@ -44,15 +44,16 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::app::seam_stubs::{
-    DebuggerAddressTranslator, MapEntry, ModuleMapEntry, ModuleMapProposal, ProgramLocation,
-    RegionMapEntry, RegionMapProposal, SectionMapEntry, SectionMapProposal,
-    TraceConflictedMappingException, TraceLocation, TraceMemoryRegion, TraceModule, TraceSection,
+    DebuggerAddressTranslator, MapEntry, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
+    RegionMapProposal, SectionMapEntry, SectionMapProposal, TraceConflictedMappingException,
+    TraceLocation, TraceMemoryRegion, TraceModule, TraceSection,
 };
 use crate::debug::api::modules::DebuggerStaticMappingChangeListener;
 use crate::framework::model::DomainFile;
 use crate::program::model::address::{AddressSetView, AddressSpace};
 use crate::program::model::listing::Program;
 use crate::program::model::mem::MemoryBlock;
+use crate::program::util::ProgramLocation;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace::Trace;
 use crate::util::exception::CancelledException;
@@ -385,7 +386,26 @@ mod tests {
     impl TraceLocation for MockTraceLocation {}
 
     struct MockProgramLocation;
-    impl ProgramLocation for MockProgramLocation {}
+    impl ProgramLocation for MockProgramLocation {
+        fn get_program(&self) -> std::sync::Arc<dyn Program> {
+            std::sync::Arc::new(MockProgram)
+        }
+
+        fn get_address(&self) -> crate::program::model::address::Address {
+            let space = AddressSpace::new(
+                "ram",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Ram,
+                0,
+            );
+            crate::program::model::address::Address::new(space, 0)
+        }
+
+        fn get_byte_address(&self) -> crate::program::model::address::Address {
+            self.get_address()
+        }
+    }
 
     struct MockMapEntry;
     impl MapEntry for MockMapEntry {}

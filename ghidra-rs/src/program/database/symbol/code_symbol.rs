@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use crate::app::seam_stubs::ProgramLocation;
 use crate::program::model::address::Address;
 use crate::program::model::listing::{CodeUnit, Data};
 use crate::program::model::symbol::{
     get_default_external_name, ExternalLocation, Namespace, SourceType, Symbol, SymbolType,
 };
+use crate::program::util::ProgramLocation;
 
 /// Value returned by [`CodeSymbol::get_object`], standing in for the polymorphic `Object` return
 /// of `CodeSymbol.getObject()` (an `ExternalLocation`, a `CodeUnit`, or a `Data` primitive

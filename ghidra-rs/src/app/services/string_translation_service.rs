@@ -12,9 +12,9 @@
 //! `PluginDescription.getPluginDescription(Class)` reflection lookups that have no Rust
 //! equivalent, and the [`HelpLocation`] placeholder trait has no constructor to build one from.
 
-use crate::app::seam_stubs::ProgramLocation;
 use crate::framework::seam_stubs::HelpLocation;
 use crate::program::model::listing::Program;
+use crate::program::util::ProgramLocation;
 
 /// Options given to [`StringTranslationService::translate`].
 ///
@@ -71,6 +71,9 @@ pub fn sort_string_translation_services(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+
+    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 
     struct MockProgram;
 
@@ -87,7 +90,20 @@ mod tests {
     }
 
     struct MockLocation;
-    impl ProgramLocation for MockLocation {}
+    impl ProgramLocation for MockLocation {
+        fn get_program(&self) -> Arc<dyn Program> {
+            Arc::new(MockProgram)
+        }
+
+        fn get_address(&self) -> Address {
+            let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+            Address::new(space, 0)
+        }
+
+        fn get_byte_address(&self) -> Address {
+            self.get_address()
+        }
+    }
 
     struct MockTranslationService {
         name: &'static str,

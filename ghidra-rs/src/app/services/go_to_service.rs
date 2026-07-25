@@ -5,9 +5,8 @@
 //!
 //! Java's overloaded `goTo`/`goToExternalLocation`/`goToQuery` methods are each given a distinct
 //! Rust name, since Rust traits cannot overload on parameter type/arity alone. `ProgramLocation`
-//! and `Navigatable` are not yet ported, so they are represented by placeholder traits in
-//! [`crate::app::seam_stubs`] (the former already exists for
-//! [`StringTranslationService`](crate::app::services::StringTranslationService), the latter for
+//! is ported as [`crate::program::util::ProgramLocation`]. `Navigatable` is not yet ported, so it
+//! is represented by a placeholder trait in [`crate::app::seam_stubs`] (added for
 //! [`MemorySearchService`](crate::app::services::MemorySearchService)). `GoToOverrideService` is
 //! also not yet ported and is added as a new placeholder here.
 //!
@@ -17,12 +16,13 @@
 
 use std::sync::Arc;
 
-use crate::app::seam_stubs::{GoToOverrideService, Navigatable, ProgramLocation};
+use crate::app::seam_stubs::{GoToOverrideService, Navigatable};
 use crate::app::services::go_to_service_listener::GoToServiceListener;
 use crate::app::services::query_data::QueryData;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
 use crate::program::model::symbol::ExternalLocation;
+use crate::program::util::ProgramLocation;
 use crate::util::task::TaskMonitor;
 
 /// Characters that are allowed in words that the GoToService can use. These typically represent
@@ -195,7 +195,26 @@ mod tests {
     }
 
     struct MockLocation;
-    impl ProgramLocation for MockLocation {}
+    impl ProgramLocation for MockLocation {
+        fn get_program(&self) -> Arc<dyn Program> {
+            Arc::new(MockProgram)
+        }
+
+        fn get_address(&self) -> Address {
+            let space = crate::program::model::address::AddressSpace::new(
+                "ram",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Ram,
+                0,
+            );
+            Address::new(space, 0)
+        }
+
+        fn get_byte_address(&self) -> Address {
+            self.get_address()
+        }
+    }
 
     struct MockNavigatable;
     impl Navigatable for MockNavigatable {}
