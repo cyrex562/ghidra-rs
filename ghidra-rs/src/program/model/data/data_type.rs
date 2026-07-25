@@ -579,6 +579,14 @@ pub trait DataType {
         None
     }
 
+    /// Stands in for `dt instanceof Array ? (Array) dt : null`, used by
+    /// [`VariableOffset`](crate::program::model::listing::variable_offset::VariableOffset)'s
+    /// `getObjects()` port to resolve array-indexed sub-operand names. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_array(&self) -> Option<&dyn crate::program::model::data::array::Array> {
+        None
+    }
+
     /// Stands in for `dt instanceof PartialUnion ? (PartialUnion) dt : null`, used by the same
     /// port. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather than
     /// by-value.
