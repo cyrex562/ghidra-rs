@@ -13441,7 +13441,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/CategoryDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/CategoryDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/CategoryDBAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ComponentDBAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ComponentDBAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ComponentDBAdapterV0.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/CompositeDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/CompositeDBAdapter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database data 
