@@ -131,6 +131,9 @@ pub const ELEM_GROUP: ElementId = ElementId::new("group", 120);
 // Real Ghidra id is 168 (`ElementId.java`'s `ELEM_PENTRY`), continuing the local counter above
 // instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
 pub const ELEM_PENTRY: ElementId = ElementId::new("pentry", 121);
+// Real Ghidra id is 73 (`ElementId.java`'s `ELEM_HASH`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_HASH: ElementId = ElementId::new("hash", 122);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
