@@ -5,6 +5,7 @@ pub mod domain_object_adapter_db;
 pub mod domain_object_db_change_set;
 pub mod domain_object_file_listener;
 pub mod ghidra_folder_data;
+pub mod ghidra_tool_state;
 pub mod open_mode;
 pub mod opened_domain_file;
 
@@ -17,5 +18,6 @@ pub use domain_object_adapter_db::DomainObjectAdapterDB;
 pub use domain_object_db_change_set::DomainObjectDBChangeSet;
 pub use domain_object_file_listener::DomainObjectFileListener;
 pub use ghidra_folder_data::{get_relative_path, GhidraFolderData};
+pub use ghidra_tool_state::GhidraToolState;
 pub use open_mode::OpenMode;
 pub use opened_domain_file::{OpenedDomainFile, OpenedDomainFileError};
