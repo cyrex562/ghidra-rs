@@ -23,7 +23,7 @@ DONE	trait	106	3	1	generic	Ghidra/Framework/Generic/src/main/java/ghidra/generic
 DONE	trait	102	5	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/algo/FindPathsAlgorithm.java
 DONE	trait	101	32	15	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/GraphAlgorithms.java
 DONE	trait	102	6	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ArrayDBAdapter.java
-TODO	trait	102	16	259	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeDB.java
+PARK	trait	102	16	259	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeDB.java
 TODO	trait	101	6	208	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/ArrayDB.java
 TODO	trait	101	4	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/BuiltinDBAdapter.java
 TODO	trait	101	7	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/CallingConventionDBAdapter.java
