@@ -96,10 +96,15 @@ pub trait FormatManager {}
 pub trait Archive {}
 
 /// Placeholder for `ghidra.app.nav.Navigatable`, referenced by
-/// [`MemorySearchService`](crate::app::services::MemorySearchService) before the real class is
-/// ported. `MemorySearchService` only ever passes this type through as a parameter, so no
-/// members are needed yet.
-pub trait Navigatable {}
+/// [`MemorySearchService`](crate::app::services::MemorySearchService) (which only ever passes
+/// this type through as a parameter) and by
+/// [`NavigatableActionContext`](crate::app::context::NavigatableActionContext) (whose
+/// `is_active_program` default method mirrors `NavigatableActionContext.isActiveProgram()`,
+/// which calls `Navigatable.isConnected()`) before the real class is ported.
+pub trait Navigatable {
+    /// Stands in for `Navigatable.isConnected()`.
+    fn is_connected(&self) -> bool;
+}
 
 /// Placeholder for `ghidra.features.base.memsearch.gui.SearchSettings`, referenced by
 /// [`MemorySearchService`](crate::app::services::MemorySearchService) before the real class is

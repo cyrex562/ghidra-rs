@@ -21,7 +21,11 @@ mod tests {
     use super::*;
 
     struct FakeNavigatable;
-    impl Navigatable for FakeNavigatable {}
+    impl Navigatable for FakeNavigatable {
+        fn is_connected(&self) -> bool {
+            false
+        }
+    }
 
     struct RecordingListener {
         removed_count: usize,

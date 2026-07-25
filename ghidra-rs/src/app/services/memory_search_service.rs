@@ -32,7 +32,11 @@ mod tests {
     use super::*;
 
     struct MockNavigatable;
-    impl Navigatable for MockNavigatable {}
+    impl Navigatable for MockNavigatable {
+        fn is_connected(&self) -> bool {
+            false
+        }
+    }
 
     struct MockSearchSettings;
     impl SearchSettings for MockSearchSettings {}
