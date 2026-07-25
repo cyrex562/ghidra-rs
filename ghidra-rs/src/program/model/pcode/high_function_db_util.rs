@@ -14,12 +14,13 @@
 //! implementor, mirroring calling the Java static methods via `HighFunctionDBUtil.foo(...)`.
 //!
 //! This type was selected as a dependency-cycle cut-point; several of the core types it
-//! references (`HighSymbol`, `HighVariable`, `LocalSymbolMap`, `DynamicEntry`, `DataTypeSymbol`,
+//! references (`HighSymbol`, `LocalSymbolMap`, `DynamicEntry`, `DataTypeSymbol`,
 //! `UnionFacetSymbol`, and the DB-backed `ParameterImpl`/`ReturnParameterImpl`/`LocalVariableImpl`
 //! trio) are not yet ported; minimal placeholders for them live in
-//! [`crate::program::seam_stubs`] (see `STUBS.tsv`). `HighFunction` itself has since been ported
-//! as a trait (see
-//! [`high_function`](crate::program::model::pcode::high_function::HighFunction)). A handful of
+//! [`crate::program::seam_stubs`] (see `STUBS.tsv`). `HighFunction` and `HighVariable` themselves
+//! have since been ported as traits (see
+//! [`high_function`](crate::program::model::pcode::high_function::HighFunction) and
+//! [`high_variable`](crate::program::model::pcode::high_variable::HighVariable)). A handful of
 //! sub-steps that need mutable `SymbolTable`/`Listing`/`ReferenceManager` access via a `Program`
 //! reached only as a shared `Arc<dyn Program>` (through `Function::get_program`/
 //! `Variable::get_program`) cannot be represented with this crate's current ownership

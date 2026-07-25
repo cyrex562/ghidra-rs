@@ -12,7 +12,8 @@
 //! dependency-cycle cut-point, so it is promoted straight to a trait with that placeholder as its
 //! supertrait bound, following the precedent of
 //! [`HighConstant`](crate::program::model::pcode::high_constant::HighConstant) (also a
-//! `HighSymbol`/`HighVariable` subclass cut at the same seam). The placeholder was grown with a
+//! `HighSymbol` subclass cut at the same seam; [`HighVariable`](crate::program::model::pcode::high_variable::HighVariable)
+//! has since been ported as its own trait). The placeholder was grown with a
 //! `decode` default (`HighSymbol.decode(Decoder)`) so this trait's default `decode` method has
 //! something to build on; see `STUBS.tsv`.
 //!
@@ -185,9 +186,9 @@ mod tests {
         }
         fn split_out_merge_group(
             &mut self,
-            _high: Box<dyn crate::program::seam_stubs::HighVariable>,
+            _high: Box<dyn crate::program::model::pcode::high_variable::HighVariable>,
             _vn: &crate::program::model::pcode::Varnode,
-        ) -> Result<Box<dyn crate::program::seam_stubs::HighVariable>, crate::program::model::pcode::pcode_exception::PcodeException>
+        ) -> Result<Box<dyn crate::program::model::pcode::high_variable::HighVariable>, crate::program::model::pcode::pcode_exception::PcodeException>
         {
             unimplemented!("not needed for this smoke test")
         }

@@ -14,6 +14,7 @@ pub mod high_constant;
 pub mod high_function;
 pub mod high_function_db_util;
 pub mod high_param_id;
+pub mod high_variable;
 pub mod ids;
 pub mod linked_byte_buffer;
 pub mod list_linked;
@@ -49,6 +50,7 @@ pub use high_function::{
 };
 pub use high_function_db_util::{HighFunctionDb, HighFunctionDBUtil, ReturnCommitOption, AUTO_CAT};
 pub use high_param_id::{HighParamID, DECOMPILER_TAG_MAP};
+pub use high_variable::HighVariable;
 pub use ids::*;
 pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition};
 pub use list_linked::{LinkedIter, ListLinked};
