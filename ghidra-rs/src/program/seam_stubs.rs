@@ -2078,14 +2078,6 @@ pub trait CodeBlockModel {
     ) -> Result<Box<dyn CodeBlockIterator>, CancelledException>;
 }
 
-/// Placeholder for `ghidra.program.util.CodeUnitLocation`, referenced (as a superclass) by
-/// [`OffsetFieldLocation`](crate::program::util::offset_field_location::OffsetFieldLocation)
-/// before the real class is ported. `CodeUnitLocation` itself extends `ProgramLocation` (see
-/// [`crate::app::seam_stubs::ProgramLocation`]), but `OffsetFieldLocation` never calls a method
-/// on either superclass (it only adds a `getType()` accessor of its own), so this placeholder is
-/// a marker with no members.
-pub trait CodeUnitLocation {}
-
 /// Placeholder for `ghidra.program.util.OffsetFieldType`, referenced by
 /// [`OffsetFieldLocation`](crate::program::util::offset_field_location::OffsetFieldLocation)
 /// before the real enum is ported. All four variants are mirrored since
