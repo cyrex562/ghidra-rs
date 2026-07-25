@@ -2438,3 +2438,13 @@ pub trait FunctionTagManagerProgram {
     fn function_tags_changed(&self);
 }
 
+/// Placeholder for `ghidra.program.database.symbol.VariableSymbolDB`, referenced by
+/// [`FunctionDb`](crate::program::database::function::FunctionDb) before the real class is
+/// ported.
+///
+/// `VariableSymbolDB extends SymbolDB`, and `FunctionDB` only ever passes instances of it opaquely
+/// through to (the not-yet-ported) `FunctionVariables`, never inspecting anything beyond its base
+/// `Symbol` identity itself. So this placeholder is a bare marker over the already-ported
+/// [`Symbol`] trait, with no extra members.
+pub trait VariableSymbolDb: Symbol {}
+

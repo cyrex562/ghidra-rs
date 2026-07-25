@@ -332,3 +332,4 @@ ts	stub_class	referenced_by
 2026-07-24T04:00:00Z	MetaDataType	NoisyStructureBuilder
 2026-07-24T05:00:00Z	VariableStorage(grown)	VariableUtilities
 2026-07-24T06:00:00Z	ExternalManagerDb	ExternalLocationDB
+2026-07-25T00:00:00Z	VariableSymbolDb	FunctionDB

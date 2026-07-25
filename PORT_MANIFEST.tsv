@@ -13523,7 +13523,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionAdapterV1.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionAdapterV2.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionAdapterV3.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionDB.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionManagerDB.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionStackFrame.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/function/FunctionTagAdapter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program database function
