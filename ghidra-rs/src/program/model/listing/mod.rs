@@ -38,6 +38,7 @@ pub mod label_string;
 pub mod library;
 pub mod listing;
 pub mod local_variable;
+pub mod operand_representation_list;
 pub mod parameter;
 pub mod program;
 pub mod program_change_set;
@@ -106,6 +107,9 @@ pub use label_string::{LabelString, LabelType};
 pub use library::{Library, UNKNOWN as UNKNOWN_LIBRARY_NAME};
 pub use listing::{CreateFunctionError, Listing, DEFAULT_TREE_NAME};
 pub use local_variable::LocalVariable;
+pub use operand_representation_list::{
+    OperandRepresentationElement, OperandRepresentationList, OperandRepresentationListImpl,
+};
 pub use parameter::Parameter;
 pub use program::{Program, PROGRAM_INFO};
 pub use program_change_set::ProgramChangeSet;
