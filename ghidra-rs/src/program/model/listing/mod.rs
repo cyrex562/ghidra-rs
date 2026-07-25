@@ -50,6 +50,7 @@ pub mod register_change_set;
 pub mod repeatable_comment;
 pub mod stack_frame;
 pub mod stack_variable_comparator;
+pub mod stub_listing;
 pub mod symbol_change_set;
 pub mod thunk_function;
 pub mod variable;
@@ -118,6 +119,7 @@ pub use stack_frame::{
     CreateStackVariableError, StackFrame, GROWS_NEGATIVE, GROWS_POSITIVE, UNKNOWN_PARAM_OFFSET,
 };
 pub use stack_variable_comparator::{StackVariableComparator, StackVariableOperand};
+pub use stub_listing::StubListing;
 pub use symbol_change_set::SymbolChangeSet;
 pub use thunk_function::ThunkFunction;
 pub use variable::Variable;
