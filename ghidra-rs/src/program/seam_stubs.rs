@@ -568,18 +568,16 @@ impl crate::program::model::listing::Variable for DatabaseVariableImpl {
     }
 }
 
-/// Placeholder for `ghidra.program.model.data.StandAloneDataTypeManager`, referenced by
-/// [`DataTypeArchive`](crate::program::model::listing::data_type_archive::DataTypeArchive)
-/// before the real class is ported. `DataTypeArchive` only ever returns this type opaquely, so
-/// no members are needed yet.
-pub trait StandAloneDataTypeManager {}
-
 /// Placeholder for `ghidra.program.database.ProjectDataTypeManager`, referenced by
 /// [`DataTypeArchiveDB::get_data_type_manager`](crate::program::database::data_type_archive_db::DataTypeArchiveDB::get_data_type_manager)
-/// before the real class is ported. Extends [`StandAloneDataTypeManager`] per the Java class
-/// hierarchy (`ProjectDataTypeManager extends StandAloneDataTypeManager`);
+/// before the real class is ported. Extends the now-ported
+/// [`StandAloneDataTypeManager`](crate::program::model::data::stand_alone_data_type_manager::StandAloneDataTypeManager)
+/// per the Java class hierarchy (`ProjectDataTypeManager extends StandAloneDataTypeManager`);
 /// `DataTypeArchiveDB` only ever returns this type opaquely, so no members are needed yet.
-pub trait ProjectDataTypeManager: StandAloneDataTypeManager {}
+pub trait ProjectDataTypeManager:
+    crate::program::model::data::stand_alone_data_type_manager::StandAloneDataTypeManager
+{
+}
 
 /// Placeholder for `ghidra.program.database.DataTypeArchiveDBChangeSet`, referenced by
 /// [`DataTypeArchiveDB::get_changes`](crate::program::database::data_type_archive_db::DataTypeArchiveDB::get_changes)
