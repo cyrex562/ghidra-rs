@@ -4,6 +4,7 @@ pub mod builtin_db_adapter;
 pub mod calling_convention_db_adapter;
 pub mod category_db_adapter;
 pub mod component_db_adapter;
+pub mod composite_db;
 pub mod composite_db_adapter;
 pub mod enum_signed_state;
 pub mod lazy_loading_caching_map;
@@ -23,6 +24,7 @@ pub use component_db_adapter::{
     ComponentDBAdapter, COMPONENT_COMMENT_COL, COMPONENT_DT_ID_COL, COMPONENT_FIELD_NAME_COL,
     COMPONENT_OFFSET_COL, COMPONENT_ORDINAL_COL, COMPONENT_PARENT_ID_COL, COMPONENT_SIZE_COL,
 };
+pub use composite_db::CompositeDb;
 pub use composite_db_adapter::{
     CompositeDBAdapter, COMPOSITE_ALIGNMENT_COL, COMPOSITE_CAT_COL, COMPOSITE_COMMENT_COL,
     COMPOSITE_IS_UNION_COL, COMPOSITE_LAST_CHANGE_TIME_COL, COMPOSITE_LENGTH_COL,
