@@ -55,6 +55,7 @@ pub mod symbol_change_set;
 pub mod thunk_function;
 pub mod variable;
 pub mod variable_filter;
+pub mod variable_offset;
 pub mod variable_size_exception;
 pub mod variable_utilities;
 
@@ -127,5 +128,6 @@ pub use variable_filter::{
     CompoundStackVariableFilter, LocalVariableFilter, MemoryVariableFilter, ParameterFilter,
     RegisterVariableFilter, StackVariableFilter, UniqueVariableFilter, VariableFilter,
 };
+pub use variable_offset::{ReplacedElement, VariableOffset, VariableOffsetImpl, VariableOffsetObject};
 pub use variable_size_exception::VariableSizeException;
 pub use variable_utilities::{VariableConflictHandler, VariableUtilities};

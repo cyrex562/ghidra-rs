@@ -70,6 +70,18 @@ pub trait Reference: Send + Sync + Any {
     fn as_offset_reference(&self) -> Option<&dyn crate::program::model::symbol::OffsetReference> {
         None
     }
+
+    /// Returns this reference viewed as a [`StackReference`](crate::program::model::symbol::StackReference)
+    /// when it is one.
+    ///
+    /// Mirrors Ghidra's `(StackReference) ref` cast (guarded by `instanceof StackReference`),
+    /// used by
+    /// [`VariableOffset`](crate::program::model::listing::variable_offset::VariableOffset)'s
+    /// explicit-reference constructor. The default returns `None`; stack references override it
+    /// to return `Some(self)`.
+    fn as_stack_reference(&self) -> Option<&dyn crate::program::model::symbol::StackReference> {
+        None
+    }
 }
 
 /// Marker trait for dynamically determined references that may not be
