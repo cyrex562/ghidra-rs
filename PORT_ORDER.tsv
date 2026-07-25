@@ -5,7 +5,7 @@ DONE	trait	118	113	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	115	309	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/GhidraLanguagePropertyKeys.java
 DONE	trait	114	1239	51	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ProgramArchitectureTranslator.java
 DONE	trait	113	111	206	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PartialUnion.java
-TODO	trait	112	1239	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/NoisyStructureBuilder.java
+DONE	trait	112	1239	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/NoisyStructureBuilder.java
 TODO	trait	111	1069	256	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableUtilities.java
 TODO	trait	109	3	39	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/ExternalLocationDB.java
 TODO	trait	108	15	98	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/external/ExternalManagerDB.java
