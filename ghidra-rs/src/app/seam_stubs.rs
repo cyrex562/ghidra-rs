@@ -40,12 +40,6 @@ pub trait ControlMode {}
 /// value, so no members are needed yet.
 pub trait DebuggerCoordinates {}
 
-/// Placeholder for `ghidra.program.util.ProgramLocation`, referenced by
-/// [`StringTranslationService`](crate::app::services::StringTranslationService) before the real
-/// class is ported. `StringTranslationService` only ever passes this type through as a
-/// parameter, so no members are needed yet.
-pub trait ProgramLocation {}
-
 /// Placeholder for `ghidra.debug.api.action.AutoMapSpec`, referenced by
 /// [`DebuggerAutoMappingService`](crate::app::services::DebuggerAutoMappingService) before the
 /// real class is ported. `DebuggerAutoMappingService` only ever passes this type through as a

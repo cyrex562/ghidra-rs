@@ -32,6 +32,7 @@ pub mod program_change_record;
 pub mod program_conflict_exception;
 pub mod program_diff_filter;
 pub mod program_event;
+pub mod program_location;
 pub mod program_merge;
 pub mod program_merge_filter;
 pub mod range_map_adapter;
@@ -73,6 +74,7 @@ pub use program_change_record::ProgramChangeRecord;
 pub use program_conflict_exception::ProgramConflictException;
 pub use program_diff_filter::ProgramDiffFilter;
 pub use program_event::ProgramEvent;
+pub use program_location::ProgramLocation;
 pub use program_merge::{
     get_unique_name, FunctionMemberRenameError, MemoryMergeError, ProgramMerge,
     SYMBOL_CONFLICT_SUFFIX,

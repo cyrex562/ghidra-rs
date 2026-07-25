@@ -76,7 +76,7 @@ mod tests {
     use crate::program::model::pcode::decoder::DecoderError;
     use crate::program::model::pcode::ids::{AttributeId, ElementId};
     use crate::program::model::symbol::{Namespace, SourceType, Symbol, SymbolType};
-    use crate::app::seam_stubs::ProgramLocation;
+    use crate::program::util::ProgramLocation;
     use crate::program::model::pcode::high_function::HighFunction;
     use std::sync::Arc;
 
