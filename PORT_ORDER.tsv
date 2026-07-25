@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	121	141	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighSymbol.java
+DONE	trait	121	141	28	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighSymbol.java
 TODO	trait	119	113	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/DynamicHash.java
 TODO	trait	118	113	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/DynamicEntry.java
 TODO	trait	115	309	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/GhidraLanguagePropertyKeys.java
