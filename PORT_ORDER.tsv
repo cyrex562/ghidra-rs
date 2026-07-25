@@ -48,7 +48,7 @@ DONE	trait	99	1254	154	program	Ghidra/Framework/SoftwareModeling/src/main/java/g
 DONE	trait	98	1264	53	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileDataTypeManager.java
 DONE	trait	97	1238	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeArchiveIdDumper.java
 DONE	trait	96	1071	221	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableOffset.java
-TODO	trait	95	1067	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/OperandRepresentationList.java
+DONE	trait	95	1067	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/OperandRepresentationList.java
 TODO	trait	94	765	22	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/ProgramLocation.java
 TODO	trait	93	204	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitLocation.java
 TODO	trait	92	191	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AddressFieldLocation.java
