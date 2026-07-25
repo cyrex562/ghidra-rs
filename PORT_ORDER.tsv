@@ -51,7 +51,7 @@ DONE	trait	96	1071	221	program	Ghidra/Framework/SoftwareModeling/src/main/java/g
 DONE	trait	95	1067	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/OperandRepresentationList.java
 DONE	trait	94	765	22	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/ProgramLocation.java
 DONE	trait	93	204	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/CodeUnitLocation.java
-TODO	trait	92	191	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AddressFieldLocation.java
+DONE	trait	92	191	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/AddressFieldLocation.java
 TODO	trait	91	20	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/nav/NavigatableRemovalListener.java
 TODO	trait	92	15	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/DataLocationListContext.java
 TODO	trait	94	15	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigationActionContext.java
