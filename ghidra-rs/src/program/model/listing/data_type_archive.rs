@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
 use crate::program::model::listing::data_type_archive_change_set::DataTypeArchiveChangeSet;
-use crate::program::seam_stubs::StandAloneDataTypeManager;
+use crate::program::model::data::stand_alone_data_type_manager::StandAloneDataTypeManager;
 
 /// Name of data type archive information property list.
 pub const DATA_TYPE_ARCHIVE_INFO: &str = "Data Type Archive Information";
@@ -52,7 +52,54 @@ mod tests {
 
     struct MockStandAloneDataTypeManager;
 
-    impl StandAloneDataTypeManager for MockStandAloneDataTypeManager {}
+    impl DataTypeManager for MockStandAloneDataTypeManager {}
+
+    impl crate::program::database::data::data_type_manager_db::DataTypeManagerDb
+        for MockStandAloneDataTypeManager
+    {
+        fn db_error(&mut self, _error: std::io::Error) {}
+        fn add_data_type_to_replace(
+            &mut self,
+            _data_type_id: i64,
+            _replacement: Box<dyn crate::program::model::data::data_type::DataType>,
+        ) {
+        }
+        fn add_data_type_to_delete(&mut self, _data_type_id: i64) {}
+    }
+
+    impl StandAloneDataTypeManager for MockStandAloneDataTypeManager {
+        fn clear_program_architecture(
+            &mut self,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<
+            (),
+            crate::program::model::data::stand_alone_data_type_manager::ClearProgramArchitectureError,
+        > {
+            Ok(())
+        }
+
+        fn set_program_architecture(
+            &mut self,
+            _language: Box<dyn crate::program::model::lang::Language>,
+            _compiler_spec_id: crate::program::model::lang::CompilerSpecID,
+            _update_option: crate::program::model::data::stand_alone_data_type_manager::LanguageUpdateOption,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<
+            (),
+            crate::program::model::data::stand_alone_data_type_manager::SetProgramArchitectureError,
+        > {
+            Ok(())
+        }
+
+        fn undo(&mut self) {}
+        fn redo(&mut self) {}
+        fn can_redo(&self) -> bool {
+            false
+        }
+        fn can_undo(&self) -> bool {
+            false
+        }
+    }
 
     struct MockDataTypeManager;
 

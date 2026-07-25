@@ -90,6 +90,7 @@ pub mod rgb16_encoding_settings_definition;
 pub mod rgb32_encoding_settings_definition;
 pub mod short_data_type;
 pub mod source_archive;
+pub mod stand_alone_data_type_manager;
 pub mod string_layout_enum;
 pub mod structure;
 pub mod structure_factory;
