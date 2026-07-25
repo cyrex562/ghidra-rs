@@ -290,7 +290,6 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	ExpressionValueLike	ExpressionEvaluator
 2026-07-23T00:00:00Z	ExpressionException	ExpressionEvaluator
 2026-07-23T00:00:00Z	CodeBlockModel	SubroutineBlockModel
-2026-07-23T00:00:00Z	CodeUnitLocation	OffsetFieldLocation
 2026-07-23T00:00:00Z	OffsetFieldType	OffsetFieldLocation
 2026-07-23T00:00:00Z	PseudoInstructionLike	PseudoFlowProcessor
 2026-07-23T00:00:00Z	VarnodeContext	SymbolicPropogator
