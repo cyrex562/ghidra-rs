@@ -43,7 +43,7 @@ DONE	trait	102	7	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	101	4	208	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/PointerDB.java
 DONE	trait	101	6	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/SourceArchiveAdapter.java
 DONE	trait	102	7	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/TypedefDBAdapter.java
-TODO	trait	100	51	458	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeManagerDB.java
+DONE	trait	100	51	458	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeManagerDB.java
 TODO	trait	99	1254	154	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StandAloneDataTypeManager.java
 TODO	trait	98	1264	53	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FileDataTypeManager.java
 TODO	trait	97	1238	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeArchiveIdDumper.java
