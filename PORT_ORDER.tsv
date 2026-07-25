@@ -14,7 +14,7 @@ DONE	trait	106	158	78	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	105	126	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/HighVariable.java
 DONE	trait	104	342	34	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/Varnode.java
 DONE	trait	103	307	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/DynamicVariableStorage.java
-TODO	trait	102	1066	77	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/StubListing.java
+DONE	trait	102	1066	77	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/StubListing.java
 TODO	trait	101	43	90	program	Ghidra/Features/Base/src/main/java/ghidra/program/database/GhidraProgramMultiUserMergeManagerFactory.java
 TODO	trait	102	26	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/GImplicitDirectedGraph.java
 TODO	trait	101	48	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/GDirectedGraph.java
