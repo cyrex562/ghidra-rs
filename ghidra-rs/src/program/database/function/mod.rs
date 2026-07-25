@@ -1,4 +1,5 @@
 pub mod function_adapter;
+pub mod function_db;
 pub mod function_manager_db;
 pub mod function_tag_adapter;
 pub mod function_tag_manager_db;
@@ -13,6 +14,7 @@ pub use function_adapter::{
     FUNCTION_SIGNATURE_SOURCE_SHIFT, FUNCTION_VARARG_FLAG, RETURN_DATA_TYPE_ID_COL,
     RETURN_STORAGE_COL, STACK_LOCAL_SIZE_COL, STACK_PURGE_COL, STACK_RETURN_OFFSET_COL,
 };
+pub use function_db::FunctionDb;
 pub use function_manager_db::{FunctionManagerDb, SignatureUpgradeError};
 pub use function_tag_adapter::{FunctionTagAdapter, COMMENT_COL, NAME_COL};
 pub use function_tag_manager_db::FunctionTagManagerDb;
