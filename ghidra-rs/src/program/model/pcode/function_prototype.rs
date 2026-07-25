@@ -3,7 +3,8 @@
 //! High-level prototype of a function based on Varnodes, describing the inputs and outputs of
 //! this function.
 //!
-//! `FunctionPrototype` is referenced from [`HighFunction`](crate::program::seam_stubs::HighFunction)
+//! `FunctionPrototype` is referenced from
+//! [`HighFunction`](crate::program::model::pcode::high_function::HighFunction)
 //! long before its serialization collaborators -- `PcodeDataTypeManager` and `PcodeFactory` (and,
 //! transitively, `AddressXML`) -- are ported, so it was selected as a dependency-cycle cut-point
 //! and its public API is modeled as a trait rather than a concrete struct. This promotes the

@@ -9,9 +9,11 @@
 //! `get_size`/`decode_instances` (all the inherited `HighVariable` members this class actually
 //! calls) so this trait's default methods have something to build on; see `STUBS.tsv`.
 //!
-//! [`HighSymbol`] and [`HighFunction`] are likewise only minimal placeholders; [`HighFunction`]
-//! was grown with `get_global_symbol_map`/`get_pc_address` for the same reason. [`LocalSymbolMap`]
-//! was grown with `get_symbol` (`LocalSymbolMap.getSymbol(long)`).
+//! [`HighSymbol`] is likewise only a minimal placeholder. [`HighFunction`] has since been ported
+//! as its own trait (see [`crate::program::model::pcode::high_function`]); back when this module
+//! was written it was still a placeholder grown with `get_global_symbol_map`/`get_pc_address`, both
+//! of which now live as real methods on the ported trait. [`LocalSymbolMap`] was grown with
+//! `get_symbol` (`LocalSymbolMap.getSymbol(long)`).
 //!
 //! [`HighConstant::decode`]'s deepest fallback -- calling `GlobalSymbolMap.populateSymbol`, and
 //! (if that also fails) decoding a spacebase reference off the representative varnode's lone
@@ -32,7 +34,8 @@ use crate::program::model::pcode::ids::ATTRIB_SYMREF;
 use crate::program::model::pcode::Varnode;
 use crate::program::model::address::Address;
 use crate::program::model::scalar::Scalar;
-use crate::program::seam_stubs::{HighFunction, HighSymbol, HighVariable};
+use crate::program::model::pcode::high_function::HighFunction;
+use crate::program::seam_stubs::{HighSymbol, HighVariable};
 
 /// A constant that has been given a data type (like a constant that is really a pointer). Port of
 /// `ghidra.program.model.pcode.HighConstant`.
@@ -222,6 +225,12 @@ mod tests {
         fn get_function(&self) -> Box<dyn Function> {
             unimplemented!("not needed for this smoke test")
         }
+        fn get_id(&self) -> i64 {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_language(&self) -> Box<dyn crate::program::model::lang::Language> {
+            unimplemented!("not needed for this smoke test")
+        }
         fn get_compiler_spec(&self) -> Box<dyn crate::program::model::lang::CompilerSpec> {
             unimplemented!("not needed for this smoke test")
         }
@@ -235,6 +244,35 @@ mod tests {
         }
         fn get_pc_address(&self, _representative: &Varnode) -> Option<Address> {
             self.pc_address.clone()
+        }
+        fn grab_from_function(&mut self, _override_extrapop: i32, _include_default_names: bool, _do_override: bool) {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn decode(
+            &mut self,
+            _decoder: &dyn crate::program::model::pcode::decoder::Decoder,
+        ) -> Result<(), DecoderException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn split_out_merge_group(
+            &mut self,
+            _high: Box<dyn HighVariable>,
+            _vn: &Varnode,
+        ) -> Result<Box<dyn HighVariable>, crate::program::model::pcode::pcode_exception::PcodeException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn encode(
+            &self,
+            _encoder: &mut dyn crate::program::model::pcode::encoder::Encoder,
+            _id: i64,
+            _namespace: &dyn crate::program::model::symbol::Namespace,
+            _entry_point: Option<Address>,
+            _size: i32,
+        ) -> std::io::Result<()> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn set_volatile(&mut self, _vn: &Varnode, _val: bool) {
+            unimplemented!("not needed for this smoke test")
         }
     }
 

@@ -11,6 +11,7 @@ pub mod function_prototype;
 pub mod global_symbol_map;
 pub mod high_code_symbol;
 pub mod high_constant;
+pub mod high_function;
 pub mod high_function_db_util;
 pub mod high_param_id;
 pub mod ids;
@@ -42,6 +43,10 @@ pub use function_prototype::FunctionPrototype;
 pub use global_symbol_map::GlobalSymbolMap;
 pub use high_code_symbol::HighCodeSymbol;
 pub use high_constant::HighConstant;
+pub use high_function::{
+    collapse_to_global, encode_namespace, find_create_override_space, find_override_space,
+    is_override_namespace, tag_find_exclude, HighFunction, OVERRIDE_NAMESPACE_NAME,
+};
 pub use high_function_db_util::{HighFunctionDb, HighFunctionDBUtil, ReturnCommitOption, AUTO_CAT};
 pub use high_param_id::{HighParamID, DECOMPILER_TAG_MAP};
 pub use ids::*;

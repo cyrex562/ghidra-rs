@@ -134,6 +134,10 @@ pub const ELEM_PENTRY: ElementId = ElementId::new("pentry", 121);
 // Real Ghidra id is 73 (`ElementId.java`'s `ELEM_HASH`), continuing the local counter above
 // instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
 pub const ELEM_HASH: ElementId = ElementId::new("hash", 122);
+// Continuing the local counter above per the same non-wire-compatible numbering scheme as
+// `ELEM_BHEAD`.
+pub const ELEM_PARENT: ElementId = ElementId::new("parent", 123);
+pub const ELEM_VAL: ElementId = ElementId::new("val", 124);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
@@ -225,4 +229,7 @@ pub const ATTRIB_MINSIZE: AttributeId = AttributeId::new("minsize", 62);
 pub const ATTRIB_MAXSIZE: AttributeId = AttributeId::new("maxsize", 63);
 pub const ATTRIB_STORAGE: AttributeId = AttributeId::new("storage", 64);
 pub const ATTRIB_EXTENSION: AttributeId = AttributeId::new("extension", 65);
+// Continuing the local counter above per the same non-wire-compatible numbering scheme as
+// `ELEM_BHEAD`.
+pub const ATTRIB_LABEL: AttributeId = AttributeId::new("label", 66);
 pub const ATTRIB_UNKNOWN: AttributeId = AttributeId::new("XMLunknown", 159);

@@ -14,10 +14,12 @@
 //! implementor, mirroring calling the Java static methods via `HighFunctionDBUtil.foo(...)`.
 //!
 //! This type was selected as a dependency-cycle cut-point; several of the core types it
-//! references (`HighFunction`, `HighSymbol`, `HighVariable`, `LocalSymbolMap`,
-//! `DynamicEntry`, `DataTypeSymbol`, `UnionFacetSymbol`, and the DB-backed
-//! `ParameterImpl`/`ReturnParameterImpl`/`LocalVariableImpl` trio) are not yet ported; minimal
-//! placeholders for them live in [`crate::program::seam_stubs`] (see `STUBS.tsv`). A handful of
+//! references (`HighSymbol`, `HighVariable`, `LocalSymbolMap`, `DynamicEntry`, `DataTypeSymbol`,
+//! `UnionFacetSymbol`, and the DB-backed `ParameterImpl`/`ReturnParameterImpl`/`LocalVariableImpl`
+//! trio) are not yet ported; minimal placeholders for them live in
+//! [`crate::program::seam_stubs`] (see `STUBS.tsv`). `HighFunction` itself has since been ported
+//! as a trait (see
+//! [`high_function`](crate::program::model::pcode::high_function::HighFunction)). A handful of
 //! sub-steps that need mutable `SymbolTable`/`Listing`/`ReferenceManager` access via a `Program`
 //! reached only as a shared `Arc<dyn Program>` (through `Function::get_program`/
 //! `Variable::get_program`) cannot be represented with this crate's current ownership
@@ -36,7 +38,8 @@ use crate::program::model::listing::{
 };
 use crate::program::model::pcode::{OpCode, PcodeOp, Varnode};
 use crate::program::model::symbol::{SourceType, Symbol};
-use crate::program::seam_stubs::{self, DataTypeSymbol, HighFunction, HighSymbol};
+use crate::program::model::pcode::high_function::HighFunction;
+use crate::program::seam_stubs::{self, DataTypeSymbol, HighSymbol};
 use crate::util::exception::{AssertException, DuplicateNameException, InvalidInputException};
 
 /// Category for auto generated prototypes. Port of `HighFunctionDBUtil.AUTO_CAT`.
@@ -1102,7 +1105,7 @@ fn write_override_impl(
     callsite: Address,
     sig: &dyn FunctionSignature,
 ) -> Result<(), InvalidInputException> {
-    let space = seam_stubs::high_function_find_create_override_space(function)
+    let space = crate::program::model::pcode::high_function::find_create_override_space(function)
         .ok_or_else(|| InvalidInputException("Could not create \"override\" namespace".to_string()))?;
     seam_stubs::write_data_type_symbol_override(space.as_ref(), callsite, sig);
     Ok(())

@@ -299,7 +299,6 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	OldLanguageFactory	LanguageVersionException
 2026-07-23T00:00:00Z	LanguageTranslatorFactory	LanguageVersionException
 2026-07-23T00:00:00Z	TripleSymbol	SleighParserContext
-2026-07-23T00:00:00Z	HighFunction	HighFunctionDBUtil
 2026-07-23T00:00:00Z	LocalSymbolMap	HighFunctionDBUtil
 2026-07-23T00:00:00Z	HighVariable	HighFunctionDBUtil
 2026-07-23T00:00:00Z	DataTypeSymbol	HighFunctionDBUtil
@@ -311,7 +310,6 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	VariableUtilities	HighFunctionDBUtil
 2026-07-23T00:00:00Z	Undefined	HighFunctionDBUtil
 2026-07-23T18:00:00Z	HighVariable	HighConstant
-2026-07-23T18:00:00Z	HighFunction	HighConstant
 2026-07-23T18:00:00Z	HighSymbol	HighConstant
 2026-07-23T18:00:00Z	LocalSymbolMap	HighConstant
 2026-07-23T19:00:00Z	PcodeDataTypeManager	FunctionPrototype
@@ -333,3 +331,4 @@ ts	stub_class	referenced_by
 2026-07-24T05:00:00Z	VariableStorage(grown)	VariableUtilities
 2026-07-24T06:00:00Z	ExternalManagerDb	ExternalLocationDB
 2026-07-25T00:00:00Z	VariableSymbolDb	FunctionDB
+2026-07-25T01:00:00Z	JumpTable	HighFunction
