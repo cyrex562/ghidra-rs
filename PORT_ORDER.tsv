@@ -58,7 +58,7 @@ DONE	trait	94	15	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/Nav
 DONE	trait	93	51	6	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/NavigatableActionContext.java
 DONE	trait	93	18	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/RestrictedAddressSetContext.java
 DONE	trait	92	18	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/context/ProgramLocationSupplierContext.java
-TODO	trait	90	18	14	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/data/GhidraToolState.java
+DONE	trait	90	18	14	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/data/GhidraToolState.java
 TODO	trait	89	43	293	program	Ghidra/Features/Base/src/main/java/ghidra/program/database/GhidraDataTypeArchiveMergeManagerFactory.java
 TODO	trait	93	16	10	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/SubMemoryBlock.java
 TODO	trait	92	10	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/BitMappedSubMemoryBlock.java
