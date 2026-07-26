@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	91	17	63	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/MemoryMapDBAdapter.java
+DONE	trait	91	17	63	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/MemoryMapDBAdapter.java
 TODO	trait	90	10	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/BufferSubMemoryBlock.java
 TODO	trait	89	13	41	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/MemoryBlockDB.java
 TODO	trait	88	30	132	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/MemoryMapDB.java
