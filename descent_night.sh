@@ -133,7 +133,7 @@ Rules for breaking the cycle:
   (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test -> read failures -> fix ->
   repeat until BOTH compile clean AND all tests pass. Do NOT run git. Run cargo SYNCHRONOUSLY
   and wait for each command to finish -- this is a SINGLE-SHOT non-interactive session: never
-  background a command, schedule a wakeup, or defer work to "report back later". Everything,
+  background a command, schedule a wakeup, or defer work to 'report back later'. Everything,
   including the final passing test run, must complete within this turn before you stop.
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
 Port this type (plus placeholder stubs for its references) and fix any test code your change breaks.
@@ -160,7 +160,7 @@ Rules:
   that test code to match; (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test ->
   read failures -> fix -> repeat until BOTH compile clean AND all tests pass. Do NOT run git. Run cargo SYNCHRONOUSLY
   and wait for each command to finish -- this is a SINGLE-SHOT non-interactive session: never
-  background a command, schedule a wakeup, or defer work to "report back later". Everything,
+  background a command, schedule a wakeup, or defer work to 'report back later'. Everything,
   including the final passing test run, must complete within this turn before you stop.
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
 Port this class and fix any test code your change breaks.
