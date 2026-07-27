@@ -50,7 +50,7 @@ DONE	trait	85	12	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/ap
 DONE	trait	84	19	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyTerminal.java
 DONE	trait	84	6	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyExtendedGrammar.java
 DONE	trait	83	10	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyExtendedNonTerminal.java
-TODO	trait	85	11	13	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseNumericToken.java
+DONE	trait	85	11	13	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseNumericToken.java
 TODO	trait	84	12	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyNumericTerminal.java
 TODO	trait	83	8	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyFixedNumericTerminal.java
 TODO	trait	82	14	13	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblySentential.java
