@@ -339,3 +339,4 @@ ts	stub_class	referenced_by
 2026-07-26T10:00:00Z	PcodeFactory(grown)	AddressXML
 2026-07-27T03:58:08Z	RegisterValueBuilder	ContextCache
 2026-07-27T04:50:34Z	SourceLanguageId	SourceLanguage
+2026-07-27T05:30:00Z	OldFunctionManager	OldFunctionDataDB

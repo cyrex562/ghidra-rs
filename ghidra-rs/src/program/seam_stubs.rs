@@ -2412,6 +2412,13 @@ pub trait DomainObjectMergeManager {
     fn as_any(&self) -> &dyn Any;
 }
 
+/// Placeholder for `ghidra.program.database.oldfunction.OldFunctionManager`, referenced by
+/// [`OldFunctionDataDB::get_function_manager`](crate::program::database::oldfunction::OldFunctionDataDB::get_function_manager)
+/// before the real class is ported. `OldFunctionDataDB` only ever passes this type through
+/// opaquely (it is itself constructed *by* `OldFunctionManager`, which is what makes
+/// `OldFunctionDataDB` a cycle cut-point), so no members are needed yet.
+pub trait OldFunctionManager {}
+
 /// Placeholder for `ghidra.GhidraApplicationLayout`, referenced by
 /// [`DataTypeArchiveIdDumper`](crate::program::model::data::data_type_archive_id_dumper::DataTypeArchiveIdDumper)
 /// before the real class is ported. `DataTypeArchiveIdDumper.launch()` only ever receives this
