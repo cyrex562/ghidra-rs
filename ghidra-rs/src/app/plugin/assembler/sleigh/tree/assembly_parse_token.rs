@@ -3,7 +3,7 @@
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
-use crate::app::seam_stubs::AssemblyTerminal;
+use crate::app::plugin::assembler::sleigh::symbol::AssemblyTerminal;
 
 /// A string token in an assembly parse tree.
 ///
@@ -78,6 +78,7 @@ impl Hash for dyn AssemblyParseToken + '_ {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::seam_stubs::{AssemblyNumericSymbols, AssemblySymbol};
 
     #[derive(Debug)]
     struct MockTerminal(&'static str);
@@ -88,9 +89,25 @@ mod tests {
         }
     }
 
-    impl AssemblyTerminal for MockTerminal {
+    impl AssemblySymbol for MockTerminal {
         fn terminal_tag(&self) -> &str {
             self.0
+        }
+    }
+
+    impl AssemblyTerminal for MockTerminal {
+        fn r#match(
+            &self,
+            _buffer: &str,
+            _pos: usize,
+            _grammar: &dyn crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar,
+            _symbols: &dyn AssemblyNumericSymbols,
+        ) -> Vec<Arc<dyn AssemblyParseToken>> {
+            Vec::new()
+        }
+
+        fn get_suggestions(&self, _got: &str, _symbols: &dyn AssemblyNumericSymbols) -> Vec<String> {
+            Vec::new()
         }
     }
 
