@@ -8,7 +8,7 @@ DONE	trait	84	149	54	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	83	1238	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CountedDynamicDataType.java
 DONE	trait	81	124	203	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeDataTypeManager.java
 DONE	trait	80	307	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ConstantPool.java
-TODO	trait	79	120	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/AddressXML.java
+DONE	trait	79	120	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/AddressXML.java
 TODO	trait	77	40	9	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguageFile.java
 TODO	trait	76	43	47	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguageDescription.java
 TODO	trait	75	40	59	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguageProvider.java
