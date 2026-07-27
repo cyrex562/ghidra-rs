@@ -106,7 +106,31 @@ mod tests {
 
     /// Stands in for a resolved `AssemblyResolvedPatterns`, e.g. the encoding built so far that
     /// `solve` is asked to extend.
-    impl AssemblyResolvedPatterns for Res {}
+    impl AssemblyResolvedPatterns for Res {
+        fn get_instruction_length(&self) -> i32 {
+            0
+        }
+        fn get_instruction(&self) -> Box<dyn crate::app::seam_stubs::AssemblyPatternBlock> {
+            Box::new(MockBlock { vals: vec![] })
+        }
+        fn get_context(&self) -> Box<dyn crate::app::seam_stubs::AssemblyPatternBlock> {
+            Box::new(MockBlock { vals: vec![] })
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct MockBlock {
+        vals: Vec<i8>,
+    }
+
+    impl crate::app::seam_stubs::AssemblyPatternBlock for MockBlock {
+        fn get_vals(&self) -> Vec<i8> {
+            self.vals.clone()
+        }
+        fn fill_mask(&self) -> Box<dyn crate::app::seam_stubs::AssemblyPatternBlock> {
+            Box::new(self.clone())
+        }
+    }
 
     #[derive(Debug)]
     struct MockSolver;
