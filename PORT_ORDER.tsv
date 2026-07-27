@@ -25,7 +25,7 @@ DONE	trait	67	15	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/ap
 DONE	trait	68	4	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionDBAdapter.java
 DONE	trait	71	5	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldStackVariableDBAdapter.java
 DONE	trait	69	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldRegisterVariableDBAdapter.java
-TODO	trait	68	2	19	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionDataDB.java
+DONE	trait	68	2	19	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionDataDB.java
 TODO	trait	67	4	82	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionManager.java
 TODO	trait	68	8	83	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/reloc/RelocationDBAdapter.java
 TODO	trait	68	22	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationTable.java
