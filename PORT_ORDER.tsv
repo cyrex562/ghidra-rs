@@ -22,7 +22,7 @@ DONE	trait	68	190	58	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	67	178	1	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressIteratorConverter.java
 DONE	trait	68	12	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguage.java
 DONE	trait	67	15	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageID.java
-TODO	trait	68	4	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionDBAdapter.java
+DONE	trait	68	4	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionDBAdapter.java
 TODO	trait	71	5	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldStackVariableDBAdapter.java
 TODO	trait	69	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldRegisterVariableDBAdapter.java
 TODO	trait	68	2	19	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionDataDB.java
