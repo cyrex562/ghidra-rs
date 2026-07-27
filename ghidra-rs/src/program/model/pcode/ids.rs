@@ -164,6 +164,10 @@ pub const ELEM_VALUE: ElementId = ElementId::new("value", 133);
 // Real Ghidra id is 112 (`ElementId.java`'s `ELEM_TOKEN`), but that collides with this file's own
 // `ELEM_SEQNUM` at 112, so it is renumbered per the same scheme.
 pub const ELEM_TOKEN: ElementId = ElementId::new("token", 134);
+// Real Ghidra id is 113 (`ElementId.java`'s `ELEM_IOP`), but that collides with this file's own
+// `ELEM_VARNODE` at 113, so it is renumbered to continue the local counter above instead per the
+// same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_IOP: ElementId = ElementId::new("iop", 135);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
@@ -288,3 +292,6 @@ pub const ATTRIB_TAG: AttributeId = AttributeId::new("tag", 170);
 // Real Ghidra id is 4 (`AttributeId.java`'s `ATTRIB_CONSTRUCTOR`), but that collides with this
 // file's own `ATTRIB_SPACE` at 4, so it is renumbered per the same scheme.
 pub const ATTRIB_CONSTRUCTOR: AttributeId = AttributeId::new("constructor", 171);
+// Real Ghidra id is 92 (`AttributeId.java`'s `ATTRIB_LOGICALSIZE`), continuing the local counter
+// above instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ATTRIB_LOGICALSIZE: AttributeId = AttributeId::new("logicalsize", 172);
