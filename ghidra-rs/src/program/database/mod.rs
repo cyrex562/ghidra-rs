@@ -53,4 +53,4 @@ pub use properties::{
     get_table_name, DBPropertyMapManager, PropertiesDBAdapter, ProgramReadyError, PropertyMapDB,
     TestSaveable, PROPERTY_TABLE_PREFIX,
 };
-pub use reloc::RelocationDBAdapter;
+pub use reloc::{RelocationDBAdapter, RelocationManager};
