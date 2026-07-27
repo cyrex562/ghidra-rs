@@ -17,7 +17,8 @@ use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
-use crate::program::seam_stubs::{AddressLabelInfo, MemBuffer, MemoryBlockDefinition, Processor};
+use crate::app::plugin::processors::generic::MemoryBlockDefinition;
+use crate::program::seam_stubs::{AddressLabelInfo, MemBuffer, Processor};
 use crate::util::task::TaskMonitor;
 
 /// Combines the checked exceptions declared on `Language.parse`.

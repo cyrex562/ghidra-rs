@@ -108,8 +108,9 @@ mod tests {
         Symbol, SymbolType,
     };
     use crate::program::model::util::PropertySet;
+    use crate::app::plugin::processors::generic::MemoryBlockDefinition;
     use crate::program::seam_stubs::{
-        AddressLabelInfo, CommentType, MemBuffer, MemoryBlockDefinition, Processor,
+        AddressLabelInfo, CommentType, MemBuffer, Processor,
     };
     use crate::util::task::TaskMonitor;
 
