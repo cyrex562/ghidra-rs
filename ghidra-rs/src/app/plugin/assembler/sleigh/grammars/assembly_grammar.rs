@@ -140,13 +140,52 @@ mod tests {
         }
     }
 
-    struct MockProduction(&'static str);
+    struct MockProduction {
+        idx: i32,
+        lhs: Arc<dyn AssemblyNonTerminal>,
+        rhs: Arc<dyn AssemblySentential>,
+    }
+
+    impl MockProduction {
+        fn new(name: &'static str) -> Self {
+            MockProduction {
+                idx: -1,
+                lhs: Arc::new(MockNonTerminal(name)),
+                rhs: Arc::new(MockSentential),
+            }
+        }
+    }
+
+    impl crate::app::plugin::assembler::sleigh::grammars::AbstractAssemblyProduction
+        for MockProduction
+    {
+        fn index(&self) -> i32 {
+            self.idx
+        }
+        fn set_index(&mut self, idx: i32) {
+            self.idx = idx;
+        }
+        fn lhs(&self) -> Arc<dyn AssemblyNonTerminal> {
+            self.lhs.clone()
+        }
+        fn rhs(&self) -> Arc<dyn AssemblySentential> {
+            self.rhs.clone()
+        }
+    }
+
     impl AssemblyProduction for MockProduction {}
 
     struct MockConstructor(u32);
     impl Constructor for MockConstructor {}
 
     struct MockSemantic(u32);
+
+    impl std::fmt::Display for MockSemantic {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "semantic#{}", self.0)
+        }
+    }
+
     impl AssemblyConstructorSemantic for MockSemantic {}
 
     /// Decoder that plays back a single always-true `<instruct_pat><pat_block off="0"
@@ -320,7 +359,7 @@ mod tests {
     #[test]
     fn add_production_is_recorded() {
         let mut grammar = TestGrammar::default();
-        let prod: Arc<dyn AssemblyProduction> = Arc::new(MockProduction("I => a I"));
+        let prod: Arc<dyn AssemblyProduction> = Arc::new(MockProduction::new("I => a I"));
         grammar.add_production(prod);
         assert_eq!(grammar.productions.into_inner().unwrap().len(), 1);
     }
@@ -348,7 +387,7 @@ mod tests {
     #[test]
     fn combine_merges_pure_recursive_productions() {
         let mut source = TestGrammar::default();
-        let recursive: Arc<dyn AssemblyProduction> = Arc::new(MockProduction("I => I"));
+        let recursive: Arc<dyn AssemblyProduction> = Arc::new(MockProduction::new("I => I"));
         source
             .pure_recursive
             .get_mut()
@@ -367,7 +406,7 @@ mod tests {
     #[test]
     fn get_pure_recursion_finds_registered_production() {
         let mut grammar = TestGrammar::default();
-        let recursive: Arc<dyn AssemblyProduction> = Arc::new(MockProduction("E => E"));
+        let recursive: Arc<dyn AssemblyProduction> = Arc::new(MockProduction::new("E => E"));
         grammar
             .pure_recursive
             .get_mut()
