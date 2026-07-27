@@ -697,6 +697,108 @@ pub trait MemBuffer {
     fn is_big_endian(&self) -> bool {
         false
     }
+
+    /// Stands in for `MemBuffer.getMemory()`, used by
+    /// [`CountedDynamicDataType`](crate::program::model::data::counted_dynamic_data_type::CountedDynamicDataType)
+    /// before the real interface (and its full `Memory`-backed `getShort`/`getInt`/`getLong`
+    /// family) is ported. Defaults to `None`, mirroring a buffer with no backing memory (e.g. one
+    /// built directly from a byte array).
+    fn get_memory(&self) -> Option<Arc<dyn crate::program::model::mem::Memory>> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.DataTypeInstance`, referenced by
+/// [`CountedDynamicDataType`](crate::program::model::data::counted_dynamic_data_type::CountedDynamicDataType)
+/// before the real class (which computes an instance's true length by consulting `Dynamic`/
+/// `FactoryDataType` machinery against a `MemBuffer`) is ported. This placeholder only supports
+/// fixed-length data types: it reports `None` (mirroring the real factory's `null` return for a
+/// data type whose length could not be determined) for any `data_type` reporting a negative
+/// length, and otherwise reports that length directly without consulting `buf`.
+pub struct DataTypeInstance {
+    data_type: Arc<dyn DataType>,
+    length: i32,
+}
+
+impl DataTypeInstance {
+    /// Stands in for `DataTypeInstance.getDataType()`.
+    pub fn get_data_type(&self) -> Arc<dyn DataType> {
+        self.data_type.clone()
+    }
+
+    /// Stands in for `DataTypeInstance.getLength()`.
+    pub fn get_length(&self) -> i32 {
+        self.length
+    }
+}
+
+/// Stands in for the static factory `DataTypeInstance.getDataTypeInstance(DataType, MemBuffer,
+/// boolean)`. See [`DataTypeInstance`].
+pub fn get_data_type_instance(
+    data_type: Arc<dyn DataType>,
+    buf: &dyn MemBuffer,
+    use_alignment: bool,
+) -> Option<DataTypeInstance> {
+    let _ = (buf, use_alignment);
+    let length = data_type.get_length();
+    if length < 0 {
+        return None;
+    }
+    Some(DataTypeInstance { data_type, length })
+}
+
+/// Placeholder for `ghidra.program.model.data.ReadOnlyDataTypeComponent`, referenced by
+/// [`CountedDynamicDataType`](crate::program::model::data::counted_dynamic_data_type::CountedDynamicDataType)
+/// before the real class is ported. Only the fields that class's `getAllComponents` populates
+/// (data type, length, ordinal, offset, field name) are modeled; the real class's `parent`
+/// constructor argument is omitted since capturing an owned handle back to the `&self` producing
+/// it is not expressible through the [`DataTypeComponent`] trait object, so
+/// [`get_parent`](DataTypeComponent::get_parent) falls back to that trait's default. The real
+/// class's `comment` argument is always passed as `""` by its only caller, so it is omitted too;
+/// [`get_comment`](DataTypeComponent::get_comment) falls back to that trait's default (`None`).
+pub struct ReadOnlyDataTypeComponent {
+    data_type: Arc<dyn DataType>,
+    length: i32,
+    ordinal: i32,
+    offset: i32,
+    field_name: String,
+}
+
+impl ReadOnlyDataTypeComponent {
+    /// Constructs a new read-only component, mirroring the subset of
+    /// `ReadOnlyDataTypeComponent`'s constructor arguments modeled here. See the struct docs for
+    /// which Java constructor arguments are omitted.
+    pub fn new(data_type: Arc<dyn DataType>, length: i32, ordinal: i32, offset: i32, field_name: String) -> Self {
+        ReadOnlyDataTypeComponent {
+            data_type,
+            length,
+            ordinal,
+            offset,
+            field_name,
+        }
+    }
+}
+
+impl crate::program::model::data::data_type_component::DataTypeComponent for ReadOnlyDataTypeComponent {
+    fn get_data_type(&self) -> Box<dyn DataType> {
+        share_data_type(&self.data_type)
+    }
+
+    fn get_ordinal(&self) -> i32 {
+        self.ordinal
+    }
+
+    fn get_offset(&self) -> i32 {
+        self.offset
+    }
+
+    fn get_length(&self) -> i32 {
+        self.length
+    }
+
+    fn get_field_name(&self) -> Option<String> {
+        Some(self.field_name.clone())
+    }
 }
 
 /// Placeholder for `ghidra.pcode.floatformat.FloatFormat`, referenced by

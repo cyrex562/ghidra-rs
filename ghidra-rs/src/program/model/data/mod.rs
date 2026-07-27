@@ -17,6 +17,7 @@ pub mod composite;
 pub mod composite_data_type_impl;
 pub mod composite_internal;
 pub mod composite_test_utils;
+pub mod counted_dynamic_data_type;
 pub mod custom_format;
 pub mod custom_organization;
 pub mod data_organization;

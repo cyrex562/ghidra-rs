@@ -334,3 +334,6 @@ ts	stub_class	referenced_by
 2026-07-25T08:00:00Z	GhidraApplicationLayout	DataTypeArchiveIdDumper
 2026-07-25T08:00:00Z	GhidraLaunchable	DataTypeArchiveIdDumper
 2026-07-25T08:34:12Z	Navigatable(grown)	NavigatableActionContext
+2026-07-26T09:00:00Z	DataTypeInstance	CountedDynamicDataType
+2026-07-26T09:05:00Z	ReadOnlyDataTypeComponent	CountedDynamicDataType
+2026-07-26T09:10:00Z	MemBuffer(grown)	CountedDynamicDataType
