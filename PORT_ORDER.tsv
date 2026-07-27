@@ -39,7 +39,7 @@ DONE	trait	66	365	357	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	65	5	38	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/MemoryBlockDefinition.java
 DONE	trait	64	183	217	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguage.java
 DONE	trait	63	12	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/expression/TokenField.java
-TODO	trait	65	19	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/SolverHint.java
+DONE	trait	65	19	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/SolverHint.java
 TODO	trait	85	55	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AssemblyResolvedBackfill.java
 TODO	trait	86	4	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/ConstructorEntryVisitor.java
 TODO	trait	86	2	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/PcodeOpEntryVisitor.java
