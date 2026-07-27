@@ -647,3 +647,96 @@ pub trait AssemblyParseTreeNode {
     /// Mirrors `AssemblyParseTreeNode.generateString()`.
     fn generate_string(&self) -> String;
 }
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.match.BinaryExpressionMatcher` (and
+/// its nested `Commutative` variant), referenced by
+/// [`Context`](crate::app::plugin::assembler::sleigh::expr::r#match::Context)'s binary-form
+/// factory methods (`and`/`div`/`shl`/`mul`/`or`/`plus`/`shr`/`sub`/`xor`) before the real class is
+/// ported. `Context` only ever returns this type as an opaque
+/// [`ExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher),
+/// so no members beyond that are needed yet.
+pub trait BinaryExpressionMatcher:
+    crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher
+{
+}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.match.ConstantValueMatcher`,
+/// referenced by [`Context`](crate::app::plugin::assembler::sleigh::expr::r#match::Context)'s
+/// `cv` factory method before the real class is ported. `Context` only ever returns this type as
+/// an opaque
+/// [`ExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher),
+/// so no members beyond that are needed yet.
+pub trait ConstantValueMatcher:
+    crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher
+{
+}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.match.AnyMatcher`, referenced by
+/// [`Context`](crate::app::plugin::assembler::sleigh::expr::r#match::Context)'s `var`/`var_of`
+/// factory methods before the real class is ported. `Context` only ever returns this type as an
+/// opaque
+/// [`ExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher),
+/// so no members beyond that are needed yet.
+pub trait AnyMatcher: crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.match.OperandValueMatcher`,
+/// referenced by [`Context`](crate::app::plugin::assembler::sleigh::expr::r#match::Context)'s
+/// `opnd` factory method before the real class is ported. `Context` only ever returns this type
+/// as an opaque
+/// [`ExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher),
+/// so no members beyond that are needed yet.
+pub trait OperandValueMatcher:
+    crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher
+{
+}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.match.FieldSizeMatcher`, referenced
+/// by [`Context`](crate::app::plugin::assembler::sleigh::expr::r#match::Context)'s `fld_sz`
+/// factory method before the real class is ported. `Context` only ever returns this type as an
+/// opaque
+/// [`ExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher),
+/// so no members beyond that are needed yet.
+pub trait FieldSizeMatcher:
+    crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher
+{
+}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.match.UnaryExpressionMatcher`,
+/// referenced by [`Context`](crate::app::plugin::assembler::sleigh::expr::r#match::Context)'s
+/// `neg`/`not` factory methods before the real class is ported. `Context` only ever returns this
+/// type as an opaque
+/// [`ExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher),
+/// so no members beyond that are needed yet.
+pub trait UnaryExpressionMatcher:
+    crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher
+{
+}
+
+/// Shared placeholder implementor for the six matcher-construction stubs above.
+/// [`Context`](crate::app::plugin::assembler::sleigh::expr::r#match::Context)'s factory methods
+/// each need *some* concrete value to hand back as an
+/// [`ExpressionMatcher`](crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher);
+/// none of the six real sibling classes above are ported yet, so every factory method returns one
+/// of these -- it never matches anything, standing in until each sibling class gets its own real
+/// port.
+#[derive(Debug)]
+pub struct UnimplementedExpressionMatcher;
+
+impl crate::app::plugin::assembler::sleigh::expr::r#match::ExpressionMatcher
+    for UnimplementedExpressionMatcher
+{
+    fn match_into(
+        &self,
+        _expression: &crate::program::model::lang::sleigh::expression::PatternExpression,
+        _result: &mut crate::app::plugin::assembler::sleigh::expr::r#match::MatchResult,
+    ) -> bool {
+        false
+    }
+}
+
+impl BinaryExpressionMatcher for UnimplementedExpressionMatcher {}
+impl ConstantValueMatcher for UnimplementedExpressionMatcher {}
+impl AnyMatcher for UnimplementedExpressionMatcher {}
+impl OperandValueMatcher for UnimplementedExpressionMatcher {}
+impl FieldSizeMatcher for UnimplementedExpressionMatcher {}
+impl UnaryExpressionMatcher for UnimplementedExpressionMatcher {}

@@ -356,3 +356,9 @@ ts	stub_class	referenced_by
 2026-07-27T08:24:55Z	AssemblyParseTreeNode	AssemblyParseBranch
 2026-07-27T08:24:55Z	AssemblyProduction	AssemblyParseBranch
 2026-07-27T08:24:55Z	AssemblyConstructorSemantic	AssemblyParseBranch
+2026-07-27T21:00:00Z	BinaryExpressionMatcher	ExpressionMatcher
+2026-07-27T21:00:00Z	ConstantValueMatcher	ExpressionMatcher
+2026-07-27T21:00:00Z	AnyMatcher	ExpressionMatcher
+2026-07-27T21:00:00Z	OperandValueMatcher	ExpressionMatcher
+2026-07-27T21:00:00Z	FieldSizeMatcher	ExpressionMatcher
+2026-07-27T21:00:00Z	UnaryExpressionMatcher	ExpressionMatcher
