@@ -23,6 +23,7 @@ pub mod query;
 pub mod permissions;
 pub mod recognizer;
 pub mod ref_repeat_comment;
+pub mod sourcelanguage;
 pub mod symbol_path;
 pub mod viewer;
 pub mod xml;

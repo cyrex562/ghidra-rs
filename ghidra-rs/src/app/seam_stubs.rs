@@ -444,3 +444,9 @@ pub trait ConstructState: Send + Sync {
     /// Stands in for `ConstructState.getParent()`.
     fn parent(&self) -> Option<std::sync::Arc<dyn ConstructState>>;
 }
+
+/// Placeholder for `ghidra.app.util.sourcelanguage.SourceLanguageID`, referenced by
+/// [`SourceLanguage`](crate::app::util::sourcelanguage::source_language::SourceLanguage) before
+/// the real class is ported. `SourceLanguage` only ever returns this type opaquely, so no members
+/// are needed yet.
+pub trait SourceLanguageId {}
