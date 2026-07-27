@@ -15,11 +15,9 @@
 //! onto this trait. The test-only `getMaxBufferSize`/`setMaxBufferSize` statics are likewise
 //! omitted as out of scope for the trait's contract.
 //!
-//! `FileBytes` is exposed through the existing placeholder
-//! [`FileBytes`](crate::program::seam_stubs::FileBytes) trait object (already stubbed out for
-//! `MemoryBlockSourceInfo`) rather than a concrete struct, so that neither `MemoryMapDB` nor the
-//! not-yet-ported `FileBytes` class need to depend on this trait to remain independently
-//! portable/testable.
+//! `FileBytes` is exposed through the [`FileBytes`](crate::program::database::mem::file_bytes::FileBytes)
+//! trait object rather than a concrete struct, so that neither `MemoryMapDB` nor `FileBytes` need
+//! to depend on this trait to remain independently portable/testable.
 
 use std::error::Error;
 use std::fmt;
@@ -27,7 +25,7 @@ use std::io;
 use std::sync::Arc;
 
 use crate::framework::db::DBBuffer;
-use crate::program::seam_stubs::FileBytes;
+use crate::program::database::mem::file_bytes::FileBytes;
 use crate::util::exception::IOCancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -115,6 +113,7 @@ pub trait FileBytesAdapter: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::database::mem::file_bytes::FileBytesError;
     use std::collections::HashMap;
 
     /// Minimal in-memory `DBBuffer` used only to exercise `get_buffer` round-tripping.
@@ -186,14 +185,67 @@ mod tests {
         }
     }
 
-    /// A minimal in-memory `FileBytes` record used only by these adapter smoke tests.
+    /// A minimal in-memory `FileBytes` record used only by these adapter smoke tests; the byte
+    /// access contract itself is exercised in more depth by `file_bytes`'s own tests.
     struct MockFileBytesEntry {
-        #[allow(dead_code)]
         filename: String,
-        buffer_id: i32,
+        data: Vec<u8>,
     }
 
-    impl FileBytes for MockFileBytesEntry {}
+    impl FileBytes for MockFileBytesEntry {
+        fn get_filename(&self) -> &str {
+            &self.filename
+        }
+        fn get_file_offset(&self) -> i64 {
+            0
+        }
+        fn get_size(&self) -> i64 {
+            self.data.len() as i64
+        }
+        fn get_modified_byte(&self, offset: i64) -> Result<u8, FileBytesError> {
+            self.get_original_byte(offset)
+        }
+        fn get_original_byte(&self, offset: i64) -> Result<u8, FileBytesError> {
+            self.data
+                .get(offset as usize)
+                .copied()
+                .ok_or_else(|| FileBytesError::IndexOutOfBounds(offset.to_string()))
+        }
+        fn get_modified_bytes_range(
+            &self,
+            offset: i64,
+            b: &mut [u8],
+            off: usize,
+            length: usize,
+        ) -> Result<usize, FileBytesError> {
+            self.get_original_bytes_range(offset, b, off, length)
+        }
+        fn get_original_bytes_range(
+            &self,
+            offset: i64,
+            b: &mut [u8],
+            off: usize,
+            length: usize,
+        ) -> Result<usize, FileBytesError> {
+            let start = offset as usize;
+            let available = self.data.len().saturating_sub(start);
+            let n = length.min(available);
+            b[off..off + n].copy_from_slice(&self.data[start..start + n]);
+            Ok(n)
+        }
+        fn put_byte(&self, _offset: i64, _b: u8) -> Result<(), FileBytesError> {
+            Err(FileBytesError::Invalidated)
+        }
+        fn put_bytes_range(
+            &self,
+            _offset: i64,
+            _b: &[u8],
+            _off: usize,
+            _length: usize,
+        ) -> Result<usize, FileBytesError> {
+            Err(FileBytesError::Invalidated)
+        }
+    }
 
     /// A minimal `FileBytesAdapter` proving the trait is object-safe and that its methods behave
     /// sensibly against real (non-trivial) in-memory state, standing in for the real
@@ -237,10 +289,10 @@ mod tests {
             }
             let buffer_id = self.next_buffer_id;
             self.next_buffer_id += 1;
-            self.buffers.insert(buffer_id, bytes);
+            self.buffers.insert(buffer_id, bytes.clone());
             let entry: Arc<dyn FileBytes> = Arc::new(MockFileBytesEntry {
                 filename: filename.to_string(),
-                buffer_id,
+                data: bytes,
             });
             self.entries.push(entry.clone());
             Ok(entry)

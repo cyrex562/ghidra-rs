@@ -26,7 +26,7 @@ use crate::framework::db::{DBBuffer, DBHandle, DBRecord};
 use crate::program::database::mem::sub_memory_block::SubMemoryBlock;
 use crate::program::model::address::{Address, AddressOverflowException};
 use crate::program::model::mem::{Memory, MemoryBlock, MemoryBlockType};
-use crate::program::seam_stubs::FileBytes;
+use crate::program::database::mem::file_bytes::FileBytes;
 
 /// Error type aggregating the checked exceptions thrown by Java's `MemoryMapDBAdapter` block
 /// creation methods (`IOException`, `AddressOverflowException`).

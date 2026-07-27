@@ -1326,18 +1326,6 @@ pub fn is_void_data_type(dt: Option<&dyn DataType>) -> bool {
     dt.is_some_and(DataType::is_void_type)
 }
 
-/// Placeholder for `ghidra.program.database.mem.FileBytes`, referenced by
-/// [`MemoryBlockSourceInfo`](crate::program::model::mem::memory_block_source_info::MemoryBlockSourceInfo)
-/// before the real class is ported. `MemoryBlockSourceInfo` only ever returns this type opaquely,
-/// so no members are needed yet.
-///
-/// Bounded by `Send + Sync` so that `Arc<dyn FileBytes>` can be held by state in
-/// `Send + Sync` trait implementors (e.g.
-/// [`FileBytesAdapter`](crate::program::database::mem::file_bytes_adapter::FileBytesAdapter)
-/// implementations that cache created `FileBytes`), matching every other adapter/manager trait
-/// in this crate.
-pub trait FileBytes: Send + Sync {}
-
 /// Placeholder for `ghidra.program.database.mem.ByteMappingScheme`, referenced by
 /// [`MemoryBlockSourceInfo`](crate::program::model::mem::memory_block_source_info::MemoryBlockSourceInfo)
 /// before the real class is ported. `MemoryBlockSourceInfo` only ever returns this type opaquely,
