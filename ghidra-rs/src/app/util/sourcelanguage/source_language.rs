@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::app::seam_stubs::SourceLanguageId;
+use crate::app::util::sourcelanguage::source_language_id::SourceLanguageId;
 use crate::program::model::listing::Program;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -55,7 +55,11 @@ mod tests {
 
     struct MockSourceLanguageId;
 
-    impl SourceLanguageId for MockSourceLanguageId {}
+    impl SourceLanguageId for MockSourceLanguageId {
+        fn get_id_as_string(&self) -> &str {
+            "mock"
+        }
+    }
 
     struct CancelledMonitor;
 
