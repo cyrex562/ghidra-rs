@@ -13,7 +13,7 @@ DONE	trait	77	40	9	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/ap
 DONE	trait	76	43	47	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguageDescription.java
 DONE	trait	75	40	59	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguageProvider.java
 DONE	trait	74	259	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/DefaultLanguageService.java
-TODO	trait	73	354	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Processor.java
+DONE	trait	73	354	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Processor.java
 TODO	trait	72	304	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicLanguageDescription.java
 TODO	trait	71	38	47	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextCache.java
 TODO	trait	70	304	131	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicCompilerSpec.java
