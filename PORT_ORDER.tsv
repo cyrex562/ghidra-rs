@@ -19,7 +19,7 @@ DONE	trait	71	38	47	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/a
 DONE	trait	70	304	131	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/BasicCompilerSpec.java
 DONE	trait	69	1066	64	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/InstructionStub.java
 DONE	trait	68	190	58	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SimpleDiffUtility.java
-TODO	trait	67	178	1	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressIteratorConverter.java
+DONE	trait	67	178	1	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/AddressIteratorConverter.java
 TODO	trait	68	12	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguage.java
 TODO	trait	67	15	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageID.java
 TODO	trait	68	4	47	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/oldfunction/OldFunctionDBAdapter.java
