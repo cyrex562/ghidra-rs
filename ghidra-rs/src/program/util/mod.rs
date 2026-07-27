@@ -39,6 +39,7 @@ pub mod program_location;
 pub mod program_merge;
 pub mod program_merge_filter;
 pub mod range_map_adapter;
+pub mod simple_diff_utility;
 pub mod string_property_map;
 pub mod symbolic_propogator;
 pub mod user_data_change_record;
@@ -87,6 +88,7 @@ pub use program_merge::{
 };
 pub use program_merge_filter::ProgramMergeFilter;
 pub use range_map_adapter::RangeMapAdapter;
+pub use simple_diff_utility::{DefaultSimpleDiffUtility, SimpleDiffUtility};
 pub use string_property_map::StringPropertyMap;
 pub use symbolic_propogator::{SymbolicPropogator, SymbolicValue};
 pub use user_data_change_record::UserDataChangeRecord;

@@ -9,7 +9,7 @@ use thiserror::Error;
 
 use crate::program::model::address::{AddressSet, AddressSetView};
 use crate::program::model::listing::library::Library;
-use crate::program::model::listing::CircularDependencyException;
+use crate::program::model::listing::{CircularDependencyException, Function};
 use crate::program::model::symbol::{Symbol, SymbolType};
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 
@@ -176,6 +176,16 @@ pub trait Namespace: Send + Sync {
     /// Library`, since Rust trait objects cannot be downcast to another trait object without
     /// extra machinery.
     fn as_library(&self) -> Option<Arc<dyn Library>> {
+        None
+    }
+
+    /// Narrows this namespace to a [`Function`] when it is one. Stands in for `instanceof
+    /// Function`, since Rust trait objects cannot be downcast to another trait object without
+    /// extra machinery. See [`Namespace::as_library`] for the analogous `Library` accessor.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn as_function(&self) -> Option<Arc<dyn Function>> {
         None
     }
 }

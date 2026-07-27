@@ -14508,7 +14508,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/Reg
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RegisterTransitionFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RegisterValueStore.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/RepeatableCommentFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SimpleDiffUtility.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SimpleDiffUtility.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SimpleLanguageTranslator.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SourceMapFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/util/SpaceFieldLocation.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program util 

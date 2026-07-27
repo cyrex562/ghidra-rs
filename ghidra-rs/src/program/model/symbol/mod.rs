@@ -1,4 +1,5 @@
 use crate::program::model::address::Address;
+use crate::program::model::listing::{Function, Variable};
 use std::io;
 use std::sync::Arc;
 
@@ -123,6 +124,35 @@ pub trait Symbol: Send + Sync {
     fn get_containing_memory_block_name(&self) -> Option<String> {
         None
     }
+
+    /// The symbol of this symbol's parent namespace, or `None` for the global namespace. Stands
+    /// in for `Symbol.getParentSymbol()`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn get_parent_symbol(&self) -> Option<Arc<dyn Symbol>> {
+        None
+    }
+
+    /// Narrows this symbol to a [`Variable`] when its [`SymbolType`] is `Parameter` or
+    /// `LocalVar`. Stands in for `Symbol.getObject()` narrowed to the `Variable` case; see
+    /// [`Symbol::as_namespace`] for why a dedicated accessor is needed instead of a downcast.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn as_variable(&self) -> Option<Arc<dyn Variable>> {
+        None
+    }
+
+    /// Narrows this symbol to a [`Function`] when its [`SymbolType`] is `Function`. Stands in
+    /// for `Symbol.getObject()` narrowed to the `Function` case; see [`Symbol::as_namespace`]
+    /// for why a dedicated accessor is needed instead of a downcast.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn as_function(&self) -> Option<Arc<dyn Function>> {
+        None
+    }
 }
 
 pub trait SymbolTable: Send + Sync {
@@ -165,5 +195,89 @@ pub trait SymbolTable: Send + Sync {
     fn is_external_entry_point(&self, addr: &Address) -> io::Result<bool> {
         let _ = addr;
         Ok(false)
+    }
+
+    /// Get the primary symbol at the given address. Stands in for
+    /// `SymbolTable.getPrimarySymbol(Address)`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn get_primary_symbol(&self, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
+        let _ = addr;
+        Ok(None)
+    }
+
+    /// Get all external symbols with the given name. Stands in for
+    /// `SymbolTable.getExternalSymbols(String)`.
+    ///
+    /// Defaults to empty so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn get_external_symbols_by_name(&self, name: &str) -> io::Result<Vec<Arc<dyn Symbol>>> {
+        let _ = name;
+        Ok(Vec::new())
+    }
+
+    /// Get all external symbols. Stands in for the no-argument
+    /// `SymbolTable.getExternalSymbols()`.
+    ///
+    /// Defaults to empty so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn get_all_external_symbols(&self) -> io::Result<Vec<Arc<dyn Symbol>>> {
+        Ok(Vec::new())
+    }
+
+    /// Get the symbol with the given name contained within the given namespace. Unifies
+    /// `SymbolTable.getLibrarySymbol(String)`, `getClassSymbol(String, Namespace)`, and
+    /// `getNamespaceSymbol(String, Namespace)` into a single lookup, since this trait does not
+    /// distinguish those namespace kinds at the query layer.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn find_symbol_by_name_namespace(
+        &self,
+        name: &str,
+        namespace: &dyn Namespace,
+    ) -> io::Result<Option<Arc<dyn Symbol>>> {
+        let _ = (name, namespace);
+        Ok(None)
+    }
+
+    /// Get the symbol with the given name, address, and namespace. Stands in for
+    /// `SymbolTable.getSymbol(String, Address, Namespace)`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn find_symbol_by_name_address_namespace(
+        &self,
+        name: &str,
+        addr: &Address,
+        namespace: &dyn Namespace,
+    ) -> io::Result<Option<Arc<dyn Symbol>>> {
+        let _ = (name, addr, namespace);
+        Ok(None)
+    }
+
+    /// Get all symbols with the given name contained within the given namespace. Stands in for
+    /// `SymbolTable.getSymbols(String, Namespace)`.
+    ///
+    /// Defaults to empty so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn get_symbols_by_name_namespace(
+        &self,
+        name: &str,
+        namespace: &dyn Namespace,
+    ) -> io::Result<Vec<Arc<dyn Symbol>>> {
+        let _ = (name, namespace);
+        Ok(Vec::new())
+    }
+
+    /// Get all symbols contained within the namespace with the given ID. Stands in for
+    /// `SymbolTable.getSymbols(long namespaceID)`.
+    ///
+    /// Defaults to empty so existing implementors are unaffected. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility).
+    fn get_symbols_in_namespace(&self, namespace_id: i64) -> io::Result<Vec<Arc<dyn Symbol>>> {
+        let _ = namespace_id;
+        Ok(Vec::new())
     }
 }
