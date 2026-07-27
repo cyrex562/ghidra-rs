@@ -524,10 +524,23 @@ pub trait AssemblyNonTerminal: std::fmt::Display {
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyProduction`, referenced by
-/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
-/// real class is ported. `AssemblyGrammar` only ever passes/returns this type opaquely, so no
-/// members are needed yet.
-pub trait AssemblyProduction {}
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) (which
+/// only ever passes/returns this type opaquely) and by
+/// [`AssemblyParseBranch`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch)
+/// (which additionally calls `getRHS()`/`getLHS()` -- inherited from the now-ported
+/// [`AbstractAssemblyProduction`](crate::app::plugin::assembler::sleigh::grammars::AbstractAssemblyProduction)
+/// supertrait, mirroring `AssemblyProduction extends AbstractAssemblyProduction<AssemblyNonTerminal>`
+/// -- and its own `isConstructor()`) before the real class is ported. `is_constructor` is modeled
+/// as a default method always returning `true`, mirroring the Java class's hardcoded
+/// `isConstructor() { return true; }` override.
+pub trait AssemblyProduction:
+    crate::app::plugin::assembler::sleigh::grammars::AbstractAssemblyProduction
+{
+    /// Mirrors `AssemblyProduction.isConstructor()`, which unconditionally returns `true`.
+    fn is_constructor(&self) -> bool {
+        true
+    }
+}
 
 /// Placeholder for `ghidra.app.plugin.processors.sleigh.Constructor`, referenced by
 /// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
@@ -539,10 +552,13 @@ pub trait Constructor {}
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyConstructorSemantic`,
 /// referenced by
-/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
-/// real class is ported. `AssemblyGrammar` only ever passes/returns this type opaquely, so no
-/// members are needed yet.
-pub trait AssemblyConstructorSemantic {}
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) (which
+/// only ever passes/returns this type opaquely) and by
+/// [`AssemblyParseBranch`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch)
+/// (whose `print_indented` default method formats a collection of these via `toString()`, mirroring
+/// `AssemblyParseBranch.print`'s `StringUtils.join(sems, ", ")`) before the real class is ported.
+/// The `Display` bound stands in for `AssemblyConstructorSemantic.toString()`.
+pub trait AssemblyConstructorSemantic: std::fmt::Display {}
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblySymbol`, referenced by
 /// [`AssemblyTerminal`](crate::app::plugin::assembler::sleigh::symbol::AssemblyTerminal) (as its
@@ -599,3 +615,35 @@ pub trait AssemblyNumericSymbols {
 /// parameterized over different non-terminal types, rather than one extending the other.
 /// `AssemblyExtendedGrammar` only ever returns this type opaquely, so no members are needed yet.
 pub trait AssemblyExtendedProduction {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.tree.AssemblyParseTreeNode`, referenced by
+/// [`AssemblyParseBranch`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch)
+/// (whose own `substs: List<AssemblyParseTreeNode>` field holds heterogeneous children -- either
+/// further branches or the already-ported
+/// [`AssemblyParseToken`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseToken)/
+/// [`AssemblyParseNumericToken`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseNumericToken))
+/// before the real (abstract) class is ported. Only the three members
+/// `AssemblyParseBranch.java` itself calls on a child are modeled: `getSym()` (used by
+/// `addChild`'s expectation check), `print(PrintStream, String)` (recursed into by
+/// `AssemblyParseBranch`'s own override -- renamed `print_indented` per this crate's
+/// `display_string`/`print_indented` convention, and taking the grammar explicitly as a parameter
+/// since this stub has no `grammar` field of its own to inherit), and `generateString()` (recursed
+/// into by `AssemblyParseBranch`'s own override). The inherited `getParent()`/`setParent()`/
+/// `getGrammar()`/public `print(PrintStream)` surface is left out for the same reason
+/// [`AssemblyParseToken`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseToken)'s own
+/// doc comment gives: it belongs to this still-unported class's own future port.
+pub trait AssemblyParseTreeNode {
+    /// Mirrors `AssemblyParseTreeNode.getSym()`.
+    fn get_sym(&self) -> std::sync::Arc<dyn AssemblySymbol>;
+
+    /// Mirrors `AssemblyParseTreeNode.print(PrintStream, String)`, returning the formatted text
+    /// instead of writing it to a stream.
+    fn print_indented(
+        &self,
+        grammar: &dyn crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar,
+        indent: &str,
+    ) -> String;
+
+    /// Mirrors `AssemblyParseTreeNode.generateString()`.
+    fn generate_string(&self) -> String;
+}

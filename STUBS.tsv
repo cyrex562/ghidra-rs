@@ -353,3 +353,6 @@ ts	stub_class	referenced_by
 2026-07-27T16:00:00Z	AssemblyNumericSymbols	AssemblyTerminal
 2026-07-27T18:00:00Z	AssemblyExtendedProduction	AssemblyExtendedGrammar
 2026-07-27T07:48:45Z	AssemblyNumericSymbols	AssemblyNumericTerminal
+2026-07-27T08:24:55Z	AssemblyParseTreeNode	AssemblyParseBranch
+2026-07-27T08:24:55Z	AssemblyProduction	AssemblyParseBranch
+2026-07-27T08:24:55Z	AssemblyConstructorSemantic	AssemblyParseBranch
