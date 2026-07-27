@@ -451,6 +451,52 @@ pub trait ConstructState: Send + Sync {
 /// through as a parameter, so no members are needed yet.
 pub trait RecursiveDescentSolver {}
 
+/// Placeholder for `ghidra.app.plugin.languages.sleigh.SleighConstructorTraversal`, referenced by
+/// [`SleighLanguages`](crate::app::plugin::languages::sleigh::sleigh_languages::SleighLanguages)
+/// before the real class -- which walks every subtable in a `SleighLanguage`'s symbol table,
+/// invoking a nested [`SubtableTraversal`] per subtable -- is ported. Models
+/// `SleighConstructorTraversal.traverse(ConstructorEntryVisitor)`, the one entry point
+/// `SleighLanguages` needs; callers supply an already-scoped traversal rather than this trait's
+/// (unported) implementor being built from a concrete `SleighLanguage`, keeping the seam
+/// decoupled from any one traversal implementation.
+pub trait ConstructorTraversal {
+    /// Stands in for `SleighConstructorTraversal.traverse(ConstructorEntryVisitor)`.
+    fn traverse(
+        &self,
+        visitor: &mut dyn crate::app::plugin::languages::sleigh::constructor_entry_visitor::ConstructorEntryVisitor,
+    ) -> crate::app::plugin::languages::sleigh::visitor_results::VisitorResult;
+}
+
+/// Placeholder for `ghidra.app.plugin.languages.sleigh.SleighSubtableTraversal`, referenced by
+/// [`SleighLanguages`](crate::app::plugin::languages::sleigh::sleigh_languages::SleighLanguages)
+/// before the real class -- which recursively descends a subtable's decision tree -- is ported.
+/// Models `SleighSubtableTraversal.traverse(SubtableEntryVisitor)`, the one entry point
+/// `SleighLanguages` needs.
+pub trait SubtableTraversal {
+    /// Stands in for `SleighSubtableTraversal.traverse(SubtableEntryVisitor)`.
+    fn traverse(
+        &self,
+        visitor: &mut dyn crate::app::plugin::languages::sleigh::subtable_entry_visitor::SubtableEntryVisitor,
+    ) -> crate::app::plugin::languages::sleigh::visitor_results::VisitorResult;
+}
+
+/// Placeholder for `ghidra.app.plugin.languages.sleigh.SleighPcodeTraversal`, referenced by
+/// [`SleighLanguages`](crate::app::plugin::languages::sleigh::sleigh_languages::SleighLanguages)
+/// before the real class -- which walks a single constructor's p-code template ops -- is ported.
+/// Models `SleighPcodeTraversal.traverse(OnlyPcodeOpEntryVisitor)` with a plain `FnMut` callback
+/// in place of Java's package-private `OnlyPcodeOpEntryVisitor` marker interface, since that
+/// interface exists solely to type this one callback and has no other purpose worth a seam of
+/// its own.
+pub trait PcodeTraversal {
+    /// Stands in for `SleighPcodeTraversal.traverse(OnlyPcodeOpEntryVisitor)`.
+    fn traverse(
+        &self,
+        visit: &mut dyn FnMut(
+            &crate::program::model::lang::sleigh::template::OpTpl,
+        ) -> crate::app::plugin::languages::sleigh::visitor_results::VisitorResult,
+    ) -> crate::app::plugin::languages::sleigh::visitor_results::VisitorResult;
+}
+
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolvedPatterns`, referenced by
 /// [`AssemblyResolvedBackfill::solve`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill::solve)
 /// before the real class is ported. Extends the crate's already-ported

@@ -342,3 +342,6 @@ ts	stub_class	referenced_by
 2026-07-27T11:00:00Z	SourceMapEntry	SourceMapEntryIterator
 2026-07-27T12:00:00Z	RecursiveDescentSolver	AssemblyResolvedBackfill
 2026-07-27T12:00:00Z	AssemblyResolvedPatterns	AssemblyResolvedBackfill
+2026-07-27T13:00:00Z	ConstructorTraversal	SleighLanguages
+2026-07-27T13:00:00Z	SubtableTraversal	SleighLanguages
+2026-07-27T13:00:00Z	PcodeTraversal	SleighLanguages
