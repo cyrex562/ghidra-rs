@@ -7,6 +7,7 @@ use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::data::enum_::Enum;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
 use crate::program::seam_stubs::{DataTypePath, MemBuffer};
@@ -543,6 +544,30 @@ pub trait DataType {
     /// return `true`.
     fn is_function_definition_type(&self) -> bool {
         false
+    }
+
+    /// Stands in for `instanceof BooleanDataType`, used by
+    /// [`PcodeDataTypeManager::get_metatype`](crate::program::model::pcode::pcode_data_type_manager::get_metatype)'s
+    /// port of `PcodeDataTypeManager.getMetatype(DataType)`. Checked ahead of
+    /// [`is_integer_type`](Self::is_integer_type) since `BooleanDataType` is itself (in Java) an
+    /// `AbstractUnsignedIntegerDataType` subclass. Implementors representing the boolean type are
+    /// expected to override this to return `true`.
+    fn is_boolean_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `instanceof WideCharDataType || instanceof WideChar16DataType || instanceof
+    /// WideChar32DataType`, used by the same `get_metatype` port. Implementors representing any
+    /// of those wide-character types are expected to override this to return `true`.
+    fn is_wide_char_type(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `dt instanceof Enum ? (Enum) dt : null`, used by the same `get_metatype`
+    /// port to recover [`Enum::is_signed`]. See [`as_pointer`](Self::as_pointer) for why this is
+    /// by-reference rather than by-value.
+    fn as_enum(&self) -> Option<&dyn Enum> {
+        None
     }
 
     /// Stands in for `dt instanceof Array ? (Array) dt : null`, used by

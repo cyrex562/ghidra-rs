@@ -23,6 +23,7 @@ pub mod packed_bytes;
 pub mod partial_union;
 pub mod patch_encoder;
 pub mod pcode_block_basic;
+pub mod pcode_data_type_manager;
 pub mod pcode_exception;
 pub mod pcode_override;
 pub mod string_ingest;
@@ -59,6 +60,10 @@ pub use packed_bytes::PackedBytes;
 pub use partial_union::PartialUnion;
 pub use patch_encoder::PatchEncoder;
 pub use pcode_block_basic::PcodeBlockBasic;
+pub use pcode_data_type_manager::{
+    find_pointer_relative_inner, get_metatype, get_metatype_from_string, get_metatype_string,
+    CoreTypeEntry, PcodeDataTypeManager,
+};
 pub use pcode_exception::PcodeException;
 pub use pcode_override::PcodeOverride;
 pub use string_ingest::StringIngest;

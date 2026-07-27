@@ -1982,13 +1982,6 @@ pub trait HighSymbol: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.program.model.pcode.PcodeDataTypeManager`, referenced by
-/// [`FunctionPrototype`](crate::program::model::pcode::function_prototype::FunctionPrototype)'s
-/// `encode_prototype` before the real class is ported. `FunctionPrototype::encode_prototype` only
-/// ever passes this type through opaquely (the real serialization logic is left to concrete
-/// implementors), so no members are needed yet.
-pub trait PcodeDataTypeManager {}
-
 /// Placeholder for `ghidra.program.model.pcode.PcodeFactory`, referenced by
 /// [`FunctionPrototype`](crate::program::model::pcode::function_prototype::FunctionPrototype)'s
 /// `decode_prototype` before the real class is ported. `FunctionPrototype::decode_prototype` only

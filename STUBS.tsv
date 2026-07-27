@@ -306,7 +306,6 @@ ts	stub_class	referenced_by
 2026-07-23T00:00:00Z	Undefined	HighFunctionDBUtil
 2026-07-23T18:00:00Z	HighSymbol	HighConstant
 2026-07-23T18:00:00Z	LocalSymbolMap	HighConstant
-2026-07-23T19:00:00Z	PcodeDataTypeManager	FunctionPrototype
 2026-07-23T19:00:00Z	PcodeFactory	FunctionPrototype
 2026-07-23T20:00:00Z	ConstructState	OpTplWalker
 2026-07-23T21:00:00Z	ParamMeasure	HighParamID
