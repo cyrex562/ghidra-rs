@@ -4,7 +4,7 @@ DONE	trait	88	30	131	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	87	11	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/FileBytesAdapter.java
 DONE	trait	86	63	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/FileBytes.java
 DONE	trait	85	11	7	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/mem/AddressSourceInfo.java
-TODO	trait	84	149	54	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/StubMemory.java
+DONE	trait	84	149	54	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/mem/StubMemory.java
 TODO	trait	83	1238	8	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/CountedDynamicDataType.java
 TODO	trait	81	124	203	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeDataTypeManager.java
 TODO	trait	80	307	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/ConstantPool.java
