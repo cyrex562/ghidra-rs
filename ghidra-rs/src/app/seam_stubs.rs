@@ -507,3 +507,37 @@ pub trait AssemblyResolvedPatterns:
     crate::app::plugin::assembler::sleigh::sem::AssemblyResolution
 {
 }
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyNonTerminal`, referenced by
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
+/// real class is ported. `AssemblyGrammar` only ever passes this type through as a
+/// parameter/return value, so no members are needed yet.
+pub trait AssemblyNonTerminal {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblySentential`, referenced by
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
+/// real class is ported. Java's `AssemblySentential<AssemblyNonTerminal>` generic is dropped, since
+/// this crate has no generic parameter to substitute yet. `AssemblyGrammar` only ever passes this
+/// type through as a parameter, so no members are needed yet.
+pub trait AssemblySentential {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyProduction`, referenced by
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
+/// real class is ported. `AssemblyGrammar` only ever passes/returns this type opaquely, so no
+/// members are needed yet.
+pub trait AssemblyProduction {}
+
+/// Placeholder for `ghidra.app.plugin.processors.sleigh.Constructor`, referenced by
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
+/// real class is ported. Distinct from
+/// [`crate::program::model::lang::sleigh::constructor::Constructor`] (a port of the unrelated
+/// `ghidra.pcodeCPort.slghsymbol.Constructor` backend class). `AssemblyGrammar` only ever passes
+/// this type through as a parameter, so no members are needed yet.
+pub trait Constructor {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyConstructorSemantic`,
+/// referenced by
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
+/// real class is ported. `AssemblyGrammar` only ever passes/returns this type opaquely, so no
+/// members are needed yet.
+pub trait AssemblyConstructorSemantic {}

@@ -345,3 +345,8 @@ ts	stub_class	referenced_by
 2026-07-27T13:00:00Z	ConstructorTraversal	SleighLanguages
 2026-07-27T13:00:00Z	SubtableTraversal	SleighLanguages
 2026-07-27T13:00:00Z	PcodeTraversal	SleighLanguages
+2026-07-27T14:00:00Z	AssemblyNonTerminal	AssemblyGrammar
+2026-07-27T14:00:00Z	AssemblySentential	AssemblyGrammar
+2026-07-27T14:00:00Z	AssemblyProduction	AssemblyGrammar
+2026-07-27T14:00:00Z	Constructor	AssemblyGrammar
+2026-07-27T14:00:00Z	AssemblyConstructorSemantic	AssemblyGrammar
