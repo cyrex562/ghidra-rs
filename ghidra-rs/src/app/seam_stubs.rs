@@ -509,10 +509,19 @@ pub trait AssemblyResolvedPatterns:
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyNonTerminal`, referenced by
-/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
-/// real class is ported. `AssemblyGrammar` only ever passes this type through as a
-/// parameter/return value, so no members are needed yet.
-pub trait AssemblyNonTerminal {}
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) (which
+/// only ever passes this type through as a parameter/return value) and by
+/// [`AssemblyExtendedNonTerminal`](
+/// crate::app::plugin::assembler::sleigh::symbol::AssemblyExtendedNonTerminal) (a real port, which
+/// wraps a value of this type and calls `getName()`/`toString()` on it, mirroring
+/// `AssemblyExtendedNonTerminal extends AssemblyNonTerminal`) before the real class is ported. The
+/// `Display` bound and `get_name` method stand in for those two calls; `toString()` isn't
+/// overridden by `AssemblyNonTerminal` itself, so this stub can't yet reproduce its
+/// `"[" + name + "]"` formatting, only expose that a display exists.
+pub trait AssemblyNonTerminal: std::fmt::Display {
+    /// Get the name of this non-terminal.
+    fn get_name(&self) -> String;
+}
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblySentential`, referenced by
 /// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
@@ -563,14 +572,6 @@ pub trait AssemblySymbol: std::fmt::Display {
 /// through to implementers, never calling a method on it themselves, so no members are needed
 /// yet.
 pub trait AssemblyNumericSymbols {}
-
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyExtendedNonTerminal`,
-/// referenced by
-/// [`AssemblyExtendedGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyExtendedGrammar)
-/// before the real class is ported. Mirrors `AssemblyExtendedNonTerminal extends
-/// AssemblyNonTerminal` as a supertrait bound; `AssemblyExtendedGrammar` only ever passes this
-/// type through as a parameter, so no further members are needed yet.
-pub trait AssemblyExtendedNonTerminal: AssemblyNonTerminal {}
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyExtendedProduction`,
 /// referenced by

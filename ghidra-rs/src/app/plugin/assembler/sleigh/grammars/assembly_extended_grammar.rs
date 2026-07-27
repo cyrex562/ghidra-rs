@@ -2,9 +2,8 @@
 
 use std::sync::Arc;
 
-use crate::app::seam_stubs::{
-    AssemblyExtendedNonTerminal, AssemblyExtendedProduction, AssemblySentential,
-};
+use crate::app::plugin::assembler::sleigh::symbol::AssemblyExtendedNonTerminal;
+use crate::app::seam_stubs::{AssemblyExtendedProduction, AssemblySentential};
 
 /// Defines an "extended" grammar.
 ///
@@ -22,10 +21,10 @@ use crate::app::seam_stubs::{
 /// `newProduction`, which unconditionally throws `UnsupportedOperationException("Please
 /// construct extended productions yourself")` -- since the inherited `AbstractAssemblyGrammar`
 /// surface (`addProduction`, `combine`, `verify()`, iteration, etc.) belongs to that still-unported
-/// superclass and is left for its own port. [`AssemblyExtendedNonTerminal`] and
-/// [`AssemblyExtendedProduction`], the core types this method references that aren't ported yet,
-/// are modeled as minimal placeholder traits in [`crate::app::seam_stubs`];
-/// [`AssemblySentential`] is likewise a placeholder there already, reused here.
+/// superclass and is left for its own port. [`AssemblyExtendedNonTerminal`] is a real port (see
+/// [`crate::app::plugin::assembler::sleigh::symbol`]); [`AssemblyExtendedProduction`], the other
+/// core type this method references, isn't ported yet and is modeled as a minimal placeholder
+/// trait in [`crate::app::seam_stubs`], as is [`AssemblySentential`], reused here.
 pub trait AssemblyExtendedGrammar {
     /// Construct a new extended production given its LHS and RHS.
     ///
@@ -49,9 +48,47 @@ pub trait AssemblyExtendedGrammar {
 mod tests {
     use super::*;
 
+    struct MockPlainNonTerminal;
+
+    impl std::fmt::Display for MockPlainNonTerminal {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "plain")
+        }
+    }
+
+    impl crate::app::seam_stubs::AssemblyNonTerminal for MockPlainNonTerminal {
+        fn get_name(&self) -> String {
+            "plain".to_string()
+        }
+    }
+
     struct MockExtendedNonTerminal;
-    impl crate::app::seam_stubs::AssemblyNonTerminal for MockExtendedNonTerminal {}
-    impl AssemblyExtendedNonTerminal for MockExtendedNonTerminal {}
+
+    impl std::fmt::Display for MockExtendedNonTerminal {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "ext")
+        }
+    }
+
+    impl crate::app::seam_stubs::AssemblyNonTerminal for MockExtendedNonTerminal {
+        fn get_name(&self) -> String {
+            "ext".to_string()
+        }
+    }
+
+    impl AssemblyExtendedNonTerminal for MockExtendedNonTerminal {
+        fn end(&self) -> i32 {
+            -1
+        }
+
+        fn wrapped(&self) -> Arc<dyn crate::app::seam_stubs::AssemblyNonTerminal> {
+            Arc::new(MockPlainNonTerminal)
+        }
+
+        fn own_name(&self) -> String {
+            "ext".to_string()
+        }
+    }
 
     struct MockSentential;
     impl AssemblySentential for MockSentential {}
