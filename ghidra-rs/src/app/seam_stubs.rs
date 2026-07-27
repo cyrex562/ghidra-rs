@@ -541,3 +541,17 @@ pub trait Constructor {}
 /// real class is ported. `AssemblyGrammar` only ever passes/returns this type opaquely, so no
 /// members are needed yet.
 pub trait AssemblyConstructorSemantic {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyTerminal`, referenced by
+/// [`AssemblyParseToken`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseToken) before
+/// the real class (itself an unported subclass of the unported `AssemblySymbol`) is ported.
+/// `AssemblyParseToken` only ever displays, compares, and hashes its terminal, so this stub
+/// exposes just that: a `Display` bound (stands in for the inherited `Object#toString()` used in
+/// `AssemblyParseToken.print`) plus a stable identity tag (stands in for the inherited
+/// `Object#equals`/`hashCode`, mirroring the [`SolverHint::tag`](
+/// crate::app::plugin::assembler::sleigh::expr::SolverHint::tag) convention used for the same
+/// purpose elsewhere in this crate).
+pub trait AssemblyTerminal: std::fmt::Display {
+    /// A stable identity for this terminal, used for equality and hashing.
+    fn terminal_tag(&self) -> &str;
+}
