@@ -9,13 +9,13 @@
 //! `FunctionManagerDB`/`FunctionDB` relationship captured by
 //! [`FunctionDb`](crate::program::database::function::FunctionDb).
 //!
-//! Neither `OldFunctionManager` nor `OldStackFrameDB` is ported yet. `OldFunctionManager` is
-//! referenced here only as this type's `getFunctionManager()` return value (never called through
-//! by this trait's own default methods), so it gets a bare marker placeholder,
-//! [`OldFunctionManager`](crate::program::seam_stubs::OldFunctionManager), in `seam_stubs.rs`.
-//! `OldStackFrameDB` needs no placeholder at all: `OldStackFrameDB implements StackFrame`, and
-//! `getStackFrame()` is this type's only reference to it, so that method is modeled directly in
-//! terms of the already-ported [`StackFrame`] trait object.
+//! `OldFunctionManager` is now ported too, as
+//! [`OldFunctionManager`](crate::program::database::oldfunction::OldFunctionManager) (this type's
+//! `getFunctionManager()` return value is never called through by this trait's own default
+//! methods, so no change was needed here beyond the import). `OldStackFrameDB` is not ported yet
+//! and needs no placeholder at all: `OldStackFrameDB implements StackFrame`, and `getStackFrame()`
+//! is this type's only reference to it, so that method is modeled directly in terms of the
+//! already-ported [`StackFrame`] trait object.
 //!
 //! Mapped over directly as required methods (each backed by real, non-trivial logic in the DB
 //! -- record decoding, adapter lookups, register/stack parameter merging -- that a concrete
@@ -64,8 +64,8 @@ use std::sync::Arc;
 use crate::program::database::map::AddressMap;
 use crate::program::model::address::{Address, AddressSetView};
 use crate::program::model::data::data_type::DataType;
+use crate::program::database::oldfunction::OldFunctionManager;
 use crate::program::model::listing::{Parameter, Program, StackFrame};
-use crate::program::seam_stubs::OldFunctionManager;
 
 /// In-memory representation of an old (pre-migration) function, read from the pre-2.2 function
 /// tables.
@@ -177,7 +177,53 @@ mod tests {
     }
 
     struct MockOldFunctionManager;
-    impl OldFunctionManager for MockOldFunctionManager {}
+
+    impl crate::framework::db::util::ErrorHandler for MockOldFunctionManager {
+        fn db_error(&self, _e: std::io::Error) {}
+    }
+
+    impl OldFunctionManager for MockOldFunctionManager {
+        fn get_program(&self) -> Option<Arc<dyn Program>> {
+            None
+        }
+        fn get_function_adapter(
+            &self,
+        ) -> &dyn crate::program::database::oldfunction::OldFunctionDBAdapter {
+            unimplemented!("mock does not exercise get_function_adapter")
+        }
+        fn get_register_variable_adapter(
+            &self,
+        ) -> &dyn crate::program::database::oldfunction::OldRegisterVariableDBAdapter {
+            unimplemented!("mock does not exercise get_register_variable_adapter")
+        }
+        fn get_stack_variable_adapter(
+            &self,
+        ) -> &dyn crate::program::database::oldfunction::OldStackVariableDBAdapter {
+            unimplemented!("mock does not exercise get_stack_variable_adapter")
+        }
+        fn get_data_type(&self, _data_type_id: i64) -> Box<dyn DataType> {
+            unimplemented!("mock does not exercise get_data_type")
+        }
+        fn get_data_type_id(&self, _data_type: &dyn DataType) -> i64 {
+            unimplemented!("mock does not exercise get_data_type_id")
+        }
+        fn get_function_body(&self, _function_key: i64) -> std::io::Result<Box<dyn AddressSetView>> {
+            unimplemented!("mock does not exercise get_function_body")
+        }
+        fn get_function(&self, _rec: &crate::framework::db::DBRecord) -> Arc<dyn OldFunctionDataDB> {
+            unimplemented!("mock does not exercise get_function")
+        }
+        fn upgrade(
+            &mut self,
+            _upgrade_program: &mut dyn Program,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::program::database::oldfunction::UpgradeError> {
+            unimplemented!("mock does not exercise upgrade")
+        }
+        fn dispose(&mut self) -> std::io::Result<()> {
+            unimplemented!("mock does not exercise dispose")
+        }
+    }
 
     struct MockProgram;
     impl crate::framework::model::DomainObject for MockProgram {}

@@ -2412,12 +2412,18 @@ pub trait DomainObjectMergeManager {
     fn as_any(&self) -> &dyn Any;
 }
 
-/// Placeholder for `ghidra.program.database.oldfunction.OldFunctionManager`, referenced by
-/// [`OldFunctionDataDB::get_function_manager`](crate::program::database::oldfunction::OldFunctionDataDB::get_function_manager)
-/// before the real class is ported. `OldFunctionDataDB` only ever passes this type through
-/// opaquely (it is itself constructed *by* `OldFunctionManager`, which is what makes
-/// `OldFunctionDataDB` a cycle cut-point), so no members are needed yet.
-pub trait OldFunctionManager {}
+/// Placeholder for `ghidra.program.database.oldfunction.OldFunctionMapDB`, referenced by
+/// [`OldFunctionManager`](crate::program::database::oldfunction::OldFunctionManager) before the
+/// real class is ported. `OldFunctionManager` only ever calls its `dispose()`/`getBody(long)`
+/// pair (from its own `dispose`/`get_function_body`), never anything else, so this placeholder
+/// exposes just that pair.
+pub trait OldFunctionMapDB {
+    /// Stands in for `OldFunctionMapDB.dispose()`.
+    fn dispose(&mut self);
+
+    /// Stands in for `OldFunctionMapDB.getBody(long)`.
+    fn get_body(&self, function_key: i64) -> Box<dyn AddressSetView>;
+}
 
 /// Placeholder for `ghidra.GhidraApplicationLayout`, referenced by
 /// [`DataTypeArchiveIdDumper`](crate::program::model::data::data_type_archive_id_dumper::DataTypeArchiveIdDumper)
