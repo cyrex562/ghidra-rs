@@ -31,7 +31,7 @@ DONE	trait	68	8	83	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 DONE	trait	68	22	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationTable.java
 DONE	trait	67	2	49	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/reloc/RelocationManager.java
 DONE	trait	68	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFileAdapter.java
-TODO	trait	68	4	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceMapAdapter.java
+DONE	trait	68	4	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceMapAdapter.java
 TODO	trait	69	11	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntryIterator.java
 TODO	trait	68	11	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourcePathTransformer.java
 TODO	trait	67	5	83	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFileManagerDB.java
