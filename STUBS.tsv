@@ -350,3 +350,4 @@ ts	stub_class	referenced_by
 2026-07-27T14:00:00Z	AssemblyProduction	AssemblyGrammar
 2026-07-27T14:00:00Z	Constructor	AssemblyGrammar
 2026-07-27T14:00:00Z	AssemblyConstructorSemantic	AssemblyGrammar
+2026-07-27T15:00:00Z	AssemblyTerminal	AssemblyParseToken
