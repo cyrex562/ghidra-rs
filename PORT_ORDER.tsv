@@ -34,7 +34,7 @@ DONE	trait	68	3	46	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 DONE	trait	68	4	48	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceMapAdapter.java
 DONE	trait	69	11	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntryIterator.java
 DONE	trait	68	11	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourcePathTransformer.java
-TODO	trait	67	5	83	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFileManagerDB.java
+DONE	trait	67	5	83	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/sourcemap/SourceFileManagerDB.java
 TODO	trait	66	365	357	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/ProgramDB.java
 TODO	trait	65	5	38	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/generic/MemoryBlockDefinition.java
 TODO	trait	64	183	217	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/SleighLanguage.java
