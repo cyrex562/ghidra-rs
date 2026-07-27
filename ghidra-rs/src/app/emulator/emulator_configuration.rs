@@ -323,7 +323,7 @@ mod tests {
 
         fn get_default_memory_blocks(
             &self,
-        ) -> Vec<Box<dyn crate::program::seam_stubs::MemoryBlockDefinition>> {
+        ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
             vec![]
         }
 

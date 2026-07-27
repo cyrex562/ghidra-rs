@@ -117,9 +117,10 @@ mod tests {
     use crate::program::model::listing::Program;
     use crate::program::model::pcode::Encoder;
     use crate::program::model::lang::prototype_model::PrototypeModel;
+    use crate::app::plugin::processors::generic::MemoryBlockDefinition;
     use crate::program::seam_stubs::{
         ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery,
-        MemBuffer, MemoryBlockDefinition, AddressLabelInfo, PcodeInjectLibrary, Processor,
+        MemBuffer, AddressLabelInfo, PcodeInjectLibrary, Processor,
         RegisterValue,
     };
     use crate::program::model::lang::endian::Endian;

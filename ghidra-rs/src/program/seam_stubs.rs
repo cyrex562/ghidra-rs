@@ -1117,12 +1117,6 @@ pub trait Processor {
 /// members are needed yet.
 pub trait AddressLabelInfo {}
 
-/// Placeholder for `ghidra.app.plugin.processors.generic.MemoryBlockDefinition`, referenced by
-/// [`Language`](crate::program::model::lang::language::Language)
-/// before the real class is ported. `Language` only ever returns this type opaquely, so no
-/// members are needed yet.
-pub trait MemoryBlockDefinition {}
-
 /// Placeholder for `ghidra.program.model.lang.PcodeInjectLibrary`, referenced by
 /// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
 /// before the real class is ported. `CompilerSpec` only ever returns this type opaquely, so no
