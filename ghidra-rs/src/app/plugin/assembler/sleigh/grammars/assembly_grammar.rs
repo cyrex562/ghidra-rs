@@ -2,9 +2,9 @@
 
 use std::sync::Arc;
 
+use crate::app::plugin::assembler::sleigh::grammars::assembly_sentential::AssemblySentential;
 use crate::app::seam_stubs::{
-    AssemblyConstructorSemantic, AssemblyNonTerminal, AssemblyProduction, AssemblySentential,
-    Constructor,
+    AssemblyConstructorSemantic, AssemblyNonTerminal, AssemblyProduction, Constructor,
 };
 use crate::program::model::lang::sleigh::pattern::DisjointPattern;
 
@@ -115,7 +115,30 @@ mod tests {
     }
 
     struct MockSentential;
-    impl AssemblySentential for MockSentential {}
+    impl AssemblySentential for MockSentential {
+        fn add_symbol(
+            &mut self,
+            _symbol: Arc<dyn crate::app::seam_stubs::AssemblySymbol>,
+        ) -> bool {
+            unimplemented!()
+        }
+        fn get_symbols(&self) -> Vec<Arc<dyn crate::app::seam_stubs::AssemblySymbol>> {
+            Vec::new()
+        }
+        fn finish(&mut self) {}
+        fn sub(&self, _from_index: usize, _to_index: usize) -> Box<dyn AssemblySentential> {
+            unimplemented!()
+        }
+        fn white_space_symbol(&self) -> Arc<dyn crate::app::seam_stubs::AssemblySymbol> {
+            unimplemented!()
+        }
+        fn make_string_terminal(
+            &self,
+            _str: &str,
+        ) -> Arc<dyn crate::app::seam_stubs::AssemblySymbol> {
+            unimplemented!()
+        }
+    }
 
     struct MockProduction(&'static str);
     impl AssemblyProduction for MockProduction {}

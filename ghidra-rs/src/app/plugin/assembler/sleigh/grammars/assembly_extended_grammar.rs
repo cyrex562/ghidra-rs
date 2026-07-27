@@ -2,8 +2,9 @@
 
 use std::sync::Arc;
 
+use crate::app::plugin::assembler::sleigh::grammars::assembly_sentential::AssemblySentential;
 use crate::app::plugin::assembler::sleigh::symbol::AssemblyExtendedNonTerminal;
-use crate::app::seam_stubs::{AssemblyExtendedProduction, AssemblySentential};
+use crate::app::seam_stubs::AssemblyExtendedProduction;
 
 /// Defines an "extended" grammar.
 ///
@@ -91,7 +92,30 @@ mod tests {
     }
 
     struct MockSentential;
-    impl AssemblySentential for MockSentential {}
+    impl AssemblySentential for MockSentential {
+        fn add_symbol(
+            &mut self,
+            _symbol: Arc<dyn crate::app::seam_stubs::AssemblySymbol>,
+        ) -> bool {
+            unimplemented!()
+        }
+        fn get_symbols(&self) -> Vec<Arc<dyn crate::app::seam_stubs::AssemblySymbol>> {
+            Vec::new()
+        }
+        fn finish(&mut self) {}
+        fn sub(&self, _from_index: usize, _to_index: usize) -> Box<dyn AssemblySentential> {
+            unimplemented!()
+        }
+        fn white_space_symbol(&self) -> Arc<dyn crate::app::seam_stubs::AssemblySymbol> {
+            unimplemented!()
+        }
+        fn make_string_terminal(
+            &self,
+            _str: &str,
+        ) -> Arc<dyn crate::app::seam_stubs::AssemblySymbol> {
+            unimplemented!()
+        }
+    }
 
     /// A grammar that relies entirely on the trait's default `new_production`, proving
     /// object-safety through a `dyn` reference and that the default matches the Java class's

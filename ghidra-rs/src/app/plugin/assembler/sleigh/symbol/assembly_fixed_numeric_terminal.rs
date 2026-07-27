@@ -283,7 +283,7 @@ mod tests {
         fn add_constructor_production(
             &mut self,
             _lhs: Arc<dyn crate::app::seam_stubs::AssemblyNonTerminal>,
-            _rhs: Arc<dyn crate::app::seam_stubs::AssemblySentential>,
+            _rhs: Arc<dyn crate::app::plugin::assembler::sleigh::grammars::assembly_sentential::AssemblySentential>,
             _pattern: crate::program::model::lang::sleigh::pattern::DisjointPattern,
             _cons: Arc<dyn crate::app::seam_stubs::Constructor>,
             _indices: Vec<usize>,
