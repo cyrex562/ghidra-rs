@@ -14348,7 +14348,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pc
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/Relocation.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationHandler.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationResult.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationTable.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationTable.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/reloc/RelocationUtil.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model reloc 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/scalar/Scalar.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model scalar 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/scalar/ScalarOverflowException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra program model scalar
