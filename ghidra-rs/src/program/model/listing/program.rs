@@ -4,7 +4,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
 use crate::program::model::listing::{FunctionManager, Listing, ProgramContext};
-use crate::program::model::symbol::{EquateTable, ExternalManager, ReferenceManager, SymbolTable};
+use crate::program::model::symbol::{EquateTable, ExternalManager, Namespace, ReferenceManager, SymbolTable};
 use std::sync::Arc;
 
 /// Name of the properties list holding general program information.
@@ -29,6 +29,16 @@ pub trait Program: DomainObject + Send + Sync {
     }
 
     fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        None
+    }
+
+    /// The namespace representing this program's global symbol scope. Stands in for
+    /// `Program.getGlobalNamespace()`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected; concrete implementations
+    /// should override once global-namespace support is ported. Added for
+    /// [`SimpleDiffUtility`](crate::program::util::SimpleDiffUtility::get_symbol).
+    fn get_global_namespace(&self) -> Option<Arc<dyn Namespace>> {
         None
     }
 
