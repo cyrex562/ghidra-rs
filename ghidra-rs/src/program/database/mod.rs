@@ -24,6 +24,7 @@ pub mod program_db;
 pub mod program_modifier_listener;
 pub mod properties;
 pub mod references;
+pub mod reloc;
 pub mod sourcemap;
 pub mod symbol;
 pub mod util;
@@ -52,3 +53,4 @@ pub use properties::{
     get_table_name, DBPropertyMapManager, PropertiesDBAdapter, ProgramReadyError, PropertyMapDB,
     TestSaveable, PROPERTY_TABLE_PREFIX,
 };
+pub use reloc::RelocationDBAdapter;
