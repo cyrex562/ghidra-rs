@@ -563,3 +563,21 @@ pub trait AssemblySymbol: std::fmt::Display {
 /// through to implementers, never calling a method on it themselves, so no members are needed
 /// yet.
 pub trait AssemblyNumericSymbols {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyExtendedNonTerminal`,
+/// referenced by
+/// [`AssemblyExtendedGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyExtendedGrammar)
+/// before the real class is ported. Mirrors `AssemblyExtendedNonTerminal extends
+/// AssemblyNonTerminal` as a supertrait bound; `AssemblyExtendedGrammar` only ever passes this
+/// type through as a parameter, so no further members are needed yet.
+pub trait AssemblyExtendedNonTerminal: AssemblyNonTerminal {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyExtendedProduction`,
+/// referenced by
+/// [`AssemblyExtendedGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyExtendedGrammar)
+/// before the real class is ported. Distinct from (not a subtype of) the
+/// [`AssemblyProduction`] placeholder above: in Java both `AssemblyExtendedProduction` and
+/// `AssemblyProduction` are sibling concrete subclasses of `AbstractAssemblyProduction`,
+/// parameterized over different non-terminal types, rather than one extending the other.
+/// `AssemblyExtendedGrammar` only ever returns this type opaquely, so no members are needed yet.
+pub trait AssemblyExtendedProduction {}

@@ -352,3 +352,5 @@ ts	stub_class	referenced_by
 2026-07-27T14:00:00Z	AssemblyConstructorSemantic	AssemblyGrammar
 2026-07-27T16:00:00Z	AssemblySymbol	AssemblyTerminal
 2026-07-27T16:00:00Z	AssemblyNumericSymbols	AssemblyTerminal
+2026-07-27T18:00:00Z	AssemblyExtendedNonTerminal	AssemblyExtendedGrammar
+2026-07-27T18:00:00Z	AssemblyExtendedProduction	AssemblyExtendedGrammar
