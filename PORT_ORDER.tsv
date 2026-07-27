@@ -57,7 +57,7 @@ DONE	trait	82	14	13	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/a
 DONE	trait	81	8	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyProduction.java
 DONE	trait	80	9	6	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyGrammar.java
 DONE	trait	79	12	11	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseBranch.java
-TODO	trait	77	15	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseResult.java
+DONE	trait	77	15	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseResult.java
 TODO	trait	78	8	26	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/ExpressionMatcher.java
 TODO	trait	76	45	30	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/DefaultAssemblyResolvedBackfill.java
 TODO	trait	75	39	29	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySelector.java
