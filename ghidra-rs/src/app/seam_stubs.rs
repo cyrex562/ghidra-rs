@@ -499,14 +499,94 @@ pub trait PcodeTraversal {
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolvedPatterns`, referenced by
 /// [`AssemblyResolvedBackfill::solve`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill::solve)
-/// before the real class is ported. Extends the crate's already-ported
+/// and by [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real
+/// class is ported. Extends the crate's already-ported
 /// [`AssemblyResolution`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolution) trait,
 /// mirroring the Java interface's `extends AssemblyResolution`. `AssemblyResolvedBackfill::solve`
-/// only ever passes this type through as a parameter, so no further members are needed yet.
+/// only ever passes this type through as a parameter, so it needed no further members;
+/// `AssemblySelector` additionally sorts resolutions by encoded length/bits and re-masks the
+/// chosen one, so it needs `getInstructionLength()`, `getInstruction()`, and `getContext()` too.
 pub trait AssemblyResolvedPatterns:
     crate::app::plugin::assembler::sleigh::sem::AssemblyResolution
 {
+    /// Mirrors `AssemblyResolvedPatterns.getInstructionLength()`.
+    fn get_instruction_length(&self) -> i32;
+
+    /// Mirrors `AssemblyResolvedPatterns.getInstruction()`.
+    fn get_instruction(&self) -> Box<dyn AssemblyPatternBlock>;
+
+    /// Mirrors `AssemblyResolvedPatterns.getContext()`.
+    fn get_context(&self) -> Box<dyn AssemblyPatternBlock>;
 }
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyPatternBlock`, referenced by
+/// [`AssemblyResolvedPatterns`] and by
+/// [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real class is
+/// ported. `AssemblySelector` only ever reads the raw instruction bytes (to compare two candidate
+/// encodings by length, then lexicographically) and asks for a fully-masked copy of the chosen
+/// encoding, so only `getVals()` and `fillMask()` are needed.
+pub trait AssemblyPatternBlock {
+    /// Mirrors `AssemblyPatternBlock.getVals()`.
+    fn get_vals(&self) -> Vec<i8>;
+
+    /// Mirrors `AssemblyPatternBlock.fillMask()`.
+    fn fill_mask(&self) -> Box<dyn AssemblyPatternBlock>;
+}
+
+/// One record from an [`AssemblyResolutionResults`] set, already discriminated the way
+/// `AssemblySelector.filterCompatibleAndSort` discriminates it in Java: via an unchecked cast
+/// guarded by `AssemblyResolution.isError()` -- error records are cast to `AssemblyResolvedError`,
+/// and every other record encountered there is cast to `AssemblyResolvedPatterns` (backfill
+/// records are not expected in a finished `AssemblyResolutionResults`). Modeling the split as an
+/// enum lets this stub hand back an already-downcast value instead of requiring an unsafe/`Any`
+/// based cast that the real, already-ported `AssemblyResolution` trait does not support.
+pub enum AssemblyResolutionEntry {
+    Error(Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedError>),
+    Patterns(Box<dyn AssemblyResolvedPatterns>),
+}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolutionResults`, referenced
+/// by [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real class
+/// is ported. Java's version is a `Set<AssemblyResolution>` decorator; `AssemblySelector` only
+/// ever iterates it, so this stub exposes that as a single method returning already-discriminated
+/// [`AssemblyResolutionEntry`] values (see its docs for why).
+pub trait AssemblyResolutionResults {
+    /// Mirrors iterating `AssemblyResolutionResults` (a `Set<AssemblyResolution>`).
+    fn resolutions(&self) -> Vec<AssemblyResolutionEntry>;
+}
+
+/// Placeholder for `ghidra.app.plugin.assembler.AssemblySyntaxException`, thrown by
+/// [`AssemblySelector::filter_parse`](crate::app::plugin::assembler::AssemblySelector::filter_parse)'s
+/// default implementation before the real class is ported. Extends `std::error::Error` so it can
+/// stand in for the Java checked exception as a boxed `Result` error, mirroring
+/// [`TraceConflictedMappingException`].
+pub trait AssemblySyntaxException: std::error::Error {}
+
+/// Minimal constructible implementor of [`AssemblySyntaxException`]. `AssemblySelector::filter_parse`'s
+/// default body needs to actually construct one (mirroring `new
+/// AssemblySyntaxException(syntaxErrors)`, whose message joins each erroring
+/// `AssemblyParseResult`'s display with `\n`, per `StringUtils.join(errors, "\n")`), so this
+/// stores just that joined message rather than the original `AssemblyParseResult` set -- the real
+/// port's fuller `getErrors()` API is left for its own future port.
+#[derive(Debug)]
+pub struct AssemblySyntaxError {
+    message: String,
+}
+
+impl AssemblySyntaxError {
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into() }
+    }
+}
+
+impl std::fmt::Display for AssemblySyntaxError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for AssemblySyntaxError {}
+impl AssemblySyntaxException for AssemblySyntaxError {}
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyNonTerminal`, referenced by
 /// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) (which
