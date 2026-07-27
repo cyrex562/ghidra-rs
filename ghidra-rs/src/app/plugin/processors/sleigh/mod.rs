@@ -1,3 +1,4 @@
+pub mod context_cache;
 pub mod op_tpl_walker;
 pub mod pcode_emit_objects;
 pub mod pcode_emit_packed;

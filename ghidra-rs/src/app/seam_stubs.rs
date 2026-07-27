@@ -406,6 +406,23 @@ pub trait TripleSymbol: Send + Sync {
     );
 }
 
+/// Placeholder for `ghidra.program.model.lang.RegisterValue`'s `RegisterValue(Register, byte[])`
+/// constructor, referenced by
+/// [`ContextCache::set_context`](crate::app::plugin::processors::sleigh::context_cache::ContextCache::set_context)
+/// before the real `RegisterValue` class is ported. Distinct from
+/// [`program::seam_stubs::RegisterValue`](crate::program::seam_stubs::RegisterValue), which
+/// models read-only access to an already-built value; `set_context` additionally needs to build
+/// one from a base register and raw mask/value bytes, which that trait cannot express. Only this
+/// one construction capability is modeled.
+pub trait RegisterValueBuilder {
+    /// Stands in for `new RegisterValue(register, bytes)`.
+    fn build_register_value(
+        &self,
+        register: crate::program::model::lang::register::RegisterRef,
+        bytes: Vec<u8>,
+    ) -> Box<dyn crate::program::seam_stubs::RegisterValue>;
+}
+
 /// Placeholder for `ghidra.app.plugin.processors.sleigh.ConstructState`, referenced by
 /// [`OpTplWalker`](crate::app::plugin::processors::sleigh::op_tpl_walker::OpTplWalker) before the
 /// real class is ported. Java's `ConstructState` exposes direct `getConstructor()`/
