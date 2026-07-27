@@ -53,7 +53,24 @@ mod tests {
     use super::*;
 
     struct MockSymbols;
-    impl AssemblyNumericSymbols for MockSymbols {}
+    impl AssemblyNumericSymbols for MockSymbols {
+        fn choose(
+            &self,
+            _name: &str,
+            _space: Option<&crate::program::model::address::AddressSpace>,
+        ) -> std::collections::BTreeSet<i64> {
+            std::collections::BTreeSet::new()
+        }
+
+        fn get_suggestions(
+            &self,
+            _got: &str,
+            _space: Option<&crate::program::model::address::AddressSpace>,
+            _max: usize,
+        ) -> Vec<String> {
+            Vec::new()
+        }
+    }
 
     /// A terminal that matches a fixed literal keyword, exercising real (non-trivial) match and
     /// suggestion behavior rather than trivially-true stubs.

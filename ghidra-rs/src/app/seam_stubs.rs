@@ -567,11 +567,35 @@ pub trait AssemblySymbol: std::fmt::Display {
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyNumericSymbols`, referenced
-/// by [`AssemblyTerminal`](crate::app::plugin::assembler::sleigh::symbol::AssemblyTerminal) before
-/// the real class is ported. `AssemblyTerminal::match`/`get_suggestions` only ever pass this type
-/// through to implementers, never calling a method on it themselves, so no members are needed
-/// yet.
-pub trait AssemblyNumericSymbols {}
+/// by [`AssemblyTerminal`](crate::app::plugin::assembler::sleigh::symbol::AssemblyTerminal) and
+/// [`AssemblyNumericTerminal`](crate::app::plugin::assembler::sleigh::symbol::AssemblyNumericTerminal)
+/// before the real class is ported. `AssemblyTerminal::match`/`get_suggestions` only ever pass
+/// this type through to implementers, but `AssemblyNumericTerminal` actually calls
+/// `choose`/`getSuggestions` on it (to resolve program labels/equates for a bare identifier, and
+/// to offer label completions), so those two methods are added here -- the minimum this concrete
+/// class's real API that `AssemblyNumericTerminal` needs.
+pub trait AssemblyNumericSymbols {
+    /// Choose the value(s) bound to a label name, optionally scoped to an address space.
+    ///
+    /// Mirrors `AssemblyNumericSymbols.choose(String, AddressSpace)`. `space` mirrors Java's
+    /// nullable `AddressSpace` parameter (`None` means "no space hint", matching Java's `null`).
+    fn choose(
+        &self,
+        name: &str,
+        space: Option<&crate::program::model::address::AddressSpace>,
+    ) -> std::collections::BTreeSet<i64>;
+
+    /// Suggest up to `max` label names having the given prefix, optionally scoped to an address
+    /// space.
+    ///
+    /// Mirrors `AssemblyNumericSymbols.getSuggestions(String, AddressSpace, int)`.
+    fn get_suggestions(
+        &self,
+        got: &str,
+        space: Option<&crate::program::model::address::AddressSpace>,
+        max: usize,
+    ) -> Vec<String>;
+}
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyExtendedProduction`,
 /// referenced by
