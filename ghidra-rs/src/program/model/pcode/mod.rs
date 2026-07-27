@@ -1,3 +1,4 @@
+pub mod address_xml;
 pub mod block_graph;
 pub mod block_map;
 pub mod byte_ingest;
@@ -32,6 +33,12 @@ use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use std::fmt;
 use std::sync::Arc;
 
+pub use address_xml::{
+    decode, decode_from_attributes, decode_storage_from_attributes, encode_addr,
+    encode_addr_with_size, encode_attributes, encode_attributes_range, encode_attributes_with_size,
+    encode_varnodes, restore_range_xml, restore_xml, restore_xml_with_language, AddressXml,
+    DefaultAddressXml, MAX_PIECES,
+};
 pub use block_graph::BlockGraph;
 pub use block_map::BlockMap;
 pub use byte_ingest::ByteIngest;

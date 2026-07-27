@@ -1295,59 +1295,6 @@ pub struct ParameterPieces {
     pub join_pieces: Option<Vec<Varnode>>,
 }
 
-/// Placeholder for `ghidra.program.model.pcode.AddressXML`, referenced by
-/// [`ParamEntry::encode`](crate::program::model::lang::param_entry::ParamEntry::encode) before
-/// the real class is ported. Only the piece of behavior `ParamEntry::encode` needs -- writing a
-/// sized (and optionally "join") address as an `<addr>` element -- is modeled; XML restore and
-/// the real class's full piece-encoding wire format (`AddressXML.encode(Encoder, Varnode[],
-/// long)`, which needs `Varnode.encodePiece` and the `VARIABLE_SPACE`/`ATTRIB_LOGICALSIZE`
-/// machinery) are left to the real port. This placeholder's join encoding is a simplified stand
-/// in (it writes the overall joined range's space/offset/size, not a per-piece breakdown).
-pub struct AddressXML {
-    space: Arc<AddressSpace>,
-    offset: i64,
-    size: i32,
-    join_pieces: Option<Vec<Varnode>>,
-}
-
-impl AddressXML {
-    /// Stands in for `new AddressXML(AddressSpace, long, int)`.
-    pub fn new(space: Arc<AddressSpace>, offset: i64, size: i32) -> Self {
-        Self { space, offset, size, join_pieces: None }
-    }
-
-    /// Stands in for `new AddressXML(AddressSpace, long, int, Varnode[])`.
-    pub fn with_join(space: Arc<AddressSpace>, offset: i64, size: i32, join_pieces: Vec<Varnode>) -> Self {
-        Self { space, offset, size, join_pieces: Some(join_pieces) }
-    }
-
-    /// Stands in for `AddressXML.encode(Encoder)`.
-    pub fn encode(&self, encoder: &mut dyn Encoder) -> std::io::Result<()> {
-        encoder.open_element(crate::program::model::pcode::ELEM_ADDR)?;
-        if self.join_pieces.is_none() {
-            encoder.write_space(crate::program::model::pcode::ATTRIB_SPACE, self.space.as_ref())?;
-            encoder.write_unsigned_integer(
-                crate::program::model::pcode::ATTRIB_OFFSET,
-                self.offset as u64,
-            )?;
-            if self.size != 0 {
-                encoder
-                    .write_signed_integer(crate::program::model::pcode::ATTRIB_SIZE, self.size as i64)?;
-            }
-        } else {
-            encoder.write_space(crate::program::model::pcode::ATTRIB_SPACE, self.space.as_ref())?;
-            encoder.write_unsigned_integer(
-                crate::program::model::pcode::ATTRIB_OFFSET,
-                self.offset as u64,
-            )?;
-            encoder
-                .write_signed_integer(crate::program::model::pcode::ATTRIB_SIZE, self.size as i64)?;
-        }
-        encoder.close_element(crate::program::model::pcode::ELEM_ADDR)?;
-        Ok(())
-    }
-}
-
 /// Placeholder for `ghidra.program.model.lang.ParamListStandard`, referenced by
 /// [`AssignAction`](crate::program::model::lang::protorules::assign_action::AssignAction) and
 /// [`ParamListStandardOut`](crate::program::model::lang::param_list_standard_out::ParamListStandardOut)
@@ -1987,7 +1934,17 @@ pub trait HighSymbol: Send + Sync {
 /// `decode_prototype` before the real class is ported. `FunctionPrototype::decode_prototype` only
 /// ever passes this type through opaquely (the real deserialization logic is left to concrete
 /// implementors), so no members are needed yet.
-pub trait PcodeFactory {}
+///
+/// Grown (see `STUBS.tsv`) to add [`get_join_storage`](Self::get_join_storage), needed by
+/// [`address_xml::decode_storage_from_attributes`](crate::program::model::pcode::address_xml::decode_storage_from_attributes)
+/// before the real class (and its `LocalSymbolMap`-backed storage registry) is ported.
+pub trait PcodeFactory {
+    /// Stands in for `PcodeFactory.getJoinStorage(Varnode[])`: build (or look up) the storage
+    /// representing a logical value assembled from the given physical pieces.
+    fn get_join_storage(&self, pieces: Vec<Varnode>) -> Box<dyn VariableStorage> {
+        Box::new(VarnodeListStorage(pieces))
+    }
+}
 
 /// Placeholder for `ghidra.program.model.pcode.LocalSymbolMap`, referenced by
 /// [`HighFunction`](crate::program::model::pcode::high_function::HighFunction) before the real

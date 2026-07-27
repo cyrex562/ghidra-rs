@@ -336,3 +336,4 @@ ts	stub_class	referenced_by
 2026-07-26T09:00:00Z	DataTypeInstance	CountedDynamicDataType
 2026-07-26T09:05:00Z	ReadOnlyDataTypeComponent	CountedDynamicDataType
 2026-07-26T09:10:00Z	MemBuffer(grown)	CountedDynamicDataType
+2026-07-26T10:00:00Z	PcodeFactory(grown)	AddressXML

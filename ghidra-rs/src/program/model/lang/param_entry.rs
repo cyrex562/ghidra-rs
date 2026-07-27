@@ -6,7 +6,8 @@ use crate::program::model::pcode::{
     Encoder, Varnode, ATTRIB_ALIGN, ATTRIB_EXTENSION, ATTRIB_MAXSIZE, ATTRIB_MINSIZE,
     ATTRIB_STORAGE, ELEM_PENTRY,
 };
-use crate::program::seam_stubs::{AddressXML, ParameterPieces};
+use crate::program::model::pcode::address_xml::{AddressXml, DefaultAddressXml};
+use crate::program::seam_stubs::ParameterPieces;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 
 /// Describes a memory range (register, stack slot, or "join" of several pieces) that can be used
@@ -515,8 +516,8 @@ pub trait ParamEntry {
         }
         let address_size = match self.get_join_record() {
             // Treat as unsized address with no size
-            None => AddressXML::new(self.get_space(), self.get_address_base(), 0),
-            Some(pieces) => AddressXML::with_join(
+            None => DefaultAddressXml::new(self.get_space(), self.get_address_base(), 0),
+            Some(pieces) => DefaultAddressXml::with_join(
                 self.get_space(),
                 self.get_address_base(),
                 self.get_size(),
