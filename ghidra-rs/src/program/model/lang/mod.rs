@@ -3,6 +3,7 @@ pub mod compiler_spec;
 pub mod compiler_spec_description;
 pub mod compiler_spec_id;
 pub mod compiler_spec_not_found_exception;
+pub mod constant_pool;
 pub mod data_type_provider_context;
 pub mod decompiler_language;
 pub mod disassembler_context;
@@ -61,6 +62,10 @@ pub use compiler_spec::{CompilerSpec, EvaluationModelType};
 pub use compiler_spec_description::CompilerSpecDescription;
 pub use compiler_spec_id::CompilerSpecID;
 pub use compiler_spec_not_found_exception::CompilerSpecNotFoundException;
+pub use constant_pool::{
+    ConstantPool, ConstantPoolRecord, ARRAY_LENGTH, CHECK_CAST, CLASS_REFERENCE, INSTANCE_OF,
+    POINTER_FIELD, POINTER_METHOD, PRIMITIVE, STRING_LITERAL,
+};
 pub use data_type_provider_context::DataTypeProviderContext;
 pub use disassembler_context::DisassemblerContext;
 pub use disassembler_context_adapter::DisassemblerContextAdapter;

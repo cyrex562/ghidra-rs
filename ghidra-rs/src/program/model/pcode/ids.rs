@@ -154,6 +154,16 @@ pub const ELEM_TYPE: ElementId = ElementId::new("type", 129);
 pub const ELEM_TYPEREF: ElementId = ElementId::new("typeref", 130);
 // Real Ghidra id is 289 (`ElementId.java`'s `ELEM_BITFIELD`), renumbered per the same scheme.
 pub const ELEM_BITFIELD: ElementId = ElementId::new("bitfield", 131);
+// Real Ghidra id is 110 (`ElementId.java`'s `ELEM_CPOOLREC`), but that collides with this file's
+// own `ELEM_RANGELIST` at 110, so it is renumbered to continue the local counter above instead
+// per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_CPOOLREC: ElementId = ElementId::new("cpoolrec", 132);
+// Real Ghidra id is 9 (`ElementId.java`'s `ELEM_VALUE`), but that collides with this file's own
+// `ELEM_PAIR` at 9, so it is renumbered per the same scheme.
+pub const ELEM_VALUE: ElementId = ElementId::new("value", 133);
+// Real Ghidra id is 112 (`ElementId.java`'s `ELEM_TOKEN`), but that collides with this file's own
+// `ELEM_SEQNUM` at 112, so it is renumbered per the same scheme.
+pub const ELEM_TOKEN: ElementId = ElementId::new("token", 134);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
@@ -270,3 +280,11 @@ pub const ATTRIB_OPAQUESTRING: AttributeId = AttributeId::new("opaquestring", 16
 pub const ATTRIB_UTF: AttributeId = AttributeId::new("utf", 167);
 // Real Ghidra id is 60 (`AttributeId.java`'s `ATTRIB_VARLENGTH`), renumbered per the same scheme.
 pub const ATTRIB_VARLENGTH: AttributeId = AttributeId::new("varlength", 168);
+// Real Ghidra id is 18 (`AttributeId.java`'s `ATTRIB_REF`), but that collides with this file's
+// own `ATTRIB_MINLEN` at 18, so it is renumbered per the same scheme.
+pub const ATTRIB_REF: AttributeId = AttributeId::new("ref", 169);
+// Real Ghidra id is 83 (`AttributeId.java`'s `ATTRIB_TAG`), renumbered per the same scheme.
+pub const ATTRIB_TAG: AttributeId = AttributeId::new("tag", 170);
+// Real Ghidra id is 4 (`AttributeId.java`'s `ATTRIB_CONSTRUCTOR`), but that collides with this
+// file's own `ATTRIB_SPACE` at 4, so it is renumbered per the same scheme.
+pub const ATTRIB_CONSTRUCTOR: AttributeId = AttributeId::new("constructor", 171);
