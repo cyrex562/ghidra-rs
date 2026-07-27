@@ -1,3 +1,4 @@
+pub mod basic_compiler_spec;
 pub mod basic_compiler_spec_description;
 pub mod basic_language_description;
 pub mod compiler_spec;
@@ -58,6 +59,7 @@ pub mod unknown_instruction_exception;
 pub mod unknown_register;
 pub mod versioned_language_service;
 
+pub use basic_compiler_spec::BasicCompilerSpec;
 pub use basic_compiler_spec_description::BasicCompilerSpecDescription;
 pub use basic_language_description::BasicLanguageDescription;
 pub use compiler_spec::{CompilerSpec, EvaluationModelType};
