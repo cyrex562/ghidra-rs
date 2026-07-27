@@ -523,13 +523,6 @@ pub trait AssemblyNonTerminal: std::fmt::Display {
     fn get_name(&self) -> String;
 }
 
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblySentential`, referenced by
-/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
-/// real class is ported. Java's `AssemblySentential<AssemblyNonTerminal>` generic is dropped, since
-/// this crate has no generic parameter to substitute yet. `AssemblyGrammar` only ever passes this
-/// type through as a parameter, so no members are needed yet.
-pub trait AssemblySentential {}
-
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.grammars.AssemblyProduction`, referenced by
 /// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
 /// real class is ported. `AssemblyGrammar` only ever passes/returns this type opaquely, so no
