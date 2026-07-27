@@ -101,7 +101,18 @@ mod tests {
     use std::sync::Mutex;
 
     struct MockNonTerminal(&'static str);
-    impl AssemblyNonTerminal for MockNonTerminal {}
+
+    impl std::fmt::Display for MockNonTerminal {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "[{}]", self.0)
+        }
+    }
+
+    impl AssemblyNonTerminal for MockNonTerminal {
+        fn get_name(&self) -> String {
+            self.0.to_string()
+        }
+    }
 
     struct MockSentential;
     impl AssemblySentential for MockSentential {}
