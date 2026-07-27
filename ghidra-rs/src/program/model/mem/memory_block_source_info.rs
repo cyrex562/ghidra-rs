@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::mem::MemoryBlock;
-use crate::program::seam_stubs::{ByteMappingScheme, FileBytes};
+use crate::program::database::mem::file_bytes::FileBytes;
+use crate::program::seam_stubs::ByteMappingScheme;
 
 pub trait MemoryBlockSourceInfo {
     /// Returns the length of this block byte source.

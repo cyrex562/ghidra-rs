@@ -15,7 +15,7 @@ use std::io;
 use std::sync::Arc;
 
 use crate::program::model::mem::{MemoryAccessException, MemoryBlock, MemoryBlockSourceInfo, MemoryBlockType};
-use crate::program::seam_stubs::FileBytes;
+use crate::program::database::mem::file_bytes::FileBytes;
 
 /// Error type aggregating the checked exceptions thrown by Java's `SubMemoryBlock` byte-access
 /// and mutation methods (`IndexOutOfBoundsException`, `IllegalArgumentException`,
