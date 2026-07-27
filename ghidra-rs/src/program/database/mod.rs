@@ -15,6 +15,7 @@ pub mod map;
 pub mod mem;
 pub mod merge_program_generator;
 pub mod module;
+pub mod oldfunction;
 pub mod overlay_region_supplier;
 pub mod overlay_space_db_adapter;
 pub mod program_address_factory;
@@ -40,6 +41,7 @@ pub use ghidra_program_multi_user_merge_manager_factory::GhidraProgramMultiUserM
 pub use listing_db::ListingDB;
 pub use manager_db::ManagerDB;
 pub use merge_program_generator::MergeProgramGenerator;
+pub use oldfunction::OldFunctionDBAdapter;
 pub use overlay_region_supplier::OverlayRegionSupplier;
 pub use overlay_space_db_adapter::{CreateOverlaySpaceError, OverlaySpaceDBAdapter};
 pub use program_address_factory::{CheckOverlayNameError, ProgramAddressFactory};
