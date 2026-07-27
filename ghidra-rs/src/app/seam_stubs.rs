@@ -444,3 +444,20 @@ pub trait ConstructState: Send + Sync {
     /// Stands in for `ConstructState.getParent()`.
     fn parent(&self) -> Option<std::sync::Arc<dyn ConstructState>>;
 }
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.RecursiveDescentSolver`, referenced by
+/// [`AssemblyResolvedBackfill::solve`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill::solve)
+/// before the real class is ported. `AssemblyResolvedBackfill::solve` only ever passes this type
+/// through as a parameter, so no members are needed yet.
+pub trait RecursiveDescentSolver {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolvedPatterns`, referenced by
+/// [`AssemblyResolvedBackfill::solve`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill::solve)
+/// before the real class is ported. Extends the crate's already-ported
+/// [`AssemblyResolution`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolution) trait,
+/// mirroring the Java interface's `extends AssemblyResolution`. `AssemblyResolvedBackfill::solve`
+/// only ever passes this type through as a parameter, so no further members are needed yet.
+pub trait AssemblyResolvedPatterns:
+    crate::app::plugin::assembler::sleigh::sem::AssemblyResolution
+{
+}
