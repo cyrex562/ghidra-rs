@@ -542,16 +542,24 @@ pub trait Constructor {}
 /// members are needed yet.
 pub trait AssemblyConstructorSemantic {}
 
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyTerminal`, referenced by
-/// [`AssemblyParseToken`](crate::app::plugin::assembler::sleigh::tree::AssemblyParseToken) before
-/// the real class (itself an unported subclass of the unported `AssemblySymbol`) is ported.
-/// `AssemblyParseToken` only ever displays, compares, and hashes its terminal, so this stub
-/// exposes just that: a `Display` bound (stands in for the inherited `Object#toString()` used in
-/// `AssemblyParseToken.print`) plus a stable identity tag (stands in for the inherited
-/// `Object#equals`/`hashCode`, mirroring the [`SolverHint::tag`](
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblySymbol`, referenced by
+/// [`AssemblyTerminal`](crate::app::plugin::assembler::sleigh::symbol::AssemblyTerminal) (as its
+/// supertrait, mirroring `AssemblyTerminal extends AssemblySymbol`) before the real class is
+/// ported. `AssemblyTerminal`'s own consumers only ever display, compare, and hash a terminal, so
+/// this stub exposes just that: a `Display` bound (stands in for the inherited
+/// `Object#toString()`, which `AssemblySymbol.toString()` mirrors LAZILY) plus a stable identity
+/// tag (stands in for `AssemblySymbol`'s LAZY `equals`/`hashCode`, both defined in terms of
+/// `toString()`), mirroring the [`SolverHint::tag`](
 /// crate::app::plugin::assembler::sleigh::expr::SolverHint::tag) convention used for the same
-/// purpose elsewhere in this crate).
-pub trait AssemblyTerminal: std::fmt::Display {
-    /// A stable identity for this terminal, used for equality and hashing.
+/// purpose elsewhere in this crate.
+pub trait AssemblySymbol: std::fmt::Display {
+    /// A stable identity for this symbol, used for equality and hashing.
     fn terminal_tag(&self) -> &str;
 }
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.symbol.AssemblyNumericSymbols`, referenced
+/// by [`AssemblyTerminal`](crate::app::plugin::assembler::sleigh::symbol::AssemblyTerminal) before
+/// the real class is ported. `AssemblyTerminal::match`/`get_suggestions` only ever pass this type
+/// through to implementers, never calling a method on it themselves, so no members are needed
+/// yet.
+pub trait AssemblyNumericSymbols {}
