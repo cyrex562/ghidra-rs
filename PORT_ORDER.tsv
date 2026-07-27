@@ -41,7 +41,7 @@ DONE	trait	64	183	217	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 DONE	trait	63	12	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/expression/TokenField.java
 DONE	trait	65	19	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/SolverHint.java
 DONE	trait	85	55	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AssemblyResolvedBackfill.java
-TODO	trait	86	4	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/ConstructorEntryVisitor.java
+DONE	trait	86	4	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/ConstructorEntryVisitor.java
 TODO	trait	86	2	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/PcodeOpEntryVisitor.java
 TODO	trait	88	5	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/SubtableEntryVisitor.java
 TODO	trait	85	10	9	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/languages/sleigh/SleighLanguages.java
