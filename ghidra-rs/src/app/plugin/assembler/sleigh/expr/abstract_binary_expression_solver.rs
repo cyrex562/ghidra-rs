@@ -5,10 +5,10 @@ use std::sync::Arc;
 
 use super::{AbstractExpressionSolver, NeedsBackfillException, SolverException, SolverHint};
 use crate::app::plugin::assembler::sleigh::sem::{
-    AbstractAssemblyResolutionFactory, AssemblyResolution,
+    AbstractAssemblyResolutionFactory, AssemblyResolution, AssemblyResolvedPatterns,
 };
 use super::RecursiveDescentSolver;
-use crate::app::seam_stubs::{AssemblyResolvedPatterns, MaskedLong};
+use crate::app::seam_stubs::MaskedLong;
 use crate::program::model::lang::sleigh::expression::PatternExpression;
 
 /// The error a solve attempt for one side of a binary expression can fail with: either a missing
@@ -414,14 +414,137 @@ mod tests {
         }
     }
     impl AssemblyResolvedPatterns for MockPatterns {
-        fn get_instruction_length(&self) -> i32 {
-            0
-        }
         fn get_instruction(&self) -> Box<dyn AssemblyPatternBlock> {
             Box::new(MockPatternBlock)
         }
         fn get_context(&self) -> Box<dyn AssemblyPatternBlock> {
             Box::new(MockPatternBlock)
+        }
+        fn with_context(&self, _ctx: Box<dyn AssemblyPatternBlock>) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_instruction_length(&self) -> i32 {
+            0
+        }
+        fn get_defined_instruction_length(&self) -> i32 {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_backfills(
+            &self,
+        ) -> Vec<Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn has_backfills(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_forbids(&self) -> Vec<Box<dyn AssemblyResolvedPatterns>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn read_instruction(&self, _byte_start: i32, _size: i32) -> MaskedLong {
+            unimplemented!("not exercised by these tests")
+        }
+        fn read_context(&self, _start: i32, _len: i32) -> MaskedLong {
+            unimplemented!("not exercised by these tests")
+        }
+        fn read_context_op(
+            &self,
+            _cop: &crate::program::model::lang::sleigh::constructor::ContextOp,
+        ) -> MaskedLong {
+            unimplemented!("not exercised by these tests")
+        }
+        fn bits_equal(&self, _that: &dyn AssemblyResolvedPatterns) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn equivalent_construct_state(
+            &self,
+            _state: &crate::program::model::lang::sleigh::walker::ConstructState,
+        ) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn shift_patterns(&self, _shamt: i32) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn with_description(&self, _description: &str) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn with_right_patterns(
+            &self,
+            _right: Box<dyn AssemblyResolution>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn with_constructor(&self, _cons: Arc<dyn crate::app::seam_stubs::Constructor>) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn combine(
+            &self,
+            _pat: &dyn AssemblyResolvedPatterns,
+        ) -> Option<Box<dyn AssemblyResolvedPatterns>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn combine_backfill(
+            &self,
+            _bf: &dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn combine_less_backfill(
+            &self,
+            _that: &dyn AssemblyResolvedPatterns,
+            _bf: &dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill,
+        ) -> Option<Box<dyn AssemblyResolvedPatterns>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn parent_patterns(&self, _description: &str, _op_count: i32) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn backfill(
+            &self,
+            _solver: &dyn RecursiveDescentSolver,
+            _vals: &HashMap<String, i64>,
+        ) -> Box<dyn AssemblyResolution> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn check_not_forbidden(&self) -> Box<dyn AssemblyResolution> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn nop_left_sibling(&self) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn solve_context_changes_for_forbids(
+            &self,
+            _sem: &dyn crate::app::seam_stubs::AssemblyConstructorSemantic,
+            _vals: &HashMap<String, i64>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn possible_ins_vals(&self, _for_ctx: &dyn AssemblyPatternBlock) -> Vec<Vec<u8>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn dump_constructor_tree(&self) -> String {
+            unimplemented!("not exercised by these tests")
+        }
+        fn truncate(&self, _shamt: i32) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn with_forbids(
+            &self,
+            _more: Vec<Box<dyn AssemblyResolvedPatterns>>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn mask_out(
+            &self,
+            _cop: &crate::program::model::lang::sleigh::constructor::ContextOp,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn write_context_op(
+            &self,
+            _cop: &crate::program::model::lang::sleigh::constructor::ContextOp,
+            _val: MaskedLong,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
         }
     }
 

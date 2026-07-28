@@ -340,7 +340,6 @@ ts	stub_class	referenced_by
 2026-07-27T04:50:34Z	SourceLanguageId	SourceLanguage
 2026-07-27T06:00:00Z	OldFunctionMapDB	OldFunctionManager
 2026-07-27T11:00:00Z	SourceMapEntry	SourceMapEntryIterator
-2026-07-27T12:00:00Z	AssemblyResolvedPatterns	AssemblyResolvedBackfill
 2026-07-27T13:00:00Z	ConstructorTraversal	SleighLanguages
 2026-07-27T13:00:00Z	SubtableTraversal	SleighLanguages
 2026-07-27T13:00:00Z	PcodeTraversal	SleighLanguages
@@ -361,7 +360,6 @@ ts	stub_class	referenced_by
 2026-07-27T21:00:00Z	OperandValueMatcher	ExpressionMatcher
 2026-07-27T21:00:00Z	FieldSizeMatcher	ExpressionMatcher
 2026-07-27T21:00:00Z	UnaryExpressionMatcher	ExpressionMatcher
-2026-07-27T22:00:00Z	AssemblyResolvedPatterns	AssemblySelector
 2026-07-27T22:00:00Z	AssemblyPatternBlock	AssemblySelector
 2026-07-27T22:00:00Z	AssemblyResolutionResults	AssemblySelector
 2026-07-27T22:00:00Z	AssemblySyntaxException	AssemblySelector

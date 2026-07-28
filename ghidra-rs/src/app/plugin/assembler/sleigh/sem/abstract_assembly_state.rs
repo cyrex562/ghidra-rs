@@ -3,8 +3,11 @@
 use std::cell::Cell;
 use std::sync::Arc;
 
-use super::{AbstractAssemblyResolutionFactory, AbstractAssemblyTreeResolver, AssemblyResolvedError};
-use crate::app::seam_stubs::{AssemblyConstructorSemantic, AssemblyResolvedPatterns};
+use super::{
+    AbstractAssemblyResolutionFactory, AbstractAssemblyTreeResolver, AssemblyResolvedError,
+    AssemblyResolvedPatterns,
+};
+use crate::app::seam_stubs::AssemblyConstructorSemantic;
 
 /// Base for a node in an assembly prototype.
 ///

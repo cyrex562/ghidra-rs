@@ -3,13 +3,13 @@
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
-use super::{AbstractAssemblyResolutionFactory, AssemblyResolution};
+use super::{AbstractAssemblyResolutionFactory, AssemblyResolution, AssemblyResolvedPatterns};
 use crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar;
 use crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch;
 use crate::app::seam_stubs::{
     AbstractAssemblyStateGenerator, AssemblyConstructorSemantic,
     AssemblyContextGraph, AssemblyParseTreeNode, AssemblyPatternBlock, AssemblyProduction,
-    AssemblyResolutionResults, AssemblyResolvedPatterns, Constructor, OperandSymbol,
+    AssemblyResolutionResults, Constructor, OperandSymbol,
 };
 use crate::program::model::address::Address;
 use crate::program::model::lang::sleigh::SleighLanguage;
@@ -46,9 +46,9 @@ pub const INST_NEXT2: &str = "inst_next2";
 /// `resolver: AbstractAssemblyTreeResolver<?>` field and call back into it (`getStateGenerator`,
 /// `resolvePatterns`, `parent`, ...), while `AbstractAssemblyTreeResolver` itself constructs and
 /// returns instances of them (`getStateGenerator`/`getHiddenStateGenerator`) -- a genuine two-way
-/// cycle. Java's `RP` type parameter is dropped in favor of the crate's existing
-/// [`AssemblyResolvedPatterns`](crate::app::seam_stubs::AssemblyResolvedPatterns) placeholder,
-/// referenced directly via `Box<dyn AssemblyResolvedPatterns>`, mirroring how
+/// cycle. Java's `RP` type parameter is dropped in favor of the crate's already-ported
+/// [`AssemblyResolvedPatterns`], referenced directly via `Box<dyn AssemblyResolvedPatterns>`,
+/// mirroring how
 /// [`AbstractAssemblyProduction`](crate::app::plugin::assembler::sleigh::grammars::AbstractAssemblyProduction)
 /// dropped its own `NT` parameter for the same reason.
 ///
@@ -228,9 +228,12 @@ pub trait AbstractAssemblyTreeResolver {
     /// [`vals_mut`](Self::vals_mut) from each entry's instruction length, retries
     /// `AssemblyResolvedPatterns.backfill` on every entry that still has pending backfills, then
     /// replaces any entry that *still* has pending backfills with an "incomplete solution" error.
-    /// Left as a required method: it needs `AssemblyResolvedPatterns.hasBackfills`/`.backfill`,
-    /// not yet modeled on this trait's minimal
-    /// [`AssemblyResolvedPatterns`](crate::app::seam_stubs::AssemblyResolvedPatterns) placeholder.
+    /// Left as a required method: replacing an entry in place within an
+    /// [`AssemblyResolutionResults`] needs the `Applicator`/per-entry-transform machinery Java's
+    /// version uses, not modeled on this trait's minimal
+    /// [`AssemblyResolutionResults`](crate::app::seam_stubs::AssemblyResolutionResults)
+    /// placeholder even though [`AssemblyResolvedPatterns::has_backfills`]/
+    /// [`::backfill`](AssemblyResolvedPatterns::backfill) themselves are now modeled.
     fn resolve_pending_backfills(
         &mut self,
         temp: Box<dyn AssemblyResolutionResults>,
@@ -241,8 +244,11 @@ pub trait AbstractAssemblyTreeResolver {
     /// Mirrors the protected `AbstractAssemblyTreeResolver.selectContext(AssemblyResolutionResults)`:
     /// combines each entry with a context-only resolution built from [`context`](Self::context),
     /// replacing entries that fail to combine with an "incompatible context" error. Left as a
-    /// required method: it needs `AbstractAssemblyResolutionFactory.contextOnly` and
-    /// `AssemblyResolvedPatterns.combine`, neither modeled on this trait's minimal placeholders.
+    /// required method: replacing an entry in place within an [`AssemblyResolutionResults`] needs
+    /// the `Applicator`/per-entry-transform machinery Java's version uses, not modeled on this
+    /// trait's minimal [`AssemblyResolutionResults`](crate::app::seam_stubs::AssemblyResolutionResults)
+    /// placeholder, even though [`AbstractAssemblyResolutionFactory::context_only`] and
+    /// [`AssemblyResolvedPatterns::combine`] are themselves both modeled.
     fn select_context(
         &self,
         temp: Box<dyn AssemblyResolutionResults>,
@@ -251,9 +257,10 @@ pub trait AbstractAssemblyTreeResolver {
     /// Filter out results that would certainly be disassembled differently than assembled.
     ///
     /// Mirrors the protected `AbstractAssemblyTreeResolver.filterForbidden(AssemblyResolutionResults)`:
-    /// replaces each entry with the result of `AssemblyResolvedPatterns.checkNotForbidden()`. Left
-    /// as a required method: that check isn't modeled on this trait's minimal
-    /// `AssemblyResolvedPatterns` placeholder.
+    /// replaces each entry with the result of [`AssemblyResolvedPatterns::check_not_forbidden`].
+    /// Left as a required method for the same per-entry-replacement reason as
+    /// [`select_context`](Self::select_context), even though `check_not_forbidden` itself is
+    /// modeled.
     fn filter_forbidden(
         &self,
         temp: Box<dyn AssemblyResolutionResults>,
@@ -398,8 +405,9 @@ pub trait AbstractAssemblyTreeResolver {
     /// progress is made (also failure, to avoid looping forever). Per the Java class's own `TODO`,
     /// this seems to be missing from a refactor that introduced `AssemblyConstructState`'s
     /// equivalent. Left as a required method for the same reason as
-    /// [`resolve_pending_backfills`](Self::resolve_pending_backfills): it needs
-    /// `AssemblyResolvedPatterns.hasBackfills`/`.backfill`.
+    /// [`resolve_pending_backfills`](Self::resolve_pending_backfills): the per-entry replacement
+    /// machinery, not the now-modeled [`AssemblyResolvedPatterns::has_backfills`]/
+    /// [`::backfill`](AssemblyResolvedPatterns::backfill) themselves.
     fn try_resolve_backfills(
         &self,
         results: Box<dyn AssemblyResolutionResults>,

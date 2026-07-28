@@ -40,7 +40,7 @@ pub trait DefaultAssemblyResolvedBackfill: AssemblyResolvedBackfill {
 mod tests {
     use super::*;
     use crate::app::plugin::assembler::sleigh::expr::RecursiveDescentSolver;
-    use crate::app::seam_stubs::AssemblyResolvedPatterns;
+    use crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedPatterns;
     use std::cmp::Ordering;
     use std::collections::HashMap;
 
