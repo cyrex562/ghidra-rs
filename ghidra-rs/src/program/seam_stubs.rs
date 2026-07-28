@@ -904,7 +904,18 @@ pub trait Reference {}
 /// Placeholder for `ghidra.program.model.data.GenericCallingConvention`, referenced by
 /// [`FunctionDefinition`](crate::program::model::data::function_definition::FunctionDefinition)
 /// before the real enum is ported.
-pub trait GenericCallingConvention {}
+///
+/// Grown (see `STUBS.tsv`) with a defaulted
+/// [`get_declaration_name`](Self::get_declaration_name) so pre-existing bare `impl
+/// GenericCallingConvention for Foo {}` blocks keep compiling; needed by
+/// [`FunctionDefinitionDataType`](crate::program::model::data::function_definition_data_type::FunctionDefinitionDataType)'s
+/// port of the deprecated `FunctionDefinitionDataType.setGenericCallingConvention`.
+pub trait GenericCallingConvention {
+    /// Stands in for `GenericCallingConvention.getDeclarationName()`.
+    fn get_declaration_name(&self) -> String {
+        String::new()
+    }
+}
 
 /// Placeholder for `db.Transaction`, referenced by
 /// [`DataTypeManager`](crate::program::model::data::data_type_manager::DataTypeManager)
