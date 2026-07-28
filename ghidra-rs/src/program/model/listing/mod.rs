@@ -59,6 +59,7 @@ pub mod symbol_change_set;
 pub mod thunk_function;
 pub mod variable;
 pub mod variable_filter;
+pub mod variable_impl;
 pub mod variable_offset;
 pub mod variable_size_exception;
 pub mod variable_utilities;
