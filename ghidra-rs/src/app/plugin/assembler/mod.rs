@@ -1,3 +1,4 @@
+pub mod assembler_builder;
 pub mod assembly_error;
 pub mod assembly_exception;
 pub mod assembly_selection_error;
@@ -7,6 +8,7 @@ pub mod generic_assembler;
 pub mod generic_assembler_builder;
 pub mod sleigh;
 
+pub use assembler_builder::AssemblerBuilder;
 pub use assembly_error::AssemblyError;
 pub use assembly_exception::AssemblyException;
 pub use assembly_selection_error::AssemblySelectionError;
