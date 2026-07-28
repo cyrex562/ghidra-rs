@@ -318,7 +318,42 @@ mod tests {
 
     #[derive(Debug)]
     struct MockGeneralSolver;
-    impl RecursiveDescentSolver for MockGeneralSolver {}
+    impl RecursiveDescentSolver for MockGeneralSolver {
+        fn solve(
+            &self,
+            _factory: &dyn AbstractAssemblyResolutionFactory,
+            _exp: &PatternExpression,
+            _goal: MaskedLong,
+            _vals: &HashMap<String, i64>,
+            _cur: &dyn AssemblyResolvedPatterns,
+            _hints: &HashSet<Arc<dyn SolverHint>>,
+            _description: &str,
+        ) -> Result<Box<dyn AssemblyResolution>, NeedsBackfillException> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_value(
+            &self,
+            _exp: &PatternExpression,
+            _vals: &HashMap<String, i64>,
+            _cur: &dyn AssemblyResolvedPatterns,
+        ) -> Result<Option<MaskedLong>, NeedsBackfillException> {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_instruction_length(&self, _exp: &PatternExpression) -> i32 {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn value_for_resolution(
+            &self,
+            _exp: &PatternExpression,
+            _vals: &HashMap<String, i64>,
+            _rc: &dyn AssemblyResolvedPatterns,
+        ) -> MaskedLong {
+            unimplemented!("not exercised by these tests")
+        }
+    }
 
     /// A minimal solver for `PatternExpression::Constant`, mirroring the shape of
     /// `ConstantValueSolver` closely enough to exercise real solve/get_value/register behavior.
