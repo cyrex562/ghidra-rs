@@ -636,6 +636,16 @@ pub trait DataType {
     fn as_factory(&self) -> Option<&dyn crate::program::model::data::factory_data_type::FactoryDataType> {
         None
     }
+
+    /// Stands in for `dt instanceof TypeDef ? (TypeDef) dt : null`, used by
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s port of
+    /// the private `DataUtilities.isDefaultData(DataType)`, which needs
+    /// [`TypeDef::is_auto_named`]/[`TypeDef::get_data_type`] without consuming ownership of the
+    /// borrowed `dt`. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather
+    /// than by-value.
+    fn as_typedef(&self) -> Option<&dyn crate::program::model::data::typedef::TypeDef> {
+        None
+    }
 }
 
 /// Trivial fallback used by this trait's default methods where the Java interface has no

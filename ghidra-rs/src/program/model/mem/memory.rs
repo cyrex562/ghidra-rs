@@ -2,13 +2,24 @@ use std::sync::Arc;
 
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
-use crate::program::model::mem::MemoryAccessException;
+use crate::program::model::mem::{MemoryAccessException, MemoryBlock};
 
 pub trait Memory: Send + Sync {
     fn is_big_endian(&self) -> bool;
     fn get_byte(&self, addr: &Address) -> Result<u8, MemoryAccessException>;
     fn get_bytes(&self, addr: &Address, dest: &mut [u8]) -> usize;
     fn set_bytes(&mut self, addr: &Address, source: &[u8]) -> Result<(), MemoryAccessException>;
+
+    /// Get the memory block which contains the given address, or `None` if the address is not
+    /// contained within any memory block.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s ports of
+    /// `getMaxAddressOfUndefinedRange`/`isUndefinedRange`.
+    fn get_block(&self, addr: &Address) -> Option<Arc<dyn MemoryBlock>> {
+        let _ = addr;
+        None
+    }
 
     /// Get the program this memory belongs to, if any.
     ///

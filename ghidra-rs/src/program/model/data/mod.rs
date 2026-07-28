@@ -37,6 +37,7 @@ pub mod data_type_mnemonic_settings_definition;
 pub mod data_type_path;
 pub mod data_type_transferable;
 pub mod data_type_with_charset;
+pub mod data_utilities;
 pub mod default_annotation_handler;
 pub mod domain_file_based_data_type_manager;
 pub mod dword_data_type;

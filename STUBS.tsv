@@ -372,3 +372,4 @@ ts	stub_class	referenced_by
 2026-07-28T05:30:00Z	PointerTypeSettingsDefinition	PointerDataType
 2026-07-28T05:30:00Z	Memory(grown)	PointerDataType
 2026-07-28T05:30:00Z	Program(grown)	PointerDataType
+2026-07-28T06:00:00Z	DumbMemBufferImpl	DataUtilities
