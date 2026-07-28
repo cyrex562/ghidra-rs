@@ -93,6 +93,7 @@ pub mod tracked_task_listener;
 pub mod dbg_msg_tracer;
 pub mod language_utilities;
 pub mod undefined_function;
+pub mod stack_frame_impl;
 
 pub use address_range_comparators::AddressRangeComparators;
 pub use application_utilities::{
@@ -183,3 +184,4 @@ pub use tracked_task_listener::TrackedTaskListener;
 pub use dbg_msg_tracer::{DbgMsgTracer, CallRec};
 pub use language_utilities::LanguageUtilities;
 pub use undefined_function::{check_entry_is_memory_address, find_entry_block, UndefinedFunction};
+pub use stack_frame_impl::{compute_stack_frame_impl_fields, StackFrameImpl};
