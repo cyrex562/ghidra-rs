@@ -2571,3 +2571,45 @@ pub trait SourceMapEntry {
     fn get_range(&self) -> Option<AddressRange>;
 }
 
+/// Placeholder for `ghidra.program.model.data.AlignedComponentPacker`, referenced by
+/// [`AlignedStructurePacker`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker)
+/// before the real class (and its bitfield/alignment packing algorithm) is ported. Exposes only
+/// the four members `AlignedStructurePacker.pack()` calls on its per-call packer instance; the
+/// constructor and all bitfield-packing internals stay out of scope until the real class lands.
+pub trait AlignedComponentPacker {
+    /// Stands in for `AlignedComponentPacker.addComponent(InternalDataTypeComponent, boolean)`.
+    fn add_component(
+        &mut self,
+        dtc: &mut dyn crate::program::model::data::internal_data_type_component::InternalDataTypeComponent,
+        is_last_component: bool,
+    );
+
+    /// Stands in for `AlignedComponentPacker.getDefaultAlignment()`.
+    fn get_default_alignment(&self) -> i32;
+
+    /// Stands in for `AlignedComponentPacker.getLength()`.
+    fn get_length(&self) -> i32;
+
+    /// Stands in for `AlignedComponentPacker.componentsChanged()`.
+    fn components_changed(&self) -> bool;
+}
+
+/// Placeholder for the static `ghidra.program.model.data.DataOrganizationImpl.getAlignedOffset`,
+/// referenced by
+/// [`AlignedStructurePacker`](crate::program::model::data::aligned_structure_packer::AlignedStructurePacker)
+/// before `DataOrganizationImpl` itself is ported. The algorithm has no dependency on any
+/// unported state, so it is ported faithfully here as a free function rather than left
+/// unimplemented.
+pub fn get_aligned_offset(alignment: i32, minimum_offset: i32) -> i32 {
+    if alignment <= 0 {
+        return minimum_offset;
+    }
+    let is_power_of_two = (alignment & (alignment - 1)) == 0;
+    if is_power_of_two {
+        return alignment + ((minimum_offset - 1) & !(alignment - 1));
+    }
+    let offcut = minimum_offset % alignment;
+    let adj = if offcut != 0 { alignment - offcut } else { 0 };
+    minimum_offset + adj
+}
+
