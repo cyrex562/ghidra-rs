@@ -33,7 +33,7 @@ DONE	trait	47	1254	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	46	1249	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/Undefined1DataType.java
 DONE	trait	45	1243	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AlignedStructurePacker.java
 DONE	trait	44	1260	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataOrganizationImpl.java
-TODO	trait	43	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractDataType.java
+DONE	trait	43	1240	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractDataType.java
 TODO	trait	42	1068	201	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableImpl.java
 TODO	trait	41	1071	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/ParameterImpl.java
 TODO	trait	40	1066	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/AutoParameterImpl.java
