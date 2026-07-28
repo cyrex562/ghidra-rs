@@ -546,13 +546,69 @@ pub enum AssemblyResolutionEntry {
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolutionResults`, referenced
-/// by [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real class
-/// is ported. Java's version is a `Set<AssemblyResolution>` decorator; `AssemblySelector` only
-/// ever iterates it, so this stub exposes that as a single method returning already-discriminated
-/// [`AssemblyResolutionEntry`] values (see its docs for why).
+/// by [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) (which only ever
+/// iterates it, hence [`resolutions`](Self::resolutions)'s already-discriminated
+/// [`AssemblyResolutionEntry`] view -- see its docs for why) and by
+/// [`AbstractAssemblyTreeResolver`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver)
+/// (whose [`parent`](
+/// crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::parent) default
+/// method rebuilds a results set from another one's raw entries, including any still-pending
+/// backfill records -- which `resolutions()`'s finished-result split doesn't accommodate, hence
+/// the separate [`iter_all`](Self::iter_all)/[`add`](Self::add) pair) before the real class is
+/// ported. Java's version is a `Set<AssemblyResolution>` decorator with a much larger API
+/// (`apply`, `absorb`, `stream`, ...); only the members these two callers actually need are
+/// modeled.
 pub trait AssemblyResolutionResults {
-    /// Mirrors iterating `AssemblyResolutionResults` (a `Set<AssemblyResolution>`).
+    /// Mirrors iterating `AssemblyResolutionResults` (a `Set<AssemblyResolution>`), for callers
+    /// that only expect finished results (errors and resolved patterns, no pending backfills).
     fn resolutions(&self) -> Vec<AssemblyResolutionEntry>;
+
+    /// Mirrors iterating `AssemblyResolutionResults` as a raw `Set<AssemblyResolution>`, without
+    /// the finished-result assumption `resolutions()` makes, so pending backfill records (still
+    /// possible mid-resolution) are included too.
+    fn iter_all(
+        &self,
+    ) -> Vec<Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolution>>;
+
+    /// Mirrors `AssemblyResolutionResults.add(AssemblyResolution)`.
+    fn add(&mut self, ar: Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolution>);
+}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyContextGraph`, referenced by
+/// [`AbstractAssemblyTreeResolver`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver)
+/// before the real class is ported. `AbstractAssemblyTreeResolver` only ever stores this type (the
+/// constructor-assigned `ctxGraph` field, exposed via its
+/// [`ctx_graph`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::ctx_graph)
+/// hook) and passes it to `resolveRootRecursion` -- a required trait method left bodyless for a
+/// future port rather than a default here (see that method's docs) -- so no members are needed
+/// yet.
+pub trait AssemblyContextGraph {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AbstractAssemblyStateGenerator`,
+/// referenced by
+/// [`AbstractAssemblyTreeResolver`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver)
+/// (whose `getStateGenerator`/`getHiddenStateGenerator` construct and return one) before the real
+/// (abstract) class -- itself the other half of the dependency cycle
+/// `AbstractAssemblyTreeResolver` was cut to break, since its subclasses each hold a `resolver:
+/// AbstractAssemblyTreeResolver` field -- is ported. Both methods only ever return this type
+/// opaquely, so no members are needed yet.
+pub trait AbstractAssemblyStateGenerator {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AbstractAssemblyResolutionFactory`,
+/// referenced by
+/// [`AbstractAssemblyTreeResolver`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver)
+/// before the real class is ported. Java's version is a rich builder API (`nop`, `contextOnly`,
+/// `newErrorBuilder`, `error`, `newAssemblyResolutionResults`, ...); only
+/// [`new_assembly_resolution_results`](Self::new_assembly_resolution_results) is modeled, since
+/// it's the one method `AbstractAssemblyTreeResolver`'s own default methods
+/// ([`get_factory`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::get_factory)
+/// and [`parent`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::parent))
+/// call. The rest of the builder surface belongs to whichever future port implements the other,
+/// currently-required (bodyless) trait methods that reference it in Java (`resolve`,
+/// `resolvePendingBackfills`, `selectContext`, `filterByDisassembly`, ...).
+pub trait AbstractAssemblyResolutionFactory {
+    /// Mirrors `AbstractAssemblyResolutionFactory.newAssemblyResolutionResults()`.
+    fn new_assembly_resolution_results(&self) -> Box<dyn AssemblyResolutionResults>;
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.AssemblySyntaxException`, thrown by
@@ -623,12 +679,40 @@ pub trait AssemblyProduction:
 }
 
 /// Placeholder for `ghidra.app.plugin.processors.sleigh.Constructor`, referenced by
-/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) before the
+/// [`AssemblyGrammar`](crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar) (which
+/// only ever passes this type through as a parameter) and by
+/// [`AbstractAssemblyTreeResolver`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver)
+/// (whose [`compute_offset`](
+/// crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::compute_offset)
+/// default method walks a constructor's operands to compute an encoded bit offset) before the
 /// real class is ported. Distinct from
 /// [`crate::program::model::lang::sleigh::constructor::Constructor`] (a port of the unrelated
-/// `ghidra.pcodeCPort.slghsymbol.Constructor` backend class). `AssemblyGrammar` only ever passes
-/// this type through as a parameter, so no members are needed yet.
-pub trait Constructor {}
+/// `ghidra.pcodeCPort.slghsymbol.Constructor` backend class).
+pub trait Constructor {
+    /// Mirrors `Constructor.getOperand(int)`.
+    fn operand(&self, index: i32) -> std::sync::Arc<dyn OperandSymbol>;
+}
+
+/// Placeholder for `ghidra.app.plugin.processors.sleigh.symbol.OperandSymbol`, referenced by
+/// [`AbstractAssemblyTreeResolver`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver)
+/// before the real class is ported. Only the three accessors its
+/// [`compute_offset`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::compute_offset)
+/// default method needs -- to recursively compute an operand's encoded bit offset, following the
+/// `offsetBase` chain to a base operand when the offset is relative -- are modeled; the fuller
+/// symbol-table surface (`getDefiningSymbol()`, pattern/handle resolution, etc.) is left for that
+/// class's own future port.
+pub trait OperandSymbol {
+    /// Mirrors `OperandSymbol.getOffsetBase()`. `-1` means the offset is absolute (matching
+    /// Java's sentinel); any other value is the index, within the same constructor, of the base
+    /// operand this one's offset is relative to.
+    fn offset_base(&self) -> i32;
+
+    /// Mirrors `OperandSymbol.getRelativeOffset()`.
+    fn relative_offset(&self) -> i32;
+
+    /// Mirrors `OperandSymbol.getMinimumLength()`.
+    fn minimum_length(&self) -> i32;
+}
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyConstructorSemantic`,
 /// referenced by

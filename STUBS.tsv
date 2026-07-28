@@ -367,3 +367,7 @@ ts	stub_class	referenced_by
 2026-07-27T22:00:00Z	AssemblyResolutionResults	AssemblySelector
 2026-07-27T22:00:00Z	AssemblySyntaxException	AssemblySelector
 2026-07-28T02:53:27Z	SleighAssembler	SleighAssemblerBuilder
+2026-07-28T03:15:21Z	OperandSymbol	AbstractAssemblyTreeResolver
+2026-07-28T03:15:21Z	AssemblyContextGraph	AbstractAssemblyTreeResolver
+2026-07-28T03:15:21Z	AbstractAssemblyStateGenerator	AbstractAssemblyTreeResolver
+2026-07-28T03:15:21Z	AbstractAssemblyResolutionFactory	AbstractAssemblyTreeResolver

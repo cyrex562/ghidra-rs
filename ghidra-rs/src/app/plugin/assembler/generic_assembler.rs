@@ -493,6 +493,17 @@ mod tests {
         fn resolutions(&self) -> Vec<AssemblyResolutionEntry> {
             Vec::new()
         }
+        fn iter_all(
+            &self,
+        ) -> Vec<Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolution>> {
+            Vec::new()
+        }
+        fn add(
+            &mut self,
+            _ar: Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolution>,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
     }
 
     // --- GenericAssembler mock ---
