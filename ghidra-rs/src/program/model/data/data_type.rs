@@ -620,6 +620,22 @@ pub trait DataType {
     ) -> Option<&dyn crate::program::model::pcode::partial_union::PartialUnion> {
         None
     }
+
+    /// Stands in for `dt instanceof Dynamic ? (Dynamic) dt : null`, used by
+    /// [`DataTypeInstance`](crate::program::model::data::data_type_instance::DataTypeInstance)'s
+    /// port of `DataTypeInstance.getDataTypeInstance(...)` to recover
+    /// [`Dynamic::can_specify_length`]/[`Dynamic::get_dynamic_length`]. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_dynamic(&self) -> Option<&dyn crate::program::model::data::dynamic::Dynamic> {
+        None
+    }
+
+    /// Stands in for `dt instanceof FactoryDataType ? (FactoryDataType) dt : null`, used by the
+    /// same `DataTypeInstance` port to recover [`FactoryDataType::get_data_type`]. See
+    /// [`as_pointer`](Self::as_pointer) for why this is by-reference rather than by-value.
+    fn as_factory(&self) -> Option<&dyn crate::program::model::data::factory_data_type::FactoryDataType> {
+        None
+    }
 }
 
 /// Trivial fallback used by this trait's default methods where the Java interface has no

@@ -28,6 +28,7 @@ pub mod data_type_conflict_handler;
 pub mod data_type_dependency_exception;
 pub mod data_type_encode_exception;
 pub mod data_type_display_options;
+pub mod data_type_instance;
 pub mod data_type_manager;
 pub mod data_type_manager_change_listener;
 pub mod data_type_manager_change_listener_adapter;
