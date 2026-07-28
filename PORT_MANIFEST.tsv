@@ -12953,7 +12953,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assem
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySelector.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySemanticException.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/AssemblySyntaxException.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/GenericAssembler.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/GenericAssembler.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/GenericAssemblerBuilder.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/AbstractSleighAssembler.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/AbstractSleighAssemblerBuilder.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app plugin assembler sleigh 
