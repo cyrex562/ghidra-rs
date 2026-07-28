@@ -1,4 +1,5 @@
 pub mod address_change_set;
+pub mod auto_parameter_impl;
 pub mod auto_parameter_type;
 pub mod bookmark;
 pub mod bookmark_comparator;
