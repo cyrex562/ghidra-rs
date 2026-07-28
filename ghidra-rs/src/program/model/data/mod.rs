@@ -22,6 +22,7 @@ pub mod counted_dynamic_data_type;
 pub mod custom_format;
 pub mod custom_organization;
 pub mod data_organization;
+pub mod data_organization_impl;
 pub mod data_type;
 pub mod data_type_archive_id_dumper;
 pub mod data_type_component;

@@ -168,6 +168,36 @@ pub const ELEM_TOKEN: ElementId = ElementId::new("token", 134);
 // `ELEM_VARNODE` at 113, so it is renumbered to continue the local counter above instead per the
 // same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
 pub const ELEM_IOP: ElementId = ElementId::new("iop", 135);
+// Real Ghidra ids are 37/38/39/40/42/44/45/46/47/50/51/52/53/54/55/56/57/58/59/65
+// (`ElementId.java`'s `ELEM_ABSOLUTE_MAX_ALIGNMENT`/`ELEM_BITFIELD_PACKING`/`ELEM_CHAR_SIZE`/
+// `ELEM_CHAR_TYPE`/`ELEM_DATA_ORGANIZATION`/`ELEM_DEFAULT_ALIGNMENT`/
+// `ELEM_DEFAULT_POINTER_ALIGNMENT`/`ELEM_DOUBLE_SIZE`/`ELEM_ENTRY`/`ELEM_FLOAT_SIZE`/
+// `ELEM_INTEGER_SIZE`/`ELEM_LONG_DOUBLE_SIZE`/`ELEM_LONG_LONG_SIZE`/`ELEM_LONG_SIZE`/
+// `ELEM_MACHINE_ALIGNMENT`/`ELEM_POINTER_SHIFT`/`ELEM_POINTER_SIZE`/`ELEM_SHORT_SIZE`/
+// `ELEM_SIZE_ALIGNMENT_MAP`/`ELEM_WCHAR_SIZE`), all of which collide with other entries already
+// in this table, so they continue the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_ABSOLUTE_MAX_ALIGNMENT: ElementId = ElementId::new("absolute_max_alignment", 136);
+pub const ELEM_BITFIELD_PACKING: ElementId = ElementId::new("bitfield_packing", 137);
+pub const ELEM_CHAR_SIZE: ElementId = ElementId::new("char_size", 138);
+pub const ELEM_CHAR_TYPE: ElementId = ElementId::new("char_type", 139);
+pub const ELEM_DATA_ORGANIZATION: ElementId = ElementId::new("data_organization", 140);
+pub const ELEM_DEFAULT_ALIGNMENT: ElementId = ElementId::new("default_alignment", 141);
+pub const ELEM_DEFAULT_POINTER_ALIGNMENT: ElementId =
+    ElementId::new("default_pointer_alignment", 142);
+pub const ELEM_DOUBLE_SIZE: ElementId = ElementId::new("double_size", 143);
+pub const ELEM_ENTRY: ElementId = ElementId::new("entry", 144);
+pub const ELEM_FLOAT_SIZE: ElementId = ElementId::new("float_size", 145);
+pub const ELEM_INTEGER_SIZE: ElementId = ElementId::new("integer_size", 146);
+pub const ELEM_LONG_DOUBLE_SIZE: ElementId = ElementId::new("long_double_size", 147);
+pub const ELEM_LONG_LONG_SIZE: ElementId = ElementId::new("long_long_size", 148);
+pub const ELEM_LONG_SIZE: ElementId = ElementId::new("long_size", 149);
+pub const ELEM_MACHINE_ALIGNMENT: ElementId = ElementId::new("machine_alignment", 150);
+pub const ELEM_POINTER_SHIFT: ElementId = ElementId::new("pointer_shift", 151);
+pub const ELEM_POINTER_SIZE: ElementId = ElementId::new("pointer_size", 152);
+pub const ELEM_SHORT_SIZE: ElementId = ElementId::new("short_size", 153);
+pub const ELEM_SIZE_ALIGNMENT_MAP: ElementId = ElementId::new("size_alignment_map", 154);
+pub const ELEM_WCHAR_SIZE: ElementId = ElementId::new("wchar_size", 155);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {

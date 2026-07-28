@@ -2613,3 +2613,15 @@ pub fn get_aligned_offset(alignment: i32, minimum_offset: i32) -> i32 {
     minimum_offset + adj
 }
 
+/// Placeholder for `ghidra.program.model.data.BitFieldDataType`, referenced by
+/// [`DataOrganizationImpl`](crate::program::model::data::data_organization_impl::DataOrganizationImpl)'s
+/// port of `DataOrganizationImpl.getAlignment(DataType)` (via
+/// [`DataType::as_bit_field`](crate::program::model::data::data_type::DataType::as_bit_field))
+/// before the real `BitFieldDataType` class -- which depends on the not-yet-ported bitfield
+/// allocation machinery -- is ported. Exposes only the one member that method calls on a
+/// bitfield's data type.
+pub trait BitFieldDataType {
+    /// Stands in for `BitFieldDataType.getBaseDataType()`.
+    fn get_base_data_type(&self) -> Box<dyn DataType>;
+}
+

@@ -646,6 +646,25 @@ pub trait DataType {
     fn as_typedef(&self) -> Option<&dyn crate::program::model::data::typedef::TypeDef> {
         None
     }
+
+    /// Stands in for `dt instanceof Composite ? (Composite) dt : null`, used by
+    /// [`data_organization_impl`](crate::program::model::data::data_organization_impl)'s port of
+    /// `DataOrganizationImpl.getAlignment(DataType)` to recover a composite's own computed
+    /// alignment. See [`as_pointer`](Self::as_pointer) for why this is by-reference rather than
+    /// by-value.
+    fn as_composite(&self) -> Option<&dyn crate::program::model::data::composite::Composite> {
+        None
+    }
+
+    /// Stands in for `dt instanceof BitFieldDataType ? (BitFieldDataType) dt : null`, used by the
+    /// same `DataOrganizationImpl.getAlignment(DataType)` port to recover a bitfield's base data
+    /// type. The real `BitFieldDataType` class is not yet ported, so the downcast target is the
+    /// [`seam_stubs::BitFieldDataType`](crate::program::seam_stubs::BitFieldDataType) placeholder;
+    /// see `STUBS.tsv`. Implementors representing a bitfield are expected to override both this
+    /// and [`is_bit_field_type`](Self::is_bit_field_type).
+    fn as_bit_field(&self) -> Option<&dyn crate::program::seam_stubs::BitFieldDataType> {
+        None
+    }
 }
 
 /// Trivial fallback used by this trait's default methods where the Java interface has no
