@@ -176,7 +176,11 @@ mod tests {
     impl AssemblyProduction for MockProduction {}
 
     struct MockConstructor(u32);
-    impl Constructor for MockConstructor {}
+    impl Constructor for MockConstructor {
+        fn operand(&self, _index: i32) -> Arc<dyn crate::app::seam_stubs::OperandSymbol> {
+            unimplemented!("not exercised by these tests")
+        }
+    }
 
     struct MockSemantic(u32);
 
