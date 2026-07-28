@@ -13,6 +13,18 @@
 //! wired together, so it is modeled as a trait -- a supertrait of [`VariableStorage`] adding just
 //! the four `@Override` accessors this subclass introduces -- rather than a concrete struct.
 //!
+//! Two of those four (`isForcedIndirect()`/`isAutoStorage()`) have since been promoted onto the
+//! [`VariableStorage`] stub itself (grown for
+//! [`ParameterImpl`](crate::program::model::listing::parameter_impl::ParameterImpl); see
+//! `STUBS.tsv`), matching the real `VariableStorage` base class (both default `false` there).
+//! Since a subtrait cannot supply a new default body under a supertrait method's exact name
+//! (the same limitation documented on
+//! [`VariableImpl`](crate::program::model::listing::variable_impl::VariableImpl)), this trait no
+//! longer redeclares them; implementors instead override `VariableStorage::is_forced_indirect`/
+//! `is_auto_storage` directly, optionally delegating to
+//! [`dynamic_variable_storage_is_auto_storage`](DynamicVariableStorage::dynamic_variable_storage_is_auto_storage)
+//! for the `autoParamType != null` default this class's real Java override provides.
+//!
 //! The private/public constructors and the `getUnassignedDynamicStorage`/`INDIRECT_VOID_STORAGE`
 //! static factories are construction-time plumbing tied to a concrete backing representation
 //! (varnode list validation against a `ProgramArchitecture`, raising `InvalidInputException`) and
@@ -32,21 +44,17 @@ use crate::program::seam_stubs::VariableStorage;
 
 /// Port of `ghidra.program.model.lang.DynamicVariableStorage`.
 pub trait DynamicVariableStorage: VariableStorage {
-    /// Port of `DynamicVariableStorage.isForcedIndirect()`: `true` if the parameter has been
-    /// forced to pass as a pointer instead of its raw type.
-    fn is_forced_indirect(&self) -> bool;
-
     /// Port of `DynamicVariableStorage.isUnassignedStorage()`.
     fn is_unassigned_storage(&self) -> bool;
 
     /// Port of `DynamicVariableStorage.isVoidStorage()`.
     fn is_void_storage(&self) -> bool;
 
-    /// Port of `DynamicVariableStorage.isAutoStorage()`: `true` if this storage carries an
-    /// auto-parameter type. Defaults to delegating to the supertrait's
-    /// [`get_auto_parameter_type`](VariableStorage::get_auto_parameter_type), matching the real
-    /// class's `autoParamType != null` check.
-    fn is_auto_storage(&self) -> bool {
+    /// Default body an implementor's own `VariableStorage::is_auto_storage` override can delegate
+    /// to: `true` if this storage carries an auto-parameter type, matching
+    /// `DynamicVariableStorage.isAutoStorage()`'s `autoParamType != null` check (as opposed to the
+    /// base `VariableStorage.isAutoStorage()`, which always returns `false`).
+    fn dynamic_variable_storage_is_auto_storage(&self) -> bool {
         self.get_auto_parameter_type().is_some()
     }
 
@@ -83,13 +91,13 @@ mod tests {
         fn get_varnodes(&self) -> Vec<Varnode> {
             self.varnodes.clone()
         }
-    }
 
-    impl DynamicVariableStorage for MockForcedIndirectStorage {
         fn is_forced_indirect(&self) -> bool {
             true
         }
+    }
 
+    impl DynamicVariableStorage for MockForcedIndirectStorage {
         fn is_unassigned_storage(&self) -> bool {
             false
         }
@@ -107,13 +115,13 @@ mod tests {
         fn get_auto_parameter_type(&self) -> Option<AutoParameterType> {
             Some(AutoParameterType::This)
         }
+
+        fn is_auto_storage(&self) -> bool {
+            self.dynamic_variable_storage_is_auto_storage()
+        }
     }
 
     impl DynamicVariableStorage for MockAutoParamStorage {
-        fn is_forced_indirect(&self) -> bool {
-            false
-        }
-
         fn is_unassigned_storage(&self) -> bool {
             true
         }
