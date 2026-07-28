@@ -55,12 +55,12 @@ pub trait SleighAssemblerBuilder: AssemblerBuilder {
 mod tests {
     use super::*;
     use crate::app::plugin::assembler::sleigh::parse::AssemblyParseResult;
+    use crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedPatterns;
     use crate::app::plugin::assembler::{
         AssembleError, AssembleLineError, Assembler, GenericAssembler, GenericAssemblerBuilder,
     };
     use crate::app::seam_stubs::{
-        AssemblyPatternBlock, AssemblyResolutionResults, AssemblyResolvedPatterns,
-        AssemblySyntaxException,
+        AssemblyPatternBlock, AssemblyResolutionResults, AssemblySyntaxException,
     };
     use crate::program::model::address::Address;
     use crate::program::model::lang::language_id::LanguageID;

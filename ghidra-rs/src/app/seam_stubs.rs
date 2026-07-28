@@ -491,34 +491,12 @@ pub trait PcodeTraversal {
     ) -> crate::app::plugin::languages::sleigh::visitor_results::VisitorResult;
 }
 
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolvedPatterns`, referenced by
-/// [`AssemblyResolvedBackfill::solve`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill::solve)
-/// and by [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real
-/// class is ported. Extends the crate's already-ported
-/// [`AssemblyResolution`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolution) trait,
-/// mirroring the Java interface's `extends AssemblyResolution`. `AssemblyResolvedBackfill::solve`
-/// only ever passes this type through as a parameter, so it needed no further members;
-/// `AssemblySelector` additionally sorts resolutions by encoded length/bits and re-masks the
-/// chosen one, so it needs `getInstructionLength()`, `getInstruction()`, and `getContext()` too.
-pub trait AssemblyResolvedPatterns:
-    crate::app::plugin::assembler::sleigh::sem::AssemblyResolution
-{
-    /// Mirrors `AssemblyResolvedPatterns.getInstructionLength()`.
-    fn get_instruction_length(&self) -> i32;
-
-    /// Mirrors `AssemblyResolvedPatterns.getInstruction()`.
-    fn get_instruction(&self) -> Box<dyn AssemblyPatternBlock>;
-
-    /// Mirrors `AssemblyResolvedPatterns.getContext()`.
-    fn get_context(&self) -> Box<dyn AssemblyPatternBlock>;
-}
-
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyPatternBlock`, referenced by
-/// [`AssemblyResolvedPatterns`] and by
-/// [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real class is
-/// ported. `AssemblySelector` only ever reads the raw instruction bytes (to compare two candidate
-/// encodings by length, then lexicographically) and asks for a fully-masked copy of the chosen
-/// encoding, so only `getVals()` and `fillMask()` are needed.
+/// [`AssemblyResolvedPatterns`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedPatterns)
+/// and by [`AssemblySelector`](crate::app::plugin::assembler::AssemblySelector) before the real
+/// class is ported. `AssemblySelector` only ever reads the raw instruction bytes (to compare two
+/// candidate encodings by length, then lexicographically) and asks for a fully-masked copy of the
+/// chosen encoding, so only `getVals()` and `fillMask()` are needed.
 pub trait AssemblyPatternBlock {
     /// Mirrors `AssemblyPatternBlock.getVals()`.
     fn get_vals(&self) -> Vec<i8>;
@@ -536,7 +514,7 @@ pub trait AssemblyPatternBlock {
 /// based cast that the real, already-ported `AssemblyResolution` trait does not support.
 pub enum AssemblyResolutionEntry {
     Error(Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedError>),
-    Patterns(Box<dyn AssemblyResolvedPatterns>),
+    Patterns(Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedPatterns>),
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolutionResults`, referenced
