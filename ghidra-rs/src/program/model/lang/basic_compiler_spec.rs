@@ -191,7 +191,7 @@ mod tests {
         fn inject(
             &self,
             _context: &dyn crate::program::seam_stubs::InjectContext,
-            _emit: &mut dyn crate::program::seam_stubs::PcodeEmit,
+            _emit: &mut dyn crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit,
         ) -> Result<(), InjectPayloadError> {
             unimplemented!("not exercised by this smoke test")
         }

@@ -1,9 +1,10 @@
+use crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::program::Program;
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::{Encoder, PcodeOp};
-use crate::program::seam_stubs::{InjectContext, PcodeEmit};
+use crate::program::seam_stubs::InjectContext;
 use crate::util::exception::NotFoundException;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
@@ -207,7 +208,51 @@ mod tests {
     impl InjectContext for MockInjectContext {}
 
     struct MockPcodeEmit;
-    impl PcodeEmit for MockPcodeEmit {}
+    impl PcodeEmit for MockPcodeEmit {
+        fn start_address(&self) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn fall_offset(&self) -> i32 {
+            0
+        }
+        fn walker(&self) -> &crate::program::model::lang::sleigh::ParserWalker {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn pcode_override(&self) -> Option<&dyn crate::program::model::pcode::PcodeOverride> {
+            None
+        }
+        fn fall_override(&self) -> Option<crate::program::model::address::Address> {
+            None
+        }
+        fn default_fall_address(&self) -> Option<crate::program::model::address::Address> {
+            None
+        }
+        fn add_label_ref(&mut self) {}
+        fn resolve_relatives(
+            &mut self,
+        ) -> Result<(), crate::app::plugin::processors::sleigh::sleigh_exception::SleighException>
+        {
+            Ok(())
+        }
+        fn dump(
+            &mut self,
+            _instr_addr: crate::program::model::address::Address,
+            _opcode: crate::decompiler::opcodes::op_code::OpCode,
+            _in_: &mut [crate::app::plugin::processors::sleigh::varnode_data::VarnodeData],
+            _isize: usize,
+            _out: Option<&crate::app::plugin::processors::sleigh::varnode_data::VarnodeData>,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn build(
+            &mut self,
+            _construct: &crate::program::model::lang::sleigh::template::ConstructTpl,
+            _secnum: i32,
+        ) -> Result<(), crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmitBuildError>
+        {
+            Ok(())
+        }
+    }
 
     struct MockEncoder;
     impl Encoder for MockEncoder {

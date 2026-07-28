@@ -42,10 +42,10 @@ impl LabelRef {
 ///
 /// Port of `ghidra.app.plugin.processors.sleigh.PcodeEmitPacked`. In Java this extends the
 /// abstract `PcodeEmit`, which drives parsing of a `ConstructTpl` and owns the `numOps` counter
-/// and `labeldef` table that this class's overrides read. That base class is still
-/// [`TODO`](crate::program::seam_stubs::PcodeEmit) (and, being a large template-walking driver
-/// rather than a single-responsibility interface, is out of scope for this cut), so those
-/// fields are exposed here as accessor methods instead. `dump`'s `instrAddr` parameter is
+/// and `labeldef` table that this class's overrides read. That base class's own template-walking
+/// driver (`build` and its private helpers) is still out of scope for a full port -- see
+/// [`PcodeEmit::build`](crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit::build)'s
+/// docs -- so those fields are exposed here as accessor methods instead. `dump`'s `instrAddr` parameter is
 /// dropped: it goes unused in the Java override, existing only to satisfy the base class's
 /// abstract signature.
 pub trait PcodeEmitPacked {

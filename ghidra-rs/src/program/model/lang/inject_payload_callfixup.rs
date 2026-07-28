@@ -38,7 +38,8 @@ mod tests {
     use crate::program::model::lang::sleigh::SleighLanguage;
     use crate::program::model::listing::program::Program;
     use crate::program::model::pcode::{Encoder, PcodeOp};
-    use crate::program::seam_stubs::{InjectContext, PcodeEmit};
+    use crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit;
+    use crate::program::seam_stubs::InjectContext;
     use crate::util::xml::xml_parse_exception::XmlParseException;
     use crate::util::xml::xml_pull_parser::XmlPullParser;
 
