@@ -82,6 +82,18 @@ pub trait Reference: Send + Sync + Any {
     fn as_stack_reference(&self) -> Option<&dyn crate::program::model::symbol::StackReference> {
         None
     }
+
+    /// Returns this reference viewed as an [`ExternalReference`](crate::program::model::symbol::ExternalReference)
+    /// when it is one.
+    ///
+    /// Mirrors Ghidra's `(ExternalReference) ref` cast (guarded by `instanceof
+    /// ExternalReference`), used by
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s port of
+    /// the private `DataUtilities.restoreReference`. The default returns `None`; external
+    /// references override it to return `Some(self)`.
+    fn as_external_reference(&self) -> Option<&dyn crate::program::model::symbol::ExternalReference> {
+        None
+    }
 }
 
 /// Marker trait for dynamically determined references that may not be

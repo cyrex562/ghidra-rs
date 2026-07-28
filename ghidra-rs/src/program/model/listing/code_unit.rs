@@ -262,6 +262,17 @@ pub trait CodeUnit: MemBuffer + PropertySet {
     /// Returns the scalar at the given operand index, or `None` if no scalar exists at that
     /// index. Data objects have one operand (the value).
     fn get_scalar(&self, op_index: i32) -> Option<Scalar>;
+
+    /// Stands in for `cu instanceof Data ? (Data) cu : null`, used by
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s ports of
+    /// `getMaxAddressOfUndefinedRange`/`isUndefinedRange`, which walk a mixed
+    /// instruction/data code-unit sequence and need to know whether each unit is `Data` without
+    /// a general trait-object downcast being available. Implementors of
+    /// [`Data`](crate::program::model::listing::data::Data) are expected to override this to
+    /// return `Some(self)`.
+    fn as_data(&self) -> Option<&dyn crate::program::model::listing::data::Data> {
+        None
+    }
 }
 
 #[cfg(test)]

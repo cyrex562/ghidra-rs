@@ -753,6 +753,57 @@ pub trait MemBuffer {
     }
 }
 
+/// Placeholder for `ghidra.program.model.mem.DumbMemBufferImpl`, referenced by
+/// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities) before the real
+/// class (a `MemoryBufferImpl` subclass adding a small internal read-ahead cache) is ported. This
+/// placeholder skips the caching and simply reads straight through to the backing
+/// [`Memory`](crate::program::model::mem::Memory) on every call, which is behaviorally equivalent
+/// (just slower) since `MemoryBufferImpl`'s cache is a pure performance optimization.
+pub struct DumbMemBufferImpl {
+    memory: Option<Arc<dyn crate::program::model::mem::Memory>>,
+    address: Address,
+}
+
+impl DumbMemBufferImpl {
+    /// Stands in for the `DumbMemBufferImpl(Memory, Address)` constructor.
+    pub fn new(memory: Option<Arc<dyn crate::program::model::mem::Memory>>, address: Address) -> Self {
+        DumbMemBufferImpl { memory, address }
+    }
+}
+
+impl MemBuffer for DumbMemBufferImpl {
+    fn get_address(&self) -> Address {
+        self.address.clone()
+    }
+
+    fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+        let memory = self.memory.as_ref().ok_or_else(MemoryAccessException::default)?;
+        let addr = self
+            .address
+            .add(offset as i64)
+            .map_err(|_| MemoryAccessException::default())?;
+        memory.get_byte(&addr).map(|b| b as i8)
+    }
+
+    fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        let Some(memory) = self.memory.as_ref() else {
+            return 0;
+        };
+        let Ok(addr) = self.address.add(offset as i64) else {
+            return 0;
+        };
+        memory.get_bytes(&addr, buffer) as i32
+    }
+
+    fn is_big_endian(&self) -> bool {
+        self.memory.as_ref().map(|m| m.is_big_endian()).unwrap_or(false)
+    }
+
+    fn get_memory(&self) -> Option<Arc<dyn crate::program::model::mem::Memory>> {
+        self.memory.clone()
+    }
+}
+
 /// Placeholder for `ghidra.program.model.data.DataTypeInstance`, referenced by
 /// [`CountedDynamicDataType`](crate::program::model::data::counted_dynamic_data_type::CountedDynamicDataType)
 /// before the real class (which computes an instance's true length by consulting `Dynamic`/

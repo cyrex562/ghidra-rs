@@ -4,6 +4,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
 use crate::program::model::listing::{FunctionManager, Listing, ProgramContext};
+use crate::program::model::mem::Memory;
 use crate::program::model::symbol::{EquateTable, ExternalManager, Namespace, ReferenceManager, SymbolTable};
 use std::sync::Arc;
 
@@ -29,6 +30,16 @@ pub trait Program: DomainObject + Send + Sync {
     }
 
     fn get_listing(&mut self) -> Option<&mut dyn Listing> {
+        None
+    }
+
+    /// Get the memory for this program.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities)'s port of
+    /// the private `DataUtilities.getDtInstance`, which needs it to build a `MemBuffer` at a
+    /// candidate data address.
+    fn get_memory(&self) -> Option<Arc<dyn Memory>> {
         None
     }
 
