@@ -489,9 +489,9 @@ pub trait DataType {
     }
 
     /// Stands in for `instanceof ghidra.program.model.data.DefaultDataType`, used by
-    /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Backed by a
-    /// minimal [`DefaultDataType`](crate::program::seam_stubs::DefaultDataType) placeholder
-    /// marker trait since the real `DefaultDataType` class is not yet ported; see `STUBS.tsv`.
+    /// [`is_undefined`](crate::program::model::data::undefined::is_undefined). Implementors of
+    /// [`DefaultDataType`](crate::program::model::data::default_data_type::DefaultDataType) are
+    /// expected to override this to return `true`.
     fn is_default_data_type(&self) -> bool {
         false
     }
