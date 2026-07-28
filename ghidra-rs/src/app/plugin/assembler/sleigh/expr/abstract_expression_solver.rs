@@ -7,7 +7,8 @@ use super::{NeedsBackfillException, SolverHint};
 use crate::app::plugin::assembler::sleigh::sem::{
     AbstractAssemblyResolutionFactory, AssemblyResolution,
 };
-use crate::app::seam_stubs::{AssemblyResolvedPatterns, MaskedLong, RecursiveDescentSolver};
+use super::RecursiveDescentSolver;
+use crate::app::seam_stubs::{AssemblyResolvedPatterns, MaskedLong};
 use crate::program::model::lang::sleigh::expression::PatternExpression;
 
 /// The root type of an expression solver: attempts to find, or fold, the value(s) that satisfy a
@@ -36,7 +37,7 @@ use crate::program::model::lang::sleigh::expression::PatternExpression;
 /// All four public methods are `abstract` in Java (no body to give a default), so all become
 /// required trait methods, including [`register`](Self::register): its Java body (`this.solver =
 /// general; general.register(tcls, this);`) needs a registry-keyed-by-class-token `register`
-/// capability this crate's minimal [`RecursiveDescentSolver`] placeholder does not model -- the
+/// capability this crate's [`RecursiveDescentSolver`] trait deliberately does not model -- the
 /// same reasoning
 /// [`AbstractAssemblyResolutionFactory::solve_or_backfill_masked`](
 /// crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyResolutionFactory::solve_or_backfill_masked)

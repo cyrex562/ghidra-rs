@@ -445,65 +445,6 @@ pub trait ConstructState: Send + Sync {
     fn parent(&self) -> Option<std::sync::Arc<dyn ConstructState>>;
 }
 
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.RecursiveDescentSolver`, referenced by
-/// [`AssemblyResolvedBackfill::solve`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill::solve)
-/// (which only ever passes this type through as a parameter) and by
-/// [`AbstractBinaryExpressionSolver`](crate::app::plugin::assembler::sleigh::expr::AbstractBinaryExpressionSolver)
-/// before the real class is ported. The Java class's `solve`/`getValue`/`getInstructionLength`/
-/// `valueForResolution` are all concrete methods that resolve the registered
-/// `AbstractExpressionSolver` for the expression's runtime class and delegate to it -- the same
-/// four operations `AbstractExpressionSolver` itself declares, just re-dispatched by expression
-/// type instead of implemented directly. `AbstractBinaryExpressionSolver`'s inherited `solver`
-/// field (the general solver assigned during `register()`) is read by exactly these four methods
-/// to recurse into an expression's left/right subexpressions, so this placeholder grows to cover
-/// them; the registry-keyed-by-class-token `register`/`getRegistered` machinery behind them is not
-/// modeled, since no current caller needs it.
-pub trait RecursiveDescentSolver {
-    /// Mirrors the protected `RecursiveDescentSolver.solve(AbstractAssemblyResolutionFactory,
-    /// PatternExpression, MaskedLong, Map<String, Long>, AssemblyResolvedPatterns,
-    /// Set<SolverHint>, String)`.
-    fn solve(
-        &self,
-        factory: &dyn crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyResolutionFactory,
-        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
-        goal: MaskedLong,
-        vals: &std::collections::HashMap<String, i64>,
-        cur: &dyn AssemblyResolvedPatterns,
-        hints: &std::collections::HashSet<
-            std::sync::Arc<dyn crate::app::plugin::assembler::sleigh::expr::SolverHint>,
-        >,
-        description: &str,
-    ) -> Result<
-        Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolution>,
-        crate::app::plugin::assembler::sleigh::expr::NeedsBackfillException,
-    >;
-
-    /// Mirrors the protected `RecursiveDescentSolver.getValue(PatternExpression, Map<String,
-    /// Long>, AssemblyResolvedPatterns)`. Returns `Ok(None)` if the expression depends on a
-    /// variable, mirroring Java's nullable return.
-    fn get_value(
-        &self,
-        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
-        vals: &std::collections::HashMap<String, i64>,
-        cur: &dyn AssemblyResolvedPatterns,
-    ) -> Result<Option<MaskedLong>, crate::app::plugin::assembler::sleigh::expr::NeedsBackfillException>;
-
-    /// Mirrors `RecursiveDescentSolver.getInstructionLength(PatternExpression)`.
-    fn get_instruction_length(
-        &self,
-        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
-    ) -> i32;
-
-    /// Mirrors `RecursiveDescentSolver.valueForResolution(PatternExpression, Map<String, Long>,
-    /// AssemblyResolvedPatterns)`.
-    fn value_for_resolution(
-        &self,
-        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
-        vals: &std::collections::HashMap<String, i64>,
-        rc: &dyn AssemblyResolvedPatterns,
-    ) -> MaskedLong;
-}
-
 /// Placeholder for `ghidra.app.plugin.languages.sleigh.SleighConstructorTraversal`, referenced by
 /// [`SleighLanguages`](crate::app::plugin::languages::sleigh::sleigh_languages::SleighLanguages)
 /// before the real class -- which walks every subtable in a `SleighLanguage`'s symbol table,

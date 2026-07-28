@@ -50,9 +50,10 @@ use crate::program::model::lang::sleigh::pattern::DisjointPattern;
 /// plus [`AssemblyResolutionResults::add`], so they get real default bodies. Likewise, of the
 /// three `solveOrBackfill` overloads, only the `MaskedLong`-taking one
 /// ([`solve_or_backfill_masked`](Self::solve_or_backfill_masked)) is required -- its Java body
-/// needs the static `RecursiveDescentSolver.getSolver()` singleton and its own `solve`/
-/// `getInstructionLength` methods, neither modeled on this crate's minimal
-/// [`RecursiveDescentSolver`](crate::app::seam_stubs::RecursiveDescentSolver) placeholder -- while
+/// needs the static `RecursiveDescentSolver.getSolver()` singleton, which this crate's
+/// [`RecursiveDescentSolver`](crate::app::plugin::assembler::sleigh::expr::RecursiveDescentSolver)
+/// trait deliberately doesn't model (see its own doc comment) since this factory trait has no
+/// concrete `RecursiveDescentSolver` implementor to reach for one from -- while
 /// the other two ([`solve_or_backfill_bits`](Self::solve_or_backfill_bits) and
 /// [`solve_or_backfill`](Self::solve_or_backfill)) just convert their arguments to a `MaskedLong`
 /// and delegate, so they're real default methods.
@@ -191,9 +192,10 @@ pub trait AbstractAssemblyResolutionFactory {
     /// MaskedLong, Map<String, Long>, AssemblyResolvedPatterns, String)`: attempts
     /// `RecursiveDescentSolver.solve`, falling back to [`backfill`](Self::backfill) (with a field
     /// length from `RecursiveDescentSolver.getInstructionLength`) if that solve needs a symbol not
-    /// yet in `vals`. Left as a required method: neither `solve` nor `getInstructionLength` are
-    /// modeled on this trait's minimal [`RecursiveDescentSolver`](
-    /// crate::app::seam_stubs::RecursiveDescentSolver) placeholder.
+    /// yet in `vals`. Left as a required method: this trait has no way to obtain a
+    /// [`RecursiveDescentSolver`](crate::app::plugin::assembler::sleigh::expr::RecursiveDescentSolver)
+    /// instance to call either method on (see that trait's own doc comment on why the Java
+    /// `getSolver()` singleton accessor isn't modeled).
     fn solve_or_backfill_masked(
         &self,
         exp: &PatternExpression,

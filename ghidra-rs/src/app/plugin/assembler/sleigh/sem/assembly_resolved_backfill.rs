@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use super::AssemblyResolution;
-use crate::app::seam_stubs::{AssemblyResolvedPatterns, RecursiveDescentSolver};
+use crate::app::plugin::assembler::sleigh::expr::RecursiveDescentSolver;
+use crate::app::seam_stubs::AssemblyResolvedPatterns;
 
 /// A backfill record produced during assembly resolution when part of the encoding cannot yet be
 /// determined (e.g. because it depends on a symbol like `inst_next` that isn't defined until

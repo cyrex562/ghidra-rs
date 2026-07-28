@@ -7,7 +7,8 @@ use super::{AbstractExpressionSolver, NeedsBackfillException, SolverException, S
 use crate::app::plugin::assembler::sleigh::sem::{
     AbstractAssemblyResolutionFactory, AssemblyResolution,
 };
-use crate::app::seam_stubs::{AssemblyResolvedPatterns, MaskedLong, RecursiveDescentSolver};
+use super::RecursiveDescentSolver;
+use crate::app::seam_stubs::{AssemblyResolvedPatterns, MaskedLong};
 use crate::program::model::lang::sleigh::expression::PatternExpression;
 
 /// The error a solve attempt for one side of a binary expression can fail with: either a missing
