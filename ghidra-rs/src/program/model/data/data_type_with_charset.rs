@@ -1,6 +1,7 @@
 use crate::program::model::data::data_type::DataType;
 use crate::docking::settings::settings::Settings;
-use crate::program::seam_stubs::{MemBuffer, StringDataInstance, DEFAULT_CHARSET_NAME};
+use crate::program::model::data::string_data_instance::{StringDataInstance, DEFAULT_CHARSET_NAME};
+use crate::program::seam_stubs::MemBuffer;
 
 /// A character value to encode, standing in for the `Object value` parameter of
 /// `DataTypeWithCharset.encodeCharacterValue`, which Java accepts as either a `Character` or a

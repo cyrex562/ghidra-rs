@@ -8,9 +8,8 @@ use crate::program::model::data::data_type_with_charset::DataTypeWithCharset;
 use crate::program::model::data::endian_settings_definition::EndianSettingsDefinition;
 use crate::program::model::data::padding_settings_definition::PaddingSettingsDefinition;
 use crate::program::model::data::render_unicode_settings_definition::RenderUnicodeSettingsDefinition;
-use crate::program::seam_stubs::{
-    CharsetSettingsDefinition, MemBuffer, CHARSET_UTF16, CHARSET_UTF32, DEFAULT_CHARSET_NAME,
-};
+use crate::program::model::data::string_data_instance::DEFAULT_CHARSET_NAME;
+use crate::program::seam_stubs::{CharsetSettingsDefinition, MemBuffer, CHARSET_UTF16, CHARSET_UTF32};
 
 /// Provides a definition of a primitive char in a program. The size and signed-ness of this type
 /// is determined by the data organization of the associated data type manager.
@@ -287,7 +286,7 @@ mod tests {
             &self,
             _settings: &dyn Settings,
             _buf: &dyn MemBuffer,
-        ) -> Box<dyn crate::program::seam_stubs::StringDataInstance> {
+        ) -> Box<dyn crate::program::model::data::string_data_instance::StringDataInstance> {
             unimplemented!("not exercised by these tests")
         }
 

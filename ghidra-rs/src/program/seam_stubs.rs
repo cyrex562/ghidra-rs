@@ -942,31 +942,6 @@ pub trait FloatFormat {
     fn to_decimal_string(&self, value: &dyn BigFloat, use_english: bool) -> String;
 }
 
-/// Placeholder for `ghidra.program.model.data.StringDataInstance`, referenced by
-/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset)
-/// and [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable)
-/// before the real class is ported.
-///
-/// Models just the instance methods that `DataTypeWithCharset`'s and `ArrayStringable`'s default
-/// methods delegate to once a `StringDataInstance` has been built for a given data
-/// type/settings/buffer/length.
-pub trait StringDataInstance {
-    /// Encode a normalized character value (one code point, as one or two UTF-16 style chars)
-    /// as replacement bytes.
-    fn encode_replacement_from_char_value(&self, value: &[char]) -> Result<Vec<u8>, String>;
-
-    /// Encode a single-character string representation as replacement bytes.
-    fn encode_replacement_from_char_representation(&self, repr: &str) -> Result<Vec<u8>, String>;
-
-    /// Stands in for `StringDataInstance.getStringValue()`.
-    fn get_string_value(&self) -> Option<String> {
-        None
-    }
-}
-
-/// Placeholder for `ghidra.program.model.data.StringDataInstance.DEFAULT_CHARSET_NAME`.
-pub const DEFAULT_CHARSET_NAME: &str = "US-ASCII";
-
 /// Placeholder for `ghidra.program.model.listing.CommentType`, referenced by
 /// [`CodeUnit`](crate::program::model::listing::code_unit::CodeUnit)
 /// before the real enum is ported.
