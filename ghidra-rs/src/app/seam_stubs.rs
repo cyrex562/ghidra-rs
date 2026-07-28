@@ -820,13 +820,3 @@ impl AnyMatcher for UnimplementedExpressionMatcher {}
 impl OperandValueMatcher for UnimplementedExpressionMatcher {}
 impl FieldSizeMatcher for UnimplementedExpressionMatcher {}
 impl UnaryExpressionMatcher for UnimplementedExpressionMatcher {}
-
-/// Placeholder for `ghidra.app.plugin.assembler.Assembler`, referenced by
-/// [`AssemblerBuilder`](crate::app::plugin::assembler::AssemblerBuilder) before the real class is
-/// ported. In Java, `Assembler` is a plain marker interface --
-/// `Assembler extends GenericAssembler<AssemblyResolvedPatterns>` with no members of its own --
-/// and `AssemblerBuilder` only ever returns this type, so the stub mirrors that exactly: a
-/// supertrait bound on the already-ported
-/// [`GenericAssembler`](crate::app::plugin::assembler::GenericAssembler) with no additional
-/// methods.
-pub trait Assembler: crate::app::plugin::assembler::GenericAssembler {}
