@@ -820,3 +820,12 @@ impl AnyMatcher for UnimplementedExpressionMatcher {}
 impl OperandValueMatcher for UnimplementedExpressionMatcher {}
 impl FieldSizeMatcher for UnimplementedExpressionMatcher {}
 impl UnaryExpressionMatcher for UnimplementedExpressionMatcher {}
+
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.SleighAssembler`, referenced by
+/// [`SleighAssemblerBuilder`](crate::app::plugin::assembler::sleigh::sleigh_assembler_builder::SleighAssemblerBuilder)
+/// before the real class is ported. Mirrors `SleighAssembler extends
+/// AbstractSleighAssembler<AssemblyResolvedPatterns> implements Assembler`;
+/// `SleighAssemblerBuilder` only ever returns this type opaquely (its own covariant narrowing of
+/// `AssemblerBuilder::get_assembler`/`get_assembler_with_program`), so no members beyond the
+/// `Assembler` supertrait are needed yet.
+pub trait SleighAssembler: crate::app::plugin::assembler::Assembler {}
