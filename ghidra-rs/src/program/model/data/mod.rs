@@ -77,6 +77,7 @@ pub mod offset_shift_settings_definition;
 pub mod packing_type;
 pub mod padding_settings_definition;
 pub mod parameter_definition;
+pub mod parameter_definition_impl;
 pub mod playable;
 pub mod png_resource;
 pub mod pointer;
