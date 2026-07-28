@@ -366,4 +366,3 @@ ts	stub_class	referenced_by
 2026-07-27T22:00:00Z	AssemblyPatternBlock	AssemblySelector
 2026-07-27T22:00:00Z	AssemblyResolutionResults	AssemblySelector
 2026-07-27T22:00:00Z	AssemblySyntaxException	AssemblySelector
-2026-07-27T23:00:00Z	Assembler	AssemblerBuilder

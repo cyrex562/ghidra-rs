@@ -1,58 +1,24 @@
-//! Mirrors `ghidra.app.plugin.assembler.AssemblerBuilder`.
+//! Mirrors `ghidra.app.plugin.assembler.Assembler`.
 
-use std::sync::Arc;
+use super::GenericAssembler;
 
-use crate::program::model::listing::Program;
-
-use super::{Assembler, AssemblySelector, GenericAssemblerBuilder};
-
-/// An interface to build an [`Assembler`] for a given language.
+/// The primary interface for performing assembly in Ghidra.
 ///
-/// Mirrors `ghidra.app.plugin.assembler.AssemblerBuilder`, which extends
-/// `GenericAssemblerBuilder<AssemblyResolvedPatterns, Assembler>` and covariantly overrides both
-/// `getAssembler` overloads to return `Assembler` instead of the generic `A` type parameter.
-/// `get_language_id`/`get_language` are inherited unchanged from
-/// [`GenericAssemblerBuilder`] and are not redeclared here.
+/// Mirrors `ghidra.app.plugin.assembler.Assembler`, which is a plain marker interface --
+/// `Assembler extends GenericAssembler<AssemblyResolvedPatterns>` with no members of its own.
+/// The Rust trait mirrors that exactly: a supertrait bound on
+/// [`GenericAssembler`](crate::app::plugin::assembler::GenericAssembler) with no additional
+/// methods.
 ///
-/// `get_assembler`/`get_assembler_with_program` narrow the return type of
-/// [`GenericAssemblerBuilder::get_assembler`]/[`GenericAssemblerBuilder::get_assembler_with_program`]
-/// from `Box<dyn GenericAssembler>` to `Box<dyn Assembler>` (mirroring the covariant override in
-/// Java) and so are redeclared with the same name here, following the same pattern used by
-/// [`DataTypeArchiveDB`](crate::program::database::data_type_archive_db::DataTypeArchiveDB) --
-/// use fully qualified syntax (e.g. `AssemblerBuilder::get_assembler(...)`) to select between the
-/// two when both are in scope for the same value.
-///
-/// Every method here is abstract in Java (this is a plain interface with no default methods), so
-/// none of the trait methods below have default bodies either.
-pub trait AssemblerBuilder: GenericAssemblerBuilder {
-    /// Build an assembler with the given selector callback.
-    ///
-    /// Narrows the return type of [`GenericAssemblerBuilder::get_assembler`], which this trait
-    /// also inherits; use fully qualified syntax to call the desired one when both are in scope
-    /// for the same value.
-    ///
-    /// Mirrors `AssemblerBuilder.getAssembler(AssemblySelector)`.
-    fn get_assembler(&self, selector: Box<dyn AssemblySelector>) -> Box<dyn Assembler>;
-
-    /// Build an assembler with the given selector callback and program binding.
-    ///
-    /// Narrows the return type of [`GenericAssemblerBuilder::get_assembler_with_program`], which
-    /// this trait also inherits; use fully qualified syntax to call the desired one when both are
-    /// in scope for the same value.
-    ///
-    /// Mirrors `AssemblerBuilder.getAssembler(AssemblySelector, Program)`.
-    fn get_assembler_with_program(
-        &self,
-        selector: Box<dyn AssemblySelector>,
-        program: Arc<dyn Program>,
-    ) -> Box<dyn Assembler>;
-}
+/// Use the `Assemblers` class (not yet ported) to obtain a suitable implementation for a given
+/// program or language.
+pub trait Assembler: GenericAssembler {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::app::plugin::assembler::sleigh::parse::AssemblyParseResult;
-    use crate::app::plugin::assembler::{AssembleError, AssembleLineError, GenericAssembler};
+    use crate::app::plugin::assembler::{AssembleError, AssembleLineError};
     use crate::app::seam_stubs::{
         AssemblyPatternBlock, AssemblyResolutionResults, AssemblyResolvedPatterns,
         AssemblySyntaxException,
@@ -62,12 +28,12 @@ mod tests {
     use crate::program::model::lang::Language;
     use crate::program::model::listing::{Instruction, InstructionIterator};
     use crate::program::model::mem::MemoryAccessException;
+    use std::sync::Arc;
 
     // --- Language mock ---
     //
     // No method here is exercised beyond `get_language_id`, so every other abstract method
-    // panics if reached, following the convention used by `generic_assembler_builder.rs`'s
-    // tests.
+    // panics if reached, following the convention used by `assembler_builder.rs`'s tests.
 
     struct MockLanguage;
 
@@ -306,32 +272,21 @@ mod tests {
         }
     }
 
-    // --- AssemblySelector mock ---
-
-    struct DefaultSelector;
-    impl AssemblySelector for DefaultSelector {}
-
     // --- Assembler mock ---
     //
     // Implements both `GenericAssembler` (the unnarrowed supertrait every assembler
-    // implementation must satisfy) and the empty `Assembler` marker stub, matching Java's
+    // implementation must satisfy) and the empty `Assembler` marker trait, matching Java's
     // `Assembler extends GenericAssembler<AssemblyResolvedPatterns>`.
 
-    struct MockAssembler {
-        bound: bool,
-    }
+    struct MockAssembler;
 
     impl GenericAssembler for MockAssembler {
         fn get_language(&self) -> Box<dyn Language> {
             Box::new(MockLanguage)
         }
 
-        fn get_program(&self) -> Option<Arc<dyn Program>> {
-            if self.bound {
-                unimplemented!("this test never constructs a bound Program")
-            } else {
-                None
-            }
+        fn get_program(&self) -> Option<Arc<dyn crate::program::model::listing::Program>> {
+            None
         }
 
         fn assemble(
@@ -416,111 +371,15 @@ mod tests {
 
     impl Assembler for MockAssembler {}
 
-    // --- AssemblerBuilder mock ---
-    //
-    // Stands in for one of the abstract `AbstractSleighAssemblerBuilder` subclasses Ghidra
-    // ships (there is no default implementation to instantiate directly, since
-    // `AssemblerBuilder` is a plain interface). Implements both `GenericAssemblerBuilder` (whose
-    // `get_assembler`/`get_assembler_with_program` return `Box<dyn GenericAssembler>`) and
-    // `AssemblerBuilder` (whose same-named methods narrow to `Box<dyn Assembler>`), matching
-    // Java's covariant override.
-
-    struct MockBuilder {
-        language_id: LanguageID,
-    }
-
-    impl GenericAssemblerBuilder for MockBuilder {
-        fn get_language_id(&self) -> LanguageID {
-            self.language_id.clone()
-        }
-
-        fn get_language(&self) -> Box<dyn Language> {
-            Box::new(MockLanguage)
-        }
-
-        fn get_assembler(&self, selector: Box<dyn AssemblySelector>) -> Box<dyn GenericAssembler> {
-            drop(selector);
-            Box::new(MockAssembler { bound: false })
-        }
-
-        fn get_assembler_with_program(
-            &self,
-            selector: Box<dyn AssemblySelector>,
-            _program: Arc<dyn Program>,
-        ) -> Box<dyn GenericAssembler> {
-            drop(selector);
-            Box::new(MockAssembler { bound: true })
-        }
-    }
-
-    impl AssemblerBuilder for MockBuilder {
-        fn get_assembler(&self, selector: Box<dyn AssemblySelector>) -> Box<dyn Assembler> {
-            drop(selector);
-            Box::new(MockAssembler { bound: false })
-        }
-
-        fn get_assembler_with_program(
-            &self,
-            selector: Box<dyn AssemblySelector>,
-            _program: Arc<dyn Program>,
-        ) -> Box<dyn Assembler> {
-            drop(selector);
-            Box::new(MockAssembler { bound: true })
-        }
-    }
-
-    // --- Program mock ---
-
-    struct MockProgram;
-
-    impl crate::framework::model::DomainObject for MockProgram {}
-
-    impl Program for MockProgram {
-        fn get_name(&self) -> String {
-            "mock".to_string()
-        }
-
-        fn get_language_id(&self) -> String {
-            "test:LE:32:default".to_string()
-        }
-    }
-
     #[test]
-    fn narrowed_get_assembler_returns_an_assembler() {
-        let builder = MockBuilder { language_id: LanguageID::new("test:LE:32:default").unwrap() };
-        let asm = AssemblerBuilder::get_assembler(&builder, Box::new(DefaultSelector));
-        // `asm` is a `Box<dyn Assembler>`; confirm it's also usable through `GenericAssembler`.
+    fn trait_is_object_safe_and_usable_through_supertrait() {
+        let asm: Box<dyn Assembler> = Box::new(MockAssembler);
+        // Confirm the trait object is usable through `GenericAssembler` too, matching Java's
+        // `Assembler extends GenericAssembler<AssemblyResolvedPatterns>`.
         assert!((&*asm as &dyn GenericAssembler).get_program().is_none());
-    }
-
-    #[test]
-    fn narrowed_get_assembler_with_program_binds_the_assembler() {
-        let builder = MockBuilder { language_id: LanguageID::new("test:LE:32:default").unwrap() };
-        let asm = AssemblerBuilder::get_assembler_with_program(
-            &builder,
-            Box::new(DefaultSelector),
-            Arc::new(MockProgram),
-        );
         assert_eq!(
             (&*asm as &dyn GenericAssembler).get_language().get_language_id().to_string(),
             "test:LE:32:default"
         );
-    }
-
-    #[test]
-    fn unnarrowed_supertrait_method_is_still_reachable_via_ufcs() {
-        let builder = MockBuilder { language_id: LanguageID::new("x86:LE:32:default").unwrap() };
-        let generic_asm =
-            GenericAssemblerBuilder::get_assembler(&builder, Box::new(DefaultSelector));
-        assert!(generic_asm.get_program().is_none());
-    }
-
-    #[test]
-    fn trait_is_object_safe() {
-        let builder: Box<dyn AssemblerBuilder> =
-            Box::new(MockBuilder { language_id: LanguageID::new("x86:LE:32:default").unwrap() });
-        assert_eq!(builder.get_language_id().to_string(), "x86:LE:32:default");
-        let asm = AssemblerBuilder::get_assembler(&*builder, Box::new(DefaultSelector));
-        assert!((&*asm as &dyn GenericAssembler).get_program().is_none());
     }
 }
