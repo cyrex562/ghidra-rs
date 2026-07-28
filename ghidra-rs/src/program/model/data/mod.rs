@@ -1,6 +1,7 @@
 pub mod abstract_complex_data_type;
 pub mod abstract_float_data_type;
 pub mod address_space_settings_definition;
+pub mod aligned_structure_packer;
 pub mod alignment_type;
 pub mod annotation_handler;
 pub mod archive_type;
