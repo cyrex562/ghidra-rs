@@ -135,4 +135,14 @@ pub trait Program: DomainObject + Send + Sync {
     fn get_program_context(&mut self) -> Option<&mut dyn ProgramContext> {
         None
     }
+
+    /// Get the program's image base address, if known.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`PointerDataType`](crate::program::model::data::pointer_data_type::PointerDataType)'s
+    /// port of `PointerDataType.getAddressValue`, which needs it to resolve an
+    /// image-base-relative pointer.
+    fn get_image_base(&self) -> Option<Address> {
+        None
+    }
 }

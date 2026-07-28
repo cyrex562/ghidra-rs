@@ -369,3 +369,6 @@ ts	stub_class	referenced_by
 2026-07-28T04:00:00Z	MaskedLong	AbstractBinaryExpressionSolver
 2026-07-28T04:39:51Z	PcodeInjectLibrary(grown)	InstructionPcodeOverride
 2026-07-28T04:59:16Z	GenericCallingConvention(grown)	FunctionDefinitionDataType
+2026-07-28T05:30:00Z	PointerTypeSettingsDefinition	PointerDataType
+2026-07-28T05:30:00Z	Memory(grown)	PointerDataType
+2026-07-28T05:30:00Z	Program(grown)	PointerDataType
