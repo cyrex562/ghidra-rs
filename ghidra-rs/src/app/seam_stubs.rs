@@ -594,21 +594,29 @@ pub trait AssemblyContextGraph {}
 /// opaquely, so no members are needed yet.
 pub trait AbstractAssemblyStateGenerator {}
 
-/// Placeholder for `ghidra.app.plugin.assembler.sleigh.sem.AbstractAssemblyResolutionFactory`,
-/// referenced by
-/// [`AbstractAssemblyTreeResolver`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver)
-/// before the real class is ported. Java's version is a rich builder API (`nop`, `contextOnly`,
-/// `newErrorBuilder`, `error`, `newAssemblyResolutionResults`, ...); only
-/// [`new_assembly_resolution_results`](Self::new_assembly_resolution_results) is modeled, since
-/// it's the one method `AbstractAssemblyTreeResolver`'s own default methods
-/// ([`get_factory`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::get_factory)
-/// and [`parent`](crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyTreeResolver::parent))
-/// call. The rest of the builder surface belongs to whichever future port implements the other,
-/// currently-required (bodyless) trait methods that reference it in Java (`resolve`,
-/// `resolvePendingBackfills`, `selectContext`, `filterByDisassembly`, ...).
-pub trait AbstractAssemblyResolutionFactory {
-    /// Mirrors `AbstractAssemblyResolutionFactory.newAssemblyResolutionResults()`.
-    fn new_assembly_resolution_results(&self) -> Box<dyn AssemblyResolutionResults>;
+/// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.MaskedLong`, referenced by
+/// [`AbstractAssemblyResolutionFactory`](
+/// crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyResolutionFactory)'s `backfill` and
+/// `solveOrBackfill` family before the real class is ported. Java's version is an immutable value
+/// type pairing a mask with a value (plus a large arithmetic/bit-manipulation API); only the mask
+/// and value fields themselves, and the two static constructors those callers actually use
+/// (`fromLong`, `fromMaskAndValue`), are modeled.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MaskedLong {
+    pub mask: i64,
+    pub val: i64,
+}
+
+impl MaskedLong {
+    /// Mirrors `MaskedLong.fromLong(long)`: a fully-defined value (mask of all-ones).
+    pub fn from_long(val: i64) -> Self {
+        Self { mask: -1, val }
+    }
+
+    /// Mirrors `MaskedLong.fromMaskAndValue(long, long)`.
+    pub fn from_mask_and_value(mask: i64, val: i64) -> Self {
+        Self { mask, val }
+    }
 }
 
 /// Placeholder for `ghidra.app.plugin.assembler.AssemblySyntaxException`, thrown by

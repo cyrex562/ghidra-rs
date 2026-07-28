@@ -3,11 +3,11 @@
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
-use super::AssemblyResolution;
+use super::{AbstractAssemblyResolutionFactory, AssemblyResolution};
 use crate::app::plugin::assembler::sleigh::grammars::AssemblyGrammar;
 use crate::app::plugin::assembler::sleigh::tree::AssemblyParseBranch;
 use crate::app::seam_stubs::{
-    AbstractAssemblyResolutionFactory, AbstractAssemblyStateGenerator, AssemblyConstructorSemantic,
+    AbstractAssemblyStateGenerator, AssemblyConstructorSemantic,
     AssemblyContextGraph, AssemblyParseTreeNode, AssemblyPatternBlock, AssemblyProduction,
     AssemblyResolutionResults, AssemblyResolvedPatterns, Constructor, OperandSymbol,
 };
@@ -552,6 +552,81 @@ mod tests {
     impl AbstractAssemblyResolutionFactory for MockFactory {
         fn new_assembly_resolution_results(&self) -> Box<dyn AssemblyResolutionResults> {
             Box::new(MockResults::default())
+        }
+        fn nop(&self, _description: &str) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn nop_with_children(
+            &self,
+            _description: &str,
+            _children: Vec<Box<dyn AssemblyResolution>>,
+            _right: Option<Box<dyn AssemblyResolution>>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn error(&self, _error: &str, _res: &dyn AssemblyResolution) -> Box<dyn AssemblyResolution> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn backfill(
+            &self,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+            _goal: crate::app::seam_stubs::MaskedLong,
+            _inslen: i32,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolution> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn resolved(
+            &self,
+            _ins: Box<dyn AssemblyPatternBlock>,
+            _ctx: Box<dyn AssemblyPatternBlock>,
+            _description: &str,
+            _cons: Option<Arc<dyn Constructor>>,
+            _children: Vec<Box<dyn AssemblyResolution>>,
+            _right: Option<Box<dyn AssemblyResolution>>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn instr_only(
+            &self,
+            _ins: Box<dyn AssemblyPatternBlock>,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn context_only(
+            &self,
+            _ctx: Box<dyn AssemblyPatternBlock>,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn from_pattern(
+            &self,
+            _pat: &crate::program::model::lang::sleigh::pattern::DisjointPattern,
+            _min_len: i32,
+            _description: &str,
+            _cons: Option<Arc<dyn Constructor>>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn from_string(
+            &self,
+            _str: &str,
+            _description: &str,
+            _children: Vec<Box<dyn AssemblyResolution>>,
+        ) -> Result<Box<dyn AssemblyResolvedPatterns>, String> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn solve_or_backfill_masked(
+            &self,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+            _goal: crate::app::seam_stubs::MaskedLong,
+            _vals: &HashMap<String, i64>,
+            _cur: &dyn AssemblyResolvedPatterns,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolution> {
+            unimplemented!("not exercised by these tests")
         }
     }
 

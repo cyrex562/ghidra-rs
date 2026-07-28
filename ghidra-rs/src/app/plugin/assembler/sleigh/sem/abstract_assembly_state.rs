@@ -3,10 +3,8 @@
 use std::cell::Cell;
 use std::sync::Arc;
 
-use super::{AbstractAssemblyTreeResolver, AssemblyResolvedError};
-use crate::app::seam_stubs::{
-    AbstractAssemblyResolutionFactory, AssemblyConstructorSemantic, AssemblyResolvedPatterns,
-};
+use super::{AbstractAssemblyResolutionFactory, AbstractAssemblyTreeResolver, AssemblyResolvedError};
+use crate::app::seam_stubs::{AssemblyConstructorSemantic, AssemblyResolvedPatterns};
 
 /// Base for a node in an assembly prototype.
 ///
@@ -178,6 +176,81 @@ mod tests {
     struct MockFactory;
     impl AbstractAssemblyResolutionFactory for MockFactory {
         fn new_assembly_resolution_results(&self) -> Box<dyn AssemblyResolutionResults> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn nop(&self, _description: &str) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn nop_with_children(
+            &self,
+            _description: &str,
+            _children: Vec<Box<dyn AssemblyResolution>>,
+            _right: Option<Box<dyn AssemblyResolution>>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn error(&self, _error: &str, _res: &dyn AssemblyResolution) -> Box<dyn AssemblyResolution> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn backfill(
+            &self,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+            _goal: crate::app::seam_stubs::MaskedLong,
+            _inslen: i32,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolution> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn resolved(
+            &self,
+            _ins: Box<dyn crate::app::seam_stubs::AssemblyPatternBlock>,
+            _ctx: Box<dyn crate::app::seam_stubs::AssemblyPatternBlock>,
+            _description: &str,
+            _cons: Option<Arc<dyn crate::app::seam_stubs::Constructor>>,
+            _children: Vec<Box<dyn AssemblyResolution>>,
+            _right: Option<Box<dyn AssemblyResolution>>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn instr_only(
+            &self,
+            _ins: Box<dyn crate::app::seam_stubs::AssemblyPatternBlock>,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn context_only(
+            &self,
+            _ctx: Box<dyn crate::app::seam_stubs::AssemblyPatternBlock>,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn from_pattern(
+            &self,
+            _pat: &crate::program::model::lang::sleigh::pattern::DisjointPattern,
+            _min_len: i32,
+            _description: &str,
+            _cons: Option<Arc<dyn crate::app::seam_stubs::Constructor>>,
+        ) -> Box<dyn AssemblyResolvedPatterns> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn from_string(
+            &self,
+            _str: &str,
+            _description: &str,
+            _children: Vec<Box<dyn AssemblyResolution>>,
+        ) -> Result<Box<dyn AssemblyResolvedPatterns>, String> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn solve_or_backfill_masked(
+            &self,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+            _goal: crate::app::seam_stubs::MaskedLong,
+            _vals: &std::collections::HashMap<String, i64>,
+            _cur: &dyn AssemblyResolvedPatterns,
+            _description: &str,
+        ) -> Box<dyn AssemblyResolution> {
             unimplemented!("not exercised by these tests")
         }
     }
