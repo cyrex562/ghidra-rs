@@ -1119,9 +1119,25 @@ pub trait AddressLabelInfo {}
 
 /// Placeholder for `ghidra.program.model.lang.PcodeInjectLibrary`, referenced by
 /// [`CompilerSpec`](crate::program::model::lang::compiler_spec::CompilerSpec)
-/// before the real class is ported. `CompilerSpec` only ever returns this type opaquely, so no
-/// members are needed yet.
-pub trait PcodeInjectLibrary {}
+/// before the real class is ported.
+///
+/// Grown (see `STUBS.tsv`) to add
+/// [`get_payload`](Self::get_payload), needed by
+/// [`InstructionPcodeOverrideImpl`](crate::program::model::listing::instruction_pcode_override::InstructionPcodeOverrideImpl)'s
+/// `getCallFixup` port, with a `None` default so pre-existing bare `impl PcodeInjectLibrary for
+/// Foo {}` blocks keep compiling.
+pub trait PcodeInjectLibrary {
+    /// Stands in for `PcodeInjectLibrary.getPayload(int, String)`. Defaults to `None`, mirroring
+    /// a library with no registered payloads.
+    fn get_payload(
+        &self,
+        inject_type: i32,
+        name: &str,
+    ) -> Option<Box<dyn crate::program::model::lang::InjectPayload>> {
+        let _ = (inject_type, name);
+        None
+    }
+}
 
 /// Placeholder for `ghidra.program.model.lang.InjectContext`, referenced by
 /// [`InjectPayload`](crate::program::model::lang::inject_payload::InjectPayload)
