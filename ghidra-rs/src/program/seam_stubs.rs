@@ -594,12 +594,6 @@ pub trait DataTypeArchiveDbChangeSet:
 {
 }
 
-/// Placeholder for `ghidra.program.model.data.DefaultDataType`, referenced by
-/// [`Undefined::is_undefined`](crate::program::model::data::undefined::is_undefined) (via
-/// `DataType::is_default_data_type`) before the real class is ported. `Undefined` only ever
-/// checks `instanceof DefaultDataType`, so no members are needed yet.
-pub trait DefaultDataType {}
-
 /// Placeholder for `ghidra.program.model.data.MetaDataType`, referenced by
 /// [`NoisyStructureBuilder::add_data_type`](crate::program::model::data::noisy_structure_builder::NoisyStructureBuilder::add_data_type)
 /// via its static `getMostSpecificDataType(DataType, DataType)` helper, used to decide which of

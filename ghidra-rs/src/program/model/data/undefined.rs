@@ -25,9 +25,9 @@
 //! has no instance methods to attach them to). Both rely on Java `instanceof` checks that have no
 //! general downcast on [`DataType`], so -- mirroring the existing `is_array`/`is_pointer`/
 //! `is_structure`/`is_union`/`is_typedef` flags -- two new flag methods are added to [`DataType`]:
-//! `is_default_data_type` (stands in for `instanceof DefaultDataType`; backed by a new minimal
-//! [`DefaultDataType`](crate::program::seam_stubs::DefaultDataType) marker placeholder in
-//! `seam_stubs.rs` since the real `DefaultDataType` is not yet ported -- see `STUBS.tsv`) and
+//! `is_default_data_type` (stands in for `instanceof DefaultDataType`; implementors of
+//! [`DefaultDataType`](crate::program::model::data::default_data_type::DefaultDataType) are
+//! expected to override it to return `true`, per that trait's own module docs) and
 //! `is_undefined_type` (stands in for `instanceof Undefined`; backed by this trait directly, now
 //! that it exists -- implementors of [`Undefined`] are expected to override it to return `true`).
 //! `instanceof Array` + `((Array) dataType).getDataType()` similarly has no downcast available, so

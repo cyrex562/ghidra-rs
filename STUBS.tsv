@@ -238,7 +238,6 @@ ts	stub_class	referenced_by
 2026-07-21T06:00:00Z	RepositoryFolderLike	RepositoryFile
 2026-07-21T04:57:17Z	RepositoryLike	RepositoryHandleImpl
 2026-07-21T05:04:41Z	RepositoryManagerLike	RepositoryServerHandleImpl
-2026-07-21T06:15:00Z	DefaultDataType	Undefined
 2026-07-21T00:00:00Z	TransientProjectManagerLike	TransientProjectData
 2026-07-21T06:30:00Z	GhidraFileDataLike	GhidraFolderData
 2026-07-22T02:50:37Z	GhidraURLWrappedContentLike	GhidraURLConnection
