@@ -6,7 +6,7 @@ DONE	trait	72	56	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/ap
 DONE	trait	76	5	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseTransitionTable.java
 DONE	trait	75	3	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/util/TableEntryKey.java
 DONE	trait	74	6	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseActionGotoTable.java
-TODO	trait	73	8	16	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParser.java
+DONE	trait	73	8	16	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParser.java
 TODO	trait	71	4	35	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/SleighAssemblerBuilder.java
 TODO	trait	70	55	56	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AbstractAssemblyTreeResolver.java
 TODO	trait	69	49	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AbstractAssemblyState.java
