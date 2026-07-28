@@ -367,3 +367,4 @@ ts	stub_class	referenced_by
 2026-07-28T03:15:21Z	AssemblyContextGraph	AbstractAssemblyTreeResolver
 2026-07-28T03:15:21Z	AbstractAssemblyStateGenerator	AbstractAssemblyTreeResolver
 2026-07-28T04:00:00Z	MaskedLong	AbstractBinaryExpressionSolver
+2026-07-28T04:39:51Z	PcodeInjectLibrary(grown)	InstructionPcodeOverride
