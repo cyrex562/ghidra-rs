@@ -26,6 +26,7 @@ pub mod function_iterator;
 pub mod function_manager;
 pub mod function_overlap_exception;
 pub mod function_signature;
+pub mod function_signature_impl;
 pub mod function_tag;
 pub mod function_tag_change_set;
 pub mod function_tag_manager;
@@ -97,6 +98,8 @@ pub use function_overlap_exception::FunctionOverlapException;
 pub use function_signature::{
     FunctionSignature, NORETURN_DISPLAY_STRING, VAR_ARGS_DISPLAY_STRING, VOID_PARAM_DISPLAY_STRING,
 };
+#[allow(deprecated)]
+pub use function_signature_impl::FunctionSignatureImpl;
 pub use function_tag::FunctionTag;
 pub use function_tag_change_set::FunctionTagChangeSet;
 pub use function_tag_manager::FunctionTagManager;
