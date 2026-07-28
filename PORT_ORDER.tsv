@@ -9,7 +9,7 @@ DONE	trait	74	6	5	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app
 DONE	trait	73	8	16	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParser.java
 DONE	trait	71	4	35	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/SleighAssemblerBuilder.java
 DONE	trait	70	55	56	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AbstractAssemblyTreeResolver.java
-TODO	trait	69	49	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AbstractAssemblyState.java
+DONE	trait	69	49	4	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AbstractAssemblyState.java
 TODO	trait	66	57	32	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AbstractAssemblyResolutionFactory.java
 TODO	trait	65	48	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/sem/AbstractAssemblyResolution.java
 TODO	trait	64	13	27	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/AbstractExpressionSolver.java
