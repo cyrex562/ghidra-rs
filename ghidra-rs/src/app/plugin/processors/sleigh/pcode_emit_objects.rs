@@ -9,10 +9,11 @@ use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber, Varnode};
 ///
 /// Port of `ghidra.app.plugin.processors.sleigh.PcodeEmitObjects`. In Java this extends the
 /// abstract `PcodeEmit`, which drives parsing of a `ConstructTpl` and owns the `numOps` counter
-/// and `labeldef` table that this class's overrides read. That base class is still
-/// [`TODO`](crate::program::seam_stubs::PcodeEmit) (and, being a large template-walking driver
-/// rather than a single-responsibility interface, is out of scope for this cut), so the one piece
-/// of base-class state this type actually needs -- `labeldef` -- is exposed here as an accessor
+/// and `labeldef` table that this class's overrides read. That base class's own template-walking
+/// driver (`build` and its private helpers) is still out of scope for a full port -- see
+/// [`PcodeEmit::build`](crate::app::plugin::processors::sleigh::pcode_emit::PcodeEmit::build)'s
+/// docs -- so the one piece of base-class state this type actually needs -- `labeldef` -- is
+/// exposed here as an accessor
 /// method instead, mirroring [`PcodeEmitPacked`](super::pcode_emit_packed::PcodeEmitPacked).
 /// `numOps` is not modeled separately: the base class increments it by exactly one immediately
 /// after each call to [`dump`](Self::dump), so it always equals `oplist.size()` at the point
