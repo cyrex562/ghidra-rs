@@ -92,6 +92,7 @@ pub mod seam_stubs;
 pub mod tracked_task_listener;
 pub mod dbg_msg_tracer;
 pub mod language_utilities;
+pub mod undefined_function;
 
 pub use address_range_comparators::AddressRangeComparators;
 pub use application_utilities::{
@@ -181,3 +182,4 @@ pub use domain_object_lock_hold::DomainObjectLockHold;
 pub use tracked_task_listener::TrackedTaskListener;
 pub use dbg_msg_tracer::{DbgMsgTracer, CallRec};
 pub use language_utilities::LanguageUtilities;
+pub use undefined_function::{check_entry_is_memory_address, find_entry_block, UndefinedFunction};

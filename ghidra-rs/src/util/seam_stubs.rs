@@ -3,14 +3,35 @@
 
 use super::async_utils::AsyncExecutor;
 use super::datastruct::NoSuchIndexException;
-use super::exception::NoValueException;
+use super::exception::{CancelledException, NoValueException};
 use super::graph::key_indexable_set::KeyIndexableSet;
 use super::graph::keyed_object::KeyedObject;
 use super::graph::vertex::Vertex;
-use crate::program::model::address::{AddressRange, AddressRangeIterator};
+use super::task::TaskMonitor;
+use crate::program::model::address::{Address, AddressRange, AddressRangeIterator};
+use crate::program::seam_stubs::CodeBlock;
 
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.block.IsolatedEntrySubModel`, needed by
+/// [`crate::util::undefined_function::UndefinedFunction::find_function_using_isolated_block_model`].
+///
+/// The real class is a `CodeBlockModel` that treats every entry point (as identified by
+/// symbols/references, independent of any existing disassembly) as starting its own block, used
+/// as a fallback when [`crate::program::model::block::simple_block_model::SimpleBlockModel`]
+/// finds nothing. Only the one query `UndefinedFunction.findFunctionUsingIsolatedBlockModel`
+/// performs is modeled here; the real port would carry the full entry-point partitioning
+/// algorithm.
+pub trait IsolatedEntrySubModelLike {
+    /// Stands in for `IsolatedEntrySubModel.getFirstCodeBlockContaining(Address, TaskMonitor)`
+    /// (inherited from `CodeBlockModel`).
+    fn get_first_code_block_containing(
+        &self,
+        addr: &Address,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Option<Box<dyn CodeBlock>>, CancelledException>;
+}
 
 /// Placeholder for `ghidra.util.filechooser.GhidraFileChooserModel`, needed by
 /// [`crate::util::filechooser::GhidraFileFilter`].

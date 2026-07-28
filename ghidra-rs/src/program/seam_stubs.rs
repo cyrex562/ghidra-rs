@@ -1586,6 +1586,14 @@ pub trait ProgramOverlayAddressSpace {
 /// empty/unbounded block so pre-existing bare `impl CodeBlock for Foo {}` blocks keep compiling;
 /// `get_model`/`get_destinations` are left required since there is no generic placeholder
 /// `CodeBlockModel`/`CodeBlockReferenceIterator` to hand back.
+///
+/// Grown (see `STUBS.tsv`) with `is_empty`/`get_first_start_address`/`get_sources` -- the real
+/// interface extends `AddressSetView` (for `isEmpty`) and separately declares
+/// `getFirstStartAddress`/`getSources`, used by
+/// [`crate::util::undefined_function::UndefinedFunction`]'s `getEntryBlock` port to walk a code
+/// block's non-call, non-indirect source edges back to a function entry point. All three default
+/// to the same "empty/unbounded block" stand-in as `get_min_address`/`contains` (an empty block
+/// with no sources), so pre-existing bare `impl CodeBlock for Foo {}` blocks keep compiling.
 pub trait CodeBlock {
     /// Stands in for `CodeBlock.getMinAddress()`.
     fn get_min_address(&self) -> Option<Address> {
@@ -1606,6 +1614,45 @@ pub trait CodeBlock {
         &self,
         monitor: &dyn TaskMonitor,
     ) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException>;
+
+    /// Stands in for `CodeBlock.isEmpty()` (inherited from `AddressSetView`). Defaults to `true`,
+    /// matching the "empty" stand-in already used by [`get_min_address`](Self::get_min_address).
+    fn is_empty(&self) -> bool {
+        true
+    }
+
+    /// Stands in for `CodeBlock.getFirstStartAddress()`. Defaults to
+    /// [`get_min_address`](Self::get_min_address).
+    fn get_first_start_address(&self) -> Option<Address> {
+        self.get_min_address()
+    }
+
+    /// Stands in for `CodeBlock.getSources(TaskMonitor)`. Defaults to reporting no sources
+    /// (matching an "empty/unbounded block" with nothing flowing into it), unlike
+    /// [`get_destinations`](Self::get_destinations) which is left required: this keeps
+    /// pre-existing bare `impl CodeBlock for Foo {}` blocks compiling without needing a generic
+    /// placeholder `CodeBlockReferenceIterator` to hand back.
+    fn get_sources(
+        &self,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
+        let _ = monitor;
+        Ok(Box::new(EmptyCodeBlockReferenceIterator))
+    }
+}
+
+/// A [`CodeBlockReferenceIterator`] with no elements, used as the default
+/// [`CodeBlock::get_sources`] result. Not a port of any specific Java class.
+pub struct EmptyCodeBlockReferenceIterator;
+
+impl CodeBlockReferenceIterator for EmptyCodeBlockReferenceIterator {
+    fn has_next(&mut self) -> Result<bool, CancelledException> {
+        Ok(false)
+    }
+
+    fn next(&mut self) -> Result<Box<dyn crate::program::model::block::code_block_reference::CodeBlockReference>, CancelledException> {
+        panic!("EmptyCodeBlockReferenceIterator::next called after has_next returned false")
+    }
 }
 
 /// Placeholder for `ghidra.program.model.symbol.FlowType`, referenced by
@@ -1614,6 +1661,11 @@ pub trait CodeBlock {
 /// [`SubroutineDestReferenceIterator`](crate::program::model::block::subroutine_dest_reference_iterator)
 /// before the real enum is ported. All members default to `false` so pre-existing bare
 /// `impl FlowType for Foo {}` blocks keep compiling.
+///
+/// Grown (see `STUBS.tsv`) with `is_indirect`, needed by
+/// [`crate::util::undefined_function::UndefinedFunction`]'s `getEntryBlock` port to skip
+/// indirect-flow source edges while walking a code block's sources back to a function entry
+/// point.
 pub trait FlowType {
     /// Stands in for `FlowType.isCall()`.
     fn is_call(&self) -> bool {
@@ -1627,6 +1679,11 @@ pub trait FlowType {
 
     /// Stands in for `FlowType.isFallthrough()`.
     fn is_fallthrough(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `FlowType.isIndirect()`.
+    fn is_indirect(&self) -> bool {
         false
     }
 }
