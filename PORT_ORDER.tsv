@@ -26,7 +26,7 @@ DONE	trait	54	1240	15	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	53	1243	58	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FunctionDefinitionDataType.java
 DONE	trait	52	1066	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionSignatureImpl.java
 DONE	trait	51	1288	66	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/PointerDataType.java
-TODO	trait	50	1245	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeInstance.java
+DONE	trait	50	1245	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeInstance.java
 TODO	trait	49	1276	66	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataUtilities.java
 TODO	trait	48	1244	55	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DataTypeImpl.java
 TODO	trait	47	1254	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/DefaultDataType.java
