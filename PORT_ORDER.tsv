@@ -20,7 +20,7 @@ DONE	trait	60	40	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/ap
 DONE	trait	59	69	21	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ParserWalker.java
 DONE	trait	58	36	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/ContextChange.java
 DONE	trait	57	57	20	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/Constructor.java
-TODO	trait	56	41	97	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/PcodeEmit.java
+DONE	trait	56	41	97	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/processors/sleigh/PcodeEmit.java
 TODO	trait	55	1067	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/InstructionPcodeOverride.java
 TODO	trait	54	1240	15	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ParameterDefinitionImpl.java
 TODO	trait	53	1243	58	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/FunctionDefinitionDataType.java
