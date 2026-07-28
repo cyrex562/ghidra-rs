@@ -135,7 +135,51 @@ mod tests {
     #[derive(Debug)]
     struct MockSolver;
 
-    impl RecursiveDescentSolver for MockSolver {}
+    impl RecursiveDescentSolver for MockSolver {
+        fn solve(
+            &self,
+            _factory: &dyn crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyResolutionFactory,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+            _goal: crate::app::seam_stubs::MaskedLong,
+            _vals: &HashMap<String, i64>,
+            _cur: &dyn AssemblyResolvedPatterns,
+            _hints: &std::collections::HashSet<
+                std::sync::Arc<dyn crate::app::plugin::assembler::sleigh::expr::SolverHint>,
+            >,
+            _description: &str,
+        ) -> Result<Box<dyn AssemblyResolution>, crate::app::plugin::assembler::sleigh::expr::NeedsBackfillException>
+        {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_value(
+            &self,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+            _vals: &HashMap<String, i64>,
+            _cur: &dyn AssemblyResolvedPatterns,
+        ) -> Result<
+            Option<crate::app::seam_stubs::MaskedLong>,
+            crate::app::plugin::assembler::sleigh::expr::NeedsBackfillException,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn get_instruction_length(
+            &self,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+        ) -> i32 {
+            unimplemented!("not exercised by these tests")
+        }
+
+        fn value_for_resolution(
+            &self,
+            _exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+            _vals: &HashMap<String, i64>,
+            _rc: &dyn AssemblyResolvedPatterns,
+        ) -> crate::app::seam_stubs::MaskedLong {
+            unimplemented!("not exercised by these tests")
+        }
+    }
 
     /// A backfill record awaiting a single symbol (mimics needing `inst_next`).
     #[derive(Debug)]

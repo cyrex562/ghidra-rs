@@ -447,9 +447,62 @@ pub trait ConstructState: Send + Sync {
 
 /// Placeholder for `ghidra.app.plugin.assembler.sleigh.expr.RecursiveDescentSolver`, referenced by
 /// [`AssemblyResolvedBackfill::solve`](crate::app::plugin::assembler::sleigh::sem::AssemblyResolvedBackfill::solve)
-/// before the real class is ported. `AssemblyResolvedBackfill::solve` only ever passes this type
-/// through as a parameter, so no members are needed yet.
-pub trait RecursiveDescentSolver {}
+/// (which only ever passes this type through as a parameter) and by
+/// [`AbstractBinaryExpressionSolver`](crate::app::plugin::assembler::sleigh::expr::AbstractBinaryExpressionSolver)
+/// before the real class is ported. The Java class's `solve`/`getValue`/`getInstructionLength`/
+/// `valueForResolution` are all concrete methods that resolve the registered
+/// `AbstractExpressionSolver` for the expression's runtime class and delegate to it -- the same
+/// four operations `AbstractExpressionSolver` itself declares, just re-dispatched by expression
+/// type instead of implemented directly. `AbstractBinaryExpressionSolver`'s inherited `solver`
+/// field (the general solver assigned during `register()`) is read by exactly these four methods
+/// to recurse into an expression's left/right subexpressions, so this placeholder grows to cover
+/// them; the registry-keyed-by-class-token `register`/`getRegistered` machinery behind them is not
+/// modeled, since no current caller needs it.
+pub trait RecursiveDescentSolver {
+    /// Mirrors the protected `RecursiveDescentSolver.solve(AbstractAssemblyResolutionFactory,
+    /// PatternExpression, MaskedLong, Map<String, Long>, AssemblyResolvedPatterns,
+    /// Set<SolverHint>, String)`.
+    fn solve(
+        &self,
+        factory: &dyn crate::app::plugin::assembler::sleigh::sem::AbstractAssemblyResolutionFactory,
+        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+        goal: MaskedLong,
+        vals: &std::collections::HashMap<String, i64>,
+        cur: &dyn AssemblyResolvedPatterns,
+        hints: &std::collections::HashSet<
+            std::sync::Arc<dyn crate::app::plugin::assembler::sleigh::expr::SolverHint>,
+        >,
+        description: &str,
+    ) -> Result<
+        Box<dyn crate::app::plugin::assembler::sleigh::sem::AssemblyResolution>,
+        crate::app::plugin::assembler::sleigh::expr::NeedsBackfillException,
+    >;
+
+    /// Mirrors the protected `RecursiveDescentSolver.getValue(PatternExpression, Map<String,
+    /// Long>, AssemblyResolvedPatterns)`. Returns `Ok(None)` if the expression depends on a
+    /// variable, mirroring Java's nullable return.
+    fn get_value(
+        &self,
+        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+        vals: &std::collections::HashMap<String, i64>,
+        cur: &dyn AssemblyResolvedPatterns,
+    ) -> Result<Option<MaskedLong>, crate::app::plugin::assembler::sleigh::expr::NeedsBackfillException>;
+
+    /// Mirrors `RecursiveDescentSolver.getInstructionLength(PatternExpression)`.
+    fn get_instruction_length(
+        &self,
+        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+    ) -> i32;
+
+    /// Mirrors `RecursiveDescentSolver.valueForResolution(PatternExpression, Map<String, Long>,
+    /// AssemblyResolvedPatterns)`.
+    fn value_for_resolution(
+        &self,
+        exp: &crate::program::model::lang::sleigh::expression::PatternExpression,
+        vals: &std::collections::HashMap<String, i64>,
+        rc: &dyn AssemblyResolvedPatterns,
+    ) -> MaskedLong;
+}
 
 /// Placeholder for `ghidra.app.plugin.languages.sleigh.SleighConstructorTraversal`, referenced by
 /// [`SleighLanguages`](crate::app::plugin::languages::sleigh::sleigh_languages::SleighLanguages)
@@ -616,6 +669,33 @@ impl MaskedLong {
     /// Mirrors `MaskedLong.fromMaskAndValue(long, long)`.
     pub fn from_mask_and_value(mask: i64, val: i64) -> Self {
         Self { mask, val }
+    }
+
+    /// Mirrors `MaskedLong.isFullyDefined()`: true iff there are no undefined bits. Added for
+    /// [`AbstractBinaryExpressionSolver`](
+    /// crate::app::plugin::assembler::sleigh::expr::AbstractBinaryExpressionSolver), which checks
+    /// this on each operand before treating it as a known constant.
+    pub fn is_fully_defined(&self) -> bool {
+        self.mask == -1
+    }
+
+    /// Mirrors `MaskedLong.agrees(MaskedLong)`: true iff the two values' defined bit positions
+    /// (where both masks have a defined bit) match. Added for
+    /// [`AbstractBinaryExpressionSolver`](
+    /// crate::app::plugin::assembler::sleigh::expr::AbstractBinaryExpressionSolver)'s constant-vs-goal
+    /// check (`ConstantValueSolver.checkConstAgrees`, not yet ported as its own type).
+    pub fn agrees(&self, that: MaskedLong) -> bool {
+        let both_mask = self.mask & that.mask;
+        (self.val & both_mask) == (that.val & both_mask)
+    }
+}
+
+impl std::fmt::Display for MaskedLong {
+    /// A simplified stand-in for `MaskedLong.toString()` (which formats via
+    /// `NumericUtilities.convertMaskedValueToHexString`, not modeled on this minimal placeholder):
+    /// used only to interpolate a value into error-resolution messages.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#x}:{:#x}", self.val, self.mask)
     }
 }
 

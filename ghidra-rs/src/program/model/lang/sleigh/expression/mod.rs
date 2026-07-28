@@ -27,6 +27,27 @@ pub enum PatternExpression {
 }
 
 impl PatternExpression {
+    /// Returns the left/right operands if this is one of the binary-operator variants (i.e. this
+    /// crate's flattened counterpart to a `BinaryExpression` subclass instance), `None`
+    /// otherwise. Mirrors `BinaryExpression.getLeft()`/`getRight()`, used generically by
+    /// [`AbstractBinaryExpressionSolver`](
+    /// crate::app::plugin::assembler::sleigh::expr::AbstractBinaryExpressionSolver) across every
+    /// binary operator without needing a distinct `BinaryExpression` type to range over.
+    pub fn binary_operands(&self) -> Option<(&PatternExpression, &PatternExpression)> {
+        match self {
+            Self::Plus(l, r)
+            | Self::Sub(l, r)
+            | Self::Mult(l, r)
+            | Self::LeftShift(l, r)
+            | Self::RightShift(l, r)
+            | Self::And(l, r)
+            | Self::Or(l, r)
+            | Self::Xor(l, r)
+            | Self::Div(l, r) => Some((l, r)),
+            _ => None,
+        }
+    }
+
     pub fn get_value(&self, walker: &ParserWalker) -> Result<i64, MemoryAccessException> {
         match self {
             Self::TokenField(f) => f.get_value(walker),
