@@ -374,3 +374,4 @@ ts	stub_class	referenced_by
 2026-07-28T06:00:00Z	DumbMemBufferImpl	DataUtilities
 2026-07-28T06:30:00Z	AlignedComponentPacker	AlignedStructurePacker
 2026-07-28T06:30:00Z	DataOrganizationImpl.getAlignedOffset	AlignedStructurePacker
+2026-07-28T07:00:00Z	BitFieldDataType	DataOrganizationImpl
