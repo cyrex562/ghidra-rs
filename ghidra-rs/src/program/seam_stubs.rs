@@ -148,6 +148,20 @@ pub trait VariableStorage {
         None
     }
 
+    /// Stands in for `VariableStorage.isForcedIndirect()`. Defaults to `false` (grown for
+    /// [`ParameterImpl`](crate::program::model::listing::parameter_impl::ParameterImpl); see
+    /// `STUBS.tsv`).
+    fn is_forced_indirect(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `VariableStorage.isAutoStorage()`. Defaults to `false` (grown for
+    /// [`ParameterImpl`](crate::program::model::listing::parameter_impl::ParameterImpl); see
+    /// `STUBS.tsv`).
+    fn is_auto_storage(&self) -> bool {
+        false
+    }
+
     /// Stands in for the `new VariableStorage(ProgramArchitecture, Varnode...)` family of
     /// constructors used throughout `VariableUtilities` to build resized/derived storage.
     /// Defaults to a fresh [`VarnodeListStorage`] backed by `varnodes`, which is enough for

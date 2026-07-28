@@ -43,6 +43,7 @@ pub mod listing;
 pub mod local_variable;
 pub mod operand_representation_list;
 pub mod parameter;
+pub mod parameter_impl;
 pub mod program;
 pub mod program_change_set;
 pub mod program_context;

@@ -375,3 +375,4 @@ ts	stub_class	referenced_by
 2026-07-28T06:30:00Z	AlignedComponentPacker	AlignedStructurePacker
 2026-07-28T06:30:00Z	DataOrganizationImpl.getAlignedOffset	AlignedStructurePacker
 2026-07-28T07:00:00Z	BitFieldDataType	DataOrganizationImpl
+2026-07-28T07:30:00Z	VariableStorage(grown)	ParameterImpl
