@@ -39,7 +39,7 @@ DONE	trait	41	1071	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	40	1066	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/AutoParameterImpl.java
 DONE	trait	38	41	64	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/SimpleBlockModel.java
 DONE	trait	36	328	275	util	Ghidra/Features/Base/src/main/java/ghidra/util/UndefinedFunction.java
-TODO	trait	35	301	14	util	Ghidra/Features/Base/src/main/java/ghidra/util/StackFrameImpl.java
+DONE	trait	35	301	14	util	Ghidra/Features/Base/src/main/java/ghidra/util/StackFrameImpl.java
 TODO	trait	34	1271	108	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StringDataInstance.java
 TODO	trait	33	1259	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractStringDataType.java
 TODO	trait	32	1255	21	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractIntegerDataType.java
