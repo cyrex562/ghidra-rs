@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	33	1259	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractStringDataType.java
+DONE	trait	33	1259	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractStringDataType.java
 TODO	trait	32	1255	19	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractIntegerDataType.java
 TODO	trait	31	1258	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractUnsignedIntegerDataType.java
 TODO	trait	30	1289	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ByteDataType.java
