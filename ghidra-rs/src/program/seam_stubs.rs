@@ -162,6 +162,23 @@ pub trait VariableStorage {
         false
     }
 
+    /// Stands in for `VariableStorage.isStackStorage()`. Defaults to "single varnode located in
+    /// the stack address space", matching the pattern used by
+    /// [`is_unique_storage`](Self::is_unique_storage)/[`is_register_storage`](Self::is_register_storage).
+    /// Added for
+    /// [`SymbolUtilities`](crate::program::model::symbol::symbol_utilities::SymbolUtilities).
+    fn is_stack_storage(&self) -> bool {
+        matches!(self.get_varnodes().as_slice(), [vn] if vn.get_address().is_stack_address())
+    }
+
+    /// Stands in for `VariableStorage.getStackOffset()`: the raw offset of the first storage
+    /// varnode's address. Only meaningful when [`is_stack_storage`](Self::is_stack_storage) is
+    /// `true`. Added for
+    /// [`SymbolUtilities`](crate::program::model::symbol::symbol_utilities::SymbolUtilities).
+    fn get_stack_offset(&self) -> i32 {
+        self.get_first_varnode().map(|vn| vn.get_offset() as i32).unwrap_or(0)
+    }
+
     /// Stands in for the `new VariableStorage(ProgramArchitecture, Varnode...)` family of
     /// constructors used throughout `VariableUtilities` to build resized/derived storage.
     /// Defaults to a fresh [`VarnodeListStorage`] backed by `varnodes`, which is enough for

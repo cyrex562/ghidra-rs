@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::program::model::address::Address;
 use crate::program::model::listing::{CodeUnit, Data};
 use crate::program::model::symbol::{
-    get_default_external_name, ExternalLocation, Namespace, SourceType, Symbol, SymbolType,
+    DefaultSymbolUtilities, ExternalLocation, Namespace, SourceType, Symbol, SymbolType, SymbolUtilities,
 };
 use crate::program::util::ProgramLocation;
 
@@ -168,7 +168,8 @@ pub trait CodeSymbol: Symbol {
     fn do_get_name(&self) -> String {
         if self.get_source() == SourceType::Default && self.is_external() {
             if let Some(addr) = self.external_program_address() {
-                return get_default_external_name(&addr, self.external_data_type_prefix().as_deref());
+                return DefaultSymbolUtilities
+                    .get_default_external_name(&addr, self.external_data_type_prefix().as_deref());
             }
         }
         self.base_do_get_name()
@@ -665,13 +666,13 @@ mod tests {
 
         assert_eq!(
             sym.do_get_name(),
-            get_default_external_name(&test_address(0x1000), None)
+            DefaultSymbolUtilities.get_default_external_name(&test_address(0x1000), None)
         );
 
         sym.external_data_type_prefix = Some("char".to_string());
         assert_eq!(
             sym.do_get_name(),
-            get_default_external_name(&test_address(0x1000), Some("char"))
+            DefaultSymbolUtilities.get_default_external_name(&test_address(0x1000), Some("char"))
         );
     }
 

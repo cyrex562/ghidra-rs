@@ -3,8 +3,8 @@ use std::sync::Arc;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Function;
 use crate::program::model::symbol::{
-    get_default_external_function_name, Namespace, Reference, SetParentNamespaceError, Symbol,
-    SourceType, SymbolType, ThunkReference,
+    DefaultSymbolUtilities, Namespace, Reference, SetParentNamespaceError, Symbol,
+    SourceType, SymbolType, SymbolUtilities, ThunkReference,
 };
 use crate::program::util::ProgramLocation;
 use crate::util::task::TaskMonitor;
@@ -105,7 +105,7 @@ pub trait FunctionSymbol: Symbol {
         }
         if self.is_external() {
             if let Some(addr) = self.external_program_address() {
-                return get_default_external_function_name(&addr);
+                return DefaultSymbolUtilities.get_default_external_function_name(&addr);
             }
         }
         if let Some(thunked) = self.get_thunked_symbol() {
@@ -115,7 +115,7 @@ pub trait FunctionSymbol: Symbol {
             }
             return thunk_name;
         }
-        crate::program::model::symbol::get_default_function_name(&self.get_address())
+        DefaultSymbolUtilities.get_default_function_name(&self.get_address())
     }
 
     /// Stands in for `FunctionSymbol.doGetParentNamespace()`. When this is a default-named thunk,
@@ -414,7 +414,7 @@ mod tests {
         let sym = plain_function_symbol("ignored_when_default", SourceType::Default);
         assert_eq!(
             sym.do_get_name(),
-            crate::program::model::symbol::get_default_function_name(&test_address(0x1000))
+            DefaultSymbolUtilities.get_default_function_name(&test_address(0x1000))
         );
     }
 

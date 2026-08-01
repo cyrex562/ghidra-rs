@@ -22,7 +22,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::program::model::address::GLOBAL_NAMESPACE_NAME;
-use crate::program::model::symbol::{Namespace, Symbol, DELIMITER};
+use crate::program::model::symbol::{Namespace, Symbol, SymbolUtilities, DELIMITER};
 
 /// Errors produced constructing a [`SymbolPath`] from a string or list of names.
 ///
@@ -83,7 +83,8 @@ pub trait SymbolPath: Send + Sync {
             .as_list()
             .into_iter()
             .map(|name| {
-                crate::program::model::symbol::replace_invalid_chars(Some(&name), true)
+                crate::program::model::symbol::DefaultSymbolUtilities
+                    .replace_invalid_chars(Some(&name), true)
                     .unwrap_or_default()
             })
             .collect();
