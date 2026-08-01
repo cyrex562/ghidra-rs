@@ -22,7 +22,7 @@ mod tests {
     struct MockCodeBlock;
 
     impl CodeBlock for MockCodeBlock {
-        fn get_model(&self) -> Box<dyn crate::program::seam_stubs::CodeBlockModel> {
+        fn get_model(&self) -> Box<dyn crate::program::model::block::CodeBlockModel> {
             unimplemented!()
         }
         fn get_destinations(

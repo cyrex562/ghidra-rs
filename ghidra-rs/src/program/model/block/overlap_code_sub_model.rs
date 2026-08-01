@@ -48,9 +48,10 @@ mod tests {
     use crate::program::model::symbol::Namespace;
     use crate::program::model::symbol::SourceType;
     use crate::program::model::util::PropertyMap;
+    use crate::program::model::block::code_block_model::CodeBlockModel;
     use crate::program::seam_stubs::{
-        CodeBlockModel, CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType,
-        DataIterator, FunctionIterator, InstructionIterator, InstructionSet, MemBuffer,
+        CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
+        FunctionIterator, InstructionIterator, InstructionSet, MemBuffer,
     };
     use crate::program::util::CodeUnitInsertionException;
     use crate::util::exception::{CancelledException, DuplicateNameException};
@@ -440,6 +441,32 @@ mod tests {
     }
 
     impl CodeBlockModel for OModel {
+        fn get_name(&self) -> String {
+            unimplemented!()
+        }
+        fn get_code_block_at(
+            &self,
+            _addr: &Address,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Option<Box<dyn crate::program::seam_stubs::CodeBlock>>, CancelledException> {
+            unimplemented!()
+        }
+        fn get_first_code_block_containing(
+            &self,
+            _addr: &Address,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Option<Box<dyn crate::program::seam_stubs::CodeBlock>>, CancelledException> {
+            unimplemented!()
+        }
+        fn get_code_blocks(
+            &self,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<
+            Box<dyn crate::program::model::block::code_block_iterator::CodeBlockIterator>,
+            CancelledException,
+        > {
+            unimplemented!()
+        }
         fn get_basic_block_model(&self) -> Box<dyn CodeBlockModel> {
             unimplemented!()
         }
@@ -451,6 +478,52 @@ mod tests {
             Box<dyn crate::program::model::block::code_block_iterator::CodeBlockIterator>,
             CancelledException,
         > {
+            unimplemented!()
+        }
+        fn get_sources(
+            &self,
+            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<
+            Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
+            CancelledException,
+        > {
+            unimplemented!()
+        }
+        fn get_num_sources(
+            &self,
+            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<i32, CancelledException> {
+            unimplemented!()
+        }
+        fn get_destinations(
+            &self,
+            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<
+            Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
+            CancelledException,
+        > {
+            unimplemented!()
+        }
+        fn get_num_destinations(
+            &self,
+            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<i32, CancelledException> {
+            unimplemented!()
+        }
+        fn get_flow_type(
+            &self,
+            _block: &dyn crate::program::seam_stubs::CodeBlock,
+        ) -> Box<dyn crate::program::seam_stubs::FlowType> {
+            unimplemented!()
+        }
+        fn get_block_name(&self, _block: &dyn crate::program::seam_stubs::CodeBlock) -> String {
+            unimplemented!()
+        }
+        fn get_program(&self) -> Arc<dyn crate::program::model::listing::Program> {
             unimplemented!()
         }
     }

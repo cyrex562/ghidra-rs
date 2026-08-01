@@ -555,7 +555,8 @@ mod tests {
     use crate::program::model::listing::function::SetFunctionNameError;
     use crate::program::model::listing::FunctionUpdateType;
     use crate::program::model::symbol::SymbolType;
-    use crate::program::seam_stubs::{CodeBlockModel, FlowType};
+    use crate::program::model::block::code_block_model::CodeBlockModel;
+    use crate::program::seam_stubs::FlowType;
     use crate::util::task::DummyMonitor;
 
     fn mock_space() -> Arc<AddressSpace> {
@@ -1070,6 +1071,29 @@ mod tests {
 
     struct MockCodeBlockModel;
     impl CodeBlockModel for MockCodeBlockModel {
+        fn get_name(&self) -> String {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_code_block_at(
+            &self,
+            _addr: &Address,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Option<Box<dyn CodeBlock>>, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_first_code_block_containing(
+            &self,
+            _addr: &Address,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Option<Box<dyn CodeBlock>>, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_code_blocks(
+            &self,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Box<dyn crate::program::model::block::code_block_iterator::CodeBlockIterator>, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
         fn get_basic_block_model(&self) -> Box<dyn CodeBlockModel> {
             unimplemented!("not needed for this smoke test")
         }
@@ -1078,6 +1102,43 @@ mod tests {
             _block: &dyn CodeBlock,
             _monitor: &dyn TaskMonitor,
         ) -> Result<Box<dyn crate::program::model::block::code_block_iterator::CodeBlockIterator>, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_sources(
+            &self,
+            _block: &dyn CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_num_sources(
+            &self,
+            _block: &dyn CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<i32, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_destinations(
+            &self,
+            _block: &dyn CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_num_destinations(
+            &self,
+            _block: &dyn CodeBlock,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<i32, CancelledException> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_flow_type(&self, _block: &dyn CodeBlock) -> Box<dyn FlowType> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_block_name(&self, _block: &dyn CodeBlock) -> String {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn get_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::Program> {
             unimplemented!("not needed for this smoke test")
         }
     }

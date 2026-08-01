@@ -1,4 +1,5 @@
 pub mod code_block_iterator;
+pub mod code_block_model;
 pub mod code_block_reference;
 pub mod code_block_reference_iterator;
 pub mod mult_ent_sub_model;
@@ -9,6 +10,7 @@ pub mod subroutine_block_model;
 pub mod subroutine_dest_reference_iterator;
 
 pub use code_block_iterator::{CodeBlockIter, CodeBlockIterator};
+pub use code_block_model::CodeBlockModel;
 pub use code_block_reference::CodeBlockReference;
 pub use code_block_reference_iterator::CodeBlockReferenceIterator;
 pub use mult_ent_sub_model::MultEntSubModel;
