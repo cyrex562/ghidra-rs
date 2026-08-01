@@ -51,6 +51,44 @@ pub trait AbstractPdb {
     fn pdb_reader_options(&self) -> &PdbReaderOptions;
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.C13ChecksumType`, referenced by
+/// [`C13FileChecksum::to_display_string`](crate::format::pdb2::pdbreader::c13_file_checksum::C13FileChecksum::to_display_string)
+/// before the real enum is ported. Models only the `fromValue` lookup and the `toString()`
+/// display name that the checksum's display string needs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum C13ChecksumType {
+    UnknownChecksumType,
+    NoneChecksumType,
+    Md5ChecksumType,
+    Sha1ChecksumType,
+    Sha256ChecksumType,
+}
+
+impl C13ChecksumType {
+    pub fn from_value(val: i32) -> Self {
+        match val {
+            0x00 => C13ChecksumType::NoneChecksumType,
+            0x01 => C13ChecksumType::Md5ChecksumType,
+            0x02 => C13ChecksumType::Sha1ChecksumType,
+            0x03 => C13ChecksumType::Sha256ChecksumType,
+            _ => C13ChecksumType::UnknownChecksumType,
+        }
+    }
+}
+
+impl std::fmt::Display for C13ChecksumType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            C13ChecksumType::UnknownChecksumType => "UnknownChecksumType",
+            C13ChecksumType::NoneChecksumType => "NoneChecksumType",
+            C13ChecksumType::Md5ChecksumType => "Md5ChecksumType",
+            C13ChecksumType::Sha1ChecksumType => "Sha1ChecksumType",
+            C13ChecksumType::Sha256ChecksumType => "Sha256ChecksumType",
+        };
+        f.write_str(name)
+    }
+}
+
 /// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.RecordNumber`, referenced by
 /// [`MsType`](crate::format::pdb2::pdbreader::type::ms_type::MsType) before the real class is
 /// ported. Models only the `NO_TYPE` sentinel that `MsType::record_number`'s default needs.
