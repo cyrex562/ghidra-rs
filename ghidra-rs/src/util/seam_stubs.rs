@@ -268,6 +268,55 @@ pub trait ExtensionsLike {
     fn report_duplicate_extensions(&self);
 }
 
+/// Placeholder for `generic.jar.ApplicationModule`, needed by
+/// [`crate::util::ghidra_jar_builder::GhidraJarBuilder`].
+///
+/// The real `ApplicationModule` is a concrete, `Comparable` class wrapping a module directory and
+/// its application root, computed entirely from the module directory's parent folder name (plus a
+/// `Module.manifest`-driven `excludeFromGhidraJar` check). Only the name, category predicates, and
+/// exclusion check `GhidraJarBuilder` consumes are declared here; the file-path-derived
+/// construction, `getModuleDir()`/`getApplicationRoot()`/`getRelativePath()` accessors, and
+/// `compareTo` ordering (reproduced directly against this trait's predicates by
+/// `GhidraJarBuilder`'s own module-sorting helper, since a placeholder trait can't carry
+/// `Ord`-through-trait-object) are left to the real port.
+pub trait ApplicationModuleLike {
+    /// Returns the module's name (its directory name), mirroring `ApplicationModule.getName()`.
+    fn name(&self) -> String;
+
+    /// Whether this module lives under an `Extensions` directory, mirroring
+    /// `ApplicationModule.isExtension()`.
+    fn is_extension(&self) -> bool;
+
+    /// Whether this module lives under a `Framework` directory, mirroring
+    /// `ApplicationModule.isFramework()`.
+    fn is_framework(&self) -> bool;
+
+    /// Whether this module lives under a `Debug` directory, mirroring
+    /// `ApplicationModule.isDebug()`.
+    fn is_debug(&self) -> bool;
+
+    /// Whether this module lives under a `Processors` directory, mirroring
+    /// `ApplicationModule.isProcessor()`.
+    fn is_processor(&self) -> bool;
+
+    /// Whether this module lives under a `Features` directory, mirroring
+    /// `ApplicationModule.isFeature()`.
+    fn is_feature(&self) -> bool;
+
+    /// Whether this module lives under a `Configurations` directory, mirroring
+    /// `ApplicationModule.isConfiguration()`.
+    fn is_configuration(&self) -> bool;
+
+    /// Whether this module lives under a `GPL` directory, mirroring
+    /// `ApplicationModule.isGPL()`.
+    fn is_gpl(&self) -> bool;
+
+    /// Whether the module's `Module.manifest` marks it excluded from the standalone Ghidra jar,
+    /// mirroring `ApplicationModule.excludeFromGhidraJar()` (`false` on any read error, matching
+    /// the Java method's caught-`IOException` fallback).
+    fn exclude_from_ghidra_jar(&self) -> bool;
+}
+
 /// Placeholder for `ghidra.util.UnionAddressRangeIterator`, needed by
 /// [`crate::util::address_range_iterators::AddressRangeIteratorFactory`].
 ///
