@@ -38,7 +38,7 @@ use crate::program::model::listing::{
     Function, FunctionSignature, FunctionUpdateType, Parameter, Program, Variable,
 };
 use crate::program::model::pcode::{OpCode, PcodeOp, Varnode};
-use crate::program::model::symbol::{SourceType, Symbol};
+use crate::program::model::symbol::{SourceType, Symbol, SymbolUtilities};
 use crate::program::model::pcode::high_function::HighFunction;
 use crate::program::seam_stubs::{self, DataTypeSymbol, HighSymbol};
 use crate::util::exception::{AssertException, DuplicateNameException, InvalidInputException};
@@ -1044,7 +1044,9 @@ fn update_db_variable_impl(
         Some(name) => Some(name.to_string()),
         None => {
             let symbol_name = high_symbol.get_name();
-            if crate::program::model::symbol::is_dynamic_symbol_pattern(&symbol_name, true) {
+            if crate::program::model::symbol::DefaultSymbolUtilities
+                .is_dynamic_symbol_pattern(&symbol_name, true)
+            {
                 None
             } else {
                 Some(symbol_name)
