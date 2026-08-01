@@ -36,8 +36,9 @@ use crate::program::model::pcode::ids::{
     ATTRIB_FIRST, ATTRIB_LAST, ATTRIB_LOGICALSIZE, ATTRIB_OFFSET, ATTRIB_PIECE, ATTRIB_SIZE,
     ATTRIB_SPACE, ATTRIB_VALUE, ELEM_ADDR, ELEM_IOP, ELEM_SPACEID,
 };
+use crate::program::model::pcode::pcode_factory::PcodeFactory;
 use crate::program::model::pcode::Varnode;
-use crate::program::seam_stubs::{PcodeFactory, PlaceholderVariableStorage, VarnodeListStorage};
+use crate::program::seam_stubs::{PlaceholderVariableStorage, VarnodeListStorage};
     use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::xml::spec_xml_utils::{decode_int, decode_long};
 use crate::util::xml::xml_element::XmlElement;
@@ -425,7 +426,9 @@ pub fn decode_storage_from_attributes(
     } else {
         decoder.rewind_attributes();
         let (pieces, _logical_size) = decode_varnode_pieces(decoder)?;
-        Ok(pcode_factory.get_join_storage(pieces))
+        pcode_factory
+            .get_join_storage(pieces)
+            .map_err(|e| DecoderException::with_cause("failed to build join storage", e))
     }
 }
 
@@ -683,6 +686,59 @@ mod tests {
 
     fn join_space() -> Arc<AddressSpace> {
         AddressSpace::new("join", 32, 1, AddressSpaceType::Join, 1)
+    }
+
+    /// Minimal `PcodeFactory` mock for tests that only exercise
+    /// `decode_storage_from_attributes`'s single-varnode path, which only ever calls the
+    /// defaulted [`PcodeFactory::get_join_storage`]; every other member is unreachable from these
+    /// tests.
+    struct MockPcodeFactory;
+    impl PcodeFactory for MockPcodeFactory {
+        fn get_address_factory(&self) -> Arc<dyn crate::program::model::address::AddressFactory> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_data_type_manager(
+            &self,
+        ) -> Arc<dyn crate::program::model::pcode::pcode_data_type_manager::PcodeDataTypeManager>
+        {
+            unimplemented!("not exercised by these tests")
+        }
+        fn new_varnode_with_ref(&self, _sz: i32, _addr: Address, _ref_id: i32) -> Varnode {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_join_address(&self, _storage: &dyn VariableStorage) -> Option<Address> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn build_storage(
+            &self,
+            _vn: &Varnode,
+        ) -> Result<Box<dyn VariableStorage>, crate::util::exception::InvalidInputException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_ref(&self, _refid: i32) -> Option<Varnode> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_op_ref(
+            &self,
+            _refid: i32,
+        ) -> Option<crate::program::model::pcode::PcodeOp> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_symbol(
+            &self,
+            _symbol_id: i64,
+        ) -> Option<Arc<dyn crate::program::seam_stubs::HighSymbol>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn new_op(
+            &self,
+            _sq: crate::program::model::pcode::SequenceNumber,
+            _opc: crate::program::model::pcode::OpCode,
+            _inputs: Vec<Varnode>,
+            _output: Option<Varnode>,
+        ) -> crate::program::model::pcode::PcodeOp {
+            unimplemented!("not exercised by these tests")
+        }
     }
 
     // --- DefaultAddressXml + trait object-safety ---
@@ -1028,8 +1084,6 @@ mod tests {
             ELEM_ADDR.id,
             vec![(ATTRIB_SPACE.id, MockAttrValue::Space(space.clone())), (ATTRIB_OFFSET.id, MockAttrValue::UInt(0x8))],
         );
-        struct MockPcodeFactory;
-        impl PcodeFactory for MockPcodeFactory {}
 
         let storage = decode_storage_from_attributes(4, &decoder, &MockPcodeFactory).unwrap();
         assert_eq!(storage.size(), 4);
@@ -1041,8 +1095,6 @@ mod tests {
         let space = ram_space();
         let factory = Arc::new(DefaultAddressFactory::new(vec![space]));
         let decoder = MockDecoder::new(factory, ELEM_ADDR.id, vec![]);
-        struct MockPcodeFactory;
-        impl PcodeFactory for MockPcodeFactory {}
 
         let storage = decode_storage_from_attributes(4, &decoder, &MockPcodeFactory).unwrap();
         assert!(!storage.is_valid());
