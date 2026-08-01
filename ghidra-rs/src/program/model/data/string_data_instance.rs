@@ -786,7 +786,12 @@ fn decode_utf32_bytes(bytes: &[u8], big_endian: bool) -> Option<String> {
 
 /// Encodes `value` using one of the charsets this crate supports without a full
 /// `java.nio.charset.Charset` registry. See the module docs.
-fn encode_string(value: &str, charset_name: &str) -> Result<Vec<u8>, String> {
+///
+/// `pub(crate)` so [`AbstractStringDataType`](super::abstract_string_data_type) can reuse it for
+/// its own `encode_replacement_from_char_value`/`encode_replacement_from_char_representation`
+/// implementations, which (per Java) skip the layout/padding wrapping
+/// [`StringDataInstance::encode_replacement_from_string_value`] applies.
+pub(crate) fn encode_string(value: &str, charset_name: &str) -> Result<Vec<u8>, String> {
     match charset_name {
         "US-ASCII" => {
             if value.chars().all(|c| c.is_ascii()) {
