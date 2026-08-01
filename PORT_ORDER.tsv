@@ -16,7 +16,7 @@ DONE	trait	17	69	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidr
 DONE	trait	16	682	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefType.java
 DONE	trait	15	581	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/DataRefType.java
 DONE	trait	14	1035	17	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GlobalSymbol.java
-TODO	trait	13	1047	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GlobalNamespace.java
+DONE	trait	13	1047	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GlobalNamespace.java
 TODO	trait	12	27	30	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceFileManager.java
 TODO	trait	11	28	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntry.java
 TODO	trait	9	266	61	framework	Ghidra/Framework/Generic/src/main/java/ghidra/framework/Application.java
