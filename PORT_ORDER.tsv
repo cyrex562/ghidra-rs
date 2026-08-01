@@ -34,7 +34,7 @@ PARK	trait	0	1380	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghid
 DONE	trait	13	475	3	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13FileChecksum.java
 PARK	trait	11	482	15	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Type.java
 PARK	trait	10	491	15	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Section.java
-TODO	trait	13	479	4	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/ModuleInformation.java
+DONE	trait	13	479	4	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/ModuleInformation.java
 TODO	trait	15	473	2	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/DebugHeader.java
 TODO	trait	20	22	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/msf/Msf.java
 TODO	trait	31	37	3	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/MDDataType.java
