@@ -52,8 +52,7 @@ use crate::framework::store::LockException;
 use crate::program::database::sourcemap::SourceFile;
 use crate::program::database::ManagerDB;
 use crate::program::model::address::{Address, AddressOverflowException, AddressRange, AddressSetView};
-use crate::program::model::sourcemap::SourceMapEntryIterator;
-use crate::program::seam_stubs::SourceMapEntry;
+use crate::program::model::sourcemap::{SourceMapEntry, SourceMapEntryIterator};
 
 /// Error produced by [`SourceFileManagerDB::add_source_map_entry`], mirroring the Java method's
 /// `throws LockException, AddressOverflowException`.
@@ -229,6 +228,12 @@ mod tests {
                 return None;
             }
             AddressRange::from_start_len(self.base_address.clone(), self.length as u64).ok()
+        }
+
+        fn compare_to(&self, other: &dyn SourceMapEntry) -> std::cmp::Ordering {
+            self.base_address
+                .cmp(&other.get_base_address())
+                .then_with(|| self.line_number.cmp(&other.get_line_number()))
         }
     }
 

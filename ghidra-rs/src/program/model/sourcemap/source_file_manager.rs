@@ -37,8 +37,7 @@ use std::sync::Arc;
 use crate::framework::store::LockException;
 use crate::program::database::sourcemap::{AddSourceMapEntryError, SourceFile};
 use crate::program::model::address::{Address, AddressRange, AddressSetView};
-use crate::program::model::sourcemap::SourceMapEntryIterator;
-use crate::program::seam_stubs::SourceMapEntry;
+use crate::program::model::sourcemap::{SourceMapEntry, SourceMapEntryIterator};
 
 /// Manages [`SourceFile`]s and [`SourceMapEntry`]s for a program.
 ///
@@ -202,6 +201,12 @@ mod tests {
                 return None;
             }
             AddressRange::from_start_len(self.base_address.clone(), self.length as u64).ok()
+        }
+
+        fn compare_to(&self, other: &dyn SourceMapEntry) -> std::cmp::Ordering {
+            self.base_address
+                .cmp(&other.get_base_address())
+                .then_with(|| self.line_number.cmp(&other.get_line_number()))
         }
     }
 

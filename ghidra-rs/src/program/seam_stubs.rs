@@ -33,7 +33,6 @@ use crate::program::model::block::code_block_reference_iterator::CodeBlockRefere
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
 use crate::program::model::symbol::{Namespace, SetParentNamespaceError, Symbol};
-use crate::program::database::sourcemap::SourceFile;
 use crate::program::util::language_translator::LanguageTranslator;
 use crate::util::exception::CancelledException;
 use std::any::Any;
@@ -2370,29 +2369,6 @@ pub trait GhidraApplicationLayout {}
 pub trait GhidraLaunchable {
     /// Stands in for `GhidraLaunchable.launch(GhidraApplicationLayout, String[])`.
     fn launch(&mut self, layout: &dyn GhidraApplicationLayout, args: &[String]) -> io::Result<()>;
-}
-
-/// Placeholder for `ghidra.program.model.sourcemap.SourceMapEntry`, referenced by
-/// [`SourceMapEntryIterator`](crate::program::model::sourcemap::source_map_entry_iterator::SourceMapEntryIterator)
-/// before the real interface is ported. Exposes the entry's identifying data (line number, source
-/// file, base address, length, and derived range) that the iterator's `Item` type needs; the
-/// `Comparable<SourceMapEntry>` ordering is not needed by the iterator and is left for the real
-/// port.
-pub trait SourceMapEntry {
-    /// Stands in for `SourceMapEntry.getLineNumber()`.
-    fn get_line_number(&self) -> i32;
-
-    /// Stands in for `SourceMapEntry.getSourceFile()`.
-    fn get_source_file(&self) -> SourceFile;
-
-    /// Stands in for `SourceMapEntry.getBaseAddress()`.
-    fn get_base_address(&self) -> Address;
-
-    /// Stands in for `SourceMapEntry.getLength()`.
-    fn get_length(&self) -> i64;
-
-    /// Stands in for `SourceMapEntry.getRange()`; `None` for length-0 entries.
-    fn get_range(&self) -> Option<AddressRange>;
 }
 
 /// Placeholder for `ghidra.program.model.data.AlignedComponentPacker`, referenced by

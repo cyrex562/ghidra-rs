@@ -1,6 +1,6 @@
 //! Port of `ghidra.program.model.sourcemap.SourceMapEntryIterator`.
 
-use crate::program::seam_stubs::SourceMapEntry;
+use crate::program::model::sourcemap::SourceMapEntry;
 use std::sync::Arc;
 
 /// Iterator that returns [`SourceMapEntry`] items.
@@ -95,6 +95,12 @@ mod tests {
                 self.base_address.clone(),
                 mock_address(self.base_address.offset() + 3),
             ))
+        }
+
+        fn compare_to(&self, other: &dyn SourceMapEntry) -> std::cmp::Ordering {
+            self.base_address
+                .cmp(&other.get_base_address())
+                .then_with(|| self.line_number.cmp(&other.get_line_number()))
         }
     }
 
