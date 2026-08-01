@@ -1967,23 +1967,6 @@ pub trait HighSymbol: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.program.model.pcode.PcodeFactory`, referenced by
-/// [`FunctionPrototype`](crate::program::model::pcode::function_prototype::FunctionPrototype)'s
-/// `decode_prototype` before the real class is ported. `FunctionPrototype::decode_prototype` only
-/// ever passes this type through opaquely (the real deserialization logic is left to concrete
-/// implementors), so no members are needed yet.
-///
-/// Grown (see `STUBS.tsv`) to add [`get_join_storage`](Self::get_join_storage), needed by
-/// [`address_xml::decode_storage_from_attributes`](crate::program::model::pcode::address_xml::decode_storage_from_attributes)
-/// before the real class (and its `LocalSymbolMap`-backed storage registry) is ported.
-pub trait PcodeFactory {
-    /// Stands in for `PcodeFactory.getJoinStorage(Varnode[])`: build (or look up) the storage
-    /// representing a logical value assembled from the given physical pieces.
-    fn get_join_storage(&self, pieces: Vec<Varnode>) -> Box<dyn VariableStorage> {
-        Box::new(VarnodeListStorage(pieces))
-    }
-}
-
 /// Placeholder for `ghidra.program.model.pcode.LocalSymbolMap`, referenced by
 /// [`HighFunction`](crate::program::model::pcode::high_function::HighFunction) before the real
 /// class is ported. Exposes only the parameter accessors

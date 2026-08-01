@@ -26,6 +26,7 @@ pub mod patch_encoder;
 pub mod pcode_block_basic;
 pub mod pcode_data_type_manager;
 pub mod pcode_exception;
+pub mod pcode_factory;
 pub mod pcode_override;
 pub mod string_ingest;
 
@@ -72,6 +73,7 @@ pub use pcode_data_type_manager::{
     CoreTypeEntry, PcodeDataTypeManager,
 };
 pub use pcode_exception::PcodeException;
+pub use pcode_factory::PcodeFactory;
 pub use pcode_override::PcodeOverride;
 pub use string_ingest::StringIngest;
 
@@ -387,7 +389,7 @@ impl PartialEq for Varnode {
 
 impl Eq for Varnode {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PcodeOp {
     pub opcode: OpCode,
     pub seqnum: SequenceNumber,

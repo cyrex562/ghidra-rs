@@ -16,8 +16,8 @@
 //!
 //! [`encode_prototype`](FunctionPrototype::encode_prototype) and
 //! [`decode_prototype`](FunctionPrototype::decode_prototype) are declared with the real Java
-//! signatures (`PcodeDataTypeManager` is now its own real trait -- see
-//! `pcode_data_type_manager` -- while `PcodeFactory` remains a placeholder below) but left as
+//! signatures (`PcodeDataTypeManager` and `PcodeFactory` are now both their own real traits -- see
+//! `pcode_data_type_manager` and `pcode_factory`) but left as
 //! required methods with no default body: the real algorithm reads/writes several private fields
 //! (`modellock`, `voidinputlock`, `outputlock`, `custom`, `injectname`) that have no public Java
 //! getter, and also calls the not-yet-ported `AddressXML` utility to (de)serialize storage
@@ -35,7 +35,8 @@ use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::pcode_data_type_manager::PcodeDataTypeManager;
-use crate::program::seam_stubs::{HighSymbol, PcodeFactory, PlaceholderVariableStorage};
+use crate::program::model::pcode::pcode_factory::PcodeFactory;
+use crate::program::seam_stubs::{HighSymbol, PlaceholderVariableStorage};
     use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// High-level prototype of a function based on Varnodes, describing the inputs and outputs of
