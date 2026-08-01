@@ -13,7 +13,7 @@ DONE	trait	21	454	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghi
 DONE	trait	20	585	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefTypeFactory.java
 DONE	trait	18	57	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockModel.java
 DONE	trait	17	69	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlock.java
-TODO	trait	16	682	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefType.java
+DONE	trait	16	682	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefType.java
 TODO	trait	15	581	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/DataRefType.java
 TODO	trait	14	1035	17	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GlobalSymbol.java
 TODO	trait	13	1047	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/GlobalNamespace.java
