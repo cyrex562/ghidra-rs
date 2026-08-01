@@ -6,6 +6,7 @@ pub mod category_db_adapter;
 pub mod component_db_adapter;
 pub mod composite_db;
 pub mod composite_db_adapter;
+pub mod data_type_db;
 pub mod data_type_manager_db;
 pub mod enum_db;
 pub mod enum_db_adapter;
@@ -37,6 +38,7 @@ pub use component_db_adapter::{
     COMPONENT_OFFSET_COL, COMPONENT_ORDINAL_COL, COMPONENT_PARENT_ID_COL, COMPONENT_SIZE_COL,
 };
 pub use composite_db::CompositeDb;
+pub use data_type_db::{prepend_comment, DataTypeDb, DoSetNameRecordError, SetNameError};
 pub use data_type_manager_db::{DataTypeManagerDb, GetCallingConventionIdError};
 pub use enum_db::{max_possible_value, min_possible_value, EnumDb};
 pub use composite_db_adapter::{
