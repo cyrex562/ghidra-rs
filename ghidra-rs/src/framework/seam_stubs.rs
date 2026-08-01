@@ -27,6 +27,11 @@ use crate::generic::jar::ResourceFile;
 /// additionally needs the extension installation search path (`getExtensionInstallationDirs()`)
 /// to determine whether an extension lives under an installation/repo folder. Defaults to empty
 /// for the same reason as the other additions.
+///
+/// Extended once more for [`ExtensionUtils`](crate::util::extensions::ExtensionUtils), which
+/// additionally needs the extension archive directory (`getExtensionArchiveDir()`) to search for
+/// extensions bundled by the build process. Defaults to `None` for the same reason as the other
+/// additions.
 pub trait ApplicationLayoutLike {
     /// Gets the application properties from the application layout, mirroring
     /// `ApplicationLayout.getApplicationProperties()`.
@@ -84,6 +89,13 @@ pub trait ApplicationLayoutLike {
     /// directories), mirroring `ApplicationLayout.getExtensionInstallationDirs()`.
     fn extension_installation_dirs(&self) -> Vec<ResourceFile> {
         Vec::new()
+    }
+
+    /// Gets the directory containing extensions archived as part of the build process, mirroring
+    /// `ApplicationLayout.getExtensionArchiveDir()` (`None` if there is no archive directory,
+    /// matching the Java method's documented `null` return).
+    fn extension_archive_dir(&self) -> Option<ResourceFile> {
+        None
     }
 }
 

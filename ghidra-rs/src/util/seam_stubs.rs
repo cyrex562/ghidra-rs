@@ -236,6 +236,38 @@ pub const EXTENSION_PROPERTIES_FILE_NAME: &str = "extension.properties";
 /// needed by [`crate::util::extensions::ExtensionDetails`].
 pub const EXTENSION_PROPERTIES_FILE_NAME_UNINSTALLED: &str = "extension.properties.uninstalled";
 
+/// Placeholder for `ghidra.util.extensions.Extensions`, needed by
+/// [`crate::util::extensions::ExtensionUtils`].
+///
+/// The real `Extensions` is a package-private collection class (`Map<String, List<ExtensionDetails>>`
+/// keyed by name) used only by `ExtensionUtils` to dedupe extensions by name, mark ones pending
+/// uninstall for removal, and report name collisions. Only the members `ExtensionUtils` calls are
+/// declared here; the real port carries the full name-keyed bookkeeping.
+pub trait ExtensionsLike {
+    /// Adds an extension to this collection, mirroring `Extensions.add(ExtensionDetails)`.
+    fn add(&mut self, extension: Box<dyn crate::util::extensions::ExtensionDetails>);
+
+    /// Returns all installed extensions that are not marked for uninstall (one per name),
+    /// mirroring `Extensions.getActiveExtensions()`.
+    fn active_extensions(
+        &self,
+        app: &dyn crate::framework::Application,
+    ) -> Vec<&dyn crate::util::extensions::ExtensionDetails>;
+
+    /// Returns all unique extensions (no duplicates, one per name) that the application is aware
+    /// of, mirroring `Extensions.get()`.
+    fn all_extensions(&self) -> Vec<&dyn crate::util::extensions::ExtensionDetails>;
+
+    /// Removes any extensions that have already been marked for removal, deleting their install
+    /// directories, mirroring `Extensions.cleanupExtensionsMarkedForRemoval()`. This should be
+    /// called before any class loading has occurred.
+    fn cleanup_extensions_marked_for_removal(&mut self, app: &dyn crate::framework::Application);
+
+    /// Logs any duplicate extensions (more than one entry sharing a name), mirroring
+    /// `Extensions.reportDuplicateExtensions()`.
+    fn report_duplicate_extensions(&self);
+}
+
 /// Placeholder for `ghidra.util.UnionAddressRangeIterator`, needed by
 /// [`crate::util::address_range_iterators::AddressRangeIteratorFactory`].
 ///
