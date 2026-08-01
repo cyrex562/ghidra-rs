@@ -4,7 +4,7 @@ DONE	trait	32	1255	19	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	31	1258	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractUnsignedIntegerDataType.java
 DONE	trait	30	1289	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ByteDataType.java
 DONE	trait	28	18	186	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/core/datamgr/archive/BuiltInSourceArchive.java
-TODO	trait	27	1272	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltIn.java
+DONE	trait	27	1272	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltIn.java
 TODO	trait	26	1238	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AIFFDataType.java
 TODO	trait	25	621	225	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolUtilities.java
 TODO	trait	23	1106	70	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableStorage.java
