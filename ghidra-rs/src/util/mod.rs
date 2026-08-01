@@ -41,6 +41,7 @@ pub mod error_logger;
 pub mod exception;
 pub mod extensions;
 pub mod filechooser;
+pub mod ghidra_jar_builder;
 pub mod function;
 pub mod io;
 pub mod issue;
@@ -127,6 +128,10 @@ pub use error_display::{ConsoleErrorDisplay, ErrorDisplay};
 pub use error_logger::{DefaultErrorLogger, ErrorLogger};
 pub use exception::{AssertException, BadLinkException, CancelledException, ClosedException, DuplicateFileException, DuplicateNameException, GraphException, IOCancelledException, InvalidNameException, MultipleCauses, NoValueException, NotFoundException, NotOwnerException, PropertyTypeMismatchException, UserAccessException, UsrException, VersionException};
 pub use extensions::{ExtensionDetails, ExtensionUtils};
+pub use ghidra_jar_builder::{
+    include_module_by_default, module_rank, seed_included_module_names, GhidraJarBuilder,
+    GhidraJarBuilderError, JarFileFilter,
+};
 pub use filechooser::{all_files_filter, AllFilesFilter, GhidraFileFilter};
 pub use function::{Callback, TriConsumer, ExceptionalCallback, ExceptionalConsumer, ExceptionalFunction, ExceptionalSupplier, TerminatingConsumer};
 pub use io::{BoundedInputStream, HashingOutputStream, NullOutputStream};
