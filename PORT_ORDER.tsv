@@ -10,7 +10,7 @@ DONE	trait	25	621	225	program	Ghidra/Framework/SoftwareModeling/src/main/java/gh
 DONE	trait	23	1106	70	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/VariableStorage.java
 DONE	trait	22	114	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeFactory.java
 DONE	trait	21	454	31	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/pcode/PcodeOp.java
-TODO	trait	20	585	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefTypeFactory.java
+DONE	trait	20	585	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefTypeFactory.java
 TODO	trait	18	57	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockModel.java
 TODO	trait	17	69	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlock.java
 TODO	trait	16	682	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefType.java
