@@ -1,3 +1,4 @@
+pub mod abstract_address_space;
 pub mod address_collectors;
 pub mod address_format_exception;
 pub mod address_iterator_test_stub;
@@ -26,6 +27,7 @@ pub mod special_address;
 use std::fmt;
 use std::sync::Arc;
 
+pub use abstract_address_space::AbstractAddressSpace;
 pub use address_format_exception::AddressFormatException;
 pub use address_iterator_test_stub::AddressIteratorTestStub;
 pub use address_map_impl::AddressMapImpl;
