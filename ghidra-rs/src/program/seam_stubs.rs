@@ -30,6 +30,7 @@ use crate::program::model::pcode::high_variable::HighVariable;
 use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::pcode::Varnode;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
+use crate::program::model::block::code_block_model::CodeBlockModel;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
@@ -2116,33 +2117,6 @@ pub trait AddressCorrelationRangeLike: Send + Sync {
 
     /// Stands in for `AddressCorrelationRange.getCorrelatorName()`.
     fn correlator_name(&self) -> String;
-}
-
-/// Placeholder for `ghidra.program.model.block.CodeBlockModel`, referenced (as a supertrait) by
-/// [`SubroutineBlockModel`](crate::program::model::block::subroutine_block_model::SubroutineBlockModel)
-/// and used by
-/// [`SubroutineDestReferenceIterator`](crate::program::model::block::subroutine_dest_reference_iterator)
-/// before the real interface is ported. `externals_included` defaults to `false` so pre-existing
-/// bare `impl CodeBlockModel for Foo {}` blocks keep compiling; `get_basic_block_model`/
-/// `get_code_blocks_containing` are left required since there is no generic placeholder
-/// `CodeBlockModel`/`CodeBlockIterator` to hand back. This is an independent, minimal placeholder
-/// from the identically-named `CodeBlockModel` in [`crate::app::seam_stubs`] (used by
-/// `BlockModelService`); the two should be consolidated once the real `CodeBlockModel` is ported.
-pub trait CodeBlockModel {
-    /// Stands in for `CodeBlockModel.externalsIncluded()`.
-    fn externals_included(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `CodeBlockModel.getBasicBlockModel()`.
-    fn get_basic_block_model(&self) -> Box<dyn CodeBlockModel>;
-
-    /// Stands in for `CodeBlockModel.getCodeBlocksContaining(CodeBlock, TaskMonitor)`.
-    fn get_code_blocks_containing(
-        &self,
-        block: &dyn CodeBlock,
-        monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn CodeBlockIterator>, CancelledException>;
 }
 
 /// Placeholder for `ghidra.program.util.OffsetFieldType`, referenced by
