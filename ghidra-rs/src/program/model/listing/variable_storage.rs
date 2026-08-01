@@ -305,6 +305,23 @@ pub trait VariableStorage {
         crc.finish() as i64
     }
 
+    /// Get the byte offset of `register` within this storage. Stands in for
+    /// `VariableStorage.getRegisterOffset(Register)`, used by
+    /// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat)'s
+    /// register mark-up before that method's real multi-varnode-aware algorithm is ported.
+    /// Returns the cumulative byte size of preceding varnodes once a varnode whose address
+    /// matches `register`'s address is found, or -1 if not found among this storage's varnodes.
+    fn get_register_offset(&self, register: &Register) -> i64 {
+        let mut offset = 0i64;
+        for vn in self.get_varnodes() {
+            if vn.get_address() == register.address() {
+                return offset;
+            }
+            offset += vn.get_size() as i64;
+        }
+        -1
+    }
+
     /// Port of `VariableStorage.compareTo(VariableStorage)`.
     fn compare_to(&self, other: &dyn VariableStorage) -> Ordering {
         let my_precedence = precedence(self);
