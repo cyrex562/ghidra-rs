@@ -23,7 +23,7 @@ DONE	trait	9	266	61	framework	Ghidra/Framework/Generic/src/main/java/ghidra/fram
 DONE	trait	8	9	2	framework	Ghidra/Framework/FileSystem/src/main/java/ghidra/framework/remote/GhidraObjectInputFilter.java
 DONE	trait	8	14	6	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/ExtensionDetails.java
 DONE	trait	7	11	5	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/ExtensionUtils.java
-TODO	trait	6	301	24	util	Ghidra/Features/Base/src/main/java/ghidra/util/GhidraJarBuilder.java
+DONE	trait	6	301	24	util	Ghidra/Features/Base/src/main/java/ghidra/util/GhidraJarBuilder.java
 TODO	trait	5	1038	52	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AbstractAddressSpace.java
 TODO	trait	4	302	28	util	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/util/AddressIteratorAdapter.java
 TODO	trait	3	1034	1	program	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/program/model/address/CachedAddressSetView.java
