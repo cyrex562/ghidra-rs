@@ -376,3 +376,5 @@ ts	stub_class	referenced_by
 2026-07-31T00:00:00Z	ModuleUtilities(consts)	ExtensionDetails
 2026-07-31T00:00:00Z	ExtensionUtils(consts)	ExtensionDetails
 2026-07-31T00:00:00Z	ApplicationLayoutLike(grown)	ExtensionDetails
+2026-08-01T00:00:00Z	ExtensionsLike	ExtensionUtils
+2026-08-01T00:00:00Z	ApplicationLayoutLike(grown)	ExtensionUtils
