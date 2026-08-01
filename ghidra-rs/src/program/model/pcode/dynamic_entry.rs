@@ -37,7 +37,8 @@ use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::dynamic_hash::DynamicHash;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::ids::{ATTRIB_FIRST, ATTRIB_LAST, ATTRIB_SPACE, ATTRIB_VAL, ELEM_HASH, ELEM_RANGE, ELEM_RANGELIST};
-use crate::program::seam_stubs::{HashVariableStorage, HighSymbol, VariableStorage};
+use crate::program::seam_stubs::{HashVariableStorage, HighSymbol};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// A `HighSymbol` mapping based on local hashing of the symbol's Varnode. Port of the instance
 /// contract of `ghidra.program.model.pcode.DynamicEntry` (with the public parts of its

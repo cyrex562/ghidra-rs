@@ -13,7 +13,7 @@
 //! are already ported ([`DataTypeManager::get_pointer`]/[`DataTypeManager::get_pointer_with_size`],
 //! [`DataOrganization::get_pointer_size`]), so [`ParameterImpl::parameter_impl_get_data_type`] uses
 //! them directly. `VariableStorage.isForcedIndirect()`/`isAutoStorage()` have no counterpart yet on
-//! the [`seam_stubs::VariableStorage`](crate::program::seam_stubs::VariableStorage) placeholder, so
+//! the [`VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage) trait, so
 //! this port grows that stub with two `false`-defaulted methods (see `STUBS.tsv`).
 //!
 //! `SymbolUtilities.isDefaultParameterName(String)` has no ported counterpart yet; rather than
@@ -148,7 +148,8 @@ mod tests {
     use crate::program::model::listing::{Function, Program};
     use crate::program::model::pcode::Varnode;
     use crate::program::model::symbol::{SourceType, Symbol};
-    use crate::program::seam_stubs::{PlaceholderVariableStorage, VariableStorage};
+    use crate::program::seam_stubs::{PlaceholderVariableStorage};
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::util::exception::InvalidInputException;
 
     /// Minimal fixed-endian, 4-byte-pointer [`BitFieldPacking`]/[`DataOrganization`] pair, used

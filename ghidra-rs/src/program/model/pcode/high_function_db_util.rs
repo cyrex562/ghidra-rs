@@ -221,7 +221,7 @@ impl Variable for ParamAsVariable {
     fn set_data_type_with_storage(
         &mut self,
         data_type: Box<dyn DataType>,
-        storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
+        storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage>,
         force: bool,
         source: SourceType,
     ) -> Result<(), InvalidInputException> {
@@ -282,7 +282,7 @@ impl Variable for ParamAsVariable {
         self.0.set_comment(comment)
     }
 
-    fn get_variable_storage(&self) -> Option<Box<dyn crate::program::seam_stubs::VariableStorage>> {
+    fn get_variable_storage(&self) -> Option<Box<dyn crate::program::model::listing::variable_storage::VariableStorage>> {
         self.0.get_variable_storage()
     }
 
@@ -571,7 +571,7 @@ fn get_parameters(high_function: &dyn HighFunction, use_data_types: bool) -> Vec
 
 /// Simplified stand-in for `VariableUtilities.storageMatches(List<Variable>, Variable[])`: true
 /// if both lists have the same length and each pair's storage compares equal via
-/// [`crate::program::seam_stubs::VariableStorage::storage_equals`].
+/// [`crate::program::model::listing::variable_storage::VariableStorage::storage_equals`].
 fn variable_storage_matches(a: &[Box<dyn Variable>], b: &[Box<dyn Parameter>]) -> bool {
     if a.len() != b.len() {
         return false;
@@ -585,8 +585,8 @@ fn variable_storage_matches(a: &[Box<dyn Variable>], b: &[Box<dyn Parameter>]) -
 }
 
 fn storage_option_equals(
-    a: Option<&dyn crate::program::seam_stubs::VariableStorage>,
-    b: Option<&dyn crate::program::seam_stubs::VariableStorage>,
+    a: Option<&dyn crate::program::model::listing::variable_storage::VariableStorage>,
+    b: Option<&dyn crate::program::model::listing::variable_storage::VariableStorage>,
 ) -> bool {
     match (a, b) {
         (None, None) => true,
@@ -613,7 +613,7 @@ fn change_conflicting_symbol_names(
 fn create_local_variable(
     function: &mut dyn Function,
     dt: Box<dyn DataType>,
-    storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
+    storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage>,
     pc_addr: Option<Address>,
     source: SourceType,
 ) -> Result<Box<dyn Variable>, InvalidInputException> {
@@ -720,7 +720,7 @@ fn gather_merge_set(function: &mut dyn Function, seed: Box<dyn Variable>) -> Vec
 
 fn get_local_variable(
     function: &dyn Function,
-    storage: &dyn crate::program::seam_stubs::VariableStorage,
+    storage: &dyn crate::program::model::listing::variable_storage::VariableStorage,
     pc_addr: Option<&Address>,
 ) -> Option<Box<dyn Variable>> {
     if storage.is_hash_storage() {
@@ -751,7 +751,7 @@ fn get_local_variable(
 /// function at the same first-use-offset.
 fn clear_conflicting_local_variables(
     function: &mut dyn Function,
-    storage: &dyn crate::program::seam_stubs::VariableStorage,
+    storage: &dyn crate::program::model::listing::variable_storage::VariableStorage,
     pc_addr: Option<&Address>,
 ) -> Option<Box<dyn Variable>> {
     if storage.is_hash_storage() {
@@ -1244,7 +1244,7 @@ fn write_union_facet_impl(
     }
 
     let program = function.get_program();
-    let storage: Box<dyn crate::program::seam_stubs::VariableStorage> =
+    let storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage> =
         Box::new(seam_stubs::HashVariableStorage(hash));
     let var = seam_stubs::DatabaseVariableImpl::new(Some(symbol_name), first_use_offset, dt, storage, program);
     let _ = function.add_local_variable(Box::new(var), SourceType::UserDefined);

@@ -24,9 +24,8 @@ use crate::program::model::lang::input_list_type::InputListType;
 use crate::program::model::lang::param_list::WithSlotRec;
 use crate::program::model::listing::program::Program;
 use crate::program::model::pcode::{Encoder, Varnode};
-use crate::program::seam_stubs::{
-    ParameterPieces, PcodeInjectLibrary, PrototypePieces, VariableStorage,
-};
+use crate::program::seam_stubs::{ParameterPieces, PcodeInjectLibrary, PrototypePieces};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// Special [`PrototypeModel::get_extrapop`] value indicating the number of extra bytes popped
 /// from the stack on return is unknown.

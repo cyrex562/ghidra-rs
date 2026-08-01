@@ -1,14 +1,14 @@
 //! Port of `ghidra.program.database.symbol.VariableStorageManager`.
 //!
 //! The Java type is a single-method interface for mapping a
-//! [`VariableStorage`](crate::program::seam_stubs::VariableStorage) specification to (and
+//! [`VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage) specification to (and
 //! optionally allocating) the [`Address`] that represents it in the variable storage address
 //! space. This trait was selected as a dependency-cycle cut-point.
 
 use std::io;
 
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// Maps variable storage specifications to variable addresses.
 ///

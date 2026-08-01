@@ -6,7 +6,6 @@ ts	stub_class	referenced_by
 2026-07-05T12:10:00Z	DataTypePath	DataType
 2026-07-05T12:20:00Z	Transaction	DataTypeManager
 2026-07-06T00:10:00Z	GenericCallingConvention	FunctionDefinition
-2026-07-06T00:20:00Z	VariableStorage	Variable
 2026-07-06T00:30:00Z	CommentType	CodeUnit
 2026-07-06T00:59:57Z	RegisterValue	ProgramContext
 2026-07-06T01:10:00Z	StackFrame	Function
@@ -317,7 +316,6 @@ ts	stub_class	referenced_by
 2026-07-24T02:00:00Z	FunctionTagManagerProgram	FunctionTagManagerDB
 2026-07-24T03:00:00Z	HighSymbol	HighCodeSymbol
 2026-07-24T04:00:00Z	MetaDataType	NoisyStructureBuilder
-2026-07-24T05:00:00Z	VariableStorage(grown)	VariableUtilities
 2026-07-24T06:00:00Z	ExternalManagerDb	ExternalLocationDB
 2026-07-25T00:00:00Z	VariableSymbolDb	FunctionDB
 2026-07-25T01:00:00Z	JumpTable	HighFunction
@@ -374,7 +372,6 @@ ts	stub_class	referenced_by
 2026-07-28T06:30:00Z	AlignedComponentPacker	AlignedStructurePacker
 2026-07-28T06:30:00Z	DataOrganizationImpl.getAlignedOffset	AlignedStructurePacker
 2026-07-28T07:00:00Z	BitFieldDataType	DataOrganizationImpl
-2026-07-28T07:30:00Z	VariableStorage(grown)	ParameterImpl
 2026-07-28T08:27:37Z	IsolatedEntrySubModelLike	UndefinedFunction
 2026-07-28T08:27:37Z	CodeBlock(grown)	UndefinedFunction
 2026-07-28T08:27:37Z	FlowType(grown)	UndefinedFunction
@@ -382,4 +379,3 @@ ts	stub_class	referenced_by
 2026-07-31T00:00:00Z	AudioPlayer	AIFFDataType
 2026-07-31T00:00:00Z	Symbol(grown)	SymbolUtilities
 2026-07-31T00:00:00Z	SymbolTable(grown)	SymbolUtilities
-2026-07-31T00:00:00Z	VariableStorage(grown)	SymbolUtilities

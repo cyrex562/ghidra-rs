@@ -66,9 +66,8 @@ mod tests {
     use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Variable};
     use crate::program::model::symbol::{ExternalLocation, Namespace, SourceType};
     use crate::program::model::lang::prototype_model::PrototypeModel;
-    use crate::program::seam_stubs::{
-        StackFrame, VariableFilter, VariableStorage,
-    };
+    use crate::program::seam_stubs::{StackFrame, VariableFilter};
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::util::exception::InvalidInputException;
     use crate::util::task::TaskMonitor;
 

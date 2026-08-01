@@ -44,9 +44,9 @@
 //! `Java`'s `VariableStorage.isVoidStorage()`/`isUnassignedStorage()` distinguish two singleton
 //! sentinel storages (`VariableStorage.VOID_STORAGE`/`UNASSIGNED_STORAGE`), neither of which is
 //! portable without the real `VariableStorage` class (not yet ported; see
-//! [`seam_stubs::VariableStorage`](crate::program::seam_stubs::VariableStorage)). Both sentinels
+//! [`seam_stubs::VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage)). Both sentinels
 //! have an empty varnode list, matching how the stub's own
-//! [`VariableStorage::is_valid`](crate::program::seam_stubs::VariableStorage::is_valid) doc already
+//! [`VariableStorage::is_valid`](crate::program::model::listing::variable_storage::VariableStorage::is_valid) doc already
 //! treats "empty varnode list" as the placeholder-storage signal, so this port checks
 //! `storage.get_varnodes().is_empty()` wherever Java checks either predicate. Similarly,
 //! `VariableStorage.isStackStorage()`/`hasStackStorage()`/`isCompoundStorage()` are not on the
@@ -106,7 +106,8 @@ use crate::program::model::listing::variable_utilities::VariableUtilities;
 use crate::program::model::listing::{Function, Program, Variable};
 use crate::program::model::pcode::Varnode;
 use crate::program::model::symbol::SourceType;
-use crate::program::seam_stubs::{PlaceholderVariableStorage, VarnodeListStorage, VariableStorage};
+use crate::program::seam_stubs::{PlaceholderVariableStorage, VarnodeListStorage};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::InvalidInputException;
 
 /// Zero-sized [`VariableUtilities`] implementor used solely to reach that trait's
@@ -1330,13 +1331,15 @@ mod tests {
 
     #[test]
     fn is_equivalent_compares_storage_and_data_type() {
+        // `is_equivalent` does not compare name, so identical storage/type/offset makes these
+        // two (differently-named) variables equivalent, matching `VariableStorage::storage_equals`'s
+        // real varnode-list comparison.
         let a = new_variable("local_1", MockDataType::sized(4), ram_space().address(0x10));
         let b = new_variable("local_2", MockDataType::sized(4), ram_space().address(0x10));
-        // `storage_equals` on the underlying stub defaults to `false` (see seam_stubs), so two
-        // otherwise-identical storages are never considered equal by this port; this exercises
-        // that both variables are consistently *not* equivalent rather than asserting a specific
-        // (stub-dependent) outcome for identical storage.
-        assert!(!a.is_equivalent(&b));
+        assert!(a.is_equivalent(&b));
+
+        let c = new_variable("local_3", MockDataType::sized(4), ram_space().address(0x20));
+        assert!(!a.is_equivalent(&c), "different storage must not be equivalent");
     }
 
     #[test]

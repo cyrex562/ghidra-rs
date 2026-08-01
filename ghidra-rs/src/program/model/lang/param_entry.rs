@@ -19,7 +19,7 @@ use crate::util::xml::xml_parse_exception::XmlParseException;
 /// `numslots`, `joinrec`) set up once by `restoreXml` and never mutated afterward. Since a Rust
 /// trait has no fields, every private field becomes a defaulted accessor method here (mirroring
 /// the pattern already used for
-/// [`VariableStorage`](crate::program::seam_stubs::VariableStorage)), and the class's query
+/// [`VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage)), and the class's query
 /// methods (`containedBy`, `intersects`, `justifiedContain`, `contains`, `getSlot`,
 /// `getAddrBySlot`, `encode`, `isEquivalent`) become provided default methods implemented purely
 /// in terms of those accessors. `restoreXml` and the private helpers it alone drives

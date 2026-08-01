@@ -6,7 +6,8 @@ use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::language::Language;
 use crate::program::model::listing::program::Program;
 use crate::program::model::pcode::Encoder;
-use crate::program::seam_stubs::{ParameterPieces, PrototypePieces, VariableStorage};
+use crate::program::seam_stubs::{ParameterPieces, PrototypePieces};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::xml::xml_parse_exception::XmlParseException;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 

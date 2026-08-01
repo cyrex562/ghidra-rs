@@ -64,6 +64,7 @@ pub mod variable_filter;
 pub mod variable_impl;
 pub mod variable_offset;
 pub mod variable_size_exception;
+pub mod variable_storage;
 pub mod variable_utilities;
 
 pub use address_change_set::AddressChangeSet;
@@ -144,4 +145,5 @@ pub use variable_filter::{
 };
 pub use variable_offset::{ReplacedElement, VariableOffset, VariableOffsetImpl, VariableOffsetObject};
 pub use variable_size_exception::VariableSizeException;
+pub use variable_storage::{BadStorage, UnassignedStorage, VariableStorage, VariableStorageImpl, VoidStorage};
 pub use variable_utilities::{VariableConflictHandler, VariableUtilities};

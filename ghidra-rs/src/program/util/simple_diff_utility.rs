@@ -34,7 +34,7 @@
 //!   [`AddressSpace`] does not carry overlay membership, so only space name and
 //!   [`AddressSpaceType`] are compared.
 //! - `VariableStorage.isBadStorage()` has no port; `!storage.is_valid()` is used instead (see
-//!   [`VariableStorage::is_valid`](crate::program::seam_stubs::VariableStorage::is_valid)).
+//!   [`VariableStorage::is_valid`](crate::program::model::listing::variable_storage::VariableStorage::is_valid)).
 //! - [`get_matching_external_symbol`](SimpleDiffUtility::get_matching_external_symbol) does not
 //!   port the `allowInferredMatch` reference-correlation branch (which walks
 //!   `ReferenceManager.getReferencesTo`/thunk addresses to infer a match when no name match is
@@ -58,7 +58,7 @@ use crate::program::model::listing::{
 };
 use crate::program::model::pcode::Varnode;
 use crate::program::model::symbol::{ExternalLocation, Namespace, SourceType, Symbol, SymbolTable, SymbolType};
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// Port of `ghidra.program.util.SimpleDiffUtility`. See the module docs for the adaptations made
 /// while porting this static utility class to a trait.

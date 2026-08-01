@@ -167,7 +167,8 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::listing::{Function, Variable};
     use crate::program::model::symbol::SourceType;
-    use crate::program::seam_stubs::{PlaceholderDataType, PlaceholderVariableStorage, VariableStorage};
+    use crate::program::seam_stubs::{PlaceholderDataType, PlaceholderVariableStorage};
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::util::exception::InvalidInputException;
     use std::cmp::Ordering;
 

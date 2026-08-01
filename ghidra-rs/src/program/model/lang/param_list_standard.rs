@@ -57,7 +57,7 @@ pub fn get_basic_type_class(tp: &dyn DataType) -> StorageClass {
 /// `ModelRule` (and the `AddressXML` join-parsing it also needs) are ported. Likewise
 /// `getPotentialRegisterStorage` is not provided:
 /// the real method constructs `VariableStorage` instances, and the
-/// [`VariableStorage`](crate::program::seam_stubs::VariableStorage) placeholder is an empty
+/// [`VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage) placeholder is an empty
 /// marker trait with no constructor.
 ///
 /// Port of `ghidra.program.model.lang.ParamListStandard`.
@@ -398,7 +398,7 @@ mod tests {
     use crate::program::model::lang::compiler_spec::CompilerSpec;
     use crate::program::model::lang::language::Language;
     use crate::program::model::listing::program::Program;
-    use crate::program::seam_stubs::VariableStorage;
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::util::xml::xml_parse_exception::XmlParseException;
     use crate::util::xml::xml_pull_parser::XmlPullParser;
 
