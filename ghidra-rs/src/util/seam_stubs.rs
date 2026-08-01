@@ -220,6 +220,22 @@ pub trait TwoWayBreakdownFactory {
     ) -> Box<dyn Iterator<Item = TwoWayBreakdownEntry>>;
 }
 
+/// Placeholder for `utility.module.ModuleUtilities.MANIFEST_FILE_NAME`, needed by
+/// [`crate::util::extensions::ExtensionDetails`].
+pub const MODULE_MANIFEST_FILE_NAME: &str = "Module.manifest";
+
+/// Placeholder for `utility.module.ModuleUtilities.MANIFEST_FILE_NAME_UNINSTALLED`, needed by
+/// [`crate::util::extensions::ExtensionDetails`].
+pub const MODULE_MANIFEST_FILE_NAME_UNINSTALLED: &str = "Module.manifest.uninstalled";
+
+/// Placeholder for `ghidra.util.extensions.ExtensionUtils.PROPERTIES_FILE_NAME`, needed by
+/// [`crate::util::extensions::ExtensionDetails`].
+pub const EXTENSION_PROPERTIES_FILE_NAME: &str = "extension.properties";
+
+/// Placeholder for `ghidra.util.extensions.ExtensionUtils.PROPERTIES_FILE_NAME_UNINSTALLED`,
+/// needed by [`crate::util::extensions::ExtensionDetails`].
+pub const EXTENSION_PROPERTIES_FILE_NAME_UNINSTALLED: &str = "extension.properties.uninstalled";
+
 /// Placeholder for `ghidra.util.UnionAddressRangeIterator`, needed by
 /// [`crate::util::address_range_iterators::AddressRangeIteratorFactory`].
 ///

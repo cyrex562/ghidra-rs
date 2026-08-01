@@ -22,6 +22,11 @@ use crate::generic::jar::ResourceFile;
 /// empty/`None`/`false` value so the existing [`GenericRunInfo`](crate::framework::GenericRunInfo)
 /// mock implementors (which only ever exercised `application_properties`/
 /// `application_installation_dir`) are unaffected.
+///
+/// Extended again for [`ExtensionDetails`](crate::util::extensions::ExtensionDetails), which
+/// additionally needs the extension installation search path (`getExtensionInstallationDirs()`)
+/// to determine whether an extension lives under an installation/repo folder. Defaults to empty
+/// for the same reason as the other additions.
 pub trait ApplicationLayoutLike {
     /// Gets the application properties from the application layout, mirroring
     /// `ApplicationLayout.getApplicationProperties()`.
@@ -72,6 +77,13 @@ pub trait ApplicationLayoutLike {
     /// `ApplicationLayout.inSingleJarMode()`.
     fn in_single_jar_mode(&self) -> bool {
         false
+    }
+
+    /// Gets the ordered extension installation search directories from the application layout
+    /// (the user extension directory first, followed by installation/repo `Extensions`
+    /// directories), mirroring `ApplicationLayout.getExtensionInstallationDirs()`.
+    fn extension_installation_dirs(&self) -> Vec<ResourceFile> {
+        Vec::new()
     }
 }
 
