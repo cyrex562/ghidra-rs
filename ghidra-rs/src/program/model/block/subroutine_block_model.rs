@@ -36,7 +36,7 @@ mod tests {
             _addr: &crate::program::model::address::Address,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
-            Option<Box<dyn crate::program::seam_stubs::CodeBlock>>,
+            Option<Box<dyn crate::program::model::block::CodeBlock>>,
             crate::util::exception::CancelledException,
         > {
             unimplemented!()
@@ -46,7 +46,7 @@ mod tests {
             _addr: &crate::program::model::address::Address,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
-            Option<Box<dyn crate::program::seam_stubs::CodeBlock>>,
+            Option<Box<dyn crate::program::model::block::CodeBlock>>,
             crate::util::exception::CancelledException,
         > {
             unimplemented!()
@@ -65,7 +65,7 @@ mod tests {
         }
         fn get_code_blocks_containing(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
             Box<dyn crate::program::model::block::code_block_iterator::CodeBlockIterator>,
@@ -75,7 +75,7 @@ mod tests {
         }
         fn get_sources(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
             Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
@@ -85,14 +85,14 @@ mod tests {
         }
         fn get_num_sources(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<i32, crate::util::exception::CancelledException> {
             unimplemented!()
         }
         fn get_destinations(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
             Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
@@ -102,18 +102,18 @@ mod tests {
         }
         fn get_num_destinations(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<i32, crate::util::exception::CancelledException> {
             unimplemented!()
         }
         fn get_flow_type(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
         ) -> Box<dyn crate::program::seam_stubs::FlowType> {
             unimplemented!()
         }
-        fn get_block_name(&self, _block: &dyn crate::program::seam_stubs::CodeBlock) -> String {
+        fn get_block_name(&self, _block: &dyn crate::program::model::block::CodeBlock) -> String {
             unimplemented!()
         }
         fn get_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::Program> {
@@ -145,7 +145,7 @@ mod tests {
             _addr: &crate::program::model::address::Address,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
-            Option<Box<dyn crate::program::seam_stubs::CodeBlock>>,
+            Option<Box<dyn crate::program::model::block::CodeBlock>>,
             crate::util::exception::CancelledException,
         > {
             unimplemented!()
@@ -155,7 +155,7 @@ mod tests {
             _addr: &crate::program::model::address::Address,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
-            Option<Box<dyn crate::program::seam_stubs::CodeBlock>>,
+            Option<Box<dyn crate::program::model::block::CodeBlock>>,
             crate::util::exception::CancelledException,
         > {
             unimplemented!()
@@ -174,7 +174,7 @@ mod tests {
         }
         fn get_code_blocks_containing(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
             Box<dyn crate::program::model::block::code_block_iterator::CodeBlockIterator>,
@@ -184,7 +184,7 @@ mod tests {
         }
         fn get_sources(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
             Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
@@ -194,14 +194,14 @@ mod tests {
         }
         fn get_num_sources(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<i32, crate::util::exception::CancelledException> {
             unimplemented!()
         }
         fn get_destinations(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<
             Box<dyn crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator>,
@@ -211,18 +211,18 @@ mod tests {
         }
         fn get_num_destinations(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<i32, crate::util::exception::CancelledException> {
             unimplemented!()
         }
         fn get_flow_type(
             &self,
-            _block: &dyn crate::program::seam_stubs::CodeBlock,
+            _block: &dyn crate::program::model::block::CodeBlock,
         ) -> Box<dyn crate::program::seam_stubs::FlowType> {
             unimplemented!()
         }
-        fn get_block_name(&self, _block: &dyn crate::program::seam_stubs::CodeBlock) -> String {
+        fn get_block_name(&self, _block: &dyn crate::program::model::block::CodeBlock) -> String {
             unimplemented!()
         }
         fn get_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::Program> {

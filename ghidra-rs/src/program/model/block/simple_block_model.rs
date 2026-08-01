@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use crate::program::model::address::{Address, AddressSetView};
+use crate::program::model::block::code_block::CodeBlock;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::listing::program::Program;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::CodeBlock;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -213,9 +213,11 @@ mod tests {
     use crate::program::model::symbol::Reference;
     use std::sync::Arc as StdArc;
 
+    crate::impl_empty_address_set_view!(MockCodeBlock);
+
     /// A `CodeBlock` whose only meaningfully-implemented member is
-    /// [`CodeBlock::get_model`](crate::program::seam_stubs::CodeBlock::get_model), unused by the
-    /// tests below (which only exercise the block model's own methods).
+    /// [`CodeBlock::get_model`](crate::program::model::block::code_block::CodeBlock::get_model),
+    /// unused by the tests below (which only exercise the block model's own methods).
     struct MockCodeBlock;
 
     impl CodeBlock for MockCodeBlock {

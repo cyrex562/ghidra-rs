@@ -1,4 +1,4 @@
-use crate::program::seam_stubs::CodeBlock;
+use crate::program::model::block::code_block::CodeBlock;
 use crate::util::exception::CancelledException;
 
 /// An iterator interface over [`CodeBlock`]s.
@@ -58,6 +58,8 @@ impl<'a> Iterator for CodeBlockIter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    crate::impl_empty_address_set_view!(MockCodeBlock);
 
     struct MockCodeBlock;
 

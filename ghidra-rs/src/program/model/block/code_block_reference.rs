@@ -1,5 +1,6 @@
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::{CodeBlock, FlowType};
+use crate::program::model::block::code_block::CodeBlock;
+use crate::program::seam_stubs::FlowType;
 
 /// A `CodeBlockReference` represents the flow from one [`CodeBlock`] to another. Flow consists
 /// of:
@@ -40,6 +41,8 @@ mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use std::sync::Arc;
+
+    crate::impl_empty_address_set_view!(MockCodeBlock);
 
     struct MockCodeBlock;
 
