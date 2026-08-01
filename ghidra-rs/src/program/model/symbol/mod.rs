@@ -5,6 +5,7 @@ use std::io;
 use std::sync::Arc;
 
 pub mod address_label_pair;
+pub mod data_ref_type;
 pub mod entry_point_reference;
 pub mod equate;
 pub mod equate_reference;
@@ -37,6 +38,7 @@ pub mod symbol_utilities;
 pub mod thunk_reference;
 
 pub use address_label_pair::AddressLabelPair;
+pub use data_ref_type::DataRefType;
 pub use entry_point_reference::EntryPointReference;
 pub use equate::{Equate, SimpleEquate, UniversalId};
 pub use equate_reference::{EquateReference, SimpleEquateReference};
