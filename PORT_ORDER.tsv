@@ -2,7 +2,7 @@ status	mode	depth	fanin	rem	module	path
 DONE	trait	33	1259	4	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractStringDataType.java
 DONE	trait	32	1255	19	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractIntegerDataType.java
 DONE	trait	31	1258	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AbstractUnsignedIntegerDataType.java
-TODO	trait	30	1289	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ByteDataType.java
+DONE	trait	30	1289	2	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/ByteDataType.java
 TODO	trait	28	18	186	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/core/datamgr/archive/BuiltInSourceArchive.java
 TODO	trait	27	1272	1	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/BuiltIn.java
 TODO	trait	26	1238	3	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/AIFFDataType.java
