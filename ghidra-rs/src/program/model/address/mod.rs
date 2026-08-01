@@ -11,6 +11,7 @@ pub mod address_set;
 pub mod address_set_collection;
 pub mod address_set_mapping;
 pub mod address_set_view_adapter;
+pub mod cached_address_set_view;
 pub mod factory;
 pub mod global_namespace;
 pub mod immutable_address_set;
@@ -39,6 +40,7 @@ pub use address_set::{AddressSet, AddressSetView};
 pub use address_set_collection::{AddressSetCollection, SingleAddressSetCollection};
 pub use address_set_mapping::AddressSetMapping;
 pub use address_set_view_adapter::AddressSetViewAdapter;
+pub use cached_address_set_view::{CachedAddressSetView, CachedAddressSetViewImpl};
 pub use factory::{AddressFactory, DefaultAddressFactory};
 pub use global_namespace::{
     GlobalNamespace, GlobalSymbol, GLOBAL_NAMESPACE_ID, GLOBAL_NAMESPACE_NAME, GLOBAL_SYMBOL_NAME,
