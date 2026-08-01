@@ -2677,3 +2677,34 @@ pub trait BitFieldDataType {
     fn get_base_data_type(&self) -> Box<dyn DataType>;
 }
 
+/// Placeholder for `ghidra.program.model.data.AudioPlayer`, referenced by
+/// [`AIFFDataType`](crate::program::model::data::aiff_data_type::AIFFDataType) before the real
+/// class is ported. The real class also implements Swing-facing `Playable`/`LineListener` to
+/// play audio clips on click, which is well outside this crate's scope so far; this placeholder
+/// only exposes read-back of the raw sound bytes the real constructor (`AudioPlayer(byte[])`)
+/// stores, since that's the only member `AIFFDataType.getValue(...)` needs.
+pub trait AudioPlayer: std::any::Any {
+    /// Stands in for reading back the private `AudioPlayer.bytes` field.
+    fn get_bytes(&self) -> &[u8];
+}
+
+/// Minimal concrete stand-in for `ghidra.program.model.data.AudioPlayer`, used by
+/// [`AIFFDataType::aiff_value`](crate::program::model::data::aiff_data_type::AIFFDataType::aiff_value)
+/// to actually construct an [`AudioPlayer`] instance (the trait alone cannot be instantiated).
+pub struct AudioPlayerImpl {
+    bytes: Vec<u8>,
+}
+
+impl AudioPlayerImpl {
+    /// Stands in for the `AudioPlayer(byte[] bytes)` constructor.
+    pub fn new(bytes: Vec<u8>) -> Self {
+        AudioPlayerImpl { bytes }
+    }
+}
+
+impl AudioPlayer for AudioPlayerImpl {
+    fn get_bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+

@@ -379,3 +379,4 @@ ts	stub_class	referenced_by
 2026-07-28T08:27:37Z	CodeBlock(grown)	UndefinedFunction
 2026-07-28T08:27:37Z	FlowType(grown)	UndefinedFunction
 2026-07-31T00:00:00Z	SignedByteDataType	ByteDataType
+2026-07-31T00:00:00Z	AudioPlayer	AIFFDataType
