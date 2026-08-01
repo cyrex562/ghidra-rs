@@ -1,4 +1,5 @@
 pub mod anonymous_callback;
+pub mod ghidra_object_input_filter;
 pub mod ghidra_principal;
 pub mod ghidra_server_handle;
 pub mod remote_repository_handle;
@@ -13,6 +14,11 @@ pub mod ssh_signature_callback;
 pub mod user;
 
 pub use anonymous_callback::AnonymousCallback;
+pub use ghidra_object_input_filter::{
+    parse_serial_filter_text, FilterInfo, FilterStatus, GhidraObjectInputFilter,
+    ParsedSerialFilter, MAXARRAY_DEFAULT, MAXBYTES_DEFAULT, MAXDEPTH_DEFAULT, MAXREFS_DEFAULT,
+    README_PATH,
+};
 pub use ghidra_principal::GhidraPrincipal;
 pub use ghidra_server_handle::{
     GhidraServerHandle, GhidraServerHandleError, ALT_BIND_NAME, ALT_GHIDRA_BIND_VERSION,
