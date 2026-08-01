@@ -273,6 +273,17 @@ pub trait CodeUnit: MemBuffer + PropertySet {
     fn as_data(&self) -> Option<&dyn crate::program::model::listing::data::Data> {
         None
     }
+
+    /// Stands in for `cu instanceof Instruction ? (Instruction) cu : null`, used by
+    /// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat)'s
+    /// port of `getRepresentationString`/`getOperandRepresentationList`, which need to branch on
+    /// whether a code unit is an instruction without a general trait-object downcast being
+    /// available. Implementors of
+    /// [`Instruction`](crate::program::model::listing::instruction::Instruction) are expected to
+    /// override this to return `Some(self)`.
+    fn as_instruction(&self) -> Option<&dyn crate::program::model::listing::instruction::Instruction> {
+        None
+    }
 }
 
 #[cfg(test)]

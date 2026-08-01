@@ -315,4 +315,24 @@ pub trait SymbolTable: Send + Sync {
         let _ = name;
         Ok(Vec::new())
     }
+
+    /// Get the symbol associated with the given reference's destination. Stands in for
+    /// `SymbolTable.getSymbol(Reference)`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat).
+    fn get_symbol_for_reference(&self, reference: &dyn Reference) -> io::Result<Option<Arc<dyn Symbol>>> {
+        let _ = reference;
+        Ok(None)
+    }
+
+    /// Get the namespace containing the given address. Stands in for
+    /// `SymbolTable.getNamespace(Address)`.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected. Added for
+    /// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat).
+    fn get_namespace(&self, addr: &Address) -> io::Result<Option<Arc<dyn Namespace>>> {
+        let _ = addr;
+        Ok(None)
+    }
 }

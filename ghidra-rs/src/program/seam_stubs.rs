@@ -9,6 +9,7 @@ use crate::pcode::floatformat::big_float::BigFloat;
 use crate::pcode::floatformat::unsupported_float_format_exception::UnsupportedFloatFormatException;
 use crate::program::model::address::{Address, AddressRange, AddressSetView, AddressSpace};
 use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::endian::Endian;
@@ -32,7 +33,7 @@ use crate::program::model::pcode::Varnode;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
-use crate::program::model::symbol::{Namespace, SetParentNamespaceError, Symbol};
+use crate::program::model::symbol::{Namespace, NamespaceType, SetParentNamespaceError, Symbol};
 use crate::program::util::language_translator::LanguageTranslator;
 use crate::util::exception::CancelledException;
 use std::any::Any;
@@ -2453,6 +2454,142 @@ impl AudioPlayerImpl {
 impl AudioPlayer for AudioPlayerImpl {
     fn get_bytes(&self) -> &[u8] {
         &self.bytes
+    }
+}
+
+/// Indicator for controlling the display of block names on labels. Placeholder for the nested
+/// enum `ghidra.program.model.listing.CodeUnitFormatOptions.ShowBlockName`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real `CodeUnitFormatOptions` class is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ShowBlockName {
+    /// Never show the block name in an address, label, or operand representation.
+    #[default]
+    Never,
+    /// Always show the block name in address, label, or operand representations.
+    Always,
+    /// Show the block name in address, label, or operand representations which are not
+    /// contained within the current block.
+    NonLocal,
+}
+
+/// Indicator for controlling the display of name-spaces on labels. Placeholder for the nested
+/// enum `ghidra.program.model.listing.CodeUnitFormatOptions.ShowNamespace`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real `CodeUnitFormatOptions` class is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ShowNamespace {
+    /// Never show the namespace for a label reference.
+    #[default]
+    Never,
+    /// Always show the namespace for a label reference.
+    Always,
+    /// Show the namespace for a label reference if the label is in a different namespace from
+    /// the referenced location.
+    NonLocal,
+    /// Show the namespace for a label reference if the label is in the same namespace as the
+    /// reference location (i.e., local to function).
+    Local,
+}
+
+/// Placeholder for `ghidra.program.model.listing.CodeUnitFormatOptions`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real class is ported. Carries the same field set as the Java class; every field is public
+/// so `CodeUnitFormat` can read/set them directly the way the Java class's package-visible
+/// subclass access does.
+///
+/// [`CodeUnitFormatOptions::simplify_template`] stands in for
+/// `CodeUnitFormatOptions.simplifyTemplate(String)`, which normally delegates to a
+/// `TemplateSimplifier`; since that class is not yet ported, this returns `name` unchanged
+/// (equivalent to a simplifier that finds no template angle-brackets to collapse).
+#[derive(Debug, Clone)]
+pub struct CodeUnitFormatOptions {
+    pub show_block_name: ShowBlockName,
+    pub show_namespace: ShowNamespace,
+    pub local_prefix_override: Option<String>,
+    pub show_library_in_namespace: bool,
+    pub do_reg_variable_markup: bool,
+    pub do_stack_variable_markup: bool,
+    pub include_inferred_variable_markup: bool,
+    pub always_show_primary_reference: bool,
+    pub follow_referenced_pointers: bool,
+    pub include_scalar_reference_adjustment: bool,
+    pub show_data_mutability: bool,
+    pub show_offcut_info: bool,
+    pub display_options: crate::program::model::data::data_type_display_options::DefaultDataTypeDisplayOptions,
+}
+
+impl Default for CodeUnitFormatOptions {
+    fn default() -> Self {
+        CodeUnitFormatOptions {
+            show_block_name: ShowBlockName::Never,
+            show_namespace: ShowNamespace::Never,
+            local_prefix_override: None,
+            show_library_in_namespace: true,
+            do_reg_variable_markup: true,
+            do_stack_variable_markup: true,
+            include_inferred_variable_markup: false,
+            always_show_primary_reference: false,
+            follow_referenced_pointers: false,
+            include_scalar_reference_adjustment: false,
+            show_data_mutability: false,
+            show_offcut_info: true,
+            display_options: crate::program::model::data::data_type_display_options::DEFAULT,
+        }
+    }
+}
+
+impl CodeUnitFormatOptions {
+    /// Stands in for `new CodeUnitFormatOptions()`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Stands in for `new CodeUnitFormatOptions(ShowBlockName, ShowNamespace)`.
+    pub fn with_show_options(show_block_name: ShowBlockName, show_namespace: ShowNamespace) -> Self {
+        CodeUnitFormatOptions { show_block_name, show_namespace, ..Self::default() }
+    }
+
+    /// Stands in for `CodeUnitFormatOptions.simplifyTemplate(String)`. See the struct docs for
+    /// why this is currently an identity function.
+    pub fn simplify_template(&self, name: &str) -> String {
+        name.to_string()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.NamespaceUtils`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real class is ported. Only the one static helper that class needs is modeled here; unlike
+/// most placeholders in this file this is a real, faithful port of that helper's algorithm (a
+/// stateless walk up the namespace hierarchy), not a stubbed-out default.
+pub mod namespace_utils {
+    use super::{Arc, Namespace, NamespaceType};
+
+    /// Stands in for the static `NamespaceUtils.getNamespacePathWithoutLibrary(Namespace)`.
+    pub fn get_namespace_path_without_library(namespace: Option<Arc<dyn Namespace>>) -> String {
+        let mut result = String::new();
+        let mut ns = namespace;
+        while let Some(n) = ns {
+            if n.is_global() || n.get_type() == NamespaceType::Library {
+                break;
+            }
+            result = format!("{}{}{}", n.get_name(), crate::program::model::symbol::DELIMITER, result);
+            ns = n.get_parent_namespace();
+        }
+        result
+    }
+}
+
+/// Placeholder for `ghidra.app.util.viewer.field.CommentUtils`, referenced by
+/// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
+/// the real class (and the comment-annotation parsing framework it depends on) is ported.
+pub mod comment_utils {
+    /// Stands in for the static `CommentUtils.getDisplayString(String, Program)`, which resolves
+    /// inline `{@...}` annotations (e.g. symbol/address references) embedded in a comment into
+    /// their display form. Annotation parsing is not yet ported, so this returns `comment`
+    /// unchanged (equivalent to a comment containing no annotations).
+    pub fn get_display_string(comment: &str, _program: &dyn crate::program::model::listing::Program) -> String {
+        comment.to_string()
     }
 }
 

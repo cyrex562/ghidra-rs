@@ -17,6 +17,16 @@ pub trait Program: DomainObject + Send + Sync {
     fn get_name(&self) -> String;
     fn get_language_id(&self) -> String;
 
+    /// Get the language associated with this program.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat)'s
+    /// port of `Program.getLanguage()`, which needs it to check `Language.supportsPcode()`
+    /// before performing operand mark-up.
+    fn get_language(&self) -> Option<Arc<dyn crate::program::model::lang::Language>> {
+        None
+    }
+
     fn get_address_factory(&self) -> Option<Arc<dyn AddressFactory>> {
         None
     }
