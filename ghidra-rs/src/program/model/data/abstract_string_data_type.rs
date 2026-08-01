@@ -132,7 +132,12 @@ pub fn common_with_charset_string_settings_defs() -> Vec<Box<dyn SettingsDefinit
 /// `CharsetInfoManager.getCharsetCharSize(String)`. Limited to the charset names
 /// [`string_data_instance`](super::string_data_instance) supports (see that module's docs);
 /// unrecognized names -- including the single-byte charsets it does support -- default to `1`.
-fn charset_char_size(charset_name: &str) -> i32 {
+///
+/// `pub(crate)` (rather than private) so
+/// [`AbstractIntegerDataType`](super::abstract_integer_data_type::AbstractIntegerDataType) can
+/// reuse the same charset-name-to-byte-width mapping for its own char-array label helpers instead
+/// of duplicating it.
+pub(crate) fn charset_char_size(charset_name: &str) -> i32 {
     match charset_name {
         "UTF-16" | "UTF-16BE" | "UTF-16LE" => 2,
         "UTF-32" | "UTF-32BE" | "UTF-32LE" => 4,
