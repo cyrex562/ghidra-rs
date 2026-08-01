@@ -1,3 +1,4 @@
+pub mod application;
 pub mod application_identifier;
 pub mod application_properties;
 pub mod client;
@@ -26,6 +27,7 @@ pub mod shutdown_priority;
 pub mod store;
 pub mod version;
 
+pub use application::{Application, OSFileNotFoundError};
 pub use application_identifier::ApplicationIdentifier;
 pub use application_properties::ApplicationProperties;
 pub use cmd::Command;

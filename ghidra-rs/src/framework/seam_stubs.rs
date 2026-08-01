@@ -15,6 +15,13 @@ use crate::generic::jar::ResourceFile;
 /// ported. `GenericRunInfo` only ever reads the application properties and installation directory
 /// off of the layout returned by [`ApplicationLike::application_layout`], so no other members are
 /// needed yet.
+///
+/// Extended for [`Application`](crate::framework::application::Application), which additionally
+/// needs the application root directories, modules, single-jar-mode flag, and the user
+/// temp/cache/settings directories `ApplicationLayout` also carries. Each addition defaults to an
+/// empty/`None`/`false` value so the existing [`GenericRunInfo`](crate::framework::GenericRunInfo)
+/// mock implementors (which only ever exercised `application_properties`/
+/// `application_installation_dir`) are unaffected.
 pub trait ApplicationLayoutLike {
     /// Gets the application properties from the application layout, mirroring
     /// `ApplicationLayout.getApplicationProperties()`.
@@ -24,6 +31,74 @@ pub trait ApplicationLayoutLike {
     /// `ApplicationLayout.getApplicationInstallationDir()` (`None` if not set, matching the Java
     /// method's documented `null` return).
     fn application_installation_dir(&self) -> Option<&ResourceFile>;
+
+    /// Gets the application root directories from the application layout, mirroring
+    /// `ApplicationLayout.getApplicationRootDirs()`.
+    fn application_root_dirs(&self) -> Vec<ResourceFile> {
+        Vec::new()
+    }
+
+    /// Gets the application's modules from the application layout, mirroring
+    /// `ApplicationLayout.getModules()` (Java's `Map<String, GModule>`, flattened to a `Vec` here
+    /// since [`GModuleLike`] trait objects can't be used as `HashMap` keys/values ergonomically).
+    fn modules(&self) -> Vec<Box<dyn GModuleLike>> {
+        Vec::new()
+    }
+
+    /// Looks up a single module by name, mirroring `ApplicationLayout.getModules().get(name)`.
+    fn module_named(&self, _name: &str) -> Option<Box<dyn GModuleLike>> {
+        None
+    }
+
+    /// Gets the user temp directory from the application layout, mirroring
+    /// `ApplicationLayout.getUserTempDir()`.
+    fn user_temp_dir(&self) -> Option<PathBuf> {
+        None
+    }
+
+    /// Gets the user cache directory from the application layout, mirroring
+    /// `ApplicationLayout.getUserCacheDir()`.
+    fn user_cache_dir(&self) -> Option<PathBuf> {
+        None
+    }
+
+    /// Gets the user settings directory from the application layout, mirroring
+    /// `ApplicationLayout.getUserSettingsDir()`.
+    fn user_settings_dir(&self) -> Option<PathBuf> {
+        None
+    }
+
+    /// Checks whether the application layout uses a "single jar" layout, mirroring
+    /// `ApplicationLayout.inSingleJarMode()`.
+    fn in_single_jar_mode(&self) -> bool {
+        false
+    }
+}
+
+/// Placeholder for `ghidra.framework.GModule`, referenced by
+/// [`ApplicationLayoutLike`] and [`Application`](crate::framework::application::Application)
+/// before the real class is ported. Exposes the module-relative file/directory search operations
+/// `Application` calls directly on each module (`getModuleRoot`, `accumulateDataFilesByExtension`,
+/// `findModuleFile`, `collectExistingModuleDirs`); `GModule`'s constructor, shadow-module
+/// resolution across repos, and manifest-driven search-root/ignore-dir setup are all
+/// implementation details of how a real port would populate those search results, not part of the
+/// contract callers need.
+pub trait GModuleLike {
+    /// Gets the module's root directory, mirroring `GModule.getModuleRoot()`.
+    fn module_root(&self) -> ResourceFile;
+
+    /// Accumulates all files within the module's search roots (including its `data` directory)
+    /// that end with the given extension, mirroring
+    /// `GModule.accumulateDataFilesByExtension(List, String)`.
+    fn accumulate_data_files_by_extension(&self, accumulator: &mut Vec<ResourceFile>, extension: &str);
+
+    /// Finds the first file with the given module-relative path across the module's search roots,
+    /// mirroring `GModule.findModuleFile(String)`.
+    fn find_module_file(&self, relative_path: &str) -> Option<ResourceFile>;
+
+    /// Accumulates every existing directory with the given module-relative path across the
+    /// module's search roots, mirroring `GModule.collectExistingModuleDirs(List, String)`.
+    fn collect_existing_module_dirs(&self, accumulator: &mut Vec<ResourceFile>, relative_path: &str);
 }
 
 /// Placeholder for `ghidra.framework.Application`, referenced by
