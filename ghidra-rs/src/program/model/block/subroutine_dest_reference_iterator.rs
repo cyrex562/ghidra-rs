@@ -1,7 +1,7 @@
+use crate::program::model::block::code_block::CodeBlock;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
 use crate::program::model::block::code_block_reference::CodeBlockReference;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
-use crate::program::seam_stubs::CodeBlock;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -43,7 +43,7 @@ pub fn get_num_destinations(
     let Some(block) = block else {
         return Ok(0);
     };
-    if block.get_min_address().is_none() {
+    if block.min_address().is_none() {
         return Ok(0);
     }
 
@@ -92,7 +92,7 @@ pub fn get_num_destinations(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+    use crate::program::model::address::{Address, AddressSetView, AddressSpace, AddressSpaceType};
     use crate::program::model::block::code_block_model::CodeBlockModel;
     use crate::program::seam_stubs::FlowType;
     use crate::util::task::DummyMonitor;
@@ -181,17 +181,107 @@ mod tests {
         space: Arc<AddressSpace>,
     }
 
-    impl CodeBlock for BasicBlock {
-        fn get_min_address(&self) -> Option<Address> {
-            Some(Address::new(self.space.clone(), self.start))
-        }
-        fn get_model(&self) -> Box<dyn CodeBlockModel> {
-            unimplemented!("basic blocks are only iterated over, never re-modeled")
-        }
+    impl AddressSetView for BasicBlock {
         fn contains(&self, address: &Address) -> bool {
             Arc::ptr_eq(address.space(), &self.space)
                 && address.offset() >= self.start
                 && address.offset() < self.end
+        }
+        fn contains_range(&self, start: &Address, end: &Address) -> bool {
+            self.contains(start) && self.contains(end)
+        }
+        fn contains_set(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn is_empty(&self) -> bool {
+            self.start >= self.end
+        }
+        fn min_address(&self) -> Option<Address> {
+            Some(Address::new(self.space.clone(), self.start))
+        }
+        fn max_address(&self) -> Option<Address> {
+            Some(Address::new(self.space.clone(), self.end - 1))
+        }
+        fn num_address_ranges(&self) -> usize {
+            1
+        }
+        fn address_ranges(&self) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn address_ranges_ordered(
+            &self,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn address_ranges_from(
+            &self,
+            _start: &Address,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn num_addresses(&self) -> u64 {
+            (self.end - self.start) as u64
+        }
+        fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn addresses_from(
+            &self,
+            _start: &Address,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersects_set(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersects_range(&self, _start: &Address, _end: &Address) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersect(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersect_range(
+            &self,
+            _start: &Address,
+            _end: &Address,
+        ) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn union(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn subtract(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn xor(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn has_same_addresses(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn first_range(&self) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn last_range(&self) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn range_containing(
+            &self,
+            _address: &Address,
+        ) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn find_first_address_in_common(&self, _set: &dyn AddressSetView) -> Option<Address> {
+            unimplemented!("not needed for this smoke test")
+        }
+    }
+
+    impl CodeBlock for BasicBlock {
+        fn get_model(&self) -> Box<dyn CodeBlockModel> {
+            unimplemented!("basic blocks are only iterated over, never re-modeled")
         }
         fn get_destinations(
             &self,
@@ -319,17 +409,107 @@ mod tests {
         model: SubroutineModel,
     }
 
-    impl CodeBlock for SubroutineBlock {
-        fn get_min_address(&self) -> Option<Address> {
-            Some(Address::new(self.space.clone(), self.start))
-        }
-        fn get_model(&self) -> Box<dyn CodeBlockModel> {
-            Box::new(self.model.clone())
-        }
+    impl AddressSetView for SubroutineBlock {
         fn contains(&self, address: &Address) -> bool {
             Arc::ptr_eq(address.space(), &self.space)
                 && address.offset() >= self.start
                 && address.offset() < self.end
+        }
+        fn contains_range(&self, start: &Address, end: &Address) -> bool {
+            self.contains(start) && self.contains(end)
+        }
+        fn contains_set(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn is_empty(&self) -> bool {
+            self.start >= self.end
+        }
+        fn min_address(&self) -> Option<Address> {
+            Some(Address::new(self.space.clone(), self.start))
+        }
+        fn max_address(&self) -> Option<Address> {
+            Some(Address::new(self.space.clone(), self.end - 1))
+        }
+        fn num_address_ranges(&self) -> usize {
+            1
+        }
+        fn address_ranges(&self) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn address_ranges_ordered(
+            &self,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn address_ranges_from(
+            &self,
+            _start: &Address,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn num_addresses(&self) -> u64 {
+            (self.end - self.start) as u64
+        }
+        fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn addresses_from(
+            &self,
+            _start: &Address,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersects_set(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersects_range(&self, _start: &Address, _end: &Address) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersect(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersect_range(
+            &self,
+            _start: &Address,
+            _end: &Address,
+        ) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn union(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn subtract(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn xor(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn has_same_addresses(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn first_range(&self) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn last_range(&self) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn range_containing(
+            &self,
+            _address: &Address,
+        ) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn find_first_address_in_common(&self, _set: &dyn AddressSetView) -> Option<Address> {
+            unimplemented!("not needed for this smoke test")
+        }
+    }
+
+    impl CodeBlock for SubroutineBlock {
+        fn get_model(&self) -> Box<dyn CodeBlockModel> {
+            Box::new(self.model.clone())
         }
         fn get_destinations(
             &self,
@@ -420,6 +600,7 @@ mod tests {
     #[test]
     fn block_with_no_min_address_short_circuits_without_touching_model() {
         struct NoAddressBlock;
+        crate::impl_empty_address_set_view!(NoAddressBlock);
         impl CodeBlock for NoAddressBlock {
             fn get_model(&self) -> Box<dyn CodeBlockModel> {
                 panic!("get_num_destinations must short-circuit before calling get_model");

@@ -9,7 +9,7 @@ use super::graph::keyed_object::KeyedObject;
 use super::graph::vertex::Vertex;
 use super::task::TaskMonitor;
 use crate::program::model::address::{Address, AddressRange, AddressRangeIterator};
-use crate::program::seam_stubs::CodeBlock;
+use crate::program::model::block::CodeBlock;
 
 /// Placeholder for `ghidra.util.task.Task`, needed by [`crate::util::TrackedTaskListener`].
 pub trait Task: Send + Sync {}

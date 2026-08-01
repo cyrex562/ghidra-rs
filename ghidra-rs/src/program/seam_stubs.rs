@@ -29,8 +29,6 @@ use crate::program::model::pcode::high_function::HighFunction;
 use crate::program::model::pcode::high_variable::HighVariable;
 use crate::program::model::pcode::list_linked::LinkedIter;
 use crate::program::model::pcode::Varnode;
-use crate::program::model::block::code_block_iterator::CodeBlockIterator;
-use crate::program::model::block::code_block_model::CodeBlockModel;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::pcode::pcode_block_basic::PcodeBlockBasic;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
@@ -38,7 +36,6 @@ use crate::program::model::symbol::{Namespace, SetParentNamespaceError, Symbol};
 use crate::program::database::sourcemap::SourceFile;
 use crate::program::util::language_translator::LanguageTranslator;
 use crate::util::exception::CancelledException;
-use crate::util::task::TaskMonitor;
 use std::any::Any;
 use std::fmt;
 use std::io;
@@ -1434,72 +1431,9 @@ pub trait ProgramOverlayAddressSpace {
     fn invalidate(&self);
 }
 
-/// Placeholder for `ghidra.program.model.block.CodeBlock`, referenced by
-/// [`CodeBlockIterator`](crate::program::model::block::code_block_iterator::CodeBlockIterator),
-/// [`CodeBlockReference`](crate::program::model::block::code_block_reference::CodeBlockReference),
-/// and
-/// [`SubroutineDestReferenceIterator`](crate::program::model::block::subroutine_dest_reference_iterator)
-/// before the real interface is ported. `get_min_address`/`contains` default to the values for an
-/// empty/unbounded block so pre-existing bare `impl CodeBlock for Foo {}` blocks keep compiling;
-/// `get_model`/`get_destinations` are left required since there is no generic placeholder
-/// `CodeBlockModel`/`CodeBlockReferenceIterator` to hand back.
-///
-/// Grown (see `STUBS.tsv`) with `is_empty`/`get_first_start_address`/`get_sources` -- the real
-/// interface extends `AddressSetView` (for `isEmpty`) and separately declares
-/// `getFirstStartAddress`/`getSources`, used by
-/// [`crate::util::undefined_function::UndefinedFunction`]'s `getEntryBlock` port to walk a code
-/// block's non-call, non-indirect source edges back to a function entry point. All three default
-/// to the same "empty/unbounded block" stand-in as `get_min_address`/`contains` (an empty block
-/// with no sources), so pre-existing bare `impl CodeBlock for Foo {}` blocks keep compiling.
-pub trait CodeBlock {
-    /// Stands in for `CodeBlock.getMinAddress()`.
-    fn get_min_address(&self) -> Option<Address> {
-        None
-    }
-
-    /// Stands in for `CodeBlock.getModel()`.
-    fn get_model(&self) -> Box<dyn CodeBlockModel>;
-
-    /// Stands in for `CodeBlock.contains(Address)`.
-    fn contains(&self, address: &Address) -> bool {
-        let _ = address;
-        false
-    }
-
-    /// Stands in for `CodeBlock.getDestinations(TaskMonitor)`.
-    fn get_destinations(
-        &self,
-        monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException>;
-
-    /// Stands in for `CodeBlock.isEmpty()` (inherited from `AddressSetView`). Defaults to `true`,
-    /// matching the "empty" stand-in already used by [`get_min_address`](Self::get_min_address).
-    fn is_empty(&self) -> bool {
-        true
-    }
-
-    /// Stands in for `CodeBlock.getFirstStartAddress()`. Defaults to
-    /// [`get_min_address`](Self::get_min_address).
-    fn get_first_start_address(&self) -> Option<Address> {
-        self.get_min_address()
-    }
-
-    /// Stands in for `CodeBlock.getSources(TaskMonitor)`. Defaults to reporting no sources
-    /// (matching an "empty/unbounded block" with nothing flowing into it), unlike
-    /// [`get_destinations`](Self::get_destinations) which is left required: this keeps
-    /// pre-existing bare `impl CodeBlock for Foo {}` blocks compiling without needing a generic
-    /// placeholder `CodeBlockReferenceIterator` to hand back.
-    fn get_sources(
-        &self,
-        monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
-        let _ = monitor;
-        Ok(Box::new(EmptyCodeBlockReferenceIterator))
-    }
-}
-
 /// A [`CodeBlockReferenceIterator`] with no elements, used as the default
-/// [`CodeBlock::get_sources`] result. Not a port of any specific Java class.
+/// [`CodeBlock::get_sources`](crate::program::model::block::code_block::CodeBlock::get_sources)
+/// result. Not a port of any specific Java class.
 pub struct EmptyCodeBlockReferenceIterator;
 
 impl CodeBlockReferenceIterator for EmptyCodeBlockReferenceIterator {

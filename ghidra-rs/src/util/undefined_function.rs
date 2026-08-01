@@ -79,7 +79,8 @@ use crate::program::model::listing::{
     Function, FunctionSignature, FunctionTag, Parameter, Program, Variable,
 };
 use crate::program::model::symbol::{ExternalLocation, Namespace, SourceType, Symbol};
-use crate::program::seam_stubs::{CodeBlock, StackFrame, VariableFilter};
+use crate::program::model::block::code_block::CodeBlock;
+use crate::program::seam_stubs::{StackFrame, VariableFilter};
 use crate::util::exception::{CancelledException, InvalidInputException};
 use crate::util::seam_stubs::IsolatedEntrySubModelLike;
 use crate::util::task::TaskMonitor;
@@ -117,9 +118,7 @@ pub fn find_entry_block(
     }
 
     let mut visited: HashSet<Address> = HashSet::new();
-    let block_start = block
-        .get_first_start_address()
-        .expect("a non-empty code block has a first start address");
+    let block_start = block.get_first_start_address();
     visited.insert(block_start);
 
     let mut worklist: VecDeque<Box<dyn CodeBlock>> = VecDeque::new();
@@ -524,7 +523,7 @@ pub trait UndefinedFunction: Function {
             .get_first_code_block_containing(address, monitor)
             .ok()
             .flatten()?;
-        let entry = block.get_first_start_address()?;
+        let entry = block.get_first_start_address();
         Self::new_undefined_function(program, Some(entry)).ok()
     }
 
@@ -541,7 +540,7 @@ pub trait UndefinedFunction: Function {
     {
         monitor.set_message(&format!("Find undefined entry for {address} (simple model)"));
         let block = find_entry_block(block_model, address, monitor).ok().flatten()?;
-        let entry = block.get_first_start_address()?;
+        let entry = block.get_first_start_address();
         Self::new_undefined_function(program, Some(entry)).ok()
     }
 }
@@ -1151,21 +1150,111 @@ mod tests {
         sources: Vec<(Address, bool)>,
     }
 
-    impl CodeBlock for GraphBlock {
-        fn get_min_address(&self) -> Option<Address> {
+    impl AddressSetView for GraphBlock {
+        fn contains(&self, address: &Address) -> bool {
+            address == &self.start
+        }
+        fn contains_range(&self, start: &Address, end: &Address) -> bool {
+            self.contains(start) && self.contains(end)
+        }
+        fn contains_set(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn is_empty(&self) -> bool {
+            false
+        }
+        fn min_address(&self) -> Option<Address> {
             Some(self.start.clone())
         }
+        fn max_address(&self) -> Option<Address> {
+            Some(self.start.clone())
+        }
+        fn num_address_ranges(&self) -> usize {
+            1
+        }
+        fn address_ranges(&self) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn address_ranges_ordered(
+            &self,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn address_ranges_from(
+            &self,
+            _start: &Address,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn num_addresses(&self) -> u64 {
+            1
+        }
+        fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn addresses_from(
+            &self,
+            _start: &Address,
+            _forward: bool,
+        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersects_set(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersects_range(&self, _start: &Address, _end: &Address) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersect(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn intersect_range(
+            &self,
+            _start: &Address,
+            _end: &Address,
+        ) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn union(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn subtract(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn xor(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn has_same_addresses(&self, _set: &dyn AddressSetView) -> bool {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn first_range(&self) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn last_range(&self) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn range_containing(
+            &self,
+            _address: &Address,
+        ) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not needed for this smoke test")
+        }
+        fn find_first_address_in_common(&self, _set: &dyn AddressSetView) -> Option<Address> {
+            unimplemented!("not needed for this smoke test")
+        }
+    }
+
+    impl CodeBlock for GraphBlock {
         fn get_model(&self) -> Box<dyn CodeBlockModel> {
             Box::new(MockCodeBlockModel)
         }
         fn get_destinations(&self, _monitor: &dyn TaskMonitor) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
             unimplemented!("not needed for this smoke test")
         }
-        fn is_empty(&self) -> bool {
-            false
-        }
-        fn get_first_start_address(&self) -> Option<Address> {
-            Some(self.start.clone())
+        fn get_first_start_address(&self) -> Address {
+            self.start.clone()
         }
         fn get_sources(&self, _monitor: &dyn TaskMonitor) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
             Ok(Box::new(GraphSourceIterator {
@@ -1337,21 +1426,110 @@ mod tests {
 
         #[derive(Clone)]
         struct ChainBlock(GraphBlock, Option<Box<GraphBlock>>);
-        impl CodeBlock for ChainBlock {
-            fn get_min_address(&self) -> Option<Address> {
+        impl AddressSetView for ChainBlock {
+            fn contains(&self, address: &Address) -> bool {
+                address == &self.0.start
+            }
+            fn contains_range(&self, start: &Address, end: &Address) -> bool {
+                self.contains(start) && self.contains(end)
+            }
+            fn contains_set(&self, _set: &dyn AddressSetView) -> bool {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn is_empty(&self) -> bool {
+                false
+            }
+            fn min_address(&self) -> Option<Address> {
                 Some(self.0.start.clone())
             }
+            fn max_address(&self) -> Option<Address> {
+                Some(self.0.start.clone())
+            }
+            fn num_address_ranges(&self) -> usize {
+                1
+            }
+            fn address_ranges(&self) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn address_ranges_ordered(
+                &self,
+                _forward: bool,
+            ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn address_ranges_from(
+                &self,
+                _start: &Address,
+                _forward: bool,
+            ) -> Box<dyn crate::program::model::address::AddressRangeIterator> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn num_addresses(&self) -> u64 {
+                1
+            }
+            fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn addresses_from(
+                &self,
+                _start: &Address,
+                _forward: bool,
+            ) -> Box<dyn crate::program::model::address::AddressIterator> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn intersects_set(&self, _set: &dyn AddressSetView) -> bool {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn intersects_range(&self, _start: &Address, _end: &Address) -> bool {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn intersect(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn intersect_range(
+                &self,
+                _start: &Address,
+                _end: &Address,
+            ) -> crate::program::model::address::AddressSet {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn union(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn subtract(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn xor(&self, _set: &dyn AddressSetView) -> crate::program::model::address::AddressSet {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn has_same_addresses(&self, _set: &dyn AddressSetView) -> bool {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn first_range(&self) -> Option<crate::program::model::address::AddressRange> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn last_range(&self) -> Option<crate::program::model::address::AddressRange> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn range_containing(
+                &self,
+                _address: &Address,
+            ) -> Option<crate::program::model::address::AddressRange> {
+                unimplemented!("not needed for this smoke test")
+            }
+            fn find_first_address_in_common(&self, _set: &dyn AddressSetView) -> Option<Address> {
+                unimplemented!("not needed for this smoke test")
+            }
+        }
+        impl CodeBlock for ChainBlock {
             fn get_model(&self) -> Box<dyn CodeBlockModel> {
                 Box::new(MockCodeBlockModel)
             }
             fn get_destinations(&self, _monitor: &dyn TaskMonitor) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
                 unimplemented!("not needed for this smoke test")
             }
-            fn is_empty(&self) -> bool {
-                false
-            }
-            fn get_first_start_address(&self) -> Option<Address> {
-                Some(self.0.start.clone())
+            fn get_first_start_address(&self) -> Address {
+                self.0.start.clone()
             }
             fn get_sources(&self, _monitor: &dyn TaskMonitor) -> Result<Box<dyn CodeBlockReferenceIterator>, CancelledException> {
                 match &self.1 {
@@ -1422,7 +1600,7 @@ mod tests {
         let model = ChainModel(requested_chain_block);
         let monitor = DummyMonitor;
         let found = find_entry_block(&model, &addr(0x3000), &monitor).unwrap().unwrap();
-        assert_eq!(found.get_first_start_address(), Some(real_entry));
+        assert_eq!(found.get_first_start_address(), real_entry);
     }
 
     #[test]

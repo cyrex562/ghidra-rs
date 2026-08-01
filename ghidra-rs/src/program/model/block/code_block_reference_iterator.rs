@@ -16,8 +16,11 @@ pub trait CodeBlockReferenceIterator {
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::seam_stubs::{CodeBlock, FlowType};
+    use crate::program::model::block::code_block::CodeBlock;
+    use crate::program::seam_stubs::FlowType;
     use std::sync::Arc;
+
+    crate::impl_empty_address_set_view!(MockCodeBlock);
 
     struct MockCodeBlock;
 

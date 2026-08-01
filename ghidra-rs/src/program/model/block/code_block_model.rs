@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use crate::program::model::address::Address;
+use crate::program::model::block::code_block::CodeBlock;
 use crate::program::model::block::code_block_iterator::CodeBlockIterator;
 use crate::program::model::block::code_block_reference_iterator::CodeBlockReferenceIterator;
 use crate::program::model::listing::program::Program;
-use crate::program::seam_stubs::{CodeBlock, FlowType};
+use crate::program::seam_stubs::FlowType;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -154,6 +155,8 @@ mod tests {
     /// [`get_first_code_block_containing`] (returning zero or one block, never fabricating extras)
     /// while [`get_name`]/[`externals_included`]/[`allows_block_overlap`] report real,
     /// caller-distinguishable state rather than shared placeholder defaults.
+    crate::impl_empty_address_set_view!(MockCodeBlock);
+
     struct MockCodeBlock;
 
     impl CodeBlock for MockCodeBlock {
