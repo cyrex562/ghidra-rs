@@ -127,6 +127,15 @@ pub trait ApplicationProperties {
             _ => today_yyyy_mmm_dd(),
         }
     }
+
+    /// Lists the names of every property held in this instance's own backing property store,
+    /// mirroring the `Enumeration<Object> keys()` iteration performed by
+    /// [`Application::application_source_revisions`](crate::framework::application::Application::application_source_revisions).
+    /// Defaults to empty so existing implementors are unaffected; implementations that back a
+    /// real, enumerable property store should override this.
+    fn property_names(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 /// Returns `value` if present and non-blank, otherwise the empty string, mirroring the
