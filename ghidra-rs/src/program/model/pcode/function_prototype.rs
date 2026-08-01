@@ -35,7 +35,8 @@ use crate::program::model::pcode::decoder::Decoder;
 use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::pcode_data_type_manager::PcodeDataTypeManager;
-use crate::program::seam_stubs::{HighSymbol, PcodeFactory, PlaceholderVariableStorage, VariableStorage};
+use crate::program::seam_stubs::{HighSymbol, PcodeFactory, PlaceholderVariableStorage};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// High-level prototype of a function based on Varnodes, describing the inputs and outputs of
 /// this function.

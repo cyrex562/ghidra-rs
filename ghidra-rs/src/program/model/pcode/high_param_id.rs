@@ -169,7 +169,8 @@ mod tests {
     use crate::program::model::listing::{FunctionSignature, FunctionTag, Parameter, Variable};
     use crate::program::model::symbol::{ExternalLocation, Namespace, Symbol, SymbolType};
     use crate::program::model::pcode::Varnode;
-    use crate::program::seam_stubs::{StackFrame, VariableFilter, VariableStorage};
+    use crate::program::seam_stubs::{StackFrame, VariableFilter};
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::program::database::function::OverlappingFunctionException;
     use crate::program::model::listing::Program;
     use crate::util::exception::InvalidInputException;

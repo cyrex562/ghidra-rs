@@ -37,7 +37,8 @@ use crate::program::model::pcode::ids::{
     ATTRIB_SPACE, ATTRIB_VALUE, ELEM_ADDR, ELEM_IOP, ELEM_SPACEID,
 };
 use crate::program::model::pcode::Varnode;
-use crate::program::seam_stubs::{PcodeFactory, PlaceholderVariableStorage, VariableStorage, VarnodeListStorage};
+use crate::program::seam_stubs::{PcodeFactory, PlaceholderVariableStorage, VarnodeListStorage};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::xml::spec_xml_utils::{decode_int, decode_long};
 use crate::util::xml::xml_element::XmlElement;
 use crate::util::xml::xml_parse_exception::XmlParseException;

@@ -28,15 +28,15 @@
 //! analogue of the unchecked `IllegalArgumentException`).
 //!
 //! `VariableStorage.isForcedIndirect()`/`isAutoStorage()` are already covered by the
-//! [`seam_stubs::VariableStorage`](crate::program::seam_stubs::VariableStorage) placeholder (grown
-//! for `ParameterImpl`), so no further stub growth is needed here.
+//! [`VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage) trait (grown
+//! for `ParameterImpl`), so no further growth is needed here.
 
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::parameter_impl::ParameterImpl;
 use crate::program::model::listing::variable::SetVariableNameError;
 use crate::program::model::listing::{AutoParameterType, Function};
 use crate::program::model::symbol::SourceType;
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::InvalidInputException;
 
 /// Stands in for the private static `AutoParameterImpl.getAutoName(AutoParameterType)`: the

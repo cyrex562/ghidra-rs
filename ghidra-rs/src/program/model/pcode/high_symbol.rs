@@ -66,7 +66,8 @@ use crate::program::model::pcode::decoder_exception::DecoderException;
 use crate::program::model::pcode::encoder::Encoder;
 use crate::program::model::pcode::high_variable::HighVariable;
 use crate::program::model::symbol::{Namespace, Symbol};
-use crate::program::seam_stubs::{HighFunction, PlaceholderDataType, PlaceholderVariableStorage, SymbolEntry, VariableStorage};
+use crate::program::seam_stubs::{HighFunction, PlaceholderDataType, PlaceholderVariableStorage, SymbolEntry};
+    use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// Put keys in the dynamic symbol portion of the key space. Port of `HighSymbol.ID_BASE`.
 pub const ID_BASE: i64 = 0x4000_0000_0000_0000;

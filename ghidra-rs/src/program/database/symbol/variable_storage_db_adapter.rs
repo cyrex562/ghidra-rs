@@ -20,7 +20,7 @@ use std::io;
 use crate::framework::db::{DBRecord, RecordIterator};
 
 /// Adapter to access the variable storage table, which maps a storage-address hash to its
-/// serialized [`VariableStorage`](crate::program::seam_stubs::VariableStorage) representation.
+/// serialized [`VariableStorage`](crate::program::model::listing::variable_storage::VariableStorage) representation.
 ///
 /// Port of `ghidra.program.database.symbol.VariableStorageDBAdapter`. See the module docs for
 /// what was intentionally left out (the static factory and table-layout constants).

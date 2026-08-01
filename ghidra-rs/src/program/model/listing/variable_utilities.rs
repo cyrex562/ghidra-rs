@@ -20,7 +20,7 @@ use crate::program::model::lang::RegisterRef;
 use crate::program::model::listing::{AutoParameterType, Function, Parameter, Variable, VariableSizeException};
 use crate::program::model::pcode::Varnode;
 use crate::program::model::symbol::{Namespace, NamespaceType};
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::InvalidInputException;
 
 /// Assumed pointer size, in bytes, used when no [`DataTypeManager`] is available to ask for a

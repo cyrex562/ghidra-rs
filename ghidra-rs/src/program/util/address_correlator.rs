@@ -97,10 +97,8 @@ mod tests {
         ExternalLocation, ExternalReference, Namespace, Reference, SourceType, Symbol, SymbolType,
     };
     use crate::program::model::lang::prototype_model::PrototypeModel;
-    use crate::program::seam_stubs::{
-        AddressCorrelationRangeLike, CommentType, RefType as SeamRefType,
-        Reference as SeamReference, StackFrame, VariableFilter, VariableStorage,
-    };
+    use crate::program::seam_stubs::{AddressCorrelationRangeLike, CommentType, RefType as SeamRefType, Reference as SeamReference, StackFrame, VariableFilter};
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::util::exception::{CancelledException, InvalidInputException};
     use crate::util::task::TaskMonitor;
     use std::any::{Any, TypeId};

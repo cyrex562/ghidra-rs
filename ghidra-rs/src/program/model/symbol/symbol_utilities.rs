@@ -72,9 +72,9 @@
 //! - [`SymbolTable::get_label_or_function_symbols`](crate::program::model::symbol::SymbolTable::get_label_or_function_symbols)
 //!   -- stands in for `SymbolTable.getLabelOrFunctionSymbols(String, Namespace)` (Java's only
 //!   caller, this class, always passes a `null` namespace).
-//! - [`VariableStorage::is_stack_storage`](crate::program::seam_stubs::VariableStorage::is_stack_storage)
+//! - [`VariableStorage::is_stack_storage`](crate::program::model::listing::variable_storage::VariableStorage::is_stack_storage)
 //!   and
-//!   [`VariableStorage::get_stack_offset`](crate::program::seam_stubs::VariableStorage::get_stack_offset)
+//!   [`VariableStorage::get_stack_offset`](crate::program::model::listing::variable_storage::VariableStorage::get_stack_offset)
 //!   -- stand in for `VariableStorage.isStackStorage()`/`getStackOffset()`.
 //!
 //! Also fixed in passing: the pre-existing free-function port of
@@ -94,7 +94,7 @@ use crate::program::model::listing::function::{
 };
 use crate::program::model::listing::{CodeUnit, Data, Program};
 use crate::program::model::symbol::{Namespace, SourceType, Symbol, SymbolType};
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::InvalidInputException;
 
 /// Maximum allowed symbol name length, matching Ghidra's Java SymbolUtilities.

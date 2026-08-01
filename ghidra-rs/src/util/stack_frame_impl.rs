@@ -432,7 +432,7 @@ mod tests {
         fn set_data_type_with_storage(
             &mut self,
             _data_type: Box<dyn DataType>,
-            _storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
+            _storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage>,
             _force: bool,
             _source: SourceType,
         ) -> Result<(), InvalidInputException> {
@@ -484,7 +484,7 @@ mod tests {
             None
         }
         fn set_comment(&mut self, _comment: Option<String>) {}
-        fn get_variable_storage(&self) -> Option<Box<dyn crate::program::seam_stubs::VariableStorage>> {
+        fn get_variable_storage(&self) -> Option<Box<dyn crate::program::model::listing::variable_storage::VariableStorage>> {
             None
         }
         fn get_first_storage_varnode(&self) -> Option<Varnode> {
@@ -615,7 +615,7 @@ mod tests {
         fn set_return(
             &mut self,
             _data_type: Box<dyn DataType>,
-            _storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
+            _storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage>,
             _source: SourceType,
         ) -> Result<(), InvalidInputException> {
             unimplemented!("not needed for this smoke test")

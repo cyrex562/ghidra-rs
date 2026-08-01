@@ -9,7 +9,7 @@ use crate::program::model::listing::{Function, Program};
 use crate::program::model::pcode::Varnode;
 use crate::program::model::symbol::{SourceType, Symbol};
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 
 /// Error produced when [`Variable::set_name`] fails.

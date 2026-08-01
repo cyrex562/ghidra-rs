@@ -13,15 +13,15 @@
 //! wired together, so it is modeled as a trait -- a supertrait of [`VariableStorage`] adding just
 //! the four `@Override` accessors this subclass introduces -- rather than a concrete struct.
 //!
-//! Two of those four (`isForcedIndirect()`/`isAutoStorage()`) have since been promoted onto the
-//! [`VariableStorage`] stub itself (grown for
-//! [`ParameterImpl`](crate::program::model::listing::parameter_impl::ParameterImpl); see
-//! `STUBS.tsv`), matching the real `VariableStorage` base class (both default `false` there).
-//! Since a subtrait cannot supply a new default body under a supertrait method's exact name
-//! (the same limitation documented on
+//! All four (`isForcedIndirect()`/`isAutoStorage()`/`isUnassignedStorage()`/`isVoidStorage()`)
+//! have since been promoted onto the real [`VariableStorage`] port itself (see
+//! [`VariableStorage::is_forced_indirect`]/[`is_auto_storage`](VariableStorage::is_auto_storage)/
+//! [`is_unassigned_storage`](VariableStorage::is_unassigned_storage)/
+//! [`is_void_storage`](VariableStorage::is_void_storage)). Since a subtrait cannot supply a new
+//! default body under a supertrait method's exact name (the same limitation documented on
 //! [`VariableImpl`](crate::program::model::listing::variable_impl::VariableImpl)), this trait no
-//! longer redeclares them; implementors instead override `VariableStorage::is_forced_indirect`/
-//! `is_auto_storage` directly, optionally delegating to
+//! longer redeclares any of them; implementors instead override those `VariableStorage` methods
+//! directly, optionally delegating to
 //! [`dynamic_variable_storage_is_auto_storage`](DynamicVariableStorage::dynamic_variable_storage_is_auto_storage)
 //! for the `autoParamType != null` default this class's real Java override provides.
 //!
@@ -30,26 +30,18 @@
 //! (varnode list validation against a `ProgramArchitecture`, raising `InvalidInputException`) and
 //! have no Rust trait equivalent, following the same precedent set by
 //! [`HighVariable`](crate::program::model::pcode::high_variable::HighVariable) for the Java
-//! constructors it does not model. `VariableStorage` itself is still only a placeholder stub (see
-//! `STUBS.tsv`), so those singletons remain unmodeled until a concrete implementor exists to back
-//! them.
+//! constructors it does not model.
 //!
 //! `toString()`'s `" (ptr)"`/`" (auto)"` suffix logic is ported as
 //! [`dynamic_storage_suffix`](DynamicVariableStorage::dynamic_storage_suffix); the base
-//! `VariableStorage.toString()` description itself is not modeled by the `VariableStorage` stub,
-//! so implementors are expected to append this suffix to their own base description.
+//! `VariableStorage.toString()` description itself is not modeled by [`VariableStorage`], so
+//! implementors are expected to append this suffix to their own base description.
 
 use crate::program::model::listing::AutoParameterType;
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 
 /// Port of `ghidra.program.model.lang.DynamicVariableStorage`.
 pub trait DynamicVariableStorage: VariableStorage {
-    /// Port of `DynamicVariableStorage.isUnassignedStorage()`.
-    fn is_unassigned_storage(&self) -> bool;
-
-    /// Port of `DynamicVariableStorage.isVoidStorage()`.
-    fn is_void_storage(&self) -> bool;
-
     /// Default body an implementor's own `VariableStorage::is_auto_storage` override can delegate
     /// to: `true` if this storage carries an auto-parameter type, matching
     /// `DynamicVariableStorage.isAutoStorage()`'s `autoParamType != null` check (as opposed to the
@@ -97,15 +89,7 @@ mod tests {
         }
     }
 
-    impl DynamicVariableStorage for MockForcedIndirectStorage {
-        fn is_unassigned_storage(&self) -> bool {
-            false
-        }
-
-        fn is_void_storage(&self) -> bool {
-            false
-        }
-    }
+    impl DynamicVariableStorage for MockForcedIndirectStorage {}
 
     /// Mock backing unassigned storage carrying an auto-parameter type -- proves the
     /// `get_auto_parameter_type` override drives `is_auto_storage` through the supertrait.
@@ -119,17 +103,13 @@ mod tests {
         fn is_auto_storage(&self) -> bool {
             self.dynamic_variable_storage_is_auto_storage()
         }
-    }
 
-    impl DynamicVariableStorage for MockAutoParamStorage {
         fn is_unassigned_storage(&self) -> bool {
             true
         }
-
-        fn is_void_storage(&self) -> bool {
-            false
-        }
     }
+
+    impl DynamicVariableStorage for MockAutoParamStorage {}
 
     fn ram_varnode() -> Varnode {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);

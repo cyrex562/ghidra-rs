@@ -148,7 +148,7 @@ mod tests {
         fn set_return(
             &mut self,
             _data_type: Box<dyn crate::program::model::data::data_type::DataType>,
-            _storage: Box<dyn crate::program::seam_stubs::VariableStorage>,
+            _storage: Box<dyn crate::program::model::listing::variable_storage::VariableStorage>,
             _source: crate::program::model::symbol::SourceType,
         ) -> Result<(), crate::util::exception::InvalidInputException> {
             Ok(())

@@ -8,7 +8,7 @@ use crate::program::database::ManagerDB;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::listing::Library;
 use crate::program::model::symbol::{SourceType, Symbol, SymbolIterator, SymbolTable, SymbolType};
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use std::io;
 use std::sync::{Arc, RwLock};
 
