@@ -14,6 +14,7 @@ pub mod array_stringable;
 pub mod bit_field_packing;
 pub mod bit_group;
 pub mod built_in_data_type;
+pub mod byte_data_type;
 pub mod category;
 pub mod category_path;
 pub mod char_data_type;
