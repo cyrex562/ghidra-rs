@@ -11829,7 +11829,7 @@ orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NotEmptyEx
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NotFoundException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/NotYetImplementedException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/exception/PropertyTypeMismatchException.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util exception 
-orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/ExtensionDetails.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util extensions 
+orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/ExtensionDetails.java	DONE	orig_src Ghidra Framework Generic src main java ghidra util extensions 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/ExtensionModuleClassLoader.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util extensions 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/ExtensionUtils.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util extensions 
 orig_src/Ghidra/Framework/Generic/src/main/java/ghidra/util/extensions/Extensions.java	TODO	orig_src Ghidra Framework Generic src main java ghidra util extensions 

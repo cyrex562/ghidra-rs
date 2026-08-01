@@ -373,3 +373,6 @@ ts	stub_class	referenced_by
 2026-07-31T00:00:00Z	Symbol(grown)	SymbolUtilities
 2026-07-31T00:00:00Z	SymbolTable(grown)	SymbolUtilities
 2026-07-31T00:00:00Z	GModuleLike	Application
+2026-07-31T00:00:00Z	ModuleUtilities(consts)	ExtensionDetails
+2026-07-31T00:00:00Z	ExtensionUtils(consts)	ExtensionDetails
+2026-07-31T00:00:00Z	ApplicationLayoutLike(grown)	ExtensionDetails
