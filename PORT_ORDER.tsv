@@ -30,7 +30,7 @@ DONE	trait	3	1034	1	program	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/prog
 DONE	trait	2	1068	234	program	Ghidra/Features/Base/src/main/java/ghidra/program/model/listing/CodeUnitFormat.java
 DONE	trait	2	16	238	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeDB.java
 PARK	trait	1	62	205	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/database/data/DataTypeUtilities.java
-TODO	trait	0	1380	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureDataType.java
+PARK	trait	0	1380	5	program	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureDataType.java
 TODO	trait	13	475	3	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13FileChecksum.java
 TODO	trait	11	482	15	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Type.java
 TODO	trait	10	491	15	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Section.java
