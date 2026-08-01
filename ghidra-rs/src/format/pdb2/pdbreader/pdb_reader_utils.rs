@@ -8,7 +8,7 @@ const DASHES: &str = "----------------------------------------------------------
 ///
 /// Total output width is always `DASHES.len()` characters (60 dashes + newline).
 /// `name.len()` must not exceed `DASHES.len()` or this function will panic.
-pub fn dump_head(writer: &mut impl std::io::Write, name: &str) -> std::io::Result<()> {
+pub fn dump_head(writer: &mut (impl std::io::Write + ?Sized), name: &str) -> std::io::Result<()> {
     writer.write_all(name.as_bytes())?;
     writer.write_all(DASHES[name.len()..].as_bytes())
 }
@@ -16,7 +16,7 @@ pub fn dump_head(writer: &mut impl std::io::Write, name: &str) -> std::io::Resul
 /// Writes a tail line for `name`: `"End " + name` followed by enough dashes to fill the line.
 ///
 /// `name.len() + 4` must not exceed `DASHES.len()` or this function will panic.
-pub fn dump_tail(writer: &mut impl std::io::Write, name: &str) -> std::io::Result<()> {
+pub fn dump_tail(writer: &mut (impl std::io::Write + ?Sized), name: &str) -> std::io::Result<()> {
     writer.write_all(b"End ")?;
     writer.write_all(name.as_bytes())?;
     writer.write_all(DASHES[name.len() + 4..].as_bytes())
