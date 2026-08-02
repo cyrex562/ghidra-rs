@@ -7954,7 +7954,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualif
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedBasicName.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedName.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
-orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDReusableName.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
+orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDReusableName.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDSpecialName.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDMangObjectParser.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObject.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
