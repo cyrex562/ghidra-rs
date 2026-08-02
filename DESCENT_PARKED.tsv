@@ -3,3 +3,4 @@ ts	reason	path
 2026-08-01T03:19	timeout	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/data/StructureDataType.java
 2026-08-01T04:47	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Type.java
 2026-08-01T21:40	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Section.java
+2026-08-01T22:20	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/DebugHeader.java
