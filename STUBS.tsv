@@ -390,3 +390,4 @@ ts	stub_class	referenced_by
 2026-08-02T00:00:00Z	MdQualificationLike	MDObjectCPP
 2026-08-02T00:00:00Z	MdStringLike	MDObjectCPP
 2026-08-02T00:00:00Z	MdTypeInfoLike	MDObjectCPP
+2026-08-02T00:00:00Z	MdNumberedNamespaceLike	MDQualifier
