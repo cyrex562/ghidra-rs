@@ -7933,7 +7933,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifi
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDManagedProperty.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDManagedPropertyParser.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDModifiedTypeParser.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
-orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDModifierType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
+orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDModifierType.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDNamedUnspecifiedType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDPinPointerProperty.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDPointerRefDataType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
