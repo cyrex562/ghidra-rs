@@ -6,3 +6,4 @@ ts	reason	path
 2026-08-01T22:20	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/DebugHeader.java
 2026-08-01T23:06	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/MDDataType.java
 2026-08-02T01:18	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNestedName.java
+2026-08-02T01:58	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java
