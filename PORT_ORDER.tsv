@@ -11,7 +11,7 @@ DONE	trait	43	13	37	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdema
 DONE	trait	42	9	41	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDBasicName.java
 DONE	trait	41	14	36	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDBasedAttribute.java
 DONE	trait	40	15	50	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDModifierType.java
-TODO	trait	39	41	16	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangUtils.java
+DONE	trait	39	41	16	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangUtils.java
 TODO	trait	38	13	34	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDFragmentName.java
 TODO	trait	37	41	5	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangGenericize.java
 TODO	trait	36	10	39	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedName.java
