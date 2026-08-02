@@ -1,6 +1,8 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use crate::demangler::object::md_object_cpp::MdObjectCpp;
+
 /// Placeholder for `mdemangler.MDMang`, needed by
 /// [`crate::demangler::datatype::md_data_type::MdDataType`].
 ///
@@ -58,5 +60,83 @@ pub trait MdTemplateNameAndArgumentsLike {
     /// Inserts the template's rendered text (name and arguments) into `builder`.
     ///
     /// Mirrors `MDTemplateNameAndArguments.insert(StringBuilder)`.
+    fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
+}
+
+/// Placeholder for `mdemangler.naming.MDQualifiedBasicName`, needed by
+/// [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
+///
+/// Only the members `MDObjectCPP`'s ported (non-parsing) surface touches (`getBasicName`,
+/// `getQualification`, `isString`, `getMDString`, `insert`) are declared here; the real port also
+/// carries the RTTI-number/type-cast/name-modifier parsing surface.
+pub trait MdQualifiedBasicNameLike {
+    /// Returns the basic (innermost, unqualified) name component.
+    ///
+    /// Mirrors `MDQualifiedBasicName.getBasicName()`.
+    fn basic_name(&self) -> &dyn MdBasicNameLike;
+
+    /// Returns the namespace-qualification component.
+    ///
+    /// Mirrors `MDQualifiedBasicName.getQualification()`.
+    fn qualification(&self) -> &dyn MdQualificationLike;
+
+    /// Returns whether the basic name is an [`MdStringLike`] literal.
+    ///
+    /// Mirrors `MDQualifiedBasicName.isString()`.
+    fn is_string(&self) -> bool;
+
+    /// Returns the string literal, when [`MdQualifiedBasicNameLike::is_string`] is `true`.
+    ///
+    /// Mirrors `MDQualifiedBasicName.getMDString()`.
+    fn md_string(&self) -> Option<&dyn MdStringLike>;
+
+    /// Inserts the rendered qualified name into `builder`.
+    ///
+    /// Mirrors `MDQualifiedBasicName.insert(StringBuilder)`.
+    fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
+}
+
+/// Placeholder for `mdemangler.naming.MDBasicName`, needed by
+/// [`MdQualifiedBasicNameLike`] and, transitively,
+/// [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
+///
+/// Only the two members `MDObjectCPP`'s ported surface touches (`getEmbeddedObject`, `toString`)
+/// are declared here; the real port carries the full basic-name variant hierarchy.
+pub trait MdBasicNameLike {
+    /// Returns the embedded object if there is one, else the object that owns this basic name.
+    ///
+    /// Mirrors `MDBasicName.getEmbeddedObject()`.
+    fn embedded_object(&self) -> &dyn MdObjectCpp;
+
+    /// Returns the rendered display text of this basic name.
+    ///
+    /// Mirrors `MDBasicName.toString()`.
+    fn to_display_string(&self) -> String;
+}
+
+/// Placeholder for `mdemangler.naming.MDQualification`, needed by
+/// [`MdQualifiedBasicNameLike`] and [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
+///
+/// `MDObjectCPP`'s ported surface only ever passes this type through (`getQualification`), never
+/// calling a member on it, so no methods are declared yet.
+pub trait MdQualificationLike {}
+
+/// Placeholder for `mdemangler.MDString`, needed by [`MdQualifiedBasicNameLike`] and
+/// [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
+///
+/// `MDObjectCPP`'s ported surface only ever passes this type through (`getMDString`), never
+/// calling a member on it, so no methods are declared yet.
+pub trait MdStringLike {}
+
+/// Placeholder for `mdemangler.typeinfo.MDTypeInfo`, needed by
+/// [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
+///
+/// Only `insert` -- the one member `MDObjectCPP.insert(StringBuilder)` calls -- is declared here;
+/// the real port also carries `getMDType`/`setTypeCast`/`parse` and the RTTI-driven parse dispatch
+/// (`MDTypeInfoParser`).
+pub trait MdTypeInfoLike {
+    /// Inserts the rendered type info into `builder`.
+    ///
+    /// Mirrors `MDTypeInfo.insert(StringBuilder)`.
     fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
 }
