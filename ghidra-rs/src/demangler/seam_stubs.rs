@@ -55,6 +55,27 @@ pub trait MdMangLike {
     fn use_vs_all_qualification(&self) -> bool {
         false
     }
+
+    /// Truncates `builder` at the first embedded NUL character, if any.
+    ///
+    /// Mirrors `MDMang.cleanOutput(StringBuilder)`, added to clean up the lone-NUL sentinel
+    /// mimicking the MSFT "based5 bug" (see [`crate::demangler::datatype::modifier::md_based_attribute`]).
+    /// Given a real, deterministic default here (not overridden by any `MDMang` subclass), unlike
+    /// the option-flag methods above.
+    fn clean_output(&self, builder: &mut String) {
+        if let Some(pos) = builder.find('\0') {
+            builder.truncate(pos);
+        }
+    }
+
+    /// Inserts the rendered CLI-array reference clause `ref_text` into `builder`, space-separated.
+    ///
+    /// Mirrors `MDMang.insertCLIArrayRefSuffix(StringBuilder, StringBuilder)`. Given a real
+    /// default here (delegates to [`MdMangLike::insert_spaced_string`], matching the base
+    /// implementation) since no other override is reachable from this seam.
+    fn insert_cli_array_ref_suffix(&self, builder: &mut String, ref_text: &str) {
+        self.insert_spaced_string(builder, ref_text);
+    }
 }
 
 /// Placeholder for `mdemangler.naming.MDNumberedNamespace`, needed by
@@ -273,4 +294,160 @@ pub trait MdTypeInfoLike {
     ///
     /// Mirrors `MDTypeInfo.insert(StringBuilder)`.
     fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
+}
+
+/// Placeholder for `mdemangler.datatype.modifier.MDCVMod`, needed by
+/// [`crate::demangler::datatype::modifier::md_modifier_type::MdModifierType`].
+///
+/// Only the members `MDModifierType`'s ported (non-parsing) surface touches -- the const/
+/// volatile/pointer/reference/array/CLI-array/pin-pointer query flags, the based-name/
+/// member-scope accessors, and the render-side `insert`/managed-properties helpers -- are
+/// declared here; the real port also carries the parse dispatch (`parseInternal`,
+/// `parseManagedProperty`, ...) and the `isFunction`/`getThisPointerMDCVMod` pair
+/// `MDModifierType.parseInternal` uses, which is out of scope for the same reason parsing is
+/// (see [`crate::demangler::datatype::modifier::md_modifier_type`]).
+pub trait MdCvModLike {
+    /// Returns whether this modifier is a `__ptr64` pointer.
+    ///
+    /// Mirrors `MDCVMod.isPointer64()`.
+    fn is_pointer64(&self) -> bool;
+
+    /// Returns whether this modifier is `__restrict`.
+    ///
+    /// Mirrors `MDCVMod.isRestricted()`.
+    fn is_restricted(&self) -> bool;
+
+    /// Returns whether this modifier is `__unaligned`.
+    ///
+    /// Mirrors `MDCVMod.isUnaligned()`.
+    fn is_unaligned(&self) -> bool;
+
+    /// Returns the rendered `__based(...)` clause name, if this modifier is based.
+    ///
+    /// Mirrors `MDCVMod.getBasedName()`.
+    fn based_name(&self) -> Option<&str>;
+
+    /// Returns the rendered member-pointer scope qualification, if this modifier is a
+    /// pointer-to-member.
+    ///
+    /// Mirrors `MDCVMod.getMemberScope()`.
+    fn member_scope(&self) -> Option<&str>;
+
+    /// Returns whether this modifier is a CLI array (`cli::array<T>`).
+    ///
+    /// Mirrors `MDCVMod.isCLIArray()`.
+    fn is_cli_array(&self) -> bool;
+
+    /// Returns whether this modifier is a plain pointer (`*`).
+    ///
+    /// Mirrors `MDCVMod.isPointerType()`.
+    fn is_pointer_type(&self) -> bool;
+
+    /// Returns whether this modifier is a function pointer.
+    ///
+    /// Mirrors `MDCVMod.isFunctionPointerType()`.
+    fn is_function_pointer_type(&self) -> bool;
+
+    /// Returns whether this modifier is a reference (`&`).
+    ///
+    /// Mirrors `MDCVMod.isReferenceType()`.
+    fn is_reference_type(&self) -> bool;
+
+    /// Returns whether this modifier is a function reference.
+    ///
+    /// Mirrors `MDCVMod.isFunctionReferenceType()`.
+    fn is_function_reference_type(&self) -> bool;
+
+    /// Returns whether this modifier is an array.
+    ///
+    /// Mirrors `MDCVMod.isArrayType()`.
+    fn is_array_type(&self) -> bool;
+
+    /// Returns whether this modifier is a CLI pin pointer (`cli::pin_ptr<T>`).
+    ///
+    /// Mirrors `MDCVMod.isPinPointer()`.
+    fn is_pin_pointer(&self) -> bool;
+
+    /// Returns whether this modifier is the placeholder "question type" (unresolved/unknown
+    /// modifier kind) set by the `MDModifierType` constructors before parsing runs.
+    ///
+    /// Mirrors `MDCVMod.isQuestionType()`.
+    fn is_question_type(&self) -> bool;
+
+    /// Inserts the rendered modifier text (GC/EI prefix, mod-type keyword, `F`/CV suffix) at the
+    /// front of `builder`, space-separated.
+    ///
+    /// Mirrors `MDCVMod.insert(StringBuilder)`.
+    fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
+
+    /// Inserts this modifier's managed-properties prefix clause (e.g. `cli::array<`) at the
+    /// front of `builder`.
+    ///
+    /// Mirrors `MDCVMod.insertManagedPropertiesPrefix(StringBuilder)`.
+    fn insert_managed_properties_prefix(&self, dmang: &dyn MdMangLike, builder: &mut String);
+
+    /// Appends this modifier's managed-properties suffix clause (e.g. `>`/`^`) to `builder`.
+    ///
+    /// Mirrors `MDCVMod.insertManagedPropertiesSuffix(StringBuilder)`.
+    fn insert_managed_properties_suffix(&self, dmang: &dyn MdMangLike, builder: &mut String);
+}
+
+/// Placeholder for `mdemangler.MDType`, needed by
+/// [`crate::demangler::datatype::modifier::md_modifier_type::MdModifierType`].
+///
+/// `MDType` is the base of every referenceable type `MDModifierType` wraps (via its `refType`
+/// field). Only the members `MDModifierType`'s ported (non-parsing) surface touches -- rendering
+/// (`insert`, and `MDDataType.insertAsArg` for the `instanceof MDDataType` case), and the three
+/// `instanceof` type tests against still-unported sibling types (`MDFunctionType`,
+/// `MDArrayReferencedType`, `MDVoidDataType`) -- are declared here, standing in for Rust's lack of
+/// downcasting on trait objects. The real port also carries the full parse dispatch and the
+/// concrete type hierarchy these query methods currently approximate.
+pub trait MdTypeLike {
+    /// Inserts this type's rendered text into `builder`.
+    ///
+    /// Mirrors `MDType.insert(StringBuilder)`.
+    fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
+
+    /// Inserts this type's rendered text into `builder`, as though it is a template or function
+    /// argument.
+    ///
+    /// Mirrors `MDDataType.insertAsArg(StringBuilder)`, which most concrete `MDDataType`s never
+    /// override (see the identical default on
+    /// [`crate::demangler::datatype::md_data_type::MdDataType::insert_as_arg`]). Only reachable
+    /// via [`MdTypeLike::is_data_type`] returning `true`, mirroring the `refType instanceof
+    /// MDDataType` guard in the original.
+    fn insert_as_arg(&self, dmang: &dyn MdMangLike, builder: &mut String) {
+        self.insert(dmang, builder);
+    }
+
+    /// Returns whether this type is (also) an `MDDataType`.
+    ///
+    /// Stands in for the `refType instanceof MDDataType` check guarding whether
+    /// [`MdTypeLike::insert_as_arg`] is used at all, since Rust trait objects can't be downcast.
+    fn is_data_type(&self) -> bool;
+
+    /// Returns whether this type is an `MDFunctionType`.
+    ///
+    /// Stands in for `refType instanceof MDFunctionType`.
+    fn is_function_type(&self) -> bool;
+
+    /// Returns whether this type is an `MDArrayReferencedType`.
+    ///
+    /// Stands in for `refType instanceof MDArrayReferencedType`.
+    fn is_array_referenced_type(&self) -> bool;
+
+    /// Returns whether this type is an `MDVoidDataType`.
+    ///
+    /// Stands in for `refType instanceof MDVoidDataType`.
+    fn is_void_data_type(&self) -> bool;
+
+    /// Marks this type as reached via a modifier (pointer/reference/array) rather than
+    /// standalone, affecting how an `MDFunctionType` renders its calling convention.
+    ///
+    /// Mirrors `MDFunctionType.setFromModifier()`. Only ever invoked when
+    /// [`MdTypeLike::is_function_type`] is `true`; given a no-op default since non-function
+    /// implementors have nothing to record. `MDFunctionType.insert` mutates during rendering in
+    /// the original too, so a real implementor is expected to use interior mutability to honor
+    /// this `&self` signature.
+    fn mark_from_modifier(&self) {}
 }
