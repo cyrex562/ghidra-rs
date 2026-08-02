@@ -103,19 +103,87 @@ pub trait MdFragmentNameLike {
 }
 
 /// Placeholder for `mdemangler.template.MDTemplateNameAndArguments`, needed by
-/// [`crate::demangler::naming::md_reusable_name::MdReusableName`].
+/// [`crate::demangler::naming::md_reusable_name::MdReusableName`] and
+/// [`crate::demangler::naming::md_basic_name::MdBasicName`].
 ///
-/// Only the members `MDReusableName` touches (`getName`/`insert`) are declared here; the real
-/// port also carries constructor/destructor/type-cast queries and the arguments list.
+/// Originally only `getName`/`insert` (the members `MDReusableName` touches) were declared here;
+/// [`MdBasicName`](crate::demangler::naming::md_basic_name::MdBasicName)'s ported surface also
+/// touches the constructor/destructor/type-cast queries, so those are declared too. The real port
+/// also carries the arguments list and the mutating setters (`setName`/`setXtorQual`/
+/// `setCastTypeString`/`setCastType`).
 pub trait MdTemplateNameAndArgumentsLike {
     /// Returns the template's name text.
     ///
     /// Mirrors `MDTemplateNameAndArguments.getName()`.
     fn get_name(&self) -> String;
 
+    /// Returns whether this template name represents a constructor.
+    ///
+    /// Mirrors `MDTemplateNameAndArguments.isConstructor()`.
+    fn is_constructor(&self) -> bool;
+
+    /// Returns whether this template name represents a destructor.
+    ///
+    /// Mirrors `MDTemplateNameAndArguments.isDestructor()`.
+    fn is_destructor(&self) -> bool;
+
+    /// Returns whether this template name represents a type-cast operator.
+    ///
+    /// Mirrors `MDTemplateNameAndArguments.isTypeCast()`.
+    fn is_type_cast(&self) -> bool;
+
     /// Inserts the template's rendered text (name and arguments) into `builder`.
     ///
     /// Mirrors `MDTemplateNameAndArguments.insert(StringBuilder)`.
+    fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
+}
+
+/// Placeholder for `mdemangler.naming.MDSpecialName`, needed by
+/// [`crate::demangler::naming::md_basic_name::MdBasicName`].
+///
+/// Only the members `MDBasicName`'s ported (non-parsing) surface touches (`isConstructor`,
+/// `isDestructor`, `isTypeCast`, `getRTTINumber`, `isString`, `getMDString`, `getName`, `insert`)
+/// are declared here; the real port also carries the mutating setters (`setName`/`setXtorQual`/
+/// `setCastTypeString`/`setCastType`) and the full RTTI/operator-name parse dispatch.
+pub trait MdSpecialNameLike {
+    /// Returns whether this special name represents a constructor.
+    ///
+    /// Mirrors `MDSpecialName.isConstructor()`.
+    fn is_constructor(&self) -> bool;
+
+    /// Returns whether this special name represents a destructor.
+    ///
+    /// Mirrors `MDSpecialName.isDestructor()`.
+    fn is_destructor(&self) -> bool;
+
+    /// Returns whether this special name represents a type-cast operator.
+    ///
+    /// Mirrors `MDSpecialName.isTypeCast()`.
+    fn is_type_cast(&self) -> bool;
+
+    /// Returns the RTTI number: `{0-4, or -1 if not an RTTI}`.
+    ///
+    /// Mirrors `MDSpecialName.getRTTINumber()`.
+    fn rtti_number(&self) -> i32;
+
+    /// Returns whether this special name is a string literal.
+    ///
+    /// Mirrors `MDSpecialName.isString()`.
+    fn is_string(&self) -> bool;
+
+    /// Returns the string literal, when [`MdSpecialNameLike::is_string`] is `true`.
+    ///
+    /// Mirrors `MDSpecialName.getMDString()`.
+    fn md_string(&self) -> Option<&dyn MdStringLike>;
+
+    /// Returns the rendered name text.
+    ///
+    /// Mirrors `MDSpecialName.getName()`.
+    fn name(&self) -> String;
+
+    /// Inserts the rendered text of this special name into `builder`.
+    ///
+    /// Mirrors `MDSpecialName.insert(StringBuilder)`.
     fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
 }
 
@@ -183,6 +251,16 @@ pub trait MdQualificationLike {}
 /// `MDObjectCPP`'s ported surface only ever passes this type through (`getMDString`), never
 /// calling a member on it, so no methods are declared yet.
 pub trait MdStringLike {}
+
+/// Placeholder for `mdemangler.datatype.MDDataType`, needed by
+/// [`crate::demangler::naming::md_basic_name::MdBasicName`].
+///
+/// `MDBasicName`'s ported surface only ever passes this type through (`setCastType`), never
+/// calling a member on it, so no methods are declared yet. Note: a full port already exists on
+/// disk at `crate::demangler::datatype::md_data_type` (as `MdDataType`), but it isn't wired into
+/// `datatype::mod` or marked `DONE` in `PORT_MANIFEST.tsv`, so it isn't reachable from this
+/// crate; wiring it up is out of scope for this port.
+pub trait MdDataTypeLike {}
 
 /// Placeholder for `mdemangler.typeinfo.MDTypeInfo`, needed by
 /// [`crate::demangler::object::md_object_cpp::MdObjectCpp`].

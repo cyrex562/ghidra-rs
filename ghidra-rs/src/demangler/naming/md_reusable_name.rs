@@ -157,6 +157,18 @@ mod tests {
             self.name.clone()
         }
 
+        fn is_constructor(&self) -> bool {
+            false
+        }
+
+        fn is_destructor(&self) -> bool {
+            false
+        }
+
+        fn is_type_cast(&self) -> bool {
+            false
+        }
+
         fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String) {
             dmang.insert_string(builder, &self.name);
         }

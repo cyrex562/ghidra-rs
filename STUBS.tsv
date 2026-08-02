@@ -391,3 +391,6 @@ ts	stub_class	referenced_by
 2026-08-02T00:00:00Z	MdStringLike	MDObjectCPP
 2026-08-02T00:00:00Z	MdTypeInfoLike	MDObjectCPP
 2026-08-02T00:00:00Z	MdNumberedNamespaceLike	MDQualifier
+2026-08-02T03:40:00Z	MdTemplateNameAndArgumentsLike (extended)	MDBasicName
+2026-08-02T03:40:00Z	MdSpecialNameLike	MDBasicName
+2026-08-02T03:40:00Z	MdDataTypeLike	MDBasicName
