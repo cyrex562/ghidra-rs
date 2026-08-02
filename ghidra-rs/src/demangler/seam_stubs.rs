@@ -22,6 +22,62 @@ pub trait MdMangLike {
     ///
     /// Mirrors `MDMang.insertSpacedString(StringBuilder, String)`.
     fn insert_spaced_string(&self, builder: &mut String, s: &str);
+
+    /// Appends `s` to the end of `builder`, dropping a duplicate boundary space where the
+    /// existing content already ends with one and `s` starts with one.
+    ///
+    /// Mirrors `MDMang.appendString(StringBuilder, String)`. Provided as a default (unlike
+    /// [`MdMangLike::insert_string`]/[`MdMangLike::insert_spaced_string`]) since the original is
+    /// never overridden by any `MDMang` subclass.
+    fn append_string(&self, builder: &mut String, s: &str) {
+        if !builder.is_empty() && !s.is_empty() && builder.ends_with(' ') && s.starts_with(' ') {
+            builder.pop();
+        }
+        builder.push_str(s);
+    }
+
+    /// Returns whether anonymous-namespace qualifiers should render as the encoded
+    /// `_anon_XXXXXXXX` form rather than the literal `` `anonymous namespace' `` text.
+    ///
+    /// Mirrors `dmang.getOutputOptions().useEncodedAnonymousNamespace()`, collapsed directly onto
+    /// this seam since `MDMangOutputOptions` is not ported. Defaults to `false` (the literal-text
+    /// form) so existing implementors are unaffected.
+    fn use_encoded_anonymous_namespace(&self) -> bool {
+        false
+    }
+
+    /// Returns whether a namespace qualification should render via the VS2015-style "all
+    /// brackets" form (no unconditional trailing bracket) rather than the base "MD version" form.
+    ///
+    /// Mirrors the choice between `MDMang.insert(StringBuilder, MDQualification)` (which calls
+    /// `insert_MdVersion`) and the `MDMangVS2015` override (which calls `insert_VSAll`). Defaults
+    /// to `false` (the base `MDMang` behavior) so existing implementors are unaffected.
+    fn use_vs_all_qualification(&self) -> bool {
+        false
+    }
+}
+
+/// Placeholder for `mdemangler.naming.MDNumberedNamespace`, needed by
+/// [`crate::demangler::naming::md_qualifier::MdQualifier`].
+///
+/// Only the members `MDQualifier`'s ported (non-parsing) surface touches (`getName`,
+/// `getNumber().toString()`, `insert`) are declared here; the real port also carries the
+/// `MDEncodedNumber` parsing logic.
+pub trait MdNumberedNamespaceLike {
+    /// Returns the rendered name: the encoded number wrapped in the tick-mark convention.
+    ///
+    /// Mirrors `MDNumberedNamespace.getName()`.
+    fn name(&self) -> String;
+
+    /// Returns the rendered encoded number.
+    ///
+    /// Mirrors `MDNumberedNamespace.getNumber().toString()`.
+    fn number_string(&self) -> String;
+
+    /// Inserts the rendered name into `builder`.
+    ///
+    /// Mirrors `MDNumberedNamespace.insert(StringBuilder)`.
+    fn insert(&self, dmang: &dyn MdMangLike, builder: &mut String);
 }
 
 /// Placeholder for `mdemangler.naming.MDFragmentName`, needed by
