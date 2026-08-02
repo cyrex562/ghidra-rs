@@ -7916,7 +7916,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/extend
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/extended/MDW64Type.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype extended 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/extended/MDWcharDataType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype extended 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDArrayBasicType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
-orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDBasedAttribute.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
+orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDBasedAttribute.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDCLIArrayProperty.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDCLIProperty.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDCVMod.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype modifier 
