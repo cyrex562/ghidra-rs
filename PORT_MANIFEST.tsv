@@ -7960,7 +7960,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDMangOb
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObject.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectBracket.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectC.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
-orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCPP.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
+orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCPP.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCatch.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCatchSym.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCatchableType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler object 

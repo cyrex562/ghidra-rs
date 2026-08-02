@@ -7,5 +7,6 @@ pub mod mangled_context;
 pub mod md_character_iterator;
 pub mod microsoft;
 pub mod naming;
+pub mod object;
 pub mod seam_stubs;
 pub mod swift;

@@ -385,3 +385,8 @@ ts	stub_class	referenced_by
 2026-08-01T07:36:08Z	C13ChecksumType	C13FileChecksum
 2026-08-02T03:19:39Z	MdFragmentNameLike	MDReusableName
 2026-08-02T03:19:39Z	MdTemplateNameAndArgumentsLike	MDReusableName
+2026-08-02T00:00:00Z	MdQualifiedBasicNameLike	MDObjectCPP
+2026-08-02T00:00:00Z	MdBasicNameLike	MDObjectCPP
+2026-08-02T00:00:00Z	MdQualificationLike	MDObjectCPP
+2026-08-02T00:00:00Z	MdStringLike	MDObjectCPP
+2026-08-02T00:00:00Z	MdTypeInfoLike	MDObjectCPP
