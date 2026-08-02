@@ -5,6 +5,7 @@ pub mod demangler_options;
 pub mod gnu;
 pub mod mangled_context;
 pub mod md_character_iterator;
+pub mod md_mang_utils;
 pub mod microsoft;
 pub mod naming;
 pub mod object;

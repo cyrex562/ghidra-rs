@@ -1,3 +1,4 @@
+use crate::demangler::md_mang_utils::create_standard_anonymous_namespace_node;
 use crate::demangler::naming::md_nested_name::MdNestedName;
 use crate::demangler::naming::md_qualification::MdQualification;
 use crate::demangler::naming::md_reusable_name::MdReusableName;
@@ -171,7 +172,7 @@ pub trait MdQualifier {
         }
         else if let Some(anon) = self.name_anonymous() {
             if dmang.use_encoded_anonymous_namespace() {
-                let node = standard_anonymous_namespace_node(&anon.name());
+                let node = create_standard_anonymous_namespace_node(&anon.name());
                 dmang.insert_string(builder, &node);
             }
             else {
@@ -200,29 +201,6 @@ pub trait MdQualifier {
         else {
             dmang.insert_string(builder, UNKNOWN_NAMESPACE);
         }
-    }
-}
-
-/// Standardizes an anonymous-namespace name into the `_anon_XXXXXXXX` form.
-///
-/// Mirrors the static `MDMangUtils.createStandardAnonymousNamespaceNode(String)` helper (a pure
-/// function of its input, so ported directly rather than placed behind a seam). Unlike the
-/// original, which throws `NumberFormatException` on a malformed hex suffix, this returns the
-/// input unchanged -- consistent with this crate's preference for graceful fallback over panics
-/// in non-parsing helper code.
-fn standard_anonymous_namespace_node(anon: &str) -> String {
-    let stripped = if let Some(rest) = anon.strip_prefix("A0x") {
-        rest
-    }
-    else if let Some(rest) = anon.strip_prefix('`') {
-        rest
-    }
-    else {
-        return anon.to_string();
-    };
-    match u64::from_str_radix(stripped, 16) {
-        Ok(num) => format!("_anon_{num:08X}"),
-        Err(_) => anon.to_string(),
     }
 }
 

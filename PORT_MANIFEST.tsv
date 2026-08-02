@@ -7872,7 +7872,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMang.java	TOD
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangGenericize.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangGhidra.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangParseInfo.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler 
-orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangUtils.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler 
+orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangUtils.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangVS2013.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangVS2015.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDOutputOptions.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler 

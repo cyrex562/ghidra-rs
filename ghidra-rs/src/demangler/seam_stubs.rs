@@ -1,6 +1,7 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use crate::demangler::naming::md_qualification::MdQualification;
 use crate::demangler::object::md_object_cpp::MdObjectCpp;
 
 /// Placeholder for `mdemangler.MDMang`, needed by
@@ -223,7 +224,7 @@ pub trait MdQualifiedBasicNameLike {
     /// Returns the namespace-qualification component.
     ///
     /// Mirrors `MDQualifiedBasicName.getQualification()`.
-    fn qualification(&self) -> &dyn MdQualificationLike;
+    fn qualification(&self) -> &dyn MdQualification;
 
     /// Returns whether the basic name is an [`MdStringLike`] literal.
     ///
@@ -258,13 +259,6 @@ pub trait MdBasicNameLike {
     /// Mirrors `MDBasicName.toString()`.
     fn to_display_string(&self) -> String;
 }
-
-/// Placeholder for `mdemangler.naming.MDQualification`, needed by
-/// [`MdQualifiedBasicNameLike`] and [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
-///
-/// `MDObjectCPP`'s ported surface only ever passes this type through (`getQualification`), never
-/// calling a member on it, so no methods are declared yet.
-pub trait MdQualificationLike {}
 
 /// Placeholder for `mdemangler.MDString`, needed by [`MdQualifiedBasicNameLike`] and
 /// [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
@@ -450,4 +444,79 @@ pub trait MdTypeLike {
     /// the original too, so a real implementor is expected to use interior mutability to honor
     /// this `&self` signature.
     fn mark_from_modifier(&self) {}
+}
+
+/// Placeholder for `mdemangler.MDParsableItem`, needed by
+/// [`crate::demangler::md_mang_utils::MdMangUtils`].
+///
+/// `MDParsableItem` is the abstract base of every parse result `MDMangUtils` walks
+/// (`MDComplexType` via `MDType`/`MDDataType`, `MDObjectCPP` via `MDObject`, and `MDModifierType`
+/// via `MDType`), none of which share a common Rust base trait -- each was ported independently as
+/// its own dependency-cycle cut-point, with no supertrait relationship among them. Rather than
+/// retrofit one onto those existing, tested ports, this placeholder models exactly the three
+/// `instanceof` dispatches `MDMangUtils.recurseNamespace`/`getReferencedType` perform, as
+/// downcast-style accessors (the same pattern used by [`MdTypeLike`]'s
+/// `is_function_type`/`is_data_type`/... query methods).
+pub trait MdParsableItemLike {
+    /// `Some(referenced)` when this item is an `MDModifierType`, giving its
+    /// `getReferencedType()` (already unwrapped one level).
+    ///
+    /// Mirrors the `instanceof MDModifierType` branch of the private
+    /// `MDMangUtils.getReferencedType(MDParsableItem)`.
+    fn as_modifier_referenced_item(&self) -> Option<&dyn MdParsableItemLike> {
+        None
+    }
+
+    /// `Some(complex)` when this item is an `MDComplexType`.
+    ///
+    /// Mirrors the `instanceof MDComplexType` branch of the private
+    /// `MDMangUtils.recurseNamespace`.
+    fn as_complex_type(&self) -> Option<&dyn MdComplexTypeLike> {
+        None
+    }
+
+    /// `Some(embedded)` when this item is an `MDObjectCPP`, already resolved via
+    /// `getEmbeddedObject()`.
+    ///
+    /// Mirrors the `instanceof MDObjectCPP` branch of the private `MDMangUtils.recurseNamespace`,
+    /// pre-resolved because `MDObjectCPP.getEmbeddedObject()` requires `Self: Sized` (see
+    /// [`MdObjectCpp::embedded_object`]) and so can't be called through this trait's object-safe
+    /// accessors.
+    fn as_object_cpp_embedded(&self) -> Option<&dyn MdObjectCpp> {
+        None
+    }
+}
+
+/// Placeholder for `mdemangler.datatype.complex.MDComplexType`, needed by
+/// [`MdParsableItemLike`] and, transitively,
+/// [`crate::demangler::md_mang_utils::MdMangUtils`].
+///
+/// Only `getNamespace()` -- the one member `MDMangUtils.recurseNamespace` touches -- is declared
+/// here; the real port also carries the full complex-type (class/struct/union/enum/coclass/
+/// cointerface) parse-and-render surface inherited from `MDDataType`/`MDType`.
+pub trait MdComplexTypeLike {
+    /// Returns the namespace-qualified name of this complex type.
+    ///
+    /// Mirrors `MDComplexType.getNamespace()`.
+    fn namespace(&self) -> &dyn MdQualifiedNameLike;
+}
+
+/// Placeholder for `mdemangler.naming.MDQualifiedName`, needed by [`MdComplexTypeLike`] and,
+/// transitively, [`crate::demangler::md_mang_utils::MdMangUtils`].
+///
+/// Only `getName()`/`getQualification()` -- the two members `MDMangUtils.recurseNamespace`
+/// touches -- are declared here; the real port also carries the parse dispatch and the qualified
+/// (`::`-prefixed) vs. unqualified name distinction. Unlike sibling placeholders, no seam is
+/// needed for `getQualification()`'s return type: `MDQualification` is already ported for real as
+/// [`MdQualification`].
+pub trait MdQualifiedNameLike {
+    /// Returns the innermost (unqualified) name.
+    ///
+    /// Mirrors `MDQualifiedName.getName()`.
+    fn name(&self) -> String;
+
+    /// Returns the namespace-qualification component.
+    ///
+    /// Mirrors `MDQualifiedName.getQualification()`.
+    fn qualification(&self) -> &dyn MdQualification;
 }

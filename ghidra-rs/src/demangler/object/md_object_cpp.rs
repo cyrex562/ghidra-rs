@@ -1,6 +1,7 @@
 use crate::demangler::demangle_exception::DemangledException;
+use crate::demangler::naming::md_qualification::MdQualification;
 use crate::demangler::seam_stubs::{
-    MdMangLike, MdQualificationLike, MdQualifiedBasicNameLike, MdStringLike, MdTypeInfoLike,
+    MdMangLike, MdQualifiedBasicNameLike, MdStringLike, MdTypeInfoLike,
 };
 
 /// Represents a Microsoft-mangled C++ object symbol: either a qualified name (optionally
@@ -83,7 +84,7 @@ pub trait MdObjectCpp {
     /// Returns the namespace-qualification component.
     ///
     /// Mirrors `getQualification()`.
-    fn qualification(&self) -> Option<&dyn MdQualificationLike> {
+    fn qualification(&self) -> Option<&dyn MdQualification> {
         if let Some(hashed) = self.hashed_object() {
             return Some(hashed.qualification());
         }
@@ -151,10 +152,10 @@ pub trait MdHashedObject {
     /// Raw accessor mirroring the private `hashString` field (see `getHashString()`).
     fn hash_string(&self) -> &str;
 
-    /// Returns an empty [`MdQualificationLike`] that represents the namespace of the symbol.
+    /// Returns an empty [`MdQualification`] that represents the namespace of the symbol.
     ///
     /// Mirrors `getQualification()`.
-    fn qualification(&self) -> &dyn MdQualificationLike;
+    fn qualification(&self) -> &dyn MdQualification;
 
     /// Returns the name representation: the hash string wrapped in the tick-mark convention used
     /// elsewhere in this crate's demangled output.
@@ -175,6 +176,7 @@ pub trait MdHashedObject {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::demangler::naming::md_qualifier::MdQualifier;
     use crate::demangler::seam_stubs::MdBasicNameLike;
 
     struct MockMdMang;
@@ -194,8 +196,15 @@ mod tests {
         }
     }
 
-    struct MockQualification;
-    impl MdQualificationLike for MockQualification {}
+    #[derive(Default)]
+    struct MockQualification {
+        quals: Vec<Box<dyn MdQualifier>>,
+    }
+    impl MdQualification for MockQualification {
+        fn qualifiers(&self) -> &[Box<dyn MdQualifier>] {
+            &self.quals
+        }
+    }
 
     struct MockMdString;
     impl MdStringLike for MockMdString {}
@@ -235,7 +244,7 @@ mod tests {
             &self.basic_name
         }
 
-        fn qualification(&self) -> &dyn MdQualificationLike {
+        fn qualification(&self) -> &dyn MdQualification {
             &self.qualification
         }
 
@@ -262,7 +271,7 @@ mod tests {
             &self.hash
         }
 
-        fn qualification(&self) -> &dyn MdQualificationLike {
+        fn qualification(&self) -> &dyn MdQualification {
             &self.qualification
         }
     }
@@ -297,7 +306,7 @@ mod tests {
         MockObjectCpp {
             qualified_name: Some(MockQualifiedBasicName {
                 basic_name: MockBasicName { text: name.to_string() },
-                qualification: MockQualification,
+                qualification: MockQualification::default(),
                 string_literal: None,
             }),
             ..Default::default()
@@ -317,7 +326,7 @@ mod tests {
         let obj = MockObjectCpp {
             hashed_object: Some(MockHashedObject {
                 hash: "0123456789ABCDEF0123456789ABCDEF".to_string(),
-                qualification: MockQualification,
+                qualification: MockQualification::default(),
             }),
             ..Default::default()
         };
@@ -361,7 +370,7 @@ mod tests {
         let obj = MockObjectCpp {
             hashed_object: Some(MockHashedObject {
                 hash: "0123456789ABCDEF0123456789ABCDEF".to_string(),
-                qualification: MockQualification,
+                qualification: MockQualification::default(),
             }),
             ..Default::default()
         };

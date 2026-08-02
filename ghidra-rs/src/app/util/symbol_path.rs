@@ -271,7 +271,13 @@ fn symbol_path_from_symbol(symbol: &dyn Symbol, exclude_library: bool) -> Symbol
 
 /// Port of `SymbolPathParser.parse(String, boolean)` with `ignoreLeaderParens = true` (the
 /// default used by `SymbolPath(String)`).
-fn parse_symbol_path(name: &str) -> Result<Vec<String>, SymbolPathError> {
+///
+/// `ghidra.app.util.SymbolPathParser.parse(String)` itself is still `TODO` in
+/// `PORT_MANIFEST.tsv` (it's a stateless static algorithm, not a polymorphic core type, so no
+/// placeholder trait is warranted); this is exposed `pub` so other callers of the equivalent
+/// static method (e.g. `mdemangler.MDMangUtils.consolidateSymbolPath`, ported as
+/// [`crate::demangler::md_mang_utils`]) can reuse this logic instead of duplicating it.
+pub fn parse_symbol_path(name: &str) -> Result<Vec<String>, SymbolPathError> {
     if name.trim().is_empty() {
         return Err(SymbolPathError::BlankPathname);
     }
