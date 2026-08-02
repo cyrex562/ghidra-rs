@@ -4,7 +4,7 @@ PARK	trait	15	473	2	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin
 PARK	trait	20	22	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/msf/Msf.java
 PARK	trait	31	37	3	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/MDDataType.java
 DONE	trait	47	7	37	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDReusableName.java
-TODO	trait	46	23	49	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCPP.java
+DONE	trait	46	23	49	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCPP.java
 TODO	trait	45	4	35	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNestedName.java
 TODO	trait	44	9	39	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java
 TODO	trait	43	13	37	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualification.java
