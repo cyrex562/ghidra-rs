@@ -9,7 +9,7 @@ PARK	trait	45	4	35	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdeman
 PARK	trait	44	9	39	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java
 DONE	trait	43	13	37	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualification.java
 DONE	trait	42	9	41	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDBasicName.java
-TODO	trait	41	14	36	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDBasedAttribute.java
+DONE	trait	41	14	36	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDBasedAttribute.java
 TODO	trait	40	15	50	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/modifier/MDModifierType.java
 TODO	trait	39	41	16	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangUtils.java
 TODO	trait	38	13	34	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDFragmentName.java
