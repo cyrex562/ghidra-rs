@@ -1,7 +1,7 @@
 status	mode	depth	fanin	rem	module	path
 PARK	trait	10	491	15	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/C13Section.java
 PARK	trait	15	473	2	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/DebugHeader.java
-TODO	trait	20	22	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/msf/Msf.java
+PARK	trait	20	22	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/msf/Msf.java
 TODO	trait	31	37	3	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/MDDataType.java
 TODO	trait	47	7	37	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDReusableName.java
 TODO	trait	46	23	49	demangler	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/object/MDObjectCPP.java
