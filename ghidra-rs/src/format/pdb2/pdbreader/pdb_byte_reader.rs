@@ -562,9 +562,23 @@ mod tests {
         options: crate::format::seam_stubs::PdbReaderOptions,
     }
 
+    struct FakeMsType;
+    impl crate::format::pdb2::pdbreader::abstract_parsable_item::AbstractParsableItem
+        for FakeMsType
+    {
+    }
+    impl crate::format::seam_stubs::AbstractMsType for FakeMsType {}
+
     impl AbstractPdb for FakePdb {
         fn pdb_reader_options(&self) -> &crate::format::seam_stubs::PdbReaderOptions {
             &self.options
+        }
+
+        fn get_type_record(
+            &self,
+            _record_number: crate::format::seam_stubs::RecordNumber,
+        ) -> Box<dyn crate::format::seam_stubs::AbstractMsType> {
+            Box::new(FakeMsType)
         }
     }
 
