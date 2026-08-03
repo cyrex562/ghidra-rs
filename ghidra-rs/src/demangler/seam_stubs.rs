@@ -2,6 +2,7 @@
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
 use crate::demangler::naming::md_qualification::MdQualification;
+use crate::demangler::naming::md_qualified_name::MdQualifiedName;
 use crate::demangler::object::md_object_cpp::MdObjectCpp;
 
 /// Placeholder for `mdemangler.MDMang`, needed by
@@ -493,32 +494,14 @@ pub trait MdParsableItemLike {
 ///
 /// Only `getNamespace()` -- the one member `MDMangUtils.recurseNamespace` touches -- is declared
 /// here; the real port also carries the full complex-type (class/struct/union/enum/coclass/
-/// cointerface) parse-and-render surface inherited from `MDDataType`/`MDType`.
+/// cointerface) parse-and-render surface inherited from `MDDataType`/`MDType`. Unlike sibling
+/// placeholders, no seam is needed for `getNamespace()`'s return type: `MDQualifiedName` is
+/// already ported for real as [`MdQualifiedName`].
 pub trait MdComplexTypeLike {
     /// Returns the namespace-qualified name of this complex type.
     ///
     /// Mirrors `MDComplexType.getNamespace()`.
-    fn namespace(&self) -> &dyn MdQualifiedNameLike;
-}
-
-/// Placeholder for `mdemangler.naming.MDQualifiedName`, needed by [`MdComplexTypeLike`] and,
-/// transitively, [`crate::demangler::md_mang_utils::MdMangUtils`].
-///
-/// Only `getName()`/`getQualification()` -- the two members `MDMangUtils.recurseNamespace`
-/// touches -- are declared here; the real port also carries the parse dispatch and the qualified
-/// (`::`-prefixed) vs. unqualified name distinction. Unlike sibling placeholders, no seam is
-/// needed for `getQualification()`'s return type: `MDQualification` is already ported for real as
-/// [`MdQualification`].
-pub trait MdQualifiedNameLike {
-    /// Returns the innermost (unqualified) name.
-    ///
-    /// Mirrors `MDQualifiedName.getName()`.
-    fn name(&self) -> String;
-
-    /// Returns the namespace-qualification component.
-    ///
-    /// Mirrors `MDQualifiedName.getQualification()`.
-    fn qualification(&self) -> &dyn MdQualification;
+    fn namespace(&self) -> &dyn MdQualifiedName;
 }
 
 /// Placeholder for `mdemangler.MDException`, needed by

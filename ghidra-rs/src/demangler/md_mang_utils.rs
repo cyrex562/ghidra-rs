@@ -1,9 +1,10 @@
 //! Utility operations for `MDMang` users (and perhaps internal).
 //!
 //! Mirrors `mdemangler.MDMangUtils`, cut to a trait to break a dependency cycle: it is a
-//! cut-point between `MDParsableItem`/`MDComplexType`/`MDQualifiedName` (`mdemangler`/
-//! `mdemangler.datatype.complex`/`mdemangler.naming`, none ported yet) and the already-ported
-//! `MDModifierType`/`MDObjectCPP`/`MDQualification`/`MDQualifier`/`MDNestedName`. The original is
+//! cut-point between `MDParsableItem`/`MDComplexType` (`mdemangler`/`mdemangler.datatype.complex`,
+//! neither ported yet) and the already-ported
+//! `MDModifierType`/`MDObjectCPP`/`MDQualification`/`MDQualifier`/`MDNestedName`/`MDQualifiedName`.
+//! The original is
 //! a static utility class (private constructor, every member `static`), so there is no instance
 //! state to model; it is still ported as a trait -- with every method given a default
 //! implementation delegating to a same-named free function -- so it can be selected as this
@@ -160,7 +161,13 @@ fn recurse_namespace(
 
     if let Some(complex) = current.as_complex_type() {
         let namespace = complex.namespace();
-        recurse_qualification(dmang, parts, namespace.name(), namespace.qualification(), recurse_nested);
+        recurse_qualification(
+            dmang,
+            parts,
+            namespace.name(dmang),
+            namespace.qualification(),
+            recurse_nested,
+        );
     } else if let Some(embedded) = current.as_object_cpp_embedded() {
         recurse_object_cpp(dmang, parts, embedded, recurse_nested);
     }
@@ -359,9 +366,10 @@ fn standardize_underscores_part(part: &str) -> String {
 mod tests {
     use super::*;
     use crate::demangler::naming::md_nested_name::MdNestedName;
+    use crate::demangler::naming::md_qualified_name::MdQualifiedName;
     use crate::demangler::naming::md_reusable_name::MdReusableName;
     use crate::demangler::seam_stubs::{
-        MdComplexTypeLike, MdFragmentNameLike, MdNumberedNamespaceLike, MdQualifiedNameLike,
+        MdComplexTypeLike, MdFragmentNameLike, MdNumberedNamespaceLike,
     };
 
     struct MockMdMang;
@@ -534,13 +542,13 @@ mod tests {
     }
 
     struct MockQualifiedName {
-        name: String,
+        name: MockReusableName,
         qualification: MockQualification,
     }
 
-    impl MdQualifiedNameLike for MockQualifiedName {
-        fn name(&self) -> String {
-            self.name.clone()
+    impl MdQualifiedName for MockQualifiedName {
+        fn name_component(&self) -> &dyn MdReusableName {
+            &self.name
         }
 
         fn qualification(&self) -> &dyn MdQualification {
@@ -553,7 +561,7 @@ mod tests {
     }
 
     impl MdComplexTypeLike for MockComplexType {
-        fn namespace(&self) -> &dyn MdQualifiedNameLike {
+        fn namespace(&self) -> &dyn MdQualifiedName {
             &self.namespace
         }
     }
@@ -583,7 +591,7 @@ mod tests {
         MockParsableItem {
             complex: Some(MockComplexType {
                 namespace: MockQualifiedName {
-                    name: name.to_string(),
+                    name: MockReusableName { rendered: name.to_string() },
                     qualification: MockQualification { quals },
                 },
             }),
