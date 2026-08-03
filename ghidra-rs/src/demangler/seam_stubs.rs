@@ -78,6 +78,18 @@ pub trait MdMangLike {
     fn insert_cli_array_ref_suffix(&self, builder: &mut String, ref_text: &str) {
         self.insert_spaced_string(builder, ref_text);
     }
+
+    /// Returns whether a complex (class/struct/union/enum/coclass/cointerface) type used as a
+    /// template or function argument should have its `insertAsArg` render the trailing signedness
+    /// tag inherited from `MDDataType`.
+    ///
+    /// Mirrors `dmang.getOutputOptions().applyUdtArgumentTypeTag()`, collapsed directly onto this
+    /// seam since `MDMangOutputOptions` is not ported (see [`MdMangLike::use_encoded_anonymous_namespace`]
+    /// for the same treatment of another output option). Defaults to `true`, matching
+    /// `MDOutputOptions.DEFAULT_APPLY_UDT_TAG`.
+    fn apply_udt_argument_type_tag(&self) -> bool {
+        true
+    }
 }
 
 /// Placeholder for `mdemangler.naming.MDNumberedNamespace`, needed by
@@ -269,14 +281,27 @@ pub trait MdBasicNameLike {
 pub trait MdStringLike {}
 
 /// Placeholder for `mdemangler.datatype.MDDataType`, needed by
-/// [`crate::demangler::naming::md_basic_name::MdBasicName`].
+/// [`crate::demangler::naming::md_basic_name::MdBasicName`] and
+/// [`crate::demangler::datatype::complex::md_complex_type::MdComplexType`].
 ///
 /// `MDBasicName`'s ported surface only ever passes this type through (`setCastType`), never
-/// calling a member on it, so no methods are declared yet. Note: a full port already exists on
-/// disk at `crate::demangler::datatype::md_data_type` (as `MdDataType`), but it isn't wired into
-/// `datatype::mod` or marked `DONE` in `PORT_MANIFEST.tsv`, so it isn't reachable from this
+/// calling a member on it. `MDComplexType` (`MDDataType`'s subclass) needs its inherited
+/// signedness state to mirror `super.insert(StringBuilder)`, so the two query methods backing
+/// that -- `isSpecifiedSigned`/`isUnsigned` -- are declared too. Note: a full port already exists
+/// on disk at `crate::demangler::datatype::md_data_type` (as `MdDataType`), but it isn't wired
+/// into `datatype::mod` or marked `DONE` in `PORT_MANIFEST.tsv`, so it isn't reachable from this
 /// crate; wiring it up is out of scope for this port.
-pub trait MdDataTypeLike {}
+pub trait MdDataTypeLike {
+    /// True once `MDDataType.setSigned()` was explicitly called.
+    ///
+    /// Mirrors `MDDataType.isSpecifiedSigned()`.
+    fn is_specified_signed(&self) -> bool;
+
+    /// True once `MDDataType.setUnsigned()` was called.
+    ///
+    /// Mirrors `MDDataType.isUnsigned()`.
+    fn is_unsigned(&self) -> bool;
+}
 
 /// Placeholder for `mdemangler.typeinfo.MDTypeInfo`, needed by
 /// [`crate::demangler::object::md_object_cpp::MdObjectCpp`].
@@ -496,7 +521,10 @@ pub trait MdParsableItemLike {
 /// here; the real port also carries the full complex-type (class/struct/union/enum/coclass/
 /// cointerface) parse-and-render surface inherited from `MDDataType`/`MDType`. Unlike sibling
 /// placeholders, no seam is needed for `getNamespace()`'s return type: `MDQualifiedName` is
-/// already ported for real as [`MdQualifiedName`].
+/// already ported for real as [`MdQualifiedName`]. Note: a full (parsing aside) port of
+/// `MDComplexType` now exists as
+/// [`MdComplexType`](crate::demangler::datatype::complex::md_complex_type::MdComplexType), but
+/// rewiring `MdParsableItemLike`/`MdMangUtils` onto it is out of scope for that port.
 pub trait MdComplexTypeLike {
     /// Returns the namespace-qualified name of this complex type.
     ///
