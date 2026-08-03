@@ -18,8 +18,10 @@ pub trait Tpi {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::format::pdb2::pdbreader::abstract_parsable_item::AbstractParsableItem;
 
     struct MockMsType;
+    impl AbstractParsableItem for MockMsType {}
     impl AbstractMsType for MockMsType {}
 
     struct MockTpi;

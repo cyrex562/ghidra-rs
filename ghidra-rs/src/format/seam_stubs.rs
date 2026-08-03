@@ -3,10 +3,28 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::format::pdb2::pdbreader::abstract_parsable_item::AbstractParsableItem;
+
 /// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.type.AbstractMsType`, referenced by
-/// [`Tpi`](crate::format::pdb2::pdbreader::tpi::Tpi) before the real class is ported. `Tpi` only
-/// ever returns this type opaquely, so no members are needed yet.
-pub trait AbstractMsType {}
+/// [`Tpi`](crate::format::pdb2::pdbreader::tpi::Tpi) and by
+/// [`AbstractCobol0MsType`](crate::format::pdb2::pdbreader::type::abstract_cobol0_ms_type::AbstractCobol0MsType)
+/// before the real class is ported. Requires [`AbstractParsableItem`] (its real Java superclass)
+/// so callers can render a display string via `to_display_string()`, matching Java's
+/// `toString()`/`emit(StringBuilder)` chain.
+pub trait AbstractMsType: AbstractParsableItem {}
+
+/// Placeholder for the `Bind` enum nested in
+/// `ghidra.app.util.bin.format.pdb2.pdbreader.type.AbstractMsType`, referenced by
+/// [`AbstractCobol0MsType::emit`](crate::format::pdb2::pdbreader::type::abstract_cobol0_ms_type::AbstractCobol0MsType::emit)
+/// before the real `AbstractMsType` class (and its nested `Bind` enum) is ported. Order matches
+/// the Java enum.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Bind {
+    Ptr,
+    Array,
+    Proc,
+    None,
+}
 
 /// Placeholder for `ghidra.app.util.datatype.microsoft.GUID`, referenced by
 /// [`PdbByteReader::parse_guid`](crate::format::pdb2::pdbreader::pdb_byte_reader::PdbByteReader::parse_guid)
@@ -46,9 +64,15 @@ impl PdbReaderOptions {
 
 /// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.AbstractPdb`, referenced by
 /// [`PdbByteReader::parse_string`](crate::format::pdb2::pdbreader::pdb_byte_reader::PdbByteReader::parse_string)
+/// and by
+/// [`AbstractCobol0MsType::parent_type`](crate::format::pdb2::pdbreader::type::abstract_cobol0_ms_type::AbstractCobol0MsType::parent_type)
 /// before the real class is ported.
 pub trait AbstractPdb {
     fn pdb_reader_options(&self) -> &PdbReaderOptions;
+
+    /// Placeholder for `AbstractPdb.getTypeRecord(RecordNumber)`, needed to resolve the type
+    /// pointed to by a [`RecordNumber`].
+    fn get_type_record(&self, record_number: RecordNumber) -> Box<dyn AbstractMsType>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.C13ChecksumType`, referenced by
