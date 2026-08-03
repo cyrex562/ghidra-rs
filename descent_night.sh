@@ -31,7 +31,7 @@ DESCENT_PARKED="DESCENT_PARKED.tsv"   # durable park-list: classes too big for t
 INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
-CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-2400}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"
+CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-1500}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"  # 25min: doomed classes durable-park faster (was 2400/40min)
 TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"   # backstop: verify test crate stays green after merge
 API_RETRIES="${API_RETRIES:-2}"                                     # retry a class on TRANSIENT API failure before aborting the run
 OVERALL_HOURS="${OVERALL_HOURS:-7}"                                 # wall-clock cap; loop stops after this many hours regardless of DESCENT_MAX

@@ -32,6 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE); import portlib
 
 OUT = os.path.join(REPO, "PORT_ORDER.tsv")
+DEFERRED_OUT = os.path.join(REPO, "DESCENT_DEFERRED.tsv")   # too-big/descoped -> interactive worklist
 
 
 def load_frontier():
@@ -62,6 +63,40 @@ def is_test_path(rel):
     These test-fixture classes exercise Java internals; production Rust never depends on
     them, so porting them is wasted effort -- exclude from the frontier like UI."""
     return "/src/test/" in rel or "/src/test." in rel
+
+
+# --- pre-defer / descope: keep the nightly loop off classes that reliably time out ---
+# Descoped subsystems (self-contained, off the core critical path) -- excluded like UI/test.
+DESCOPE_SUBSTR = tuple(s for s in os.environ.get(
+    "DESCENT_DESCOPE", "/mdemangler/").split(",") if s)
+PREDEFER_REM = int(os.environ.get("PREDEFER_REM", "100"))    # too many stubs -> times out
+PREDEFER_LINES = int(os.environ.get("PREDEFER_LINES", "900"))  # too big -> times out
+
+def is_descoped(rel):
+    return any(s in rel for s in DESCOPE_SUBSTR)
+
+_lines = {}
+def line_count(rel):
+    if rel in _lines:
+        return _lines[rel]
+    try:
+        with open(os.path.join(REPO, "orig_src", rel), encoding="utf-8", errors="ignore") as fh:
+            n = sum(1 for _ in fh)
+    except OSError:
+        n = 0
+    _lines[rel] = n
+    return n
+
+def defer_reason(rel, rem):
+    """Why this class should skip the nightly loop and go to the interactive worklist (or None)."""
+    if is_descoped(rel):
+        return "descoped"
+    if rem > PREDEFER_REM:
+        return f"rem={rem}"
+    n = line_count(rel)
+    if n > PREDEFER_LINES:
+        return f"lines={n}"
+    return None
 
 
 def kind_is_interface(rel):
@@ -157,13 +192,25 @@ def main():
     trait_order = [v for v in order if mode_of(v) == "trait"]
     struct_order = [v for v in order if mode_of(v) == "struct"]
     emit = trait_order + struct_order
-    rows = [row(v) for v in emit]
-    traits = len(trait_order)
+
+    # PARTITION: classes that reliably time out (descoped subsystem / too-many-stubs / too-big) are
+    # DEFERRED off the nightly loop into DESCENT_DEFERRED.tsv -- the interactive worklist -- instead of
+    # burning a full CLAUDE_TIMEOUT to rediscover they're too big.
+    keep, deferred = [], []
+    for v in emit:
+        rsn = defer_reason(v, by[v]["remaining_dep_count"])
+        (deferred if rsn else keep).append((v, rsn))
+    rows = [row(v) for v, _ in keep]
+    traits = sum(1 for v, _ in keep if mode_of(v) == "trait")
+    dfr = {}
+    for _, rsn in deferred:
+        k = rsn.split("=")[0]
+        dfr[k] = dfr.get(k, 0) + 1
 
     print(f"# nodes in-scope unported (non-UI, mapped): {len(nodes)}")
     print(f"# leaf-first order length:                  {len(order)}")
-    print(f"# trait cut points (back-edge / interface):  {len(cut)} cuts + interfaces = {traits} trait-mode")
-    print(f"# phase-1 traits: {len(trait_order)}   phase-2 structs: {len(struct_order)}")
+    print(f"# deferred to interactive worklist:          {len(deferred)}  {dfr}")
+    print(f"# queued for nightly loop:                   {len(rows)} ({traits} trait, {len(rows)-traits} struct)")
     print(f"# root (highest fanin): {roots[0]}  (fanin {fanin.get(roots[0],0)})")
     print(f"\n# first {min(args.show, len(rows))} to port (two-phase: traits then structs):")
     print("status\tmode\tdepth\tfanin\trem\tmodule\tpath")
@@ -175,7 +222,13 @@ def main():
             fh.write("status\tmode\tdepth\tfanin\trem\tmodule\tpath\n")
             for r in rows:
                 fh.write(r + "\n")
-        print(f"\nwrote {len(rows)} rows to PORT_ORDER.tsv ({traits} trait, {len(rows)-traits} struct)")
+        with open(DEFERRED_OUT, "w", encoding="utf-8") as fh:
+            fh.write("reason\tmode\trem\tlines\tmodule\tpath\n")
+            for v, rsn in sorted(deferred, key=lambda t: (t[1].split("=")[0], t[0])):
+                fh.write(f"{rsn}\t{mode_of(v)}\t{by[v]['remaining_dep_count']}\t{line_count(v)}\t"
+                         f"{portlib.module_for(portlib.package_of(v))}\t{v}\n")
+        print(f"\nwrote {len(rows)} rows to PORT_ORDER.tsv ({traits} trait, {len(rows)-traits} struct); "
+              f"{len(deferred)} deferred to DESCENT_DEFERRED.tsv")
     return 0
 
 
