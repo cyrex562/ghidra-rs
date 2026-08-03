@@ -7894,7 +7894,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/MDVoid
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDClassType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDCoclassType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDCointerfaceType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 
-orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDComplexType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 
+orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDComplexType.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDEnumType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDStructType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/datatype/complex/MDUnionType.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler datatype complex 

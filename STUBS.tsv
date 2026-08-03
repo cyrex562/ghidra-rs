@@ -403,3 +403,5 @@ ts	stub_class	referenced_by
 2026-08-03T01:06:36Z	MsfStreamLike	Msf
 2026-08-03T02:00:00Z	MdExceptionLike	MDMangGenericize
 2026-08-03T02:00:00Z	MdMangObjectParserLike	MDMangGenericize
+2026-08-03T02:30:00Z	MdDataTypeLike (extended)	MDComplexType
+2026-08-03T02:30:00Z	MdMangLike (extended)	MDComplexType
