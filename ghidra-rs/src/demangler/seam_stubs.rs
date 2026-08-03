@@ -520,3 +520,25 @@ pub trait MdQualifiedNameLike {
     /// Mirrors `MDQualifiedName.getQualification()`.
     fn qualification(&self) -> &dyn MdQualification;
 }
+
+/// Placeholder for `mdemangler.MDException`, needed by
+/// [`crate::demangler::md_mang_genericize::MdMangGenericize`].
+///
+/// `MDException` carries three distinct payload shapes (wrapped cause, message, or an
+/// `invalidMangledName` flag), none of which `MDMangGenericize`'s ported surface ever inspects --
+/// it only ever propagates instances of this type through `Result`. So only the standard
+/// `Debug`/`Display` bounds needed to use it as an error type are declared here; the real port
+/// also carries the three constructors and `isInvalidMangledName()`.
+pub trait MdExceptionLike: std::fmt::Debug + std::fmt::Display {}
+
+/// Placeholder for `mdemangler.object.MDMangObjectParser`, needed by
+/// [`crate::demangler::md_mang_genericize::MdMangGenericize::demangle`].
+///
+/// `MDMangObjectParser.determineItemAndParse(MDMang)` requires the full (unported) `MDMang`
+/// grammar-dispatch surface (`setProcessingMode`, `resetState`, and the entire type/name parse
+/// dispatch) to implement for real. Rather than reproduce that surface here, its single call site
+/// is collapsed directly onto the required
+/// [`MdMangGenericize::parse_item`](crate::demangler::md_mang_genericize::MdMangGenericize::parse_item)
+/// method, which a concrete implementor supplies; this marker trait exists only to document that
+/// collapse, mirroring the no-method [`MdStringLike`] placeholder above.
+pub trait MdMangObjectParserLike {}
