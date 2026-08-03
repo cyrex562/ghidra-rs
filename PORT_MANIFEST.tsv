@@ -7952,7 +7952,7 @@ orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNested
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNumberedNamespace.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualification.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedBasicName.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
-orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedName.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
+orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedName.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDReusableName.java	DONE	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming
 orig_src/Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDSpecialName.java	TODO	orig_src Ghidra Features MicrosoftDmang src main java mdemangler naming 
