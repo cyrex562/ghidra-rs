@@ -104,3 +104,14 @@ impl RecordNumber {
         RecordNumber { number: Self::T_NOTYPE }
     }
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.msf.MsfFileReader`, referenced by
+/// [`Msf::file_reader`](crate::format::pdb2::pdbreader::msf::msf::Msf::file_reader) before the
+/// real class is ported. `Msf` only ever returns this type opaquely, so no members are needed
+/// yet.
+pub trait MsfFileReaderLike {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.msf.MsfStream`, referenced by
+/// [`Msf::stream`](crate::format::pdb2::pdbreader::msf::msf::Msf::stream) before the real class
+/// is ported. `Msf` only ever returns this type opaquely, so no members are needed yet.
+pub trait MsfStreamLike {}
