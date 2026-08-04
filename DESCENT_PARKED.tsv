@@ -18,3 +18,4 @@ ts	reason	path
 2026-08-03T23:17	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/AbstractDefinedSingleAddressRangeMsSymbol.java
 2026-08-03T23:42	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/InstructionAnnotation.java
 2026-08-04T00:07	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/InlinedFunctionCallsiteExtendedMsSymbol.java
+2026-08-04T02:13	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbLog.java
