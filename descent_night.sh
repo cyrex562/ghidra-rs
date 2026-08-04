@@ -112,6 +112,18 @@ for ((i=1;i<=DESCENT_MAX;i++)); do
   git checkout -f "$INTEGRATION" >/dev/null 2>&1
   git branch -D "$branch" >/dev/null 2>&1 || true; git switch -c "$branch" >/dev/null 2>&1
 
+  # #3/#6 DEPENDENCY CONTEXT: real Rust APIs of already-ported deps (reuse, don't guess) + convention-
+  # correct stub traits for unported deps (use, don't invent). Written to a FILE the model reads -- NOT
+  # interpolated into the prompt string (that path caused the 2026-07-25 quoting break).
+  depctx_file="$LOG_DIR/depctx.${class}.${hash}.txt"; depctx_note=""
+  if [ "${DEP_CONTEXT:-1}" = "1" ] && timeout 120 "$PY" scripts/dep_context.py "$ordpath" > "$depctx_file" 2>/dev/null && [ -s "$depctx_file" ]; then
+    depctx_note="
+DEPENDENCY CONTEXT (read this FILE first): ${depctx_file}
+  It lists the REAL Rust paths + API of already-ported deps (reuse them verbatim; do NOT redefine or
+  guess their signatures) and convention-correct stub traits for unported deps (paste these into
+  seam_stubs.rs if needed; do NOT invent your own names/shapes)."
+  fi
+
   if [ "$mode" = "trait" ]; then
     promote=""
     if grep -rqE --include='seam_stubs.rs' "\b(pub +)?trait +${class}\b" ghidra-rs/src 2>/dev/null; then
@@ -126,7 +138,7 @@ methods as a superset so existing impls/callers compile. (2) DELETE the placehol
 ${srcpath} to a Rust TRAIT (it was selected as a cycle cut-point).
 ${promote}
 Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in snake_case;
-create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.
+create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}
 
 Rules for breaking the cycle:
 - Map the Java type's public API to a Rust trait (methods -> trait methods). Prefer object-safe traits
@@ -157,7 +169,7 @@ This class was chosen by RECURSIVE-DESCENT order: its in-repo dependencies have 
 so REUSE the existing Rust types -- read them first; do not redefine them.
 
 Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in snake_case;
-create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.
+create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}
 
 Rules:
 - Map the class to a Rust struct with an impl block; map fields and methods faithfully. Implement any
