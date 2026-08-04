@@ -1,4 +1,4 @@
-use crate::format::seam_stubs::AbstractMsType;
+use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
 
 /// Trait for PDB Type Information (TPI) streams.
 ///
@@ -19,9 +19,17 @@ pub trait Tpi {
 mod tests {
     use super::*;
     use crate::format::pdb2::pdbreader::abstract_parsable_item::AbstractParsableItem;
+    use crate::format::pdb2::pdbreader::id_ms_parsable::IdMsParsable;
+    use crate::format::pdb2::pdbreader::r#type::ms_type::MsType;
 
     struct MockMsType;
     impl AbstractParsableItem for MockMsType {}
+    impl IdMsParsable for MockMsType {
+        fn pdb_id(&self) -> i32 {
+            0x1001
+        }
+    }
+    impl MsType for MockMsType {}
     impl AbstractMsType for MockMsType {}
 
     struct MockTpi;

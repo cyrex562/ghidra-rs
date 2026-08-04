@@ -1,7 +1,8 @@
 use crate::format::pdb2::pdbreader::pdb_byte_reader::PdbByteReader;
 use crate::format::pdb2::pdbreader::pdb_exception::PdbException;
+use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::{AbstractMsType, Bind};
 use crate::format::pdb2::pdbreader::r#type::ms_type::MsType;
-use crate::format::seam_stubs::{AbstractMsType, AbstractPdb, Bind, RecordNumber};
+use crate::format::seam_stubs::{AbstractPdb, RecordNumber};
 
 /// Trait for the various flavors of Dimensioned Array type with constant upper and lower
 /// bounds on the dimensions.
@@ -126,6 +127,12 @@ mod tests {
             builder.push_str("ElementType");
         }
     }
+    impl IdMsParsable for MockElementType {
+        fn pdb_id(&self) -> i32 {
+            0x1503
+        }
+    }
+    impl MsType for MockElementType {}
     impl AbstractMsType for MockElementType {}
 
     struct MockPdb {

@@ -567,7 +567,13 @@ mod tests {
         for FakeMsType
     {
     }
-    impl crate::format::seam_stubs::AbstractMsType for FakeMsType {}
+    impl crate::format::pdb2::pdbreader::id_ms_parsable::IdMsParsable for FakeMsType {
+        fn pdb_id(&self) -> i32 {
+            0x1001
+        }
+    }
+    impl crate::format::pdb2::pdbreader::r#type::ms_type::MsType for FakeMsType {}
+    impl crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType for FakeMsType {}
 
     impl AbstractPdb for FakePdb {
         fn pdb_reader_options(&self) -> &crate::format::seam_stubs::PdbReaderOptions {
@@ -577,7 +583,7 @@ mod tests {
         fn get_type_record(
             &self,
             _record_number: crate::format::seam_stubs::RecordNumber,
-        ) -> Box<dyn crate::format::seam_stubs::AbstractMsType> {
+        ) -> Box<dyn crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType> {
             Box::new(FakeMsType)
         }
     }
