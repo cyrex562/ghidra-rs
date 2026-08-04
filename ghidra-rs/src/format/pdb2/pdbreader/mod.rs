@@ -20,6 +20,7 @@ pub mod module_information;
 pub mod msf;
 pub mod pdb_byte_reader;
 pub mod pdb_exception;
+pub mod pdb_parser;
 pub mod pdb_reader_utils;
 pub mod parsing_iterator;
 pub mod processor;
