@@ -12,3 +12,4 @@ ts	reason	path
 2026-08-03T03:25	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMangVS2015.java
 2026-08-03T04:05	timeout	Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/MDMang.java
 2026-08-03T21:37	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/VtShapeDescriptorMsProperty.java
+2026-08-03T22:02	timeout	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/LanguageName.java
