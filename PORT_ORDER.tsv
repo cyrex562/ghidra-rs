@@ -8,7 +8,7 @@ PARK	trait	24	26	78	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin
 PARK	trait	25	20	77	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/InstructionAnnotation.java
 PARK	trait	24	19	77	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/InlinedFunctionCallsiteExtendedMsSymbol.java
 DONE	trait	19	473	7	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbParser.java
-TODO	trait	18	111	75	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/AbstractMsType.java
+DONE	trait	18	111	75	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/AbstractMsType.java
 TODO	trait	17	487	2	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbLog.java
 TODO	trait	15	472	2	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/EmptyTPI.java
 TODO	trait	14	21	76	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/AbstractBasePointerRelativeMsSymbol.java
