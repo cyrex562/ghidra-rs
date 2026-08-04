@@ -118,3 +118,10 @@ pub trait MsfFileReaderLike {}
 /// [`Msf::stream`](crate::format::pdb2::pdbreader::msf::msf::Msf::stream) before the real class
 /// is ported. `Msf` only ever returns this type opaquely, so no members are needed yet.
 pub trait MsfStreamLike {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.symbol.AbstractMsSymbol`,
+/// referenced by
+/// [`MsSymbolIterator`](crate::format::pdb2::pdbreader::ms_symbol_iterator::MsSymbolIterator)
+/// before the real class is ported. `MsSymbolIterator` only ever passes this type opaquely
+/// (as `Box<dyn AbstractMsSymbol>`), so no members are needed yet.
+pub trait AbstractMsSymbol {}
