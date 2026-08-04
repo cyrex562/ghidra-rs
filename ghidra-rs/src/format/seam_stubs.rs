@@ -125,3 +125,18 @@ pub trait MsfStreamLike {}
 /// before the real class is ported. `MsSymbolIterator` only ever passes this type opaquely
 /// (as `Box<dyn AbstractMsSymbol>`), so no members are needed yet.
 pub trait AbstractMsSymbol {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.PdbDebugInfo`, referenced by
+/// [`GlobalReferenceIterator`](crate::format::pdb2::pdbreader::global_reference_iterator::GlobalReferenceIterator)
+/// before the real class is ported. Models only the accessor needed to resolve a module's
+/// symbol records stream number.
+pub trait PdbDebugInfo {
+    fn get_symbol_records_stream_number(&self) -> i32;
+}
+
+/// Placeholders for the two `ghidra.app.util.bin.format.pdb2.pdbreader.msf.MsfStream` public
+/// static constants, referenced by
+/// [`GlobalReferenceIterator`](crate::format::pdb2::pdbreader::global_reference_iterator::GlobalReferenceIterator)
+/// before the real class is ported.
+pub const NIL_STREAM_NUMBER: i32 = 0xffff;
+pub const MAX_STREAM_LENGTH: i32 = i32::MAX;
