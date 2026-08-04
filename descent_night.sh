@@ -74,18 +74,29 @@ for ((i=1;i<=DESCENT_MAX;i++)); do
   if [ -n "$DESCENT_ONLY" ]; then
     next=""; mode=""
     for want in $DESCENT_ONLY; do
-      read -r mode next < <(awk -F'\t' -v w="$want" '$1=="TODO"{n=split($7,a,"/"); c=a[n]; sub(/\.java$/,"",c); if(c==w){print $2"\t"$7; exit}}' "$ORDER")
+      read -r mode rem next < <(awk -F'\t' -v w="$want" '$1=="TODO"{n=split($7,a,"/"); c=a[n]; sub(/\.java$/,"",c); if(c==w){print $2"\t"$5"\t"$7; exit}}' "$ORDER")
       [ -n "$next" ] && break
     done
   else
-    # STRICT top-down: first still-TODO row in file order (leaf-first). mode from col2.
-    read -r mode next < <(awk -F'\t' '$1=="TODO"{print $2"\t"$7; exit}' "$ORDER")
+    # STRICT top-down: first still-TODO row in file order (leaf-first). mode col2, rem col5.
+    read -r mode rem next < <(awk -F'\t' '$1=="TODO"{print $2"\t"$5"\t"$7; exit}' "$ORDER")
   fi
   [ -z "$next" ] && { log "no TODO rows left in $ORDER."; break; }
   ordpath="$next"; srcpath="orig_src/$next"; class=$(basename "$next" .java)
   hash=$(printf '%s' "$srcpath" | cksum | cut -d' ' -f1); branch="descent/${class}-${hash}"
   log="$LOG_DIR/descent.${class}.${hash}.$(date +%s).log"; jlog="${log%.log}.json"
   module=$("$PY" scripts/portlib.py module "${srcpath#orig_src/}" 2>/dev/null)
+
+  # #7 MODEL TIERING: route by difficulty (rem = stub surface, lines = size) to a per-class model.
+  # Default no-op (all $MODEL). Enable via env: TIER_HARD_REM/LINES + MODEL_HARD (e.g. opus),
+  # TIER_EASY_REM/LINES + MODEL_EASY (e.g. haiku). Cheap classes cheaper, hard classes more power.
+  lines=$(wc -l < "$srcpath" 2>/dev/null | tr -d ' '); lines=${lines:-0}; rem=${rem:-0}
+  portmodel="$MODEL"; tier="med"
+  if [ "$rem" -gt "${TIER_HARD_REM:-99999}" ] || [ "$lines" -gt "${TIER_HARD_LINES:-999999}" ]; then
+    portmodel="${MODEL_HARD:-$MODEL}"; tier="hard"
+  elif [ "$rem" -le "${TIER_EASY_REM:--1}" ] && [ "$lines" -le "${TIER_EASY_LINES:--1}" ]; then
+    portmodel="${MODEL_EASY:-$MODEL}"; tier="easy"
+  fi
 
   # reconcile-skip: a Rust type for this class already exists (ported early / by another harness)
   if grep -rqE --include='*.rs' --exclude='seam_stubs.rs' "\b(pub +)?(struct|trait|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
@@ -96,7 +107,7 @@ for ((i=1;i<=DESCENT_MAX;i++)); do
     git commit -q -m "descent reconcile: $class already ported -> DONE" >/dev/null 2>&1 || true
     reconciled=$((reconciled+1)); log "reconciled (already ported): $class -> DONE (no LLM turn)"; ((i--)); continue
   fi
-  log "descent ${i}/${DESCENT_MAX}: $class -> ${module}/ (${mode})"
+  log "descent ${i}/${DESCENT_MAX}: $class -> ${module}/ (${mode}, ${tier}/${portmodel}, rem=${rem} lines=${lines})"
 
   git checkout -f "$INTEGRATION" >/dev/null 2>&1
   git branch -D "$branch" >/dev/null 2>&1 || true; git switch -c "$branch" >/dev/null 2>&1
@@ -130,7 +141,9 @@ Rules for breaking the cycle:
 - MANDATORY test-green loop before finishing: (1) 'cargo build --lib' must pass; (2) 'cargo test --lib
   --no-run' must compile with ZERO errors -- if your trait/signature change broke EXISTING test code
   elsewhere (stale mocks, dyn-safety, ambiguous methods), you MUST update that test code to match;
-  (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test -> read failures -> fix ->
+  (3) run ONLY your class's OWN module tests (e.g. 'cargo test --lib the_module_path') and make them PASS
+  -- do NOT run the full 'cargo test --lib' suite yourself; it is slow (18k tests) and the harness runs
+  it as a final gate. Fast cycles = build + your module only. Iterate: build/test -> read failures -> fix ->
   repeat until BOTH compile clean AND all tests pass. Do NOT run git. Run cargo SYNCHRONOUSLY
   and wait for each command to finish -- this is a SINGLE-SHOT non-interactive session: never
   background a command, schedule a wakeup, or defer work to 'report back later'. Everything,
@@ -157,7 +170,9 @@ Rules:
   Java behavior, not trivially-true asserts.
 - MANDATORY test-green loop before finishing: (1) 'cargo build --lib' must pass; (2) 'cargo test --lib
   --no-run' must compile with ZERO errors -- if your change broke EXISTING test code elsewhere, update
-  that test code to match; (3) 'cargo test --lib' must run with ZERO failures. Iterate: build/test ->
+  that test code to match; (3) run ONLY your class's OWN module tests (e.g. 'cargo test --lib the_module_path') and make them PASS
+  -- do NOT run the full 'cargo test --lib' suite yourself; it is slow (18k tests) and the harness runs
+  it as a final gate. Fast cycles = build + your module only. Iterate: build/test ->
   read failures -> fix -> repeat until BOTH compile clean AND all tests pass. Do NOT run git. Run cargo SYNCHRONOUSLY
   and wait for each command to finish -- this is a SINGLE-SHOT non-interactive session: never
   background a command, schedule a wakeup, or defer work to 'report back later'. Everything,
@@ -178,7 +193,7 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
       git clean -fdq >/dev/null 2>&1   # drop partial-port untracked files (target/ is ignored, kept)
       git branch -D "$branch" >/dev/null 2>&1||true; git switch -c "$branch" >/dev/null 2>&1
     fi
-    timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" --model "$MODEL" --permission-mode acceptEdits \
+    timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" --model "$portmodel" --permission-mode acceptEdits \
       --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*),Bash(cargo test*)" \
       --output-format json >"$jlog" 2>>"$log"; rc=$?
     "$PY" -c 'import json,sys;print(json.load(open(sys.argv[1])).get("result",""))' "$jlog" >>"$log" 2>/dev/null||true
