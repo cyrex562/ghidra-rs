@@ -80,8 +80,11 @@ pub trait InlinedFunctionCallsiteExtendedMsSymbol {
 mod tests {
     use super::*;
     use crate::format::pdb2::pdbreader::abstract_parsable_item::AbstractParsableItem;
+    use crate::format::pdb2::pdbreader::id_ms_parsable::IdMsParsable;
+    use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
+    use crate::format::pdb2::pdbreader::r#type::ms_type::MsType;
     use crate::format::pdb2::pdbreader::symbol::instruction_annotation::Opcode;
-    use crate::format::seam_stubs::{AbstractMsType, PdbReaderOptions};
+    use crate::format::seam_stubs::PdbReaderOptions;
     use crate::format::pdb2::pdbreader::pdb_byte_reader::PdbCharset;
 
     struct MockInstruction {
@@ -114,6 +117,12 @@ mod tests {
             builder.push_str("InlineeType");
         }
     }
+    impl IdMsParsable for MockInlineeType {
+        fn pdb_id(&self) -> i32 {
+            0x1001
+        }
+    }
+    impl MsType for MockInlineeType {}
     impl AbstractMsType for MockInlineeType {}
 
     struct MockPdb {

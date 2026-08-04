@@ -124,7 +124,10 @@ pub fn emit_32_extended(
 mod tests {
     use super::*;
     use crate::format::pdb2::pdbreader::abstract_parsable_item::AbstractParsableItem;
-    use crate::format::seam_stubs::{AbstractMsType, PdbReaderOptions};
+    use crate::format::pdb2::pdbreader::id_ms_parsable::IdMsParsable;
+    use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
+    use crate::format::pdb2::pdbreader::r#type::ms_type::MsType;
+    use crate::format::seam_stubs::PdbReaderOptions;
     use crate::format::pdb2::pdbreader::pdb_byte_reader::PdbCharset;
 
     #[derive(Debug)]
@@ -141,6 +144,12 @@ mod tests {
             builder.push_str(self.0);
         }
     }
+    impl IdMsParsable for MockParentType {
+        fn pdb_id(&self) -> i32 {
+            0x1001
+        }
+    }
+    impl MsType for MockParentType {}
     impl AbstractMsType for MockParentType {}
 
     struct MockPdb {

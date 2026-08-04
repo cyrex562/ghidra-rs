@@ -94,7 +94,7 @@ mod tests {
         fn get_type_record(
             &self,
             _record_number: crate::format::seam_stubs::RecordNumber,
-        ) -> Box<dyn crate::format::seam_stubs::AbstractMsType> {
+        ) -> Box<dyn crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType> {
             unreachable!("not exercised by this test")
         }
     }

@@ -1,5 +1,6 @@
+use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::{AbstractMsType, Bind};
 use crate::format::pdb2::pdbreader::r#type::ms_type::MsType;
-use crate::format::seam_stubs::{AbstractMsType, AbstractPdb, Bind, RecordNumber};
+use crate::format::seam_stubs::{AbstractPdb, RecordNumber};
 
 /// Trait for the various flavors of Cobol0 type.
 ///
@@ -48,6 +49,12 @@ mod tests {
             builder.push_str("ParentType");
         }
     }
+    impl IdMsParsable for MockParentType {
+        fn pdb_id(&self) -> i32 {
+            0x1001
+        }
+    }
+    impl MsType for MockParentType {}
     impl AbstractMsType for MockParentType {}
 
     struct MockPdb {
