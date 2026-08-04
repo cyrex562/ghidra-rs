@@ -140,3 +140,23 @@ pub trait PdbDebugInfo {
 /// before the real class is ported.
 pub const NIL_STREAM_NUMBER: i32 = 0xffff;
 pub const MAX_STREAM_LENGTH: i32 = i32::MAX;
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.C11Lines`, referenced by
+/// [`Module::line_information`](crate::format::pdb2::pdbreader::module::Module::line_information)
+/// before the real class is ported. `Module` only ever passes this type opaquely (as
+/// `Box<dyn C11LinesLike>`), so no members are needed yet.
+pub trait C11LinesLike {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.C13Section`, referenced by
+/// [`C13SectionIteratorLike`] before the real class is ported. `Module` only ever passes this
+/// type opaquely (as `Box<dyn C13SectionLike>`), so no members are needed yet.
+pub trait C13SectionLike {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pdb2.pdbreader.C13SectionIterator`, referenced by
+/// [`Module::c13_section_iterator`](crate::format::pdb2::pdbreader::module::Module::c13_section_iterator)
+/// before the real class is ported. Models only the `Iterator` surface (`hasNext`/`next`) that
+/// `Module`'s callers need.
+pub trait C13SectionIteratorLike {
+    fn has_next(&self) -> bool;
+    fn next(&mut self) -> Option<Box<dyn C13SectionLike>>;
+}

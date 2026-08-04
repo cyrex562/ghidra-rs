@@ -17,6 +17,7 @@ pub mod global_reference_offset_iterator;
 pub mod hasher;
 pub mod hasher32;
 pub mod id_ms_parsable;
+pub mod module;
 pub mod module_information;
 pub mod msf;
 pub mod ms_symbol_iterator;
