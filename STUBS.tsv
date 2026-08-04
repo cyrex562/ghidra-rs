@@ -408,3 +408,6 @@ ts	stub_class	referenced_by
 2026-08-04T07:34:05Z	AbstractMsSymbol	MsSymbolIterator
 2026-08-04T12:00:00Z	PdbDebugInfo	GlobalReferenceIterator
 2026-08-04T12:00:00Z	MsfStream consts (NIL_STREAM_NUMBER, MAX_STREAM_LENGTH)	GlobalReferenceIterator
+2026-08-04T12:00:00Z	C11LinesLike	Module
+2026-08-04T12:00:00Z	C13SectionLike	Module
+2026-08-04T12:00:00Z	C13SectionIteratorLike	Module
