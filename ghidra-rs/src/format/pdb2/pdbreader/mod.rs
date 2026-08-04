@@ -18,6 +18,7 @@ pub mod hasher32;
 pub mod id_ms_parsable;
 pub mod module_information;
 pub mod msf;
+pub mod ms_symbol_iterator;
 pub mod pdb_byte_reader;
 pub mod pdb_exception;
 pub mod pdb_parser;
