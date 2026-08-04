@@ -68,7 +68,7 @@ def is_test_path(rel):
 # --- pre-defer / descope: keep the nightly loop off classes that reliably time out ---
 # Descoped subsystems (self-contained, off the core critical path) -- excluded like UI/test.
 DESCOPE_SUBSTR = tuple(s for s in os.environ.get(
-    "DESCENT_DESCOPE", "/mdemangler/").split(",") if s)
+    "DESCENT_DESCOPE", "/mdemangler/,/Features/PDB/").split(",") if s)
 PREDEFER_REM = int(os.environ.get("PREDEFER_REM", "100"))    # too many stubs -> times out
 PREDEFER_LINES = int(os.environ.get("PREDEFER_LINES", "900"))  # too big -> times out
 

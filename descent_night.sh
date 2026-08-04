@@ -212,6 +212,7 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
   if [ "$rc" -eq 124 ]; then
     log "TIMEOUT on $class (${CLAUDE_TIMEOUT}s) -- durable-park for interactive follow-up."
     git checkout -f "$INTEGRATION" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1||true
+    git clean -fdq >/dev/null 2>&1   # remove the timed-out port's partial untracked files (target/ is ignored)
     printf '%s\ttimeout\t%s\n' "$(date '+%Y-%m-%dT%H:%M')" "$next" >> "$DESCENT_PARKED"
     sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
     git add "$DESCENT_PARKED" "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: durable-park $class (timeout)" >/dev/null 2>&1||true
