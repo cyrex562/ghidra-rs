@@ -66,7 +66,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/Pcod
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerDataAccess.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerMemoryAccess.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerRegistersAccess.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/listing/DebuggerListing.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api listing 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/listing/DebuggerListing.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api listing 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/listing/MultiBlendedListingBackgroundColorModel.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api listing 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/model/DebuggerObjectActionContext.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api model 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/model/DebuggerSingleObjectPathActionContext.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api model 
