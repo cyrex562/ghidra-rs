@@ -1,6 +1,6 @@
 status	mode	depth	fanin	rem	module	path
 PARK	trait	26	24	77	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/StringIdMsType.java
-TODO	trait	26	22	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/VtShapeDescriptorMsProperty.java
+PARK	trait	26	22	1	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/type/VtShapeDescriptorMsProperty.java
 TODO	trait	25	20	3	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/LanguageName.java
 TODO	trait	24	21	77	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/AbstractCompile2MsSymbol.java
 TODO	trait	25	28	77	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/DataHighLevelShaderLanguageSymbolInternals.java
