@@ -14,7 +14,7 @@ PARK	trait	15	472	2	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin
 PARK	trait	14	21	76	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/symbol/AbstractBasePointerRelativeMsSymbol.java
 PARK	trait	12	474	7	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/SymbolRecords.java
 DONE	trait	11	499	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/MsSymbolIterator.java
-TODO	trait	10	473	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/GlobalReferenceIterator.java
+DONE	trait	10	473	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/GlobalReferenceIterator.java
 TODO	trait	9	478	9	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/Module.java
 TODO	trait	8	483	10	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/PdbDebugInfo.java
 TODO	trait	7	474	5	format	Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/AbstractSymbolInformation.java
