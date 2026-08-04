@@ -406,3 +406,5 @@ ts	stub_class	referenced_by
 2026-08-03T02:30:00Z	MdMangLike (extended)	MDComplexType
 2026-08-03T08:08:24Z	AbstractPdb (extended: get_type_record)	AbstractCobol0MsType
 2026-08-04T07:34:05Z	AbstractMsSymbol	MsSymbolIterator
+2026-08-04T12:00:00Z	PdbDebugInfo	GlobalReferenceIterator
+2026-08-04T12:00:00Z	MsfStream consts (NIL_STREAM_NUMBER, MAX_STREAM_LENGTH)	GlobalReferenceIterator
