@@ -8,6 +8,7 @@ pub mod program;
 pub mod target;
 pub mod time;
 pub mod trace;
+pub mod trace_address_snap_range;
 pub mod trace_change_set;
 pub mod trace_closed_exception;
 pub mod trace_execution_state;

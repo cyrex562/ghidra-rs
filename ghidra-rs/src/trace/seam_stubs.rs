@@ -4,7 +4,11 @@
 //! into a supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for
 //! provenance.
 
+use crate::program::model::address::range::AddressRange;
+use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::trace::model::lifespan::Lifespan;
+use crate::util::database::spatial::rect::euclidean_space2d::EuclideanSpace2D;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -88,3 +92,25 @@ pub trait TraceVariableSnapProgramView: TraceProgramView {}
 /// Placeholder for `ghidra.trace.model.TraceTimeViewport`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceTimeViewport {}
+
+/// Placeholder for `ghidra.trace.model.ImmutableTraceAddressSnapRange`, referenced by
+/// [`TraceAddressSnapRange`](crate::trace::model::trace_address_snap_range::TraceAddressSnapRange)
+/// before the real (concrete) implementation is ported. Only a shape hint: unknown in-repo
+/// types map to trait objects.
+pub trait ImmutableTraceAddressSnapRange: Send + Sync {
+    fn range_centered(&self, address: &Address, breadth: i32) -> AddressRange;
+    fn span_centered(&self, snap: i64, breadth: i32) -> Box<dyn Lifespan>;
+    fn centered(
+        &self,
+        address: &Address,
+        snap: i64,
+        address_breadth: i32,
+        snap_breadth: i32,
+    ) -> Box<dyn ImmutableTraceAddressSnapRange>;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn hash_code(&self) -> i32;
+    fn to_string(&self) -> String;
+    fn get_range(&self) -> AddressRange;
+    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_space(&self) -> Box<dyn EuclideanSpace2D<X = Address, Y = i64, Rect = AddressRange>>;
+}

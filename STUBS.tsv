@@ -419,3 +419,4 @@ ts	stub_class	referenced_by
 2026-08-04T12:30:00Z	ProgramSelection	DebuggerListingService
 2026-08-04T12:30:00Z	LitIdMode	DebuggerListingService
 2026-08-05T02:10:12Z	ClipboardContentProviderService	ClipboardService
+2026-08-05T02:43:28.336054+00:00	ImmutableTraceAddressSnapRange	TraceAddressSnapRange
