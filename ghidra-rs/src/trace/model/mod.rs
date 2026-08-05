@@ -16,6 +16,7 @@ pub mod trace_execution_state;
 pub mod trace_options_manager;
 pub mod trace_span;
 pub mod trace_time_viewport;
+pub mod trace_unique_object;
 pub mod trace_user_data;
 
 pub use trace_options_manager::TraceOptionsManager;
