@@ -42,6 +42,14 @@ when you would otherwise need approval, you **park** (see below) instead of gues
 - A new dependency, data format, or schema change is required.
 - A Java package's top-level area is **not in the map table** below (do not invent a module).
 - A file would need to be deleted — **never delete files**; park instead.
+- You're about to reach for `Rc<RefCell<_>>`, `Arc<Mutex<_>>`, or `Box<dyn Trait>` on a
+  **shared/graph type** (referenced from many places, mutated over its lifetime — e.g. it
+  appears high in `SEAM.tsv`'s fan-in ranking) and no established ownership pattern exists
+  for it yet in `OWNERSHIP_MIGRATION.md` or in an already-remediated sibling type. Park
+  instead of picking a pattern ad hoc — that's exactly how the current
+  `Rc<RefCell>`/`Arc<Mutex>`/`Box<dyn>`/`.clone()` inconsistency happened (see
+  `OWNERSHIP_MIGRATION.md`). Plain trait objects for genuinely open-ended extension points
+  (script/plugin providers, loaders) are fine and not what this trigger is about.
 - The issue turns out to be primarily Swing UI (see UI rule) — park with the `ui` label.
 - The spec is genuinely ambiguous and a wrong guess wastes real work.
   When you park: leave the branch as-is, post a comment stating what is blocking, the exact
@@ -72,6 +80,12 @@ unapproved stubs/placeholders/`TODO`s; revert or overwrite uncommitted user chan
 - `PORT_MANIFEST.tsv`: **The single source of truth for porting status.** TAB-separated:
   `<java_path>\t<status>\t<package>`. Status is `TODO` or `DONE`. You update it (step 5 above).
 - `todo.md`: Optional human-readable summary, generated from the manifest. Not authoritative.
+- `OWNERSHIP_MIGRATION.md`: Convention and phased plan for replacing mechanically-translated
+  Java idioms (trait-object + `Rc<RefCell>`/`Arc<Mutex>` graphs, Java-bean accessors) with
+  arena+ID / enum-dispatch Rust patterns. Read before touching a high-fan-in shared type.
+- `OWNERSHIP_DEBT.tsv`: Frontier file for that migration (same shape as `SEAM.tsv`), generated/
+  refreshed by `scripts/pattern_audit.py` — TAB-separated:
+  `status  priority  score  fanin  class  module  path  signals`.
 
 ## Current Porting State
 
@@ -85,6 +99,14 @@ unapproved stubs/placeholders/`TODO`s; revert or overwrite uncommitted user chan
 ## Coding Standards
 
 - Write idiomatic Rust using standard naming, ownership, error handling, and safety conventions.
+  For shared/graph types (see `OWNERSHIP_MIGRATION.md`), that means an arena + typed `Copy` ID
+  (e.g. via `slotmap`) instead of translating the Java interface straight into
+  `Box<dyn Trait>` + `Rc<RefCell<_>>`/`Arc<Mutex<_>>`, and enum dispatch instead of `Box<dyn>`
+  for closed Java hierarchies (a fixed, known set of implementers). Don't reach for `dyn`,
+  `Rc<RefCell<_>>`, `Arc<Mutex<_>>`, or Java-bean `get_x`/`set_x` accessor pairs by default just
+  because that's what the Java source did — those are fine when they're the right tool for a
+  specific case (e.g. `dyn` for a genuine open-ended plugin extension point), not as the
+  reflexive translation of "Java interface" or "Java field with a getter."
 - Keep behavior aligned with the Java source unless there is a clear Rust-specific reason to adapt.
 - Document public APIs with Rustdoc.
 - Keep changes scoped to the porting task or bug being handled.
@@ -127,6 +149,12 @@ unapproved stubs/placeholders/`TODO`s; revert or overwrite uncommitted user chan
   upgrading PyO3 over pinning to an older Python unless compatibility requires otherwise.
 - Report any test command that could not be run, or any environment issue that prevents a
   full test pass — do not silently skip.
+- Periodic pattern audit: `audit_night.sh` re-scans ported code with
+  `scripts/pattern_audit.py` and refreshes `OWNERSHIP_DEBT.tsv`, flagging files whose
+  Java-idiom smell score (dyn/Rc<RefCell>/Arc<Mutex> sprawl, clone density, get/set pairs,
+  unwrap density, singleton statics) got worse since the last run — this is how ownership-
+  pattern drift gets caught instead of accumulating invisibly. It doesn't block a merge by
+  itself; treat a regression it reports the same as any other review feedback.
 
 ## Review Checklist (your own, before labeling `review`)
 
@@ -135,6 +163,9 @@ unapproved stubs/placeholders/`TODO`s; revert or overwrite uncommitted user chan
 - New code has tests and those tests pass locally.
 - `PORT_MANIFEST.tsv` is updated to DONE only for completed, verified work.
 - No placeholders, stubs, or unapproved `TODO`s were added.
+- No new `Rc<RefCell<_>>`/`Arc<Mutex<_>>`/`Box<dyn Trait>` was added to a shared/graph type
+  without following `OWNERSHIP_MIGRATION.md`'s conventions (or parking per the trigger above
+  if none is established yet for that type).
 - Work happened on a `port/<issue#>-<slug>` branch off `integration`; `main` was untouched.
 - No files were deleted; uncommitted user changes were not reverted or overwritten.
 
