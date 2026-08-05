@@ -3,7 +3,7 @@
 //! Java source: `ghidra.trace.model.program.TraceProgramViewMemory`.
 use crate::program::model::mem::memory::Memory;
 use crate::trace::model::program::snap_specific_trace_view::SnapSpecificTraceView;
-use crate::trace::seam_stubs::TraceProgramView;
+use crate::trace::model::program::trace_program_view::TraceProgramView;
 
 /// The memory of a [`TraceProgramView`], as visible at a particular snapshot.
 ///
@@ -37,7 +37,40 @@ mod tests {
     use crate::trace::model::trace::Trace;
 
     struct MockTraceProgramView;
-    impl TraceProgramView for MockTraceProgramView {}
+
+    impl crate::framework::model::DomainObject for MockTraceProgramView {}
+
+    impl crate::program::model::listing::program::Program for MockTraceProgramView {
+        fn get_name(&self) -> String {
+            "mock-view".to_string()
+        }
+
+        fn get_language_id(&self) -> String {
+            "mock:LE:64:default".to_string()
+        }
+    }
+
+    impl TraceProgramView for MockTraceProgramView {
+        fn get_trace_program_view_memory(&self) -> Box<dyn TraceProgramViewMemory> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_viewport(&self) -> Box<dyn crate::trace::model::trace_time_viewport::TraceTimeViewport> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_snap(&self) -> Option<i64> {
+            None
+        }
+    }
 
     struct MockTraceProgramViewMemory {
         force_full_view: bool,

@@ -16,9 +16,9 @@ use std::pin::Pin;
 
 use crate::app::seam_stubs::{DebuggerCoordinates, Target, TraceObject, TracePlatform, TraceSchedule, TraceThread};
 use crate::framework::model::DomainFile;
+use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::target::path::KeyPath;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::TraceProgramView;
 
 /// A future representing an asynchronous, possibly-failable operation that produces no value.
 ///

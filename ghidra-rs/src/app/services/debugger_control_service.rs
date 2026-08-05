@@ -15,8 +15,8 @@ use crate::app::seam_stubs::{ControlMode, DebuggerCoordinates};
 use crate::program::model::address::Address;
 use crate::program::model::lang::Register;
 use crate::program::seam_stubs::RegisterValue;
+use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::TraceProgramView;
 
 /// A future representing an asynchronous, possibly-failable machine-state edit.
 ///

@@ -1,11 +1,12 @@
 use crate::program::model::address::AddressFactory;
 use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
 use crate::program::model::lang::{CompilerSpec, Language};
+use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceBreakpointManager, TraceCodeManager, TraceEquateManager, TraceMemoryManager,
-    TraceModuleManager, TraceObjectManager, TracePlatformManager, TraceProgramView,
+    TraceModuleManager, TraceObjectManager, TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
     TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager, TraceTimeManager,
     TraceVariableSnapProgramView,
@@ -208,9 +209,81 @@ mod tests {
     struct MockTimeManager;
     impl TraceTimeManager for MockTimeManager {}
     struct MockProgramView;
-    impl TraceProgramView for MockProgramView {}
+
+    impl DomainObject for MockProgramView {}
+
+    impl crate::program::model::listing::program::Program for MockProgramView {
+        fn get_name(&self) -> String {
+            "mock-view".to_string()
+        }
+
+        fn get_language_id(&self) -> String {
+            "mock:LE:64:default".to_string()
+        }
+    }
+
+    impl TraceProgramView for MockProgramView {
+        fn get_trace_program_view_memory(
+            &self,
+        ) -> Box<dyn crate::trace::model::program::TraceProgramViewMemory> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_viewport(&self) -> Box<dyn TraceTimeViewport> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_snap(&self) -> Option<i64> {
+            None
+        }
+    }
+
     struct MockVariableSnapProgramView;
-    impl TraceProgramView for MockVariableSnapProgramView {}
+
+    impl DomainObject for MockVariableSnapProgramView {}
+
+    impl crate::program::model::listing::program::Program for MockVariableSnapProgramView {
+        fn get_name(&self) -> String {
+            "mock-variable-snap-view".to_string()
+        }
+
+        fn get_language_id(&self) -> String {
+            "mock:LE:64:default".to_string()
+        }
+    }
+
+    impl TraceProgramView for MockVariableSnapProgramView {
+        fn get_trace_program_view_memory(
+            &self,
+        ) -> Box<dyn crate::trace::model::program::TraceProgramViewMemory> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_viewport(&self) -> Box<dyn TraceTimeViewport> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_snap(&self) -> Option<i64> {
+            None
+        }
+    }
+
     impl TraceVariableSnapProgramView for MockVariableSnapProgramView {}
     struct MockTimeViewport;
     impl TraceTimeViewport for MockTimeViewport {
