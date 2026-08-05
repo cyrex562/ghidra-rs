@@ -13,6 +13,7 @@ pub mod data_type_query_service;
 pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
 pub mod debugger_emulation_service;
+pub mod debugger_listing_service;
 pub mod debugger_platform_service;
 pub mod debugger_static_mapping_service;
 pub mod debugger_target_service;
@@ -64,6 +65,7 @@ pub use debugger_emulation_service::{
     CachedEmulator, DebuggerEmulationService, EmulateFuture, EmulationResult,
     EmulatorStateListener, RecordEmulationResult, RunFuture,
 };
+pub use debugger_listing_service::{DebuggerListingService, LocationTrackingSpecChangeListener};
 pub use debugger_platform_service::DebuggerPlatformService;
 pub use debugger_static_mapping_service::{ChangesSettledFuture, DebuggerStaticMappingService};
 pub use debugger_target_service::DebuggerTargetService;

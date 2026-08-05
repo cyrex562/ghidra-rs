@@ -412,3 +412,9 @@ ts	stub_class	referenced_by
 2026-08-04T12:00:00Z	C13SectionLike	Module
 2026-08-04T12:00:00Z	C13SectionIteratorLike	Module
 2026-08-04T12:15:00Z	LocationTrackingSpec	DebuggerListing
+2026-08-04T12:30:00Z	AutoReadMemorySpec	DebuggerListingService
+2026-08-04T12:30:00Z	MultiBlendedListingBackgroundColorModel	DebuggerListingService
+2026-08-04T12:30:00Z	CodeViewerService	DebuggerListingService
+2026-08-04T12:30:00Z	ListingPanel	DebuggerListingService
+2026-08-04T12:30:00Z	ProgramSelection	DebuggerListingService
+2026-08-04T12:30:00Z	LitIdMode	DebuggerListingService
