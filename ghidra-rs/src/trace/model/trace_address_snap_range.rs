@@ -54,9 +54,11 @@ pub trait TraceAddressSnapRange: Send + Sync {
     /// Constructs a new rectangle with the given bounds.
     ///
     /// Corresponds to the Java default `immutable(x1, x2, y1, y2) { return new
-    /// ImmutableTraceAddressSnapRange(x1, x2, y1, y2); }`. `ImmutableTraceAddressSnapRange` is
-    /// not yet ported (see `seam_stubs::ImmutableTraceAddressSnapRange`), so this is a required
-    /// method rather than a default that constructs a concrete type.
+    /// ImmutableTraceAddressSnapRange(x1, x2, y1, y2); }`.
+    /// [`ImmutableTraceAddressSnapRange`](crate::trace::model::immutable_trace_address_snap_range::ImmutableTraceAddressSnapRange)
+    /// is ported as a trait, not a concrete type (it was a cycle cut-point), so there is still no
+    /// single canonical implementor to construct here; this remains a required method rather than
+    /// a default.
     fn immutable(
         &self,
         x1: Address,
