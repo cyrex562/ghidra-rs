@@ -1,4 +1,5 @@
 pub mod address_snap;
+pub mod bookmark;
 pub mod breakpoint;
 pub mod default_address_snap;
 pub mod default_trace_span;
