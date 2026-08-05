@@ -1,13 +1,14 @@
 use crate::program::model::address::AddressFactory;
 use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
 use crate::program::model::lang::{CompilerSpec, Language};
+use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceBreakpointManager, TraceCodeManager, TraceEquateManager, TraceMemoryManager,
     TraceModuleManager, TraceObjectManager, TracePlatformManager, TraceProgramView,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
     TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager, TraceTimeManager,
-    TraceTimeViewport, TraceVariableSnapProgramView,
+    TraceVariableSnapProgramView,
 };
 use crate::util::lock_hold::{Lock, LockHold};
 
@@ -212,7 +213,79 @@ mod tests {
     impl TraceProgramView for MockVariableSnapProgramView {}
     impl TraceVariableSnapProgramView for MockVariableSnapProgramView {}
     struct MockTimeViewport;
-    impl TraceTimeViewport for MockTimeViewport {}
+    impl TraceTimeViewport for MockTimeViewport {
+        fn set_snap(&mut self, _snap: i64) {}
+
+        fn add_change_listener(&mut self, _l: crate::util::function::Runnable) {}
+
+        fn remove_change_listener(&mut self, _l: &crate::util::function::Runnable) {}
+
+        fn is_forked(&self) -> bool {
+            false
+        }
+
+        fn contains_any_upper(&self, _lifespan: &dyn crate::trace::model::lifespan::Lifespan) -> bool {
+            false
+        }
+
+        fn is_completely_visible(
+            &self,
+            _range: &crate::program::model::address::range::AddressRange,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _object: &dyn std::any::Any,
+            _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
+        ) -> bool {
+            true
+        }
+
+        fn compute_visible_parts(
+            &self,
+            _set: &dyn crate::program::model::address::address_set::AddressSetView,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _object: &dyn std::any::Any,
+            _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
+        ) -> crate::program::model::address::address_set::AddressSet {
+            crate::program::model::address::address_set::AddressSet::new()
+        }
+
+        fn get_ordered_spans(&self) -> Vec<Box<dyn crate::trace::model::lifespan::Lifespan>> {
+            Vec::new()
+        }
+
+        fn get_reversed_spans(&self) -> Vec<Box<dyn crate::trace::model::lifespan::Lifespan>> {
+            Vec::new()
+        }
+
+        fn get_ordered_snaps(&self) -> Vec<i64> {
+            Vec::new()
+        }
+
+        fn get_reversed_snaps(&self) -> Vec<i64> {
+            Vec::new()
+        }
+
+        fn get_top(
+            &self,
+            _func: &dyn Fn(i64) -> Option<Box<dyn std::any::Any>>,
+        ) -> Option<Box<dyn std::any::Any>> {
+            None
+        }
+
+        fn merged_iterator(
+            &self,
+            _iter_func: &dyn Fn(i64) -> Box<dyn Iterator<Item = Box<dyn std::any::Any>>>,
+            _comparator: &dyn Fn(&dyn std::any::Any, &dyn std::any::Any) -> std::cmp::Ordering,
+        ) -> Box<dyn Iterator<Item = Box<dyn std::any::Any>>> {
+            Box::new(std::iter::empty())
+        }
+
+        fn unioned_addresses(
+            &self,
+            _set_func: &dyn Fn(i64) -> Box<dyn crate::program::model::address::address_set::AddressSetView>,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            Box::new(crate::program::model::address::address_set::AddressSet::new())
+        }
+    }
 
     impl Trace for MockTrace {
         fn get_base_language(&self) -> Box<dyn Language> {

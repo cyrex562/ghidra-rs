@@ -547,7 +547,7 @@ mod tests {
         fn get_program_view(&self) -> Box<dyn crate::trace::seam_stubs::TraceVariableSnapProgramView> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn create_time_viewport(&self) -> Box<dyn crate::trace::seam_stubs::TraceTimeViewport> {
+        fn create_time_viewport(&self) -> Box<dyn crate::trace::model::trace_time_viewport::TraceTimeViewport> {
             unimplemented!("not exercised by this smoke test")
         }
         fn add_program_view_listener(
