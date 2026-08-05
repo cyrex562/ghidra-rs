@@ -7,7 +7,7 @@ DONE	trait	2	23	7	generic	Ghidra/Framework/Generic/src/main/java/generic/concurr
 DONE	trait	2	16	2	generic	Ghidra/Framework/Generic/src/main/java/generic/concurrent/QRunnable.java
 DONE	trait	0	188	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ClipboardService.java
 DONE	trait	8	138	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/TraceAddressSnapRange.java
-TODO	trait	7	107	26	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/ImmutableTraceAddressSnapRange.java
+DONE	trait	7	107	26	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/ImmutableTraceAddressSnapRange.java
 TODO	trait	11	108	24	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/TraceTimeViewport.java
 TODO	trait	11	100	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/TraceUniqueObject.java
 TODO	trait	11	14	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/bookmark/TraceBookmark.java
