@@ -206,7 +206,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn create_time_viewport(&self) -> Box<dyn crate::trace::seam_stubs::TraceTimeViewport> {
+        fn create_time_viewport(&self) -> Box<dyn crate::trace::model::trace_time_viewport::TraceTimeViewport> {
             unimplemented!()
         }
 

@@ -355,13 +355,14 @@ mod tests {
     use crate::program::model::lang::{CompilerSpec, Language};
     use crate::program::seam_stubs::DataTypeManagerOwner;
     use crate::trace::model::trace::TraceProgramViewListener;
+    use crate::trace::model::trace_time_viewport::TraceTimeViewport;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceBreakpointManager, TraceCodeManager, TraceEquateManager, TraceMemoryManager,
         TraceModuleManager, TraceObjectManager, TracePlatformManager,
         TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
         TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager, TraceTimeManager,
-        TraceTimeViewport, TraceVariableSnapProgramView,
+        TraceVariableSnapProgramView,
     };
     use crate::util::lock_hold::{Lock, LockHold};
 

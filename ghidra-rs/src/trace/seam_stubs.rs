@@ -85,10 +85,6 @@ pub trait TraceProgramView {}
 /// Java interface's `extends TraceProgramView`.
 pub trait TraceVariableSnapProgramView: TraceProgramView {}
 
-/// Placeholder for `ghidra.trace.model.TraceTimeViewport`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceTimeViewport {}
-
 /// Placeholder for `ghidra.trace.model.TraceAddressSnapSpace`, referenced by
 /// [`ImmutableTraceAddressSnapRange`](crate::trace::model::immutable_trace_address_snap_range::ImmutableTraceAddressSnapRange)
 /// before the real (concrete, cached-singleton) implementation is ported. Only the method that
