@@ -18,10 +18,18 @@ priority  score   fanin  class                        path
 4289.6    386.8   1009   Listing                      program/model/listing/listing.rs
 2848.7    198.1   1338   Function                     program/model/listing/function.rs
 2513.6    160.0   1471   DataTypeManager              program/model/data/data_type_manager.rs
-1981.0     94.2   2003   DataType                     program/model/data/data_type.rs
-1631.4    125.2   1203   ProgramBasedDataTypeManager  program/model/data/program_based_data_type_manager.rs
+2483.6    118.1   2003   DataType                     program/model/data/data_type.rs
+1640.2    119.2   1276   DataUtilities                program/model/data/data_utilities.rs
 ```
-(`OWNERSHIP_DEBT.tsv` has the full 639-file list.)
+(`OWNERSHIP_DEBT.tsv` has the full 1,521-row list.)
+
+Numbers above are from the committed `OWNERSHIP_DEBT.tsv` and are reproducible — re-running
+the scan on an unchanged tree yields a byte-identical file. Two corrections against this
+doc's first draft, which quoted a pre-comment-strip-fix run: `DataType` scores 118.1/2483.6
+(not 94.2/1981.0), and the fifth-ranked row is `DataUtilities`, not
+`ProgramBasedDataTypeManager` (now sixth, priority 1631.4). Phase 2's scope is "the top-N
+rows of `OWNERSHIP_DEBT.tsv` at the time you start it" — read the file, don't trust this
+snapshot to stay current.
 
 The five highest-fan-in ported types in the crate are also its five highest
 idiom-smell scores. That's not a coincidence: the classes with the most Java
@@ -194,6 +202,33 @@ mirroring `seam_night.sh`'s structure, added in this change but left
 pattern). By this phase the convention is proven and documented with real
 examples, so autonomous remediation is far lower-risk than it would be today.
 
+*Sequencing constraint, found by proofing the harness (2026-08-05):* the debt graph has the
+same dependency structure as the port graph, so Phase 3 cannot run ahead of Phase 2. Of the
+1,416 rows eligible under `MAX_FANIN=500`, **939 (66%) are convention-blocked** — their score
+is dominated by `dyn`/`Rc<RefCell<_>>`/`Arc<Mutex<_>>` over some *other* core type that has no
+convention yet — and only 477 (34%) are mechanically fixable (clone/unwrap/get-set density
+alone). A live single-iteration run confirmed the failure mode rather than predicting it:
+`DebuggerTraceManagerService` parked because its 174 `dyn`s are all over
+`Trace`/`TracePlatform`/`TraceThread`/`TraceObject`/`Target`, and `Trace` itself had already
+parked for the same reason, as had its sibling `DebuggerStaticMappingService`. Three files,
+one undecided convention. Turned loose on the raw priority order, the harness would park most
+of what it touched and burn an LLM call per park.
+
+`MECHANICAL_ONLY=1` (default) therefore restricts unattended runs to the 34% that need no
+convention decision — rows with no `Rc`/`Arc` and fewer than `DYN_BLOCK_THRESHOLD` (5) `dyn`s.
+Set `MECHANICAL_ONLY=0` once Phase 2 has decided the core-type conventions; the selector then
+returns to plain priority order (verified: it picks `Trace` first again).
+
+The Phase-2-is-human-only rule is enforced in code, not just asserted here:
+`remediate_ownership.sh` skips any row whose fan-in exceeds `MAX_FANIN`
+(default 500), so an unattended run works the long tail and cannot pick
+`Listing`/`Function`/`DataTypeManager`/`DataType`/`DataUtilities` — all of
+which sit at 1,000+ fan-in. 105 of the 1,521 rows are held back by that
+default; the remaining 1,416 are eligible. Raise `MAX_FANIN` deliberately,
+after Phase 2 has landed by hand. (Before this guard existed, a first
+`REMEDIATE_MAX=6` run went straight at `Listing` on iteration 1 — the exact
+outcome the surrounding prose warned against.)
+
 **Phase 4 — ongoing.** New ports must follow the convention from the start
 (see `AGENTS.md` changes below), so `OWNERSHIP_DEBT.tsv` should only shrink
 from here, modulo the periodic audit catching regressions (next section).
@@ -221,7 +256,13 @@ detection-only step, cheap enough to run every batch, separate from the
 - **Standalone cadence**: `audit_night.sh` (added in this change) re-runs a
   full scan and refreshes `OWNERSHIP_DEBT.tsv` weekly, wired the same way
   `seam_night.sh` documents its own crontab line, so drift is caught even
-  outside a porting batch (e.g. after manual/human commits).
+  outside a porting batch (e.g. after manual/human commits). The refresh must
+  pass `--preserve-status`: a plain rescan writes `TODO` for every row, so an
+  unqualified refresh silently wipes every `DONE`/`PARK` recorded since the
+  last audit and re-opens already-handled files. With the flag, `DONE`/`PARK`
+  carry over, except that a row whose score got *worse* than the snapshot is
+  reopened to `TODO` and logged — a remediation that regressed should come
+  back onto the frontier.
 - **Scope beyond ownership**: the signal set already generalizes past
   arena-vs-`Rc`. Getter/setter pairs are Java bean idiom leaking into Rust
   (should usually be a `pub` field or a single accessor, not a get/set pair).

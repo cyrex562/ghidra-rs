@@ -30,6 +30,19 @@ REPO="${REPO_DIR:-$HOME/Projects/ghidra-rs}"; cd "$REPO" || exit 1
 
 MODEL="${MODEL:-sonnet}"
 REMEDIATE_MAX="${REMEDIATE_MAX:-0}"   # inert by default; see header
+# Fan-in ceiling for unattended work. Rows above it (the Phase 2 blast-radius types --
+# Listing/Function/DataTypeManager/DataType/... all sit at 1000+) are skipped here and left
+# for human-reviewed PRs. Raise deliberately, only once Phase 2 has landed by hand.
+MAX_FANIN="${MAX_FANIN:-500}"
+# Skip rows whose smell is dominated by dyn/Rc/Arc, i.e. the ones that need an ownership
+# CONVENTION for some core type before they can be touched at all. 66% of the eligible
+# frontier is in that state today, and a live proofing run parked three of them in a row
+# (Trace -> DebuggerStaticMappingService -> DebuggerTraceManagerService, each blocked on the
+# same undecided Trace convention). Until Phase 2 lands those decisions, this harness can only
+# make real progress on the mechanical 34% (clone/unwrap/get-set density). Set to 0 after
+# Phase 2 to let it work the dyn-dominated rows too.
+MECHANICAL_ONLY="${MECHANICAL_ONLY:-1}"
+DYN_BLOCK_THRESHOLD="${DYN_BLOCK_THRESHOLD:-5}"
 DEBT="OWNERSHIP_DEBT.tsv"; DOC="OWNERSHIP_MIGRATION.md"
 INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
@@ -45,6 +58,24 @@ exec 7>/tmp/ghidra-remediate.lock; flock -n 7 || { echo "another remediation run
 [ -f "$DEBT" ] || { echo "no $DEBT -- run: python3 scripts/pattern_audit.py --root ghidra-rs/src --seam SEAM.tsv --out $DEBT"; exit 1; }
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+# Set col-1 status for the row whose path column (col 7) equals $1. Field-exact, so it can't
+# silently no-op the way a hand-counted sed pattern can (it did: the pattern had one field too
+# few, so every PARK was a no-op and the loop re-picked the same row until REMEDIATE_MAX ran out).
+set_status(){ # $1=path $2=new status
+  "$PY" - "$DEBT" "$1" "$2" <<'PY'
+import sys
+tsv, target, status = sys.argv[1], sys.argv[2], sys.argv[3]
+lines = open(tsv, encoding="utf-8").read().split("\n")
+hit = 0
+for i, ln in enumerate(lines):
+    c = ln.split("\t")
+    if len(c) > 6 and c[6] == target and c[0] == "TODO":
+        c[0] = status; lines[i] = "\t".join(c); hit += 1
+open(tsv, "w", encoding="utf-8").write("\n".join(lines))
+sys.exit(0 if hit else 1)
+PY
+}
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
@@ -56,9 +87,23 @@ timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>/dev/null || { log "integra
 
 fixed=0; parked=0
 for ((i=1;i<=REMEDIATE_MAX;i++)); do
-  # highest-priority still-TODO row (priority = smell score * (1 + fan-in/100))
-  row=$(awk -F'\t' '$1=="TODO"{print}' "$DEBT" | sort -t$'\t' -k2,2 -rn | head -1)
-  [ -z "$row" ] && { log "no TODO rows left in $DEBT."; break; }
+  # Highest-priority still-TODO row (priority = smell score * (1 + fan-in/100)), EXCLUDING
+  # rows above MAX_FANIN. Without that filter this harness picks Listing/Function/DataType...
+  # on iteration 1 -- precisely the Phase 2 types the header says must not run unattended.
+  # The doc's constraint has to live in the code, not only in a comment above it.
+  row=$(awk -F'\t' -v maxfan="$MAX_FANIN" -v mech="$MECHANICAL_ONLY" -v dynmax="$DYN_BLOCK_THRESHOLD" '
+        $1=="TODO" && ($4+0)<=maxfan {
+          if (mech=="1") {
+            if ($8 ~ /rc_refcell=|arc_mutex=/) next
+            if (match($8, /dyn=[0-9]+/) && substr($8, RSTART+4, RLENGTH-4)+0 >= dynmax) next
+          }
+          print
+        }' "$DEBT" | sort -t$'\t' -k2,2 -rn | head -1)
+  if [ -z "$row" ]; then
+    skipped=$(awk -F'\t' -v maxfan="$MAX_FANIN" '$1=="TODO" && ($4+0)>maxfan' "$DEBT" | wc -l)
+    log "no eligible TODO rows left in $DEBT (${skipped} above MAX_FANIN=${MAX_FANIN} held back for human-reviewed Phase 2; MECHANICAL_ONLY=${MECHANICAL_ONLY})."
+    break
+  fi
   path=$(printf '%s' "$row" | cut -f7); class=$(printf '%s' "$row" | cut -f5); signals=$(printf '%s' "$row" | cut -f8)
   hash=$(printf '%s' "$path" | cksum | cut -d' ' -f1); branch="ownership/${class}-${hash}"
   clog="$LOG_DIR/ownership.${class}.${hash}.$(date +%s).log"; jlog="${clog%.log}.json"
@@ -113,13 +158,13 @@ Change ONLY what's needed to fix the flagged smell in this file and its call sit
       fixed=$((fixed+1)); log "OK ownership: $class merged"
     else
       git merge --abort >/dev/null 2>&1||true; git reset --hard >/dev/null 2>&1||true
-      sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${path//\//\\/}\t\)#PARK\1#" "$DEBT"
+      set_status "$path" PARK || log "WARN: could not park row for $path in $DEBT"
       git add "$DEBT" >/dev/null 2>&1; git commit -q -m "ownership: park $class" >/dev/null 2>&1||true
       parked=$((parked+1)); log "PARK ownership: $class (post-merge build failed)"
     fi
   else
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
-    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${path//\//\\/}\t\)#PARK\1#" "$DEBT"
+    set_status "$path" PARK || log "WARN: could not park row for $path in $DEBT"
     git add "$DEBT" >/dev/null 2>&1; git commit -q -m "ownership: park $class" >/dev/null 2>&1||true
     parked=$((parked+1)); log "PARK ownership: $class (status=$status / build red). log: $clog"
   fi

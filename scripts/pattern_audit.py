@@ -107,6 +107,24 @@ def load_seam_fanin(seam_path):
     return fanin
 
 
+def load_prior_status(tsv_path):
+    """path -> (status, score) from a previous audit snapshot. Empty if unreadable."""
+    prior = {}
+    if not tsv_path or not os.path.exists(tsv_path):
+        return prior
+    with open(tsv_path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            path = (r.get("path") or "").strip()
+            if not path:
+                continue
+            try:
+                score = float(r.get("score") or 0)
+            except ValueError:
+                score = 0.0
+            prior[path] = ((r.get("status") or "TODO").strip(), score)
+    return prior
+
+
 def scan_file(path):
     with open(path, "r", encoding="utf-8", errors="ignore") as fh:
         text = fh.read()
@@ -174,12 +192,20 @@ def main():
     ap.add_argument("--out", help="Write TSV (status/score/fanin/class/module/path/signals) here")
     ap.add_argument("--min-score", type=float, default=3.0, help="Ignore files below this score")
     ap.add_argument("--top", type=int, default=0, help="Only print/write the top N by priority")
-    ap.add_argument("--baseline", help="Previous audit TSV, for --diff-new")
+    ap.add_argument("--baseline", help="Previous audit TSV, for --diff-new / --preserve-status")
     ap.add_argument(
         "--diff-new",
         action="store_true",
         help="Periodic-audit mode: only report files whose score regressed vs --baseline "
         "(new smells introduced since the last audit), not the whole backlog.",
+    )
+    ap.add_argument(
+        "--preserve-status",
+        action="store_true",
+        help="When writing --out, carry DONE/PARK statuses over from the previous snapshot "
+        "(--baseline, else the existing --out file) instead of resetting every row to TODO. "
+        "A DONE/PARK row whose score regressed by >0.5 is reopened as TODO. Required for any "
+        "refresh that runs after remediation has started, or the frontier file is wiped.",
     )
     args = ap.parse_args()
 
@@ -240,6 +266,31 @@ def main():
 
     out = args.out
     fieldnames = ["status", "priority", "score", "fanin", "class", "module", "path", "signals"]
+
+    if args.preserve_status:
+        # A plain rescan writes status=TODO for every row, which silently un-does every
+        # DONE/PARK a remediation run (or a human) recorded -- the frontier file loses its
+        # memory and already-handled files get picked up again. Carry those statuses over,
+        # except where the file got measurably worse since the snapshot, which is exactly
+        # the case worth reopening.
+        prior = load_prior_status(args.baseline or out)
+        kept = reopened = 0
+        for r in rows:
+            prev = prior.get(r["path"])
+            if not prev or prev[0] not in ("DONE", "PARK"):
+                continue
+            if r["score"] > prev[1] + 0.5:
+                reopened += 1
+                print(
+                    f"reopened {prev[0]} -> TODO (score {prev[1]:.1f} -> {r['score']:.1f}): "
+                    f"{r['path']}",
+                    file=sys.stderr,
+                )
+            else:
+                r["status"] = prev[0]
+                kept += 1
+        print(f"preserved {kept} DONE/PARK rows, reopened {reopened}", file=sys.stderr)
+
     if out:
         with open(out, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")

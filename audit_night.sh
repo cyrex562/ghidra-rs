@@ -40,7 +40,11 @@ git pull --ff-only >/dev/null 2>&1 || true
 regressions=$("$PY" scripts/pattern_audit.py --root ghidra-rs/src --seam SEAM.tsv \
   --baseline "$PREV" --diff-new 2>>"$LOG_DIR/audit.log")
 
-"$PY" scripts/pattern_audit.py --root ghidra-rs/src --seam SEAM.tsv --out "$DEBT" >>"$LOG_DIR/audit.log" 2>&1
+# --preserve-status is load-bearing: a plain rescan writes TODO for every row, which would
+# wipe every DONE/PARK remediation recorded since the last audit and re-open handled files.
+# Rows whose score got worse than the snapshot are still reopened to TODO (logged).
+"$PY" scripts/pattern_audit.py --root ghidra-rs/src --seam SEAM.tsv \
+  --baseline "$PREV" --preserve-status --out "$DEBT" >>"$LOG_DIR/audit.log" 2>&1
 
 n_regress=0
 if [ -n "$regressions" ]; then
