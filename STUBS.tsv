@@ -420,3 +420,4 @@ ts	stub_class	referenced_by
 2026-08-05T03:18:11.597286+00:00	TraceAddressSnapSpace	ImmutableTraceAddressSnapRange
 2026-08-05T05:00:00.000000+00:00	ObjectKey	TraceUniqueObject
 2026-08-05T00:00:00.000000+00:00	TraceBookmarkType	TraceBookmark
+2026-08-05T07:11:21.975265+00:00	TraceObjectInterface	TraceRegisterContainer
