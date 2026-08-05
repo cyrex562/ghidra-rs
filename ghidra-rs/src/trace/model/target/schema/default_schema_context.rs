@@ -6,17 +6,17 @@
 //!
 //! Java source: `ghidra.trace.model.target.schema.DefaultSchemaContext`.
 //!
-//! `PrimitiveTraceObjectSchema` and `SchemaBuilder` are not yet ported (see
-//! [`seam_stubs::PrimitiveTraceObjectSchema`](crate::trace::seam_stubs::PrimitiveTraceObjectSchema)
-//! and [`seam_stubs::SchemaBuilder`](crate::trace::seam_stubs::SchemaBuilder)), so the
+//! `SchemaBuilder` is not yet ported (see
+//! [`seam_stubs::SchemaBuilder`](crate::trace::seam_stubs::SchemaBuilder)), so the
 //! constructors take the seed primitives as a parameter rather than reaching for a static
 //! `PrimitiveTraceObjectSchema.values()`, and the two `builder(...)` overloads are split into
 //! [`builder_for_schema`](DefaultSchemaContext::builder_for_schema) and
 //! [`builder_for_name`](DefaultSchemaContext::builder_for_name) since Rust traits cannot
 //! overload on parameter type.
 use crate::debug::api::tracermi::SchemaName;
+use crate::trace::model::target::schema::primitive_trace_object_schema::PrimitiveTraceObjectSchema;
 use crate::trace::model::target::schema::schema_context::SchemaContext;
-use crate::trace::seam_stubs::{PrimitiveTraceObjectSchema, SchemaBuilder, TraceObjectSchema};
+use crate::trace::seam_stubs::{SchemaBuilder, TraceObjectSchema};
 
 /// The default implementation of a schema context.
 ///
@@ -163,7 +163,17 @@ mod tests {
         }
     }
 
-    impl PrimitiveTraceObjectSchema for MockPrimitive {}
+    impl PrimitiveTraceObjectSchema for MockPrimitive {
+        fn get_context(&self) -> Box<dyn SchemaContext> {
+            Box::new(MockContext {
+                schemas: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+            })
+        }
+
+        fn get_types(&self) -> Vec<&'static str> {
+            vec!["mock"]
+        }
+    }
 
     /// Insertion-ordered `(name, schema)` list, shared (via `Arc<Mutex<_>>`) between a
     /// `MockContext` and every `MockBuilder` created from it, so a builder's `build_and_add()`
