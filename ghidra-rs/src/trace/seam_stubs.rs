@@ -5,6 +5,7 @@
 //! provenance.
 
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::trace::model::program::TraceProgramView;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -76,13 +77,10 @@ pub trait TraceThreadManager {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceTimeManager {}
 
-/// Placeholder for `ghidra.trace.model.program.TraceProgramView`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceProgramView {}
-
 /// Placeholder for `ghidra.trace.model.program.TraceVariableSnapProgramView`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Mirrors the
-/// Java interface's `extends TraceProgramView`.
+/// Java interface's `extends TraceProgramView`, now that
+/// [`TraceProgramView`](crate::trace::model::program::TraceProgramView) has a real port.
 pub trait TraceVariableSnapProgramView: TraceProgramView {}
 
 /// Placeholder for `ghidra.trace.model.TraceAddressSnapSpace`, referenced by

@@ -52,12 +52,13 @@ mod tests {
     use crate::program::model::lang::{CompilerSpec, Language};
     use crate::program::model::listing::bookmark_type::{BookmarkType, MarkerColor};
     use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::trace::model::program::TraceProgramView;
     use crate::trace::model::trace::TraceProgramViewListener;
     use crate::trace::model::trace_time_viewport::TraceTimeViewport;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceBreakpointManager, TraceCodeManager, TraceEquateManager, TraceMemoryManager,
-        TraceModuleManager, TraceObjectManager, TracePlatformManager, TraceProgramView,
+        TraceModuleManager, TraceObjectManager, TracePlatformManager,
         TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
         TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager, TraceTimeManager,
         TraceVariableSnapProgramView,
