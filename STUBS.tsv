@@ -422,5 +422,5 @@ ts	stub_class	referenced_by
 2026-08-05T00:00:00.000000+00:00	TraceBookmarkType	TraceBookmark
 2026-08-05T07:11:21.975265+00:00	TraceObjectInterface	TraceRegisterContainer
 2026-08-05T08:18:39.063694+00:00	TraceObjectSchema	SchemaContext
-2026-08-05T08:57:48.874074+00:00	PrimitiveTraceObjectSchema	DefaultSchemaContext
+2026-08-05T09:45:00.000000+00:00	AttributeSchema	PrimitiveTraceObjectSchema
 2026-08-05T08:57:48.874074+00:00	SchemaBuilder	DefaultSchemaContext

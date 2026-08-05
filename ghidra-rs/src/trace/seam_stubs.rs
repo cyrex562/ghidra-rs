@@ -129,13 +129,13 @@ pub trait TraceObjectSchema: Send + Sync {
     fn to_string(&self) -> String;
 }
 
-/// Placeholder for `ghidra.trace.model.target.schema.PrimitiveTraceObjectSchema`, referenced by
-/// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
-/// before the real port is available. In Java this is an enum of built-in schemas
-/// (`PrimitiveTraceObjectSchema.values()`) used to seed a fresh context; `DefaultSchemaContext`
-/// only needs each primitive's identity as a [`TraceObjectSchema`], so this is a marker
-/// supertrait rather than reproducing the full 17-member Java type.
-pub trait PrimitiveTraceObjectSchema: TraceObjectSchema {}
+/// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema.AttributeSchema`,
+/// referenced by
+/// [`PrimitiveTraceObjectSchema`](crate::trace::model::target::schema::primitive_trace_object_schema::PrimitiveTraceObjectSchema)
+/// before the real port is available. `PrimitiveTraceObjectSchema` only ever hands these back as
+/// opaque values (`AttributeSchema.DEFAULT_ANY`/`DEFAULT_VOID`), never inspecting them, so this is
+/// a marker trait rather than reproducing `getName`/`getSchema`/`isRequired`/`isFixed`/`getHidden`.
+pub trait AttributeSchema: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.model.target.schema.SchemaBuilder`, referenced by
 /// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
