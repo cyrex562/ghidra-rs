@@ -914,3 +914,47 @@ impl UnaryExpressionMatcher for UnimplementedExpressionMatcher {}
 /// `AssemblerBuilder::get_assembler`/`get_assembler_with_program`), so no members beyond the
 /// `Assembler` supertrait are needed yet.
 pub trait SleighAssembler: crate::app::plugin::assembler::Assembler {}
+
+/// Placeholder for `ghidra.debug.api.action.AutoReadMemorySpec`, referenced by
+/// [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real class
+/// is ported. `DebuggerListingService` only ever returns this type opaquely, so no members are
+/// needed yet.
+pub trait AutoReadMemorySpec {}
+
+/// Placeholder for `ghidra.debug.api.listing.MultiBlendedListingBackgroundColorModel`, referenced
+/// by [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real
+/// class is ported. `DebuggerListingService` only ever returns this type, so no members are
+/// needed yet.
+pub trait MultiBlendedListingBackgroundColorModel {}
+
+/// Placeholder for `ghidra.app.services.CodeViewerService`, the base interface extended by
+/// [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real
+/// interface is ported. `DebuggerListingService` does not itself call any `CodeViewerService`
+/// members, so no members are needed yet.
+pub trait CodeViewerService {}
+
+/// Placeholder for `ghidra.app.util.viewer.listingpanel.ListingPanel`, referenced by
+/// [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real class
+/// is ported. `DebuggerListingService` only ever passes this type through as a parameter, so no
+/// members are needed yet.
+pub trait ListingPanel {}
+
+/// Placeholder for `ghidra.program.util.ProgramSelection`, referenced by
+/// [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real class
+/// is ported. `DebuggerListingService` only ever passes this type through as a parameter, so no
+/// members are needed yet.
+pub trait ProgramSelection {}
+
+/// The mode of the Go-to dialog's Sleigh expressions.
+///
+/// Placeholder for `ghidra.pcode.exec.SleighUtils.LitIdMode`, referenced by
+/// [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real
+/// `SleighUtils` class is ported. Mirrors the enum's three variants; the associated display
+/// name/radix/`preferId` fields aren't needed by `DebuggerListingService`, so are left for that
+/// class's own future port.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LitIdMode {
+    Normal,
+    Hex,
+    IdHex,
+}
