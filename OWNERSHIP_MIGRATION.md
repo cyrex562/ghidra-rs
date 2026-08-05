@@ -96,11 +96,20 @@ Output is `OWNERSHIP_DEBT.tsv` — same shape as `STUBS.tsv`/`SEAM.tsv`:
 is the frontier file for remediation, exactly like `SEAM.tsv` is the frontier
 for the seam harness.
 
-Caveats to state plainly, not paper over: it's regex-based (a `dyn` inside a
-comment or string counts; class-name-from-filename guessing can mismatch on
-irregular names), and it ranks *candidates for review*, not confirmed defects
+Caveats to state plainly, not paper over: it's regex-based (class-name-from-
+filename guessing can mismatch on irregular names, and it doesn't understand
+string literals), and it ranks *candidates for review*, not confirmed defects
 — a human or an agent should still read the file before deciding arena vs.
-enum vs. "this `Rc<RefCell>` is actually fine here."
+enum vs. "this `Rc<RefCell>` is actually fine here." One comment-related false
+positive already surfaced and got fixed during the Phase 1 pilot below: the
+scanner originally matched `dyn`/`Rc<RefCell<` inside doc comments too, so
+`group_tree.rs`'s own module doc comment — which explains what the file
+*replaces* by naming `Box<dyn Group>` and `Rc<RefCell<dyn Group>>` in prose —
+scored itself as smelly (`dyn=8, rc_refcell=2`) despite containing zero real
+trait-object or shared-cell usage. `scan_file` now strips `//`/`///`/`//!`
+line comments before matching; `group_tree.rs` scores `0` after the fix. Kept
+here as a concrete reminder that the tool's own output needs the same
+skepticism as anything else it flags.
 
 ## Remediation
 
@@ -115,12 +124,56 @@ rather than being picked up ad hoc by `tick2.sh`/`seam_night.sh`.
 `OWNERSHIP_DEBT.tsv`, this doc, `AGENTS.md` pointers, and the periodic-audit
 harness. No ported code changes yet. Low risk, fully additive.
 
-**Phase 1 — pilot on one type.** Pick a mid-fan-in, self-contained type (not
-`Listing` or `Function` — too central to risk the first attempt on) to prove
-the arena/ID pattern compiles cleanly against real call sites and to write up
-the concrete before/after as a worked example other agents (and humans) can
-follow. Land it as its own reviewed PR, human-approved given the API-breaking
-nature.
+**Phase 1 — pilot on one type. DONE — see `group_tree.rs`.** Pick a mid-fan-in,
+self-contained type (not `Listing` or `Function` — too central to risk the
+first attempt on) to prove the arena/ID pattern compiles cleanly against real
+call sites and to write up the concrete before/after as a worked example other
+agents (and humans) can follow. Land it as its own reviewed PR, human-approved
+given the API-breaking nature.
+
+*Worked example:* `ghidra-rs/src/program/model/listing/group_tree.rs` ports
+`Group`/`ProgramModule`/`ProgramFragment` — Ghidra's Program Tree, a genuine
+multi-parent DAG (a fragment "may be contained in more than one module," per
+`ProgramModule`'s Java doc) — to a `GroupTree` arena (`SlotMap<GroupId,
+GroupNode>`) with a `GroupKind::{Module, Fragment}` enum for the closed
+module-vs-fragment hierarchy. `GroupId` is a `Copy` handle; behavior lives as
+methods on `GroupId` taking `&GroupTree`/`&mut GroupTree`, exactly the shape
+sketched above. No `Rc<RefCell<_>>`, `Arc<Mutex<_>>`, or `Box<dyn Trait>`
+appears anywhere in the real code (`pattern_audit.py` scores the file `0`
+after the comment-stripping fix noted above). A test
+(`fragment_can_have_multiple_parents`) builds a fragment shared by two
+modules and mutates it through both — the actual multi-parent-graph case that
+would otherwise reach for `Rc<RefCell<dyn Group>>` — using nothing but two
+`GroupId` copies into one arena.
+
+Deliberately scoped down from full parity to keep the pilot self-contained:
+ports `Group` in full and a representative subset of `ProgramModule`/
+`ProgramFragment` (tree structure, names/comments, min/max address, multi-
+parent add/remove, cycle and duplicate-name rejection). Does not port child
+reordering, reparenting, version-tag/tree-ID bookkeeping, the "can't remove
+the tree's last fragment" invariant, or `CodeUnit`-level fragment operations
+— those need `Listing`/`CodeUnit` wiring, i.e. Phase 2. The existing
+`Group`/`ProgramModule`/`ProgramFragment` traits in sibling files (`group.rs`,
+`program_module.rs`, `program_fragment.rs`) are untouched: this is additive,
+not a replacement, so it ships with zero downstream call-site changes.
+Wiring `Listing`'s `Arc<dyn ProgramFragment>`/`Arc<dyn ProgramModule>`-
+returning methods to hand out `GroupId`s instead is real Phase 2 work (it
+touches `Listing`, one of the top-5 types below) — this pilot deliberately
+stops short of it.
+
+*Aside, discovered while building the pilot:* `main` had drifted 2,831
+commits behind `integration` (last synced at the `#3073` merge), and
+`integration` — not `main` — is where `AGENTS.md`'s branch model and the
+active porting harness (`tick2.sh`/`seam_night.sh`) actually operate. The
+Phase 0 tooling in this doc originally landed on `main`; this pilot branch
+cherry-picks it forward onto `integration` so both live where the real work
+happens. Separately, `main`'s `.gitignore` still had the bare `debug` pattern
+that a prior `integration` commit (`996bfe12`) had already identified and
+fixed as silently untracking every `src/**/debug/` directory (`ghidra-rs/src/
+debug/`, `src/app/plugin/core/debug/`, `src/format/pe/debug/`) — that fix,
+and the ~124 files it recovered, are on `integration` but were never merged
+back to `main`. Nothing to do here in this doc, but worth a human's attention:
+`main` needs a resync from `integration` independent of this migration.
 
 **Phase 2 — the top-5 seam types**, in `OWNERSHIP_DEBT.tsv` priority order
 (`Listing`, `Function`, `DataTypeManager`, `DataType`,

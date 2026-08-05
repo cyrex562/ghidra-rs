@@ -73,6 +73,18 @@ def strip_test_modules(text):
     return text
 
 
+RE_LINE_COMMENT = re.compile(r"//.*$", re.MULTILINE)
+
+
+def strip_comments(text):
+    """Best-effort: blank out `//`/`///`/`//!` line comments before signal-matching, so prose
+    that *names* `dyn`/`Rc<RefCell<`/etc. while explaining what a file replaces (exactly what
+    this module's own doc comments do) doesn't count as a real usage. Line-oriented and doesn't
+    understand string literals containing `//` -- a known, accepted limitation, same tradeoff as
+    the rest of this heuristic scanner."""
+    return RE_LINE_COMMENT.sub("", text)
+
+
 def load_seam_fanin(seam_path):
     """java_class_name (basename, no .java) -> fan-in count, from SEAM.tsv."""
     fanin = {}
@@ -102,15 +114,20 @@ def scan_file(path):
     lines = max(1, text.count("\n") + 1)
     prod_lines = max(1, prod_text.count("\n") + 1)
 
-    dyn_count = len(RE_DYN.findall(text))
-    rc_refcell = len(RE_RC_REFCELL.findall(text))
-    arc_mutex = len(RE_ARC_MUTEX.findall(text))
-    clone_count = len(RE_CLONE.findall(text))
-    getters = set(RE_GETTER.findall(text))
-    setters = set(RE_SETTER.findall(text))
+    # Signals below should reflect real code, not doc/line comments *describing* a pattern
+    # (e.g. a migration note that says "replaces Box<dyn Trait>" isn't a `dyn` usage).
+    code_text = strip_comments(text)
+    code_prod_text = strip_comments(prod_text)
+
+    dyn_count = len(RE_DYN.findall(code_text))
+    rc_refcell = len(RE_RC_REFCELL.findall(code_text))
+    arc_mutex = len(RE_ARC_MUTEX.findall(code_text))
+    clone_count = len(RE_CLONE.findall(code_text))
+    getters = set(RE_GETTER.findall(code_text))
+    setters = set(RE_SETTER.findall(code_text))
     getter_setter_pairs = len(getters & setters)
-    unwrap_count = len(RE_UNWRAP.findall(prod_text))
-    lazy_static_mut = len(RE_LAZY_STATIC_MUT.findall(text))
+    unwrap_count = len(RE_UNWRAP.findall(code_prod_text))
+    lazy_static_mut = len(RE_LAZY_STATIC_MUT.findall(code_text))
 
     clone_density = clone_count / lines * 100.0
     unwrap_density = unwrap_count / prod_lines * 100.0

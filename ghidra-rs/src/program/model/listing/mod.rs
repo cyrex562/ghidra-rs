@@ -34,6 +34,7 @@ pub mod function_tag_change_set;
 pub mod function_tag_manager;
 pub mod ghidra_class;
 pub mod group;
+pub mod group_tree;
 pub mod incompatible_language_exception;
 pub mod instruction;
 pub mod instruction_iterator;
