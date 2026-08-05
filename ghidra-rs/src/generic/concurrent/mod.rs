@@ -71,3 +71,43 @@ pub trait QProgressListener<I>: Send + Sync {
     fn progress_mode_changed(&self, id: i64, item: &I, indeterminate: bool);
     fn progress_message_changed(&self, id: i64, item: &I, message: &str);
 }
+
+/// Processes items handed to [`ConcurrentQ::add`], each on a background thread
+/// provided by a `GThreadPool`.
+pub trait QRunnable<I>: Send + Sync {
+    fn run(&self, item: I, monitor: &dyn TaskMonitor) -> Result<(), anyhow::Error>;
+}
+
+#[cfg(test)]
+mod qrunnable_tests {
+    use super::*;
+    use crate::util::task::DummyMonitor;
+    use std::sync::Mutex;
+
+    struct DoublingRunnable {
+        results: Arc<Mutex<Vec<i32>>>,
+    }
+
+    impl QRunnable<i32> for DoublingRunnable {
+        fn run(&self, item: i32, monitor: &dyn TaskMonitor) -> Result<(), anyhow::Error> {
+            if monitor.is_cancelled() {
+                anyhow::bail!("cancelled");
+            }
+            self.results.lock().unwrap().push(item * 2);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn run_processes_item_and_reports_via_monitor() {
+        let results = Arc::new(Mutex::new(Vec::new()));
+        let runnable: Box<dyn QRunnable<i32>> = Box::new(DoublingRunnable {
+            results: results.clone(),
+        });
+        let monitor = DummyMonitor;
+
+        runnable.run(21, &monitor).unwrap();
+
+        assert_eq!(*results.lock().unwrap(), vec![42]);
+    }
+}
