@@ -29,7 +29,15 @@ mod tests {
         name: SchemaName,
     }
 
-    impl TraceObjectSchema for MockSchema {}
+    impl TraceObjectSchema for MockSchema {
+        fn get_name(&self) -> SchemaName {
+            self.name.clone()
+        }
+
+        fn to_string(&self) -> String {
+            self.name.to_string()
+        }
+    }
 
     struct MockContext {
         schemas: Vec<SchemaName>,

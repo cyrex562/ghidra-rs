@@ -4,6 +4,7 @@
 //! into a supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for
 //! provenance.
 
+use crate::debug::api::tracermi::SchemaName;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::trace::model::program::TraceProgramView;
 
@@ -115,7 +116,33 @@ pub trait TraceBookmarkType: Send + Sync {}
 pub trait TraceObjectInterface: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema`, referenced by
-/// [`SchemaContext`](crate::trace::model::target::schema::schema_context::SchemaContext) before
-/// the real port is available. `SchemaContext` only needs to hold and hand back schema instances
-/// as opaque trait objects, so no members are parsed from the Java source yet.
-pub trait TraceObjectSchema: Send + Sync {}
+/// [`SchemaContext`](crate::trace::model::target::schema::schema_context::SchemaContext) and
+/// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
+/// before the real port is available. Grown beyond an opaque marker to add the two members
+/// `DefaultSchemaContext` needs: the name a schema is keyed by in a context, and its
+/// `toString()` representation.
+pub trait TraceObjectSchema: Send + Sync {
+    /// The name this schema is registered under. Mirrors `TraceObjectSchema.getName()`.
+    fn get_name(&self) -> SchemaName;
+
+    /// Mirrors `TraceObjectSchema.toString()`.
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.trace.model.target.schema.PrimitiveTraceObjectSchema`, referenced by
+/// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
+/// before the real port is available. In Java this is an enum of built-in schemas
+/// (`PrimitiveTraceObjectSchema.values()`) used to seed a fresh context; `DefaultSchemaContext`
+/// only needs each primitive's identity as a [`TraceObjectSchema`], so this is a marker
+/// supertrait rather than reproducing the full 17-member Java type.
+pub trait PrimitiveTraceObjectSchema: TraceObjectSchema {}
+
+/// Placeholder for `ghidra.trace.model.target.schema.SchemaBuilder`, referenced by
+/// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
+/// before the real port is available. `DefaultSchemaContext` only invokes `buildAndAdd()` on
+/// builders it constructs, so that is the only member ported here.
+pub trait SchemaBuilder: Send + Sync {
+    /// Builds the schema and adds it to the context the builder was created from. Mirrors
+    /// `SchemaBuilder.buildAndAdd()`.
+    fn build_and_add(&self) -> Box<dyn TraceObjectSchema>;
+}
