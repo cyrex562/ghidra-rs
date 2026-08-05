@@ -104,3 +104,8 @@ pub trait ObjectKey: Send + Sync {
     fn hash_code(&self) -> i32;
     fn compare_to(&self, that: &dyn ObjectKey) -> i32;
 }
+
+/// Placeholder for `ghidra.trace.model.bookmark.TraceBookmarkType`, referenced by
+/// [`TraceBookmark`](crate::trace::model::bookmark::trace_bookmark::TraceBookmark) before the
+/// real port is available. No members are parsed from the Java source yet.
+pub trait TraceBookmarkType: Send + Sync {}
