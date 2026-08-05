@@ -113,3 +113,9 @@ pub trait TraceBookmarkType: Send + Sync {}
 /// (and other `Trace*` marker interfaces) before the real port is available. No members are
 /// parsed from the Java source yet.
 pub trait TraceObjectInterface: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema`, referenced by
+/// [`SchemaContext`](crate::trace::model::target::schema::schema_context::SchemaContext) before
+/// the real port is available. `SchemaContext` only needs to hold and hand back schema instances
+/// as opaque trait objects, so no members are parsed from the Java source yet.
+pub trait TraceObjectSchema: Send + Sync {}
