@@ -94,3 +94,13 @@ pub trait TraceAddressSnapSpace: Send + Sync {
     where
         Self: Sized;
 }
+
+/// Placeholder for `ghidra.util.database.ObjectKey`, referenced by
+/// [`TraceUniqueObject`](crate::trace::model::trace_unique_object::TraceUniqueObject) before the
+/// real port is available. Mirrors the Java type's identity contract: an immutable-hash opaque id
+/// that is equatable and orderable against other keys.
+pub trait ObjectKey: Send + Sync {
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn hash_code(&self) -> i32;
+    fn compare_to(&self, that: &dyn ObjectKey) -> i32;
+}
