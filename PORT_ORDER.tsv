@@ -19,7 +19,7 @@ DONE	trait	30	24	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	29	54	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathFilter.java
 DONE	trait	32	49	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/SchemaContext.java
 DONE	trait	31	16	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/DefaultSchemaContext.java
-TODO	trait	30	23	7	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/PrimitiveTraceObjectSchema.java
+DONE	trait	30	23	7	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/PrimitiveTraceObjectSchema.java
 TODO	trait	29	16	7	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/schema/DefaultTraceObjectSchema.java
 TODO	trait	27	87	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObjectValue.java
 TODO	trait	27	80	34	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemoryRegion.java
