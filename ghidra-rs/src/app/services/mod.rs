@@ -4,6 +4,7 @@ pub mod analyzer_type;
 pub mod block_model_service;
 pub mod block_model_service_listener;
 pub mod bookmark_service;
+pub mod clipboard_service;
 pub mod code_format_service;
 pub mod console_service;
 pub mod coordinated_listing_panel_listener;
@@ -51,6 +52,7 @@ pub use block_model_service::{
 };
 pub use block_model_service_listener::BlockModelServiceListener;
 pub use bookmark_service::BookmarkService;
+pub use clipboard_service::ClipboardService;
 pub use code_format_service::CodeFormatService;
 pub use console_service::ConsoleService;
 pub use coordinated_listing_panel_listener::CoordinatedListingPanelListener;
