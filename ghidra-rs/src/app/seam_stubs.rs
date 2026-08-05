@@ -958,3 +958,9 @@ pub enum LitIdMode {
     Hex,
     IdHex,
 }
+
+/// Placeholder for `ghidra.app.services.ClipboardContentProviderService`, referenced by
+/// [`ClipboardService`](crate::app::services::ClipboardService) before the real class is ported.
+/// `ClipboardService` only ever passes this type through as a parameter, so no members are needed
+/// yet.
+pub trait ClipboardContentProviderService {}
