@@ -30,6 +30,9 @@ exec 8>/tmp/ghidra-seam.lock; flock -n 8 || { echo "another seam run active"; ex
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
+# Preserve any uncommitted work before the checkout/reset below discards it.
+. scripts/harness_guard.sh
+guard_working_tree seam || exit 1
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
 for b in $(git branch --list 'seam/*' --format='%(refname:short)'); do git branch -D "$b" >/dev/null 2>&1||true; done

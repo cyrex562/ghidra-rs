@@ -32,6 +32,9 @@ LOG_DIR="${LOG_DIR:-$HOME/agents/logs/ghidra}"; mkdir -p "$LOG_DIR"
 exec 6>/tmp/ghidra-audit.lock; flock -n 6 || { echo "another audit run active"; exit 0; }
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+# Preserve any uncommitted work before the checkout/reset below discards it.
+. scripts/harness_guard.sh
+guard_working_tree audit || exit 1
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git pull --ff-only >/dev/null 2>&1 || true
 

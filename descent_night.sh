@@ -26,6 +26,8 @@ REPO="${REPO_DIR:-$HOME/Projects/ghidra-rs}"; cd "$REPO" || exit 1
 MODEL="${MODEL:-sonnet}"
 DESCENT_MAX="${DESCENT_MAX:-6}"
 MANIFEST="PORT_MANIFEST.tsv"; ORDER="PORT_ORDER.tsv"; STUBS="STUBS.tsv"
+DEBT="OWNERSHIP_DEBT.tsv"                                           # Java-idiom frontier (OWNERSHIP_MIGRATION.md)
+AUDIT_STEP="${AUDIT_STEP:-1}"                                       # post-run idiom-drift scan; detection only, never blocks a port
 DESCENT_PARKED="DESCENT_PARKED.tsv"   # durable park-list: classes too big for the nightly loop (timeouts);
                                       # excluded from the regenerated order, worked interactively in daytime
 INTEGRATION="${INTEGRATION:-integration}"
@@ -44,6 +46,9 @@ exec 7>/tmp/ghidra-descent.lock; flock -n 7 || { echo "another descent run activ
 
 log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
+# Preserve any uncommitted work before the checkout/reset below discards it.
+. scripts/harness_guard.sh
+guard_working_tree descent || exit 1
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
 for b in $(git branch --list 'descent/*' --format='%(refname:short)'); do git branch -D "$b" >/dev/null 2>&1||true; done
@@ -296,7 +301,34 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
 done
 
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || true
-if [ "$PUSH" = "1" ] && [ $((ported+reconciled)) -gt 0 ]; then
+
+# Java-idiom drift audit. Detection only: it never fails a port, reverts a merge, or blocks
+# the push -- it just stops new Rc<RefCell<_>>/Arc<Mutex<_>>/Box<dyn> debt from entering
+# invisibly, which is the gap OWNERSHIP_MIGRATION.md describes. Runs before the push so the
+# refreshed frontier file ships with the ports that caused it. --preserve-status is required:
+# without it the refresh resets every DONE/PARK row in $DEBT back to TODO.
+audit_new=0; audit_committed=0
+if [ "$AUDIT_STEP" = "1" ] && [ -f "$DEBT" ] && [ $((ported+reconciled)) -gt 0 ]; then
+  prev_debt=$(mktemp /tmp/ghidra-descent-debt.XXXXXX)
+  cp "$DEBT" "$prev_debt"
+  regress=$("$PY" scripts/pattern_audit.py --root ghidra-rs/src --seam SEAM.tsv \
+              --baseline "$prev_debt" --diff-new 2>/dev/null)
+  if [ -n "$regress" ]; then
+    audit_new=$(printf '%s\n' "$regress" | grep -c .)
+    log "ownership drift: ${audit_new} file(s) got smellier this run (see $DEBT / OWNERSHIP_MIGRATION.md):"
+    printf '%s\n' "$regress" | head -20 | while IFS= read -r l; do log "  $l"; done
+  fi
+  "$PY" scripts/pattern_audit.py --root ghidra-rs/src --seam SEAM.tsv \
+        --baseline "$prev_debt" --preserve-status --out "$DEBT" >/dev/null 2>&1
+  rm -f "$prev_debt"
+  if ! git diff --quiet -- "$DEBT" 2>/dev/null; then
+    git add "$DEBT" >/dev/null 2>&1
+    git commit -q -m "audit: refresh $DEBT after descent run (${audit_new} new/worsened)" >/dev/null 2>&1 \
+      && audit_committed=1
+  fi
+fi
+
+if [ "$PUSH" = "1" ] && [ $((ported+reconciled+audit_committed)) -gt 0 ]; then
   git push "$PUSH_REMOTE" "$INTEGRATION" >/dev/null 2>&1 && log "pushed $PUSH_REMOTE/$INTEGRATION" || log "push FAILED (non-fatal; check SSH under cron)"
 fi
 if [ "$ported" -gt 0 ]; then
@@ -309,6 +341,6 @@ if [ "$ported" -gt 0 ]; then
   fi
 fi
 "$PY" scripts/dep_stats.py >/dev/null 2>&1 || true
-line="[$(date '+%Y-%m-%d %H:%M')] descent run: +${ported} ported, ${reconciled} reconciled, ${parked} parked  (DONE $(grep -c $'\tDONE\t' "$MANIFEST"))"
+line="[$(date '+%Y-%m-%d %H:%M')] descent run: +${ported} ported, ${reconciled} reconciled, ${parked} parked, ${audit_new} idiom-drift  (DONE $(grep -c $'\tDONE\t' "$MANIFEST"))"
 echo "$line" | tee -a "$LOG_DIR/port-summary.log"
 command -v notify-send >/dev/null 2>&1 && notify-send "ghidra-rs descent" "$line" 2>/dev/null || true
