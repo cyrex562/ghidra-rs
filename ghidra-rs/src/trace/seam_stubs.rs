@@ -107,3 +107,9 @@ pub trait ObjectKey: Send + Sync {
 /// [`TraceBookmark`](crate::trace::model::bookmark::trace_bookmark::TraceBookmark) before the
 /// real port is available. No members are parsed from the Java source yet.
 pub trait TraceBookmarkType: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.model.target.iface.TraceObjectInterface`, referenced by
+/// [`TraceRegisterContainer`](crate::trace::model::memory::trace_register_container::TraceRegisterContainer)
+/// (and other `Trace*` marker interfaces) before the real port is available. No members are
+/// parsed from the Java source yet.
+pub trait TraceObjectInterface: Send + Sync {}
