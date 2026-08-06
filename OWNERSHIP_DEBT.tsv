@@ -1013,7 +1013,6 @@ TODO	8.6	8.6	0	TraceShiftedReference	trace	src/trace/model/symbol/trace_shifted_
 TODO	8.5	8.5	0	DisplayableLabel	feature	src/feature/vt/gui/provider/matchtable/displayable_label.rs	dyn=4
 TODO	8.5	8.5	0	DexHeaderQuickMethods	file	src/file/formats/android/dex/format/dex_header_quick_methods.rs	dyn=2,rc_refcell=1,getset_pairs=1
 TODO	8.5	8.5	0	AddressObjectMap	program	src/program/model/address/address_object_map.rs	dyn=2,clone/100L=4.5
-TODO	8.5	8.5	0	DbSynchronizedCollection	util	src/util/database/db_synchronized_collection.rs	clone/100L=1.5,unwrap/100L=7.0
 TODO	8.4	8.4	0	OpenProgramPluginEvent	app	src/app/events/open_program_plugin_event.rs	dyn=3,clone/100L=2.4
 TODO	8.4	8.4	0	ProgramActivatedPluginEvent	app	src/app/events/program_activated_plugin_event.rs	dyn=3,clone/100L=2.4
 TODO	8.4	8.4	0	ProgramClosedPluginEvent	app	src/app/events/program_closed_plugin_event.rs	dyn=3,clone/100L=2.4
@@ -1321,7 +1320,6 @@ TODO	3.4	3.4	0	RefdInputStream	filesystem	src/filesystem/gfilesystem/refd_input_
 TODO	3.4	3.4	0	C13ExtendedInlineeSourceLine	format	src/format/pdb2/pdbreader/c13_extended_inlinee_source_line.rs	getset_pairs=3
 TODO	3.4	3.4	0	DbFieldIterator	framework	src/framework/db/db_field_iterator.rs	dyn=1,clone/100L=1.4
 TODO	3.4	3.4	0	Block	program	src/program/model/lang/sleigh/pattern/block.rs	dyn=1,unwrap/100L=1.4
-TODO	3.4	3.4	0	DbSynchronizedIterator	util	src/util/database/db_synchronized_iterator.rs	unwrap/100L=2.9
 TODO	3.3	3.3	0	PcodeEmitObjects	app	src/app/plugin/processors/sleigh/pcode_emit_objects.rs	dyn=1,clone/100L=1.3
 TODO	3.3	3.3	0	GoConstants	format	src/format/golang/go_constants.rs	unwrap/100L=3.3
 TODO	3.3	3.3	0	CodeFragmentManager	format	src/format/macos/cfm/code_fragment_manager.rs	clone/100L=3.3

@@ -77,6 +77,24 @@ where Java's `instanceof`/interface-implementer set is fixed and known).
   idiomatic Rust answer there. The rule isn't "no `dyn`," it's "don't reach for
   `dyn` by default because the Java source had an interface."
 
+**Ported Java locks** (decided 2026-08-06, applies across `util/database` and
+`util/stream_utils`). A Java class that takes a `ReadWriteLock`/`Lock`/`Object` monitor and
+wraps a delegate translates literally into a Rust struct holding `Arc<RwLock<()>>` beside a
+delegate it owns by value. That lock guards *nothing*: the payload is `()`, and `&self`/`&mut
+self` already provide exactly the read/write exclusion being imitated. It is also actively
+misleading -- sharing such a wrapper needs `Arc<..>`, which makes every `&mut self` method
+(`add`, `remove`, `clear`) unreachable, so the mutating half of the API cannot be used
+concurrently at all.
+
+The rule: **put the lock around the data, not beside it.** A synchronized collection is
+`Arc<RwLock<C>>`. Reintroduce an explicit lock only when it coordinates something the type does
+not own -- an external resource, or state shared with another holder of the same lock -- and
+when it does, use the crate's `Lock` trait (`util/lock_hold.rs`), as
+`DBSynchronizedSpliterator` does, rather than an ad-hoc `Mutex<()>`. Worked example:
+`db_synchronized_collection.rs` / `db_synchronized_iterator.rs`, where the wrappers are gone
+and a test mutates a shared collection from four threads -- the case the wrapper could not
+serve.
+
 **When `Rc<RefCell<_>>`/`Arc<Mutex<_>>` is still fine:** genuinely
 single-owner-with-callback or truly shared cross-thread mutable state that
 isn't graph-shaped (e.g. a listener registry, a cache). The smell isn't the

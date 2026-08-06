@@ -1,8 +1,4 @@
-use std::marker::PhantomData;
-use std::sync::Arc;
-use std::sync::RwLock;
-
-use super::db_synchronized_iterator::{DBSynchronizedIterator, RemovableIterator};
+use super::db_synchronized_iterator::RemovableIterator;
 
 /// Mirrors the subset of `java.util.Collection<E>` operations that
 /// [`DBSynchronizedCollection`] delegates to.
@@ -38,140 +34,24 @@ pub trait Collection<E> {
     fn clear(&mut self);
 }
 
-/// A thread-safe wrapper around a [`Collection`] that synchronizes access using a
-/// read-write lock.
+/// `DBSynchronizedCollection` (Java: `ghidra.util.database.DBSynchronizedCollection`) is
+/// deliberately absent; see [`RemovableIterator`]'s module for the full reasoning.
 ///
-/// Read-only operations (`size`, `is_empty`, `contains`, `iterator`, `to_vec`,
-/// `contains_all`) acquire the read lock, while mutating operations (`add`, `remove`,
-/// `add_all`, `remove_all`, `retain_all`, `clear`) acquire the write lock. Iterators
-/// returned by [`iterator`][Self::iterator] share the same lock and re-acquire the read
-/// lock (or write lock, for removal) on each operation, mirroring
-/// [`DBSynchronizedIterator`].
+/// The Java class wraps a collection plus the database's `ReadWriteLock`, taking the read lock
+/// around queries and the write lock around mutations. Translated literally it became a struct
+/// holding `Arc<RwLock<()>>` -- a lock over no data -- while owning its delegate by value, so
+/// it guarded nothing that `&self`/`&mut self` did not already guard. Worse, its mutating half
+/// was unusable: sharing the wrapper across threads needs `Arc<..>`, which makes every
+/// `&mut self` method (`add`, `remove`, `clear`, ...) unreachable.
 ///
-/// Port of `ghidra.util.database.DBSynchronizedCollection`.
-pub struct DBSynchronizedCollection<E, C: Collection<E>> {
-    delegate: C,
-    lock: Arc<RwLock<()>>,
-    _marker: PhantomData<E>,
-}
-
-impl<E, C: Collection<E>> DBSynchronizedCollection<E, C> {
-    /// Creates a new `DBSynchronizedCollection` wrapping `delegate` and protecting it with
-    /// `lock`.
-    pub fn new(delegate: C, lock: Arc<RwLock<()>>) -> Self {
-        Self {
-            delegate,
-            lock,
-            _marker: PhantomData,
-        }
-    }
-
-    /// Returns the number of elements.
-    ///
-    /// This operation acquires the read lock.
-    pub fn size(&self) -> usize {
-        let _guard = self.lock.read().unwrap();
-        self.delegate.size()
-    }
-
-    /// Returns `true` if there are no elements.
-    ///
-    /// This operation acquires the read lock.
-    pub fn is_empty(&self) -> bool {
-        let _guard = self.lock.read().unwrap();
-        self.delegate.is_empty()
-    }
-
-    /// Returns `true` if this collection contains the given element.
-    ///
-    /// This operation acquires the read lock.
-    pub fn contains(&self, o: &E) -> bool {
-        let _guard = self.lock.read().unwrap();
-        self.delegate.contains(o)
-    }
-
-    /// Returns a synchronized iterator over the elements.
-    ///
-    /// Obtaining the delegate's iterator acquires the read lock; the returned
-    /// [`DBSynchronizedIterator`] shares this collection's lock and acquires it again on
-    /// each subsequent operation.
-    pub fn iterator(&self) -> DBSynchronizedIterator<C::Iter> {
-        let iter = {
-            let _guard = self.lock.read().unwrap();
-            self.delegate.iterator()
-        };
-        DBSynchronizedIterator::new(iter, Arc::clone(&self.lock))
-    }
-
-    /// Returns all elements as a `Vec`, corresponding to Java's `toArray()`/`toArray(T[])`.
-    ///
-    /// This operation acquires the read lock.
-    pub fn to_vec(&self) -> Vec<E> {
-        let _guard = self.lock.read().unwrap();
-        self.delegate.to_vec()
-    }
-
-    /// Adds an element, returning `true` if the collection changed as a result.
-    ///
-    /// This operation acquires the write lock.
-    pub fn add(&mut self, e: E) -> bool {
-        let _guard = self.lock.write().unwrap();
-        self.delegate.add(e)
-    }
-
-    /// Removes an element, returning `true` if the collection changed as a result.
-    ///
-    /// This operation acquires the write lock.
-    pub fn remove(&mut self, o: &E) -> bool {
-        let _guard = self.lock.write().unwrap();
-        self.delegate.remove(o)
-    }
-
-    /// Returns `true` if this collection contains every element of `c`.
-    ///
-    /// This operation acquires the read lock.
-    pub fn contains_all(&self, c: &[E]) -> bool {
-        let _guard = self.lock.read().unwrap();
-        self.delegate.contains_all(c)
-    }
-
-    /// Adds every element of `c`, returning `true` if the collection changed as a result.
-    ///
-    /// This operation acquires the write lock.
-    pub fn add_all(&mut self, c: Vec<E>) -> bool {
-        let _guard = self.lock.write().unwrap();
-        self.delegate.add_all(c)
-    }
-
-    /// Removes every element that is also in `c`, returning `true` if the collection changed.
-    ///
-    /// This operation acquires the write lock.
-    pub fn remove_all(&mut self, c: &[E]) -> bool {
-        let _guard = self.lock.write().unwrap();
-        self.delegate.remove_all(c)
-    }
-
-    /// Retains only the elements that are also in `c`, returning `true` if the collection
-    /// changed.
-    ///
-    /// This operation acquires the write lock.
-    pub fn retain_all(&mut self, c: &[E]) -> bool {
-        let _guard = self.lock.write().unwrap();
-        self.delegate.retain_all(c)
-    }
-
-    /// Removes all elements.
-    ///
-    /// This operation acquires the write lock.
-    pub fn clear(&mut self) {
-        let _guard = self.lock.write().unwrap();
-        self.delegate.clear();
-    }
-}
+/// In Rust, a synchronized collection is `Arc<RwLock<C>>`: the lock holds the data, mutation
+/// happens through the write guard, and the borrow checker enforces the discipline the Java
+/// class had to document. [`Collection`] remains as the delegate abstraction.
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Arc, RwLock};
 
     struct VecIter<T> {
         items: Vec<T>,
@@ -273,132 +153,77 @@ mod tests {
         }
     }
 
-    fn make(items: Vec<i32>) -> DBSynchronizedCollection<i32, VecCollection<i32>> {
-        DBSynchronizedCollection::new(VecCollection::new(items), Arc::new(RwLock::new(())))
-    }
-
-    #[test]
-    fn size_reports_element_count() {
-        let c = make(vec![1, 2, 3]);
-        assert_eq!(c.size(), 3);
-    }
-
-    #[test]
-    fn is_empty_true_for_empty_collection() {
-        let c = make(vec![]);
-        assert!(c.is_empty());
-    }
-
-    #[test]
-    fn is_empty_false_for_nonempty_collection() {
-        let c = make(vec![1]);
-        assert!(!c.is_empty());
-    }
-
-    #[test]
-    fn contains_finds_present_element() {
-        let c = make(vec![1, 2, 3]);
-        assert!(c.contains(&2));
-        assert!(!c.contains(&9));
+    fn collection(items: Vec<i32>) -> VecCollection<i32> {
+        VecCollection::new(items)
     }
 
     #[test]
     fn iterator_yields_all_elements() {
-        let c = make(vec![10, 20, 30]);
-        let out: Vec<i32> = c.iterator().collect();
+        let out: Vec<i32> = collection(vec![10, 20, 30]).iterator().collect();
         assert_eq!(out, vec![10, 20, 30]);
     }
 
     #[test]
+    fn removable_iterator_removes_through_the_collection_iterator() {
+        let mut iter = collection(vec![1, 2, 3]).iterator();
+        assert_eq!(iter.next(), Some(1));
+        iter.remove();
+        assert_eq!(iter.collect::<Vec<_>>(), vec![2, 3]);
+    }
+
+    #[test]
     fn to_vec_returns_all_elements() {
-        let c = make(vec![1, 2, 3]);
-        assert_eq!(c.to_vec(), vec![1, 2, 3]);
+        assert_eq!(collection(vec![1, 2, 3]).to_vec(), vec![1, 2, 3]);
     }
 
     #[test]
-    fn add_appends_element_and_reports_change() {
-        let mut c = make(vec![1]);
-        assert!(c.add(2));
-        assert_eq!(c.to_vec(), vec![1, 2]);
-    }
-
-    #[test]
-    fn remove_deletes_element_and_reports_change() {
-        let mut c = make(vec![1, 2, 3]);
-        assert!(c.remove(&2));
-        assert_eq!(c.to_vec(), vec![1, 3]);
+    fn add_and_remove_report_whether_the_collection_changed() {
+        let mut c = collection(vec![1, 2]);
+        assert!(c.add(3));
+        assert!(c.remove(&1));
         assert!(!c.remove(&99));
+        assert_eq!(c.to_vec(), vec![2, 3]);
     }
 
     #[test]
-    fn contains_all_checks_every_element() {
-        let c = make(vec![1, 2, 3]);
-        assert!(c.contains_all(&[1, 3]));
-        assert!(!c.contains_all(&[1, 9]));
-    }
-
-    #[test]
-    fn add_all_extends_and_reports_change() {
-        let mut c = make(vec![1]);
-        assert!(c.add_all(vec![2, 3]));
-        assert_eq!(c.to_vec(), vec![1, 2, 3]);
-        assert!(!c.add_all(vec![]));
-    }
-
-    #[test]
-    fn remove_all_deletes_matching_and_reports_change() {
-        let mut c = make(vec![1, 2, 3, 4]);
-        assert!(c.remove_all(&[2, 4]));
-        assert_eq!(c.to_vec(), vec![1, 3]);
-        assert!(!c.remove_all(&[99]));
-    }
-
-    #[test]
-    fn retain_all_keeps_only_matching_and_reports_change() {
-        let mut c = make(vec![1, 2, 3, 4]);
+    fn retain_all_and_clear() {
+        let mut c = collection(vec![1, 2, 3, 4]);
         assert!(c.retain_all(&[2, 4]));
         assert_eq!(c.to_vec(), vec![2, 4]);
-        assert!(!c.retain_all(&[2, 4]));
-    }
-
-    #[test]
-    fn clear_removes_all_elements() {
-        let mut c = make(vec![1, 2, 3]);
         c.clear();
         assert!(c.is_empty());
     }
 
+    /// The replacement for `DBSynchronizedCollection`: put the collection behind the lock,
+    /// not a lock beside it. This is the case the removed wrapper could not serve at all --
+    /// sharing it required `Arc`, which made every `&mut self` method unreachable, so a
+    /// concurrent `add` was impossible. Here two threads mutate the same collection.
     #[test]
-    fn read_lock_released_after_size() {
-        let lock = Arc::new(RwLock::new(()));
-        let c = DBSynchronizedCollection::new(VecCollection::new(vec![1, 2]), lock.clone());
-        c.size();
-        assert!(
-            lock.try_write().is_ok(),
-            "write lock should be acquirable after size() returns"
-        );
+    fn arc_rwlock_gives_the_shared_mutation_the_wrapper_promised() {
+        let shared = Arc::new(RwLock::new(collection(vec![])));
+        let handles: Vec<_> = (0..4)
+            .map(|n| {
+                let shared = Arc::clone(&shared);
+                std::thread::spawn(move || {
+                    shared.write().unwrap().add(n);
+                })
+            })
+            .collect();
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        let mut got = shared.read().unwrap().to_vec();
+        got.sort();
+        assert_eq!(got, vec![0, 1, 2, 3]);
     }
 
     #[test]
-    fn write_lock_released_after_add() {
-        let lock = Arc::new(RwLock::new(()));
-        let mut c = DBSynchronizedCollection::new(VecCollection::new(vec![1]), lock.clone());
-        c.add(2);
-        assert!(
-            lock.try_write().is_ok(),
-            "write lock should be acquirable after add() returns"
-        );
-    }
-
-    #[test]
-    fn returned_iterator_shares_collection_lock() {
-        let lock = Arc::new(RwLock::new(()));
-        let c = DBSynchronizedCollection::new(VecCollection::new(vec![1, 2]), lock.clone());
-        let mut iter = c.iterator().peekable();
-        iter.peek();
-        assert!(
-            lock.try_write().is_ok(),
-            "write lock should be released once the iterator's read is done"
-        );
+    fn read_guard_allows_concurrent_readers() {
+        let shared = Arc::new(RwLock::new(collection(vec![1, 2, 3])));
+        let first = shared.read().unwrap();
+        let second = shared.read().unwrap();
+        assert_eq!(first.size(), 3);
+        assert_eq!(second.size(), 3);
     }
 }
