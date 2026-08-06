@@ -38,8 +38,15 @@ pub trait TraceBasedDataTypeManager: DataTypeManager {}
 pub trait TraceEquateManager {}
 
 /// Placeholder for `ghidra.trace.model.guest.TracePlatformManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TracePlatformManager {}
+/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Grown to add
+/// the lookup
+/// [`TraceBaseCodeUnitsView`](crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView)'s
+/// default `getForRegister(long, Register)`/`getContaining(long, Register)`/`get(long, Register,
+/// boolean)` methods need: the host platform, used when no explicit platform is given.
+pub trait TracePlatformManager {
+    /// Returns the trace's host (base) platform. Mirrors `TracePlatformManager.getHostPlatform()`.
+    fn get_host_platform(&self) -> Box<dyn TracePlatform>;
+}
 
 /// Placeholder for `ghidra.trace.model.memory.TraceMemoryManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.

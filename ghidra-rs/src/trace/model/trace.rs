@@ -187,7 +187,11 @@ mod tests {
     struct MockEquateManager;
     impl TraceEquateManager for MockEquateManager {}
     struct MockPlatformManager;
-    impl TracePlatformManager for MockPlatformManager {}
+    impl TracePlatformManager for MockPlatformManager {
+        fn get_host_platform(&self) -> Box<dyn crate::trace::seam_stubs::TracePlatform> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockMemoryManager;
     impl TraceMemoryManager for MockMemoryManager {}
     struct MockModuleManager;
