@@ -583,7 +583,6 @@ TODO	25.3	25.3	0	RepositoryManager		src/server/repository_manager.rs	dyn=12,clon
 TODO	25.2	25.2	0	Algorithms	generic	src/generic/stl/algorithms.rs	dyn=8,clone/100L=9.2
 TODO	25.0	24.0	4	UniqueSpace	decompiler	src/decompiler/space/unique_space.rs	dyn=12
 TODO	25.0	25.0	0	SubMemoryBlock	program	src/program/database/mem/sub_memory_block.rs	dyn=12,getset_pairs=1
-TODO	24.9	24.9	0	ListingDisplaySearchAddressIterator	app	src/app/plugin/core/searchtext/listing_display_search_address_iterator.rs	dyn=12
 TODO	24.6	24.6	0	AddrSpaceToIdSymmetryMap	decompiler	src/decompiler/utils/addr_space_to_id_symmetry_map.rs	dyn=9,clone/100L=1.7,unwrap/100L=1.8,lazy_static_mut=1
 TODO	24.6	24.6	0	DomainObjectLockHold		src/util/domain_object_lock_hold.rs	dyn=4,arc_mutex=5,unwrap/100L=1.2
 TODO	24.5	24.5	0	PrototypeModel	program	src/program/model/lang/prototype_model.rs	dyn=12
@@ -1068,7 +1067,6 @@ TODO	7.9	7.9	0	VariableStorageManager	program	src/program/database/symbol/variab
 TODO	7.8	7.8	0	AbstractIsfObject	program	src/program/model/data/isf/abstract_isf_object.rs	dyn=3,clone/100L=1.8
 TODO	7.8	7.8	0	ClassTranslator	util	src/util/classfinder/class_translator.rs	unwrap/100L=4.8,lazy_static_mut=1
 TODO	7.8	7.8	0	WeakValueTreeMap	util	src/util/datastruct/weak_value_tree_map.rs	clone/100L=7.8
-TODO	7.7	7.7	0	SearchAddressIterator	app	src/app/plugin/core/searchtext/iterators/search_address_iterator.rs	clone/100L=7.7
 TODO	7.7	7.7	0	DbFieldAdapter	program	src/program/database/util/db_field_adapter.rs	dyn=3,clone/100L=1.7
 TODO	7.7	7.7	0	AddressIteratorTestStub	program	src/program/model/address/address_iterator_test_stub.rs	clone/100L=7.7
 TODO	7.6	7.6	0	VerticalPixelAddressMap	app	src/app/util/viewer/listingpanel/vertical_pixel_address_map.rs	dyn=3,clone/100L=1.6
