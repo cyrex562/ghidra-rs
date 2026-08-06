@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+"""Unit tests for debt_clusters.py -- the type-level convention frontier.
+
+The proposer is the risky part: an over-confident suggestion is worse than none, because it
+looks like a decision. Three of its rules exist only because earlier versions got them wrong
+on real data, so each has a test here:
+
+  * mocks are not implementers   -- counting them made `Namespace` look like a 52-variant enum
+  * many implementers != closed  -- it proposed a 94-variant enum for `MemBuffer`
+  * no implementers != wrong shape -- 198 of those traits are seam_stubs.rs placeholders
+    waiting for their port, and mock-only traits are simply mid-port
+
+    python3 scripts/test_debt_clusters.py
+"""
+import os
+import sys
+import tempfile
+import unittest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import debt_clusters as dc
+
+
+def write(path, body):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(body)
+
+
+class TestFamilyRules(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.rules = os.path.join(self.d, "fam.tsv")
+        write(self.rules,
+              "suffix\tverdict\tnote\n"
+              "Iterator\tITER\titerators are concrete\n"
+              "Listener\tACCEPT\tcallback\n"
+              "Monitor\tACCEPT\tcallback\n")
+
+    def test_family_applies_by_suffix(self):
+        rules = dc.load_family_rules(self.rules)
+        self.assertEqual(dc.apply_family("AddressIterator", rules)[0], "ITER")
+        self.assertEqual(dc.apply_family("CancelledListener", rules)[0], "ACCEPT")
+        self.assertIsNone(dc.apply_family("Program", rules))
+
+    def test_bare_family_name_is_not_matched(self):
+        """`Iterator` itself is std's trait, not a Ghidra family member."""
+        rules = dc.load_family_rules(self.rules)
+        self.assertIsNone(dc.apply_family("Iterator", rules))
+
+    def test_note_records_which_family_decided_it(self):
+        rules = dc.load_family_rules(self.rules)
+        self.assertIn("[family:Iterator]", dc.apply_family("CodeUnitIterator", rules)[1])
+
+
+class TestSuggestVerdict(unittest.TestCase):
+    def call(self, name, traits=1, impls=0, mocks=0, unported=(), stubs=()):
+        return dc.suggest_verdict(
+            name,
+            {name: traits} if traits else {},
+            {},
+            {name: impls} if impls else {},
+            set(unported),
+            {name: mocks} if mocks else {},
+            set(stubs),
+        )
+
+    def test_small_closed_set_suggests_enum(self):
+        v, _why = self.call("PatternKind", impls=4)
+        self.assertEqual(v, "SUGGEST-ENUM")
+
+    def test_large_implementer_set_refuses_to_guess(self):
+        """94 implementers is evidence AGAINST a closed hierarchy. It must decline, not
+        propose a 94-variant enum."""
+        v, why = self.call("MemBuffer", impls=94)
+        self.assertIsNone(v)
+        self.assertIn("too many for an enum", why)
+
+    def test_extension_point_name_with_many_impls_suggests_accept(self):
+        v, _why = self.call("ScriptProvider", impls=20)
+        self.assertEqual(v, "SUGGEST-ACCEPT")
+
+    def test_single_implementer_suggests_struct(self):
+        v, _why = self.call("InstructionPrototype", impls=1)
+        self.assertEqual(v, "SUGGEST-STRUCT")
+
+    def test_mock_only_trait_is_deferred_not_collapsed(self):
+        """Only test doubles implement it -> the port is unfinished, not a design signal."""
+        v, why = self.call("Namespace", impls=0, mocks=51)
+        self.assertIsNone(v)
+        self.assertIn("not ported yet", why)
+
+    def test_seam_stub_placeholder_is_deferred(self):
+        v, why = self.call("SomeStub", impls=0, stubs=("SomeStub",))
+        self.assertIsNone(v)
+        self.assertIn("placeholder", why)
+
+    def test_unported_class_with_few_impls_is_deferred(self):
+        v, why = self.call("HalfPorted", impls=1, unported=("HalfPorted",))
+        self.assertIsNone(v)
+        self.assertIn("PORT_MANIFEST", why)
+
+    def test_undeclared_type_suggests_park(self):
+        v, _why = self.call("NotHere", traits=0)
+        self.assertEqual(v, "SUGGEST-PARK")
+
+
+class TestCollectDeclarations(unittest.TestCase):
+    def test_mock_impls_counted_separately_and_stubs_recorded(self):
+        d = tempfile.mkdtemp()
+        write(os.path.join(d, "src", "thing.rs"),
+              "pub trait Thing {}\n"
+              "impl Thing for RealThing {}\n"
+              "impl Thing for MockThing {}\n"
+              "impl Thing for StubThing {}\n")
+        write(os.path.join(d, "src", "seam_stubs.rs"), "pub trait Placeholder {}\n")
+        traits, _types, impls, mocks, stubs = dc.collect_declarations(os.path.join(d, "src"))
+        self.assertEqual(traits["Thing"], 1)
+        self.assertEqual(impls["Thing"], 1)      # RealThing only
+        self.assertEqual(mocks["Thing"], 2)      # Mock + Stub
+        self.assertIn("Placeholder", stubs)
+
+
+class TestIdiomaticExclusion(unittest.TestCase):
+    def test_idiomatic_trait_objects_never_enter_the_queue(self):
+        d = tempfile.mkdtemp()
+        p = os.path.join(d, "x.rs")
+        write(p, "fn f(a: &dyn Error, b: Box<dyn Fn(u32)>, c: &dyn Any, d: &dyn Program) {}\n")
+        found = dc.types_in_file(p)
+        self.assertEqual(set(found), {"Program"})
+
+    def test_path_qualified_dyn_resolves_to_final_segment(self):
+        d = tempfile.mkdtemp()
+        p = os.path.join(d, "x.rs")
+        write(p, "fn f(a: &dyn crate::program::model::listing::Function) {}\n")
+        self.assertEqual(set(dc.types_in_file(p)), {"Function"})
+
+    def test_comments_are_not_usages(self):
+        d = tempfile.mkdtemp()
+        p = os.path.join(d, "x.rs")
+        write(p, "// replaces Box<dyn Group> and Rc<RefCell<dyn Group>>\npub struct A;\n")
+        self.assertEqual(dc.types_in_file(p), {})
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
