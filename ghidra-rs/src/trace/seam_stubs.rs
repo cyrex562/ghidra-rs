@@ -115,6 +115,21 @@ pub trait TraceBookmarkType: Send + Sync {}
 /// parsed from the Java source yet.
 pub trait TraceObjectInterface: Send + Sync {}
 
+/// Placeholder for `ghidra.trace.model.memory.TraceOverlappedRegionException`, referenced by
+/// [`TraceMemoryRegion`](crate::trace::model::memory::trace_memory_region::TraceMemoryRegion)
+/// before the real port is available. Mirrors the two members
+/// [`TraceMemoryRegion`]'s setters need: the detail message (inherited from Java's
+/// `UsrException.getMessage()`) and the conflicting regions.
+pub trait TraceOverlappedRegionException: Send + Sync {
+    /// Mirrors `UsrException.getMessage()`, as inherited by `TraceOverlappedRegionException`.
+    fn message(&self) -> &str;
+
+    /// Mirrors `TraceOverlappedRegionException.getConflicts()`.
+    fn get_conflicts(
+        &self,
+    ) -> Vec<Box<dyn crate::trace::model::memory::trace_memory_region::TraceMemoryRegion>>;
+}
+
 /// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema`, referenced by
 /// [`SchemaContext`](crate::trace::model::target::schema::schema_context::SchemaContext) and
 /// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
