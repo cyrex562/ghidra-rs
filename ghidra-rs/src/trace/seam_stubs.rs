@@ -220,6 +220,14 @@ pub enum ConflictResolution {
 /// a marker trait rather than reproducing `getName`/`getSchema`/`isRequired`/`isFixed`/`getHidden`.
 pub trait AttributeSchema: Send + Sync {}
 
+/// Placeholder for `ghidra.trace.model.symbol.TraceReference`, referenced by
+/// [`TraceOffsetReference`](crate::trace::model::symbol::trace_offset_reference::TraceOffsetReference)
+/// before the real interface is ported. Only a shape hint: no public members are parsed here
+/// because `TraceOffsetReference` only needs it as a supertrait marker.
+pub trait TraceReference: Send + Sync {
+    // (no public methods parsed from the Java source)
+}
+
 /// Placeholder for `ghidra.trace.model.target.schema.SchemaBuilder`, referenced by
 /// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
 /// before the real port is available. `DefaultSchemaContext` only invokes `buildAndAdd()` on
