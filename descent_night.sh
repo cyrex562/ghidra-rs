@@ -163,16 +163,22 @@ DEPENDENCY CONTEXT (read this FILE first): ${depctx_file}
   seam_stubs.rs if needed; do NOT invent your own names/shapes)."
   fi
 
-  if [ "$mode" = "trait" ]; then
-    promote=""
-    if grep -rqE --include='seam_stubs.rs' "\b(pub +)?trait +${class}\b" ghidra-rs/src 2>/dev/null; then
-      promote="PROMOTE MODE: a minimal placeholder 'trait ${class}' currently exists in a seam_stubs.rs.
-You are REPLACING that placeholder with the real port. After creating the real trait: (1) update EVERY
-importer -- replace each 'use ...seam_stubs::${class}' with the real trait's path; keep any placeholder
+  # PROMOTE detection runs for BOTH modes. It used to sit inside the trait branch only, so a
+  # class ported as a struct never learned that a placeholder for it already existed -- the stub
+  # survived and SHADOWED the real type. 42 names ended up declared twice, with 113 files wired
+  # to the empty placeholder (see STUB_DEBT.tsv / scripts/stub_audit.py).
+  promote=""
+  if grep -rqE --include='seam_stubs.rs' "\b(pub +)?(trait|struct|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
+    promote="PROMOTE MODE: a minimal placeholder for '${class}' currently exists in a seam_stubs.rs.
+You are REPLACING that placeholder with the real port. After creating the real type: (1) update EVERY
+importer -- replace each 'use ...seam_stubs::${class}' with the real type's path; keep any placeholder
 methods as a superset so existing impls/callers compile. (2) DELETE the placeholder from seam_stubs.rs.
-(3) Remove ${class}'s line(s) from STUBS.tsv. Then proceed with the normal rules below.
+(3) Remove ${class}'s line(s) from STUBS.tsv. Leaving the placeholder in place creates two types with
+the same name, which compiles and silently cannot interoperate.
 "
-    fi
+  fi
+
+  if [ "$mode" = "trait" ]; then
     prompt="You are breaking a dependency CYCLE in a Java->Rust port. Port the Java type at
 ${srcpath} to a Rust TRAIT (it was selected as a cycle cut-point).
 ${promote}
@@ -204,6 +210,7 @@ Port this type (plus placeholder stubs for its references) and fix any test code
 If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
   else
     prompt="Port the Java class at ${srcpath} to idiomatic Rust (struct + impl).
+${promote}
 This class was chosen by RECURSIVE-DESCENT order: its in-repo dependencies have already been ported,
 so REUSE the existing Rust types -- read them first; do not redefine them.
 
@@ -291,6 +298,12 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
         sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)$/s//DONE\1/" "$ORDER"
         git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: mark $class DONE" >/dev/null 2>&1||true
         ported=$((ported+1)); log "OK descent: $class (${mode}) merged"
+        # Retirement is instructed in PROMOTE MODE but never enforced; if the placeholder is
+        # still there it now shadows the real type -- two types, same name, silently unable to
+        # interoperate. Report it rather than letting it accumulate invisibly.
+        if grep -rqE --include='seam_stubs.rs' "\b(pub +)?(trait|struct|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
+          log "WARN: placeholder for $class SURVIVED the port -- it now shadows the real type (see STUB_DEBT.tsv)"
+        fi
       else
         git reset --hard "$pre_merge" >/dev/null 2>&1||true
         sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
@@ -332,9 +345,10 @@ if [ "$AUDIT_STEP" = "1" ] && [ -f "$DEBT" ] && [ $((ported+reconciled)) -gt 0 ]
   fi
   "$PY" scripts/pattern_audit.py --root ghidra-rs/src --seam SEAM.tsv \
         --baseline "$prev_debt" --preserve-status --out "$DEBT" >/dev/null 2>&1
+  "$PY" scripts/stub_audit.py --root ghidra-rs/src --manifest "$MANIFEST" --out STUB_DEBT.tsv >/dev/null 2>&1 || true
   rm -f "$prev_debt"
   if ! git diff --quiet -- "$DEBT" 2>/dev/null; then
-    git add "$DEBT" >/dev/null 2>&1
+    git add "$DEBT" STUB_DEBT.tsv >/dev/null 2>&1
     git commit -q -m "audit: refresh $DEBT after descent run (${audit_new} new/worsened)" >/dev/null 2>&1 \
       && audit_committed=1
   fi
