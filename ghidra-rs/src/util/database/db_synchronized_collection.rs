@@ -7,14 +7,19 @@ use super::db_synchronized_iterator::{DBSynchronizedIterator, RemovableIterator}
 /// Mirrors the subset of `java.util.Collection<E>` operations that
 /// [`DBSynchronizedCollection`] delegates to.
 pub trait Collection<E> {
+    /// The collection's iterator type. An associated type rather than
+    /// `Box<dyn RemovableIterator<E>>`: the implementer knows its own iterator, so there is
+    /// nothing to erase, and static dispatch keeps `Iterator`'s adaptors usable.
+    type Iter: RemovableIterator<Item = E>;
+
     /// Returns the number of elements.
     fn size(&self) -> usize;
     /// Returns `true` if there are no elements.
     fn is_empty(&self) -> bool;
     /// Returns `true` if this collection contains the given element.
     fn contains(&self, o: &E) -> bool;
-    /// Returns a boxed iterator over the elements.
-    fn iterator(&self) -> Box<dyn RemovableIterator<E>>;
+    /// Returns an iterator over the elements.
+    fn iterator(&self) -> Self::Iter;
     /// Returns all elements as a `Vec`, corresponding to Java's `toArray()`/`toArray(T[])`.
     fn to_vec(&self) -> Vec<E>;
     /// Adds an element, returning `true` if the collection changed as a result.
@@ -90,7 +95,7 @@ impl<E, C: Collection<E>> DBSynchronizedCollection<E, C> {
     /// Obtaining the delegate's iterator acquires the read lock; the returned
     /// [`DBSynchronizedIterator`] shares this collection's lock and acquires it again on
     /// each subsequent operation.
-    pub fn iterator(&self) -> DBSynchronizedIterator<E> {
+    pub fn iterator(&self) -> DBSynchronizedIterator<C::Iter> {
         let iter = {
             let _guard = self.lock.read().unwrap();
             self.delegate.iterator()
@@ -173,17 +178,17 @@ mod tests {
         pos: usize,
     }
 
-    impl<T: Clone> RemovableIterator<T> for VecIter<T> {
-        fn has_next(&mut self) -> bool {
-            self.pos < self.items.len()
-        }
+    impl<T: Clone> Iterator for VecIter<T> {
+        type Item = T;
 
-        fn next(&mut self) -> T {
-            let item = self.items[self.pos].clone();
+        fn next(&mut self) -> Option<T> {
+            let item = self.items.get(self.pos)?.clone();
             self.pos += 1;
-            item
+            Some(item)
         }
+    }
 
+    impl<T: Clone> RemovableIterator for VecIter<T> {
         fn remove(&mut self) {
             self.pos -= 1;
             self.items.remove(self.pos);
@@ -202,6 +207,8 @@ mod tests {
     }
 
     impl<T: Clone + PartialEq + 'static> Collection<T> for VecCollection<T> {
+        type Iter = VecIter<T>;
+
         fn size(&self) -> usize {
             self.items.len()
         }
@@ -214,11 +221,11 @@ mod tests {
             self.items.contains(o)
         }
 
-        fn iterator(&self) -> Box<dyn RemovableIterator<T>> {
-            Box::new(VecIter {
+        fn iterator(&self) -> Self::Iter {
+            VecIter {
                 items: self.items.clone(),
                 pos: 0,
-            })
+            }
         }
 
         fn to_vec(&self) -> Vec<T> {
@@ -298,11 +305,7 @@ mod tests {
     #[test]
     fn iterator_yields_all_elements() {
         let c = make(vec![10, 20, 30]);
-        let mut iter = c.iterator();
-        let mut out = vec![];
-        while iter.has_next() {
-            out.push(iter.next());
-        }
+        let out: Vec<i32> = c.iterator().collect();
         assert_eq!(out, vec![10, 20, 30]);
     }
 
@@ -391,11 +394,11 @@ mod tests {
     fn returned_iterator_shares_collection_lock() {
         let lock = Arc::new(RwLock::new(()));
         let c = DBSynchronizedCollection::new(VecCollection::new(vec![1, 2]), lock.clone());
-        let mut iter = c.iterator();
-        iter.has_next();
+        let mut iter = c.iterator().peekable();
+        iter.peek();
         assert!(
             lock.try_write().is_ok(),
-            "write lock should be acquirable after the iterator's has_next() returns"
+            "write lock should be released once the iterator's read is done"
         );
     }
 }

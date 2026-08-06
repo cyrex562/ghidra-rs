@@ -1,22 +1,24 @@
 use std::sync::Arc;
 use std::sync::RwLock;
 
-/// A trait for iterators that support removal of the current element.
+/// An iterator whose current element can be removed from the underlying collection.
 ///
-/// This trait mirrors `java.util.Iterator` and provides the core iterator contract
-/// with mutable access methods.
-pub trait RemovableIterator<T> {
-    /// Returns `true` if there is a next element.
-    fn has_next(&mut self) -> bool;
-    /// Returns the next element.
-    fn next(&mut self) -> T;
-    /// Removes the current element (optional operation).
+/// Extends [`Iterator`] rather than restating it: `has_next`/`next` were a transcription of
+/// `java.util.Iterator` that std already provides (and provides better -- `next` yields
+/// `Option<Self::Item>` instead of panicking past the end, and every adaptor works). What std
+/// has no equivalent for is removal *during* iteration, so that is all this trait adds.
+///
+/// See `OWNERSHIP_MIGRATION.md` (the `ITER` verdict in `CONVENTION_QUEUE.tsv`): the debt was
+/// the `Box<dyn RemovableIterator<T>>` erasure, not the trait -- removal is a real capability,
+/// so the trait earns its keep.
+pub trait RemovableIterator: Iterator {
+    /// Removes the element most recently returned by [`Iterator::next`] (optional operation).
     fn remove(&mut self);
 }
 
 /// A thread-safe wrapper around an iterator that synchronizes access using a read-write lock.
 ///
-/// Read operations (`has_next`, `next`) acquire the read lock, while the destructive
+/// Reading (`Iterator::next`) acquires the read lock, while the destructive
 /// operation (`remove`) acquires the write lock. This mirrors the Java semantics of
 /// `ghidra.util.database.DBSynchronizedIterator`, which wraps a `java.util.Iterator`
 /// and a `ReadWriteLock`.
@@ -25,50 +27,41 @@ pub trait RemovableIterator<T> {
 ///
 /// ```ignore
 /// let lock = Arc::new(RwLock::new(()));
-/// let mut wrapped = VecIterator::new(vec![1, 2, 3]);
-/// let mut iter = DBSynchronizedIterator::new(Box::new(wrapped), lock);
-/// while iter.has_next() {
-///     let item = iter.next();
+/// let mut iter = DBSynchronizedIterator::new(removable_iter, lock);
+/// while let Some(item) = iter.next() {
 ///     // ...
 /// }
 /// ```
-pub struct DBSynchronizedIterator<T> {
-    iterator: Box<dyn RemovableIterator<T>>,
+pub struct DBSynchronizedIterator<I: RemovableIterator> {
+    iterator: I,
     lock: Arc<RwLock<()>>,
 }
 
-impl<T> DBSynchronizedIterator<T> {
+impl<I: RemovableIterator> DBSynchronizedIterator<I> {
     /// Creates a new `DBSynchronizedIterator` wrapping an iterator and protecting it with a lock.
     ///
     /// # Arguments
     ///
     /// * `iterator` - The wrapped iterator to synchronize
     /// * `lock` - The read-write lock controlling access
-    pub fn new(iterator: Box<dyn RemovableIterator<T>>, lock: Arc<RwLock<()>>) -> Self {
+    pub fn new(iterator: I, lock: Arc<RwLock<()>>) -> Self {
         Self { iterator, lock }
     }
+}
 
-    /// Returns `true` if there is a next element.
-    ///
-    /// This operation acquires the read lock.
-    pub fn has_next(&mut self) -> bool {
-        let _guard = self.lock.read().unwrap();
-        self.iterator.has_next()
-    }
+impl<I: RemovableIterator> Iterator for DBSynchronizedIterator<I> {
+    type Item = I::Item;
 
-    /// Returns the next element.
-    ///
-    /// This operation acquires the read lock.
-    pub fn next(&mut self) -> T {
+    /// Yields the next element, holding the read lock for the duration of the call.
+    fn next(&mut self) -> Option<Self::Item> {
         let _guard = self.lock.read().unwrap();
         self.iterator.next()
     }
+}
 
-    /// Removes the current element.
-    ///
-    /// This operation acquires the write lock and is only called if the underlying
-    /// iterator supports removal.
-    pub fn remove(&mut self) {
+impl<I: RemovableIterator> RemovableIterator for DBSynchronizedIterator<I> {
+    /// Removes the current element, holding the WRITE lock (removal mutates the collection).
+    fn remove(&mut self) {
         let _guard = self.lock.write().unwrap();
         self.iterator.remove();
     }
@@ -99,125 +92,83 @@ mod tests {
         }
     }
 
-    impl RemovableIterator<i32> for TestIterator {
-        fn has_next(&mut self) -> bool {
-            self.pos < self.items.len()
-        }
+    impl Iterator for TestIterator {
+        type Item = i32;
 
-        fn next(&mut self) -> i32 {
-            let item = self.items[self.pos];
+        fn next(&mut self) -> Option<i32> {
+            let item = *self.items.get(self.pos)?;
             self.pos += 1;
-            item
+            Some(item)
         }
+    }
 
+    impl RemovableIterator for TestIterator {
         fn remove(&mut self) {
             self.remove_count.fetch_add(1, Ordering::SeqCst);
         }
     }
 
-    #[test]
-    fn has_next_with_elements() {
+    fn sync_iter(items: Vec<i32>) -> (DBSynchronizedIterator<TestIterator>, Arc<AtomicUsize>) {
         let lock = Arc::new(RwLock::new(()));
-        let (inner, _) = TestIterator::new(vec![1, 2, 3]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock);
+        let (inner, removals) = TestIterator::new(items);
+        (DBSynchronizedIterator::new(inner, lock), removals)
+    }
 
-        assert!(iter.has_next());
+    /// `has_next` is gone; `Peekable` is how you look without consuming.
+    #[test]
+    fn peek_reports_a_pending_element() {
+        let (iter, _) = sync_iter(vec![1, 2, 3]);
+        let mut iter = iter.peekable();
+        assert_eq!(iter.peek(), Some(&1));
     }
 
     #[test]
-    fn has_next_empty() {
-        let lock = Arc::new(RwLock::new(()));
-        let (inner, _) = TestIterator::new(vec![]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock);
-
-        assert!(!iter.has_next());
+    fn peek_is_none_when_empty() {
+        let (iter, _) = sync_iter(vec![]);
+        let mut iter = iter.peekable();
+        assert_eq!(iter.peek(), None);
     }
 
     #[test]
-    fn has_next_exhausted() {
-        let lock = Arc::new(RwLock::new(()));
-        let (mut inner, _) = TestIterator::new(vec![1]);
-        inner.next();
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock);
-
-        assert!(!iter.has_next());
+    fn next_returns_none_past_the_end_instead_of_panicking() {
+        // The old `next(&mut self) -> T` indexed straight into the backing Vec and panicked
+        // once exhausted, mirroring java.util.Iterator. std::Iterator makes that unrepresentable.
+        let (mut iter, _) = sync_iter(vec![1]);
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
-    fn next_returns_elements() {
-        let lock = Arc::new(RwLock::new(()));
-        let (inner, _) = TestIterator::new(vec![1, 2, 3]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock);
-
-        assert_eq!(iter.next(), 1);
-        assert_eq!(iter.next(), 2);
-        assert_eq!(iter.next(), 3);
+    fn next_returns_elements_in_order() {
+        let (iter, _) = sync_iter(vec![1, 2, 3]);
+        assert_eq!(iter.collect::<Vec<_>>(), vec![1, 2, 3]);
     }
 
     #[test]
-    fn iteration_sequence() {
-        let lock = Arc::new(RwLock::new(()));
-        let (inner, _) = TestIterator::new(vec![5, 10, 15]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock);
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next(), 5);
-        assert!(iter.has_next());
-        assert_eq!(iter.next(), 10);
-        assert!(iter.has_next());
-        assert_eq!(iter.next(), 15);
-        assert!(!iter.has_next());
-    }
-
-    #[test]
-    fn remove_increments_counter() {
-        let lock = Arc::new(RwLock::new(()));
-        let (inner, remove_count) = TestIterator::new(vec![10, 20, 30]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock);
-
+    fn remove_delegates_to_the_wrapped_iterator() {
+        let (mut iter, removals) = sync_iter(vec![1, 2, 3]);
         iter.next();
         iter.remove();
-        iter.next();
+        assert_eq!(removals.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn removal_takes_the_write_lock_while_iteration_takes_the_read_lock() {
+        // Both operations must go through the shared lock; this exercises the pair in
+        // sequence, which would deadlock if `remove` re-entered the read guard.
+        let (mut iter, removals) = sync_iter(vec![1, 2]);
+        assert_eq!(iter.next(), Some(1));
         iter.remove();
-
-        assert_eq!(remove_count.load(Ordering::SeqCst), 2);
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(removals.load(Ordering::SeqCst), 1);
     }
 
+    /// The payoff of extending Iterator: adaptors, none of which the old trait allowed.
     #[test]
-    fn lock_acquired_during_has_next() {
-        let lock = Arc::new(RwLock::new(()));
-        let (inner, _) = TestIterator::new(vec![1]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock.clone());
-
-        iter.has_next();
-
-        let acquired = lock.try_write().is_ok();
-        assert!(acquired, "write lock should be acquirable after has_next returns");
-    }
-
-    #[test]
-    fn lock_acquired_during_next() {
-        let lock = Arc::new(RwLock::new(()));
-        let (inner, _) = TestIterator::new(vec![1, 2]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock.clone());
-
-        iter.next();
-
-        let acquired = lock.try_write().is_ok();
-        assert!(acquired, "write lock should be acquirable after next returns");
-    }
-
-    #[test]
-    fn lock_acquired_during_remove() {
-        let lock = Arc::new(RwLock::new(()));
-        let (inner, remove_count) = TestIterator::new(vec![1]);
-        let mut iter = DBSynchronizedIterator::new(Box::new(inner), lock.clone());
-
-        iter.next();
-        iter.remove();
-
-        assert_eq!(remove_count.load(Ordering::SeqCst), 1);
-        let acquired = lock.try_write().is_ok();
-        assert!(acquired, "write lock should be acquirable after remove returns");
+    fn adaptors_work_on_a_synchronized_iterator() {
+        let (iter, _) = sync_iter(vec![1, 2, 3, 4]);
+        let evens: Vec<i32> = iter.filter(|n| n % 2 == 0).collect();
+        assert_eq!(evens, vec![2, 4]);
     }
 }
