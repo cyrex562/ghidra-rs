@@ -42,7 +42,22 @@ SIGNAL_WEIGHTS = {
     "lazy_static_mut": 3,
 }
 
-RE_DYN = re.compile(r"\bdyn\s+[A-Za-z_]")
+# Trait objects that are idiomatic Rust rather than a Java interface translated too
+# literally. `Box<dyn Error>`, `&dyn Any` and `Box<dyn Fn(..)>` are correct Rust; counting
+# them as ownership debt inflates scores and pushes files onto the remediation frontier that
+# have nothing to remediate. 1,745 such occurrences were scored as debt before this landed.
+IDIOMATIC_DYN = {
+    "Any", "Error", "Fn", "FnMut", "FnOnce", "Iterator", "DoubleEndedIterator",
+    "ExactSizeIterator", "Send", "Sync", "Display", "Debug", "Write", "Read", "Seek",
+    "BufRead", "Future", "Hash", "Ord", "PartialEq", "PartialOrd", "Eq", "Clone",
+    "ToString", "Deref", "DerefMut", "Drop", "Default", "From", "Into", "AsRef", "AsMut",
+}
+
+# Captures the type name behind `dyn`, resolving `dyn crate::foo::Bar` to `Bar`.
+RE_DYN = re.compile(
+    r"\bdyn\s+(?:(?:crate|std|core|alloc|self|super)::)?"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Za-z_][A-Za-z0-9_]*)"
+)
 RE_RC_REFCELL = re.compile(r"\bRc\s*<\s*RefCell\s*<")
 RE_ARC_MUTEX = re.compile(r"\bArc\s*<\s*(Mutex|RwLock)\s*<")
 RE_CLONE = re.compile(r"\.clone\(\)")
@@ -125,7 +140,32 @@ def load_prior_status(tsv_path):
     return prior
 
 
-def scan_file(path):
+def load_accepted_types(queue_path):
+    """Types whose CONVENTION_QUEUE.tsv verdict is ACCEPT -- `dyn` is the right answer for
+    them (genuine open-ended extension points), so they must stop counting as debt. This is
+    what makes a convention decision actually retire files from the frontier instead of
+    leaving them to be re-asked and re-parked once per file. A SUGGEST-ACCEPT proposal is
+    deliberately NOT honoured: proposals are inert until promoted."""
+    accepted = set()
+    if not queue_path or not os.path.exists(queue_path):
+        return accepted
+    with open(queue_path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            if (r.get("verdict") or "").strip() == "ACCEPT":
+                name = (r.get("type") or "").strip()
+                if name:
+                    accepted.add(name)
+    return accepted
+
+
+def count_dyn(text, accepted):
+    """`dyn T` occurrences that represent Java-interface-as-trait-object debt: excludes
+    idiomatic Rust trait objects and any type with an ACCEPT verdict."""
+    skip = IDIOMATIC_DYN | (accepted or set())
+    return sum(1 for name in RE_DYN.findall(text) if name not in skip)
+
+
+def scan_file(path, accepted=None):
     with open(path, "r", encoding="utf-8", errors="ignore") as fh:
         text = fh.read()
     prod_text = strip_test_modules(text)
@@ -137,7 +177,7 @@ def scan_file(path):
     code_text = strip_comments(text)
     code_prod_text = strip_comments(prod_text)
 
-    dyn_count = len(RE_DYN.findall(code_text))
+    dyn_count = count_dyn(code_text, accepted)
     rc_refcell = len(RE_RC_REFCELL.findall(code_text))
     arc_mutex = len(RE_ARC_MUTEX.findall(code_text))
     clone_count = len(RE_CLONE.findall(code_text))
@@ -192,6 +232,12 @@ def main():
     ap.add_argument("--out", help="Write TSV (status/score/fanin/class/module/path/signals) here")
     ap.add_argument("--min-score", type=float, default=3.0, help="Ignore files below this score")
     ap.add_argument("--top", type=int, default=0, help="Only print/write the top N by priority")
+    ap.add_argument(
+        "--accepted",
+        default="CONVENTION_QUEUE.tsv",
+        help="Type-level verdict file (scripts/debt_clusters.py). Types marked ACCEPT there "
+        "stop counting as dyn debt. Missing file = no accepted types.",
+    )
     ap.add_argument("--baseline", help="Previous audit TSV, for --diff-new / --preserve-status")
     ap.add_argument(
         "--diff-new",
@@ -214,6 +260,9 @@ def main():
         sys.exit(1)
 
     fanin = load_seam_fanin(args.seam)
+    accepted = load_accepted_types(args.accepted)
+    if accepted:
+        print(f"honouring {len(accepted)} ACCEPT verdict(s) from {args.accepted}", file=sys.stderr)
 
     rows = []
     for dirpath, _dirs, files in os.walk(args.root):
@@ -221,7 +270,7 @@ def main():
             if not fn.endswith(".rs"):
                 continue
             path = os.path.join(dirpath, fn)
-            score, signals = scan_file(path)
+            score, signals = scan_file(path, accepted)
             if score < args.min_score:
                 continue
             stem = fn[: -len(".rs")]

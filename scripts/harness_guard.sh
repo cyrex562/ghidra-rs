@@ -44,3 +44,31 @@ guard_working_tree() { # $1 = harness name, for the stash label
       ;;
   esac
 }
+
+# Stage only what a port/remediation run is allowed to touch, and report anything else it
+# would otherwise have swept up. `git add -A` inside a harness loop is indiscriminate: during
+# a long unattended run it commits whatever a human happens to be editing into an unrelated
+# port commit. That is not hypothetical -- a nightly descent run committed three unrelated
+# in-progress files into "descent: TraceCodeUnitsView -> trait" (f2fa5516) this way.
+#
+# HARNESS_PATHS overrides the default path set. DIRTY_POLICY=ignore restores `git add -A`.
+harness_add() {
+  local paths="${HARNESS_PATHS:-ghidra-rs PORT_MANIFEST.tsv PORT_ORDER.tsv SEAM.tsv UNBLOCK.tsv STUBS.tsv OWNERSHIP_DEBT.tsv CONVENTION_QUEUE.tsv DESCENT_PARKED.tsv todo.md}"
+  if [ "${DIRTY_POLICY:-stash}" = "ignore" ]; then
+    git add -A >/dev/null 2>&1 || true
+    return 0
+  fi
+  local stray
+  stray=$(git status --porcelain -- . 2>/dev/null \
+          | awk '{ $1=""; sub(/^ +/,""); print }' \
+          | grep -vE "^($(printf '%s' "$paths" | tr ' ' '|' | sed 's/\./\\./g'))" || true)
+  if [ -n "$stray" ]; then
+    echo "NOTE: leaving $(printf '%s\n' "$stray" | grep -c .) file(s) OUT of this commit (not part of a port):"
+    printf '%s\n' "$stray" | head -10 | sed 's/^/       /'
+  fi
+  local p
+  for p in $paths; do
+    [ -e "$p" ] && { git add -- "$p" >/dev/null 2>&1 || true; }
+  done
+  return 0
+}

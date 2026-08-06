@@ -236,7 +236,7 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
     parked=$((parked+1)); continue
   fi
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
-    git add -A; git commit -q -m "descent: ${class} -> ${mode} (${srcpath})" || true
+    harness_add; git commit -q -m "descent: ${class} -> ${mode} (${srcpath})" || true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     pre_merge=$(git rev-parse HEAD)
     if git merge --no-ff "$branch" -m "merge descent: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
@@ -292,7 +292,7 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
       parked=$((parked+1)); log "PARK descent: $class (post-merge build failed)"
     fi
   else
-    git add -A>/dev/null 2>&1||true; git commit -q -m "WIP descent park: $class" >/dev/null 2>&1||true
+    harness_add >/dev/null 2>&1||true; git commit -q -m "WIP descent park: $class" >/dev/null 2>&1||true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
     git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: park $class" >/dev/null 2>&1||true

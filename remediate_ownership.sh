@@ -155,7 +155,7 @@ Change ONLY what's needed to fix the flagged smell in this file and its call sit
     git branch -D "$branch" >/dev/null 2>&1||true; break
   fi
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$clog"; then
-    git add -A; git commit -q -m "ownership: remediate ${class} (${path})" || true
+    harness_add; git commit -q -m "ownership: remediate ${class} (${path})" || true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     if git merge --no-ff "$branch" -m "merge ownership: ${class}" >>"$clog" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$clog"; then
       git branch -D "$branch" >/dev/null 2>&1||true

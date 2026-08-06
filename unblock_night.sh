@@ -103,7 +103,7 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
     git branch -D "$branch" >/dev/null 2>&1||true; break
   fi
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
-    git add -A; git commit -q -m "unblock: ${class} -> ${kind} (${srcpath})" || true
+    harness_add; git commit -q -m "unblock: ${class} -> ${kind} (${srcpath})" || true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     if git merge --no-ff "$branch" -m "merge unblock: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
       git branch -D "$branch" >/dev/null 2>&1||true

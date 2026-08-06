@@ -195,12 +195,51 @@ the signature change are enumerated by `cargo build`'s errors — fix-forward
 through them in the same PR (or as immediate stacked follow-ups) rather than
 leaving `integration` red.
 
-**Phase 3 — sweep the rest of `OWNERSHIP_DEBT.tsv`** in normal
-one-issue-per-run autonomous cadence (a `remediate_ownership.sh` harness,
-mirroring `seam_night.sh`'s structure, added in this change but left
-`REMEDIATE_MAX=0`-equivalent / not cron-wired until Phase 2 validates the
-pattern). By this phase the convention is proven and documented with real
-examples, so autonomous remediation is far lower-risk than it would be today.
+**Phase 3 — decide conventions per TYPE, then sweep files.** The original plan was a
+file-at-a-time autonomous sweep of `OWNERSHIP_DEBT.tsv` via `remediate_ownership.sh`. Proofing
+showed that unit is wrong, and the fix is a second frontier file alongside it.
+
+An ownership decision is never about a file; it is about a *type*. The file-level frontier
+re-asks the same question once per file, pays an LLM call each time, and parks each time —
+observed directly: `Trace` → `DebuggerStaticMappingService` → `DebuggerTraceManagerService`
+parked in sequence, all three on the same undecided `Trace` convention.
+`scripts/debt_clusters.py` inverts the index into `CONVENTION_QUEUE.tsv`: for every type
+reached through `dyn T`/`Rc<RefCell<T>>`/`Arc<Mutex<T>>` in a blocked file, how many distinct
+files depend on that one decision. 939 blocked files rest on ~1,070 types, but the
+distribution is steep — the top 20 verdicts cover 58% of the pile, the top 40 cover 64%.
+
+Verdicts: `ACCEPT` (`dyn` is right here — a genuine open-ended extension point), `ARENA`,
+`ENUM`, `ITER` (Java iterator interface → concrete Rust iterator), `STRUCT` (a trait with
+0–2 implementers is usually just a type), `PARK`, and `TODO`. `ACCEPT` is what makes a
+decision *do* something: `pattern_audit.py --accepted` stops counting those types, so files
+whose only remaining smell is ACCEPTed types leave the frontier with no LLM call and no park.
+`SUGGEST-<VERDICT>` rows are proposals and are deliberately inert — nothing downstream honours
+them until `--promote`.
+
+`CONVENTION_FAMILIES.tsv` decides a whole naming family at once, which is what keeps the queue
+tractable. Decided so far: `*Iterator` → `ITER`; `*Listener`/`*Service`/`*Provider`/`*Monitor`
+→ `ACCEPT`; `*Manager` → `ARENA`. Per-type verdicts always beat family rules, and a hand-made
+verdict is never recomputed when the rules change.
+
+*The measured payoff so far:* excluding idiomatic trait objects (`dyn Error`, `dyn Any`,
+`dyn Fn` — 1,745 occurrences were being scored as Java-idiom debt) plus 94 `ACCEPT` verdicts
+retired **161 files** from the frontier, 1,521 rows → 1,360, with zero code changes and zero
+LLM calls.
+
+*The finding that matters most:* the 939 blocked files split into **318 decidable now** and
+**582 waiting on the port** — traits whose only implementers are mocks, or `seam_stubs.rs`
+placeholders, i.e. the normal mid-port state. Those cannot be decided until their
+implementations land. So Phase 3 is not one blockage but two, and the larger half resolves
+itself as `descent_night.sh` progresses. Phase 3 should track the port, not race it.
+
+*On trusting the proposer:* `--suggest` infers verdicts from structural evidence (is it a
+trait? how many real implementers?). Its first three rule-sets were all wrong on real data and
+were corrected only because the output was checked against the source: it counted mock impls
+as implementers (making `Namespace` look like a 52-variant enum), read "many implementers" as
+*closed* hierarchy (proposing a 94-variant enum for `MemBuffer`), and read "no implementers"
+as "shouldn't be a trait" (when 198 of those are seam stubs awaiting their port). It now
+declines to guess in all three cases and records the evidence instead — 311 proposals where
+the naive version made 868. Treat remaining suggestions as prompts for review, not answers.
 
 *Sequencing constraint, found by proofing the harness (2026-08-05):* the debt graph has the
 same dependency structure as the port graph, so Phase 3 cannot run ahead of Phase 2. Of the

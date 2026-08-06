@@ -175,5 +175,48 @@ class TestPreserveStatus(unittest.TestCase):
         self.assertIn("reopened", err)
 
 
+class TestAcceptedVerdicts(unittest.TestCase):
+    """A CONVENTION_QUEUE.tsv verdict must change what counts as debt -- that is the whole
+    mechanism by which one decision retires many files. And a PROPOSAL must not."""
+
+    QCOLS = ["verdict", "leverage", "occurrences", "fanin", "type", "category", "source", "note"]
+
+    def _queue(self, d, verdict, typename):
+        p = os.path.join(d, "queue.tsv")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("\t".join(self.QCOLS) + "\n")
+            f.write(f"{verdict}\t1\t1\t0\t{typename}\tx\tmanual\tnote\n")
+        return p
+
+    def _root(self, d):
+        root = os.path.join(d, "src")
+        os.makedirs(root, exist_ok=True)
+        write_file(os.path.join(root, "w.rs"),
+                   "pub struct W { a: Box<dyn TaskMonitor>, b: Box<dyn TaskMonitor>,\n"
+                   "               c: Box<dyn TaskMonitor>, d: Box<dyn TaskMonitor> }\n")
+        return root
+
+    def test_accept_verdict_removes_the_type_from_scoring(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            plain = os.path.join(d, "plain.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", "/nonexistent",
+                      "--out", plain)
+            self.assertTrue(read_tsv(plain), "expected the file to score as debt without a verdict")
+
+            q = self._queue(d, "ACCEPT", "TaskMonitor")
+            after = os.path.join(d, "after.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q, "--out", after)
+            self.assertEqual(read_tsv(after), [], "ACCEPT should retire the file from the frontier")
+
+    def test_suggestion_is_inert_until_promoted(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            q = self._queue(d, "SUGGEST-ACCEPT", "TaskMonitor")
+            out = os.path.join(d, "out.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q, "--out", out)
+            self.assertTrue(read_tsv(out), "SUGGEST-ACCEPT must not take effect before review")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
