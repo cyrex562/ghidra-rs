@@ -242,3 +242,13 @@ pub trait SchemaBuilder: Send + Sync {
     /// `SchemaBuilder.buildAndAdd()`.
     fn build_and_add(&self) -> Box<dyn TraceObjectSchema>;
 }
+
+/// Placeholder for `ghidra.trace.model.guest.TracePlatform`, referenced by
+/// [`TraceCodeUnit`](crate::trace::model::listing::trace_code_unit::TraceCodeUnit) before the real
+/// port is available. No members are parsed from the Java source yet.
+pub trait TracePlatform: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.model.thread.TraceThread`, referenced by
+/// [`TraceCodeUnit`](crate::trace::model::listing::trace_code_unit::TraceCodeUnit) before the real
+/// port is available. No members are parsed from the Java source yet.
+pub trait TraceThread: Send + Sync {}
