@@ -77,6 +77,49 @@ where Java's `instanceof`/interface-implementer set is fixed and known).
   idiomatic Rust answer there. The rule isn't "no `dyn`," it's "don't reach for
   `dyn` by default because the Java source had an interface."
 
+**3. Snapshot + transaction, for DB-backed domain objects** (`program/database/*` — the
+`DataTypeDB`/`FunctionDB`/`SymbolDB` family). Decided 2026-08-06.
+
+Ghidra's DB-backed objects cache fields (`name`, `categoryPath`, …), compare a stored
+`modification_count` against the cache's to decide staleness, call `refreshIfNeeded()` before
+most reads, and guard the whole dance with a reentrant read/write lock. Ported faithfully, every
+one of these classes drags that scaffolding along. It is not incidental: it exists *because* the
+store is mutable and objects hold stale copies of it. Both bugs found on 2026-08-05 came out of
+it — the `set_name` → `get_name` self-deadlock, and a cache that survived its own invalidation.
+Only 5 files carry the pattern today; **345 `program/database` files are still TODO**, so the
+cost of the default is almost entirely still ahead.
+
+The replacement, which matches Ghidra's *semantics* more closely than Java's implementation
+does — `DomainObject` is already transactional, with undo/redo and modification counts, i.e.
+MVCC implemented by hand over DB checkpoints:
+
+- **Read = an atomic snapshot.** `fn snapshot(&self) -> Arc<ProgramStore>`. Readers resolve
+  `Copy` IDs against the snapshot they hold. There is no staleness check because a snapshot
+  cannot go stale — an older version is a *consistent* version, not a wrong one.
+  `needs_refreshing`/`refresh_if_needed`/`do_refresh` disappear entirely, and with them the
+  read lock.
+- **Write = a transaction.** `fn transaction<R>(&self, name: &str, f: impl FnOnce(&mut ProgramStore) -> R) -> R`
+  takes the single-writer lock, mutates, and publishes the new version atomically at commit.
+  This *is* `startTransaction`/`endTransaction`.
+- **Undo/redo = retained versions.** Keep a bounded ring of prior `Arc<ProgramStore>`s. Ghidra
+  already bounds undo depth.
+- **`modification_count` = the version number**, and generational arena keys already give
+  per-entry versioning.
+
+*Cost that must be designed in, not discovered:* auto-analysis is write-heavy — millions of
+records — so a persistent map per record would be far too slow. Mutate in place inside the
+transaction while the store is uniquely owned (`Arc::make_mut` copies only when a reader still
+holds the old version) and publish once at commit. Make the arenas per-entity `Arc` fields so a
+transaction clones only the arenas it touches, not the whole store. Retained snapshots also pin
+memory, which is why the undo ring is bounded.
+
+*Relationship to storage:* this changes the **access** model, not persistence. Commit still
+writes through. `framework/db` (fully ported, 13k lines: B-trees, buffer manager, chained
+buffers, recovery) becomes the reader for **legacy Ghidra-format projects** — an import/upgrade
+path, exactly as Ghidra itself upgrades older project formats to the current version — rather
+than the live in-memory model. ghidra-rs is therefore not bound to Java Ghidra's on-disk layout
+going forward, provided the importer exists.
+
 **Ported Java locks** (decided 2026-08-06, applies across `util/database` and
 `util/stream_utils`). A Java class that takes a `ReadWriteLock`/`Lock`/`Object` monitor and
 wraps a delegate translates literally into a Rust struct holding `Arc<RwLock<()>>` beside a

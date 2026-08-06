@@ -59,6 +59,16 @@ timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>/dev/null || { log "integra
 # baseline test-crate compile health -- the backstop parks any port that RAISES this count
 TEST_ERR_BASE=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error'); TEST_ERR_BASE=${TEST_ERR_BASE:-0}
 log "preflight test-compile baseline: ${TEST_ERR_BASE} errors"
+# A suite that already hangs makes the per-port runtime gate meaningless (every port would time
+# out and park), so establish up front that it terminates at all.
+if [ "$TEST_GATE" = "1" ]; then
+  timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast >/dev/null 2>&1; pre_rc=$?
+  if [ "$pre_rc" -eq 124 ]; then
+    log "preflight: suite HANGS on integration before any port -- fix the hang first; aborting."
+    exit 1
+  fi
+  log "preflight: suite terminates (rc=${pre_rc})"
+fi
 
 # refresh the leaf-first order against the current manifest (unless disabled)
 if [ "$REGEN" = "1" ] && [ -z "${DESCENT_ONLY:-}" ]; then
@@ -121,6 +131,29 @@ for ((i=1;i<=DESCENT_MAX;i++)); do
   # correct stub traits for unported deps (use, don't invent). Written to a FILE the model reads -- NOT
   # interpolated into the prompt string (that path caused the 2026-07-25 quoting break).
   depctx_file="$LOG_DIR/depctx.${class}.${hash}.txt"; depctx_note=""
+
+  # OWNERSHIP STEERING: DB-backed domain objects must not inherit Java's cache/lock/refresh
+  # scaffolding. Ported literally, each one brings cached fields + a modification-count staleness
+  # check + a reentrant lock + refreshIfNeeded -- the pattern that produced the DataTypeDB
+  # self-deadlock and a cache that survived its own invalidation. 345 of these are still queued,
+  # so the default has to change before they land, not after.
+  ownership_note=""
+  case "$ordpath" in
+    *ghidra/program/database/*)
+      ownership_note="
+OWNERSHIP CONVENTION (read OWNERSHIP_MIGRATION.md section 'Snapshot + transaction' FIRST):
+This class is a DB-backed domain object. Do NOT port Java's staleness machinery:
+- no cached name/category fields refreshed against a modification count;
+- no 'needs_refreshing'/'refresh_if_needed'/'do_refresh' plumbing;
+- no reentrant read/write lock guarding those fields.
+Instead: reads take an atomic snapshot (an Arc of the store) and resolve Copy IDs against it --
+a snapshot cannot be stale, so there is nothing to check; writes go through a transaction that
+mutates and publishes a new version. If the surrounding types for that model do not exist yet,
+port only this class's real behaviour (the DB record read/write and the domain logic), leave the
+caching/locking OUT entirely rather than inventing it, and say so in your final message.
+If you cannot do that without inventing a convention, STOP with: PORT_RESULT: PARKED <what is needed>."
+      ;;
+  esac
   if [ "${DEP_CONTEXT:-1}" = "1" ] && timeout 120 "$PY" scripts/dep_context.py "$ordpath" > "$depctx_file" 2>/dev/null && [ -s "$depctx_file" ]; then
     depctx_note="
 DEPENDENCY CONTEXT (read this FILE first): ${depctx_file}
@@ -143,7 +176,7 @@ methods as a superset so existing impls/callers compile. (2) DELETE the placehol
 ${srcpath} to a Rust TRAIT (it was selected as a cycle cut-point).
 ${promote}
 Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in snake_case;
-create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}
+create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}${ownership_note}
 
 Rules for breaking the cycle:
 - Map the Java type's public API to a Rust trait (methods -> trait methods). Prefer object-safe traits
@@ -174,7 +207,7 @@ This class was chosen by RECURSIVE-DESCENT order: its in-repo dependencies have 
 so REUSE the existing Rust types -- read them first; do not redefine them.
 
 Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in snake_case;
-create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}
+create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}${ownership_note}
 
 Rules:
 - Map the class to a Rust struct with an impl block; map fields and methods faithfully. Implement any
@@ -259,15 +292,24 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
         if [ "$terr" -gt "$TEST_ERR_BASE" ]; then
           gate_ok=0; log "test gate FAIL: $class introduced $((terr-TEST_ERR_BASE)) test-compile error(s) (base ${TEST_ERR_BASE} -> ${terr}, confirmed on retry)"
         else
-          # 2) RUNTIME check: run the suite; park only on a genuine 'test result: FAILED'.
-          tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
-          if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
+          # 2) RUNTIME check: run the suite; park on a genuine 'test result: FAILED' -- or on a
+          #    TIMEOUT, which is the case this gate used to wave through. A deadlocked test never
+          #    prints 'test result: FAILED'; it just never finishes, `timeout` kills it, and the
+          #    old check saw no FAILED marker and passed the port. That is exactly how the
+          #    DataTypeDB set_name/get_name self-deadlock reached integration on 2026-08-05,
+          #    after burning 2x TEST_TIMEOUT per subsequent port. Silence is not success.
+          tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1); trc=$?
+          if [ "$trc" -eq 124 ] || printf '%s' "$tout" | grep -q 'test result: FAILED'; then
             # retry once -- the full-suite gate can catch an unrelated FLAKY test (parallel global
             # state); a real regression fails again (2026-07-22: HighParamID/SpecExtension false-parked
             # on a flake -- their branches pass 0-failed on re-run).
-            tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1)
+            tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1); trc=$?
           fi
-          if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
+          if [ "$trc" -eq 124 ]; then
+            gate_ok=0
+            hung=$(printf '%s' "$tout" | grep -oP 'test \K\S+(?= has been running for over)' | head -3 | tr '\n' ' ')
+            log "test gate FAIL: $class -- suite TIMED OUT after ${TEST_TIMEOUT}s (hang/deadlock). Stuck: ${hung:-unknown}"
+          elif printf '%s' "$tout" | grep -q 'test result: FAILED'; then
             gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | tail -1) in suite, confirmed on retry)"
           else
             log "test gate OK: $class (test crate compiles, suite green)"
