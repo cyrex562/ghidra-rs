@@ -572,8 +572,20 @@ impl Address {
         self.offset.wrapping_sub(other.offset)
     }
 
+    /// Whether this address immediately follows `other`.
+    ///
+    /// Mirrors `AbstractAddressSpace.isSuccessor(addr1, addr2)`, which this had duplicated
+    /// rather than delegated to -- and in duplicating it, dropped the guard that matters: an
+    /// address space does NOT wrap around. Without the `max_offset` check, offset 0 was reported
+    /// as the successor of the last address in the space, so anything walking or coalescing
+    /// ranges at the top of a space (address iteration, `AddressSet` range merging) could join
+    /// the final range to the first. Caught by the Ghidra differential fixture
+    /// (`tests/address_golden.rs`), which is the only test in the crate that compares against
+    /// real Ghidra rather than against what the porter believed.
     pub fn is_successor(&self, other: &Address) -> bool {
-        self.space() == other.space() && self.offset == other.offset.wrapping_add(1)
+        self.space() == other.space()
+            && other.offset != other.space().max_offset()
+            && self.offset == other.offset.wrapping_add(1)
     }
 
     pub fn same_address_space(&self, other: &Address) -> bool {

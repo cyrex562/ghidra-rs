@@ -39,3 +39,4 @@ PORT_PARKED.tsv
 dep_stats.json
 port_history.tsv
 test_health.txt
+/tools/jdk/
