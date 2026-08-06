@@ -3,3 +3,4 @@ pub mod iface;
 pub mod info;
 pub mod path;
 pub mod schema;
+pub mod trace_object_value;
