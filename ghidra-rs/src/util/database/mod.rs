@@ -6,7 +6,7 @@ pub mod db_synchronized_collection;
 pub mod db_synchronized_iterator;
 pub mod db_synchronized_spliterator;
 
-pub use synchronized_spliterator::{Spliterator, SynchronizedSpliterator};
+pub use synchronized_spliterator::Spliterator;
 pub use db_synchronized_collection::Collection;
 pub use db_synchronized_iterator::RemovableIterator;
 pub use db_synchronized_spliterator::DBSynchronizedSpliterator;

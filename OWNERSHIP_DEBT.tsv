@@ -799,7 +799,6 @@ TODO	13.3	13.3	0	SObjname	format	src/format/pe/debug/s_objname.rs	dyn=3,rc_refce
 TODO	13.3	13.3	0	SProcref	format	src/format/pe/debug/s_procref.rs	dyn=3,rc_refcell=2,getset_pairs=1
 TODO	13.3	13.3	0	SUdt32	format	src/format/pe/debug/s_udt32.rs	dyn=3,rc_refcell=2,getset_pairs=1
 TODO	13.3	13.3	0	SUdt32New	format	src/format/pe/debug/s_udt32_new.rs	dyn=3,rc_refcell=2,getset_pairs=1
-TODO	13.3	13.3	0	SynchronizedSpliterator	util	src/util/database/synchronized_spliterator.rs	dyn=5,unwrap/100L=3.0
 TODO	13.2	13.2	0	PcodeEmit	app	src/app/plugin/processors/sleigh/pcode_emit.rs	dyn=5,clone/100L=3.2
 TODO	13.1	13.1	0	LabelHistoryListener	app	src/app/plugin/core/label/label_history_listener.rs	dyn=3,clone/100L=7.1
 TODO	13.1	13.1	0	StringTableOptions	app	src/app/plugin/core/string/string_table_options.rs	dyn=3,clone/100L=1.1,getset_pairs=6
@@ -976,12 +975,12 @@ TODO	9.7	9.7	0	MultiIterator	generic	src/generic/util/multi_iterator.rs	dyn=4,un
 TODO	9.6	9.6	0	DynamicMappingException	app	src/app/plugin/core/debug/stack/dynamic_mapping_exception.rs	dyn=3,clone/100L=3.6
 TODO	9.6	9.6	0	WeakReferenceCache	generic	src/generic/cache/weak_reference_cache.rs	clone/100L=1.6,unwrap/100L=8.0
 TODO	9.6	9.6	0	CountLatch		src/util/count_latch.rs	unwrap/100L=9.6
+TODO	9.6	9.6	0	StreamUtils		src/util/stream_utils.rs	dyn=4,unwrap/100L=1.0
 TODO	9.5	9.5	0	PdbRegisterNameToProgramRegisterMapper	app	src/app/util/pdb/pdbapplicator/pdb_register_name_to_program_register_mapper.rs	dyn=2,arc_mutex=1,clone/100L=2.5
 TODO	9.5	9.5	0	IsfTypedefIntegral	program	src/program/model/data/isf/isf_typedef_integral.rs	dyn=3,clone/100L=3.5
 TODO	9.5	9.5	0	IntArrayList	util	src/util/datastruct/int_array_list.rs	dyn=4,getset_pairs=1
 TODO	9.4	9.4	0	DataTypeDiff	app	src/app/util/html/data_type_diff.rs	dyn=3,clone/100L=3.4
 TODO	9.4	9.4	0	ThreadPool	generic	src/generic/concurrent/thread_pool.rs	clone/100L=2.2,unwrap/100L=4.1,lazy_static_mut=1
-TODO	9.4	9.4	0	StreamUtils		src/util/stream_utils.rs	dyn=4
 TODO	9.3	9.3	0	TraceRmiBackEnd	app	src/app/plugin/core/debug/gui/tracermi/launcher/trace_rmi_back_end.rs	arc_mutex=1,clone/100L=1.1,unwrap/100L=5.3
 TODO	9.3	9.3	0	SetAccumulatorWrapper	util	src/util/datastruct/set_accumulator_wrapper.rs	arc_mutex=1,unwrap/100L=5.4
 TODO	9.2	9.2	0	MonitoredRunnable	util	src/util/task/monitored_runnable.rs	dyn=1,clone/100L=4.2,getset_pairs=3
@@ -1013,6 +1012,7 @@ TODO	8.6	8.6	0	TraceShiftedReference	trace	src/trace/model/symbol/trace_shifted_
 TODO	8.5	8.5	0	DisplayableLabel	feature	src/feature/vt/gui/provider/matchtable/displayable_label.rs	dyn=4
 TODO	8.5	8.5	0	DexHeaderQuickMethods	file	src/file/formats/android/dex/format/dex_header_quick_methods.rs	dyn=2,rc_refcell=1,getset_pairs=1
 TODO	8.5	8.5	0	AddressObjectMap	program	src/program/model/address/address_object_map.rs	dyn=2,clone/100L=4.5
+TODO	8.5	8.5	0	SynchronizedSpliterator	util	src/util/database/synchronized_spliterator.rs	dyn=4
 TODO	8.4	8.4	0	OpenProgramPluginEvent	app	src/app/events/open_program_plugin_event.rs	dyn=3,clone/100L=2.4
 TODO	8.4	8.4	0	ProgramActivatedPluginEvent	app	src/app/events/program_activated_plugin_event.rs	dyn=3,clone/100L=2.4
 TODO	8.4	8.4	0	ProgramClosedPluginEvent	app	src/app/events/program_closed_plugin_event.rs	dyn=3,clone/100L=2.4
