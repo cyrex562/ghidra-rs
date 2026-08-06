@@ -7,6 +7,7 @@ pub mod immutable_trace_address_snap_range;
 pub mod lifespan;
 pub mod memory;
 pub mod program;
+pub mod symbol;
 pub mod target;
 pub mod time;
 pub mod trace;
