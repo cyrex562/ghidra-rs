@@ -6,7 +6,7 @@ DONE	trait	26	32	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	33	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceOffsetReference.java
 DONE	trait	33	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceShiftedReference.java
 DONE	trait	33	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceStackReference.java
-TODO	trait	32	31	15	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceReference.java
+DONE	trait	32	31	15	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceReference.java
 TODO	trait	31	36	7	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceCodeUnit.java
 TODO	trait	30	28	32	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceBaseCodeUnitsView.java
 TODO	trait	29	22	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceCodeUnitsView.java
