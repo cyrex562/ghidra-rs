@@ -3,7 +3,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::program::database::function::OverlappingFunctionException;
-use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::listing::code_unit::CodeUnit;
@@ -124,7 +124,7 @@ pub trait Listing {
         comment_type: i32,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator> {
+    ) -> BoxedAddressIterator {
         self.get_comment_address_iterator(
             CommentType::from_ordinal(comment_type).expect("valid comment type ordinal"),
             addr_set,
@@ -143,7 +143,7 @@ pub trait Listing {
         comment_type: CommentType,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Get a forward iterator over addresses that have any type of comment.
     ///
@@ -154,7 +154,7 @@ pub trait Listing {
         &self,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Get the comment for the given type at the specified address.
     ///
@@ -699,14 +699,14 @@ mod tests {
             _comment_type: CommentType,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_any_comment_address_iterator(
             &self,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_comment(&self, _comment_type: CommentType, _address: &Address) -> Option<String> {

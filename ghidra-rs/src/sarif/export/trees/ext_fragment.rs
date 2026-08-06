@@ -176,11 +176,11 @@ mod tests {
             self.addresses.num_addresses()
         }
 
-        fn addresses(&self, forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses(&self, forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             crate::program::model::address::AddressSetView::addresses(&self.addresses, forward)
         }
 
-        fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses_from(&self, start: &Address, forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             self.addresses.addresses_from(start, forward)
         }
 

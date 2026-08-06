@@ -59,7 +59,7 @@ mod tests {
     }
 
     use crate::program::database::function::OverlappingFunctionException;
-    use crate::program::model::address::{AddressIterator, AddressSetView};
+    use crate::program::model::address::{BoxedAddressIterator, AddressSetView};
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::listing::code_unit::CodeUnit;
@@ -400,14 +400,14 @@ mod tests {
             _comment_type: CommentType,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!()
         }
         fn get_any_comment_address_iterator(
             &self,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!()
         }
         fn get_comment(&self, _comment_type: CommentType, _address: &Address) -> Option<String> {

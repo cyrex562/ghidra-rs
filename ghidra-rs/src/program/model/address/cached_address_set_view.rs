@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::program::model::address::{
-    Address, AddressIterator, AddressIteratorAdapter, AddressRange, AddressRangeIterator,
+    Address, BoxedAddressIterator, AddressIteratorAdapter, AddressRange, AddressRangeIterator,
     AddressSet, AddressSetView, EmptyAddressIterator, EmptyAddressRangeIterator,
 };
 use crate::util::MathUtilities;
@@ -292,7 +292,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
         cached.unwrap()
     }
 
-    fn addresses(&self, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses(&self, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_ordered(true);
         let mut addresses = Vec::new();
         while let Some(range) = it.next_range() {
@@ -308,7 +308,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
         }
     }
 
-    fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_ordered(true);
         let mut addresses: Vec<Address> = Vec::new();
         while let Some(range) = it.next_range() {

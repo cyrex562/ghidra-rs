@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::program::model::address::{Address, AddressIterator, AddressSetView, EmptyAddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView, EmptyAddressIterator};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
@@ -97,7 +97,7 @@ pub trait StubListing {
         _comment_type: CommentType,
         _addr_set: &dyn AddressSetView,
         _forward: bool,
-    ) -> Box<dyn AddressIterator> {
+    ) -> BoxedAddressIterator {
         Box::new(EmptyAddressIterator)
     }
 
@@ -107,7 +107,7 @@ pub trait StubListing {
         &self,
         _addr_set: &dyn AddressSetView,
         _forward: bool,
-    ) -> Box<dyn AddressIterator> {
+    ) -> BoxedAddressIterator {
         Box::new(EmptyAddressIterator)
     }
 
@@ -617,14 +617,14 @@ impl<T: StubListing> Listing for T {
         comment_type: CommentType,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator> {
+    ) -> BoxedAddressIterator {
         StubListing::get_comment_address_iterator(self, comment_type, addr_set, forward)
     }
     fn get_any_comment_address_iterator(
         &self,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator> {
+    ) -> BoxedAddressIterator {
         StubListing::get_any_comment_address_iterator(self, addr_set, forward)
     }
     fn get_comment(&self, comment_type: CommentType, address: &Address) -> Option<String> {
@@ -978,7 +978,7 @@ mod tests {
         );
         let empty_set = crate::program::model::address::AddressSet::new();
         let mut iter = stub.get_any_comment_address_iterator(&empty_set, true);
-        assert_eq!(iter.next_address(), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]

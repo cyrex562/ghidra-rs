@@ -35,7 +35,7 @@ use thiserror::Error;
 
 use crate::framework::db::DBRecord;
 use crate::program::database::manager_db::ManagerDB;
-use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::lang::instruction_prototype::InstructionPrototype;
 use crate::program::model::lang::ProcessorContextView;
@@ -181,7 +181,7 @@ pub trait CodeManager: ManagerDB {
         comment_type: CommentType,
         set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Gets an iterator over addresses that have comments of any type. Stands in for
     /// `CodeManager.getCommentAddressIterator(AddressSetView, boolean)`.
@@ -189,7 +189,7 @@ pub trait CodeManager: ManagerDB {
         &self,
         set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Returns the instruction whose min address equals `address`, or `None`. Stands in for
     /// `CodeManager.getInstructionAt(Address)`.
@@ -628,7 +628,7 @@ mod tests {
             _comment_type: CommentType,
             _set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -636,7 +636,7 @@ mod tests {
             &self,
             _set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not exercised by this smoke test")
         }
 

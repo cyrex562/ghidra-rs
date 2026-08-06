@@ -37,7 +37,7 @@ pub trait ProgramFragment: Group + AddressSetView {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{AddressRange, AddressRangeIterator, AddressIterator};
+    use crate::program::model::address::{AddressRange, AddressRangeIterator, BoxedAddressIterator};
     use crate::program::model::address::AddressSet;
     use crate::util::exception::DuplicateNameException;
 
@@ -140,11 +140,11 @@ mod tests {
             self.addresses.num_addresses()
         }
 
-        fn addresses(&self, forward: bool) -> Box<dyn AddressIterator> {
+        fn addresses(&self, forward: bool) -> BoxedAddressIterator {
             AddressSetView::addresses(&self.addresses, forward)
         }
 
-        fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn AddressIterator> {
+        fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
             self.addresses.addresses_from(start, forward)
         }
 

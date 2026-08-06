@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use thiserror::Error;
 
-use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
 use crate::program::model::lang::Register;
 use crate::program::model::listing::Variable;
 use crate::program::model::symbol::{
@@ -259,7 +259,7 @@ pub trait ReferenceManager: Send + Sync {
         &self,
         start_addr: Address,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Returns an iterator over all addresses that are the "from" address in a reference,
     /// restricted by the given address set. `addr_set` of `None` means all addresses.
@@ -267,14 +267,14 @@ pub trait ReferenceManager: Send + Sync {
         &self,
         addr_set: Option<&dyn AddressSetView>,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Returns an iterator over all addresses that are the "to" address in a reference.
     fn get_reference_destination_iterator(
         &self,
         start_addr: Address,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Returns an iterator over all addresses that are the "to" address in a memory reference,
     /// restricted by the given address set. `addr_set` of `None` means all addresses.
@@ -282,7 +282,7 @@ pub trait ReferenceManager: Send + Sync {
         &self,
         addr_set: Option<&dyn AddressSetView>,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Returns the number of references to the specified `to_addr`.
     fn get_reference_count_to(&self, to_addr: Address) -> i32;
@@ -520,7 +520,7 @@ mod tests {
             &self,
             _start_addr: Address,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -528,7 +528,7 @@ mod tests {
             &self,
             _addr_set: Option<&dyn AddressSetView>,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -536,7 +536,7 @@ mod tests {
             &self,
             _start_addr: Address,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -544,7 +544,7 @@ mod tests {
             &self,
             _addr_set: Option<&dyn AddressSetView>,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 

@@ -20,15 +20,13 @@
 //! [`AddressIteratorAdapter`](crate::program::model::address::AddressIteratorAdapter) uses to cache
 //! its next value.
 
-use std::cell::RefCell;
-
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 use crate::program::model::listing::Program;
 use crate::program::util::simple_diff_utility::{DefaultSimpleDiffUtility, SimpleDiffUtility};
 
 /// Port of `ghidra.program.util.AddressIteratorConverter`. See the module docs for why this is a
 /// marker supertrait of [`AddressIterator`] rather than adding new trait methods.
-pub trait AddressIteratorConverter: AddressIterator {}
+pub trait AddressIteratorConverter: Iterator<Item = Address> {}
 
 /// An `AddressIterator` that converts each address produced by a wrapped iterator (owned by
 /// `iterators_program`) into the corresponding address in `other_program`, skipping addresses
@@ -36,10 +34,9 @@ pub trait AddressIteratorConverter: AddressIterator {}
 ///
 /// Port of `ghidra.program.util.AddressIteratorConverter`.
 pub struct DefaultAddressIteratorConverter {
-    iterators_program: RefCell<Box<dyn Program>>,
-    iterator: RefCell<Box<dyn AddressIterator>>,
-    other_program: RefCell<Box<dyn Program>>,
-    next_address: RefCell<Option<Address>>,
+    iterators_program: Box<dyn Program>,
+    iterator: BoxedAddressIterator,
+    other_program: Box<dyn Program>,
     diff_utility: Box<dyn SimpleDiffUtility>,
 }
 
@@ -47,60 +44,42 @@ impl DefaultAddressIteratorConverter {
     /// Constructs a converter that will convert the given address iterator, whose addresses
     /// originate from `iterators_program`, into corresponding addresses in `other_program`.
     ///
-    /// Port of `AddressIteratorConverter(Program, AddressIterator, Program)`.
+    /// Port of `AddressIteratorConverter(Program, BoxedAddressIterator, Program)`.
     pub fn new(
         iterators_program: Box<dyn Program>,
-        iterator: Box<dyn AddressIterator>,
+        iterator: BoxedAddressIterator,
         other_program: Box<dyn Program>,
     ) -> Self {
         Self {
-            iterators_program: RefCell::new(iterators_program),
-            iterator: RefCell::new(iterator),
-            other_program: RefCell::new(other_program),
-            next_address: RefCell::new(None),
+            iterators_program,
+            iterator,
+            other_program,
             diff_utility: Box::new(DefaultSimpleDiffUtility),
         }
     }
 }
 
-impl AddressIterator for DefaultAddressIteratorConverter {
-    /// Port of `AddressIteratorConverter.hasNext()`.
-    fn has_next(&self) -> bool {
-        if self.next_address.borrow().is_some() {
-            return true;
-        }
-        loop {
-            if !self.iterator.borrow().has_next() {
-                return false;
-            }
-            let Some(address) = self.iterator.borrow_mut().next_address() else {
-                return false;
-            };
-            let converted = {
-                let mut iterators_program = self.iterators_program.borrow_mut();
-                let mut other_program = self.other_program.borrow_mut();
-                self.diff_utility.get_compatible_address(
-                    &mut **iterators_program,
-                    &address,
-                    &mut **other_program,
-                )
-            };
-            if let Some(converted_address) = converted {
-                *self.next_address.borrow_mut() = Some(converted_address);
-                return true;
-            }
-        }
-    }
+impl Iterator for DefaultAddressIteratorConverter {
+    type Item = Address;
 
-    /// Port of `AddressIteratorConverter.next()`.
-    fn next_address(&mut self) -> Option<Address> {
-        if let Some(address) = self.next_address.borrow_mut().take() {
-            return Some(address);
+    /// Port of `AddressIteratorConverter.hasNext()` + `next()`, which collapse into one method.
+    ///
+    /// Java needed the pair because `hasNext()` had to *find* the next convertible address in
+    /// order to answer, then stash it in a field for `next()` to return. `Iterator::next`
+    /// returns `Option`, so the lookahead buffer -- and the `RefCell`s that existed only so the
+    /// `&self` signature of `hasNext` could mutate the wrapped iterator -- are all unnecessary.
+    /// Addresses with no counterpart in the other program are skipped, as before.
+    fn next(&mut self) -> Option<Address> {
+        loop {
+            let address = self.iterator.next()?;
+            if let Some(converted) = self.diff_utility.get_compatible_address(
+                &mut *self.iterators_program,
+                &address,
+                &mut *self.other_program,
+            ) {
+                return Some(converted);
+            }
         }
-        if self.has_next() {
-            return self.next_address.borrow_mut().take();
-        }
-        None
     }
 }
 
@@ -110,7 +89,7 @@ impl AddressIteratorConverter for DefaultAddressIteratorConverter {}
 /// constructor while letting callers depend only on the trait.
 pub fn new_address_iterator_converter(
     iterators_program: Box<dyn Program>,
-    iterator: Box<dyn AddressIterator>,
+    iterator: BoxedAddressIterator,
     other_program: Box<dyn Program>,
 ) -> Box<dyn AddressIteratorConverter> {
     Box::new(DefaultAddressIteratorConverter::new(
@@ -177,12 +156,12 @@ mod tests {
         );
 
         let mut results = Vec::new();
-        while converter.has_next() {
-            results.push(converter.next_address().expect("next after has_next"));
+        while let Some(address) = converter.next() {
+            results.push(address);
         }
 
         assert_eq!(results, vec![ram_b.address(0x1000), ram_b.address(0x2000)]);
-        assert!(converter.next_address().is_none());
+        assert!(converter.next().is_none());
     }
 
     #[test]
@@ -198,9 +177,7 @@ mod tests {
             wrapped,
             mock_program(ram_b.clone(), "lang"),
         );
-
-        assert!(converter.has_next());
-        assert_eq!(converter.next_address(), Some(ram_b.address(0x400)));
-        assert!(!converter.has_next());
+        assert_eq!(converter.next(), Some(ram_b.address(0x400)));
+        assert_eq!(converter.next(), None);
     }
 }

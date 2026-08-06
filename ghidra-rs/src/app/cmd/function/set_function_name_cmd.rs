@@ -67,7 +67,7 @@ mod tests {
 
     use crate::program::database::function::OverlappingFunctionException;
     use crate::program::model::address::{
-        AddressIterator, AddressSetView, AddressSpace, AddressSpaceType,
+        BoxedAddressIterator, AddressSetView, AddressSpace, AddressSpaceType,
     };
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -406,14 +406,14 @@ mod tests {
             _comment_type: CommentType,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!()
         }
         fn get_any_comment_address_iterator(
             &self,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!()
         }
         fn get_comment(&self, _comment_type: CommentType, _address: &Address) -> Option<String> {

@@ -47,7 +47,7 @@ pub use global_namespace::{
 };
 pub use immutable_address_set::ImmutableAddressSet;
 pub use iterator::{
-    AddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
+    BoxedAddressIterator, AddressIteratorAdapter, AddressRangeIterator, AddressRangeIteratorAdapter,
     EmptyAddressIterator, EmptyAddressRangeIterator,
 };
 pub use key_range::KeyRange;

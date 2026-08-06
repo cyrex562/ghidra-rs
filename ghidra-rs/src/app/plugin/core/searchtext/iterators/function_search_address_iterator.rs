@@ -1,4 +1,4 @@
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 use crate::program::model::listing::FunctionIterator;
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -30,17 +30,10 @@ impl FunctionSearchAddressIterator {
     }
 }
 
-impl AddressIterator for FunctionSearchAddressIterator {
-    fn has_next(&self) -> bool {
-        self.ensure_cached();
-        self.cached_next
-            .borrow()
-            .as_ref()
-            .map(|opt| opt.is_some())
-            .unwrap_or(false)
-    }
+impl Iterator for FunctionSearchAddressIterator {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
+    fn next(&mut self) -> Option<Address> {
         self.ensure_cached();
         self.cached_next
             .borrow_mut()
@@ -543,8 +536,8 @@ mod tests {
     fn empty_function_iterator_has_no_next() {
         let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![];
         let test_iter = TestFunctionIterator::new(functions);
-        let iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
-        assert!(!iter.has_next());
+        let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
@@ -553,8 +546,7 @@ mod tests {
         let func1 = Arc::new(MockFunction { entry_point: addr1 });
         let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![func1];
         let test_iter = TestFunctionIterator::new(functions);
-        let iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
-        assert!(iter.has_next());
+        let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
     }
 
     #[test]
@@ -570,18 +562,12 @@ mod tests {
         let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![func1, func2, func3];
         let test_iter = TestFunctionIterator::new(functions);
         let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
+        assert_eq!(iter.next(), Some(addr1));
+        assert_eq!(iter.next(), Some(addr2));
+        assert_eq!(iter.next(), Some(addr3));
 
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr1));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr2));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr3));
-
-        assert!(!iter.has_next());
-        assert_eq!(iter.next_address(), None);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
@@ -589,8 +575,8 @@ mod tests {
         let functions: Vec<Arc<dyn crate::program::model::listing::Function>> = vec![];
         let test_iter = TestFunctionIterator::new(functions);
         let mut iter = FunctionSearchAddressIterator::new(Box::new(test_iter));
-        assert_eq!(iter.next_address(), None);
-        assert_eq!(iter.next_address(), None);
-        assert_eq!(iter.next_address(), None);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 }

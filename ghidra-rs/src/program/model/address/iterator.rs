@@ -1,41 +1,40 @@
 use crate::program::model::address::{Address, AddressRange};
-use std::cell::RefCell;
 
-/// Iterator over addresses.
+/// A type-erased iterator over addresses.
 ///
-/// This mirrors Ghidra's `AddressIterator`, using `Option` in place of Java's
-/// null return when no address is available.
-pub trait AddressIterator {
-    /// Returns true when another address is available.
-    fn has_next(&self) -> bool;
-
-    /// Returns the next address, or `None` when no address is available.
-    fn next_address(&mut self) -> Option<Address>;
-}
+/// Ghidra's `AddressIterator` interface (`hasNext()` + `next()`) was translated as a bespoke
+/// trait; it is gone. Address iterators are plain [`Iterator<Item = Address>`][Iterator], so
+/// callers get `map`/`filter`/`take_while`/`chain` and can be fed by any std iterator. Use
+/// [`Peekable`](std::iter::Peekable) where Java called `hasNext()`.
+///
+/// `Box<dyn Iterator<Item = Address>>` is idiomatic Rust, not the Java-interface-as-trait-object
+/// pattern the ownership migration removes: the erased type is `std::Iterator` itself. Prefer a
+/// concrete iterator or `impl Iterator<Item = Address>` where the type is known at the call site.
+///
+/// See `OWNERSHIP_MIGRATION.md` (the `ITER` verdict in `CONVENTION_QUEUE.tsv`).
+pub type BoxedAddressIterator = Box<dyn Iterator<Item = Address>>;
 
 /// Empty address iterator.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct EmptyAddressIterator;
 
-impl AddressIterator for EmptyAddressIterator {
-    fn has_next(&self) -> bool {
-        false
-    }
+impl Iterator for EmptyAddressIterator {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
+    fn next(&mut self) -> Option<Address> {
         None
     }
 }
 
-/// Adapter from an iterator of addresses to an `AddressIterator`.
+/// Adapter that owns any `Iterator<Item = Address>`.
 ///
-/// This wraps any iterator that produces `Address` items and implements
-/// the `AddressIterator` trait. It caches the next value to implement
-/// the `has_next()` check without consuming from the underlying iterator
-/// in an immutable context.
+/// Previously this wrapped the iterator in `RefCell<Box<dyn Iterator<Item = Address>>>` plus a
+/// one-element lookahead cache, purely so it could offer `has_next(&self)` -- a Java signature
+/// that needs to inspect the next item through a shared reference. With the bespoke trait gone
+/// there is nothing to fake: the adapter just holds the iterator, and callers who need
+/// lookahead use `.peekable()`.
 pub struct AddressIteratorAdapter {
-    iterator: RefCell<Box<dyn Iterator<Item = Address>>>,
-    cached_next: RefCell<Option<Option<Address>>>,
+    iterator: Box<dyn Iterator<Item = Address>>,
 }
 
 impl AddressIteratorAdapter {
@@ -43,10 +42,7 @@ impl AddressIteratorAdapter {
     ///
     /// Accepts any `Iterator<Item = Address>` by taking ownership.
     pub fn new<I: Iterator<Item = Address> + 'static>(iterator: I) -> Self {
-        Self {
-            iterator: RefCell::new(Box::new(iterator)),
-            cached_next: RefCell::new(None),
-        }
+        Self { iterator: Box::new(iterator) }
     }
 
     /// Creates an adapter over a vector of addresses.
@@ -56,23 +52,13 @@ impl AddressIteratorAdapter {
         Self::new(addresses.into_iter())
     }
 
-    fn ensure_cached(&self) {
-        if self.cached_next.borrow().is_none() {
-            let next = self.iterator.borrow_mut().next();
-            *self.cached_next.borrow_mut() = Some(next);
-        }
-    }
 }
 
-impl AddressIterator for AddressIteratorAdapter {
-    fn has_next(&self) -> bool {
-        self.ensure_cached();
-        self.cached_next.borrow().as_ref().map(|opt| opt.is_some()).unwrap_or(false)
-    }
+impl Iterator for AddressIteratorAdapter {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
-        self.ensure_cached();
-        self.cached_next.borrow_mut().take().flatten()
+    fn next(&mut self) -> Option<Address> {
+        self.iterator.next()
     }
 }
 
@@ -140,31 +126,26 @@ mod tests {
     fn empty_address_iterator_has_no_addresses() {
         let mut iterator = EmptyAddressIterator;
 
-        assert!(!iterator.has_next());
-        assert!(iterator.next_address().is_none());
+        assert_eq!(iterator.next(), None);
+        assert!(iterator.next().is_none());
     }
 
     #[test]
     fn address_adapter_iterates_addresses_and_then_returns_none() {
         let vec = vec![addr(0x1000), addr(0x1001)];
         let mut iterator = AddressIteratorAdapter::new(vec.into_iter());
-
-        assert!(iterator.has_next());
-        assert_eq!(iterator.next_address(), Some(addr(0x1000)));
-        assert!(iterator.has_next());
-        assert_eq!(iterator.next_address(), Some(addr(0x1001)));
-        assert!(!iterator.has_next());
-        assert!(iterator.next_address().is_none());
+        assert_eq!(iterator.next(), Some(addr(0x1000)));
+        assert_eq!(iterator.next(), Some(addr(0x1001)));
+        assert_eq!(iterator.next(), None);
+        assert!(iterator.next().is_none());
     }
 
     #[test]
     fn address_adapter_from_vec_works() {
         let mut iterator = AddressIteratorAdapter::from_vec(vec![addr(0x2000), addr(0x2001)]);
-
-        assert!(iterator.has_next());
-        assert_eq!(iterator.next_address(), Some(addr(0x2000)));
-        assert_eq!(iterator.next_address(), Some(addr(0x2001)));
-        assert!(!iterator.has_next());
+        assert_eq!(iterator.next(), Some(addr(0x2000)));
+        assert_eq!(iterator.next(), Some(addr(0x2001)));
+        assert_eq!(iterator.next(), None);
     }
 
     #[test]
@@ -172,20 +153,16 @@ mod tests {
         let addresses = vec![addr(0x1000), addr(0x1001), addr(0x1002), addr(0x1003)];
         let filtered = addresses.into_iter().filter(|a| a.offset() % 2 == 0);
         let mut iterator = AddressIteratorAdapter::new(filtered);
-
-        assert!(iterator.has_next());
-        assert_eq!(iterator.next_address(), Some(addr(0x1000)));
-        assert!(iterator.has_next());
-        assert_eq!(iterator.next_address(), Some(addr(0x1002)));
-        assert!(!iterator.has_next());
-        assert!(iterator.next_address().is_none());
+        assert_eq!(iterator.next(), Some(addr(0x1000)));
+        assert_eq!(iterator.next(), Some(addr(0x1002)));
+        assert_eq!(iterator.next(), None);
+        assert!(iterator.next().is_none());
     }
 
     #[test]
     fn empty_range_iterator_has_no_ranges() {
         let mut iterator = EmptyAddressRangeIterator;
 
-        assert!(!iterator.has_next());
         assert!(iterator.next_range().is_none());
     }
 
@@ -194,12 +171,8 @@ mod tests {
         let first = AddressRange::new(addr(0x1000), addr(0x100f));
         let second = AddressRange::new(addr(0x2000), addr(0x200f));
         let mut iterator = AddressRangeIteratorAdapter::new(vec![first.clone(), second.clone()]);
-
-        assert!(iterator.has_next());
         assert_eq!(iterator.next_range(), Some(first));
-        assert!(iterator.has_next());
         assert_eq!(iterator.next_range(), Some(second));
-        assert!(!iterator.has_next());
         assert!(iterator.next_range().is_none());
     }
 

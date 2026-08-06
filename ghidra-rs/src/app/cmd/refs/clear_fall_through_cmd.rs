@@ -471,14 +471,14 @@ mod tests {
             _comment_type: crate::program::seam_stubs::CommentType,
             _addr_set: &dyn crate::program::model::address::AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_any_comment_address_iterator(
             &self,
             _addr_set: &dyn crate::program::model::address::AddressSetView,
             _forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_comment(&self, _comment_type: crate::program::seam_stubs::CommentType, _address: &crate::program::model::address::Address) -> Option<String> {

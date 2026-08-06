@@ -1,4 +1,4 @@
-use crate::program::model::address::{Address, AddressIterator, AddressRangeIterator, AddressSet, AddressSetView};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressRangeIterator, AddressSet, AddressSetView};
 
 /// Marks ranges of addresses in a property map.
 ///
@@ -26,7 +26,7 @@ pub trait AddressSetPropertyMap {
     fn get_address_set(&self) -> AddressSet;
 
     /// Return an address iterator over the property map.
-    fn get_addresses(&self) -> Box<dyn AddressIterator>;
+    fn get_addresses(&self) -> BoxedAddressIterator;
 
     /// Return an address range iterator over the property map.
     fn get_address_ranges(&self) -> Box<dyn AddressRangeIterator>;
@@ -74,7 +74,7 @@ mod tests {
             self.set.clone()
         }
 
-        fn get_addresses(&self) -> Box<dyn AddressIterator> {
+        fn get_addresses(&self) -> BoxedAddressIterator {
             self.set.addresses(true)
         }
 
@@ -119,19 +119,16 @@ mod tests {
 
         let mut addr_iter = map.get_addresses();
         let mut count = 0;
-        while addr_iter.has_next() {
-            addr_iter.next_address();
+        while addr_iter.next().is_some() {
             count += 1;
         }
         assert_eq!(count, 0x11);
 
         let mut range_iter = map.get_address_ranges();
-        assert!(range_iter.has_next());
         let range = range_iter.next_range().unwrap();
         assert_eq!(*range.min_address(), addr(0x2000));
         assert_eq!(*range.max_address(), addr(0x2010));
-        assert!(!range_iter.has_next());
-
+        assert!(range_iter.next_range().is_none());
         map.remove_address_set(&other);
         assert!(!map.contains(&addr(0x2005)));
 

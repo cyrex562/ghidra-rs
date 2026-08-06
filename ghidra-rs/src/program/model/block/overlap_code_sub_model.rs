@@ -33,7 +33,7 @@ pub trait OverlapCodeSubModel: SubroutineBlockModel {
 mod tests {
     use super::*;
     use crate::program::database::function::OverlappingFunctionException;
-    use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+    use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::lang::instruction_prototype::InstructionPrototype;
@@ -112,14 +112,14 @@ mod tests {
             _: CommentType,
             _: &dyn AddressSetView,
             _: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!()
         }
         fn get_any_comment_address_iterator(
             &self,
             _: &dyn AddressSetView,
             _: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!()
         }
         fn get_comment(&self, _: CommentType, _: &Address) -> Option<String> {

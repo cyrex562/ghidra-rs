@@ -1,5 +1,5 @@
 use crate::program::model::address::{
-    Address, AddressIterator, AddressIteratorAdapter, AddressRange, AddressRangeIterator,
+    Address, BoxedAddressIterator, AddressIteratorAdapter, AddressRange, AddressRangeIterator,
     AddressSet, AddressSetView,
 };
 
@@ -112,7 +112,7 @@ pub trait AbstractAddressSetView {
     }
 
     /// Mirrors `getAddresses(boolean forward)`.
-    fn addresses(&self, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses(&self, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_ordered(forward);
         let mut addresses = Vec::new();
         while let Some(range) = it.next_range() {
@@ -126,7 +126,7 @@ pub trait AbstractAddressSetView {
     }
 
     /// Mirrors `getAddresses(Address start, boolean forward)`.
-    fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_from(start, forward);
         let mut addresses = Vec::new();
         while let Some(range) = it.next_range() {

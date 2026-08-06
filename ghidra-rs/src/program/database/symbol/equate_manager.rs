@@ -55,7 +55,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::program::database::ManagerDB;
-use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
 use crate::program::model::symbol::Equate;
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::util::UniversalID;
@@ -176,15 +176,15 @@ pub trait EquateManager: ManagerDB {
 
     /// Returns an address iterator over every address with an equate reference. Stands in for
     /// `EquateManager.getEquateAddresses()`.
-    fn get_equate_addresses(&self) -> Box<dyn AddressIterator>;
+    fn get_equate_addresses(&self) -> BoxedAddressIterator;
 
     /// Returns an address iterator over addresses with an equate reference at or after `start`.
     /// Stands in for `EquateManager.getEquateAddresses(Address)`.
-    fn get_equate_addresses_from(&self, start: &Address) -> Box<dyn AddressIterator>;
+    fn get_equate_addresses_from(&self, start: &Address) -> BoxedAddressIterator;
 
     /// Returns an address iterator over addresses with an equate reference that lie in `set`.
     /// Stands in for `EquateManager.getEquateAddresses(AddressSetView)`.
-    fn get_equate_addresses_in(&self, set: &dyn AddressSetView) -> Box<dyn AddressIterator>;
+    fn get_equate_addresses_in(&self, set: &dyn AddressSetView) -> BoxedAddressIterator;
 
     /// Returns an iterator over all equates. Stands in for `EquateManager.getEquates()`.
     fn get_equates(&self) -> Box<dyn Iterator<Item = Arc<dyn Equate>> + '_>;
@@ -412,14 +412,14 @@ mod tests {
                 .collect()
         }
 
-        fn get_equate_addresses(&self) -> Box<dyn AddressIterator> {
+        fn get_equate_addresses(&self) -> BoxedAddressIterator {
             let mut addrs: Vec<Address> = self.refs.iter().map(|r| r.address.clone()).collect();
             addrs.sort();
             addrs.dedup();
             Box::new(AddressIteratorAdapter::from_vec(addrs))
         }
 
-        fn get_equate_addresses_from(&self, start: &Address) -> Box<dyn AddressIterator> {
+        fn get_equate_addresses_from(&self, start: &Address) -> BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .refs
                 .iter()
@@ -431,7 +431,7 @@ mod tests {
             Box::new(AddressIteratorAdapter::from_vec(addrs))
         }
 
-        fn get_equate_addresses_in(&self, set: &dyn AddressSetView) -> Box<dyn AddressIterator> {
+        fn get_equate_addresses_in(&self, set: &dyn AddressSetView) -> BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .refs
                 .iter()
@@ -568,19 +568,19 @@ mod tests {
 
         let mut all_addrs = Vec::new();
         let mut it = mgr.get_equate_addresses();
-        while let Some(a) = it.next_address() {
+        while let Some(a) = it.next() {
             all_addrs.push(a);
         }
         assert_eq!(all_addrs, vec![addr(0x1000), addr(0x2000)]);
 
         let mut from = mgr.get_equate_addresses_from(&addr(0x1500));
-        assert_eq!(from.next_address(), Some(addr(0x2000)));
-        assert_eq!(from.next_address(), None);
+        assert_eq!(from.next(), Some(addr(0x2000)));
+        assert_eq!(from.next(), None);
 
         let set = AddressSet::from_start_end(addr(0x1000), addr(0x1fff));
         let mut in_set = mgr.get_equate_addresses_in(&set);
-        assert_eq!(in_set.next_address(), Some(addr(0x1000)));
-        assert_eq!(in_set.next_address(), None);
+        assert_eq!(in_set.next(), Some(addr(0x1000)));
+        assert_eq!(in_set.next(), None);
 
         // Re-adding the same equate at the same address/op-index replaces the prior reference
         // rather than duplicating it.

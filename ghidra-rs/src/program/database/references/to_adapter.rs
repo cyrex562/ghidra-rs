@@ -26,7 +26,7 @@ use std::io;
 
 use crate::program::database::references::{RecordAdapter, RefList};
 use crate::program::database::ProgramDB;
-use crate::program::model::address::{Address, AddressIterator, AddressSetView, AddressSpace};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView, AddressSpace};
 
 /// Adapter storing, per destination address, the list of references that point to it.
 ///
@@ -78,7 +78,7 @@ pub trait ToAdapter: RecordAdapter {
     /// # Errors
     ///
     /// Returns an error if there was a problem accessing the database.
-    fn get_to_iterator(&self, forward: bool) -> io::Result<Box<dyn AddressIterator>>;
+    fn get_to_iterator(&self, forward: bool) -> io::Result<BoxedAddressIterator>;
 
     /// Stands in for `ToAdapter.getToIterator(Address, boolean)`: like
     /// [`Self::get_to_iterator`], starting at (and including) `start_addr`.
@@ -90,7 +90,7 @@ pub trait ToAdapter: RecordAdapter {
         &self,
         start_addr: &Address,
         forward: bool,
-    ) -> io::Result<Box<dyn AddressIterator>>;
+    ) -> io::Result<BoxedAddressIterator>;
 
     /// Stands in for `ToAdapter.getToIterator(AddressSetView, boolean)`: like
     /// [`Self::get_to_iterator`], restricted to addresses contained in `set`.
@@ -102,7 +102,7 @@ pub trait ToAdapter: RecordAdapter {
         &self,
         set: &dyn AddressSetView,
         forward: bool,
-    ) -> io::Result<Box<dyn AddressIterator>>;
+    ) -> io::Result<BoxedAddressIterator>;
 
     /// Stands in for `ToAdapter.getOldNamespaceAddresses(AddressSpace)`.
     ///
@@ -112,7 +112,7 @@ pub trait ToAdapter: RecordAdapter {
     fn get_old_namespace_addresses(
         &self,
         addr_space: &AddressSpace,
-    ) -> io::Result<Box<dyn AddressIterator>>;
+    ) -> io::Result<BoxedAddressIterator>;
 
     /// Stands in for `ToAdapter.putRecord(long, int, byte[])`, a fixed-behavior override (no
     /// subclass overrides it) that always throws `UnsupportedOperationException`. Distinct from
@@ -345,7 +345,7 @@ mod tests {
             Ok(self.ref_lists.contains_key(&to_addr))
         }
 
-        fn get_to_iterator(&self, forward: bool) -> io::Result<Box<dyn AddressIterator>> {
+        fn get_to_iterator(&self, forward: bool) -> io::Result<BoxedAddressIterator> {
             let mut keys: Vec<i64> = self.ref_lists.keys().copied().collect();
             keys.sort_unstable();
             if !forward {
@@ -361,7 +361,7 @@ mod tests {
             &self,
             start_addr: &Address,
             forward: bool,
-        ) -> io::Result<Box<dyn AddressIterator>> {
+        ) -> io::Result<BoxedAddressIterator> {
             let start = start_addr.offset();
             let mut keys: Vec<i64> = self
                 .ref_lists
@@ -383,7 +383,7 @@ mod tests {
             &self,
             set: &dyn AddressSetView,
             forward: bool,
-        ) -> io::Result<Box<dyn AddressIterator>> {
+        ) -> io::Result<BoxedAddressIterator> {
             let mut keys: Vec<i64> = self
                 .ref_lists
                 .keys()
@@ -403,7 +403,7 @@ mod tests {
         fn get_old_namespace_addresses(
             &self,
             _addr_space: &AddressSpace,
-        ) -> io::Result<Box<dyn AddressIterator>> {
+        ) -> io::Result<BoxedAddressIterator> {
             Ok(Box::new(
                 crate::program::model::address::EmptyAddressIterator,
             ))
@@ -436,15 +436,15 @@ mod tests {
 
         let mut iter = adapter.get_to_iterator(true).unwrap();
         let mut seen = Vec::new();
-        while iter.has_next() {
-            seen.push(iter.next_address().unwrap().offset());
+        while let Some(a) = iter.next() {
+            seen.push(a.offset());
         }
         assert_eq!(seen, vec![0x100, 0x200, 0x300]);
 
         let mut rev = adapter.get_to_iterator(false).unwrap();
         let mut seen_rev = Vec::new();
-        while rev.has_next() {
-            seen_rev.push(rev.next_address().unwrap().offset());
+        while let Some(a) = rev.next() {
+            seen_rev.push(a.offset());
         }
         assert_eq!(seen_rev, vec![0x300, 0x200, 0x100]);
     }

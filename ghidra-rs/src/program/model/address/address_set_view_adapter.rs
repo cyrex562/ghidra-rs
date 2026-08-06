@@ -1,5 +1,5 @@
 use crate::program::model::address::{
-    Address, AddressIterator, AddressRange, AddressRangeIterator, AddressSet, AddressSetView,
+    Address, BoxedAddressIterator, AddressRange, AddressRangeIterator, AddressSet, AddressSetView,
 };
 
 /// Read-only wrapper around an address set view.
@@ -67,11 +67,11 @@ impl AddressSetView for AddressSetViewAdapter {
         self.set.num_addresses()
     }
 
-    fn addresses(&self, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses(&self, forward: bool) -> BoxedAddressIterator {
         self.set.addresses(forward)
     }
 
-    fn addresses_from(&self, start: &Address, forward: bool) -> Box<dyn AddressIterator> {
+    fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
         self.set.addresses_from(start, forward)
     }
 

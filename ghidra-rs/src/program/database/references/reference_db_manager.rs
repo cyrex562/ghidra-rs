@@ -21,7 +21,7 @@ use std::io;
 use thiserror::Error;
 
 use crate::program::database::ManagerDB;
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 use crate::program::model::symbol::{ReferenceManager, Symbol};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -65,7 +65,7 @@ pub trait ReferenceDbManager: ReferenceManager + ManagerDB {
 
     /// Get an address iterator over references that are external entry memory references. Stands
     /// in for `ReferenceDBManager.getExternalEntryIterator()`.
-    fn get_external_entry_iterator(&self) -> Box<dyn AddressIterator>;
+    fn get_external_entry_iterator(&self) -> BoxedAddressIterator;
 
     /// Return whether the address is an external entry point. Stands in for
     /// `ReferenceDBManager.isExternalEntryPoint(Address)`.
@@ -330,7 +330,7 @@ mod tests {
             &self,
             _start_addr: Address,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -338,7 +338,7 @@ mod tests {
             &self,
             _addr_set: Option<&dyn crate::program::model::address::AddressSetView>,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -346,7 +346,7 @@ mod tests {
             &self,
             _start_addr: Address,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -354,7 +354,7 @@ mod tests {
             &self,
             _addr_set: Option<&dyn crate::program::model::address::AddressSetView>,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -472,7 +472,7 @@ mod tests {
             Ok(moving.len() as i32)
         }
 
-        fn get_external_entry_iterator(&self) -> Box<dyn AddressIterator> {
+        fn get_external_entry_iterator(&self) -> BoxedAddressIterator {
             let addrs: Vec<Address> = self
                 .external_entries
                 .iter()
@@ -555,7 +555,7 @@ mod tests {
 
         let mut entries = Vec::new();
         let mut it = mgr.get_external_entry_iterator();
-        while let Some(a) = it.next_address() {
+        while let Some(a) = it.next() {
             entries.push(a);
         }
         assert_eq!(entries, vec![new_to.clone()]);

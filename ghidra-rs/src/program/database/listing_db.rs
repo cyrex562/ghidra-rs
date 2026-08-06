@@ -36,7 +36,7 @@ pub trait ListingDB: Listing {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+    use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::lang::instruction_prototype::InstructionPrototype;
@@ -130,14 +130,14 @@ mod tests {
             _comment_type: CommentType,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_any_comment_address_iterator(
             &self,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_comment(&self, _comment_type: CommentType, _address: &Address) -> Option<String> {

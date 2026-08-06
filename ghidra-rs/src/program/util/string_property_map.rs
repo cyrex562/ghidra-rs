@@ -123,7 +123,7 @@ mod tests {
             &self,
             start: &Address,
             end: &Address,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             self.get_property_iterator_range_ordered(start, end, true)
         }
 
@@ -132,7 +132,7 @@ mod tests {
             start: &Address,
             end: &Address,
             forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .values
                 .keys()
@@ -145,7 +145,7 @@ mod tests {
             Box::new(AddressIteratorAdapter::from_vec(addrs))
         }
 
-        fn get_property_iterator(&self) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn get_property_iterator(&self) -> crate::program::model::address::BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(
                 self.values.keys().cloned().collect(),
             ))
@@ -154,7 +154,7 @@ mod tests {
         fn get_property_iterator_set(
             &self,
             asv: &dyn crate::program::model::address::AddressSetView,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             self.get_property_iterator_set_ordered(asv, true)
         }
 
@@ -162,7 +162,7 @@ mod tests {
             &self,
             asv: &dyn crate::program::model::address::AddressSetView,
             forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .values
                 .keys()
@@ -179,7 +179,7 @@ mod tests {
             &self,
             start: &Address,
             forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .values
                 .keys()

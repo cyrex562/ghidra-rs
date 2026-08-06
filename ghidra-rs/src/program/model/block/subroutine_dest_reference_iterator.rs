@@ -224,14 +224,14 @@ mod tests {
         fn num_addresses(&self) -> u64 {
             (self.end - self.start) as u64
         }
-        fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses(&self, _forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn addresses_from(
             &self,
             _start: &Address,
             _forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn intersects_set(&self, _set: &dyn AddressSetView) -> bool {
@@ -452,14 +452,14 @@ mod tests {
         fn num_addresses(&self) -> u64 {
             (self.end - self.start) as u64
         }
-        fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses(&self, _forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn addresses_from(
             &self,
             _start: &Address,
             _forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn intersects_set(&self, _set: &dyn AddressSetView) -> bool {

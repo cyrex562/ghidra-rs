@@ -1,4 +1,4 @@
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 use crate::program::model::listing::InstructionIterator;
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -30,17 +30,10 @@ impl InstructionSearchAddressIterator {
     }
 }
 
-impl AddressIterator for InstructionSearchAddressIterator {
-    fn has_next(&self) -> bool {
-        self.ensure_cached();
-        self.cached_next
-            .borrow()
-            .as_ref()
-            .map(|opt| opt.is_some())
-            .unwrap_or(false)
-    }
+impl Iterator for InstructionSearchAddressIterator {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
+    fn next(&mut self) -> Option<Address> {
         self.ensure_cached();
         self.cached_next
             .borrow_mut()
@@ -464,8 +457,8 @@ mod tests {
     fn empty_iterator_has_no_next() {
         let inner = TestInstructionIterator::new(vec![]);
         let mut iter = InstructionSearchAddressIterator::new(Box::new(inner));
-        assert!(!iter.has_next());
-        assert!(iter.next_address().is_none());
+        assert_eq!(iter.next(), None);
+        assert!(iter.next().is_none());
     }
 
     #[test]
@@ -480,22 +473,19 @@ mod tests {
         });
         let inner = TestInstructionIterator::new(vec![instr1, instr2]);
         let mut iter = InstructionSearchAddressIterator::new(Box::new(inner));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr1));
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr2));
-        assert!(!iter.has_next());
-        assert!(iter.next_address().is_none());
+        assert_eq!(iter.next(), Some(addr1));
+        assert_eq!(iter.next(), Some(addr2));
+        assert_eq!(iter.next(), None);
+        assert!(iter.next().is_none());
     }
 
     #[test]
     fn multiple_next_calls_when_empty() {
         let inner = TestInstructionIterator::new(vec![]);
         let mut iter = InstructionSearchAddressIterator::new(Box::new(inner));
-        assert!(iter.next_address().is_none());
-        assert!(iter.next_address().is_none());
-        assert!(iter.next_address().is_none());
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
     }
 
     #[test]
@@ -506,10 +496,8 @@ mod tests {
         });
         let inner = TestInstructionIterator::new(vec![instr]);
         let mut iter = InstructionSearchAddressIterator::new(Box::new(inner));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr));
-        assert!(!iter.has_next());
-        assert!(iter.next_address().is_none());
+        assert_eq!(iter.next(), Some(addr));
+        assert_eq!(iter.next(), None);
+        assert!(iter.next().is_none());
     }
 }

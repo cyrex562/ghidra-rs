@@ -1,5 +1,5 @@
 use crate::program::model::address::{
-    Address, AddressIterator, AddressIteratorAdapter, AddressRange, AddressSetView,
+    Address, BoxedAddressIterator, AddressIteratorAdapter, AddressRange, AddressSetView,
 };
 use crate::program::model::symbol::{Equate, EquateReference, SimpleEquate};
 use std::collections::{BTreeMap, BTreeSet};
@@ -40,7 +40,7 @@ pub trait EquateTable {
     fn equates_at(&self, reference: &Address) -> Vec<&SimpleEquate>;
 
     /// Returns an iterator over addresses with equate references.
-    fn equate_addresses(&self) -> Box<dyn AddressIterator>;
+    fn equate_addresses(&self) -> BoxedAddressIterator;
 
     /// Returns all equates with the given scalar value.
     fn equates_for_value(&self, value: i64) -> Vec<&SimpleEquate>;
@@ -49,10 +49,10 @@ pub trait EquateTable {
     fn equates(&self) -> Vec<&SimpleEquate>;
 
     /// Returns addresses with equate references at or after the start address.
-    fn equate_addresses_from(&self, start: &Address) -> Box<dyn AddressIterator>;
+    fn equate_addresses_from(&self, start: &Address) -> BoxedAddressIterator;
 
     /// Returns addresses with equate references that are inside the supplied set.
-    fn equate_addresses_in(&self, set: &dyn AddressSetView) -> Box<dyn AddressIterator>;
+    fn equate_addresses_in(&self, set: &dyn AddressSetView) -> BoxedAddressIterator;
 }
 
 /// In-memory equate table.
@@ -160,7 +160,7 @@ impl EquateTable for SimpleEquateTable {
             .collect()
     }
 
-    fn equate_addresses(&self) -> Box<dyn AddressIterator> {
+    fn equate_addresses(&self) -> BoxedAddressIterator {
         Box::new(AddressIteratorAdapter::from_vec(self.referenced_addresses()))
     }
 
@@ -175,7 +175,7 @@ impl EquateTable for SimpleEquateTable {
         self.equates.values().collect()
     }
 
-    fn equate_addresses_from(&self, start: &Address) -> Box<dyn AddressIterator> {
+    fn equate_addresses_from(&self, start: &Address) -> BoxedAddressIterator {
         let addresses = self
             .referenced_addresses()
             .into_iter()
@@ -184,7 +184,7 @@ impl EquateTable for SimpleEquateTable {
         Box::new(AddressIteratorAdapter::from_vec(addresses))
     }
 
-    fn equate_addresses_in(&self, set: &dyn AddressSetView) -> Box<dyn AddressIterator> {
+    fn equate_addresses_in(&self, set: &dyn AddressSetView) -> BoxedAddressIterator {
         let addresses = self
             .referenced_addresses()
             .into_iter()
@@ -252,13 +252,13 @@ mod tests {
         equate.add_reference(addr(0x1000), 2);
 
         let mut iterator = table.equate_addresses();
-        assert_eq!(iterator.next_address(), Some(addr(0x1000)));
-        assert_eq!(iterator.next_address(), Some(addr(0x1004)));
-        assert_eq!(iterator.next_address(), None);
+        assert_eq!(iterator.next(), Some(addr(0x1000)));
+        assert_eq!(iterator.next(), Some(addr(0x1004)));
+        assert_eq!(iterator.next(), None);
 
         let mut iterator = table.equate_addresses_from(&addr(0x1001));
-        assert_eq!(iterator.next_address(), Some(addr(0x1004)));
-        assert_eq!(iterator.next_address(), None);
+        assert_eq!(iterator.next(), Some(addr(0x1004)));
+        assert_eq!(iterator.next(), None);
     }
 
     #[test]
@@ -271,8 +271,8 @@ mod tests {
         let set = AddressSet::from_start_end(addr(0x1000), addr(0x1fff));
         let mut iterator = table.equate_addresses_in(&set);
 
-        assert_eq!(iterator.next_address(), Some(addr(0x1000)));
-        assert_eq!(iterator.next_address(), None);
+        assert_eq!(iterator.next(), Some(addr(0x1000)));
+        assert_eq!(iterator.next(), None);
     }
 
     #[test]
@@ -291,8 +291,8 @@ mod tests {
         assert_eq!(table.equate("FIRST").unwrap().reference_count(), 1);
         assert!(table.equate("SECOND").is_none());
         let mut iterator = table.equate_addresses();
-        assert_eq!(iterator.next_address(), Some(addr(0x2000)));
-        assert_eq!(iterator.next_address(), None);
+        assert_eq!(iterator.next(), Some(addr(0x2000)));
+        assert_eq!(iterator.next(), None);
     }
 
     #[test]

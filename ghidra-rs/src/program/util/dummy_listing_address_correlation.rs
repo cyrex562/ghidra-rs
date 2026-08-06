@@ -80,7 +80,7 @@ impl AddressSetView for DummyAddressSetView {
         0
     }
 
-    fn addresses(&self, _forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+    fn addresses(&self, _forward: bool) -> crate::program::model::address::BoxedAddressIterator {
         Box::new(crate::program::model::address::EmptyAddressIterator)
     }
 
@@ -88,7 +88,7 @@ impl AddressSetView for DummyAddressSetView {
         &self,
         _start: &Address,
         _forward: bool,
-    ) -> Box<dyn crate::program::model::address::AddressIterator> {
+    ) -> crate::program::model::address::BoxedAddressIterator {
         Box::new(crate::program::model::address::EmptyAddressIterator)
     }
 

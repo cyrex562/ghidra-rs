@@ -42,7 +42,7 @@ mod tests {
     use crate::framework::db::DBRecord;
     use crate::program::database::db_object::{DbObject, DbObjectState};
     use crate::program::model::address::{
-        Address, AddressIterator, AddressIteratorAdapter, AddressSetView, AddressSpace, AddressSpaceType,
+        Address, BoxedAddressIterator, AddressIteratorAdapter, AddressSetView, AddressSpace, AddressSpaceType,
     };
     use crate::program::model::util::PropertyMap;
     use crate::program::seam_stubs::AddressKeyIteratorLike;
@@ -154,7 +154,7 @@ mod tests {
             &self,
             _start: &Address,
             _end: &Address,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(Vec::new()))
         }
 
@@ -163,15 +163,15 @@ mod tests {
             _start: &Address,
             _end: &Address,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(Vec::new()))
         }
 
-        fn get_property_iterator(&self) -> Box<dyn AddressIterator> {
+        fn get_property_iterator(&self) -> BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(Vec::new()))
         }
 
-        fn get_property_iterator_set(&self, _asv: &dyn AddressSetView) -> Box<dyn AddressIterator> {
+        fn get_property_iterator_set(&self, _asv: &dyn AddressSetView) -> BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(Vec::new()))
         }
 
@@ -179,11 +179,11 @@ mod tests {
             &self,
             _asv: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(Vec::new()))
         }
 
-        fn get_property_iterator_from(&self, _start: &Address, _forward: bool) -> Box<dyn AddressIterator> {
+        fn get_property_iterator_from(&self, _start: &Address, _forward: bool) -> BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(Vec::new()))
         }
 

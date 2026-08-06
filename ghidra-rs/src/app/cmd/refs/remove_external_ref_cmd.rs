@@ -60,7 +60,7 @@ mod tests {
         ExternalLocation, Namespace, RefType, ReferenceIterator, ReferenceManager, SourceType,
         Symbol,
     };
-    use crate::program::model::address::{AddressIterator, AddressSetView};
+    use crate::program::model::address::{BoxedAddressIterator, AddressSetView};
     use crate::program::model::lang::Register;
     use crate::program::model::listing::Variable;
     use crate::util::exception::InvalidInputException;
@@ -342,7 +342,7 @@ mod tests {
             &self,
             _start_addr: Address,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -350,7 +350,7 @@ mod tests {
             &self,
             _addr_set: Option<&dyn AddressSetView>,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -358,7 +358,7 @@ mod tests {
             &self,
             _start_addr: Address,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 
@@ -366,7 +366,7 @@ mod tests {
             &self,
             _addr_set: Option<&dyn AddressSetView>,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             Box::new(crate::program::model::address::EmptyAddressIterator)
         }
 

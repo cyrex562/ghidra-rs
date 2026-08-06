@@ -1,11 +1,11 @@
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 use crate::program::model::symbol::SymbolIterator;
 
 /// Wrapper around a SymbolIterator for label search operations.
 ///
 /// Port of `ghidra.app.plugin.core.searchtext.iterators.LabelSearchAddressIterator`.
 /// This adapts a SymbolIterator (which iterates over label symbols) into an
-/// AddressIterator by extracting the address from each symbol.
+/// BoxedAddressIterator by extracting the address from each symbol.
 pub struct LabelSearchAddressIterator {
     symbol_iterator: Box<dyn SymbolIterator>,
 }
@@ -17,12 +17,10 @@ impl LabelSearchAddressIterator {
     }
 }
 
-impl AddressIterator for LabelSearchAddressIterator {
-    fn has_next(&self) -> bool {
-        self.symbol_iterator.has_next()
-    }
+impl Iterator for LabelSearchAddressIterator {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
+    fn next(&mut self) -> Option<Address> {
         self.symbol_iterator
             .next_symbol()
             .map(|symbol| symbol.get_address())
@@ -115,8 +113,8 @@ mod tests {
     #[test]
     fn empty_iterator_has_no_next() {
         let inner = TestSymbolIterator::new(vec![]);
-        let iter = LabelSearchAddressIterator::new(Box::new(inner));
-        assert!(!iter.has_next());
+        let mut iter = LabelSearchAddressIterator::new(Box::new(inner));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
@@ -129,22 +127,19 @@ mod tests {
         ];
         let inner = TestSymbolIterator::new(symbols);
         let mut iter = LabelSearchAddressIterator::new(Box::new(inner));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr1));
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr2));
-        assert!(!iter.has_next());
-        assert!(iter.next_address().is_none());
+        assert_eq!(iter.next(), Some(addr1));
+        assert_eq!(iter.next(), Some(addr2));
+        assert_eq!(iter.next(), None);
+        assert!(iter.next().is_none());
     }
 
     #[test]
     fn multiple_next_calls_when_empty() {
         let inner = TestSymbolIterator::new(vec![]);
         let mut iter = LabelSearchAddressIterator::new(Box::new(inner));
-        assert!(iter.next_address().is_none());
-        assert!(iter.next_address().is_none());
-        assert!(iter.next_address().is_none());
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
     }
 
     #[test]
@@ -154,10 +149,8 @@ mod tests {
         let addr_expected = test_address(0x2000);
         let inner = TestSymbolIterator::new(symbols);
         let mut iter = LabelSearchAddressIterator::new(Box::new(inner));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr_expected));
-        assert!(!iter.has_next());
-        assert!(iter.next_address().is_none());
+        assert_eq!(iter.next(), Some(addr_expected));
+        assert_eq!(iter.next(), None);
+        assert!(iter.next().is_none());
     }
 }

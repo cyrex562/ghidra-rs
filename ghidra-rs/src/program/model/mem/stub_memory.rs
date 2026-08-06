@@ -618,14 +618,14 @@ mod tests {
         fn num_addresses(&self) -> u64 {
             self.set.num_addresses()
         }
-        fn addresses(&self, forward: bool) -> Box<dyn crate::program::model::address::AddressIterator> {
+        fn addresses(&self, forward: bool) -> crate::program::model::address::BoxedAddressIterator {
             self.set.addresses(forward)
         }
         fn addresses_from(
             &self,
             start: &Address,
             forward: bool,
-        ) -> Box<dyn crate::program::model::address::AddressIterator> {
+        ) -> crate::program::model::address::BoxedAddressIterator {
             self.set.addresses_from(start, forward)
         }
         fn intersects_set(&self, set: &dyn AddressSetView) -> bool {
