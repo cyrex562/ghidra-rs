@@ -4,8 +4,11 @@
 //! into a supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for
 //! provenance.
 
+use std::sync::Arc;
+
 use crate::debug::api::tracermi::SchemaName;
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::symbol::Symbol;
 use crate::trace::model::program::TraceProgramView;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
@@ -67,8 +70,18 @@ pub trait TraceStackManager {}
 pub trait TraceStaticMappingManager {}
 
 /// Placeholder for `ghidra.trace.model.symbol.TraceSymbolManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceSymbolManager {}
+/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Grown to add
+/// the lookup
+/// [`TraceReference`](crate::trace::model::symbol::trace_reference::TraceReference)'s default
+/// `get_associated_symbol()` needs. The real Java default resolves this via the manager's full
+/// symbol table (`SymbolTable.getSymbolByID(long)`), not yet ported, so this placeholder always
+/// reports no symbol found until that machinery exists.
+pub trait TraceSymbolManager {
+    /// Looks up a symbol by its ID. Mirrors `SymbolTable.getSymbolByID(long)`.
+    fn get_symbol_by_id(&self, _id: i64) -> Option<Arc<dyn Symbol>> {
+        None
+    }
+}
 
 /// Placeholder for `ghidra.trace.model.thread.TraceThreadManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -219,14 +232,6 @@ pub enum ConflictResolution {
 /// opaque values (`AttributeSchema.DEFAULT_ANY`/`DEFAULT_VOID`), never inspecting them, so this is
 /// a marker trait rather than reproducing `getName`/`getSchema`/`isRequired`/`isFixed`/`getHidden`.
 pub trait AttributeSchema: Send + Sync {}
-
-/// Placeholder for `ghidra.trace.model.symbol.TraceReference`, referenced by
-/// [`TraceOffsetReference`](crate::trace::model::symbol::trace_offset_reference::TraceOffsetReference)
-/// before the real interface is ported. Only a shape hint: no public members are parsed here
-/// because `TraceOffsetReference` only needs it as a supertrait marker.
-pub trait TraceReference: Send + Sync {
-    // (no public methods parsed from the Java source)
-}
 
 /// Placeholder for `ghidra.trace.model.target.schema.SchemaBuilder`, referenced by
 /// [`DefaultSchemaContext`](crate::trace::model::target::schema::default_schema_context::DefaultSchemaContext)
