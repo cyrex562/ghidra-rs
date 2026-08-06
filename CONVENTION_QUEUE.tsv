@@ -1,0 +1,1073 @@
+verdict	leverage	occurrences	fanin	type	category	source	note
+ACCEPT	191	890	2259	TaskMonitor	open-extension	manual	Caller-supplied progress/cancellation callback -- the textbook open-ended extension point the doc carves out for dyn. Not debt.
+ARENA	164	542	2963	Program	graph?	manual	Doc names it an arena type.
+TODO	133	746	1328	AddressSetView	graph?	evidence	12 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+ENUM	113	722	2003	DataType	closed-hierarchy?	manual	Doc: closed hierarchy (Structure/Union/Enum/Array/Pointer/TypeDef/Dynamic) -> enum dispatch.
+ARENA	110	323	790	Symbol	graph?	manual	Doc names it an arena type.
+ARENA	73	518	1338	Function	graph?	manual	Doc names it an arena type; Phase 2 (fan-in 1338).
+ACCEPT	73	287	436	ByteProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	72	234	370	Namespace	graph?	evidence	only 51 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	65	153	1031	BinaryReader	graph?	evidence	only 67 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	64	130	204	Encoder	graph?	evidence	32 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	53	174	0	VariableStorage	graph?	evidence	12 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+SUGGEST-STRUCT	52	389	504	Reference	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	52	133	541	Language	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	52	101	1071	AddressFactory	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	51	538	1010	Variable	graph?	suggest	small closed set: 3 real implementers, all in-crate
+ITER	50	181	1003	AddressIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	50	93	249	MemBuffer	graph?	evidence	20 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+SUGGEST-STRUCT	50	71	44	InstructionPrototype	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	49	369	489	Settings	graph?	suggest	small closed set: 8 real implementers, all in-crate
+TODO	47	150	136	ExternalLocation	graph?	evidence	only 12 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	46	114	1471	DataTypeManager	graph?	manual	Doc names it an arena type; Phase 2 (fan-in 1471).
+SUGGEST-ENUM	45	120	0	PrototypeModel	graph?	suggest	small closed set: 4 real implementers, all in-crate
+ITER	42	54	0	ReferenceIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+SUGGEST-STRUCT	41	224	980	Parameter	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	38	246	1053	Instruction	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	36	83	376	CompilerSpec	graph?	evidence	only 8 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	36	45	47	FunctionSignature	graph?	evidence	only 11 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	35	38	43	ExternalReference	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	34	107	0	RegisterValue	graph?	evidence	only 1 real implementer(s), but RegisterValue is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-STRUCT	34	77	0	FunctionTag	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	33	173	1061	CodeUnit	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	32	38	0	StackFrame	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	31	383	1134	Data	graph?	manual	Doc names it an arena type.
+SUGGEST-ACCEPT	30	95	0	VariableFilter	open-extension	suggest	7 implementers and an extension-point name -- open set
+SUGGEST-STRUCT	29	48	311	CompilerSpecDescription	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	28	52	0	Processor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	26	58	318	LanguageDescription	graph?	evidence	only 10 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-PARK	26	51	0	Vec	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-ENUM	25	324	29	TokenPattern	graph?	suggest	small closed set: 6 real implementers, all in-crate
+SUGGEST-ENUM	24	111	370	DomainFile	graph?	suggest	small closed set: 6 real implementers, all in-crate
+SUGGEST-STRUCT	24	41	25	ProcessorContextView	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	23	80	36	PatternExpression	graph?	evidence	37 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+ACCEPT	23	59	0	CancelledListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	23	44	12	Pattern	graph?	evidence	22 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+ARENA	23	37	1009	Listing	graph?	manual	Doc names it an arena type; Phase 2 (fan-in 1009).
+ITER	22	84	994	AddressRangeIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+ITER	22	65	0	InstructionIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	21	28	1073	DefaultProgramContext	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	21	25	33	ProcessorContext	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	20	141	0	InstructionContext	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	20	52	82	ProgramFragment	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ITER	19	121	0	CodeUnitIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+ITER	19	88	0	FunctionIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	19	54	19	Constructor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	19	22	41	PropertyMap	graph?	evidence	only 10 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	19	20	0	MemoryBlockDefinition	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	19	20	309	ParallelInstructionLanguageHelper	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	18	105	986	ProgramModule	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ITER	18	91	272	RecordIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	18	68	0	ItemCheckoutStatus	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ENUM	18	51	162	Decoder	graph?	suggest	small closed set: 7 real implementers, all in-crate
+TODO	18	19	0	AddressLabelInfo	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	17	88	234	DomainObject	graph?	evidence	13 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	17	20	0	DebugSymbol	graph?	evidence	19 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+SUGGEST-STRUCT	16	295	0	AssemblyResolvedPatterns	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	16	268	0	AssemblyResolution	graph?	suggest	small closed set: 4 real implementers, all in-crate
+ITER	16	100	0	DataIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	16	45	0	AssemblyConstructorSemantic	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	16	17	1270	DataOrganization	graph?	evidence	only 26 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	15	106	0	AssemblyPatternBlock	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	15	99	0	PluginTool	graph?	evidence	only 2 real implementer(s), but PluginTool is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	15	97	328	Trace	graph?	evidence	only 10 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	15	17	0	CodeUnitComments	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	15	17	0	CommentHistory	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	15	17	0	InstructionSet	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ENUM	14	167	0	CodeBlock	graph?	suggest	small closed set: 7 real implementers, all in-crate
+SUGGEST-STRUCT	14	63	0	MdMangLike	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	13	52	0	CodeBlockModel	graph?	suggest	small closed set: 7 real implementers, all in-crate
+ITER	13	51	0	CodeBlockReferenceIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	12	97	0	AssemblyResolutionResults	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	12	50	0	AssemblyNonTerminal	graph?	evidence	only 2 real implementer(s), but AssemblyNonTerminal is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-STRUCT	12	41	0	AssemblyGrammar	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	12	35	0	AssemblySentential	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	12	26	1264	DataTypeComponent	graph?	suggest	small closed set: 6 real implementers, all in-crate
+SUGGEST-ENUM	11	105	422	MemoryBlock	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	11	98	27	AddrSpace	graph?	evidence	only 8 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	11	65	0	HighSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	11	51	0	FolderItem	graph?	evidence	only 9 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	11	35	284	Project	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	11	23	386	Options	graph?	suggest	small closed set: 8 real implementers, all in-crate
+TODO	11	18	0	FlowType	graph?	evidence	only 1 real implementer(s), but FlowType is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-STRUCT	11	12	0	DataTypeDisplayOptions	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	10	61	230	FieldKeyRecordNode	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	10	57	0	AssemblySymbol	graph?	suggest	small closed set: 4 real implementers, all in-crate
+ITER	10	35	0	CodeBlockIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	10	32	0	TraceProgramView	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	10	28	979	Library	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	10	26	0	Lock	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	10	18	228	FieldKeyInteriorNode	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	10	18	0	TripleSymbol	graph?	evidence	10 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	10	17	0	MdFragmentNameLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	10	15	0	TraceTimeViewport	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	9	64	343	Lifespan	graph?	evidence	only 10 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	9	58	0	AssemblyProduction	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	9	40	264	ToolTemplate	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	9	34	26	PatternValue	graph?	evidence	11 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	9	32	0	AssemblyResolvedBackfill	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	9	29	0	ProgramLocation	graph?	suggest	small closed set: 4 real implementers, all in-crate
+TODO	9	28	0	ManagedBufferFileHandle	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	9	27	0	ManagedBufferFile	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	9	27	0	MdQualifier	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	9	26	0	PcodeOverride	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	9	24	0	LanguageTranslator	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	9	23	0	HighFunction	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	9	23	1208	ParameterDefinition	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	9	18	0	RecursiveDescentSolver	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	9	11	0	CheckoutType	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	9	10	0	PcodeInjectLibrary	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	9	10	0	RangeList	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	9	10	0	RefType	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	8	34	0	PatternEquationOps	graph?	evidence	13 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	8	27	0	RepositoryItem	graph?	evidence	only 1 real implementer(s), but RepositoryItem is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-ACCEPT	8	23	0	RepositoryAdapter	open-extension	suggest	3 implementers and an extension-point name -- open set
+TODO	8	22	0	MdObjectCpp	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	8	21	150	AddressMap	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	8	21	233	FieldKeyNode	graph?	evidence	only 15 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	8	19	0	MdQualification	graph?	evidence	only 8 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	8	18	0	TraceProgramViewListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	8	18	0	TraceVariableSnapProgramView	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	8	16	0	Component	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	8	13	642	SymbolTable	graph?	evidence	only 1 real implementer(s), but SymbolTable is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	8	12	318	InjectPayload	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ACCEPT	8	11	0	RepositoryServerAdapter	open-extension	suggest	4 implementers and an extension-point name -- open set
+TODO	8	10	7	Translate	graph?	evidence	only 9 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	8	9	0	TraceAddressPropertyManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceBasedDataTypeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceBookmarkManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceBreakpointManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceCodeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceEquateManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceMemoryManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceModuleManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceObjectManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TracePlatformManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceReferenceManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceRegisterContextManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceStackManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceStaticMappingManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceSymbolManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceThreadManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ARENA	8	9	0	TraceTimeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	7	69	0	GFile	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	7	51	336	DomainFolder	graph?	suggest	small closed set: 5 real implementers, all in-crate
+SUGGEST-ENUM	7	37	0	ProjectLocator	graph?	suggest	small closed set: 7 real implementers, all in-crate
+TODO	7	34	0	MdReusableName	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	7	27	0	AssemblyTerminal	graph?	suggest	small closed set: 4 real implementers, all in-crate
+SUGGEST-STRUCT	7	27	0	JdomElement	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	7	25	0	AssemblyParseResult	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	7	23	0	AbstractAssemblyResolutionFactory	open-extension	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	7	23	0	AssemblyNumericSymbols	graph?	evidence	only 2 real implementer(s), but AssemblyNumericSymbols is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-STRUCT	7	20	0	ParserContext	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	7	20	0	ServiceListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ITER	7	14	0	ExternalLocationIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	7	11	0	PatchEncoder	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	6	46	0	ValidatableLine	graph?	suggest	small closed set: 3 real implementers, all in-crate
+SUGGEST-ENUM	6	25	1297	Structure	graph?	suggest	small closed set: 6 real implementers, all in-crate
+SUGGEST-ENUM	6	24	0	AssemblyParseToken	graph?	suggest	small closed set: 4 real implementers, all in-crate
+TODO	6	22	0	FixedKeyNode	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	6	21	0	AbstractPdb	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	6	21	0	FileBytes	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	6	19	0	AssemblySyntaxException	closed-hierarchy?	evidence	only 1 real implementer(s), but AssemblySyntaxException is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	6	17	0	RepositoryHandle	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	6	15	280	ProjectData	graph?	suggest	small closed set: 5 real implementers, all in-crate
+TODO	6	14	0	InputBlockStream	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	6	14	0	Mask	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+ACCEPT	6	12	0	ActionContextProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	6	12	0	MouseEvent	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	6	11	0	BufferFile	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	6	11	0	DataTypeManagerDb	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	6	11	0	HighVariable	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	6	11	0	MdTemplateNameAndArgumentsLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	6	10	0	AddressMapDB	graph?	manual	
+TODO	6	10	0	DBHandle	graph?	manual	
+SUGGEST-ENUM	6	9	0	CodeBlockReference	graph?	suggest	small closed set: 4 real implementers, all in-crate
+TODO	6	9	0	OutputBlockStream	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	6	8	0	ApplicationProperties	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	6	8	0	BlockStream	graph?	evidence	only 19 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	6	7	0	PcodeEmit	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	6	6	0	ComponentProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	5	37	0	SolverHint	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-PARK	5	30	0	SymReference	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-ACCEPT	5	28	0	DataTypeConflictHandler	open-extension	suggest	8 implementers and an extension-point name -- open set
+SUGGEST-ENUM	5	28	0	ObjectStorage	graph?	suggest	small closed set: 6 real implementers, all in-crate
+SUGGEST-ENUM	5	28	0	Saveable	graph?	suggest	small closed set: 5 real implementers, all in-crate
+TODO	5	26	0	Vertex	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	5	25	139	Group	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	5	21	0	AddressKeyIteratorLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	5	21	99	SettingsDefinition	graph?	evidence	29 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	5	20	0	MdParsableItemLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	5	18	0	GenericAssembler	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	5	18	418	Memory	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	5	16	0	BlockStreamHandle	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	5	12	0	FileSystemListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	5	12	0	InjectContext	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	5	12	0	ToolOptions	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	5	10	0	BufferFileBlock	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ARENA	5	10	593	ExternalManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	5	10	0	MdStringLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-PARK	5	10	0	VarnodeTplTrait	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-PARK	5	10	0	bool	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	5	9	0	BufferMgr	graph?	manual	
+TODO	5	9	0	Table	graph?	manual	
+TODO	5	8	0	MdNestedName	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	5	8	0	PcodeDataTypeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	5	7	0	MdHashedObject	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	5	7	0	MdQualifiedBasicNameLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	5	7	0	MdTypeInfoLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	5	7	0	ToolChest	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	5	6	0	ApplicationLayoutLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	5	6	0	ImageIcon	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	5	6	0	ToolIconURL	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	68	0	PcodeBlock	graph?	evidence	only 1 real implementer(s), but PcodeBlock is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-ENUM	4	65	0	GDirectedGraph	graph?	suggest	small closed set: 4 real implementers, all in-crate
+SUGGEST-ENUM	4	65	0	IteratorStl	graph?	suggest	small closed set: 7 real implementers, all in-crate
+SUGGEST-STRUCT	4	40	0	MdExceptionLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	4	39	1222	Category	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	32	0	ConstructState	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	29	0	PluginDescription	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	4	29	100	Workspace	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	4	27	0	MdDataTypeLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	24	660	ActionContext	graph?	evidence	only 7 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	21	0	Application	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	4	21	0	Buffer	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	4	21	0	Fsrl	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	20	0	PluginPackageLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ENUM	4	19	0	AssemblySelector	graph?	suggest	small closed set: 4 real implementers, all in-crate
+TODO	4	18	0	Navigatable	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	17	0	AbstractMsSymbol	closed-hierarchy?	evidence	only 1 real implementer(s), but AbstractMsSymbol is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	4	16	0	PluginLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	4	15	0	BlockMap	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	4	12	1240	Composite	graph?	evidence	12 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	4	12	0	HelpLocation	graph?	evidence	only 1 real implementer(s), but HelpLocation is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	4	12	16	OperandSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	11	0	AssemblyResolvedError	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	4	11	0	PlaceHolderLine	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	4	11	0	RepositoryLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	4	9	0	IsfObject	graph?	evidence	38 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	4	8	0	IntPropertyMap	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	8	0	LongPropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	8	0	ObjectPropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	8	0	Platform	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	8	0	StringPropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	4	8	0	SubroutineBlockModel	graph?	suggest	small closed set: 5 real implementers, all in-crate
+TODO	4	7	0	KeyStroke	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	4	6	0	AbstractMsType	closed-hierarchy?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	4	6	0	DataFileItem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	6	0	MdNumberedNamespaceLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	6	0	UserManagerLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	5	0	Architecture	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	4	5	0	DatabaseItem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	5	0	GlobalSymbolMap	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	5	0	MdQualifiedName	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	4	5	0	TextDataItem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	4	4	0	Icon	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	3	60	0	SaveState	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	41	0	SourceMapEntry	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	3	36	0	FidHashQuad	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	3	32	0	ExtensionDetails	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	27	0	TraceObjectSchema	graph?	evidence	only 1 real implementer(s), but TraceObjectSchema is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-ENUM	3	25	0	AssemblyParseNumericToken	graph?	suggest	small closed set: 3 real implementers, all in-crate
+SUGGEST-STRUCT	3	24	0	ByteBlock	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	3	23	0	DBBuffer	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	20	0	TraceSchedule	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ENUM	3	19	0	ComparisonItem	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	3	16	0	KeyBindingData	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	16	0	TracePlatform	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	3	15	0	CryptoProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	3	15	0	DisjointPattern	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	14	0	AssemblyParseTreeNode	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	3	14	0	AuthCallback	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	3	14	305	DisassemblerContext	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	3	14	258	EventType	graph?	suggest	small closed set: 3 real implementers, all in-crate
+ITER	3	14	0	MsSymbolIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	3	14	20	ProgramArchitecture	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	12	0	RefList	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	3	10	0	ContextChange	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ACCEPT	3	9	0	ListenerErrorHandler	open-extension	suggest	7 implementers and an extension-point name -- open set
+TODO	3	9	0	Task	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	3	8	0	AssemblyParseBranch	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	3	8	1233	Enum	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	8	0	MenuData	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	3	8	0	Occlusion	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	3	8	0	PropertyChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	3	8	0	SleighLanguageFile	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	3	8	1231	SourceArchive	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	3	8	0	Spliterator	graph?	suggest	small closed set: 6 real implementers, all in-crate
+TODO	3	8	0	ToolAssociationInfo	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	8	0	VoidPropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	3	7	0	AddressCorrelation	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	3	7	0	Assembler	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	7	0	BufferFileHandle	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	7	0	DataBuffer	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	7	0	MessageLog	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	7	0	SchemaContext	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	3	7	0	WorkspaceChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	3	6	109	BookmarkType	graph?	evidence	only 7 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	6	0	DataTypeDiffInput	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	3	6	605	EquateTable	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	3	6	316	LanguageService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+SUGGEST-ENUM	3	6	0	LocalFileSystem	graph?	suggest	small closed set: 4 real implementers, all in-crate
+SUGGEST-ENUM	3	6	0	PtySession	graph?	suggest	small closed set: 5 real implementers, all in-crate
+ARENA	3	6	611	ReferenceManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ITER	3	6	0	SourceMapEntryIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	3	6	0	TraceProgramViewMemory	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	3	6	0	VariableOffset	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	3	5	0	FileSystem	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	3	5	307	GhidraDataConverter	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	3	5	0	GhidraProtocolConnector	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	3	5	0	PcodeFactory	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	3	5	0	ServiceProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+SUGGEST-PARK	3	5	0	usize	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-STRUCT	3	4	0	AddressCorrelationRangeLike	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	3	4	0	ByteMappingScheme	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	4	0	JButton	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	4	0	JMenuItem	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ENUM	3	4	0	KeyBindingType	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	3	4	0	LocalSymbolMap	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	4	0	MdCvModLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	4	0	OldFunctionDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	3	4	0	RemoteRepositoryServerHandle	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	3	4	0	ToolBarData	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	3	4	101	ToolConnection	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	3	4	255	ToolServices	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+ARENA	3	3	0	FunctionTagManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	3	3	0	GenericCallingConvention	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	3	3	0	GhidraApplicationLayout	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ARENA	3	3	0	NamespaceManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	3	3	1251	Pointer	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	2	90	0	JdiCause	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	53	0	DebuggerCoordinates	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	48	0	BigFloat	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	34	0	VarnodeContext	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	33	0	SymbolPath	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ACCEPT	2	28	0	TableFilter	open-extension	suggest	9 implementers and an extension-point name -- open set
+TODO	2	25	4	ExprTree	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	22	0	FileSystemInfoRec	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	2	19	0	ByteSequence	graph?	suggest	small closed set: 8 real implementers, all in-crate
+TODO	2	19	0	LongKeyNode	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	17	0	DirectedGraph	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	16	0	AbstractAssemblyProduction	closed-hierarchy?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	15	0	LongKeyRecordNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	2	13	0	GhidraFolderData	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	2	13	0	Target	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	13	0	TermMode	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	13	0	TraceObject	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	13	0	VarKeyNode	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	12	0	ByteTrieNodeIfc	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	12	0	ParamEntry	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	12	0	PseudoInstructionLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ENUM	2	11	0	SimpleBlockModel	graph?	suggest	small closed set: 5 real implementers, all in-crate
+SUGGEST-ENUM	2	10	0	ErrorLogger	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	2	10	125	MemoryBlockSourceInfo	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	10	0	TraceThread	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	9	1235	Array	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+ARENA	2	9	0	AttributeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	2	9	0	PrimitiveTraceObjectSchema	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	9	0	ProgramOverlayAddressSpace	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	9	0	SubMemoryBlock	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	9	0	ValueStoragePage	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	2	8	0	DebuggerStaticMappingChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-STRUCT	2	8	0	OperandRepresentationList	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	8	0	RepositoryFile	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	8	0	RepositoryFolderLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	8	0	TraceAddressSnapRange	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	7	0	AttributeLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	7	0	FsrlRootLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	7	0	OldFunctionDataDB	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	7	0	ProgramAddressFactory	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	7	0	ProgramDB	graph?	manual	
+TODO	2	7	0	SleighParserContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	7	0	SourceLanguageId	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	6	0	AbstractAssemblyStateGenerator	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	6	0	AddressSourceInfo	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	2	6	0	Archive	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	6	977	Bookmark	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	6	0	ContextEvaluator	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ACCEPT	2	6	255	DomainFileFilter	open-extension	suggest	5 implementers and an extension-point name -- open set
+ACCEPT	2	6	291	DomainObjectListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	2	6	301	Location	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	6	0	ModuleInformation	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	6	307	ParamList	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	6	0	PcodeBlockBasic	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	2	6	99	ProjectListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-STRUCT	2	6	0	PseudoFlowProcessor	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ITER	2	6	594	SymbolIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+ACCEPT	2	6	0	ToolChestChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	2	6	0	TraceRmiAcceptor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	6	0	TraceRmiConnection	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	2	6	0	TraceRmiServiceListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-STRUCT	2	6	0	UserData	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	2	5	0	AbstractAssemblyTreeResolver	closed-hierarchy?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	5	4	ContextSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	2	5	1205	DataTypeManagerChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	2	5	0	EdgeSet	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	5	0	FixedKeyInteriorNodeLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	5	0	GFileSystemLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	5	0	GModuleLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	5	0	GhidraClass	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	2	5	0	OldFunctionManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	2	5	0	PdbDebugInfo	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	5	0	RepositoryServerHandleImpl	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	4	0	AssemblyContextGraph	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	4	0	BlockGraph	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	4	0	CodeSymbol	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	4	0	CustomOption	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	4	462	DockingActionIf	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	2	4	0	DomainObjectMergeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	2	4	0	ExternalManagerDb	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	2	4	0	FileSystemProbeConflictResolver	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	2	4	0	FileSystemServiceLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	4	0	FunctionManagerDb	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ITER	2	4	0	GlobalReferenceIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	2	4	0	InjectPayloadSleigh	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	4	0	JarFileAccess	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	4	0	LinkHandler	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-PARK	2	4	0	MdTemplateArgumentsListLike	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	2	4	0	ModelRuleLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	4	0	ObjectKey	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	4	0	PseudoData	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	2	4	0	RemoteAdapterListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ITER	2	4	0	RemovableIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	2	4	0	SleighLanguageDescription	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	4	1241	TypeDef	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	2	3	0	AssemblyExtendedNonTerminal	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ACCEPT	2	3	0	BasicFactory	open-extension	suggest	3 implementers and an extension-point name -- open set
+SUGGEST-PARK	2	3	0	Box	graph?	suggest	not declared in the crate (external type or unresolved stub)
+ACCEPT	2	3	0	BusyListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ACCEPT	2	3	0	CloseableTaskMonitor	open-extension	family	[family:Monitor] Progress/cancellation callback supplied by the caller. The textbook open extension point.
+SUGGEST-ACCEPT	2	3	0	ConstructorEntryVisitor	open-extension	suggest	3 implementers and an extension-point name -- open set
+SUGGEST-ENUM	2	3	356	DataConverter	graph?	suggest	small closed set: 4 real implementers, all in-crate
+TODO	2	3	1079	DataTypeArchive	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	3	0	DataTypeSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	3	0	Database	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	2	3	0	DomainFolderChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-STRUCT	2	3	0	FidHasher	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	2	3	0	Fixup	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	3	0	GFileSystemFactory	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	3	0	GraphIteratorLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	3	302	Issue	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	3	0	JdiReason	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	3	0	LongKeyInteriorNode	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	3	0	MdComplexTypeLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	3	0	MemoryLoadImage	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	2	3	0	NameTransformer	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	2	3	0	NamespaceManagerDB	graph?	manual	
+SUGGEST-STRUCT	2	3	0	OldRegisterVariableDBAdapter	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	2	3	0	OldStackVariableDBAdapter	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	3	991	ProgramContext	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	2	3	0	PropertyChangeEvent	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	2	3	0	RegisterState	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	2	3	0	Resource	graph?	suggest	small closed set: 4 real implementers, all in-crate
+SUGGEST-STRUCT	2	3	0	SearchRegion	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-PARK	2	3	0	String	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-STRUCT	2	3	0	SubtableEntryVisitor	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	2	3	0	ToolSet	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	3	0	TransactionInfo	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	2	3	99	TransactionListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-PARK	2	3	0	i32	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	2	2	106	Analyzer	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	2	2	0	BitFieldPacking	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	2	2	0	BlockCopy	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	2	0	BlockGoto	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	2	0	DataTypeArchiveChangeSet	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	2	1240	Dynamic	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	2	2	0	DynamicHash	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	2	2	0	Factory	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	2	2	1219	FunctionDefinition	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	2	0	FunctionPrototype	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	2	0	GhidraFileDataLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-PARK	2	2	0	HashMap	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-PARK	2	2	0	HashSet	graph?	suggest	not declared in the crate (external type or unresolved stub)
+ACCEPT	2	2	0	JdiEventsListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	2	2	254	LinkFileInfo	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	2	2	0	ListingAddressCorrelation	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	2	2	0	MdBasicNameLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	2	2	0	OpTplWalker	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-PARK	2	2	0	Option	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	2	2	0	ProgramMerge	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	2	2	255	ProjectManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	2	2	0	SimpleDiffUtility	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ARENA	2	2	1254	StandAloneDataTypeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	2	2	0	StringSettingsDefinition	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ARENA	2	2	101	ToolManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	2	2	0	Transaction	graph?	evidence	only 2 real implementer(s), but Transaction is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-ENUM	2	2	0	VariableUtilities	graph?	suggest	small closed set: 3 real implementers, all in-crate
+SUGGEST-STRUCT	2	2	0	VtProgramCorrelatorInfo	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-PARK	2	2	0	r	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	44	0	Recognizer	graph?	evidence	42 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+TODO	1	40	0	ExpressionMatcher	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	33	0	AbstractDomainObjectListenerBuilder	closed-hierarchy?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	26	0	BinaryField	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	26	0	IndexField	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	23	0	ByteField	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ITER	1	20	253	DBFieldIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	1	20	0	TraceModule	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	16	0	PcodeOpAst	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	15	0	ApplicationModuleLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	15	614	Equate	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	13	0	FileSystemRef	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	12	0	BooleanChangeAdapter	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	12	0	ExtensionsLike	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+ITER	1	12	0	SearchAddressIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	1	10	0	AsyncReferenceLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	10	0	FragmentDB	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	9	0	Edge	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	9	0	LaunchParameterAny	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	9	0	SectionMapProposal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-PARK	1	9	0	Self	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	9	0	TraceMemoryRegion	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	8	0	ByteProviderLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ITER	1	8	0	DBLongIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	1	8	0	DebuggerPlatformMapper	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	8	0	DomainObjectAdapterDB	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	8	0	ExpressionOperator	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	8	0	ExpressionValueLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	8	0	LocationTrackingSpec	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	8	0	ModuleDB	graph?	evidence	only 1 real implementer(s), but ModuleDB is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	1	8	0	Terminal	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	7	0	EquateDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	7	0	FileSystemEventListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	7	0	FixedKeyRecordNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	7	0	LoadSpecLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	7	0	ModuleMapProposal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	7	0	RegionMapProposal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	6	0	AutoMapSpec	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	6	0	ControlMode	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	6	0	EmulatorFactory	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	6	0	GTimerMonitor	open-extension	family	[family:Monitor] Progress/cancellation callback supplied by the caller. The textbook open extension point.
+ACCEPT	1	6	0	GraphDisplayProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	1	6	0	GraphNavigatorSeam	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	6	0	IndexScrollListenerAdapter	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	6	0	ParamListStandardLike	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	6	0	ParamMeasure	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	6	0	PcodeMachine	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	6	0	StateEditor	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	6	7	SubtableSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ACCEPT	1	6	0	TextFilter	open-extension	suggest	12 implementers and an extension-point name -- open set
+SUGGEST-ENUM	1	6	1221	TypeDefSettingsDefinition	graph?	suggest	small closed set: 7 real implementers, all in-crate
+SUGGEST-STRUCT	1	6	0	ValueSortedMap	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	6	7	ValueSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	6	0	WeakSet	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	5	0	AbstractAddressSpace	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	5	0	ApplicationIdentifier	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	5	0	AssignAction	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	5	0	ConfigFieldCodec	graph?	evidence	13 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+SUGGEST-ENUM	1	5	0	Constraint	graph?	suggest	small closed set: 3 real implementers, all in-crate
+ACCEPT	1	5	0	ControlModeChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	5	0	DataTypeProviderContext	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	5	0	DatatypeFilter	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	5	0	DebuggerListing	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	5	0	DisassemblerMessageListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-STRUCT	1	5	587	EquateReference	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	5	0	FixedKeyFixedRecNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	5	0	FixedKeyVarRecNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	5	0	GoToOverrideService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	5	0	InstructionBlockFlow	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ITER	1	5	0	ListIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+ACCEPT	1	5	0	LocationTrackingSpecChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	5	0	MdNameModifier	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	5	0	OptionLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	5	0	QualifierFilter	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	5	0	SchemaBuilder	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	5	0	SpatialMap	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ACCEPT	1	5	0	SpecVisitor	open-extension	suggest	4 implementers and an extension-point name -- open set
+SUGGEST-ACCEPT	1	5	0	TimerCallback	open-extension	suggest	3 implementers and an extension-point name -- open set
+TODO	1	5	0	ValueMapLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	4	0	AddressSetCollection	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	4	0	Animator	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	1	4	0	AsyncExecutor	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	1	4	0	AttributedGraphExporter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	4	0	BlockModelServiceListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ACCEPT	1	4	0	ClipboardContentProviderService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	4	0	ConstructorLike	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	4	0	DbCacheHandle	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	4	0	EmulationResult	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	1	4	0	EmulatorStateListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	4	0	GProperties	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	4	0	GoToServiceListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ACCEPT	1	4	0	GraphDisplayBrokerListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ITER	1	4	0	GraphIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	1	4	0	InstructionAnnotation	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	4	0	IntegerAttributeLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	4	0	JarEntryFilter	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+ACCEPT	1	4	0	ListingMarginProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	1	4	0	MapEntry	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	4	0	MockAnimatorState	graph?	manual	
+ITER	1	4	0	PeekableIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	1	4	0	PrivateDatabase	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	1	4	0	ProgramConstraint	graph?	suggest	small closed set: 3 real implementers, all in-crate
+ACCEPT	1	4	0	ProgressListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	4	0	Scheduler	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	4	0	SleighAssembler	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	4	102	StringTranslationService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	4	0	TargetPublicationListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	4	0	TimeoutTaskMonitorSeam	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	4	0	TokenSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	4	0	TraceConflictedMappingException	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	4	0	TraceRmiLaunchOffer	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	4	0	TraceUserData	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	4	0	TreePath	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	4	0	VariableSymbolDb	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	4	0	VertexSetLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	4	0	ViewProviderService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	4	0	Writer	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	AIFFDataType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	3	0	AbstractAssemblyState	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	3	0	ActionTrigger	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	ApplicationPropertiesLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	AssemblyExtendedGrammar	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	1	3	0	AttributeSchema	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	1	3	0	AutoServiceListenerLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	BasicCompilerSpec	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	3	0	C11LinesLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	3	0	C13SectionIteratorLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	3	0	Color	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	1259	DWordDataType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	3	0	DataTable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	3	102	DebuggerControlService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	3	0	EnumSettingsDefinition	graph?	evidence	17 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+SUGGEST-STRUCT	1	3	307	ErrorDisplay	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	3	0	ExternalLocationDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	3	0	FileAttributeTypeLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	3	0	Font	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	FunctionAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	3	0	FunctionTagManagerProgram	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	3	0	GhidraFileChooserModelLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	3	0	GhidraFileFilter	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-PARK	1	3	0	HlslRegisterType	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	3	0	LazyInner	graph?	manual	
+TODO	1	3	0	LibrarySymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	3	0	ListStl	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	3	0	MdSpecialNameLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	MockState	graph?	manual	
+TODO	1	3	0	NamespaceSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	OptionType	graph?	evidence	only 1 real implementer(s), but OptionType is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-PARK	1	3	0	ParserContextStub	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-STRUCT	1	3	0	PcodeOpEntryVisitor	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	3	0	Plugin	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	3	0	PreprocessorDefinitions	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	3	0	PreprocessorWriter	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	3	1076	ProgramUserData	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	3	0	PropertyEditor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	1245	QWordDataType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	3	0	RepositoryServerHandle	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	3	0	SleighLanguages	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	3	0	TableEntryKey	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	3	0	TimingTarget	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	3	7	Token	graph?	evidence	only 2 real implementer(s), but Token is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	1	3	0	TraceOverlappedRegionException	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	3	0	TwoWayBreakdownFactory	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ARENA	1	3	0	VariableStorageManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	1	3	0	Wiring	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	AbstractAssemblyGrammar	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	AddressIteratorConverter	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	AnimatorBehavior	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	ApplicationIdentifierLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	ApplicationLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	0	AsyncUtils	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	2	0	AuthenticationModule	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	AutoReadMemorySpec	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	2	0	AutoService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	2	0	BufferNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	CheckinHandler	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	2	0	CodeLocation	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	CodeUnitDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	1	2	0	CodeUnitLocation	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	1	2	0	ConstructorTraversal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	CoordinatedStructureDisplay	graph?	evidence	only 1 real implementer(s), but CoordinatedStructureDisplay is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	1	2	0	CoordinatedStructureModel	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	CreateFunctionCmd	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	1	2	0	CreateStructureBehavior	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	1	2	0	CryptoSession	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	DataDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	DataHighLevelShaderLanguageSymbolInternals32Extended	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	DataTypeArchiveDbChangeSet	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ENUM	1	2	1276	DataUtilities	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	1	2	0	DecompileFunctionTask	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	DefaultGhidraProtocolHandler	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	DefaultTraceRmiAcceptor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	0	DerivedStreamProducer	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	2	0	DerivedStreamPushProducer	graph?	suggest	declared a trait but nothing (non-mock) implements it -- not an extension point
+TODO	1	2	304	DisassemblerContextAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	2	0	DomainObjectClosedListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ACCEPT	1	2	0	DomainObjectFileListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	2	0	EmulatorLoadData	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	1	2	0	EquateManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	1	2	0	ErrorHandler	open-extension	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	ErrorWarningReporter	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	1	2	0	EuclideanSpace2D	graph?	suggest	small closed set: 5 real implementers, all in-crate
+SUGGEST-STRUCT	1	2	0	ExpressionEvaluator	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	1	2	0	ExpressionValue	graph?	suggest	small closed set: 3 real implementers, all in-crate
+TODO	1	2	0	FamilySymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	FieldIndexTable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	FileAttributeLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	FileAttributesLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	FileCacheEntryBuilderLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	FileCacheEntryLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ARENA	1	2	1264	FileDataTypeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	1	2	0	FixedKeyInteriorNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	FloatFormat	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	FragmentDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	FunctionComparisonModel	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	FunctionComparisonPanel	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	GhidraProtocolHandler	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	GhidraServerHandle	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	GhidraUrlHandlerLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	GraphDisplay	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	HandleInputStream	graph?	manual	
+TODO	1	2	0	HandleOutputStream	graph?	manual	
+TODO	1	2	0	HttpClientsLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	InputStreamBufferByteSequence	graph?	manual	
+TODO	1	2	0	InstructionBlock	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	InstructionError	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	IsolatedEntrySubModelLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	0	JarEntry	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	2	0	JarFileFilter	open-extension	suggest	declared a trait but nothing (non-mock) implements it -- not an extension point
+TODO	1	2	0	KeyManagerFactoryLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	LanguageTranslatorFactory	open-extension	evidence	only 1 real implementer(s), but LanguageTranslatorFactory is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+TODO	1	2	0	LegacyUserSettingsLocator	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	LineArrayListWriter	graph?	manual	
+TODO	1	2	0	LinkedGhidraFolder	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-ACCEPT	1	2	0	ListenerErrorHandlerFactory	open-extension	suggest	3 implementers and an extension-point name -- open set
+TODO	1	2	0	ListingPanel	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	LoadResultsLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	Loader	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	LocalFileSystemLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	LocalFolderItem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	Locator	graph?	manual	
+TODO	1	2	0	MdMang	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-PARK	1	2	0	MdObjectReservedLike	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-PARK	1	2	0	MdOutputOptionsLike	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	2	0	MdTypeLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	MemoryFaultHandler	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	MemoryMapDB	graph?	manual	
+SUGGEST-STRUCT	1	2	0	MessageDigestBehavior	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	ModuleDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	ModuleMapEntry	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	MonitorReceiver	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	0	MsfFileReaderLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	MsfStreamLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	0	MultEntSubModel	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	MultiBlendedListingBackgroundColorModel	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	124	Op	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	OptionsEditor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	OptionsVetoException	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	0	OverlapCodeSubModel	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	ParamListStandard	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	ParentChildDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	PartialUnion	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	PartitionCodeSubModel	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	PcodeTraversal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	PreferencesLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	ProgramSelection	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ARENA	1	2	0	ProjectDataTypeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ACCEPT	1	2	0	ProjectViewListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-ENUM	1	2	2	PropertySet	graph?	suggest	small closed set: 5 real implementers, all in-crate
+TODO	1	2	0	PrototypeManagerProgram	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	PseudoDisassembler	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	PtyChild	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	PtyParent	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	QCallback	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	RecordingOptionsState	graph?	manual	
+TODO	1	2	0	RegionMapEntry	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	RegisterValueBuilder	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	RemoteBlockStreamHandleLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	SearchSettings	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	SectionMapEntry	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	131	ServiceInfo	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	1241	SignedDWordDataType	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	1240	SignedQWordDataType	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	2	0	SortedList	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	SourceLanguage	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	StreamDecompressorCliToolWrapper	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	1	2	0	StructDisplayDataProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+SUGGEST-PARK	1	2	0	StubToolChest	graph?	suggest	not declared in the crate (external type or unresolved stub)
+ITER	1	2	0	SubroutineDestReferenceIterator	graph?	family	[family:Iterator] Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+TODO	1	2	0	SymbolManagerDB	graph?	manual	
+SUGGEST-PARK	1	2	0	SymbolParser	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	2	0	SymbolRecords	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	2	0	TerminalListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	2	0	ToggleDockingActionIf	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	TokenSource	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	TraceBookmarkType	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	TraceLocation	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	TraceRmiHandler	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	TraceSection	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	TrustManagerFactoryLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	UnionAddressRangeIteratorFactory	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	2	0	UnknownFolderItem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	2	0	UnsupportedMapDB	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	2	0	ValueSortedMapEntryList	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	2	0	ValueSortedMapKeyList	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	2	0	VarKeyInteriorNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	AbortedTransactionListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	1	0	AbstractAddressSetView	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	AbstractAssemblyResolution	closed-hierarchy?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	AbstractBinaryExpressionSolver	closed-hierarchy?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	AbstractCobol0MsType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	AbstractDimensionedArrayConstBoundsLowerUpperMsType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	AbstractExpressionSolver	closed-hierarchy?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	AddressChangeSet	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	AddressCorrelator	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	AddressRangeIteratorFactory	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	AddressSetPropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	AddressTranslator	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	AddressXml	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	1202	AnnotationHandler	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	ApplicationUtilities	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ArchiverCliToolWrapper	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ArrayDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	AssemblerBuilder	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	AssemblyExtendedProduction	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+SUGGEST-STRUCT	1	1	0	AssemblyFixedNumericTerminal	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	AssemblyNumericTerminal	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	AssemblyParseActionGotoTable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	AssemblyParseTransitionTable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	AssemblyParser	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	AutoParameterImpl	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	BasicLanguageDescription	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	BigRefListV0	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	BlockIfGoto	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	1	105	BlockModelService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	BlockMultiGoto	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	1	0	BlockStreamServer	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	1	1	0	BooleanSettingsDefinition	graph?	suggest	small closed set: 4 real implementers, all in-crate
+TODO	1	1	0	BufferFileAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ByteTrieNode	graph?	manual	
+SUGGEST-STRUCT	1	1	0	C13SectionLike	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	CachedAddressSetView	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	1	1	0	CachedPasswordProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	1	1	0	ChangeSet	graph?	evidence	9 real implementers -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA)
+SUGGEST-STRUCT	1	1	0	ClassStateHandler	open-extension	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	ClassSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	ClipboardService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ARENA	1	1	0	CodeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	1	1	0	CodeUnitFormat	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	CommentHistoryAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	CommentsDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	ComparableMultiMapStl	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	ComparableMultiSetStl	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	CompositeDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	109	ConsoleService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	ConstantPool	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	5	ConstantSpace	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	ContextCache	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	ContextSet	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	CountedDynamicDataType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	227	DBFileListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ARENA	1	1	0	DBPropertyMapManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	1	1	0	DataDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	DataFileHandle	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	DataHighLevelShaderLanguageSymbolInternals	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	DataHighLevelShaderLanguageSymbolInternals32	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	DataLocationListContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	DataTypeArchiveDB	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	DataTypeArchiveIdDumper	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	98	DataTypeArchiveService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	259	DataTypeManagerService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+SUGGEST-PARK	1	1	0	DataTypeMerger	graph?	suggest	not declared in the crate (external type or unresolved stub)
+ACCEPT	1	1	99	DataTypeQueryService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	DataTypeUtilities	graph?	evidence	only 1 real implementer(s), but DataTypeUtilities is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+SUGGEST-STRUCT	1	1	0	DbObject	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	1	1	98	DebuggerAutoMappingService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	98	DebuggerEmulationService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	0	DebuggerListingService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	100	DebuggerPlatformService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	111	DebuggerStaticMappingService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	98	DebuggerTargetService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	106	DebuggerTraceManagerService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	DecisionNode	graph?	manual	
+TODO	1	1	0	Decryptor	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	DefaultAssemblyResolvedBackfill	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	DefaultLanguageService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	0	DefaultPluginPackagingProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+SUGGEST-STRUCT	1	1	0	DefaultProjectData	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	DefaultSchemaContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	DefaultSslContextInitializer	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	DepthFirstSearch	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	DiscoverableAddressCorrelator	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ACCEPT	1	1	0	DomainFolderFilter	open-extension	suggest	8 implementers and an extension-point name -- open set
+SUGGEST-STRUCT	1	1	1209	DynamicDataType	closed-hierarchy?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	DynamicEntry	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ACCEPT	1	1	101	EclipseIntegrationService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	EnumDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	EquateRefDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	ExtensionUtils	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	ExternalDisassembler	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	FileBytesAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	1	1	0	FileSystemRefManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ACCEPT	1	1	0	FileSystemService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	FromAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	101	FunctionComparisonService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	FunctionDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	FunctionDefinitionDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	FunctionHasher	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	1	1	1088	FunctionManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	1	1	0	FunctionMerge	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	FunctionSignatureImpl	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	FunctionSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	FunctionTagManagerDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	FunctionTagMappingAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	GFileHashProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+TODO	1	1	0	GFileSystem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	GFileSystemFactoryByteProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+ACCEPT	1	1	0	GFileSystemProbeByteProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+ACCEPT	1	1	0	GFileSystemProgramProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+SUGGEST-ENUM	1	1	0	GImplicitDirectedGraph	graph?	suggest	small closed set: 4 real implementers, all in-crate
+SUGGEST-STRUCT	1	1	0	GTimer	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	GenericAssemblerBuilder	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-PARK	1	1	0	GenericCallingConventionPlaceholder	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	1	0	GenericRunInfo	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	GenericStandAloneApplication	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	GhidraDataTypeArchiveMergeManagerFactory	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	GhidraJarBuilder	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	GhidraProgramMultiUserMergeManagerFactory	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	GhidraServer	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	GhidraToolState	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	GhidraURL	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	GhidraURLConnection	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	GhidraURLWrappedContentLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	1	284	GoToService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	GraphAlgorithms	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	108	GraphDisplayBroker	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	HighCodeSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	HighConstant	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	HighFunctionDBUtil	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	HighParamID	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	1199	ICategory	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ImmutableTraceAddressSnapRange	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	IndexedLocalFileSystem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	InjectPayloadCallfixup	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	InlinedFunctionCallsiteExtendedMsSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	Inner	graph?	manual	
+TODO	1	1	0	InstDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	InstructionPcodeOverride	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	1207	InternalDataTypeComponent	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	98	InternalTraceRmiService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	0	IssueListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	1	0	JarEntryNode	graph?	manual	
+TODO	1	1	0	JumpTable	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	1	0	LabelHistoryAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	304	LanguageProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+SUGGEST-STRUCT	1	1	0	LanguageTranslatorFactoryMinion	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	300	LanguageUtilities	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	LanguageVersionException	closed-hierarchy?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-ENUM	1	1	0	LesserList	graph?	suggest	small closed set: 5 real implementers, all in-crate
+TODO	1	1	0	ListingDB	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	98	ListingMarginProviderService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	Loaded	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	LocalVariable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ManagedBufferFileAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	MdBasicName	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	MdComplexType	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	MdDataTypeParser	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	MdMangGenericize	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	MdMangUtils	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	MdMangVs2015	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	MdModifierType	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	MemoryBlockDB	graph?	manual	
+TODO	1	1	0	MemoryMapDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	98	MemorySearchService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+SUGGEST-STRUCT	1	1	0	MergeResolver	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	MockDomainObject	graph?	manual	
+TODO	1	1	0	Module	graph?	evidence	only 1 real implementer(s), but Module is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+ARENA	1	1	0	ModuleManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-STRUCT	1	1	0	MonitoredRunnable	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	Msf	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	NameSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	NavigatableActionContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	NavigationActionContext	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	586	OffsetReference	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	OldLanguageFactory	open-extension	evidence	only 1 real implementer(s), but OldLanguageFactory is still TODO in PORT_MANIFEST.tsv -- revisit once the port lands
+ACCEPT	1	1	0	OptionsChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	1	0	OtherSpace	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	OverlaySpaceDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	ParamListStandardOut	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	ParameterImpl	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	PasswordProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+SUGGEST-ACCEPT	1	1	0	PathFilter	open-extension	suggest	3 implementers and an extension-point name -- open set
+TODO	1	1	0	PcodeEmitPacked	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	PdbParser	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	PluginInstaller	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	PluginUtils	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	PluginsConfiguration	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	PointerDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	1241	PointerTypedefBuilder	graph?	suggest	trait with only 2 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	PoolInner	graph?	manual	
+TODO	1	1	0	ProgramArchitectureTranslator	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	ProgramChangeSet	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	ProgramCompilerSpec	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ProgramLocationSupplierContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	98	ProgressService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	ProjectLockLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	1	0	PropertyFile	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	PropertyMapDB	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	1	1	0	PrototypeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+ACCEPT	1	1	0	QItemListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+ACCEPT	1	1	0	QProgressListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-STRUCT	1	1	0	QRunnable	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	RangeMapAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-PARK	1	1	0	RealCheckoutType	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	1	0	RedBlackEntry	graph?	manual	
+TODO	1	1	0	RefListV0	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	1	1	0	ReferenceDbManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	1	1	0	Register	graph?	manual	
+TODO	1	1	0	RegisterTree	graph?	manual	
+TODO	1	1	0	RelocationDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	RemoteBufferFileHandle	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	RemoteManagedBufferFileHandle	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-STRUCT	1	1	0	RemoteRepositoryHandle	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	RepositoryHandleImpl	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	RepositoryLogger	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+ARENA	1	1	0	RepositoryManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+SUGGEST-PARK	1	1	0	SeamRefType	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-PARK	1	1	0	SeamReference	graph?	suggest	not declared in the crate (external type or unresolved stub)
+SUGGEST-STRUCT	1	1	0	SemanticEnvironment	graph?	suggest	declared a trait but nothing (non-mock) implements it -- not an extension point
+TODO	1	1	0	SettingsDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	SleighAssemblerBuilder	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	3	SleighBase	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	SleighCompile	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	SleighDebugLogger	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	SleighInstructionPrototype	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	SleighLanguageProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+ARENA	1	1	0	SourceFileManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	1	1	0	SourceFileManagerDB	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	SourceMapAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-ENUM	1	1	11	SpecificSymbol	graph?	suggest	small closed set: 7 real implementers, all in-crate
+TODO	1	1	0	StructureDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	StubMemory	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	SubtableTraversal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+TODO	1	1	0	SymbolDatabaseAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-PARK	1	1	0	SymbolEntry	graph?	suggest	not declared in the crate (external type or unresolved stub)
+TODO	1	1	0	SymbolManagerDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	SymbolicPropogator	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	0	TaskListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+SUGGEST-ACCEPT	1	1	0	TerminatingConsumer	open-extension	suggest	5 implementers and an extension-point name -- open set
+TODO	1	1	0	ThunkFunctionAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ToAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	TraceBookmark	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	TraceObjectInterface	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	1	99	TraceRmiLauncherService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	105	TraceRmiService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+TODO	1	1	0	TraceUniqueObject	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	302	TrackedTaskListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	1	0	TransientProjectData	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ARENA	1	1	0	TreeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
+TODO	1	1	1224	Union	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	4	UniqueSpace	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+ACCEPT	1	1	100	VSCodeIntegrationService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+SUGGEST-STRUCT	1	1	0	ValStrAny	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+TODO	1	1	0	ValueMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	ValueMapSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	VariableConflictHandler	open-extension	suggest	declared a trait but nothing (non-mock) implements it -- not an extension point
+TODO	1	1	0	VariableImpl	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	Version	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
+ACCEPT	1	1	304	VersionedLanguageService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	99	ViewManagerService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+ACCEPT	1	1	0	VtFunctionAssociationListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+TODO	1	1	0	WeakDataStructureFactory	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+TODO	1	1	0	Writeable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
+SUGGEST-STRUCT	1	1	0	XmlDataReader	graph?	suggest	trait with only 1 real implementer(s) -- usually just a concrete type
+SUGGEST-PARK	1	1	0	u64	graph?	suggest	not declared in the crate (external type or unresolved stub)
