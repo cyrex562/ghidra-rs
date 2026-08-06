@@ -426,3 +426,5 @@ ts	stub_class	referenced_by
 2026-08-05T08:57:48.874074+00:00	SchemaBuilder	DefaultSchemaContext
 2026-08-06T01:41:21.293989+00:00	TraceObject	TraceObjectValue
 2026-08-06T02:54:57.197691+00:00	TraceObjectInterface	TraceMemory
+2026-08-06T05:50:59.453305+00:00	TracePlatform	TraceCodeUnit
+2026-08-06T05:50:59.453326+00:00	TraceThread	TraceCodeUnit
