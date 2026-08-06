@@ -39,7 +39,7 @@ use crate::program::database::program_db::ProgramDB;
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::listing::{ProgramFragment, ProgramModule};
 use crate::util::exception::{CancelledException, DuplicateNameException};
-use crate::util::lock::Lock;
+use crate::util::lock::ReentrantLock;
 use crate::util::task::TaskMonitor;
 
 /// Name of the default tree that is created when a program is created. Stands in for
@@ -198,7 +198,7 @@ pub trait TreeManager: ManagerDB {
     /// Gets the lock used to synchronize access to the program's trees.
     ///
     /// Stands in for `TreeManager.getLock()`.
-    fn get_lock(&self) -> &Lock<()>;
+    fn get_lock(&self) -> &ReentrantLock;
 
     /// Gets the program that owns this manager.
     ///
@@ -236,7 +236,7 @@ mod tests {
     struct MockTreeManager {
         trees: BTreeMap<String, i64>,
         next_id: i64,
-        lock: Lock<()>,
+        lock: ReentrantLock,
         db_handle: DBHandle,
         error_handler: StubErrorHandler,
     }
@@ -246,7 +246,7 @@ mod tests {
             MockTreeManager {
                 trees: BTreeMap::new(),
                 next_id: 0,
-                lock: Lock::new_unit("Tree Manager"),
+                lock: ReentrantLock::new("Tree Manager"),
                 db_handle: DBHandle::new().expect("db handle should construct"),
                 error_handler: StubErrorHandler,
             }
@@ -375,7 +375,7 @@ mod tests {
             None
         }
 
-        fn get_lock(&self) -> &Lock<()> {
+        fn get_lock(&self) -> &ReentrantLock {
             &self.lock
         }
 

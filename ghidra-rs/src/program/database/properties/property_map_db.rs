@@ -459,6 +459,6 @@ mod tests {
 
         map.delete().unwrap();
         assert_eq!(map.get_size(), 0);
-        assert!(map.is_deleted(&crate::util::lock::Lock::new_unit("test")));
+        assert!(map.is_deleted(&crate::util::lock::ReentrantLock::new("test")));
     }
 }

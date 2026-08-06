@@ -90,7 +90,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::data_type_path::DataTypePath;
 use crate::program::model::data::data_utilities::DataUtilities;
 use crate::util::exception::{DuplicateNameException, InvalidNameException};
-use crate::util::lock::Lock;
+use crate::util::lock::ReentrantLock;
 use crate::util::UniversalID;
 
 /// Error produced by [`DataTypeDb::do_set_name_record`], combining the two checked exceptions
@@ -139,7 +139,7 @@ pub trait DataTypeDb: DataType + DbObject {
 
     /// The lock shared with this datatype's owning manager (`dataMgr.lock` in Java), guarding the
     /// cached `name`/`category` fields against concurrent refresh.
-    fn lock(&self) -> &Lock<()>;
+    fn lock(&self) -> &ReentrantLock;
 
     /// Backing storage for the `volatile` `name` field.
     fn stored_name(&self) -> Option<String>;
@@ -358,7 +358,7 @@ pub trait DataTypeDb: DataType + DbObject {
 
     /// Port of `DataTypeDB.isDeleted()`. Exposed under a distinct name since
     /// [`DataType::is_deleted`] already provides a (placeholder) default, and to disambiguate
-    /// from [`DbObject::is_deleted`] (which takes an explicit `&Lock<()>` argument and would
+    /// from [`DbObject::is_deleted`] (which takes an explicit `&ReentrantLock` argument and would
     /// otherwise be an ambiguous call target on a `dyn DataTypeDb`).
     fn data_type_db_is_deleted(&self) -> bool {
         DbObject::is_deleted(self, self.lock())
@@ -596,7 +596,7 @@ mod tests {
     struct MockDataTypeDb {
         db_state: DbObjectState,
         cache: Arc<AtomicModCache>,
-        lock: Lock<()>,
+        lock: ReentrantLock,
         name: Mutex<Option<String>>,
         category_path: Mutex<Option<CategoryPath>>,
         deleting: Mutex<bool>,
@@ -625,7 +625,7 @@ mod tests {
             MockDataTypeDb {
                 db_state,
                 cache,
-                lock: Lock::new_unit("test"),
+                lock: ReentrantLock::new("test"),
                 name: Mutex::new(None),
                 category_path: Mutex::new(None),
                 deleting: Mutex::new(false),
@@ -644,6 +644,10 @@ mod tests {
             &self.db_state
         }
         fn refresh(&self, _record: Option<&crate::framework::db::DBRecord>) -> bool {
+            // Mirrors `DataTypeDB.refresh()`, whose subclasses call `completeRefresh()` to drop
+            // the cached name/category before the next read re-derives them. Without this the
+            // mock reports a stale name forever after an invalidation.
+            self.data_type_db_complete_refresh();
             true
         }
     }
@@ -667,7 +671,7 @@ mod tests {
         fn owning_data_type_manager(&self) -> Arc<dyn DataTypeManagerDb> {
             self.manager.clone()
         }
-        fn lock(&self) -> &Lock<()> {
+        fn lock(&self) -> &ReentrantLock {
             &self.lock
         }
         fn stored_name(&self) -> Option<String> {

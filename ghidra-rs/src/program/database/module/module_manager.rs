@@ -36,7 +36,7 @@ use crate::program::model::listing::group::Group;
 use crate::program::model::listing::{ProgramFragment, ProgramModule};
 use crate::program::seam_stubs::{FragmentDB, ModuleDB};
 use crate::util::exception::{CancelledException, NotFoundException};
-use crate::util::lock::Lock;
+use crate::util::lock::ReentrantLock;
 use crate::util::task::TaskMonitor;
 
 /// DB table name prefix for a program tree's fragment-address range map. Stands in for
@@ -92,7 +92,7 @@ pub trait ModuleManager {
     /// Gets the lock used to synchronize access to this tree.
     ///
     /// Stands in for `ModuleManager.getLock()`.
-    fn get_lock(&self) -> &Lock<()>;
+    fn get_lock(&self) -> &ReentrantLock;
 
     /// Sets the name of the program tree this manager belongs to.
     ///
@@ -488,7 +488,7 @@ mod tests {
         module_adapter: MockModuleDBAdapter,
         fragment_adapter: MockFragmentDBAdapter,
         parent_child_adapter: MockParentChildAdapter,
-        lock: Lock<()>,
+        lock: ReentrantLock,
         db_handle: DBHandle,
         fragment_names: BTreeMap<String, ()>,
         version_counter: i64,
@@ -511,7 +511,7 @@ mod tests {
             &self.parent_child_adapter
         }
 
-        fn get_lock(&self) -> &Lock<()> {
+        fn get_lock(&self) -> &ReentrantLock {
             &self.lock
         }
 
@@ -677,7 +677,7 @@ mod tests {
             module_adapter: MockModuleDBAdapter,
             fragment_adapter: MockFragmentDBAdapter,
             parent_child_adapter: MockParentChildAdapter,
-            lock: Lock::new_unit("Module Manager"),
+            lock: ReentrantLock::new("Module Manager"),
             db_handle: DBHandle::new().expect("db handle should construct"),
             fragment_names: BTreeMap::new(),
             version_counter: 0,

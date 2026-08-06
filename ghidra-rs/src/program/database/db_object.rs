@@ -2,7 +2,7 @@
 
 use crate::framework::db::DBRecord;
 use crate::program::database::db_cache::{DbCacheHandle, INVALID_COUNT};
-use crate::util::lock::Lock;
+use crate::util::lock::ReentrantLock;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -263,7 +263,7 @@ pub trait DbObject: Send + Sync {
     /// This method provides a cheap (lock free) way to test if an object is valid. If this
     /// object is invalid and not deleted, then the lock will be used to refresh as needed. A
     /// deleted object will not be refreshed. Stands in for `DbObject.validate(Lock)`.
-    fn validate(&self, lock: &Lock<()>) -> bool {
+    fn validate(&self, lock: &ReentrantLock) -> bool {
         if self.is_valid() {
             return true;
         }
@@ -277,7 +277,7 @@ pub trait DbObject: Send + Sync {
 
     /// Returns true if this object has been deleted. Note: once an object has been deleted, it
     /// will never be "refreshed". Stands in for `DbObject.isDeleted(Lock)`.
-    fn is_deleted(&self, lock: &Lock<()>) -> bool {
+    fn is_deleted(&self, lock: &ReentrantLock) -> bool {
         self.state().is_deleted_flag() || !self.validate(lock)
     }
 }
@@ -394,7 +394,7 @@ mod tests {
         cache.invalidate();
         assert!(!obj.refresh_if_needed());
 
-        assert!(obj.is_deleted(&Lock::new_unit("test")));
+        assert!(obj.is_deleted(&ReentrantLock::new("test")));
         assert_eq!(*cache.deleted_keys.lock().unwrap(), vec![9]);
 
         // Once deleted, the object never refreshes again, even if the cache is invalidated
