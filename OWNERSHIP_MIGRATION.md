@@ -101,17 +101,43 @@ MVCC implemented by hand over DB checkpoints:
 - **Write = a transaction.** `fn transaction<R>(&self, name: &str, f: impl FnOnce(&mut ProgramStore) -> R) -> R`
   takes the single-writer lock, mutates, and publishes the new version atomically at commit.
   This *is* `startTransaction`/`endTransaction`.
-- **Undo/redo = retained versions.** Keep a bounded ring of prior `Arc<ProgramStore>`s. Ghidra
-  already bounds undo depth.
+- **Undo/redo = a delta log.** Each transaction records the reversible changes it made; undo
+  applies their inverses, redo replays them forward. This is what Ghidra already does — a
+  transaction records the changed records for its checkpoint rather than duplicating the
+  database.
+
+  Retaining prior `Arc<ProgramStore>` versions instead is the obvious-looking design and is
+  wrong: holding the previous version makes the writer a non-sole owner, so `Arc::make_mut`
+  copies the arena on the next write, and a non-persistent map copy is O(n) in entries. Measured
+  in the pilot (`equate_store.rs`, `write_cost_is_independent_of_store_size`):
+
+  | store entries | in-place write | copying write | ratio |
+  |---|---|---|---|
+  | 100 | 2.9 µs | 87 µs | 30x |
+  | 1,000 | 2.3 µs | 262 µs | 116x |
+  | 10,000 | 3.9 µs | 2.1 ms | 536x |
+  | 100,000 | 24 µs | 25 ms | 1040x |
+
+  In-place cost is flat; the copying path is linear. At 100k entries that is 25 ms *per
+  transaction*, and a real program has millions of code units — auto-analysis would never
+  finish. The delta log keeps the writer the sole owner, so writes stay in place, and its memory
+  is proportional to edits rather than store size.
 - **`modification_count` = the version number**, and generational arena keys already give
   per-entry versioning.
 
-*Cost that must be designed in, not discovered:* auto-analysis is write-heavy — millions of
-records — so a persistent map per record would be far too slow. Mutate in place inside the
-transaction while the store is uniquely owned (`Arc::make_mut` copies only when a reader still
-holds the old version) and publish once at commit. Make the arenas per-entity `Arc` fields so a
-transaction clones only the arenas it touches, not the whole store. Retained snapshots also pin
-memory, which is why the undo ring is bounded.
+*The cost that remains, and cannot be removed at this layer:* a reader holding a snapshot
+across a write still forces exactly one copy — that copy is what keeps the reader's version
+immutable. So a GUI holding a snapshot while analysis runs pays the right-hand column above on
+every transaction. That is inherent to snapshot isolation over non-persistent maps; if it
+becomes the bottleneck the answer is persistent arenas (`im`/`rpds`: O(1) clone with structural
+sharing) at the cost of a dependency and slower point access. Keep arenas as per-entity `Arc`
+fields either way, so a transaction only ever touches what it modifies.
+
+*A constraint that dictates the id type:* undoing a deletion must restore the entry under the
+**same** id, or every id held elsewhere dangles after an undo. `SlotMap::insert` always mints a
+fresh key and has no insert-at-key, so arenas that need undo use an explicit monotonic counter —
+which is what the DB record key already is. Ids are never reused, so a stale id resolves to
+`None`, the same safety a generational key gives.
 
 *Relationship to storage:* this changes the **access** model, not persistence. Commit still
 writes through. `framework/db` (fully ported, 13k lines: B-trees, buffer manager, chained
