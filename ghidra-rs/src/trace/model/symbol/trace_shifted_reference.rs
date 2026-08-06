@@ -1,5 +1,5 @@
 use crate::program::model::symbol::ShiftedReference;
-use crate::trace::seam_stubs::TraceReference;
+use crate::trace::model::symbol::trace_reference::TraceReference;
 
 /// Port of `ghidra.trace.model.symbol.TraceShiftedReference`, a
 /// [`TraceReference`] whose destination is computed from a base value left
@@ -24,15 +24,45 @@ impl<T: TraceReference + ShiftedReference + ?Sized> TraceShiftedReference for T 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::symbol::{RefType, Reference, SourceType};
+    use crate::program::model::address::{Address, AddressRange, AddressSpace, AddressSpaceType};
+    use crate::program::model::symbol::{RefType, Reference, SourceType, Symbol};
+    use crate::trace::model::lifespan::Lifespan;
+    use crate::trace::model::trace::Trace;
+    use std::sync::Arc;
 
     struct MockTraceShiftedReference {
         value: i64,
         shift: i32,
     }
 
-    impl TraceReference for MockTraceShiftedReference {}
+    impl TraceReference for MockTraceShiftedReference {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_start_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_to_range(&self) -> AddressRange {
+            let to = self.to_address();
+            AddressRange::new(to.clone(), to)
+        }
+
+        fn set_primary(&mut self, _primary: bool) {}
+
+        fn set_reference_type(&mut self, _ref_type: RefType) {}
+
+        fn set_associated_symbol(&mut self, _symbol: Arc<dyn Symbol>) {}
+
+        fn clear_associated_symbol(&mut self) {}
+
+        fn delete(&mut self) {}
+    }
 
     impl ShiftedReference for MockTraceShiftedReference {
         fn shift(&self) -> i32 {

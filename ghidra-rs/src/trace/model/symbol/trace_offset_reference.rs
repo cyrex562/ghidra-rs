@@ -1,5 +1,5 @@
 use crate::program::model::symbol::OffsetReference;
-use crate::trace::seam_stubs::TraceReference;
+use crate::trace::model::symbol::trace_reference::TraceReference;
 
 /// Port of `ghidra.trace.model.symbol.TraceOffsetReference`, a
 /// [`TraceReference`] whose destination is computed as a base address plus an
@@ -29,8 +29,11 @@ impl<T: TraceReference + OffsetReference + ?Sized> TraceOffsetReference for T {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::symbol::{RefType, Reference, SourceType};
+    use crate::program::model::address::{Address, AddressRange, AddressSpace, AddressSpaceType};
+    use crate::program::model::symbol::{RefType, Reference, SourceType, Symbol};
+    use crate::trace::model::lifespan::Lifespan;
+    use crate::trace::model::trace::Trace;
+    use std::sync::Arc;
 
     struct MockTraceOffsetReference {
         to_range_min: Address,
@@ -38,7 +41,33 @@ mod tests {
         offset: i64,
     }
 
-    impl TraceReference for MockTraceOffsetReference {}
+    impl TraceReference for MockTraceOffsetReference {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_start_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_to_range(&self) -> AddressRange {
+            AddressRange::new(self.to_range_min.clone(), self.to_range_min.clone())
+        }
+
+        fn set_primary(&mut self, _primary: bool) {}
+
+        fn set_reference_type(&mut self, _ref_type: RefType) {}
+
+        fn set_associated_symbol(&mut self, _symbol: Arc<dyn Symbol>) {}
+
+        fn clear_associated_symbol(&mut self) {}
+
+        fn delete(&mut self) {}
+    }
 
     impl OffsetReference for MockTraceOffsetReference {
         fn offset(&self) -> i64 {

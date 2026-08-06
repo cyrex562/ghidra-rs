@@ -1,5 +1,5 @@
 use crate::program::model::symbol::StackReference;
-use crate::trace::seam_stubs::TraceReference;
+use crate::trace::model::symbol::trace_reference::TraceReference;
 
 /// Port of `ghidra.trace.model.symbol.TraceStackReference`, a
 /// [`TraceReference`] pointing to a stack location.
@@ -25,14 +25,43 @@ impl<T: TraceReference + StackReference + ?Sized> TraceStackReference for T {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::symbol::{RefType, Reference, SourceType};
+    use crate::program::model::address::{Address, AddressRange, AddressSpace, AddressSpaceType};
+    use crate::program::model::symbol::{RefType, Reference, SourceType, Symbol};
+    use crate::trace::model::lifespan::Lifespan;
+    use crate::trace::model::trace::Trace;
+    use std::sync::Arc;
 
     struct MockTraceStackReference {
         to_address: Address,
     }
 
-    impl TraceReference for MockTraceStackReference {}
+    impl TraceReference for MockTraceStackReference {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_start_snap(&self) -> i64 {
+            0
+        }
+
+        fn get_to_range(&self) -> AddressRange {
+            AddressRange::new(self.to_address.clone(), self.to_address.clone())
+        }
+
+        fn set_primary(&mut self, _primary: bool) {}
+
+        fn set_reference_type(&mut self, _ref_type: RefType) {}
+
+        fn set_associated_symbol(&mut self, _symbol: Arc<dyn Symbol>) {}
+
+        fn clear_associated_symbol(&mut self) {}
+
+        fn delete(&mut self) {}
+    }
 
     impl StackReference for MockTraceStackReference {
         fn stack_offset(&self) -> i32 {
