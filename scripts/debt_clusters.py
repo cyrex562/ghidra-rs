@@ -1,0 +1,422 @@
+"""Type-level frontier for the ownership migration -- the work-list Phase 3 actually needs.
+
+OWNERSHIP_DEBT.tsv ranks FILES, but an ownership decision is never about a file: it's about a
+TYPE. Proofing the remediation harness showed why that matters. Three files parked in a row
+(Trace -> DebuggerStaticMappingService -> DebuggerTraceManagerService), each on the same
+undecided convention for `Trace`. File-at-a-time remediation re-asks the same question once
+per file, pays an LLM call for each, and parks every time.
+
+This script inverts the index: for every type reached through `dyn T` / `Rc<RefCell<T>>` /
+`Arc<Mutex<T>>` in a convention-blocked file, count how many distinct files depend on that
+decision. The result is a short queue -- ~20 verdicts cover well over half the blocked pile --
+where each entry is answered ONCE and unblocks everything downstream of it.
+
+Verdicts (col 1 of CONVENTION_QUEUE.tsv), per OWNERSHIP_MIGRATION.md's conventions:
+  TODO    undecided -- files depending on it stay blocked
+  ACCEPT  `dyn` is the RIGHT answer here (genuine open-ended extension point: a progress
+          monitor, plugin-provided service, loader, listener). Not debt. pattern_audit.py
+          stops counting it, so files whose only remaining smell is ACCEPTed types leave the
+          frontier with no LLM call and no park.
+  ARENA   shared/graph type -> arena + typed Copy ID (see group_tree.rs for the worked shape)
+  ENUM    closed hierarchy -> enum dispatch
+  ITER    Java iterator interface -> concrete Rust iterator implementing std::Iterator
+  STRUCT  shouldn't be a trait at all (a trait with 0-2 implementers is usually just a type)
+  PARK    genuinely undecidable for now; keep it off the queue but don't keep re-asking
+
+SUGGEST-<VERDICT> is a PROPOSAL, not a decision: --suggest writes them from structural
+evidence (is it declared a trait? how many implementers?), and nothing downstream acts on
+them -- pattern_audit.py honours a bare ACCEPT only, never SUGGEST-ACCEPT. Review, then
+promote in bulk with --promote.
+
+Usage:
+  python scripts/debt_clusters.py --out CONVENTION_QUEUE.tsv
+  python scripts/debt_clusters.py --top 20            # print the queue, don't write
+"""
+import argparse
+import csv
+import os
+import re
+import sys
+from collections import defaultdict
+
+# Trait objects that are idiomatic Rust, not a Java interface translated too literally.
+# `Box<dyn Error>`, `&dyn Any`, `Box<dyn Fn(..)>` are correct Rust and must never be scored
+# as ownership debt or enqueued as convention decisions.
+IDIOMATIC = {
+    "Any", "Error", "Fn", "FnMut", "FnOnce", "Iterator", "DoubleEndedIterator",
+    "ExactSizeIterator", "Send", "Sync", "Display", "Debug", "Write", "Read", "Seek",
+    "BufRead", "Future", "Hash", "Ord", "PartialEq", "PartialOrd", "Eq", "Clone",
+    "ToString", "Deref", "DerefMut", "Drop", "Default", "From", "Into", "AsRef", "AsMut",
+}
+
+# Name shapes that mark a genuine open-ended extension point -- an interface whose whole
+# purpose is that callers/plugins supply their own implementation. `dyn` is the idiomatic
+# Rust answer for these, so they are ACCEPT candidates rather than arena candidates.
+# Above this many real implementers, "closed hierarchy -> enum" stops being credible.
+ENUM_MAX_VARIANTS = 8
+
+OPEN_EXTENSION_SUFFIXES = (
+    "Monitor", "Service", "Provider", "Listener", "Adapter", "Handler", "Callback",
+    "Factory", "Plugin", "Loader", "Visitor", "Filter", "Comparator", "Consumer",
+    "Supplier", "Predicate", "Analyzer", "Exporter", "Importer", "Formatter",
+)
+
+RE_DYN = re.compile(
+    r"\bdyn\s+(?:(?:crate|std|core|alloc|self|super)::)?"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Za-z_][A-Za-z0-9_]*)"
+)
+RE_CELL = re.compile(
+    r"\b(?:Rc\s*<\s*RefCell|Arc\s*<\s*(?:Mutex|RwLock))\s*<\s*(?:dyn\s+)?"
+    r"(?:(?:crate|std|core|alloc|self|super)::)?"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Za-z_][A-Za-z0-9_]*)"
+)
+RE_LINE_COMMENT = re.compile(r"//.*$", re.MULTILINE)
+
+QUEUE_COLS = ["verdict", "leverage", "occurrences", "fanin", "type", "category", "source", "note"]
+
+
+def load_family_rules(path):
+    """suffix -> (verdict, note) from CONVENTION_FAMILIES.tsv. Families are how this queue
+    stays tractable: one rule decides a naming family at once (all *Iterator, all *Listener),
+    instead of asking the same question 22 or 39 times. Per-type verdicts always win."""
+    rules = []
+    if not path or not os.path.exists(path):
+        return rules
+    with open(path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            suffix = (r.get("suffix") or "").strip()
+            verdict = (r.get("verdict") or "").strip()
+            if suffix and verdict:
+                rules.append((suffix, verdict, r.get("note") or ""))
+    # longest suffix first, so a more specific family wins over a shorter one
+    rules.sort(key=lambda t: -len(t[0]))
+    return rules
+
+
+def apply_family(name, rules):
+    for suffix, verdict, note in rules:
+        if name.endswith(suffix) and name != suffix:
+            return verdict, f"[family:{suffix}] {note}"
+    return None
+
+
+RE_TRAIT_DECL = re.compile(r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:unsafe\s+)?trait\s+([A-Za-z_]\w*)", re.M)
+RE_TYPE_DECL = re.compile(r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:struct|enum)\s+([A-Za-z_]\w*)", re.M)
+RE_IMPL_FOR = re.compile(
+    r"^\s*impl(?:\s*<[^>]*>)?\s+(?:[\w:]*::)?([A-Za-z_]\w*)(?:\s*<[^>]*>)?\s+for\s+"
+    r"(?:&\s*)?(?:[\w:]*::)?([A-Za-z_]\w*)",
+    re.M,
+)
+
+# Test doubles are not evidence about a type's real implementer set: a trait implemented by
+# one real type and six mocks is not an open extension point.
+MOCK_PREFIXES = ("Mock", "Stub", "Fake", "Dummy", "Test", "Minimal")
+
+
+def load_unported_classes(manifest):
+    """Java class names still TODO in PORT_MANIFEST.tsv. A trait with no real implementers is
+    NOT evidence that it should be a concrete type when its Java implementers simply haven't
+    been ported yet -- that is the normal mid-port state, and 198 of these traits are literal
+    seam_stubs.rs placeholders waiting for their port. Without this check the proposer
+    confidently recommends collapsing traits whose implementations are still queued."""
+    unported = set()
+    if not manifest or not os.path.exists(manifest):
+        return unported
+    with open(manifest, encoding="utf-8") as f:
+        for line in f:
+            cols = line.rstrip("\n").split("\t")
+            if len(cols) >= 2 and cols[1] == "TODO":
+                cls = os.path.basename(cols[0])
+                if cls.endswith(".java"):
+                    unported.add(cls[: -len(".java")])
+    return unported
+
+
+def collect_declarations(root):
+    """Structural evidence for suggesting verdicts: where each name is declared and how many
+    implementers it has. A trait with many implementers is an open set; a trait with one or
+    none is usually a type that should never have been a trait."""
+    traits, types_, impls = defaultdict(int), defaultdict(int), defaultdict(int)
+    mock_impls, stub_decl = defaultdict(int), set()
+    for dirpath, _dirs, files in os.walk(root):
+        for fn in files:
+            if not fn.endswith(".rs"):
+                continue
+            try:
+                with open(os.path.join(dirpath, fn), encoding="utf-8", errors="ignore") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            for n in RE_TRAIT_DECL.findall(text):
+                traits[n] += 1
+            for n in RE_TYPE_DECL.findall(text):
+                types_[n] += 1
+            for trait_name, impl_target in RE_IMPL_FOR.findall(text):
+                if impl_target.startswith(MOCK_PREFIXES):
+                    mock_impls[trait_name] += 1
+                else:
+                    impls[trait_name] += 1
+            if fn == "seam_stubs.rs":
+                for n in RE_TRAIT_DECL.findall(text):
+                    stub_decl.add(n)
+    return traits, types_, impls, mock_impls, stub_decl
+
+
+def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl):
+    """Propose a verdict from structural evidence. Deliberately conservative: anything the
+    evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
+    is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
+    open_name = name.endswith(OPEN_EXTENSION_SUFFIXES)
+    if not is_trait and not is_type:
+        return "SUGGEST-PARK", "not declared in the crate (external type or unresolved stub)"
+    if not is_trait:
+        return None, ""                       # already a concrete type; `dyn` match is suspect
+    if n_impl == 0 and name in stub_decl:
+        # A seam_stubs.rs placeholder: the descent harness created it so a caller could compile
+        # before the real type was ported. Says nothing about the right ownership shape.
+        return None, "seam_stubs.rs placeholder -- revisit after the real port lands"
+    if n_impl == 0 and mock_impls.get(name, 0) > 0:
+        # Only test doubles implement it. That is the port being unfinished, not a design
+        # signal: the real implementers are Java classes still in the queue.
+        return None, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
+                      f"implementations are not ported yet; revisit then")
+    if n_impl <= 2 and name in unported:
+        # Mid-port state, not a design signal: the Java implementers are still queued.
+        return None, (f"only {n_impl} real implementer(s), but {name} is still TODO in "
+                      f"PORT_MANIFEST.tsv -- revisit once the port lands")
+    if n_impl == 0:
+        return "SUGGEST-STRUCT", "declared a trait but nothing (non-mock) implements it -- not an extension point"
+    if n_impl <= 2:
+        return "SUGGEST-STRUCT", f"trait with only {n_impl} real implementer(s) -- usually just a concrete type"
+    if n_impl <= ENUM_MAX_VARIANTS:
+        if open_name:
+            return "SUGGEST-ACCEPT", f"{n_impl} implementers and an extension-point name -- open set"
+        return "SUGGEST-ENUM", f"small closed set: {n_impl} real implementers, all in-crate"
+    # A large implementer set is evidence AGAINST a closed hierarchy, not for one: nobody
+    # wants a 94-variant enum. Either it is a genuine open set, or it is a graph type wanting
+    # an arena -- a call the evidence here cannot make, so say so instead of guessing.
+    if open_name:
+        return "SUGGEST-ACCEPT", f"{n_impl} implementers and an extension-point name -- open set"
+    return None, (f"{n_impl} real implementers -- too many for an enum; needs a human call "
+                  f"(genuine open set -> ACCEPT, or graph type -> ARENA)")
+
+
+def categorize(name):
+    """Best-effort first guess at what KIND of decision this type needs. A guess only --
+    the verdict column is set by a human or a reviewing agent, not by this heuristic."""
+    if name.endswith(OPEN_EXTENSION_SUFFIXES):
+        return "open-extension"
+    if name.startswith("Abstract") or name.endswith(("DataType", "Exception")):
+        return "closed-hierarchy?"
+    return "graph?"
+
+
+def load_blocked_rows(debt_path, max_fanin, dyn_threshold):
+    """The convention-blocked slice of OWNERSHIP_DEBT.tsv: rows the remediation harness
+    cannot act on until some type gets a verdict."""
+    blocked = []
+    with open(debt_path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            if r.get("status") != "TODO":
+                continue
+            try:
+                if int(r.get("fanin", 0)) > max_fanin:
+                    continue
+            except ValueError:
+                continue
+            sig = r.get("signals", "")
+            m = re.search(r"dyn=(\d+)", sig)
+            dyn = int(m.group(1)) if m else 0
+            if dyn >= dyn_threshold or "rc_refcell=" in sig or "arc_mutex=" in sig:
+                blocked.append(r)
+    return blocked
+
+
+def types_in_file(path):
+    """Types reached via dyn / Rc<RefCell<>> / Arc<Mutex<>>, comments stripped, idiomatic
+    trait objects excluded. Returns {name: occurrence_count}."""
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+            text = fh.read()
+    except OSError:
+        return {}
+    text = RE_LINE_COMMENT.sub("", text)
+    counts = defaultdict(int)
+    for rx in (RE_DYN, RE_CELL):
+        for name in rx.findall(text):
+            if name not in IDIOMATIC:
+                counts[name] += 1
+    return counts
+
+
+def load_prior_verdicts(path):
+    """type -> (verdict, source, note) from an existing queue, so regenerating never discards
+    decisions already made. Same lesson as pattern_audit.py's --preserve-status. Rows whose
+    source is 'family' are recomputed from the rules file; 'manual'/'seed' rows are kept
+    verbatim, so editing CONVENTION_FAMILIES.tsv can never silently overwrite a hand verdict."""
+    prior = {}
+    if not path or not os.path.exists(path):
+        return prior
+    with open(path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            name = (r.get("type") or "").strip()
+            if name:
+                prior[name] = (
+                    (r.get("verdict") or "TODO").strip(),
+                    (r.get("source") or "manual").strip(),
+                    r.get("note") or "",
+                )
+    return prior
+
+
+def load_seam_fanin(seam_path):
+    fanin = {}
+    if not seam_path or not os.path.exists(seam_path):
+        return fanin
+    with open(seam_path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        next(reader, None)
+        for row in reader:
+            if len(row) < 6:
+                continue
+            cls = os.path.basename(row[5])
+            if cls.endswith(".java"):
+                cls = cls[: -len(".java")]
+            try:
+                fanin[cls] = max(fanin.get(cls, 0), int(row[2]))
+            except ValueError:
+                continue
+    return fanin
+
+
+def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, families):
+    blocked = load_blocked_rows(debt, max_fanin, dyn_threshold)
+    fanin = load_seam_fanin(seam)
+    prior = load_prior_verdicts(out_path)
+
+    files_by_type = defaultdict(set)
+    occ_by_type = defaultdict(int)
+    for r in blocked:
+        full = os.path.join(os.path.dirname(src_root.rstrip("/")) or ".", r["path"])
+        if not os.path.exists(full):
+            full = os.path.join(src_root, os.path.relpath(r["path"], "src"))
+        for name, n in types_in_file(full).items():
+            files_by_type[name].add(r["path"])
+            occ_by_type[name] += n
+
+    rules = load_family_rules(families)
+    rows = []
+    for name, files in files_by_type.items():
+        prev = prior.get(name)
+        if prev and prev[1] != "family" and prev[0] != "TODO":
+            verdict, source, note = prev            # hand-made decision: never recompute
+        else:
+            fam = apply_family(name, rules)
+            if fam:
+                verdict, note, source = fam[0], fam[1], "family"
+            elif prev:
+                verdict, source, note = prev
+            else:
+                verdict, source, note = "TODO", "", ""
+        rows.append(
+            {
+                "verdict": verdict,
+                "leverage": len(files),
+                "occurrences": occ_by_type[name],
+                "fanin": fanin.get(name, 0),
+                "type": name,
+                "category": categorize(name),
+                "source": source,
+                "note": note,
+            }
+        )
+    rows.sort(key=lambda r: (-r["leverage"], -r["occurrences"], r["type"]))
+    return rows, blocked
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Type-level convention frontier for Phase 3")
+    ap.add_argument("--debt", default="OWNERSHIP_DEBT.tsv")
+    ap.add_argument("--seam", default="SEAM.tsv")
+    ap.add_argument("--root", default="ghidra-rs/src")
+    ap.add_argument("--out", help="Write CONVENTION_QUEUE.tsv here (preserves existing verdicts)")
+    ap.add_argument("--families", default="CONVENTION_FAMILIES.tsv",
+                    help="Family rules: one verdict for a whole naming family (*Iterator, *Listener, ...)")
+    ap.add_argument("--top", type=int, default=25, help="Rows to print when not writing")
+    ap.add_argument("--max-fanin", type=int, default=500,
+                    help="Match remediate_ownership.sh's MAX_FANIN: rows above it are Phase 2")
+    ap.add_argument("--dyn-threshold", type=int, default=5)
+    ap.add_argument("--manifest", default="PORT_MANIFEST.tsv",
+                    help="Port status, so a trait with no implementers YET isn't mistaken for "
+                         "a trait that shouldn't exist")
+    ap.add_argument("--suggest", action="store_true",
+                    help="Fill undecided rows with SUGGEST-<VERDICT> proposals from structural "
+                         "evidence. Proposals are inert until --promote.")
+    ap.add_argument("--promote", metavar="VERDICT",
+                    help="Promote SUGGEST-<VERDICT> rows to <VERDICT> (e.g. --promote ACCEPT), "
+                         "or ALL for every suggestion. This is the review gate.")
+    args = ap.parse_args()
+
+    rows, blocked = build_queue(
+        args.debt, args.seam, args.root, args.out, args.max_fanin, args.dyn_threshold,
+        args.families,
+    )
+    if not rows:
+        print("no convention-blocked rows -- nothing to queue", file=sys.stderr)
+        return
+
+    if args.suggest:
+        traits, types_, impls, mock_impls, stub_decl = collect_declarations(args.root)
+        unported = load_unported_classes(args.manifest)
+        n = 0
+        for r in rows:
+            if r["verdict"] != "TODO":
+                continue
+            v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
+                                     mock_impls, stub_decl)
+            if v:
+                r["verdict"], r["source"], r["note"] = v, "suggest", why
+                n += 1
+            elif why:
+                r["source"], r["note"] = "evidence", why
+        print(f"proposed {n} verdicts (inert until --promote)", file=sys.stderr)
+
+    if args.promote:
+        want = args.promote.strip().upper()
+        n = 0
+        for r in rows:
+            v = r["verdict"]
+            if v.startswith("SUGGEST-") and (want == "ALL" or v == f"SUGGEST-{want}"):
+                r["verdict"], r["source"] = v[len("SUGGEST-"):], "promoted"
+                n += 1
+        print(f"promoted {n} suggestion(s) matching {want}", file=sys.stderr)
+
+    decided = [r for r in rows if r["verdict"] != "TODO"]
+    seen, cumulative = set(), []
+    for r in rows:
+        cumulative.append(r)
+
+    if args.out:
+        with open(args.out, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=QUEUE_COLS, delimiter="\t")
+            w.writeheader()
+            for r in rows:
+                w.writerow(r)
+        print(
+            f"wrote {len(rows)} type decisions to {args.out} "
+            f"({len(decided)} already decided, {len(rows) - len(decided)} TODO) "
+            f"covering {len(blocked)} blocked files",
+            file=sys.stderr,
+        )
+    else:
+        print(f"{len(blocked)} convention-blocked files depend on {len(rows)} type decisions\n")
+        print(f"{'verdict':<8}{'files':>6}{'occ':>7}{'fanin':>7}  {'type':<32}category")
+        for r in rows[: args.top]:
+            print(
+                f"{r['verdict']:<8}{r['leverage']:>6}{r['occurrences']:>7}{r['fanin']:>7}  "
+                f"{r['type']:<32}{r['category']}"
+            )
+
+
+if __name__ == "__main__":
+    main()

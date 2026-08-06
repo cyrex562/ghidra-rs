@@ -1,0 +1,7 @@
+suffix	verdict	note
+Iterator	ITER	Rust has a native answer: a concrete iterator struct implementing std::Iterator (callers take `impl Iterator` or the concrete type). `dyn` here is a Java idiom and blocks adaptor chaining. Mechanical per-file sweep once the type itself is converted.
+Listener	ACCEPT	Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
+Service	ACCEPT	Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
+Provider	ACCEPT	Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
+Monitor	ACCEPT	Progress/cancellation callback supplied by the caller. The textbook open extension point.
+Manager	ARENA	Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
