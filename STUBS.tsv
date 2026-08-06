@@ -151,7 +151,7 @@ ts	stub_class	referenced_by
 2026-07-11T14:00:00Z	RegionMapProposal	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	TraceModule	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	TraceSection	DebuggerStaticMappingService
-2026-07-11T14:00:00Z	TraceMemoryRegion	DebuggerStaticMappingService
+2026-08-06T02:12:23.848915+00:00	TraceOverlappedRegionException	TraceMemoryRegion
 2026-07-11T15:00:00Z	Reason	PcodeArithmetic
 2026-07-11T15:00:00Z	ConcretionError	PcodeArithmetic
 2026-07-11T15:30:00Z	TreePath	DataTypeManagerService
