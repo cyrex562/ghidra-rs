@@ -99,6 +99,23 @@ class TestScanFile(unittest.TestCase):
             self.assertFalse([s for s in signals if s.startswith("unwrap")])
 
 
+class TestLockPayload(unittest.TestCase):
+    def test_bare_lock_handle_is_not_shared_mutability(self):
+        """`Arc<RwLock<()>>` holds no data -- it is a lock, which the plan calls legitimate."""
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.rs")
+            write_file(p, "pub struct A { lock: Arc<RwLock<()>>, m: Arc<Mutex<()>> }\n")
+            _score, signals = pa.scan_file(p)
+            self.assertFalse([s for s in signals if s.startswith("arc_mutex")])
+
+    def test_lock_around_real_data_still_counts(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.rs")
+            write_file(p, "pub struct A { s: Arc<Mutex<Program>>, t: Arc<RwLock<Vec<u8>>> }\n")
+            _score, signals = pa.scan_file(p)
+            self.assertIn("arc_mutex=2", signals)
+
+
 class TestDiffNew(unittest.TestCase):
     def _root(self, d, body):
         root = os.path.join(d, "src")

@@ -59,7 +59,12 @@ RE_DYN = re.compile(
     r"(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Za-z_][A-Za-z0-9_]*)"
 )
 RE_RC_REFCELL = re.compile(r"\bRc\s*<\s*RefCell\s*<")
-RE_ARC_MUTEX = re.compile(r"\bArc\s*<\s*(Mutex|RwLock)\s*<")
+# `Arc<Mutex<T>>`/`Arc<RwLock<T>>` is the multi-threaded GC-style sharing this migration
+# targets -- EXCEPT when the payload is `()`. `Arc<RwLock<()>>` carries no data at all: it is a
+# bare lock handle (the shape Java's ReadWriteLock takes when ported), which
+# OWNERSHIP_MIGRATION.md explicitly lists as a legitimate use. Counting it kept
+# db_synchronized_iterator.rs on the frontier after its actual debt was remediated.
+RE_ARC_MUTEX = re.compile(r"\bArc\s*<\s*(?:Mutex|RwLock)\s*<\s*(?!\(\s*\)\s*>)")
 RE_CLONE = re.compile(r"\.clone\(\)")
 RE_GETTER = re.compile(r"\bfn\s+get_([A-Za-z0-9_]+)\s*\(")
 RE_SETTER = re.compile(r"\bfn\s+set_([A-Za-z0-9_]+)\s*\(")
