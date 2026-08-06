@@ -127,6 +127,74 @@ pub trait TraceObjectSchema: Send + Sync {
 
     /// Mirrors `TraceObjectSchema.toString()`.
     fn to_string(&self) -> String;
+
+    /// Checks whether the given attribute key is hidden by this schema. Mirrors
+    /// `TraceObjectSchema.isHidden(String)`, used by
+    /// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
+    /// default `isHidden()`.
+    ///
+    /// The real Java default resolves this via a per-schema `Hidden` predicate not yet ported, so
+    /// this placeholder defaults to "never hidden" until that machinery exists.
+    fn is_hidden(&self, _name: &str) -> bool {
+        false
+    }
+
+    /// Resolves an attribute name (or one of its aliases) to its canonical key. Mirrors
+    /// `TraceObjectSchema.checkAliasedAttribute(String)`, used by
+    /// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
+    /// default `hasEntryKey()`.
+    ///
+    /// The real Java default resolves this via an attribute-alias map not yet ported, so this
+    /// placeholder defaults to identity (no aliasing).
+    fn check_aliased_attribute(&self, name: &str) -> String {
+        name.to_string()
+    }
+
+    /// Resolves the schema for a given child key (attribute or element). Mirrors
+    /// `TraceObjectSchema.getChildSchema(String)`, used by
+    /// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
+    /// default `getTargetSchema()`.
+    ///
+    /// The real Java default resolves this via the element/attribute schema maps not yet ported,
+    /// so this placeholder defaults to the "ANY" primitive schema, mirroring
+    /// `SchemaContext::get_schema`'s documented fallback for unresolved names.
+    fn get_child_schema(&self, _key: &str) -> Box<dyn TraceObjectSchema> {
+        struct FallbackAnySchema;
+        impl TraceObjectSchema for FallbackAnySchema {
+            fn get_name(&self) -> SchemaName {
+                SchemaName::new("ANY")
+            }
+
+            fn to_string(&self) -> String {
+                "ANY".to_string()
+            }
+        }
+        Box::new(FallbackAnySchema)
+    }
+}
+
+/// Placeholder for `ghidra.trace.model.target.TraceObject`, referenced by
+/// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue) before
+/// the real port is available. Only the member `TraceObjectValue`'s default methods need: the
+/// object's schema, used to resolve aliased attribute keys and hidden/target-schema lookups.
+pub trait TraceObject: Send + Sync {
+    /// Mirrors `TraceObject.getSchema()`.
+    fn get_schema(&self) -> Box<dyn TraceObjectSchema>;
+}
+
+/// Placeholder for the nested enum `ghidra.trace.model.target.TraceObject.ConflictResolution`,
+/// referenced by
+/// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue) before
+/// the real `TraceObject` port is available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConflictResolution {
+    /// Truncate, split, or delete conflicting entries to make way for the specified lifespan.
+    Truncate,
+    /// Fail with [`crate::trace::model::target::duplicate_key_exception::DuplicateKeyException`]
+    /// if the specified lifespan would result in conflicting entries.
+    Deny,
+    /// Adjust the new entry to fit into the span available, possibly ignoring it altogether.
+    Adjust,
 }
 
 /// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema.AttributeSchema`,
