@@ -48,6 +48,7 @@ log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
 # Preserve any uncommitted work before the checkout/reset below discards it.
 . scripts/harness_guard.sh
+. scripts/harness_gate.sh
 guard_working_tree descent || exit 1
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
@@ -279,43 +280,12 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
       #   * leaves any test FAILING.
       # Baselined against preflight (TEST_ERR_BASE) so pre-existing, not-yet-repaired drift can't
       # mass-park otherwise-good ports; once the crate is clean (base 0) the gate is strict.
+      # BACKSTOP test gate (scripts/harness_gate.sh -- shared by all four harnesses, so they
+      # cannot disagree about what "verified" means). Parks a port that raises the test-compile
+      # error count above the run's baseline, leaves a test failing, or hangs the suite.
       gate_ok=1
-      if [ "$TEST_GATE" = "1" ]; then
-        # 1) COMPILE check via --no-run (SAME command as TEST_ERR_BASE). Must not count runtime test
-        #    output: `cargo test` RUNS tests, and a passing test that merely prints a line starting
-        #    with "error" would inflate a bare `grep ^error` -> false park (this happened 2026-07-21:
-        #    6 good ports parked with an identical "base 0 -> 2"). --no-run never runs tests.
-        terr=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error'); terr=${terr:-0}
-        if [ "$terr" -gt "$TEST_ERR_BASE" ]; then    # retry once -- absorb transient incremental-compile errors
-          terr=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-run 2>&1 | grep -cE '^error'); terr=${terr:-0}
-        fi
-        if [ "$terr" -gt "$TEST_ERR_BASE" ]; then
-          gate_ok=0; log "test gate FAIL: $class introduced $((terr-TEST_ERR_BASE)) test-compile error(s) (base ${TEST_ERR_BASE} -> ${terr}, confirmed on retry)"
-        else
-          # 2) RUNTIME check: run the suite; park on a genuine 'test result: FAILED' -- or on a
-          #    TIMEOUT, which is the case this gate used to wave through. A deadlocked test never
-          #    prints 'test result: FAILED'; it just never finishes, `timeout` kills it, and the
-          #    old check saw no FAILED marker and passed the port. That is exactly how the
-          #    DataTypeDB set_name/get_name self-deadlock reached integration on 2026-08-05,
-          #    after burning 2x TEST_TIMEOUT per subsequent port. Silence is not success.
-          tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1); trc=$?
-          if [ "$trc" -eq 124 ] || printf '%s' "$tout" | grep -q 'test result: FAILED'; then
-            # retry once -- the full-suite gate can catch an unrelated FLAKY test (parallel global
-            # state); a real regression fails again (2026-07-22: HighParamID/SpecExtension false-parked
-            # on a flake -- their branches pass 0-failed on re-run).
-            tout=$(timeout "$TEST_TIMEOUT" cargo test --lib --no-fail-fast 2>&1); trc=$?
-          fi
-          if [ "$trc" -eq 124 ]; then
-            gate_ok=0
-            hung=$(printf '%s' "$tout" | grep -oP 'test \K\S+(?= has been running for over)' | head -3 | tr '\n' ' ')
-            log "test gate FAIL: $class -- suite TIMED OUT after ${TEST_TIMEOUT}s (hang/deadlock). Stuck: ${hung:-unknown}"
-          elif printf '%s' "$tout" | grep -q 'test result: FAILED'; then
-            gate_ok=0; log "test gate FAIL: $class ($(printf '%s' "$tout" | grep -oE '[0-9]+ failed' | tail -1) in suite, confirmed on retry)"
-          else
-            log "test gate OK: $class (test crate compiles, suite green)"
-          fi
-        fi
-      fi
+      gate_msg=$(run_test_gate "$class" "$log" "$TEST_ERR_BASE") || gate_ok=0
+      log "$gate_msg"
       if [ "$gate_ok" = "1" ]; then
         git branch -D "$branch" >/dev/null 2>&1||true
         sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)$/s//DONE\1/" "$ORDER"

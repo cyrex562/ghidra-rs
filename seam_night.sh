@@ -32,6 +32,7 @@ log(){ echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
 # Preserve any uncommitted work before the checkout/reset below discards it.
 . scripts/harness_guard.sh
+. scripts/harness_gate.sh
 guard_working_tree seam || exit 1
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
@@ -40,6 +41,13 @@ git pull --ff-only >/dev/null 2>&1 || true
 
 log "seam preflight: cargo build --lib"
 timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>/dev/null || { log "integration not green -- abort"; exit 1; }
+# Baseline for the shared test gate; also proves the suite terminates, so a pre-existing hang
+# aborts the run instead of parking every port against a broken baseline.
+TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"
+if ! TEST_ERR_BASE=$(test_gate_preflight); then
+  log "preflight: suite HANGS on integration before any change -- fix the hang first; aborting."; exit 1
+fi
+log "preflight test-compile baseline: ${TEST_ERR_BASE} errors; suite terminates"
 
 ported=0; parked=0; reconciled=0
 seam_done_before=$(grep -cP '^DONE\t' "$SEAM" 2>/dev/null || true)
@@ -128,16 +136,18 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
     harness_add; git commit -q -m "seam: ${class} -> trait (${srcpath})" || true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
-    if git merge --no-ff "$branch" -m "merge seam: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
+    pre_merge=$(git rev-parse HEAD)
+    if git merge --no-ff "$branch" -m "merge seam: ${class}" >>"$log" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log" \
+       && run_test_gate "$class" "$log" "$TEST_ERR_BASE"; then
       git branch -D "$branch" >/dev/null 2>&1||true
       sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${seampath//\//\\/}\)$/s//DONE\1/" "$SEAM"
       git add "$SEAM" >/dev/null 2>&1; git commit -q -m "seam: mark $class DONE" >/dev/null 2>&1||true
       ported=$((ported+1)); log "OK seam: $class (trait) merged"
     else
-      git merge --abort >/dev/null 2>&1||true; git reset --hard >/dev/null 2>&1||true
+      git merge --abort >/dev/null 2>&1||true; git reset --hard "$pre_merge" >/dev/null 2>&1||true
       sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${seampath//\//\\/}\)\$#PARK\1#" "$SEAM"
       git add "$SEAM" >/dev/null 2>&1; git commit -q -m "seam: park $class" >/dev/null 2>&1||true
-      parked=$((parked+1)); log "PARK seam: $class (post-merge build failed)"
+      parked=$((parked+1)); log "PARK seam: $class (post-merge build or test gate failed)"
     fi
   else
     harness_add >/dev/null 2>&1||true; git commit -q -m "WIP seam park: $class" >/dev/null 2>&1||true

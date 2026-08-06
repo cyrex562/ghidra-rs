@@ -80,6 +80,7 @@ PY
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
 # Preserve any uncommitted work before the checkout/reset below discards it.
 . scripts/harness_guard.sh
+. scripts/harness_gate.sh
 guard_working_tree remediate || exit 1
 git checkout -f "$INTEGRATION" >/dev/null 2>&1 || { log "no $INTEGRATION branch"; exit 1; }
 git reset --hard >/dev/null 2>&1 || true
@@ -88,6 +89,13 @@ git pull --ff-only >/dev/null 2>&1 || true
 
 log "remediate preflight: cargo build --lib"
 timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>/dev/null || { log "integration not green -- abort"; exit 1; }
+# Baseline for the shared test gate; also proves the suite terminates, so a pre-existing hang
+# aborts the run instead of parking every port against a broken baseline.
+TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"
+if ! TEST_ERR_BASE=$(test_gate_preflight); then
+  log "preflight: suite HANGS on integration before any change -- fix the hang first; aborting."; exit 1
+fi
+log "preflight test-compile baseline: ${TEST_ERR_BASE} errors; suite terminates"
 
 fixed=0; parked=0
 for ((i=1;i<=REMEDIATE_MAX;i++)); do
@@ -157,14 +165,16 @@ Change ONLY what's needed to fix the flagged smell in this file and its call sit
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$clog"; then
     harness_add; git commit -q -m "ownership: remediate ${class} (${path})" || true
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
-    if git merge --no-ff "$branch" -m "merge ownership: ${class}" >>"$clog" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$clog"; then
+    pre_merge=$(git rev-parse HEAD)
+    if git merge --no-ff "$branch" -m "merge ownership: ${class}" >>"$clog" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$clog" \
+       && run_test_gate "$class" "$clog" "$TEST_ERR_BASE"; then
       git branch -D "$branch" >/dev/null 2>&1||true
       fixed=$((fixed+1)); log "OK ownership: $class merged"
     else
-      git merge --abort >/dev/null 2>&1||true; git reset --hard >/dev/null 2>&1||true
+      git merge --abort >/dev/null 2>&1||true; git reset --hard "$pre_merge" >/dev/null 2>&1||true
       set_status "$path" PARK || log "WARN: could not park row for $path in $DEBT"
       git add "$DEBT" >/dev/null 2>&1; git commit -q -m "ownership: park $class" >/dev/null 2>&1||true
-      parked=$((parked+1)); log "PARK ownership: $class (post-merge build failed)"
+      parked=$((parked+1)); log "PARK ownership: $class (post-merge build or test gate failed)"
     fi
   else
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
