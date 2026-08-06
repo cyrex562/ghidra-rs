@@ -997,7 +997,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/s
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceReferenceOperations.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceReferenceSpace.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceShiftedReference.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceStackReference.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceStackReference.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbol.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolNoDuplicatesView.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model symbol 
