@@ -1,6 +1,7 @@
 pub mod byte_mem_buffer_impl;
 pub mod invalid_address_exception;
 pub mod mem_buffer_input_stream;
+pub mod mem_buffer;
 pub mod mem_buffer_mixin;
 pub mod memory;
 pub mod memory_access_exception;
@@ -20,6 +21,7 @@ pub mod wrapped_mem_buffer;
 pub use byte_mem_buffer_impl::ByteMemBufferImpl;
 pub use invalid_address_exception::InvalidAddressException;
 pub use mem_buffer_input_stream::MemBufferInputStream;
+pub use mem_buffer::MemBuffer;
 pub use mem_buffer_mixin::MemBufferMixin;
 pub use memory_access_exception::MemoryAccessException;
 pub use memory::Memory;
