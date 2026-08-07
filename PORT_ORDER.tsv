@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	29	22	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceDataView.java
+DONE	trait	29	22	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceDataView.java
 TODO	trait	30	26	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceBaseDefinedUnitsView.java
 TODO	trait	29	24	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceDefinedDataView.java
 TODO	trait	29	22	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceDefinedUnitsView.java
