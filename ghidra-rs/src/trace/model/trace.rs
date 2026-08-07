@@ -2,6 +2,7 @@ use crate::program::model::address::AddressFactory;
 use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
 use crate::program::model::lang::{CompilerSpec, Language};
 use crate::trace::model::listing::TraceCodeManager;
+use crate::trace::model::modules::TraceStaticMappingManager;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::time::trace_time_manager::TraceTimeManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
@@ -10,7 +11,7 @@ use crate::trace::seam_stubs::{
     TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
     TraceModuleManager, TraceObjectManager, TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
-    TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager,
+    TraceSymbolManager, TraceThreadManager,
     TraceVariableSnapProgramView,
 };
 use crate::util::lock_hold::{Lock, LockHold};
@@ -271,7 +272,50 @@ mod tests {
     struct MockStackManager;
     impl TraceStackManager for MockStackManager {}
     struct MockStaticMappingManager;
-    impl TraceStaticMappingManager for MockStaticMappingManager {}
+    impl TraceStaticMappingManager for MockStaticMappingManager {
+        fn add(
+            &mut self,
+            _range: crate::program::model::address::AddressRange,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _to_program_url: &str,
+            _to_address: &str,
+        ) -> Result<
+            Box<dyn crate::trace::seam_stubs::TraceStaticMapping>,
+            Box<dyn crate::trace::seam_stubs::TraceConflictedMappingException>,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_entries(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_containing(
+            &self,
+            _address: &crate::program::model::address::Address,
+            _snap: i64,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_any_conflicting(
+            &self,
+            _range: &crate::program::model::address::AddressRange,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _to_program_url: &str,
+            _to_address: &str,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_all_overlapping(
+            &self,
+            _range: &crate::program::model::address::AddressRange,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockSymbolManager;
     impl TraceSymbolManager for MockSymbolManager {}
     struct MockThreadManager;
