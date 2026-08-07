@@ -1,1 +1,2 @@
 pub mod trace_breakpoint_kind;
+pub mod trace_breakpoint_spec;

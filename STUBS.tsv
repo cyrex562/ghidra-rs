@@ -452,3 +452,5 @@ ts	stub_class	referenced_by
 2026-08-07T05:49:25.784587+00:00	LifeSet	DBTraceObjectInterface
 2026-08-07T05:50:48.973361+00:00	Dimension	EuclideanHyperSpace
 2026-08-07T06:34:55.957007+00:00	TraceObjectValueQuery	DBTraceObjectValueRStarTree
+2026-08-07T06:45:56.952189+00:00	TraceBreakpointCommon	TraceBreakpointSpec
+2026-08-07T06:45:56.953662+00:00	TraceBreakpointLocation	TraceBreakpointSpec
