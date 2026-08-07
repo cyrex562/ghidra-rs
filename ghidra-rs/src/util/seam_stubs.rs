@@ -373,15 +373,15 @@ pub trait DirectedLongKeyIteratorFactory {
     ) -> std::io::Result<Box<dyn crate::util::database::AbstractDirectedLongKeyIterator>>;
 }
 
-/// Placeholder for `ghidra.util.database.AbstractDirectedRecordIterator`, needed by
-/// [`crate::util::database::directed_record_iterator`].
+/// Placeholder for the not-yet-ported `delete()` member of `db.RecordIterator`, needed by
+/// [`crate::util::database::abstract_directed_record_iterator::AbstractDirectedRecordIterator`].
 ///
-/// Wraps a `db.RecordIterator` and implements only `delete()` by delegating to it, leaving
-/// `hasNext`/`next` to concrete subclasses (`ForwardRecordIterator`/`BackwardRecordIterator`, not
-/// yet ported) which impose the iteration direction. Also stands in for the anonymous subclass
-/// used to build `DirectedRecordIterator.EMPTY`.
-pub trait AbstractDirectedRecordIterator: Send + Sync {
-    fn delete(&self) -> std::io::Result<bool>;
+/// The real port, [`RecordIterator`](crate::framework::db::RecordIterator), only carries the
+/// `next`/`has_next` members ported so far. `delete` is the only member
+/// `AbstractDirectedRecordIterator` needs from it, so only that member is stubbed here rather
+/// than redefining the whole interface.
+pub trait RecordIteratorDelete: Send + Sync {
+    fn delete(&mut self) -> std::io::Result<bool>;
 }
 
 /// Placeholder for `ghidra.util.database.BackwardRecordIterator`, needed by
