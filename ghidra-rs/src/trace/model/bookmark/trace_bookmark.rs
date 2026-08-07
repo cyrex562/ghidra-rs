@@ -51,7 +51,7 @@ mod tests {
     use crate::program::model::address::{Address, AddressFactory, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::{CompilerSpec, Language};
     use crate::program::model::listing::bookmark_type::{BookmarkType, MarkerColor};
-    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::app::merge::DataTypeManagerOwner;
     use crate::trace::model::breakpoint::trace_breakpoint_manager::TraceBreakpointManager;
     use crate::trace::model::listing::TraceCodeManager;
     use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
@@ -122,8 +122,9 @@ mod tests {
     impl DomainObject for MockTrace {}
 
     impl DataTypeManagerOwner for MockTrace {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
-            Box::new(MockDataTypeManager)
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
         }
     }
 

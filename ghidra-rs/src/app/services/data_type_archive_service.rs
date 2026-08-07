@@ -126,9 +126,10 @@ mod tests {
 
     struct MockDataTypeArchive;
     impl crate::framework::model::DomainObject for MockDataTypeArchive {}
-    impl crate::program::seam_stubs::DataTypeManagerOwner for MockDataTypeArchive {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
-            Box::new(MockDataTypeManager)
+    impl crate::app::merge::DataTypeManagerOwner for MockDataTypeArchive {
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
         }
     }
     impl crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject

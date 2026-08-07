@@ -130,7 +130,7 @@ mod tests {
     use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
     use crate::program::model::listing::data_type_archive_change_set::DataTypeArchiveChangeSet;
     use crate::program::model::listing::domain_object_change_set::DomainObjectChangeSet;
-    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::app::merge::DataTypeManagerOwner;
     use crate::program::model::listing::data_type_change_set::DataTypeChangeSet;
     use std::time::SystemTime;
 
@@ -290,8 +290,9 @@ mod tests {
     }
 
     impl DataTypeManagerOwner for MockDataTypeArchiveDB {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
-            Box::new(MockDataTypeManager)
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
         }
     }
 

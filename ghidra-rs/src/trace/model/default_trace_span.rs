@@ -98,7 +98,7 @@ mod tests {
     use crate::program::model::address::AddressFactory;
     use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
     use crate::program::model::lang::{CompilerSpec, Language};
-    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::app::merge::DataTypeManagerOwner;
     use crate::trace::model::breakpoint::trace_breakpoint_manager::TraceBreakpointManager;
     use crate::trace::model::listing::TraceCodeManager;
     use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
@@ -160,7 +160,7 @@ mod tests {
     }
 
     impl DataTypeManagerOwner for MockTrace {
-        fn get_data_type_manager(&self) -> Box<dyn crate::program::model::data::data_type_manager::DataTypeManager> {
+        fn get_data_type_manager(&self) -> &dyn crate::program::model::data::data_type_manager::DataTypeManager {
             unimplemented!("not exercised by these tests")
         }
     }

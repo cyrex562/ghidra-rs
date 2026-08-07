@@ -43,7 +43,7 @@ pub trait TraceProgramViewListener {
 /// The `getDataTypeManager()` default method (which simply delegates to
 /// [`Trace::get_base_data_type_manager`]) is not re-declared here, since Rust does not support
 /// covariant trait-method overrides: it would collide with
-/// [`DataTypeManagerOwner::get_data_type_manager`](crate::program::seam_stubs::DataTypeManagerOwner::get_data_type_manager),
+/// [`DataTypeManagerOwner::get_data_type_manager`](crate::app::merge::DataTypeManagerOwner::get_data_type_manager),
 /// which this trait already inherits (via [`DataTypeManagerDomainObject`]) and which returns a
 /// different (non-covariant) type. Implementors of `Trace` should implement that supertrait
 /// method to delegate to `get_base_data_type_manager`, mirroring the Java default.
@@ -152,7 +152,7 @@ mod tests {
     use super::*;
     use crate::framework::model::DomainObject;
     use crate::program::model::data::data_type_manager::DataTypeManager;
-    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::app::merge::DataTypeManagerOwner;
 
     struct MockLock;
     impl Lock for MockLock {
@@ -175,8 +175,9 @@ mod tests {
     impl DomainObject for MockTrace {}
 
     impl DataTypeManagerOwner for MockTrace {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
-            Box::new(MockDataTypeManager)
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
         }
     }
 

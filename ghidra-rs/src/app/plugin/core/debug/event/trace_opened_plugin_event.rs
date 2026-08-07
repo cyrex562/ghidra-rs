@@ -54,7 +54,7 @@ mod tests {
     use crate::framework::model::DomainObject;
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
-    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::app::merge::DataTypeManagerOwner;
     use crate::trace::model::trace::TraceProgramViewListener;
     use crate::util::lock_hold::{Lock, LockHold};
 
@@ -74,8 +74,9 @@ mod tests {
     impl DomainObject for MockTrace {}
 
     impl DataTypeManagerOwner for MockTrace {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
-            Box::new(MockDataTypeManager)
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
         }
     }
 

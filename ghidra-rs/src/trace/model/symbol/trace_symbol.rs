@@ -94,7 +94,7 @@ mod tests {
     use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
     use crate::program::model::lang::{CompilerSpec, Language};
     use crate::program::model::symbol::{Namespace, NamespaceType, SourceType, SymbolType};
-    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::app::merge::DataTypeManagerOwner;
     use crate::trace::model::breakpoint::trace_breakpoint_manager::TraceBreakpointManager;
     use crate::trace::model::listing::TraceCodeManager;
     use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
@@ -118,7 +118,7 @@ mod tests {
     impl DomainObject for MockTrace {}
 
     impl DataTypeManagerOwner for MockTrace {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
             unimplemented!("not exercised by this smoke test")
         }
     }

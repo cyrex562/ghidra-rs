@@ -43,14 +43,6 @@ use std::sync::Arc;
 
 pub use crate::program::model::data::data_type_path::DataTypePath;
 
-/// Placeholder for `ghidra.app.merge.DataTypeManagerOwner`, referenced by
-/// [`DataTypeManagerDomainObject`](crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject)
-/// before the real interface is ported.
-pub trait DataTypeManagerOwner {
-    /// Gets the associated data type manager.
-    fn get_data_type_manager(&self) -> Box<dyn DataTypeManager>;
-}
-
 /// Minimal, purely in-memory [`VariableStorage`] backed by an explicit varnode list. Used as the
 /// default result of [`VariableStorage::with_varnodes`], mirroring
 /// `new VariableStorage(ProgramArchitecture, Varnode...)`. Not a port of any specific Java class.

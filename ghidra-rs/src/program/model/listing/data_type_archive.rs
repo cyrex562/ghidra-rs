@@ -23,7 +23,7 @@ pub trait DataTypeArchive: DataTypeManagerDomainObject {
     /// Gets the associated standalone data type manager.
     ///
     /// Narrows the return type of
-    /// [`DataTypeManagerOwner::get_data_type_manager`](crate::program::seam_stubs::DataTypeManagerOwner::get_data_type_manager),
+    /// [`DataTypeManagerOwner::get_data_type_manager`](crate::app::merge::DataTypeManagerOwner::get_data_type_manager),
     /// which this trait also inherits (via [`DataTypeManagerDomainObject`]); use fully qualified
     /// syntax to call the desired one when both are in scope for the same value.
     fn get_data_type_manager(&self) -> Box<dyn StandAloneDataTypeManager>;
@@ -48,7 +48,7 @@ mod tests {
     use super::*;
     use crate::framework::model::DomainObject;
     use crate::program::model::data::data_type_manager::DataTypeManager;
-    use crate::program::seam_stubs::DataTypeManagerOwner;
+    use crate::app::merge::DataTypeManagerOwner;
 
     struct MockStandAloneDataTypeManager;
 
@@ -153,8 +153,9 @@ mod tests {
     impl DomainObject for MockDataTypeArchive {}
 
     impl DataTypeManagerOwner for MockDataTypeArchive {
-        fn get_data_type_manager(&self) -> Box<dyn DataTypeManager> {
-            Box::new(MockDataTypeManager)
+        fn get_data_type_manager(&self) -> &dyn DataTypeManager {
+            static MANAGER: MockDataTypeManager = MockDataTypeManager;
+            &MANAGER
         }
     }
 

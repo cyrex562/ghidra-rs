@@ -129,10 +129,10 @@ mod tests {
         host_platform_calls: Rc<Cell<u32>>,
     }
     impl crate::framework::model::DomainObject for MockTrace {}
-    impl crate::program::seam_stubs::DataTypeManagerOwner for MockTrace {
+    impl crate::app::merge::DataTypeManagerOwner for MockTrace {
         fn get_data_type_manager(
             &self,
-        ) -> Box<dyn crate::program::model::data::data_type_manager::DataTypeManager> {
+        ) -> &dyn crate::program::model::data::data_type_manager::DataTypeManager {
             unimplemented!("not exercised by this smoke test")
         }
     }
