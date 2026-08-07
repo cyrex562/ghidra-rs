@@ -178,7 +178,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_time_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceTimeManager> {
+        fn get_time_manager(&self) -> Box<dyn crate::trace::model::time::trace_time_manager::TraceTimeManager> {
             unimplemented!()
         }
 
