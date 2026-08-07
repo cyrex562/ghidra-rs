@@ -1,7 +1,9 @@
 pub mod db_trace_address_snap_range_property_map;
+pub mod db_trace_address_snap_range_property_map_address_set_view;
 pub mod db_trace_address_snap_range_property_map_tree;
 
 pub use db_trace_address_snap_range_property_map::DBTraceAddressSnapRangePropertyMap;
+pub use db_trace_address_snap_range_property_map_address_set_view::DBTraceAddressSnapRangePropertyMapAddressSetView;
 pub use db_trace_address_snap_range_property_map_tree::{
     DBTraceAddressSnapRangePropertyMapTree, Painter,
 };
