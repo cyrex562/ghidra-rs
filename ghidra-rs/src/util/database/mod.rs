@@ -1,4 +1,5 @@
 pub mod annotproc;
+pub mod directed_iterator;
 pub mod err;
 pub mod spatial;
 pub mod synchronized_spliterator;
@@ -6,6 +7,7 @@ pub mod db_synchronized_collection;
 pub mod db_synchronized_iterator;
 pub mod db_synchronized_spliterator;
 
+pub use directed_iterator::{Direction, DirectedIterator};
 pub use synchronized_spliterator::Spliterator;
 pub use db_synchronized_collection::Collection;
 pub use db_synchronized_iterator::RemovableIterator;
