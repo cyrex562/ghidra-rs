@@ -60,7 +60,7 @@ DONE	trait	34	19	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	35	10	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceExecutionStateful.java
 DONE	trait	34	10	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/thread/TraceProcess.java
 DONE	trait	35	31	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObjectManager.java
-TODO	trait	33	17	27	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointManager.java
+DONE	trait	33	17	27	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointManager.java
 TODO	trait	37	8	25	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/space/DBTraceSpaceBased.java
 TODO	trait	38	3	28	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/map/TraceAddressSnapRangePropertyMapOperations.java
 TODO	trait	37	2	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/map/TraceAddressSnapRangePropertyMapSpace.java
