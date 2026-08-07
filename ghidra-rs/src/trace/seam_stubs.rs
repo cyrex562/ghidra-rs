@@ -282,3 +282,22 @@ pub trait TraceThread: Send + Sync {}
 /// before the real port is available. No members are parsed from the Java source yet.
 pub trait TraceStackFrame: Send + Sync {}
 
+/// Placeholder for `ghidra.trace.database.target.DBTraceObject`, referenced by
+/// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
+/// before the real port is available. `TraceObjectValueStorage` is a bare abstract interface (no
+/// default methods), so it only ever passes this type around opaquely (as `getParent`'s return
+/// and `getChildOrNull`'s return); no members are needed yet.
+pub trait DBTraceObject: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.database.target.DBTraceObjectManager`, referenced by
+/// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
+/// before the real port is available. `TraceObjectValueStorage` only ever passes this type around
+/// opaquely (as `getManager`'s return); no members are needed yet.
+pub trait DBTraceObjectManager: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.database.target.DBTraceObjectValue`, referenced by
+/// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
+/// before the real port is available. `TraceObjectValueStorage` only ever passes this type around
+/// opaquely (as `getWrapper`'s return); no members are needed yet.
+pub trait DBTraceObjectValue: Send + Sync {}
+

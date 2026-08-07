@@ -442,3 +442,6 @@ ts	stub_class	referenced_by
 2026-08-07T05:00:00+00:00	DBCachedObjectStore	DBAnnotatedObjectFactory
 2026-08-07T04:45:34.730566+00:00	DBDomainObjectSupport	DBCachedDomainObjectAdapter
 2026-08-07T00:00:00+00:00	DBCachedObjectStoreCore	DBAnnotatedObject
+2026-08-07T05:06:25.268330+00:00	DBTraceObject	TraceObjectValueStorage
+2026-08-07T05:06:25.269952+00:00	DBTraceObjectManager	TraceObjectValueStorage
+2026-08-07T05:06:25.270394+00:00	DBTraceObjectValue	TraceObjectValueStorage
