@@ -2,7 +2,7 @@
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
 use super::async_utils::AsyncExecutor;
-use super::database::spatial::hyper::HyperPoint;
+use super::database::spatial::hyper::{HyperBox, HyperPoint};
 use super::datastruct::NoSuchIndexException;
 use super::exception::{CancelledException, NoValueException};
 use super::graph::key_indexable_set::KeyIndexableSet;
@@ -640,15 +640,6 @@ pub trait DBCachedObjectStore<T: crate::util::database::db_annotated_object::DBA
 {
 }
 
-/// Placeholder for `ghidra.util.database.spatial.hyper.HyperBox`, needed by
-/// [`crate::util::database::spatial::hyper::euclidean_hyper_space::EuclideanHyperSpace`].
-///
-/// `EuclideanHyperSpace` only ever threads `B` through as an opaque generic parameter (handing
-/// it to [`Dimension`] and to its own abstract box-construction methods); it never calls a
-/// method on `B` directly, so this is a marker trait until the real hyper-box (with
-/// `lCorner`/`uCorner`/`immutable`/etc.) is ported.
-pub trait HyperBox: Send + Sync {}
-
 /// Placeholder for `ghidra.util.database.spatial.hyper.Dimension`, needed by
 /// [`crate::util::database::spatial::hyper::euclidean_hyper_space::EuclideanHyperSpace`].
 ///
@@ -665,7 +656,7 @@ pub trait HyperBox: Send + Sync {}
 /// `f64`-returning method, so `T` never needs to leave a concrete `Dimension` implementation.
 /// Only the members `EuclideanHyperSpace` needs are declared; the real port additionally carries
 /// `mid`/`min`/`max`/`absoluteMin`/`absoluteMax`/`intersect`/`value` for its own T-typed callers.
-pub trait Dimension<P: HyperPoint, B: HyperBox>: Send + Sync {
+pub trait Dimension<P: HyperPoint, B: HyperBox<P>>: Send + Sync {
     /// String key for this dimension's lower bound of `box_`, mirroring `lower(B)` -- used only
     /// for equality (`Objects.equals`), never compared ordinally, so a stable string
     /// representation stands in for the erased `T`.

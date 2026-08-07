@@ -451,4 +451,3 @@ ts	stub_class	referenced_by
 2026-08-07T05:37:30.000000+00:00	TraceRegisterUtils	TraceSpaceMixin
 2026-08-07T05:49:25.784587+00:00	LifeSet	DBTraceObjectInterface
 2026-08-07T05:50:48.973361+00:00	Dimension	EuclideanHyperSpace
-2026-08-07T05:50:48.973468+00:00	HyperBox	EuclideanHyperSpace

@@ -1,5 +1,5 @@
-use super::HyperPoint;
-use crate::util::seam_stubs::{Dimension, HyperBox};
+use super::{HyperBox, HyperPoint};
+use crate::util::seam_stubs::Dimension;
 
 /// A Euclidean-like multi-dimensional coordinate space over points `P` and boxes `B`.
 ///
@@ -8,7 +8,7 @@ use crate::util::seam_stubs::{Dimension, HyperBox};
 /// The space is defined entirely by its ordered list of [`Dimension`]s: every default method
 /// here folds over [`dimensions`][Self::dimensions], delegating the per-dimension arithmetic to
 /// the (currently placeholder) [`Dimension`] trait.
-pub trait EuclideanHyperSpace<P: HyperPoint, B: HyperBox> {
+pub trait EuclideanHyperSpace<P: HyperPoint, B: HyperBox<P>> {
     /// The dimensions making up this space, mirroring `getDimensions()`.
     fn dimensions(&self) -> &[Box<dyn Dimension<P, B>>];
 
@@ -111,6 +111,8 @@ pub trait EuclideanHyperSpace<P: HyperPoint, B: HyperBox> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, OnceLock};
+
     use super::*;
 
     #[derive(Clone, Copy, Debug, PartialEq)]
@@ -122,7 +124,28 @@ mod tests {
         lo: f64,
         hi: f64,
     }
-    impl HyperBox for MockBox {}
+
+    impl HyperBox<MockPoint> for MockBox {
+        fn space(&self) -> Arc<dyn EuclideanHyperSpace<MockPoint, MockBox>> {
+            line1d()
+        }
+        fn l_corner(&self) -> MockPoint {
+            MockPoint(self.lo)
+        }
+        fn u_corner(&self) -> MockPoint {
+            MockPoint(self.hi)
+        }
+        fn immutable(&self, l_corner: MockPoint, u_corner: MockPoint) -> Self {
+            MockBox { lo: l_corner.0, hi: u_corner.0 }
+        }
+    }
+
+    /// Shared singleton space, so `MockBox::space()` has something to return without
+    /// needing a self-referential struct.
+    fn line1d() -> Arc<Line1D> {
+        static SPACE: OnceLock<Arc<Line1D>> = OnceLock::new();
+        SPACE.get_or_init(|| Arc::new(Line1D::new())).clone()
+    }
 
     struct AxisDim;
     impl Dimension<MockPoint, MockBox> for AxisDim {
