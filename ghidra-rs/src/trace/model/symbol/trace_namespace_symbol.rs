@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use crate::program::model::symbol::Namespace;
-use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::TraceSymbol;
+use crate::trace::model::symbol::trace_symbol::TraceSymbol;
 
 /// A trace namespace symbol.
 ///
@@ -20,10 +19,8 @@ use crate::trace::seam_stubs::TraceSymbol;
 ///
 /// Rust has no covariant trait-method override, and reproducing either default would require
 /// implementors to hand back `Arc<Self>`/`Box<Self>` from `&self`, which is not expressible for a
-/// `dyn`-safe trait. Because [`TraceSymbol`] is currently only a marker placeholder (it does not
-/// yet extend a ported `Symbol`-equivalent), there is also no supertrait method for either default
-/// to actually override yet. Implementors should keep the identity contract in mind once
-/// `TraceSymbol` grows a real `Symbol` surface.
+/// `dyn`-safe trait. Implementors should keep the identity contract in mind when implementing
+/// [`Namespace::get_symbol`] and [`Symbol::as_namespace`](crate::program::model::symbol::Symbol::as_namespace).
 ///
 /// `Namespace::get_parent_namespace()` is covariantly overridden in Java to return
 /// `TraceNamespaceSymbol` instead of `Namespace`; that override is exposed here under a distinct
@@ -32,13 +29,14 @@ use crate::trace::seam_stubs::TraceSymbol;
 /// `Namespace::get_parent_namespace` (delegating to `get_parent_trace_namespace_symbol`),
 /// mirroring the Java override.
 ///
+/// The Java source also re-declares `@Override Trace getTrace()`, purely restating the abstract
+/// method it inherits from [`TraceSymbol`] with no new semantics; that is not redeclared here
+/// since [`TraceSymbol::get_trace`] already covers it as a supertrait method.
+///
 /// `Namespace::is_global()` is re-abstracted (without a default) in the Java source; Rust
 /// implementors are simply expected to override the [`Namespace::is_global`] default in their own
 /// `impl Namespace` block, which requires no change to this trait.
 pub trait TraceNamespaceSymbol: TraceSymbol + Namespace {
-    /// Get the trace to which this symbol belongs.
-    fn get_trace(&self) -> Box<dyn Trace>;
-
     /// This is the covariant override of `Namespace::getParentNamespace()` in the Java source;
     /// see the trait-level documentation for why it is exposed under a distinct name here.
     fn get_parent_trace_namespace_symbol(&self) -> Option<Arc<dyn TraceNamespaceSymbol>>;
@@ -56,8 +54,14 @@ pub trait TraceNamespaceSymbol: TraceSymbol + Namespace {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::{AddressSet, AddressSetView};
-    use crate::program::model::symbol::{NamespaceType, SetParentNamespaceError, Symbol};
+    use crate::program::model::address::{Address, AddressSet, AddressSetView};
+    use crate::program::model::symbol::{
+        NamespaceType, SetParentNamespaceError, SourceType, Symbol, SymbolType,
+    };
+    use crate::trace::model::symbol::trace_reference::TraceReference;
+    use crate::trace::model::trace::Trace;
+    use crate::trace::seam_stubs::TraceThread;
+    use crate::util::task::TaskMonitor;
 
     struct MockTrace;
 
@@ -193,7 +197,63 @@ mod tests {
 
     struct MockTraceSymbol;
 
-    impl TraceSymbol for MockTraceSymbol {}
+    impl Symbol for MockTraceSymbol {
+        fn get_address(&self) -> Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_name(&self) -> &str {
+            "mock_child"
+        }
+
+        fn get_symbol_type(&self) -> SymbolType {
+            SymbolType::Label
+        }
+
+        fn get_source(&self) -> SourceType {
+            SourceType::Default
+        }
+
+        fn is_primary(&self) -> bool {
+            false
+        }
+
+        fn get_id(&self) -> i64 {
+            0
+        }
+
+        fn get_parent_id(&self) -> i64 {
+            -1
+        }
+    }
+
+    impl TraceSymbol for MockTraceSymbol {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_thread(&self) -> Option<Box<dyn TraceThread>> {
+            None
+        }
+
+        fn get_parent_trace_namespace(&self) -> Option<Arc<dyn TraceNamespaceSymbol>> {
+            None
+        }
+
+        fn get_references_with_monitor(&self, _monitor: &dyn TaskMonitor) -> Vec<Arc<dyn TraceReference>> {
+            Vec::new()
+        }
+
+        fn get_reference_collection(&self) -> Vec<Arc<dyn TraceReference>> {
+            Vec::new()
+        }
+
+        fn set_pinned(&mut self, _pinned: bool) {}
+
+        fn is_pinned(&self) -> bool {
+            false
+        }
+    }
 
     struct MockNamespaceSymbol {
         id: i64,
@@ -230,13 +290,68 @@ mod tests {
         }
     }
 
-    impl TraceSymbol for MockNamespaceSymbol {}
+    impl Symbol for MockNamespaceSymbol {
+        fn get_address(&self) -> Address {
+            unimplemented!("not exercised by this smoke test")
+        }
 
-    impl TraceNamespaceSymbol for MockNamespaceSymbol {
+        fn get_name(&self) -> &str {
+            &self.name
+        }
+
+        fn get_symbol_type(&self) -> SymbolType {
+            SymbolType::Namespace
+        }
+
+        fn get_source(&self) -> SourceType {
+            SourceType::Default
+        }
+
+        fn is_primary(&self) -> bool {
+            true
+        }
+
+        fn get_id(&self) -> i64 {
+            self.id
+        }
+
+        fn get_parent_id(&self) -> i64 {
+            self.parent
+                .as_ref()
+                .map(|p| Symbol::get_id(p.as_ref()))
+                .unwrap_or(-1)
+        }
+    }
+
+    impl TraceSymbol for MockNamespaceSymbol {
         fn get_trace(&self) -> Box<dyn Trace> {
             Box::new(MockTrace)
         }
 
+        fn get_thread(&self) -> Option<Box<dyn TraceThread>> {
+            None
+        }
+
+        fn get_parent_trace_namespace(&self) -> Option<Arc<dyn TraceNamespaceSymbol>> {
+            self.parent.clone()
+        }
+
+        fn get_references_with_monitor(&self, _monitor: &dyn TaskMonitor) -> Vec<Arc<dyn TraceReference>> {
+            Vec::new()
+        }
+
+        fn get_reference_collection(&self) -> Vec<Arc<dyn TraceReference>> {
+            Vec::new()
+        }
+
+        fn set_pinned(&mut self, _pinned: bool) {}
+
+        fn is_pinned(&self) -> bool {
+            false
+        }
+    }
+
+    impl TraceNamespaceSymbol for MockNamespaceSymbol {
         fn get_parent_trace_namespace_symbol(&self) -> Option<Arc<dyn TraceNamespaceSymbol>> {
             self.parent.clone()
         }
