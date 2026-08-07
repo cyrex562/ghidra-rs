@@ -21,10 +21,6 @@ pub trait TraceAddressPropertyManager {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceBookmarkManager {}
 
-/// Placeholder for `ghidra.trace.model.breakpoint.TraceBreakpointManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceBreakpointManager {}
-
 /// Placeholder for `ghidra.trace.model.breakpoint.TraceBreakpointCommon`, referenced by
 /// [`TraceBreakpointSpec`](crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec)
 /// before the real port is available. No members are parsed from the Java source yet.

@@ -1,6 +1,7 @@
 use crate::program::model::address::AddressFactory;
 use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
 use crate::program::model::lang::{CompilerSpec, Language};
+use crate::trace::model::breakpoint::trace_breakpoint_manager::TraceBreakpointManager;
 use crate::trace::model::listing::TraceCodeManager;
 use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
 use crate::trace::model::program::TraceProgramView;
@@ -9,7 +10,7 @@ use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
-    TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
+    TraceEquateManager, TraceMemoryManager,
     TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
     TraceSymbolManager, TraceThreadManager,
@@ -185,7 +186,103 @@ mod tests {
     struct MockBookmarkManager;
     impl TraceBookmarkManager for MockBookmarkManager {}
     struct MockBreakpointManager;
-    impl TraceBreakpointManager for MockBreakpointManager {}
+    impl TraceBreakpointManager for MockBreakpointManager {
+        fn add_breakpoint(
+            &mut self,
+            _path: &str,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: crate::program::model::address::AddressRange,
+            _threads: &[Box<dyn crate::trace::seam_stubs::TraceThread>],
+            _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
+            _enabled: bool,
+            _comment: &str,
+        ) -> Result<
+            Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn place_breakpoint(
+            &mut self,
+            _path: &str,
+            _snap: i64,
+            _range: crate::program::model::address::AddressRange,
+            _threads: &[Box<dyn crate::trace::seam_stubs::TraceThread>],
+            _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
+            _enabled: bool,
+            _comment: &str,
+        ) -> Result<
+            Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn place_breakpoint_at_address(
+            &mut self,
+            _path: &str,
+            _snap: i64,
+            _address: crate::program::model::address::Address,
+            _threads: &[Box<dyn crate::trace::seam_stubs::TraceThread>],
+            _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
+            _enabled: bool,
+            _comment: &str,
+        ) -> Result<
+            Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_breakpoint_specifications(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_breakpoint_locations(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoint_specifications_by_path(
+            &self,
+            _path: &str,
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoint_locations_by_path(
+            &self,
+            _path: &str,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_placed_breakpoint_by_path(
+            &self,
+            _snap: i64,
+            _path: &str,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoints_at(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_breakpoints_intersecting(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockCodeManager;
     impl crate::trace::model::listing::TraceCodeOperations for MockCodeManager {
         fn code_units(&self) -> Box<dyn crate::trace::model::listing::TraceCodeUnitsView> {

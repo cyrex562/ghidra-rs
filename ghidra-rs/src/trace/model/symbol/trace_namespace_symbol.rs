@@ -102,7 +102,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_breakpoint_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceBreakpointManager> {
+        fn get_breakpoint_manager(&self) -> Box<dyn crate::trace::model::breakpoint::trace_breakpoint_manager::TraceBreakpointManager> {
             unimplemented!("not exercised by this smoke test")
         }
 
