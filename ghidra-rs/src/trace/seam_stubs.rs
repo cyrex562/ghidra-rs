@@ -392,3 +392,26 @@ pub trait AbstractDBTraceAddressSnapRangePropertyMapData: Send + Sync {
     fn address_space(&self) -> Arc<AddressSpace>;
 }
 
+/// Placeholder for `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapSpace`,
+/// referenced by
+/// [`DBTraceAddressSnapRangePropertyMapTree`](crate::trace::database::map::db_trace_address_snap_range_property_map_tree::DBTraceAddressSnapRangePropertyMapTree)
+/// before the real port is available. That trait's `getMapSpace()` returns this type opaquely to
+/// callers; the one accessor it (and the tree's own node/data records) reach into is the backing
+/// address space. Mirrors `DBTraceAddressSnapRangePropertyMapSpace.getAddressSpace()`.
+pub trait DBTraceAddressSnapRangePropertyMapSpace<T>: Send + Sync {
+    /// Mirrors `DBTraceAddressSnapRangePropertyMapSpace.getAddressSpace()`.
+    fn address_space(&self) -> Arc<AddressSpace>;
+}
+
+/// Placeholder for `ghidra.util.database.spatial.DBTreeNodeRecord`, referenced by
+/// [`DBTraceAddressSnapRangePropertyMapTree`](crate::trace::database::map::db_trace_address_snap_range_property_map_tree::DBTraceAddressSnapRangePropertyMapTree)
+/// before the real port is available. That trait's `internalGetChildrenOf(DBTreeNodeRecord<?>)`
+/// only ever type-tests and passes this type around opaquely; no members are needed yet.
+pub trait DBTreeNodeRecord: Send + Sync {}
+
+/// Placeholder for `ghidra.util.database.spatial.DBTreeRecord`, referenced by
+/// [`DBTraceAddressSnapRangePropertyMapTree`](crate::trace::database::map::db_trace_address_snap_range_property_map_tree::DBTraceAddressSnapRangePropertyMapTree)
+/// before the real port is available. That trait's `internalGetChildrenOf(DBTreeNodeRecord<?>)`
+/// only ever returns this type opaquely to callers; no members are needed yet.
+pub trait DBTreeRecord: Send + Sync {}
+
