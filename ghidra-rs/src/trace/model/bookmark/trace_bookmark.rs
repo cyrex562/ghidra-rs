@@ -53,6 +53,7 @@ mod tests {
     use crate::program::model::listing::bookmark_type::{BookmarkType, MarkerColor};
     use crate::program::seam_stubs::DataTypeManagerOwner;
     use crate::trace::model::listing::TraceCodeManager;
+    use crate::trace::model::modules::TraceStaticMappingManager;
     use crate::trace::model::program::TraceProgramView;
     use crate::trace::model::trace::TraceProgramViewListener;
     use crate::trace::model::time::trace_time_manager::TraceTimeManager;
@@ -62,7 +63,7 @@ mod tests {
         TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
         TraceModuleManager, TraceObjectManager, TracePlatformManager,
         TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
-        TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager,
+        TraceSymbolManager, TraceThreadManager,
         TraceVariableSnapProgramView,
     };
     use crate::util::lock_hold::{Lock, LockHold};

@@ -166,7 +166,7 @@ mod tests {
 
         fn get_static_mapping_manager(
             &self,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceStaticMappingManager> {
+        ) -> Box<dyn crate::trace::model::modules::TraceStaticMappingManager> {
             unimplemented!()
         }
 
