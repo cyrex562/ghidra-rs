@@ -2,6 +2,7 @@
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
 use super::async_utils::AsyncExecutor;
+use super::database::spatial::hyper::HyperPoint;
 use super::datastruct::NoSuchIndexException;
 use super::exception::{CancelledException, NoValueException};
 use super::graph::key_indexable_set::KeyIndexableSet;
@@ -637,4 +638,60 @@ pub trait DBCachedObjectStoreValueCollection: Send + Sync {}
 pub trait DBCachedObjectStore<T: crate::util::database::db_annotated_object::DBAnnotatedObject>:
     Send + Sync
 {
+}
+
+/// Placeholder for `ghidra.util.database.spatial.hyper.HyperBox`, needed by
+/// [`crate::util::database::spatial::hyper::euclidean_hyper_space::EuclideanHyperSpace`].
+///
+/// `EuclideanHyperSpace` only ever threads `B` through as an opaque generic parameter (handing
+/// it to [`Dimension`] and to its own abstract box-construction methods); it never calls a
+/// method on `B` directly, so this is a marker trait until the real hyper-box (with
+/// `lCorner`/`uCorner`/`immutable`/etc.) is ported.
+pub trait HyperBox: Send + Sync {}
+
+/// Placeholder for `ghidra.util.database.spatial.hyper.Dimension`, needed by
+/// [`crate::util::database::spatial::hyper::euclidean_hyper_space::EuclideanHyperSpace`].
+///
+/// The real `Dimension<T, P, B>` is generic in a per-dimension coordinate type `T` (e.g.
+/// `String` for [`StringDimension`](crate::util::database::spatial::hyper::StringDimension),
+/// `u64` for [`ULongDimension`](crate::util::database::spatial::hyper::ULongDimension));
+/// `EuclideanHyperSpace` holds a heterogeneous list of dimensions (Java's
+/// `List<Dimension<?, P, B>>` wildcard), so `T` can never appear in this trait's object-safe
+/// surface. Every method `EuclideanHyperSpace` calls that would otherwise expose `T`
+/// (`lower`/`upper`, used only for equality in `boxesEqual` and `collectBounds`) is replaced by
+/// a string-keyed equivalent here; every method that combines `T` values internally
+/// (`measureUnion`/`measureIntersection`, which read `unionLower`/`unionUpper` or
+/// `intersectionLower`/`intersectionUpper`/`compare` then `distance`) is collapsed into a single
+/// `f64`-returning method, so `T` never needs to leave a concrete `Dimension` implementation.
+/// Only the members `EuclideanHyperSpace` needs are declared; the real port additionally carries
+/// `mid`/`min`/`max`/`absoluteMin`/`absoluteMax`/`intersect`/`value` for its own T-typed callers.
+pub trait Dimension<P: HyperPoint, B: HyperBox>: Send + Sync {
+    /// String key for this dimension's lower bound of `box_`, mirroring `lower(B)` -- used only
+    /// for equality (`Objects.equals`), never compared ordinally, so a stable string
+    /// representation stands in for the erased `T`.
+    fn lower_key(&self, box_: &B) -> String;
+
+    /// String key for this dimension's upper bound of `box_`, mirroring `upper(B)`.
+    fn upper_key(&self, box_: &B) -> String;
+
+    /// Whether `box_` contains `point` along this dimension, mirroring `contains(B, P)`.
+    fn contains(&self, box_: &B, point: &P) -> bool;
+
+    /// This dimension's extent of `box_`, mirroring `measure(B)` (`distance(upper, lower)`).
+    fn measure(&self, box_: &B) -> f64;
+
+    /// This dimension's extent of the union of `a` and `b`, mirroring `EuclideanHyperSpace`'s
+    /// `measureUnion` (`distance(unionUpper(a, b), unionLower(a, b))`).
+    fn measure_union(&self, a: &B, b: &B) -> f64;
+
+    /// This dimension's extent of the intersection of `a` and `b`, or `0` if they don't overlap
+    /// along this dimension, mirroring `EuclideanHyperSpace`'s `measureIntersection`
+    /// (`compare(intersectionLower, intersectionUpper) > 0 ? 0 : distance(...)`).
+    fn measure_intersection(&self, a: &B, b: &B) -> f64;
+
+    /// Distance between `a` and `b` along this dimension, mirroring `pointDistance(P, P)`.
+    fn point_distance(&self, a: &P, b: &P) -> f64;
+
+    /// Whether `outer` encloses `inner` along this dimension, mirroring `encloses(B, B)`.
+    fn encloses(&self, outer: &B, inner: &B) -> bool;
 }
