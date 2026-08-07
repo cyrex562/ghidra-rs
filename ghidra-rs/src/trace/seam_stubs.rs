@@ -63,6 +63,14 @@ pub trait TraceObjectManager {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceReferenceManager {}
 
+/// Placeholder for `ghidra.trace.model.symbol.TraceSymbol`, referenced by
+/// [`TraceNamespaceSymbol`](crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol)
+/// before the real interface is ported. `TraceNamespaceSymbol` only extends this interface as a
+/// supertrait (for its `getChildren(): Collection<? extends TraceSymbol>`) and does not itself
+/// call any of `TraceSymbol`'s own (large) surface of symbol/reference/pin operations, so no
+/// members are ported here yet.
+pub trait TraceSymbol: Send + Sync {}
+
 /// Placeholder for `ghidra.trace.model.context.TraceRegisterContextManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceRegisterContextManager {}
