@@ -5,11 +5,12 @@ use crate::trace::model::listing::TraceCodeManager;
 use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::time::trace_time_manager::TraceTimeManager;
+use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
-    TraceObjectManager, TracePlatformManager,
+    TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
     TraceSymbolManager, TraceThreadManager,
     TraceVariableSnapProgramView,
@@ -372,7 +373,107 @@ mod tests {
         }
     }
     struct MockObjectManager;
-    impl TraceObjectManager for MockObjectManager {}
+    impl TraceObjectManager for MockObjectManager {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_root_object(
+            &mut self,
+            _schema: Box<dyn crate::trace::seam_stubs::TraceObjectSchema>,
+        ) -> Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_object(
+            &mut self,
+            _path: &crate::trace::model::target::path::key_path::KeyPath,
+        ) -> Box<dyn crate::trace::seam_stubs::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_root_schema(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceObjectSchema>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_root_object(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_object_by_id(&self, _key: i64) -> Option<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_object_by_canonical_path(
+            &self,
+            _path: &crate::trace::model::target::path::key_path::KeyPath,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_objects_by_path(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _path: &crate::trace::model::target::path::key_path::KeyPath,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_value_paths(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _predicates: &dyn crate::trace::model::target::path::PathFilter,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObjectValPath>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_objects(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_object_count(&self) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_values(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_values_intersecting(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+            _entry_key: Option<&str>,
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn query_all_interface<I: crate::trace::seam_stubs::TraceObjectInterface>(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Vec<I>
+        where
+            Self: Sized,
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn cull_disconnected_objects(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn clear(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn without_write_cache(
+            &mut self,
+        ) -> Box<dyn crate::trace::model::target::trace_object_manager::BypassWriteCache> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockReferenceManager;
     impl TraceReferenceManager for MockReferenceManager {}
     struct MockRegisterContextManager;
