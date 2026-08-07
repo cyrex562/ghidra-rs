@@ -15,10 +15,11 @@
 
 use crate::program::model::address::{Address, AddressRange};
 use crate::trace::model::lifespan::Lifespan;
+use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{TraceModule, TraceObjectInterface};
+use crate::trace::seam_stubs::TraceObjectInterface;
 use crate::util::exception::DuplicateNameException;
 
 /// Key for the section's module-owner attribute.

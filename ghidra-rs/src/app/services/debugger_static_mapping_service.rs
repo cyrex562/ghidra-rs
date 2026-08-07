@@ -35,11 +35,12 @@
 //! become `Vec`/`&mut Vec` for the same reason.
 //!
 //! `TraceLocation`, `TraceConflictedMappingException`, `MapEntry`, `ModuleMapEntry`,
-//! `SectionMapEntry`, `RegionMapEntry`, `ModuleMapProposal`, `SectionMapProposal`,
-//! `RegionMapProposal`, and `TraceModule` are not yet ported, so they are represented by
-//! placeholder traits in [`crate::app::seam_stubs`]. See `STUBS.tsv` for provenance.
-//! `TraceMemoryRegion` and `TraceSection` have real ports at
-//! [`crate::trace::model::memory::trace_memory_region::TraceMemoryRegion`] and
+//! `SectionMapEntry`, `RegionMapEntry`, `ModuleMapProposal`, `SectionMapProposal`, and
+//! `RegionMapProposal` are not yet ported, so they are represented by placeholder traits in
+//! [`crate::app::seam_stubs`]. See `STUBS.tsv` for provenance. `TraceModule`, `TraceMemoryRegion`,
+//! and `TraceSection` have real ports at
+//! [`crate::trace::model::modules::trace_module::TraceModule`],
+//! [`crate::trace::model::memory::trace_memory_region::TraceMemoryRegion`], and
 //! [`crate::trace::model::modules::trace_section::TraceSection`], respectively.
 
 use std::future::Future;
@@ -48,8 +49,9 @@ use std::pin::Pin;
 use crate::app::seam_stubs::{
     DebuggerAddressTranslator, MapEntry, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
     RegionMapProposal, SectionMapEntry, SectionMapProposal, TraceConflictedMappingException,
-    TraceLocation, TraceModule,
+    TraceLocation,
 };
+use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::modules::trace_section::TraceSection;
 use crate::debug::api::modules::DebuggerStaticMappingChangeListener;
 use crate::framework::model::DomainFile;
@@ -433,7 +435,99 @@ mod tests {
     impl RegionMapProposal for MockRegionMapProposal {}
 
     struct MockTraceModule;
-    impl TraceModule for MockTraceModule {}
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockTraceModule {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl crate::trace::seam_stubs::TraceObjectInterface for MockTraceModule {}
+    // `MockTraceModule` is only ever passed through as an opaque `&dyn TraceModule` /
+    // `Box<dyn TraceModule>` by this smoke test, so every method below is unexercised.
+    impl TraceModule for MockTraceModule {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_section(
+            &mut self,
+            _snap: i64,
+            _section_path: &str,
+            _section_name: Option<&str>,
+            _range: crate::program::model::address::AddressRange,
+        ) -> Result<Box<dyn TraceSection>, crate::util::exception::DuplicateNameException> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_path(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_range(
+            &mut self,
+            _lifespan: &dyn Lifespan,
+            _range: crate::program::model::address::AddressRange,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_range_at(&mut self, _snap: i64, _range: crate::program::model::address::AddressRange) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_range(&self, _snap: i64) -> crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_base(&mut self, _snap: i64, _base: crate::program::model::address::Address) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_base(&self, _snap: i64) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_max_address(&mut self, _snap: i64, _max: crate::program::model::address::Address) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_max_address(&self, _snap: i64) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_length(
+            &mut self,
+            _snap: i64,
+            _length: i64,
+        ) -> Result<(), crate::program::model::address::AddressOverflowException> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_length(&self, _snap: i64) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_sections(&self, _snap: i64) -> Vec<Box<dyn TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_all_sections(&self) -> Vec<Box<dyn TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_section_by_name(&self, _snap: i64, _section_name: &str) -> Option<Box<dyn TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn delete(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn remove(&mut self, _snap: i64) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_valid(&self, _snap: i64) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_alive(&self, _span: &dyn Lifespan) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockTraceSection;
     impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockTraceSection {
@@ -449,7 +543,7 @@ mod tests {
         fn get_trace(&self) -> Box<dyn Trace> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_module(&self) -> Box<dyn crate::trace::seam_stubs::TraceModule> {
+        fn get_module(&self) -> Box<dyn TraceModule> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_path(&self) -> String {
