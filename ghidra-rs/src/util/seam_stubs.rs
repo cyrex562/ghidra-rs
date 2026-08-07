@@ -567,3 +567,21 @@ pub trait DBCachedObjectStoreKeySubSet: Send + Sync {
     fn head_set(&self, to_element: i64, inclusive: bool) -> Box<dyn DBCachedObjectStoreKeySubSet>;
     fn tail_set(&self, from_element: i64, inclusive: bool) -> Box<dyn DBCachedObjectStoreKeySubSet>;
 }
+
+/// Placeholder for `ghidra.util.database.DBCachedObjectStoreSubMap`, needed by
+/// [`crate::util::database::db_cached_object_store_map::DBCachedObjectStoreMap`]'s
+/// `subMap`/`headMap`/`tailMap` return type.
+///
+/// `DBCachedObjectStoreMap` only ever constructs and returns these, never calls a method on one
+/// itself, so this is a marker trait until a consumer that actually calls into it needs the real
+/// `NavigableMap<Long, T>`-restricted-to-a-key-range surface.
+pub trait DBCachedObjectStoreSubMap: Send + Sync {}
+
+/// Placeholder for `ghidra.util.database.DBCachedObjectStoreValueCollection`, needed by
+/// [`crate::util::database::db_cached_object_store_map::DBCachedObjectStoreMap`]'s `values()`
+/// return type.
+///
+/// `DBCachedObjectStoreMap` only ever constructs and returns these, never calls a method on one
+/// itself, so this is a marker trait until a consumer that actually calls into it needs the real
+/// `Collection<T>` surface.
+pub trait DBCachedObjectStoreValueCollection: Send + Sync {}
