@@ -18,7 +18,8 @@
 
 use crate::program::model::address::{Address, AddressRange};
 use crate::trace::model::lifespan::Lifespan;
-use crate::trace::seam_stubs::{TraceConflictedMappingException, TraceStaticMapping};
+use crate::trace::model::modules::trace_static_mapping::TraceStaticMapping;
+use crate::trace::seam_stubs::TraceConflictedMappingException;
 
 /// Manages mappings from this trace into static images (Ghidra `Program`s).
 pub trait TraceStaticMappingManager {
@@ -119,7 +120,75 @@ mod tests {
 
     struct MockMapping;
 
-    impl TraceStaticMapping for MockMapping {}
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockMapping {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl TraceStaticMapping for MockMapping {
+        fn get_trace(&self) -> std::sync::Arc<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_trace_address_range(&self) -> AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_min_trace_address(&self) -> Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_trace_address(&self) -> Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_length(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_shift(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_start_snap(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_end_snap(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_static_program_url(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_static_address(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn delete(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn conflicts_with(
+            &self,
+            _range: &AddressRange,
+            _lifespan: &dyn Lifespan,
+            _to_program_url: &str,
+            _to_address: &str,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);

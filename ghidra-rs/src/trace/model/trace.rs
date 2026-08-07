@@ -280,13 +280,16 @@ mod tests {
             _to_program_url: &str,
             _to_address: &str,
         ) -> Result<
-            Box<dyn crate::trace::seam_stubs::TraceStaticMapping>,
+            Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>,
             Box<dyn crate::trace::seam_stubs::TraceConflictedMappingException>,
         > {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_all_entries(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+        fn get_all_entries(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -294,7 +297,8 @@ mod tests {
             &self,
             _address: &crate::program::model::address::Address,
             _snap: i64,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+        ) -> Option<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -304,7 +308,8 @@ mod tests {
             _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
             _to_program_url: &str,
             _to_address: &str,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+        ) -> Option<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -312,7 +317,8 @@ mod tests {
             &self,
             _range: &crate::program::model::address::AddressRange,
             _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceStaticMapping>> {
+        ) -> Vec<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
+        {
             unimplemented!("not exercised by this smoke test")
         }
     }

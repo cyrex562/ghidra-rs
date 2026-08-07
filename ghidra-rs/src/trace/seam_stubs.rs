@@ -81,13 +81,10 @@ pub trait TraceStackManager {}
 /// mappings that conflicted with the prospective one.
 pub trait TraceConflictedMappingException: Send + Sync {
     /// Mirrors `TraceConflictedMappingException.getConflicts()`.
-    fn get_conflicts(&self) -> Vec<Box<dyn TraceStaticMapping>>;
+    fn get_conflicts(
+        &self,
+    ) -> Vec<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>;
 }
-
-/// Placeholder for `ghidra.trace.model.modules.TraceStaticMapping`, referenced by
-/// [`TraceStaticMappingManager`](crate::trace::model::modules::trace_static_mapping_manager::TraceStaticMappingManager)
-/// before the real interface is ported. No members are ported here yet.
-pub trait TraceStaticMapping: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.model.symbol.TraceSymbolManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Grown to add
