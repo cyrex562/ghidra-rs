@@ -42,7 +42,7 @@ DONE	trait	35	44	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/dat
 DONE	trait	33	40	50	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedDomainObjectAdapter.java
 DONE	trait	32	59	6	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBAnnotatedObject.java
 DONE	trait	35	6	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/TraceObjectValueStorage.java
-TODO	trait	35	15	44	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/InstructionAdapterFromPrototype.java
+DONE	trait	35	15	44	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/InstructionAdapterFromPrototype.java
 TODO	trait	35	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeManager.java
 TODO	trait	35	17	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceSpaceMixin.java
 TODO	trait	34	21	18	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectInterface.java
