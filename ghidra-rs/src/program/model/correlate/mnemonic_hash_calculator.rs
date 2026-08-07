@@ -30,7 +30,8 @@ mod tests {
     use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::RefType;
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+    use crate::program::seam_stubs::{FlowOverride, InstructionContext, RegisterValue};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::program::model::listing::{OperandValue, program::Program};
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
@@ -42,6 +43,15 @@ use crate::program::model::listing::CommentType;
     }
 
     impl MemBuffer for TestInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             mock_address(0x1000)
         }

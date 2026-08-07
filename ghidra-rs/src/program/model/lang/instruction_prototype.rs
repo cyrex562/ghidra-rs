@@ -18,7 +18,8 @@ use crate::program::model::scalar::Scalar;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::Mask;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{MemBuffer, ParserContext};
+use crate::program::seam_stubs::{ParserContext};
+use crate::program::model::mem::MemBuffer;
 
 /// Sentinel value to indicate an invalid depth change.
 ///

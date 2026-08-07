@@ -41,7 +41,7 @@
 //! independently minimal placeholder for the same Java class is defined at
 //! [`crate::program::seam_stubs::FloatFormat`] instead of widening or duplicating the pcode one;
 //! see `STUBS.tsv`. `MemBuffer.getBytes(byte[], int)`/`isBigEndian()` were likewise missing from
-//! the existing [`crate::program::seam_stubs::MemBuffer`] placeholder and are added there.
+//! the existing [`crate::program::model::mem::MemBuffer`] placeholder and are added there.
 
 use std::any::TypeId;
 
@@ -53,7 +53,8 @@ use crate::program::model::data::built_in_data_type::BuiltInDataType;
 use crate::program::model::data::data_organization::DataOrganization;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_encode_exception::DataTypeEncodeException;
-use crate::program::seam_stubs::{FloatFormat, MemBuffer};
+use crate::program::seam_stubs::{FloatFormat};
+use crate::program::model::mem::MemBuffer;
 
 /// Marker type standing in for `BigFloat.class`, returned (wrapped in a `TypeId`) by
 /// [`AbstractFloatDataType::float_value_type_id`] since `BigFloat` is a trait -- not a concrete
@@ -493,13 +494,16 @@ mod tests {
 
     struct FixedMemBuffer(Vec<u8>);
     impl MemBuffer for FixedMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
         }
-        fn get_bytes_into(&self, buffer: &mut [u8], _offset: i32) -> i32 {
+        fn get_bytes(&self, buffer: &mut [u8], _offset: i32) -> usize {
             let n = buffer.len().min(self.0.len());
             buffer[..n].copy_from_slice(&self.0[..n]);
-            n as i32
+            n 
         }
         fn is_big_endian(&self) -> bool {
             true

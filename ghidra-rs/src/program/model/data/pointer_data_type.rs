@@ -87,7 +87,7 @@
 //! [`Program::get_listing`](crate::program::model::listing::Program::get_listing)) are all
 //! `&mut self` in this port (reflecting how their backing subsystems are reached elsewhere), but
 //! this call chain only ever has a shared `Arc<dyn Program>` (reached via
-//! [`MemBuffer::get_memory`](crate::program::seam_stubs::MemBuffer::get_memory) `->`
+//! [`MemBuffer::get_memory`](crate::program::model::mem::MemBuffer::get_memory) `->`
 //! [`Memory::get_program`](crate::program::model::mem::Memory::get_program)) -- there is no way to
 //! get `&mut` access through it without interior mutability those traits don't yet offer. Rather
 //! than inventing that plumbing here, `getLabelString`/the private `getPointerClassification`/
@@ -134,7 +134,8 @@ use crate::program::model::data::offset_shift_settings_definition::OffsetShiftSe
 use crate::program::model::data::parameter_definition_impl::is_same_or_equivalent_data_type;
 use crate::program::model::data::pointer::{Pointer, NAP};
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
-use crate::program::seam_stubs::{MemBuffer, PointerType, PointerTypeSettingsDefinition};
+use crate::program::seam_stubs::{PointerType, PointerTypeSettingsDefinition};
+use crate::program::model::mem::MemBuffer;
 use std::sync::Arc;
 
 /// Maximum encoded pointer length, in bytes.
@@ -830,20 +831,23 @@ mod tests {
     }
 
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.address.clone()
         }
         fn is_big_endian(&self) -> bool {
             self.big_endian
         }
-        fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
             let offset = offset as usize;
             if offset >= self.bytes.len() {
                 return 0;
             }
             let n = buffer.len().min(self.bytes.len() - offset);
             buffer[..n].copy_from_slice(&self.bytes[offset..offset + n]);
-            n as i32
+            n
         }
     }
 

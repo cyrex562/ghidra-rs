@@ -37,7 +37,7 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
     use crate::program::model::data::string_data_instance::StringDataInstance;
-    use crate::program::seam_stubs::MemBuffer;
+    use crate::program::model::mem::MemBuffer;
 
     struct MockUnsignedIntDataType {
         name: &'static str,

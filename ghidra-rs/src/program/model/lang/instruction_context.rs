@@ -3,7 +3,7 @@ use crate::program::model::lang::parser_context::ParserContext;
 use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::unknown_context_exception::UnknownContextException;
 use crate::program::model::mem::MemoryAccessException;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Utilized by a shared instruction prototype to access all relevant instruction data
 /// and context-register storage needed during instruction parse and semantic pcode generation.
@@ -89,6 +89,15 @@ mod tests {
     struct MockMemBuffer;
 
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
             Address::new(space, 0x1000)

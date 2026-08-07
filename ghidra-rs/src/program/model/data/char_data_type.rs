@@ -9,7 +9,8 @@ use crate::program::model::data::endian_settings_definition::EndianSettingsDefin
 use crate::program::model::data::padding_settings_definition::PaddingSettingsDefinition;
 use crate::program::model::data::render_unicode_settings_definition::RenderUnicodeSettingsDefinition;
 use crate::program::model::data::string_data_instance::DEFAULT_CHARSET_NAME;
-use crate::program::seam_stubs::{CharsetSettingsDefinition, MemBuffer, CHARSET_UTF16, CHARSET_UTF32};
+use crate::program::seam_stubs::{CharsetSettingsDefinition, CHARSET_UTF16, CHARSET_UTF32};
+use crate::program::model::mem::MemBuffer;
 
 /// Provides a definition of a primitive char in a program. The size and signed-ness of this type
 /// is determined by the data organization of the associated data type manager.
@@ -234,13 +235,19 @@ mod tests {
 
     struct FixedMemBuffer(Vec<u8>);
     impl MemBuffer for FixedMemBuffer {
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
         }
-        fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+        fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
             self.0
                 .get(offset as usize)
-                .map(|b| *b as i8)
+                .copied()
                 .ok_or_else(|| MemoryAccessException::new("out of bounds"))
         }
         fn get_short(&self, offset: i32) -> Result<i16, MemoryAccessException> {

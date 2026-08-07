@@ -197,7 +197,7 @@ mod tests {
     impl InstructionPrototype for MockPrototype {
         fn get_parser_context(
             &self,
-            _buf: &dyn crate::program::seam_stubs::MemBuffer,
+            _buf: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn crate::program::model::lang::ProcessorContextView,
         ) -> Result<
             Box<dyn crate::program::seam_stubs::ParserContext>,
@@ -209,7 +209,7 @@ mod tests {
         fn get_pseudo_parser_context(
             &self,
             _address: &Address,
-            _buffer: &dyn crate::program::seam_stubs::MemBuffer,
+            _buffer: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn crate::program::model::lang::ProcessorContextView,
         ) -> Result<
             Box<dyn crate::program::seam_stubs::ParserContext>,

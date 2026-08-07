@@ -122,7 +122,7 @@ mod tests {
 
         fn parse(
             &self,
-            _buf: &dyn crate::program::seam_stubs::MemBuffer,
+            _buf: &dyn crate::program::model::mem::MemBuffer,
             _context: &mut dyn crate::program::model::lang::processor_context::ProcessorContext,
             _in_delay_slot: bool,
         ) -> Result<

@@ -10,7 +10,8 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::enum_::Enum;
 use crate::program::model::data::source_archive::SourceArchive;
 use crate::program::model::data::typedef_settings_definition::TypeDefSettingsDefinition;
-use crate::program::seam_stubs::{DataTypePath, MemBuffer};
+use crate::program::seam_stubs::{DataTypePath};
+use crate::program::model::mem::MemBuffer;
 use crate::docking::settings::settings::Settings;
 use crate::docking::settings::settings_definition::SettingsDefinition;
 use crate::util::exception::{DuplicateNameException, InvalidNameException};
@@ -742,6 +743,15 @@ mod tests {
 
         struct MockBuf;
         impl MemBuffer for MockBuf {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
             fn get_address(&self) -> crate::program::model::address::Address {
                 crate::program::model::address::SpecialAddress::no_address()
             }

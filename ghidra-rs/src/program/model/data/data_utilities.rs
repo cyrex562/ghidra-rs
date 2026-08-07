@@ -87,7 +87,8 @@ use crate::program::model::data::data_type_instance::{
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::listing::{CodeUnit, Data, Listing, Program};
 use crate::program::model::symbol::{Reference, ReferenceManager};
-use crate::program::seam_stubs::{share_data_type, DumbMemBufferImpl, MemBuffer};
+use crate::program::seam_stubs::{share_data_type, DumbMemBufferImpl};
+use crate::program::model::mem::MemBuffer;
 use crate::program::util::{CodeUnitInsertionException, ProgramLocation};
 use crate::util::exception::AssertException;
 

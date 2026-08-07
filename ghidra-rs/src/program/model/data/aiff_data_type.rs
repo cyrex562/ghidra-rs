@@ -44,7 +44,8 @@ use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::data::dynamic::Dynamic;
-use crate::program::seam_stubs::{AudioPlayer, AudioPlayerImpl, MemBuffer};
+use crate::program::seam_stubs::{AudioPlayer, AudioPlayerImpl};
+use crate::program::model::mem::MemBuffer;
 
 /// Magic bytes for the 'AIFF' audio file header.
 pub const MAGIC_AIFF: [u8; 12] = [
@@ -233,14 +234,17 @@ mod tests {
     struct BytesMemBuffer(Vec<u8>);
 
     impl MemBuffer for BytesMemBuffer {
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
         }
 
-        fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+        fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
             self.0
                 .get(offset as usize)
-                .map(|&b| b as i8)
+                .map(|&b| b )
                 .ok_or_else(MemoryAccessException::default)
         }
 
@@ -254,12 +258,12 @@ mod tests {
             Ok(i32::from_be_bytes(bytes))
         }
 
-        fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
             let start = offset as usize;
             let available = self.0.len().saturating_sub(start);
             let n = available.min(buffer.len());
             buffer[..n].copy_from_slice(&self.0[start..start + n]);
-            n as i32
+            n 
         }
     }
 

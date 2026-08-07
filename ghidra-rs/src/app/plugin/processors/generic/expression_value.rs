@@ -1,5 +1,5 @@
 use crate::program::model::mem::MemoryAccessException;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Port of `ghidra.app.plugin.processors.generic.ExpressionValue`.
 ///
@@ -55,6 +55,15 @@ mod tests {
     }
 
     impl MemBuffer for TestMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> crate::program::model::address::Address {
             let space = crate::program::model::address::AddressSpace::new(
                 "ram",

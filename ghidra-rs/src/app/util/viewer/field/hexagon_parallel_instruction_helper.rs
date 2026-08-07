@@ -47,7 +47,7 @@ impl ParallelInstructionLanguageHelper for HexagonParallelInstructionHelper {
     }
 
     fn is_end_of_parallel_instruction_group(&self, instruction: &dyn Instruction) -> bool {
-        match instruction.get_bytes() {
+        match crate::program::model::listing::CodeUnit::get_bytes(instruction) {
             Ok(bytes) => {
                 if bytes.len() < 2 {
                     return true;
@@ -79,7 +79,8 @@ mod tests {
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::pcode::PcodeOp;
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, RefType, SourceType, Symbol};
-    use crate::program::seam_stubs::{FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+    use crate::program::seam_stubs::{FlowOverride, InstructionContext, RegisterValue};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::program::util::CodeUnitInsertionException;
     use std::sync::Arc;
@@ -123,6 +124,15 @@ use crate::program::model::listing::CommentType;
     }
 
     impl MemBuffer for MockInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             mock_address()
         }

@@ -216,7 +216,8 @@ mod tests {
     use crate::program::model::pcode::PcodeOp;
     use crate::program::model::scalar::Scalar;
     use crate::program::model::symbol::SourceType;
-    use crate::program::seam_stubs::{InjectContext, InstructionContext, MemBuffer};
+    use crate::program::seam_stubs::{InjectContext, InstructionContext};
+use crate::program::model::mem::MemBuffer;
 
     fn addr(space: &Arc<AddressSpace>, offset: i64) -> Address {
         Address::new(space.clone(), offset)
@@ -295,6 +296,15 @@ mod tests {
     }
 
     impl MemBuffer for MockInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.min_addr.clone()
         }

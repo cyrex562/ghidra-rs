@@ -114,10 +114,8 @@ use crate::program::model::listing::function_signature::{
     FunctionSignature, NORETURN_DISPLAY_STRING, VAR_ARGS_DISPLAY_STRING, VOID_PARAM_DISPLAY_STRING,
 };
 use crate::program::model::symbol::source_type::SourceType;
-use crate::program::seam_stubs::{
-    share_data_type, undefined_data_type, GenericCallingConvention as GenericCallingConventionPlaceholder,
-    MemBuffer,
-};
+use crate::program::seam_stubs::{share_data_type, undefined_data_type, GenericCallingConvention as GenericCallingConventionPlaceholder};
+use crate::program::model::mem::MemBuffer;
 use crate::util::exception::InvalidInputException;
 
 /// Definition of a function for things like function pointers.

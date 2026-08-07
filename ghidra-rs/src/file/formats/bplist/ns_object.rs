@@ -107,7 +107,7 @@ pub trait NsObject: StructConverter + fmt::Display {
     ///
     /// Port of `NSObject.getValue(Data)`.
     fn get_value(&self, component: &dyn Data) -> i64 {
-        match component.get_bytes() {
+        match crate::program::model::listing::CodeUnit::get_bytes(component) {
             Ok(bytes) => big_integer_long_value(&bytes),
             Err(_) => -1,
         }

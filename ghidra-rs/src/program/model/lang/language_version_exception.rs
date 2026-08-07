@@ -246,7 +246,8 @@ mod tests {
     use crate::program::model::lang::register::RegisterRef;
     use crate::program::model::listing::default_program_context::DefaultProgramContext;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{AddressLabelInfo, MemBuffer, Processor};
+    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+use crate::program::model::mem::MemBuffer;
     use crate::util::task::TaskMonitor;
     use std::collections::HashSet;
 

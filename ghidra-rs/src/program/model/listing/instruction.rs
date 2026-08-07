@@ -206,7 +206,8 @@ pub(crate) mod tests {
     use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{MemBuffer, RegisterValue};
+    use crate::program::seam_stubs::{RegisterValue};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
 
     struct MockInstruction {
@@ -217,6 +218,15 @@ use crate::program::model::listing::CommentType;
     }
 
     impl MemBuffer for MockInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.address.clone()
         }

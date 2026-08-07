@@ -4,7 +4,7 @@ use crate::program::model::data::array_stringable::get_array_stringable;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::docking::settings::settings::Settings;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Label prefix used for array data, standing in for `Array.ARRAY_LABEL_PREFIX`.
 pub const ARRAY_LABEL_PREFIX: &str = "ARRAY";
@@ -166,6 +166,15 @@ mod tests {
         initialized: bool,
     }
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> crate::program::model::address::Address {
             crate::program::model::address::SpecialAddress::no_address()
         }

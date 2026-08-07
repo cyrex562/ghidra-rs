@@ -34,7 +34,8 @@ use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::pcode::{OpCode, PatchEncoder, PcodeOp, PcodeOverride, SequenceNumber};
 use crate::program::model::scalar::Scalar;
 use crate::program::model::symbol::RefType;
-use crate::program::seam_stubs::{MemBuffer, ParserContext as ParserContextStub};
+use crate::program::seam_stubs::{ParserContext as ParserContextStub};
+use crate::program::model::mem::MemBuffer;
 
 /// The public behavior of `ghidra.program.model.lang.InvalidPrototype` that isn't already covered
 /// by the (pre-existing) [`InstructionPrototype`] trait.
@@ -605,6 +606,15 @@ mod tests {
 
     struct StubBuf;
     impl MemBuffer for StubBuf {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             mock_address(0)
         }

@@ -550,87 +550,6 @@ impl TypeDefSettingsDefinition for PointerTypeSettingsDefinition {
     }
 }
 
-/// Placeholder for `ghidra.program.model.mem.MemBuffer`, referenced by
-/// [`DataTypeWithCharset`](crate::program::model::data::data_type_with_charset::DataTypeWithCharset),
-/// [`ArrayStringable`](crate::program::model::data::array_stringable::ArrayStringable),
-/// [`Array`](crate::program::model::data::array::Array), and
-/// [`Label`](crate::app::plugin::processors::generic::label::Label)
-/// before the real interface is ported.
-pub trait MemBuffer {
-    /// Stands in for `MemBuffer.getAddress()`.
-    fn get_address(&self) -> Address;
-
-    /// Stands in for `MemBuffer.isInitializedMemory()`.
-    fn is_initialized_memory(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `buf.getMemory().getAllInitializedAddressSet().contains(buf.getAddress())`,
-    /// used by [`Array::get_array_value`](crate::program::model::data::array::Array::get_array_value)
-    /// until `Memory`'s address-set queries and `MemBuffer.getAddress()` are ported.
-    fn is_at_initialized_memory_address(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `MemBuffer.getByte(int)`, used by
-    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
-    /// real interface is ported.
-    fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
-        let _ = offset;
-        Err(MemoryAccessException::default())
-    }
-
-    /// Stands in for `MemBuffer.getUnsignedByte(int)`, used by
-    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
-    /// real interface is ported.
-    fn get_unsigned_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
-        self.get_byte(offset).map(|b| b as u8)
-    }
-
-    /// Stands in for `MemBuffer.getShort(int)`, used by
-    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
-    /// real interface is ported.
-    fn get_short(&self, offset: i32) -> Result<i16, MemoryAccessException> {
-        let _ = offset;
-        Err(MemoryAccessException::default())
-    }
-
-    /// Stands in for `MemBuffer.getInt(int)`, used by
-    /// [`CharDataType`](crate::program::model::data::char_data_type::CharDataType) before the
-    /// real interface is ported.
-    fn get_int(&self, offset: i32) -> Result<i32, MemoryAccessException> {
-        let _ = offset;
-        Err(MemoryAccessException::default())
-    }
-
-    /// Stands in for `MemBuffer.getBytes(byte[], int)`, used by
-    /// [`AbstractFloatDataType`](crate::program::model::data::abstract_float_data_type::AbstractFloatDataType)
-    /// before the real interface is ported. Returns the number of bytes actually copied into
-    /// `buffer` starting at `offset`, mirroring the Java method's `int` return (rather than
-    /// throwing, unlike the single-value getters above). Named `get_bytes_into` rather than
-    /// `get_bytes` to avoid an ambiguous-method clash with the unrelated, already-ported
-    /// `CodeUnit::get_bytes(&self) -> Result<Vec<u8>, MemoryAccessException>`.
-    fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
-        let _ = (buffer, offset);
-        0
-    }
-
-    /// Stands in for `MemBuffer.isBigEndian()`, used by
-    /// [`AbstractFloatDataType`](crate::program::model::data::abstract_float_data_type::AbstractFloatDataType)
-    /// before the real interface is ported.
-    fn is_big_endian(&self) -> bool {
-        false
-    }
-
-    /// Stands in for `MemBuffer.getMemory()`, used by
-    /// [`CountedDynamicDataType`](crate::program::model::data::counted_dynamic_data_type::CountedDynamicDataType)
-    /// before the real interface (and its full `Memory`-backed `getShort`/`getInt`/`getLong`
-    /// family) is ported. Defaults to `None`, mirroring a buffer with no backing memory (e.g. one
-    /// built directly from a byte array).
-    fn get_memory(&self) -> Option<Arc<dyn crate::program::model::mem::Memory>> {
-        None
-    }
-}
 
 /// Placeholder for `ghidra.program.model.mem.DumbMemBufferImpl`, referenced by
 /// [`DataUtilities`](crate::program::model::data::data_utilities::DataUtilities) before the real
@@ -650,28 +569,28 @@ impl DumbMemBufferImpl {
     }
 }
 
-impl MemBuffer for DumbMemBufferImpl {
+impl crate::program::model::mem::MemBuffer for DumbMemBufferImpl {
     fn get_address(&self) -> Address {
         self.address.clone()
     }
 
-    fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+    fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
         let memory = self.memory.as_ref().ok_or_else(MemoryAccessException::default)?;
         let addr = self
             .address
             .add(offset as i64)
             .map_err(|_| MemoryAccessException::default())?;
-        memory.get_byte(&addr).map(|b| b as i8)
+        memory.get_byte(&addr)
     }
 
-    fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+    fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
         let Some(memory) = self.memory.as_ref() else {
             return 0;
         };
         let Ok(addr) = self.address.add(offset as i64) else {
             return 0;
         };
-        memory.get_bytes(&addr, buffer) as i32
+        memory.get_bytes(&addr, buffer)
     }
 
     fn is_big_endian(&self) -> bool {
@@ -711,7 +630,7 @@ impl DataTypeInstance {
 /// boolean)`. See [`DataTypeInstance`].
 pub fn get_data_type_instance(
     data_type: Arc<dyn DataType>,
-    buf: &dyn MemBuffer,
+    buf: &dyn crate::program::model::mem::MemBuffer,
     use_alignment: bool,
 ) -> Option<DataTypeInstance> {
     let _ = (buf, use_alignment);

@@ -18,7 +18,8 @@ use crate::program::model::lang::parallel_instruction_language_helper::ParallelI
 use crate::program::model::lang::unknown_instruction_exception::UnknownInstructionException;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-use crate::program::seam_stubs::{AddressLabelInfo, MemBuffer, Processor};
+use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+use crate::program::model::mem::MemBuffer;
 use crate::util::task::TaskMonitor;
 
 /// Combines the checked exceptions declared on `Language.parse`.
@@ -330,6 +331,15 @@ mod tests {
         address: Address,
     }
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.address.clone()
         }

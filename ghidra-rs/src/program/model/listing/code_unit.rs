@@ -9,7 +9,7 @@ use crate::program::model::symbol::{
     ExternalLocation, ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
 
 /// Indicator for a mnemonic (versus an operand).
@@ -479,6 +479,15 @@ mod tests {
     }
 
     impl MemBuffer for MockCodeUnit {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.min_address.clone()
         }
@@ -685,6 +694,8 @@ mod tests {
 
         assert_eq!(unit.get_scalar(0), Some(Scalar::new(32, 42)));
         assert_eq!(unit.get_scalar(1), None);
-        assert_eq!(unit.get_bytes().unwrap(), vec![0x90; 4]);
+        // `CodeUnit::get_bytes()` and `MemBuffer::get_bytes(buf, off)` are overloads in Java;
+        // Rust needs the call site to name the trait.
+        assert_eq!(CodeUnit::get_bytes(unit.as_ref()).unwrap(), vec![0x90; 4]);
     }
 }

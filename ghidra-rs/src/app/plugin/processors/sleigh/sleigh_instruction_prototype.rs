@@ -309,7 +309,7 @@ mod tests {
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::pcode::{PatchEncoder, PcodeOp, PcodeOverride};
     use crate::program::model::scalar::Scalar;
-    use crate::program::seam_stubs::MemBuffer;
+    use crate::program::model::mem::MemBuffer;
     use std::io;
     use std::sync::Mutex;
 

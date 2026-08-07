@@ -50,7 +50,7 @@
 //! after the real component) is not reused from the real
 //! [`crate::program::model::mem::WrappedMemBuffer`] port: that struct wraps
 //! `crate::program::model::lang::sleigh::walker::MemBuffer`, a different (already-ported)
-//! `MemBuffer` trait than the [`crate::program::seam_stubs::MemBuffer`] placeholder
+//! `MemBuffer` trait than the [`crate::program::model::mem::MemBuffer`] placeholder
 //! `AbstractFloatDataType::float_value` (and so this trait) is built against. Instead, a small
 //! private `OffsetMemBuffer` adapter local to this module reproduces just the offsetting behavior
 //! this call site needs.
@@ -59,10 +59,11 @@ use crate::docking::settings::settings::Settings;
 use crate::generic::complex::Complex;
 use crate::pcode::floatformat::big_float::BigFloat;
 use crate::program::model::address::Address;
+use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::data::abstract_float_data_type::AbstractFloatDataType;
 use crate::program::model::data::built_in_data_type::BuiltInDataType;
 use crate::program::model::data::data_type::DataType;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Port of the private static `AbstractComplexDataType.toDouble(Object)`, adapted to convert a
 /// decoded [`BigFloat`] directly rather than dispatching on `Double`/`Float`/`Short`/`BigDecimal`
@@ -88,8 +89,12 @@ impl MemBuffer for OffsetMemBuffer<'_> {
         self.inner.get_address()
     }
 
-    fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
-        self.inner.get_bytes_into(buffer, self.offset + offset)
+    fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
+        self.inner.get_byte(self.offset + offset)
+    }
+
+    fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
+        self.inner.get_bytes(buffer, self.offset + offset)
     }
 
     fn is_big_endian(&self) -> bool {
@@ -401,17 +406,20 @@ mod tests {
 
     struct FixedMemBuffer(Vec<u8>);
     impl MemBuffer for FixedMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
         }
-        fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
             let offset = offset as usize;
             if offset >= self.0.len() {
                 return 0;
             }
             let n = buffer.len().min(self.0.len() - offset);
             buffer[..n].copy_from_slice(&self.0[offset..offset + n]);
-            n as i32
+            n
         }
         fn is_big_endian(&self) -> bool {
             true

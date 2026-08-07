@@ -269,7 +269,7 @@ mod tests {
             &mut self,
             _addr: crate::program::model::address::Address,
             _prototype: Arc<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype>,
-            _mem_buf: &dyn crate::program::seam_stubs::MemBuffer,
+            _mem_buf: &dyn crate::program::model::mem::MemBuffer,
             _context: &dyn crate::program::model::lang::ProcessorContextView,
             _length: i32,
         ) -> Result<Arc<dyn crate::program::model::listing::instruction::Instruction>, crate::program::util::CodeUnitInsertionException> {

@@ -53,7 +53,8 @@ use crate::program::model::symbol::{
     reference::Reference, stack_reference::StackReference, symbol_utilities::DefaultSymbolUtilities,
     symbol_utilities::SymbolUtilities, Equate, Namespace, Symbol,
 };
-use crate::program::seam_stubs::{comment_utils, namespace_utils, CodeUnitFormatOptions, MemBuffer, ShowBlockName, ShowNamespace};
+use crate::program::seam_stubs::{comment_utils, namespace_utils, CodeUnitFormatOptions, ShowBlockName, ShowNamespace};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
 
 const PLUS: &str = "+";
@@ -1724,6 +1725,15 @@ mod tests {
     }
 
     impl MemBuffer for MockInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Addr {
             self.address.clone()
         }
@@ -1839,6 +1849,15 @@ mod tests {
             address: Addr,
         }
         impl MemBuffer for MockData {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
             fn get_address(&self) -> Addr {
                 self.address.clone()
             }

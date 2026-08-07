@@ -15,7 +15,8 @@ use crate::program::model::symbol::{
     ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+use crate::program::seam_stubs::{FlowOverride, InstructionContext, RegisterValue};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::NoValueException;
@@ -553,7 +554,7 @@ pub trait InstructionStub {
     }
 }
 
-impl<T: InstructionStub> PropertySet for T {
+impl<T: InstructionStub + Send + Sync> PropertySet for T {
     fn set_object_property(&mut self, name: &str, value: Box<dyn Saveable>) {
         InstructionStub::set_object_property(self, name, value)
     }
@@ -589,13 +590,29 @@ impl<T: InstructionStub> PropertySet for T {
     }
 }
 
-impl<T: InstructionStub> MemBuffer for T {
+impl<T: InstructionStub + Send + Sync> MemBuffer for T {
     fn get_address(&self) -> Address {
         InstructionStub::get_membuffer_address(self)
     }
+
+    // Java's InstructionStub throws UnsupportedOperationException for each of these; the stub
+    // exists to be subclassed, and a subclass that needs byte access overrides them. Panicking
+    // is the faithful rendering -- a silent default would let a caller read zeros and believe
+    // them.
+    fn get_byte(&self, _offset: i32) -> Result<u8, MemoryAccessException> {
+        unimplemented!("InstructionStub::get_byte -- override in the concrete instruction")
+    }
+
+    fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+        unimplemented!("InstructionStub::get_bytes -- override in the concrete instruction")
+    }
+
+    fn is_big_endian(&self) -> bool {
+        unimplemented!("InstructionStub::is_big_endian -- override in the concrete instruction")
+    }
 }
 
-impl<T: InstructionStub> CodeUnit for T {
+impl<T: InstructionStub + Send + Sync> CodeUnit for T {
     fn get_address_string(&self, show_block_name: bool, pad: bool) -> String {
         InstructionStub::get_address_string(self, show_block_name, pad)
     }
@@ -722,7 +739,7 @@ impl<T: InstructionStub> CodeUnit for T {
     }
 }
 
-impl<T: InstructionStub> ProcessorContextView for T {
+impl<T: InstructionStub + Send + Sync> ProcessorContextView for T {
     fn get_base_context_register(&self) -> Option<RegisterRef> {
         InstructionStub::get_base_context_register(self)
     }
@@ -743,7 +760,7 @@ impl<T: InstructionStub> ProcessorContextView for T {
     }
 }
 
-impl<T: InstructionStub> ProcessorContext for T {
+impl<T: InstructionStub + Send + Sync> ProcessorContext for T {
     fn set_value(&mut self, register: &Register, value: i128) -> Result<(), ContextChangeException> {
         InstructionStub::set_value(self, register, value)
     }
@@ -758,7 +775,7 @@ impl<T: InstructionStub> ProcessorContext for T {
     }
 }
 
-impl<T: InstructionStub> Instruction for T {
+impl<T: InstructionStub + Send + Sync> Instruction for T {
     fn get_prototype(&self) -> Arc<dyn InstructionPrototype> {
         InstructionStub::get_prototype(self)
     }

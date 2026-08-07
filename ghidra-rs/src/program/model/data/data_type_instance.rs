@@ -69,7 +69,8 @@
 use std::sync::Arc;
 
 use crate::program::model::data::data_type::DataType;
-use crate::program::seam_stubs::{share_data_type, MemBuffer};
+use crate::program::seam_stubs::{share_data_type};
+use crate::program::model::mem::MemBuffer;
 
 /// An instance of a [`DataType`] that is applicable for a given context. Most data types are not
 /// context sensitive and are suitable for use anywhere. Others, like dynamic structures, need to
@@ -470,6 +471,15 @@ mod tests {
 
     struct MockMemBuffer;
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> crate::program::model::address::Address {
             crate::program::model::address::SpecialAddress::no_address()
         }

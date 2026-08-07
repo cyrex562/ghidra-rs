@@ -329,7 +329,7 @@ pub trait InstructionAdapterFromPrototype: TraceInstruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::Cell;
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::io;
     use std::sync::Arc;
 
@@ -352,7 +352,8 @@ mod tests {
         ExternalReference, Reference, ReferenceIterator, SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{FlowOverride, MemBuffer, ParserContext, RegisterValue};
+    use crate::program::seam_stubs::{FlowOverride, ParserContext, RegisterValue};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::listing::trace_code_unit::TraceCodeUnit;
@@ -374,16 +375,20 @@ use crate::program::model::listing::CommentType;
         num_operands: i32,
         op_type: i32,
         op_address: Option<Address>,
-        op_representation: Option<Vec<OperandValue>>,
+        // Stored as the Address rather than a Vec<OperandValue>: OperandValue::Register holds a
+        // RegisterRef (Rc<RefCell<Register>>), which is not Send + Sync, and the canonical
+        // MemBuffer is -- sleigh shares Arc<dyn MemBuffer> across threads. The tests only ever
+        // build an Address operand, so this is the same behaviour with a thread-safe field.
+        op_representation: Option<Address>,
         fall_through_offset: i32,
         expected_start: Address,
-        override_seen_correct_start: Cell<bool>,
+        override_seen_correct_start: AtomicBool,
     }
 
     impl InstructionPrototype for MockPrototype {
         fn get_parser_context(
             &self,
-            _buf: &dyn crate::program::seam_stubs::MemBuffer,
+            _buf: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn ProcessorContextView,
         ) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
             unimplemented!("not exercised by this smoke test")
@@ -392,7 +397,7 @@ use crate::program::model::listing::CommentType;
         fn get_pseudo_parser_context(
             &self,
             _address: &Address,
-            _buffer: &dyn crate::program::seam_stubs::MemBuffer,
+            _buffer: &dyn crate::program::model::mem::MemBuffer,
             _processor_context: &dyn ProcessorContextView,
         ) -> Result<Box<dyn ParserContext>, GetPseudoParserContextError> {
             unimplemented!("not exercised by this smoke test")
@@ -471,7 +476,7 @@ use crate::program::model::listing::CommentType;
             _operand_index: i32,
             _context: &dyn InstructionContext,
         ) -> Option<Vec<OperandValue>> {
-            self.op_representation.clone()
+            self.op_representation.clone().map(|a| vec![OperandValue::Address(a)])
         }
 
         fn get_address(
@@ -514,7 +519,7 @@ use crate::program::model::listing::CommentType;
         ) -> RefType {
             if let Some(o) = override_ {
                 if o.get_instruction_start() == self.expected_start {
-                    self.override_seen_correct_start.set(true);
+                    self.override_seen_correct_start.store(true, Ordering::SeqCst);
                 }
             }
             RefType::Data
@@ -572,7 +577,7 @@ use crate::program::model::listing::CommentType;
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_mem_buffer(&self) -> &dyn crate::program::seam_stubs::MemBuffer {
+        fn get_mem_buffer(&self) -> &dyn crate::program::model::mem::MemBuffer {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -623,6 +628,15 @@ use crate::program::model::listing::CommentType;
     }
 
     impl MemBuffer for MockAdapterInstruction {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.min_address.clone()
         }
@@ -1060,10 +1074,10 @@ use crate::program::model::listing::CommentType;
                 num_operands: 1,
                 op_type: OperandType::ADDRESS as i32,
                 op_address: Some(guest_addr.clone()),
-                op_representation: Some(vec![OperandValue::Address(guest_addr.clone())]),
+                op_representation: Some(guest_addr.clone()),
                 fall_through_offset: 4,
                 expected_start: min_address,
-                override_seen_correct_start: Cell::new(false),
+                override_seen_correct_start: AtomicBool::new(false),
             }),
             guest_addr,
             host_addr,
@@ -1124,7 +1138,7 @@ use crate::program::model::listing::CommentType;
             );
         assert_eq!(ref_type, RefType::Data);
         assert!(
-            instr.prototype.override_seen_correct_start.get(),
+            instr.prototype.override_seen_correct_start.load(Ordering::SeqCst),
             "override built by get_operand_ref_type must report this instruction's own start address"
         );
     }

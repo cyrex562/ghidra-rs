@@ -49,7 +49,8 @@ use crate::program::model::data::string_layout_enum::StringLayoutEnum;
 use crate::program::model::data::render_unicode_settings_definition::RenderEnum;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::mem::MemoryAccessException;
-use crate::program::seam_stubs::{MemBuffer, CHARSET_UTF16, CHARSET_UTF32};
+use crate::program::seam_stubs::{CHARSET_UTF16, CHARSET_UTF32};
+use crate::program::model::mem::MemBuffer;
 
 /// Maximum number of bytes searched for a null terminator, standing in for
 /// `StringDataInstance.MAX_STRING_LENGTH`.
@@ -834,12 +835,16 @@ impl MemBuffer for OffsetMemBuffer<'_> {
         self.inner.is_initialized_memory()
     }
 
-    fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+    fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
         self.inner.get_byte(offset + self.offset)
     }
 
-    fn get_unsigned_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
-        self.inner.get_unsigned_byte(offset + self.offset)
+    fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
+        self.inner.get_bytes(buffer, offset + self.offset)
+    }
+
+    fn get_signed_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+        self.inner.get_signed_byte(offset + self.offset)
     }
 
     fn get_short(&self, offset: i32) -> Result<i16, MemoryAccessException> {
@@ -850,9 +855,7 @@ impl MemBuffer for OffsetMemBuffer<'_> {
         self.inner.get_int(offset + self.offset)
     }
 
-    fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
-        self.inner.get_bytes_into(buffer, offset + self.offset)
-    }
+
 
     fn is_big_endian(&self) -> bool {
         self.inner.is_big_endian()
@@ -1018,8 +1021,8 @@ mod tests {
             true
         }
 
-        fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
-            self.data.get(offset as usize).map(|&b| b as i8).ok_or_else(|| MemoryAccessException::new("out of bounds"))
+        fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
+            self.data.get(offset as usize).map(|&b| b ).ok_or_else(|| MemoryAccessException::new("out of bounds"))
         }
 
         fn get_unsigned_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
@@ -1032,7 +1035,7 @@ mod tests {
             Ok(if self.big_endian { i16::from_be_bytes([b[0], b[1]]) } else { i16::from_le_bytes([b[0], b[1]]) })
         }
 
-        fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
             if offset < 0 {
                 return 0;
             }
@@ -1042,7 +1045,7 @@ mod tests {
             }
             let n = buffer.len().min(self.data.len() - o);
             buffer[..n].copy_from_slice(&self.data[o..o + n]);
-            n as i32
+            n
         }
 
         fn is_big_endian(&self) -> bool {

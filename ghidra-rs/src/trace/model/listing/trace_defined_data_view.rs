@@ -110,7 +110,7 @@ mod tests {
     };
     use crate::docking::settings::settings::Settings;
     use crate::program::model::listing::data::Data;
-    use crate::program::seam_stubs::MemBuffer;
+    use crate::program::model::mem::MemBuffer;
     use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView;
     use crate::trace::model::listing::trace_code_unit::TraceCodeUnit;
     use crate::trace::model::trace::Trace;
@@ -482,6 +482,15 @@ mod tests {
     }
 
     impl MemBuffer for MockData {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.address.clone()
         }

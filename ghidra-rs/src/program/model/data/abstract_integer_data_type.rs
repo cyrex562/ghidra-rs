@@ -99,7 +99,8 @@ use crate::program::model::data::padding_settings_definition::PaddingSettingsDef
 use crate::program::model::data::string_data_instance::{StringDataInstance, DEFAULT_CHARSET_NAME};
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::scalar::Scalar;
-use crate::program::seam_stubs::{CharsetSettingsDefinition, MemBuffer};
+use crate::program::seam_stubs::{CharsetSettingsDefinition};
+use crate::program::model::mem::MemBuffer;
 use crate::util::StringFormat;
 
 /// Package-private `AbstractIntegerDataType.C_SIGNED_CHAR`.
@@ -204,7 +205,7 @@ fn encode_bounds(length: i32, signed: bool) -> (i128, Option<i128>) {
 /// Resolves the endianness to use for a byte<->value conversion, standing in for
 /// `ENDIAN.isBigEndian(settings, buf)`. [`EndianSettingsDefinition::is_big_endian`] takes a
 /// different `MemBuffer` placeholder (`crate::program::model::lang::sleigh::walker::MemBuffer`)
-/// than the one this trait's methods use (`crate::program::seam_stubs::MemBuffer`), so -- mirroring
+/// than the one this trait's methods use (`crate::program::model::mem::MemBuffer`), so -- mirroring
 /// [`AbstractStringDataType::get_string_data_instance`]'s identical workaround -- this reads the
 /// raw enum choice via [`EnumSettingsDefinition::get_choice`] and falls back to the buffer's own
 /// endianness exactly as [`EndianSettingsDefinition::is_big_endian`] would.
@@ -671,6 +672,9 @@ mod tests {
     }
 
     impl MemBuffer for BytesBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
         }
@@ -679,7 +683,7 @@ mod tests {
             true
         }
 
-        fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
             if offset < 0 {
                 return 0;
             }
@@ -689,7 +693,7 @@ mod tests {
             }
             let n = buffer.len().min(self.data.len() - o);
             buffer[..n].copy_from_slice(&self.data[o..o + n]);
-            n as i32
+            n
         }
 
         fn is_big_endian(&self) -> bool {

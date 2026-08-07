@@ -5,7 +5,8 @@ use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
 use crate::program::model::data::dynamic_data_type::DynamicDataType;
 use crate::program::model::mem::Memory;
-use crate::program::seam_stubs::{self, MemBuffer};
+use crate::program::seam_stubs::{self};
+use crate::program::model::mem::MemBuffer;
 
 /// A dynamic data type that changes the number of elements it contains based on a count found in
 /// a header data type. The data type has a header data type which will contain the number of
@@ -198,6 +199,15 @@ mod tests {
     }
 
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.address.clone()
         }

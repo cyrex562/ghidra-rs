@@ -109,7 +109,8 @@ mod tests {
     };
     use crate::program::model::util::PropertySet;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{AddressLabelInfo, MemBuffer, Processor};
+    use crate::program::seam_stubs::{AddressLabelInfo, Processor};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::util::task::TaskMonitor;
 
@@ -301,6 +302,15 @@ use crate::program::model::listing::CommentType;
     struct MockCodeUnit;
 
     impl MemBuffer for MockCodeUnit {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             mock_address(0x100)
         }

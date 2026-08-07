@@ -58,7 +58,8 @@ mod tests {
         SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{MemBuffer, RefType, Reference};
+    use crate::program::seam_stubs::{RefType, Reference};
+use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use crate::docking::settings::settings::Settings;
     use std::any::{Any, TypeId};
@@ -77,14 +78,20 @@ use crate::program::model::listing::CommentType;
     }
 
     impl MemBuffer for MockPseudoData {
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             mock_address(0)
         }
 
-        fn get_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+        fn get_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
             self.bytes
                 .get(offset as usize)
-                .map(|b| *b as i8)
+                .copied()
                 .ok_or_else(MemoryAccessException::default)
         }
     }
@@ -345,6 +352,22 @@ use crate::program::model::listing::CommentType;
         struct UnreadablePseudoData;
 
         impl MemBuffer for UnreadablePseudoData {
+            // The point of this fixture: every read fails, which is what the test asserts on.
+            fn get_byte(
+                &self,
+                _offset: i32,
+            ) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+                Err(crate::program::model::mem::MemoryAccessException::default())
+            }
+
+            fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+                0
+            }
+
+            fn is_big_endian(&self) -> bool {
+                false
+            }
+
             fn get_address(&self) -> Address {
                 mock_address(0)
             }

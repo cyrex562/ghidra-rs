@@ -22,6 +22,8 @@
 //! [`MemBufferMixin`](super::mem_buffer_mixin::MemBufferMixin) derives `get_short`/`get_int`/
 //! `get_long`/`get_big_integer` from them.
 
+use std::sync::Arc;
+
 use crate::program::model::address::Address;
 use crate::program::model::mem::{Memory, MemoryAccessException};
 
@@ -53,17 +55,16 @@ pub trait MemBuffer: Send + Sync {
 
     /// The memory this buffer reads from, when it has one.
     ///
-    /// Stands in for `MemBuffer.getMemory()`, which is documented as possibly `null` -- hence
-    /// `Option` rather than a required method. Buffers over a plain byte array have no memory.
-    fn get_memory(&self) -> Option<&dyn Memory> {
+    /// Stands in for `MemBuffer.getMemory()`, documented as possibly `null` -- hence `Option`
+    /// rather than a required method. A buffer over a plain byte array has no memory.
+    fn get_memory(&self) -> Option<Arc<dyn Memory>> {
         None
     }
 
     /// Whether this buffer's address is in initialized memory.
     ///
     /// Mirrors `MemBuffer.isInitializedMemory()`'s default exactly: Java probes with `getByte(0)`
-    /// and reports whether it threw. Overriding with a cheaper check is fine where the
-    /// implementation can answer directly.
+    /// and reports whether it threw. Override where the implementation can answer directly.
     fn is_initialized_memory(&self) -> bool {
         self.get_byte(0).is_ok()
     }
@@ -71,10 +72,68 @@ pub trait MemBuffer: Send + Sync {
     /// Whether the buffer's own address is initialized.
     ///
     /// Stands in for `buf.getMemory().getAllInitializedAddressSet().contains(buf.getAddress())`,
-    /// which callers used before `Memory`'s address-set queries were ported. Kept as a defaulted
-    /// method so those call sites survive the consolidation unchanged.
+    /// which call sites used before `Memory`'s address-set queries were ported.
     fn is_at_initialized_memory_address(&self) -> bool {
         self.is_initialized_memory()
+    }
+
+    // --- derived reads -------------------------------------------------------------------
+    //
+    // Java declares these on MemBuffer and supplies bodies via MemBufferMixin. Here they are
+    // defaulted on the trait itself, because the callers are overwhelmingly holding a
+    // `&dyn MemBuffer` (96 call sites for get_int alone) and a trait object cannot reach a
+    // separate mixin. MemBufferMixin keeps only what is genuinely additional.
+
+    /// The byte at `offset` interpreted as signed, the way Java's `byte` always is.
+    ///
+    /// `get_byte` returns `u8` here because that is what byte-level decoding wants and Java's
+    /// signedness is an artifact of the JVM having no unsigned types. Where a call site really
+    /// does want the signed reading, it says so by calling this.
+    fn get_signed_byte(&self, offset: i32) -> Result<i8, MemoryAccessException> {
+        Ok(self.get_byte(offset)? as i8)
+    }
+
+    /// Alias for [`get_byte`](Self::get_byte), which is already unsigned.
+    fn get_unsigned_byte(&self, offset: i32) -> Result<u8, MemoryAccessException> {
+        self.get_byte(offset)
+    }
+
+    /// Fills `buf` from `offset`, reporting the count as `i32` (Java's `int`).
+    ///
+    /// Alias for [`get_bytes`](Self::get_bytes); retained because call sites ported from Java
+    /// spell it this way.
+    fn get_bytes_into(&self, buf: &mut [u8], offset: i32) -> i32 {
+        self.get_bytes(buf, offset) as i32
+    }
+
+    /// Reads `len` bytes, in the buffer's byte order, failing on a short read.
+    fn get_bytes_in_full(&self, offset: i32, len: usize) -> Result<Vec<u8>, MemoryAccessException> {
+        let mut buf = vec![0u8; len];
+        if self.get_bytes(&mut buf, offset) != len {
+            return Err(MemoryAccessException::new("Could not read enough bytes"));
+        }
+        if !self.is_big_endian() {
+            buf.reverse();
+        }
+        Ok(buf)
+    }
+
+    /// Reads a 16-bit signed value, respecting endianness. `MemBuffer.getShort(int)`.
+    fn get_short(&self, offset: i32) -> Result<i16, MemoryAccessException> {
+        let b = self.get_bytes_in_full(offset, 2)?;
+        Ok(i16::from_be_bytes([b[0], b[1]]))
+    }
+
+    /// Reads a 32-bit signed value, respecting endianness. `MemBuffer.getInt(int)`.
+    fn get_int(&self, offset: i32) -> Result<i32, MemoryAccessException> {
+        let b = self.get_bytes_in_full(offset, 4)?;
+        Ok(i32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+    }
+
+    /// Reads a 64-bit signed value, respecting endianness. `MemBuffer.getLong(int)`.
+    fn get_long(&self, offset: i32) -> Result<i64, MemoryAccessException> {
+        let b = self.get_bytes_in_full(offset, 8)?;
+        Ok(i64::from_be_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
     }
 }
 

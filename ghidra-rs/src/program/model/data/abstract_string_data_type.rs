@@ -87,7 +87,8 @@ use crate::program::model::data::string_data_instance::{encode_string, StringDat
 use crate::program::model::data::string_layout_enum::StringLayoutEnum;
 use crate::program::model::data::translation_settings_definition::TranslationSettingsDefinition;
 use crate::program::model::lang::endian::Endian;
-use crate::program::seam_stubs::{CharsetSettingsDefinition, MemBuffer};
+use crate::program::seam_stubs::{CharsetSettingsDefinition};
+use crate::program::model::mem::MemBuffer;
 
 /// Port of `AbstractStringDataType.DEFAULT_UNICODE_LABEL`.
 pub const DEFAULT_UNICODE_LABEL: &str = "UNICODE";
@@ -482,6 +483,9 @@ mod tests {
     }
 
     impl MemBuffer for BytesBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
         }
@@ -490,7 +494,7 @@ mod tests {
             true
         }
 
-        fn get_bytes_into(&self, buffer: &mut [u8], offset: i32) -> i32 {
+        fn get_bytes(&self, buffer: &mut [u8], offset: i32) -> usize {
             if offset < 0 {
                 return 0;
             }
@@ -500,7 +504,7 @@ mod tests {
             }
             let n = buffer.len().min(self.data.len() - o);
             buffer[..n].copy_from_slice(&self.data[o..o + n]);
-            n as i32
+            n
         }
 
         fn is_big_endian(&self) -> bool {

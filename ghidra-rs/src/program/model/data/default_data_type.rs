@@ -69,7 +69,7 @@ use crate::program::model::data::data_type::{DataType, NO_SOURCE_SYNC_TIME};
 use crate::program::model::data::data_type_impl::DataTypeImpl;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::scalar::scalar::Scalar;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Port of `ghidra.program.model.data.DefaultDataType`.
 ///
@@ -299,11 +299,17 @@ mod tests {
         byte: i8,
     }
     impl MemBuffer for MockBuf {
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             SpecialAddress::no_address()
         }
-        fn get_byte(&self, _offset: i32) -> Result<i8, MemoryAccessException> {
-            Ok(self.byte)
+        fn get_byte(&self, _offset: i32) -> Result<u8, MemoryAccessException> {
+            Ok(self.byte as u8)
         }
     }
 

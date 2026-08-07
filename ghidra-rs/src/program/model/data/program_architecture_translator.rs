@@ -118,11 +118,8 @@ mod tests {
     use crate::program::model::pcode::Encoder;
     use crate::program::model::lang::prototype_model::PrototypeModel;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{
-        ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery,
-        MemBuffer, AddressLabelInfo, PcodeInjectLibrary, Processor,
-        RegisterValue,
-    };
+    use crate::program::seam_stubs::{ExternalLanguageCompilerSpecQuery, LanguageCompilerSpecPair, LanguageCompilerSpecQuery, AddressLabelInfo, PcodeInjectLibrary, Processor, RegisterValue};
+use crate::program::model::mem::MemBuffer;
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::language_description::LanguageDescription;
     use crate::program::model::lang::processor_context::ProcessorContext;

@@ -63,7 +63,7 @@
 use crate::docking::settings::settings::Settings;
 use crate::program::model::data::composite_data_type_impl::CompositeDataTypeImpl;
 use crate::program::model::data::structure_internal::StructureInternal;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Basic (in-memory, non-database-backed) implementation of the structure data type.
 ///
