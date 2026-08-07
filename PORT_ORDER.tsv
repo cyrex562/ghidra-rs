@@ -30,7 +30,7 @@ DONE	trait	32	37	1	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/dat
 DONE	trait	35	1	1	generic	Ghidra/Debug/ProposedUtils/src/main/java/generic/End.java
 DONE	trait	34	37	3	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/FieldSpan.java
 DONE	trait	33	38	51	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedRecordIterator.java
-TODO	trait	32	37	1	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedRecordIterator.java
+DONE	trait	32	37	1	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedRecordIterator.java
 TODO	trait	40	47	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/annot/DBAnnotatedField.java
 TODO	trait	39	45	3	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/annot/DBAnnotatedColumn.java
 TODO	trait	38	50	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBObjectColumn.java
