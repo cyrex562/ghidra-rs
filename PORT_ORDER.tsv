@@ -36,7 +36,7 @@ DONE	trait	39	45	3	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/dat
 DONE	trait	38	50	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBObjectColumn.java
 DONE	trait	37	38	5	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreEntrySet.java
 DONE	trait	37	38	4	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreKeySet.java
-TODO	trait	37	37	8	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreMap.java
+DONE	trait	37	37	8	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreMap.java
 TODO	trait	35	37	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBAnnotatedObjectFactory.java
 TODO	trait	35	44	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/annot/DBAnnotatedObjectInfo.java
 TODO	trait	33	40	50	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedDomainObjectAdapter.java
