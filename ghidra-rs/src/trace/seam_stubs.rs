@@ -7,10 +7,11 @@
 use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
-use crate::program::model::address::Address;
+use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::symbol::Symbol;
 use crate::trace::model::program::TraceProgramView;
+use crate::trace::model::trace::Trace;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -326,4 +327,19 @@ pub trait DBTraceObjectValue: Send + Sync {}
 /// type's own getters -- so this is a marker trait rather than reproducing
 /// `getAddressSpace`/`getAffectedObject`/`isOldKnown`/`getOldValue`/`getNewValue`.
 pub trait TraceChangeRecord: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.util.TraceRegisterUtils`, referenced by
+/// [`TraceSpaceMixin`](crate::trace::util::trace_space_mixin::TraceSpaceMixin) before the real
+/// port is available. Mirrors the Java class's static-method-only shape (see
+/// [`ExtensionUtils`](crate::util::extensions::extension_utils::ExtensionUtils) for the same
+/// static-class-to-`&self`-trait convention) as an object-safe trait, restricted to the two
+/// static methods `TraceSpaceMixin`'s defaults call: `getThread(Trace, AddressSpace)` and
+/// `getFrameLevel(Trace, AddressSpace)`.
+pub trait TraceRegisterUtils: Send + Sync {
+    /// Mirrors `TraceRegisterUtils.getThread(Trace, AddressSpace)`.
+    fn get_thread(&self, trace: &dyn Trace, space: &Arc<AddressSpace>) -> Box<dyn TraceThread>;
+
+    /// Mirrors `TraceRegisterUtils.getFrameLevel(Trace, AddressSpace)`.
+    fn get_frame_level(&self, trace: &dyn Trace, space: &Arc<AddressSpace>) -> i32;
+}
 
