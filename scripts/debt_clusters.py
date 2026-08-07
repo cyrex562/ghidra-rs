@@ -302,6 +302,16 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         if j == 0:
             kind = (java_decls or {}).get(name)
             if kind in ("class", "enum", "record"):
+                if name in unported:
+                    # The concrete class has not been ported, so the trait is very likely a
+                    # deliberate seam letting callers compile ahead of it -- exactly what
+                    # TokenPattern's own doc comment says. A concrete type is still the right END
+                    # state, but the work is to port the class, not to convert a trait, and
+                    # calling it debt would misdirect whoever picks it up.
+                    return None, (
+                        f"Java declares {name} as a {kind} with no subtypes, so a concrete type is "
+                        f"the right end state -- but {name} is still TODO in PORT_MANIFEST.tsv, so "
+                        f"the trait is a seam awaiting that port, not a shape defect")
                 return "SUGGEST-STRUCT", (
                     f"Java declares {name} as a {kind} and nothing extends it -- there is no "
                     f"hierarchy to dispatch over, so a trait is the wrong shape "

@@ -27,7 +27,7 @@ TODO	44	47	43	ExternalReference	graph?	evidence	only 4 mock implementer(s) and n
 TODO	43	90	376	CompilerSpec	graph?	evidence	only 8 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	41	254	1053	Instruction	graph?	suggest	small closed set: 4 Java subtypes
 SUGGEST-ENUM	41	224	980	Parameter	graph?	suggest	small closed set: 2 Java subtypes
-STRUCT	37	114	0	RegisterValue	graph?	promoted	Java declares RegisterValue as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	37	114	0	RegisterValue	graph?	evidence	concrete type is the right end state, but RegisterValue is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	36	45	47	FunctionSignature	graph?	evidence	only 11 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	34	77	0	FunctionTag	graph?	suggest	small closed set: 2 Java subtypes
 ARENA	33	399	1134	Data	graph?	manual	Doc names it an arena type.
@@ -83,7 +83,7 @@ ARENA	16	17	0	TraceStaticMappingManager	graph?	family	[family:Manager] Java mana
 ARENA	16	17	0	TraceThreadManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 ARENA	16	17	0	TraceTimeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	15	106	0	AssemblyPatternBlock	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-STRUCT	15	34	0	ObjectKey	graph?	promoted	Java declares ObjectKey as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	15	34	0	ObjectKey	graph?	evidence	concrete type is the right end state, but ObjectKey is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 ACCEPT	15	32	0	TraceProgramViewListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 TODO	15	32	0	TraceVariableSnapProgramView	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	15	17	0	CodeUnitComments	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -116,7 +116,7 @@ TODO	11	98	27	AddrSpace	graph?	evidence	only 8 mock implementer(s) and no real o
 TODO	11	65	0	HighSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	11	51	0	FolderItem	graph?	evidence	only 9 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	11	32	0	PcodeOverride	graph?	suggest	small closed set: 1 Java subtypes
-STRUCT	11	18	0	FlowType	graph?	promoted	Java declares FlowType as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	11	18	0	FlowType	graph?	evidence	concrete type is the right end state, but FlowType is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	11	12	0	RefType	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	10	61	230	FieldKeyRecordNode	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	10	57	0	AssemblySymbol	graph?	suggest	small closed set: 2 Java subtypes
@@ -146,7 +146,7 @@ STRUCT	9	11	0	CheckoutType	graph?	promoted	Java declares CheckoutType as a enum 
 TODO	9	10	0	PcodeInjectLibrary	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	9	10	0	RangeList	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	8	34	0	PatternEquationOps	graph?	evidence	no Java type named PatternEquationOps -- an abstraction the port invented, so Java says nothing about its shape
-STRUCT	8	27	0	RepositoryItem	graph?	promoted	Java declares RepositoryItem as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	8	27	0	RepositoryItem	graph?	evidence	concrete type is the right end state, but RepositoryItem is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	8	22	0	MdObjectCpp	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	8	21	150	AddressMap	graph?	suggest	small closed set: 3 Java subtypes
 TODO	8	21	233	FieldKeyNode	graph?	evidence	only 15 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -164,7 +164,7 @@ SUGGEST-ENUM	7	27	0	AssemblyTerminal	graph?	suggest	small closed set: 5 Java sub
 TODO	7	27	0	JdomElement	graph?	evidence	no Java type named JdomElement -- an abstraction the port invented, so Java says nothing about its shape
 TODO	7	25	0	AssemblyParseResult	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	7	23	0	AbstractAssemblyResolutionFactory	open-extension	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-STRUCT	7	23	0	AssemblyNumericSymbols	graph?	promoted	Java declares AssemblyNumericSymbols as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
+TODO	7	23	0	AssemblyNumericSymbols	graph?	evidence	concrete type is the right end state, but AssemblyNumericSymbols is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 SUGGEST-ACCEPT	7	20	0	RepositoryAdapter	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 ITER	7	14	0	ExternalLocationIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 SUGGEST-ACCEPT	7	10	0	RepositoryServerAdapter	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
@@ -179,7 +179,7 @@ SUGGEST-ENUM	6	24	0	AssemblyParseToken	graph?	suggest	small closed set: 3 Java s
 TODO	6	22	0	FixedKeyNode	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	6	21	0	AbstractPdb	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	6	21	0	FileBytes	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-STRUCT	6	19	0	AssemblySyntaxException	closed-hierarchy?	promoted	Java declares AssemblySyntaxException as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	6	19	0	AssemblySyntaxException	closed-hierarchy?	evidence	concrete type is the right end state, but AssemblySyntaxException is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	6	17	0	RepositoryHandle	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	6	15	280	ProjectData	graph?	suggest	small closed set: 2 Java subtypes
 TODO	6	14	0	InputBlockStream	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -260,7 +260,7 @@ TODO	4	15	0	BlockStreamHandle	graph?	evidence	only 5 mock implementer(s) and no 
 TODO	4	15	0	TraceCodeSpace	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	4	13	0	TraceAddressSnapRangeQuery	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	4	12	1240	Composite	graph?	suggest	small closed set: 3 Java subtypes
-STRUCT	4	12	0	HelpLocation	graph?	promoted	Java declares HelpLocation as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	4	12	0	HelpLocation	graph?	evidence	concrete type is the right end state, but HelpLocation is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	4	12	16	OperandSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	4	11	0	AssemblyResolvedError	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	4	11	0	PlaceHolderLine	graph?	suggest	small closed set: 3 Java subtypes
@@ -351,7 +351,7 @@ ARENA	3	4	0	DBTraceObjectManager	graph?	family	[family:Manager] Java manager sin
 TODO	3	4	0	DBTraceObjectValue	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	JButton	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	JMenuItem	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-STRUCT	3	4	0	KeyBindingType	graph?	promoted	Java declares KeyBindingType as a enum and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (3 Rust impls notwithstanding)
+TODO	3	4	0	KeyBindingType	graph?	evidence	concrete type is the right end state, but KeyBindingType is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	3	4	0	LocalSymbolMap	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	MdCvModLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	OldFunctionDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -637,7 +637,7 @@ ACCEPT	1	4	102	StringTranslationService	open-extension	family	[family:Service] P
 ACCEPT	1	4	0	TargetPublicationListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 TODO	1	4	0	TimeoutTaskMonitorSeam	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	4	0	TokenSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-STRUCT	1	4	0	TraceChangeRecord	graph?	promoted	Java declares TraceChangeRecord as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	1	4	0	TraceChangeRecord	graph?	evidence	concrete type is the right end state, but TraceChangeRecord is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	1	4	0	TraceRmiLaunchOffer	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	1	4	0	TraceUserData	graph?	suggest	small closed set: 1 Java subtypes
 TODO	1	4	0	TreePath	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -674,7 +674,7 @@ TODO	1	3	0	ListStl	graph?	evidence	no Java type named ListStl -- an abstraction 
 TODO	1	3	0	MdSpecialNameLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	3	0	MockState	graph?	manual	
 TODO	1	3	0	NamespaceSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-STRUCT	1	3	0	OptionType	graph?	promoted	Java declares OptionType as a enum and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	1	3	0	OptionType	graph?	evidence	concrete type is the right end state, but OptionType is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 SUGGEST-PARK	1	3	0	ParserContextStub	graph?	suggest	not declared in the crate (external type or unresolved stub)
 SUGGEST-ACCEPT	1	3	0	PcodeOpEntryVisitor	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 TODO	1	3	0	Plugin	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -688,7 +688,7 @@ SUGGEST-PARK	1	3	0	SchemaTrait	graph?	suggest	not declared in the crate (externa
 STRUCT	1	3	0	SleighLanguages	graph?	promoted	Java declares SleighLanguages as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	3	0	TableEntryKey	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	3	0	TimingTarget	graph?	evidence	no Java type named TimingTarget -- an abstraction the port invented, so Java says nothing about its shape
-STRUCT	1	3	7	Token	graph?	promoted	Java declares Token as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
+TODO	1	3	7	Token	graph?	evidence	concrete type is the right end state, but Token is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	1	3	0	TwoWayBreakdownFactory	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 ARENA	1	3	0	VariableStorageManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 SUGGEST-ENUM	1	3	0	Wiring	graph?	suggest	small closed set: 2 Java subtypes
@@ -708,7 +708,7 @@ SUGGEST-ENUM	1	2	0	CodeLocation	graph?	suggest	small closed set: 2 Java subtypes
 TODO	1	2	0	CodeUnitDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	CodeUnitLocation	graph?	evidence	19 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 TODO	1	2	0	ConstructorTraversal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-STRUCT	1	2	0	CoordinatedStructureDisplay	graph?	promoted	Java declares CoordinatedStructureDisplay as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	1	2	0	CoordinatedStructureDisplay	graph?	evidence	concrete type is the right end state, but CoordinatedStructureDisplay is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	1	2	0	CoordinatedStructureModel	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 STRUCT	1	2	0	CreateFunctionCmd	graph?	promoted	Java declares CreateFunctionCmd as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
 TODO	1	2	0	CreateStructureBehavior	graph?	evidence	no Java type named CreateStructureBehavior -- an abstraction the port invented, so Java says nothing about its shape
@@ -768,7 +768,7 @@ TODO	1	2	0	IsolatedEntrySubModelLike	graph?	evidence	seam_stubs.rs placeholder -
 TODO	1	2	0	JarEntry	graph?	evidence	no Java type named JarEntry -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	2	0	JarFileFilter	open-extension	evidence	no Java type named JarFileFilter -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	2	0	KeyManagerFactoryLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-STRUCT	1	2	0	LanguageTranslatorFactory	open-extension	promoted	Java declares LanguageTranslatorFactory as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	1	2	0	LanguageTranslatorFactory	open-extension	evidence	concrete type is the right end state, but LanguageTranslatorFactory is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	1	2	0	LegacyUserSettingsLocator	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	LineArrayListWriter	graph?	manual	
 TODO	1	2	0	LinkedGhidraFolder	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -919,7 +919,7 @@ ACCEPT	1	1	98	DataTypeArchiveService	open-extension	family	[family:Service] Plug
 ACCEPT	1	1	259	DataTypeManagerService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 SUGGEST-PARK	1	1	0	DataTypeMerger	graph?	suggest	not declared in the crate (external type or unresolved stub)
 ACCEPT	1	1	99	DataTypeQueryService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
-STRUCT	1	1	0	DataTypeUtilities	graph?	promoted	Java declares DataTypeUtilities as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	1	1	0	DataTypeUtilities	graph?	evidence	concrete type is the right end state, but DataTypeUtilities is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	1	1	0	DbObject	graph?	evidence	24 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 ACCEPT	1	1	98	DebuggerAutoMappingService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 ACCEPT	1	1	98	DebuggerEmulationService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
@@ -1015,14 +1015,14 @@ TODO	1	1	0	MemoryBlockDB	graph?	manual
 TODO	1	1	0	MemoryMapDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	1	0	MergeResolver	graph?	suggest	small closed set: 8 Java subtypes
 TODO	1	1	0	MockDomainObject	graph?	manual	
-STRUCT	1	1	0	Module	graph?	promoted	Java declares Module as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	1	1	0	Module	graph?	evidence	concrete type is the right end state, but Module is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 ARENA	1	1	0	ModuleManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	1	1	0	Msf	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	NameSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	NavigatableActionContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	NavigationActionContext	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	586	OffsetReference	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-STRUCT	1	1	0	OldLanguageFactory	open-extension	promoted	Java declares OldLanguageFactory as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+TODO	1	1	0	OldLanguageFactory	open-extension	evidence	concrete type is the right end state, but OldLanguageFactory is still TODO in PORT_MANIFEST.tsv -- the trait is a seam awaiting that port, not a shape defect
 TODO	1	1	0	OtherSpace	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	OverlaySpaceDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	1	0	ParamListStandardOut	graph?	suggest	small closed set: 1 Java subtypes

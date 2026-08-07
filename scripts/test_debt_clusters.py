@@ -185,6 +185,17 @@ class TestJavaSizedVerdicts(unittest.TestCase):
         return dc.suggest_verdict(name, {name: 1}, {}, {name: rust_impls}, set(), {}, set(),
                                   java, decls or {}, jdk)
 
+    def test_an_unported_concrete_class_is_a_seam_not_a_defect(self):
+        """A trait standing in for a class that is not ported yet is a deliberate seam letting
+        callers compile ahead of it -- TokenPattern's own doc comment says exactly that. A
+        concrete type is still the right end state, but the work is to PORT the class, and
+        calling it a shape defect would misdirect whoever picks it up."""
+        v, why = dc.suggest_verdict(
+            "Later", {"Later": 1}, {}, {"Later": 20}, {"Later"}, {}, set(),
+            {"Later": 0}, {"Later": "class"}, frozenset())
+        self.assertIsNone(v)
+        self.assertIn("seam awaiting that port", why)
+
     def test_a_java_class_nothing_extends_should_not_be_a_trait(self):
         """`TokenPattern` is a concrete class in Java; nothing extends it, so a trait is wrong."""
         v, why = self.call("TokenPattern", 24, {"TokenPattern": 0}, {"TokenPattern": "class"})
