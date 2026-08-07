@@ -1,4 +1,4 @@
-//! The R*-tree indexing [`DBTraceObjectValueData`](crate::trace::seam_stubs::DBTraceObjectValueData)
+//! The R*-tree indexing [`DBTraceObjectValueData`](crate::trace::database::target::db_trace_object_value_data::DBTraceObjectValueData)
 //! entries (trace object values) by parent key, entry key, lifespan, and address, and exposing
 //! them as a spatial map.
 //!
@@ -11,8 +11,9 @@
 //! from `AbstractHyperRStarTree` (`doUnparentEntry`, `createDataEntry`, `getNodeChildrenOf`, etc.)
 //! belong to that base once it is ported.
 use crate::program::model::address::AddressSetView;
+use crate::trace::database::target::db_trace_object_value_data::DBTraceObjectValueData;
 use crate::trace::model::lifespan::Lifespan;
-use crate::trace::seam_stubs::{DBTraceObjectValueData, TraceObjectValueQuery};
+use crate::trace::seam_stubs::TraceObjectValueQuery;
 
 /// The R*-tree of trace object value entries.
 ///
@@ -50,9 +51,78 @@ pub trait DBTraceObjectValueMap: Send + Sync {
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+    use crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage;
+    use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager, DBTraceObjectValue};
+
+    struct MockObject;
+    impl DBTraceObject for MockObject {}
+
+    struct MockManager;
+    impl DBTraceObjectManager for MockManager {}
+
+    struct MockWrapper;
+    impl DBTraceObjectValue for MockWrapper {}
 
     struct MockValueData(i64);
-    impl DBTraceObjectValueData for MockValueData {}
+
+    impl TraceObjectValueStorage for MockValueData {
+        fn get_manager(&self) -> Box<dyn DBTraceObjectManager> {
+            Box::new(MockManager)
+        }
+        fn get_wrapper(&self) -> Box<dyn DBTraceObjectValue> {
+            Box::new(MockWrapper)
+        }
+        fn get_parent(&self) -> Box<dyn DBTraceObject> {
+            Box::new(MockObject)
+        }
+        fn get_entry_key(&self) -> String {
+            "key".to_string()
+        }
+        fn do_set_lifespan(&mut self, _lifespan: &dyn Lifespan) {}
+        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+            Box::new(MockLifespan { min: 0, max: 0 })
+        }
+        fn get_child_or_null(&self) -> Option<Box<dyn DBTraceObject>> {
+            None
+        }
+        fn get_value(&self) -> Box<dyn std::any::Any + Send + Sync> {
+            Box::new(self.0)
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+        fn do_delete(&mut self) {}
+    }
+
+    impl DBTraceObjectValueData for MockValueData {
+        fn get_child(&self) -> Box<dyn DBTraceObject> {
+            Box::new(MockObject)
+        }
+        fn get_address_space_id(&self) -> i32 {
+            -1
+        }
+        fn get_min_address_offset(&self) -> i64 {
+            0
+        }
+        fn get_max_address_offset(&self) -> i64 {
+            0
+        }
+        fn description(&self) -> String {
+            format!("MockValueData({})", self.0)
+        }
+        fn get_parent_key(&self) -> i64 {
+            -1
+        }
+        fn set_parent_key(&mut self, _parent_key: i64) {}
+        fn set_shape(
+            &mut self,
+            _parent: Box<dyn DBTraceObject>,
+            _child: Option<Box<dyn DBTraceObject>>,
+            _entry_key: String,
+            _lifespan: &dyn Lifespan,
+        ) {
+        }
+    }
 
     /// The mock query never inspects the tree's data; it only stands in for the opaque
     /// `Box<dyn TraceObjectValueQuery>` parameter `reduce` forwards.
