@@ -868,7 +868,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/databas
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/TraceObjectValueQuery.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/TraceObjectValueStorage.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ValueBox.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ValueShape.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ValueShape.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ValueSpace.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ValueTriple.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/iface/DBTraceObjectActivatable.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database target iface 
