@@ -15,7 +15,7 @@
 //! `Entry<Long, T>` (`java.util.Map.Entry`) has no existing port; since `T` is only ever
 //! constrained to `DBAnnotatedObject` (never concretely named) in this class, entries are
 //! represented as [`StoreEntry`], a `(key, value)` pair over the
-//! [`DBAnnotatedObject`](crate::util::seam_stubs::DBAnnotatedObject) placeholder.
+//! [`DBAnnotatedObject`](crate::util::database::db_annotated_object::DBAnnotatedObject) trait.
 //!
 //! Java's overloaded `subSet`/`headSet`/`tailSet` (2-arg vs. 3/4-arg) become distinctly-named
 //! methods, since Rust has no overloading; the 2/1-arg forms keep their default-argument
@@ -28,8 +28,9 @@
 
 use std::cmp::Ordering;
 
+use crate::util::database::db_annotated_object::DBAnnotatedObject;
 use crate::util::database::{Direction, RemovableIterator};
-use crate::util::seam_stubs::{DBAnnotatedObject, DBCachedObjectStoreEntrySubSet};
+use crate::util::seam_stubs::DBCachedObjectStoreEntrySubSet;
 
 /// A `(key, value)` pair standing in for `java.util.Map.Entry<Long, T>` as used by this class.
 pub type StoreEntry = (i64, std::sync::Arc<dyn DBAnnotatedObject>);
@@ -187,7 +188,31 @@ mod tests {
     use super::*;
 
     struct MockObject(i64);
-    impl DBAnnotatedObject for MockObject {}
+    impl crate::program::database::db_object::DbObject for MockObject {
+        fn state(&self) -> &crate::program::database::db_object::DbObjectState {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn refresh(&self, _record: Option<&crate::framework::db::record::DBRecord>) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl DBAnnotatedObject for MockObject {
+        fn store(&self) -> &dyn crate::util::seam_stubs::DBCachedObjectStoreCore {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn adapter(&self) -> &dyn crate::util::database::db_cached_domain_object_adapter::DBCachedDomainObjectAdapter {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn codecs(&self) -> &[Box<dyn crate::util::seam_stubs::DBFieldCodec>] {
+            &[]
+        }
+        fn record(&self) -> crate::framework::db::record::DBRecord {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_record(&self, _record: crate::framework::db::record::DBRecord) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     fn entry(key: i64) -> StoreEntry {
         (key, std::sync::Arc::new(MockObject(key)))

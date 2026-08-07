@@ -409,9 +409,30 @@ pub trait ForwardRecordIterator: Send + Sync {
 ///
 /// `DBAnnotatedField.codec()` only carries a `Class<? extends DBFieldCodec>` type token (which
 /// concrete codec to reflectively instantiate later); it never calls a method on the codec
-/// itself, so this is a marker trait until the real generic `store`/`load`/`getValueType` codec
-/// interface is ported.
-pub trait DBFieldCodec: Send + Sync {}
+/// itself, so `store`/`load` default to panicking until a caller that actually invokes a codec
+/// (currently [`DBAnnotatedObject`](crate::util::database::db_annotated_object::DBAnnotatedObject),
+/// via its `codecs` field) needs a real implementation.
+pub trait DBFieldCodec: Send + Sync {
+    /// Encodes `obj`'s field into `record`, mirroring `DBFieldCodec.store(OT, DBRecord)`.
+    fn store(
+        &self,
+        obj: &dyn crate::util::database::db_annotated_object::DBAnnotatedObject,
+        record: &mut crate::framework::db::record::DBRecord,
+    ) {
+        let _ = (obj, record);
+        panic!("DBFieldCodec::store is not implemented for this codec")
+    }
+
+    /// Decodes `record`'s field into `obj`, mirroring `DBFieldCodec.load(OT, DBRecord)`.
+    fn load(
+        &self,
+        obj: &dyn crate::util::database::db_annotated_object::DBAnnotatedObject,
+        record: &crate::framework::db::record::DBRecord,
+    ) -> std::io::Result<()> {
+        let _ = (obj, record);
+        panic!("DBFieldCodec::load is not implemented for this codec")
+    }
+}
 
 /// Placeholder for `ghidra.util.database.DirectedRecordIterator`'s two static factory methods
 /// (`getIterator`/`getIndexIterator`), needed by
@@ -445,16 +466,36 @@ pub trait DirectedRecordIteratorFactory {
     ) -> std::io::Result<Box<dyn crate::util::database::DirectedRecordIterator>>;
 }
 
-/// Placeholder for `ghidra.util.database.DBAnnotatedObject`, needed by
-/// [`crate::util::database::db_cached_object_store_entry_set::DBCachedObjectStoreEntrySet`]
-/// (as the generic bound `T extends DBAnnotatedObject`, via
-/// [`StoreEntry`](crate::util::database::db_cached_object_store_entry_set::StoreEntry)).
+/// Placeholder for the subset of `ghidra.util.database.DBCachedObjectStore` that
+/// [`DBAnnotatedObject`](crate::util::database::db_annotated_object::DBAnnotatedObject) calls
+/// through its `store` field, independent of the store's managed object type.
 ///
-/// `DBCachedObjectStoreEntrySet` never calls a method on a `T` instance itself -- it only stores
-/// and returns them -- so unlike the real `DBAnnotatedObject` (which carries `getObjectKey`,
-/// `isDeleted`, `getTableName`, and protected record-update machinery), this is a marker trait
-/// until the real port is needed by a consumer that actually calls into it.
-pub trait DBAnnotatedObject: Send + Sync {}
+/// The real `DBCachedObjectStore<T extends DBAnnotatedObject>` is generic in `T` (see the
+/// `DBCachedObjectStore<T>` marker below, needed by
+/// [`DBAnnotatedObjectFactory`](crate::util::database::db_annotated_object_factory::DBAnnotatedObjectFactory)),
+/// but every operation `DBAnnotatedObject` itself performs -- delegating to
+/// `adapter.getReadWriteLock()` for `readLock()`/`writeLock()`, implementing `ErrorHandler` for
+/// `dbError`, `getTableName()`, and the backing `table` field's `putRecord`/`getRecord` plus
+/// constructing this object's `ObjectKey` -- never touches `T`. That matches the `<?>` wildcard
+/// `DBAnnotatedObject` declares its own `store` field with, so this is intentionally a separate,
+/// non-generic trait rather than a use of the generic marker. Once the real `DBCachedObjectStore`
+/// is ported, both traits collapse into it.
+pub trait DBCachedObjectStoreCore: crate::framework::db::util::ErrorHandler + Send + Sync {
+    /// Mirrors `readLock()` (via `ReadWriteLock.readLock()` on the adapter's `getReadWriteLock()`).
+    fn read_lock(&self) -> &dyn crate::util::lock_hold::Lock;
+    /// Mirrors `writeLock()` (via `ReadWriteLock.writeLock()` on the adapter's `getReadWriteLock()`).
+    fn write_lock(&self) -> &dyn crate::util::lock_hold::Lock;
+    /// Mirrors `getTableName()`.
+    fn get_table_name(&self) -> String;
+    /// Mirrors the backing `table` field's `putRecord(DBRecord)`.
+    fn put_record(&self, record: &crate::framework::db::record::DBRecord) -> std::io::Result<()>;
+    /// Mirrors the backing `table` field's `getRecord(long)`.
+    fn get_record(&self, key: i64) -> std::io::Result<Option<crate::framework::db::record::DBRecord>>;
+    /// Mirrors `new ObjectKey(store.table, key)`. Reuses
+    /// [`crate::trace::seam_stubs::ObjectKey`], the existing placeholder for this same Java type
+    /// (`ghidra.util.database.ObjectKey`), rather than declaring a second one.
+    fn object_key(&self, key: i64) -> Box<dyn crate::trace::seam_stubs::ObjectKey>;
+}
 
 /// Placeholder for `ghidra.util.database.DBCachedObjectStoreEntrySubSet`, needed by
 /// [`crate::util::database::db_cached_object_store_entry_set::DBCachedObjectStoreEntrySet`]'s
@@ -593,4 +634,7 @@ pub trait DBCachedObjectStoreValueCollection: Send + Sync {}
 /// object being constructed; the factory interface itself never calls a method on it, so this
 /// is a marker trait until the real cached-object store (with `create`, index lookups, locking,
 /// etc.) is ported.
-pub trait DBCachedObjectStore<T: DBAnnotatedObject>: Send + Sync {}
+pub trait DBCachedObjectStore<T: crate::util::database::db_annotated_object::DBAnnotatedObject>:
+    Send + Sync
+{
+}

@@ -435,10 +435,10 @@ ts	stub_class	referenced_by
 2026-08-06T00:00:00+00:00	DirectedRecordIteratorFactory	DirectedRecordIterator
 2026-08-07T00:00:00+00:00	RecordIteratorDelete	AbstractDirectedRecordIterator
 2026-08-07T04:10:07+00:00	DBFieldCodec	DBAnnotatedField
-2026-08-07T00:00:00+00:00	DBAnnotatedObject	DBCachedObjectStoreEntrySet
 2026-08-07T00:00:00+00:00	DBCachedObjectStoreEntrySubSet	DBCachedObjectStoreEntrySet
 2026-08-07T00:00:00+00:00	DBCachedObjectStoreKeySubSet	DBCachedObjectStoreKeySet
 2026-08-07T04:37:11+00:00	DBCachedObjectStoreSubMap	DBCachedObjectStoreMap
 2026-08-07T04:37:11+00:00	DBCachedObjectStoreValueCollection	DBCachedObjectStoreMap
 2026-08-07T05:00:00+00:00	DBCachedObjectStore	DBAnnotatedObjectFactory
 2026-08-07T04:45:34.730566+00:00	DBDomainObjectSupport	DBCachedDomainObjectAdapter
+2026-08-07T00:00:00+00:00	DBCachedObjectStoreCore	DBAnnotatedObject

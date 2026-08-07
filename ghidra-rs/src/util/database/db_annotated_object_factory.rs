@@ -8,7 +8,8 @@
 //! until the real cached-object store is ported.
 
 use crate::framework::db::record::DBRecord;
-use crate::util::seam_stubs::{DBAnnotatedObject, DBCachedObjectStore};
+use crate::util::database::db_annotated_object::DBAnnotatedObject;
+use crate::util::seam_stubs::DBCachedObjectStore;
 
 /// Needed by a `DBCachedObjectStore` to describe how to construct the objects it manages,
 /// mirroring `DBAnnotatedObjectFactory<T extends DBAnnotatedObject>`.
@@ -29,7 +30,31 @@ mod tests {
         key: i64,
         value: i64,
     }
-    impl DBAnnotatedObject for MockObject {}
+    impl crate::program::database::db_object::DbObject for MockObject {
+        fn state(&self) -> &crate::program::database::db_object::DbObjectState {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn refresh(&self, _record: Option<&DBRecord>) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl DBAnnotatedObject for MockObject {
+        fn store(&self) -> &dyn crate::util::seam_stubs::DBCachedObjectStoreCore {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn adapter(&self) -> &dyn crate::util::database::db_cached_domain_object_adapter::DBCachedDomainObjectAdapter {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn codecs(&self) -> &[Box<dyn crate::util::seam_stubs::DBFieldCodec>] {
+            &[]
+        }
+        fn record(&self) -> DBRecord {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_record(&self, _record: DBRecord) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockStore;
     impl DBCachedObjectStore<MockObject> for MockStore {}
