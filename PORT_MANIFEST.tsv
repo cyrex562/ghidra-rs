@@ -1063,7 +1063,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/In
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/MemoryAdapter.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/MethodProtector.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/OverlappingObjectIterator.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeManager.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeRecord.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceEvent.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceEvents.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace util 
