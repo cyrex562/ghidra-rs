@@ -27,7 +27,7 @@ TODO	44	47	43	ExternalReference	graph?	evidence	only 4 mock implementer(s) and n
 TODO	43	90	376	CompilerSpec	graph?	evidence	only 8 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	41	254	1053	Instruction	graph?	suggest	small closed set: 4 Java subtypes
 SUGGEST-ENUM	41	224	980	Parameter	graph?	suggest	small closed set: 2 Java subtypes
-SUGGEST-STRUCT	37	114	0	RegisterValue	graph?	suggest	no Java type extends or implements RegisterValue -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	37	114	0	RegisterValue	graph?	promoted	Java declares RegisterValue as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	36	45	47	FunctionSignature	graph?	evidence	only 11 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	34	77	0	FunctionTag	graph?	suggest	small closed set: 2 Java subtypes
 ARENA	33	399	1134	Data	graph?	manual	Doc names it an arena type.
@@ -39,7 +39,7 @@ SUGGEST-ENUM	29	48	311	CompilerSpecDescription	graph?	suggest	small closed set: 
 TODO	28	52	0	Processor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	26	58	318	LanguageDescription	graph?	evidence	only 10 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-PARK	26	51	0	Vec	graph?	suggest	not declared in the crate (external type or unresolved stub)
-SUGGEST-STRUCT	25	324	29	TokenPattern	graph?	suggest	no Java type extends or implements TokenPattern -- it is a concrete class there, so there is no hierarchy to dispatch over (6 Rust impls notwithstanding)
+STRUCT	25	324	29	TokenPattern	graph?	promoted	Java declares TokenPattern as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (6 Rust impls notwithstanding)
 ITER	24	90	994	AddressRangeIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 SUGGEST-ENUM	23	164	0	InstructionContext	graph?	suggest	small closed set: 6 Java subtypes
 TODO	23	125	0	TraceAddressSnapRange	graph?	evidence	only 7 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -57,9 +57,9 @@ TODO	20	28	0	InstructionSet	graph?	evidence	seam_stubs.rs placeholder -- revisit
 ITER	19	121	0	CodeUnitIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 ITER	19	88	0	FunctionIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 TODO	19	54	19	Constructor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	19	45	0	Lock	graph?	suggest	no Java type extends or implements Lock -- it is a concrete class there, so there is no hierarchy to dispatch over (6 Rust impls notwithstanding)
+TODO	19	45	0	Lock	graph?	evidence	this port models the JDK's Lock; the Lock in orig_src is an unrelated Ghidra class of the same simple name, so Java's shape here says nothing
 TODO	19	22	41	PropertyMap	graph?	evidence	only 10 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	19	20	0	MemoryBlockDefinition	graph?	suggest	no Java type extends or implements MemoryBlockDefinition -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	19	20	0	MemoryBlockDefinition	graph?	promoted	Java declares MemoryBlockDefinition as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-ENUM	19	20	309	ParallelInstructionLanguageHelper	graph?	suggest	small closed set: 1 Java subtypes
 SUGGEST-ENUM	18	105	986	ProgramModule	graph?	suggest	small closed set: 2 Java subtypes
 ITER	18	91	272	RecordIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
@@ -83,7 +83,7 @@ ARENA	16	17	0	TraceStaticMappingManager	graph?	family	[family:Manager] Java mana
 ARENA	16	17	0	TraceThreadManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 ARENA	16	17	0	TraceTimeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	15	106	0	AssemblyPatternBlock	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	15	34	0	ObjectKey	graph?	suggest	no Java type extends or implements ObjectKey -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	15	34	0	ObjectKey	graph?	promoted	Java declares ObjectKey as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 ACCEPT	15	32	0	TraceProgramViewListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 TODO	15	32	0	TraceVariableSnapProgramView	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	15	17	0	CodeUnitComments	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -100,7 +100,7 @@ ARENA	15	16	0	TraceStackManager	graph?	family	[family:Manager] Java manager sing
 ARENA	15	16	0	TraceSymbolManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 SUGGEST-ENUM	14	167	0	CodeBlock	graph?	suggest	small closed set: 2 Java subtypes
 SUGGEST-ENUM	14	97	0	PluginTool	graph?	suggest	small closed set: 7 Java subtypes
-SUGGEST-STRUCT	14	63	0	MdMangLike	graph?	suggest	no Java type extends or implements MdMangLike -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	14	63	0	MdMangLike	graph?	evidence	no Java type named MdMangLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	13	209	0	TraceCodeUnit	graph?	evidence	only 9 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	13	52	0	CodeBlockModel	graph?	suggest	small closed set: 2 Java subtypes
 ITER	13	51	0	CodeBlockReferenceIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
@@ -108,7 +108,7 @@ ACCEPT	13	30	0	CancelledListener	open-extension	family	[family:Listener] Caller-
 SUGGEST-ENUM	13	14	0	DataTypeDisplayOptions	graph?	suggest	small closed set: 1 Java subtypes
 TODO	12	97	0	AssemblyResolutionResults	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	12	50	0	AssemblyNonTerminal	graph?	suggest	small closed set: 2 Java subtypes
-SUGGEST-STRUCT	12	41	0	AssemblyGrammar	graph?	suggest	no Java type extends or implements AssemblyGrammar -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+STRUCT	12	41	0	AssemblyGrammar	graph?	promoted	Java declares AssemblyGrammar as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
 TODO	12	35	0	AssemblySentential	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	12	26	1264	DataTypeComponent	graph?	suggest	small closed set: 3 Java subtypes
 TODO	11	105	422	MemoryBlock	graph?	evidence	10 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
@@ -116,7 +116,7 @@ TODO	11	98	27	AddrSpace	graph?	evidence	only 8 mock implementer(s) and no real o
 TODO	11	65	0	HighSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	11	51	0	FolderItem	graph?	evidence	only 9 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	11	32	0	PcodeOverride	graph?	suggest	small closed set: 1 Java subtypes
-SUGGEST-STRUCT	11	18	0	FlowType	graph?	suggest	no Java type extends or implements FlowType -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	11	18	0	FlowType	graph?	promoted	Java declares FlowType as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	11	12	0	RefType	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	10	61	230	FieldKeyRecordNode	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	10	57	0	AssemblySymbol	graph?	suggest	small closed set: 2 Java subtypes
@@ -142,11 +142,11 @@ TODO	9	23	0	HighFunction	graph?	evidence	only 3 mock implementer(s) and no real 
 SUGGEST-ENUM	9	23	1208	ParameterDefinition	graph?	suggest	small closed set: 2 Java subtypes
 TODO	9	18	0	RecursiveDescentSolver	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	9	13	0	PatchEncoder	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	9	11	0	CheckoutType	graph?	suggest	no Java type extends or implements CheckoutType -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+STRUCT	9	11	0	CheckoutType	graph?	promoted	Java declares CheckoutType as a enum and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (3 Rust impls notwithstanding)
 TODO	9	10	0	PcodeInjectLibrary	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	9	10	0	RangeList	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	8	34	0	PatternEquationOps	graph?	suggest	no Java type extends or implements PatternEquationOps -- it is a concrete class there, so there is no hierarchy to dispatch over (13 Rust impls notwithstanding)
-SUGGEST-STRUCT	8	27	0	RepositoryItem	graph?	suggest	no Java type extends or implements RepositoryItem -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	8	34	0	PatternEquationOps	graph?	evidence	no Java type named PatternEquationOps -- an abstraction the port invented, so Java says nothing about its shape
+STRUCT	8	27	0	RepositoryItem	graph?	promoted	Java declares RepositoryItem as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	8	22	0	MdObjectCpp	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	8	21	150	AddressMap	graph?	suggest	small closed set: 3 Java subtypes
 TODO	8	21	233	FieldKeyNode	graph?	evidence	only 15 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -161,10 +161,10 @@ TODO	7	45	0	TraceSection	graph?	evidence	only 4 mock implementer(s) and no real 
 SUGGEST-ENUM	7	37	0	ProjectLocator	graph?	suggest	small closed set: 1 Java subtypes
 TODO	7	34	0	MdReusableName	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	7	27	0	AssemblyTerminal	graph?	suggest	small closed set: 5 Java subtypes
-SUGGEST-STRUCT	7	27	0	JdomElement	graph?	suggest	no Java type extends or implements JdomElement -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	7	27	0	JdomElement	graph?	evidence	no Java type named JdomElement -- an abstraction the port invented, so Java says nothing about its shape
 TODO	7	25	0	AssemblyParseResult	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	7	23	0	AbstractAssemblyResolutionFactory	open-extension	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	7	23	0	AssemblyNumericSymbols	graph?	suggest	no Java type extends or implements AssemblyNumericSymbols -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+STRUCT	7	23	0	AssemblyNumericSymbols	graph?	promoted	Java declares AssemblyNumericSymbols as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
 SUGGEST-ACCEPT	7	20	0	RepositoryAdapter	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 ITER	7	14	0	ExternalLocationIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 SUGGEST-ACCEPT	7	10	0	RepositoryServerAdapter	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
@@ -179,7 +179,7 @@ SUGGEST-ENUM	6	24	0	AssemblyParseToken	graph?	suggest	small closed set: 3 Java s
 TODO	6	22	0	FixedKeyNode	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	6	21	0	AbstractPdb	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	6	21	0	FileBytes	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	6	19	0	AssemblySyntaxException	closed-hierarchy?	suggest	no Java type extends or implements AssemblySyntaxException -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	6	19	0	AssemblySyntaxException	closed-hierarchy?	promoted	Java declares AssemblySyntaxException as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	6	17	0	RepositoryHandle	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	6	15	280	ProjectData	graph?	suggest	small closed set: 2 Java subtypes
 TODO	6	14	0	InputBlockStream	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -187,7 +187,7 @@ ACCEPT	6	12	0	ActionContextProvider	open-extension	family	[family:Provider] Call
 TODO	6	12	0	MouseEvent	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	6	12	0	TraceInstruction	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	6	11	0	BufferFile	graph?	suggest	small closed set: 3 Java subtypes
-SUGGEST-STRUCT	6	11	0	DataTypeManagerDb	graph?	suggest	no Java type extends or implements DataTypeManagerDb -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	6	11	0	DataTypeManagerDb	graph?	evidence	no Java type named DataTypeManagerDb -- an abstraction the port invented, so Java says nothing about its shape
 TODO	6	11	0	HighVariable	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	6	11	0	MdTemplateNameAndArgumentsLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	6	10	0	AddressMapDB	graph?	manual	
@@ -210,7 +210,7 @@ SUGGEST-ENUM	5	28	0	ObjectStorage	graph?	suggest	small closed set: 3 Java subtyp
 SUGGEST-ENUM	5	28	0	Saveable	graph?	suggest	small closed set: 7 Java subtypes
 SUGGEST-ENUM	5	25	139	Group	graph?	suggest	small closed set: 2 Java subtypes
 TODO	5	24	0	TraceStaticMapping	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	5	21	0	AddressKeyIteratorLike	graph?	suggest	no Java type extends or implements AddressKeyIteratorLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	5	21	0	AddressKeyIteratorLike	graph?	evidence	no Java type named AddressKeyIteratorLike -- an abstraction the port invented, so Java says nothing about its shape
 SUGGEST-ENUM	5	21	99	SettingsDefinition	graph?	suggest	small closed set: 5 Java subtypes
 TODO	5	20	0	MdParsableItemLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	5	18	0	GenericAssembler	graph?	suggest	small closed set: 2 Java subtypes
@@ -237,8 +237,8 @@ TODO	5	6	0	ImageIcon	graph?	evidence	seam_stubs.rs placeholder -- revisit after 
 TODO	5	6	0	ToolIconURL	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	4	68	0	PcodeBlock	graph?	suggest	small closed set: 3 Java subtypes
 SUGGEST-ENUM	4	65	0	GDirectedGraph	graph?	suggest	small closed set: 3 Java subtypes
-SUGGEST-STRUCT	4	65	0	IteratorStl	graph?	suggest	no Java type extends or implements IteratorStl -- it is a concrete class there, so there is no hierarchy to dispatch over (7 Rust impls notwithstanding)
-SUGGEST-STRUCT	4	40	0	MdExceptionLike	graph?	suggest	no Java type extends or implements MdExceptionLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	4	65	0	IteratorStl	graph?	evidence	no Java type named IteratorStl -- an abstraction the port invented, so Java says nothing about its shape
+TODO	4	40	0	MdExceptionLike	graph?	evidence	no Java type named MdExceptionLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	4	39	1222	Category	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	4	32	0	ConstructState	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	4	29	0	PluginDescription	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -255,22 +255,22 @@ SUGGEST-ENUM	4	19	0	AssemblySelector	graph?	suggest	small closed set: 1 Java sub
 SUGGEST-GRAPH	4	17	0	AbstractMsSymbol	closed-hierarchy?	suggest	77 Java subtypes with an AST/IR node name -- too many for an enum, but a tagged arena graph suits a node set this size
 TODO	4	16	0	DBAnnotatedObject	graph?	evidence	27 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 TODO	4	16	0	PluginLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	4	15	0	BlockMap	graph?	suggest	no Java type extends or implements BlockMap -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	4	15	0	BlockMap	graph?	promoted	Java declares BlockMap as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	4	15	0	BlockStreamHandle	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	4	15	0	TraceCodeSpace	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	4	13	0	TraceAddressSnapRangeQuery	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	4	12	1240	Composite	graph?	suggest	small closed set: 3 Java subtypes
-SUGGEST-STRUCT	4	12	0	HelpLocation	graph?	suggest	no Java type extends or implements HelpLocation -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	4	12	0	HelpLocation	graph?	promoted	Java declares HelpLocation as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	4	12	16	OperandSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	4	11	0	AssemblyResolvedError	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	4	11	0	PlaceHolderLine	graph?	suggest	small closed set: 3 Java subtypes
-SUGGEST-STRUCT	4	11	0	RepositoryLike	graph?	suggest	no Java type extends or implements RepositoryLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	4	11	0	RepositoryLike	graph?	evidence	no Java type named RepositoryLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	4	9	0	IsfObject	graph?	evidence	35 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 TODO	4	9	0	SchemaContext	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	4	8	0	ObjectPropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	4	8	0	Platform	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	4	8	0	SubroutineBlockModel	graph?	suggest	small closed set: 3 Java subtypes
-SUGGEST-STRUCT	4	8	0	TraceConflictedMappingException	closed-hierarchy?	suggest	no Java type extends or implements TraceConflictedMappingException -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	4	8	0	TraceConflictedMappingException	closed-hierarchy?	promoted	Java declares TraceConflictedMappingException as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	4	7	0	KeyStroke	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	4	6	0	AbstractMsType	closed-hierarchy?	evidence	68 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 SUGGEST-ENUM	4	6	0	DBFieldCodec	graph?	suggest	small closed set: 2 Java subtypes
@@ -292,7 +292,7 @@ TODO	3	41	0	SourceMapEntry	graph?	evidence	only 4 mock implementer(s) and no rea
 SUGGEST-ENUM	3	36	0	FidHashQuad	graph?	suggest	small closed set: 2 Java subtypes
 TODO	3	32	0	ExtensionDetails	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	3	32	0	TraceBreakpointLocation	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	3	25	0	AssemblyParseNumericToken	graph?	suggest	no Java type extends or implements AssemblyParseNumericToken -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+STRUCT	3	25	0	AssemblyParseNumericToken	graph?	promoted	Java declares AssemblyParseNumericToken as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (3 Rust impls notwithstanding)
 SUGGEST-ENUM	3	24	0	ByteBlock	graph?	suggest	small closed set: 2 Java subtypes
 TODO	3	23	0	DBBuffer	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	3	19	0	ComparisonItem	graph?	suggest	small closed set: 4 Java subtypes
@@ -300,7 +300,7 @@ TODO	3	16	0	KeyBindingData	graph?	evidence	seam_stubs.rs placeholder -- revisit 
 TODO	3	16	0	Navigatable	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	15	0	DisjointPattern	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	3	14	0	AssemblyParseTreeNode	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	3	14	0	AuthCallback	open-extension	suggest	no Java type extends or implements AuthCallback -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	3	14	0	AuthCallback	open-extension	evidence	no Java type named AuthCallback -- an abstraction the port invented, so Java says nothing about its shape
 TODO	3	14	305	DisassemblerContext	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ITER	3	14	0	MsSymbolIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 TODO	3	14	20	ProgramArchitecture	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -313,7 +313,7 @@ TODO	3	11	0	TraceObjectValue	graph?	evidence	only 1 mock implementer(s) and no r
 SUGGEST-ENUM	3	10	0	ContextChange	graph?	suggest	small closed set: 4 Java subtypes
 SUGGEST-ENUM	3	9	0	Dimension	graph?	suggest	small closed set: 2 Java subtypes
 SUGGEST-ACCEPT	3	9	0	ListenerErrorHandler	open-extension	suggest	3 Java subtypes and an extension-point name -- open set
-SUGGEST-STRUCT	3	8	0	AssemblyParseBranch	graph?	suggest	no Java type extends or implements AssemblyParseBranch -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	3	8	0	AssemblyParseBranch	graph?	promoted	Java declares AssemblyParseBranch as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	3	8	1233	Enum	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	3	8	0	MenuData	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	3	8	0	Occlusion	graph?	suggest	small closed set: 1 Java subtypes
@@ -340,7 +340,7 @@ SUGGEST-ENUM	3	6	0	PtySession	graph?	suggest	small closed set: 3 Java subtypes
 ARENA	3	6	611	ReferenceManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 ITER	3	6	0	SourceMapEntryIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 TODO	3	6	0	TraceProgramViewMemory	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	3	6	0	VariableOffset	graph?	suggest	no Java type extends or implements VariableOffset -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	3	6	0	VariableOffset	graph?	promoted	Java declares VariableOffset as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-ENUM	3	5	0	FileSystem	graph?	suggest	small closed set: 2 Java subtypes
 SUGGEST-ENUM	3	5	307	GhidraDataConverter	graph?	suggest	small closed set: 2 Java subtypes
 TODO	3	5	0	GhidraProtocolConnector	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -351,7 +351,7 @@ ARENA	3	4	0	DBTraceObjectManager	graph?	family	[family:Manager] Java manager sin
 TODO	3	4	0	DBTraceObjectValue	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	JButton	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	JMenuItem	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	3	4	0	KeyBindingType	graph?	suggest	no Java type extends or implements KeyBindingType -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+STRUCT	3	4	0	KeyBindingType	graph?	promoted	Java declares KeyBindingType as a enum and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (3 Rust impls notwithstanding)
 TODO	3	4	0	LocalSymbolMap	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	MdCvModLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	3	4	0	OldFunctionDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -370,7 +370,7 @@ SUGGEST-ENUM	2	61	0	End	graph?	suggest	small closed set: 2 Java subtypes
 TODO	2	53	0	DebuggerCoordinates	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	48	0	BigFloat	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	2	34	0	VarnodeContext	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	2	33	0	SymbolPath	graph?	suggest	no Java type extends or implements SymbolPath -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	2	33	0	SymbolPath	graph?	promoted	Java declares SymbolPath as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-ACCEPT	2	28	0	TableFilter	open-extension	suggest	16 Java subtypes and an extension-point name -- open set
 TODO	2	27	0	TraceSnapshot	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	25	4	ExprTree	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -404,9 +404,9 @@ TODO	2	9	0	ProgramOverlayAddressSpace	graph?	evidence	seam_stubs.rs placeholder 
 TODO	2	9	0	SubMemoryBlock	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	2	9	0	ValueStoragePage	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	2	8	0	DBCachedObjectStoreKeySet	graph?	suggest	small closed set: 1 Java subtypes
-SUGGEST-STRUCT	2	8	0	OperandRepresentationList	graph?	suggest	no Java type extends or implements OperandRepresentationList -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	2	8	0	OperandRepresentationList	graph?	promoted	Java declares OperandRepresentationList as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	2	8	0	RepositoryFile	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	2	8	0	RepositoryFolderLike	graph?	suggest	no Java type extends or implements RepositoryFolderLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	2	8	0	RepositoryFolderLike	graph?	evidence	no Java type named RepositoryFolderLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	2	7	0	AttributeLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	2	7	0	AttributeSchema	graph?	suggest	small closed set: 1 Java subtypes
 TODO	2	7	0	FsrlRootLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -415,10 +415,10 @@ SUGGEST-ACCEPT	2	7	0	ProgramAddressFactory	open-extension	suggest	1 Java subtype
 TODO	2	7	0	ProgramDB	graph?	manual	
 TODO	2	7	0	SleighLanguageFile	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	2	7	0	SleighParserContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	2	7	0	SourceLanguageId	graph?	suggest	no Java type extends or implements SourceLanguageId -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	2	7	0	SourceLanguageId	graph?	evidence	no Java type named SourceLanguageId -- an abstraction the port invented, so Java says nothing about its shape
 TODO	2	6	0	AbstractAssemblyStateGenerator	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	2	6	0	AddressCorrelation	graph?	suggest	small closed set: 5 Java subtypes
-SUGGEST-STRUCT	2	6	0	AddressSourceInfo	graph?	suggest	no Java type extends or implements AddressSourceInfo -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+STRUCT	2	6	0	AddressSourceInfo	graph?	promoted	Java declares AddressSourceInfo as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
 TODO	2	6	0	Archive	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	6	977	Bookmark	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	2	6	0	ContextEvaluator	graph?	suggest	small closed set: 4 Java subtypes
@@ -428,7 +428,7 @@ TODO	2	6	301	Location	graph?	evidence	seam_stubs.rs placeholder -- revisit after
 SUGGEST-ENUM	2	6	0	ModuleInformation	graph?	suggest	small closed set: 2 Java subtypes
 TODO	2	6	307	ParamList	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	2	6	0	PcodeBlockBasic	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	2	6	0	PseudoFlowProcessor	graph?	suggest	no Java type extends or implements PseudoFlowProcessor -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	2	6	0	PseudoFlowProcessor	graph?	evidence	Java declares PseudoFlowProcessor as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 ITER	2	6	594	SymbolIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 TODO	2	6	0	TimeRadix	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 ACCEPT	2	6	0	ToolChestChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
@@ -457,18 +457,18 @@ TODO	2	4	0	CustomOption	graph?	evidence	12 Java subtypes -- too many for an enum
 TODO	2	4	462	DockingActionIf	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ARENA	2	4	0	DomainObjectMergeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	2	4	0	ExternalManagerDb	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	2	4	0	FileSystemProbeConflictResolver	graph?	suggest	no Java type extends or implements FileSystemProbeConflictResolver -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+TODO	2	4	0	FileSystemProbeConflictResolver	graph?	evidence	Java declares FileSystemProbeConflictResolver as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 TODO	2	4	0	FunctionManagerDb	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ITER	2	4	0	GlobalReferenceIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 TODO	2	4	0	InjectPayloadSleigh	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	2	4	0	JarFileAccess	graph?	suggest	no Java type extends or implements JarFileAccess -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	2	4	0	JarFileAccess	graph?	evidence	no Java type named JarFileAccess -- an abstraction the port invented, so Java says nothing about its shape
 TODO	2	4	0	LinkHandler	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-PARK	2	4	0	MdTemplateArgumentsListLike	graph?	suggest	not declared in the crate (external type or unresolved stub)
 TODO	2	4	0	ModelRuleLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	2	4	0	PseudoData	graph?	suggest	small closed set: 1 Java subtypes
 TODO	2	4	0	SleighLanguageDescription	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	2	4	1241	TypeDef	graph?	suggest	small closed set: 4 Java subtypes
-SUGGEST-STRUCT	2	3	0	AssemblyExtendedNonTerminal	graph?	suggest	no Java type extends or implements AssemblyExtendedNonTerminal -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	2	3	0	AssemblyExtendedNonTerminal	graph?	promoted	Java declares AssemblyExtendedNonTerminal as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-ACCEPT	2	3	0	BasicFactory	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 SUGGEST-PARK	2	3	0	Box	graph?	suggest	not declared in the crate (external type or unresolved stub)
 TODO	2	3	0	BypassWriteCache	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -495,24 +495,24 @@ SUGGEST-ENUM	2	3	0	RegisterState	graph?	suggest	small closed set: 1 Java subtype
 SUGGEST-ENUM	2	3	0	SearchRegion	graph?	suggest	small closed set: 2 Java subtypes
 SUGGEST-PARK	2	3	0	String	graph?	suggest	not declared in the crate (external type or unresolved stub)
 SUGGEST-ACCEPT	2	3	0	SubtableEntryVisitor	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
-SUGGEST-STRUCT	2	3	0	ToolSet	graph?	suggest	no Java type extends or implements ToolSet -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	2	3	0	ToolSet	graph?	evidence	Java declares ToolSet as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 TODO	2	3	0	TraceObjectInterface	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	3	0	TraceObjectValPath	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	3	0	TraceRegisterUtils	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	3	0	TransactionInfo	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ACCEPT	2	3	99	TransactionListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 SUGGEST-PARK	2	3	0	i32	graph?	suggest	not declared in the crate (external type or unresolved stub)
-SUGGEST-STRUCT	2	2	0	AddressCorrelationRangeLike	graph?	suggest	no Java type extends or implements AddressCorrelationRangeLike -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	2	2	0	AddressCorrelationRangeLike	graph?	evidence	no Java type named AddressCorrelationRangeLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	2	2	106	Analyzer	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	2	2	0	BitFieldPacking	graph?	suggest	small closed set: 1 Java subtypes
 TODO	2	2	0	BlockCopy	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	2	0	BlockGoto	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	2	2	0	DataTypeArchiveChangeSet	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	2	2	1240	Dynamic	graph?	evidence	14 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
-SUGGEST-STRUCT	2	2	0	DynamicHash	graph?	suggest	no Java type extends or implements DynamicHash -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+STRUCT	2	2	0	DynamicHash	graph?	promoted	Java declares DynamicHash as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
 SUGGEST-ACCEPT	2	2	0	Factory	open-extension	suggest	7 Java subtypes and an extension-point name -- open set
 TODO	2	2	1219	FunctionDefinition	graph?	evidence	only 6 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	2	2	0	FunctionPrototype	graph?	suggest	no Java type extends or implements FunctionPrototype -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	2	2	0	FunctionPrototype	graph?	promoted	Java declares FunctionPrototype as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	2	2	0	GhidraFileDataLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-PARK	2	2	0	HashMap	graph?	suggest	not declared in the crate (external type or unresolved stub)
 SUGGEST-PARK	2	2	0	HashSet	graph?	suggest	not declared in the crate (external type or unresolved stub)
@@ -529,8 +529,8 @@ ARENA	2	2	1254	StandAloneDataTypeManager	graph?	family	[family:Manager] Java man
 SUGGEST-ENUM	2	2	0	StringSettingsDefinition	graph?	suggest	small closed set: 1 Java subtypes
 ARENA	2	2	101	ToolManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 SUGGEST-ENUM	2	2	0	Transaction	graph?	suggest	small closed set: 1 Java subtypes
-SUGGEST-STRUCT	2	2	0	VariableUtilities	graph?	suggest	no Java type extends or implements VariableUtilities -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
-SUGGEST-STRUCT	2	2	0	VtProgramCorrelatorInfo	graph?	suggest	no Java type extends or implements VtProgramCorrelatorInfo -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	2	2	0	VariableUtilities	graph?	promoted	Java declares VariableUtilities as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (3 Rust impls notwithstanding)
+TODO	2	2	0	VtProgramCorrelatorInfo	graph?	evidence	no Java type named VtProgramCorrelatorInfo -- an abstraction the port invented, so Java says nothing about its shape
 SUGGEST-PARK	2	2	0	r	graph?	suggest	not declared in the crate (external type or unresolved stub)
 TODO	1	44	0	Recognizer	graph?	evidence	43 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 TODO	1	40	0	ExpressionMatcher	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -546,12 +546,12 @@ TODO	1	15	0	ApplicationModuleLike	graph?	evidence	seam_stubs.rs placeholder -- r
 SUGGEST-ENUM	1	15	614	Equate	graph?	suggest	small closed set: 2 Java subtypes
 TODO	1	13	0	FileSystemRef	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ACCEPT	1	12	0	BooleanChangeAdapter	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
-SUGGEST-STRUCT	1	12	0	ExtensionsLike	graph?	suggest	no Java type extends or implements ExtensionsLike -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	1	12	0	ExtensionsLike	graph?	evidence	no Java type named ExtensionsLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	10	0	AsyncReferenceLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	10	0	FragmentDB	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	9	0	DBCachedObjectStoreSubMap	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	9	0	Edge	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	9	0	LaunchParameterAny	graph?	suggest	no Java type extends or implements LaunchParameterAny -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	9	0	LaunchParameterAny	graph?	evidence	no Java type named LaunchParameterAny -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	9	0	SectionMapProposal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-PARK	1	9	0	Self	graph?	suggest	not declared in the crate (external type or unresolved stub)
 TODO	1	8	0	ByteProviderLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -559,9 +559,9 @@ ITER	1	8	0	DBLongIterator	graph?	family	[family:Iterator] Delete the custom trai
 TODO	1	8	0	DebuggerPlatformMapper	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	8	0	DomainObjectAdapterDB	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	8	0	ExpressionOperator	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	8	0	ExpressionValueLike	graph?	suggest	no Java type extends or implements ExpressionValueLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	8	0	ExpressionValueLike	graph?	evidence	no Java type named ExpressionValueLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	8	0	LocationTrackingSpec	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	8	0	ModuleDB	graph?	suggest	no Java type extends or implements ModuleDB -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	8	0	ModuleDB	graph?	evidence	no Java type named ModuleDB -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	8	0	Terminal	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	7	0	EquateDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	7	0	FixedKeyRecordNode	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -573,8 +573,8 @@ TODO	1	6	0	ControlMode	graph?	evidence	seam_stubs.rs placeholder -- revisit afte
 TODO	1	6	0	EmulatorFactory	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 ACCEPT	1	6	0	GraphDisplayProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
 TODO	1	6	0	GraphNavigatorSeam	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	6	0	IndexScrollListenerAdapter	open-extension	suggest	no Java type extends or implements IndexScrollListenerAdapter -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	6	0	ParamListStandardLike	graph?	suggest	no Java type extends or implements ParamListStandardLike -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	1	6	0	IndexScrollListenerAdapter	open-extension	evidence	no Java type named IndexScrollListenerAdapter -- an abstraction the port invented, so Java says nothing about its shape
+TODO	1	6	0	ParamListStandardLike	graph?	evidence	no Java type named ParamListStandardLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	6	0	ParamMeasure	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	6	0	PcodeMachine	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	6	0	StateEditor	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -585,7 +585,7 @@ SUGGEST-ENUM	1	6	0	ValueSortedMap	graph?	suggest	small closed set: 2 Java subtyp
 TODO	1	6	7	ValueSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	6	0	WeakSet	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	5	0	AbstractAddressSpace	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	5	0	ApplicationIdentifier	graph?	suggest	no Java type extends or implements ApplicationIdentifier -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	5	0	ApplicationIdentifier	graph?	promoted	Java declares ApplicationIdentifier as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	5	0	AssignAction	graph?	evidence	10 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 TODO	1	5	0	ConfigFieldCodec	graph?	evidence	17 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 SUGGEST-ENUM	1	5	0	Constraint	graph?	suggest	small closed set: 5 Java subtypes
@@ -604,18 +604,18 @@ TODO	1	5	0	MdNameModifier	graph?	evidence	only 2 mock implementer(s) and no real
 TODO	1	5	0	OptionLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ACCEPT	1	5	0	QualifierFilter	open-extension	suggest	4 Java subtypes and an extension-point name -- open set
 TODO	1	5	0	SchemaBuilder	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	5	0	SpecVisitor	open-extension	suggest	no Java type extends or implements SpecVisitor -- it is a concrete class there, so there is no hierarchy to dispatch over (4 Rust impls notwithstanding)
+TODO	1	5	0	SpecVisitor	open-extension	evidence	no Java type named SpecVisitor -- an abstraction the port invented, so Java says nothing about its shape
 SUGGEST-ACCEPT	1	5	0	TimerCallback	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 TODO	1	5	0	ValueMapLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	1	4	0	AddressSetCollection	graph?	suggest	small closed set: 3 Java subtypes
 TODO	1	4	0	Animator	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	4	0	AsyncExecutor	graph?	suggest	no Java type extends or implements AsyncExecutor -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+TODO	1	4	0	AsyncExecutor	graph?	evidence	no Java type named AsyncExecutor -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	4	0	AttributedGraphExporter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ACCEPT	1	4	0	BlockModelServiceListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 ACCEPT	1	4	0	ClipboardContentProviderService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 TODO	1	4	0	ConstructorLike	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	4	0	DBTraceObjectValueMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	4	0	DbCacheHandle	graph?	suggest	no Java type extends or implements DbCacheHandle -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	1	4	0	DbCacheHandle	graph?	evidence	no Java type named DbCacheHandle -- an abstraction the port invented, so Java says nothing about its shape
 ACCEPT	1	4	0	DebuggerStaticMappingChangeListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 TODO	1	4	0	EdgeSet	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	4	0	EmulationResult	graph?	suggest	small closed set: 1 Java subtypes
@@ -637,7 +637,7 @@ ACCEPT	1	4	102	StringTranslationService	open-extension	family	[family:Service] P
 ACCEPT	1	4	0	TargetPublicationListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 TODO	1	4	0	TimeoutTaskMonitorSeam	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	4	0	TokenSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	4	0	TraceChangeRecord	graph?	suggest	no Java type extends or implements TraceChangeRecord -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	4	0	TraceChangeRecord	graph?	promoted	Java declares TraceChangeRecord as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	4	0	TraceRmiLaunchOffer	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	1	4	0	TraceUserData	graph?	suggest	small closed set: 1 Java subtypes
 TODO	1	4	0	TreePath	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -651,8 +651,8 @@ TODO	1	3	0	ApplicationPropertiesLike	graph?	evidence	seam_stubs.rs placeholder -
 TODO	1	3	0	AssemblyExtendedGrammar	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	3	0	AutoServiceListenerLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	3	0	BasicCompilerSpec	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	3	0	C11LinesLike	graph?	suggest	no Java type extends or implements C11LinesLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	3	0	C13SectionIteratorLike	graph?	suggest	no Java type extends or implements C13SectionIteratorLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	3	0	C11LinesLike	graph?	evidence	no Java type named C11LinesLike -- an abstraction the port invented, so Java says nothing about its shape
+TODO	1	3	0	C13SectionIteratorLike	graph?	evidence	no Java type named C13SectionIteratorLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	3	0	Color	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	1	3	0	DBCachedObjectStoreMap	graph?	suggest	small closed set: 1 Java subtypes
 TODO	1	3	1259	DWordDataType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -660,44 +660,44 @@ ACCEPT	1	3	102	DebuggerControlService	open-extension	family	[family:Service] Plu
 TODO	1	3	0	EnumSettingsDefinition	graph?	evidence	18 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 SUGGEST-ENUM	1	3	307	ErrorDisplay	graph?	suggest	small closed set: 4 Java subtypes
 TODO	1	3	0	ExternalLocationDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	3	0	FileAttributeTypeLike	graph?	suggest	no Java type extends or implements FileAttributeTypeLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	3	0	FileAttributeTypeLike	graph?	evidence	no Java type named FileAttributeTypeLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	3	0	Font	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	3	0	FunctionAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	3	0	FunctionTagManagerProgram	graph?	suggest	no Java type extends or implements FunctionTagManagerProgram -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	3	0	FunctionTagManagerProgram	graph?	evidence	no Java type named FunctionTagManagerProgram -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	3	0	GhidraFileChooserModelLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ACCEPT	1	3	0	GhidraFileFilter	open-extension	suggest	2 Java subtypes and an extension-point name -- open set
 SUGGEST-PARK	1	3	0	HlslRegisterType	graph?	suggest	not declared in the crate (external type or unresolved stub)
 SUGGEST-PARK	1	3	0	HoldLock	graph?	suggest	not declared in the crate (external type or unresolved stub)
 TODO	1	3	0	LazyInner	graph?	manual	
 TODO	1	3	0	LibrarySymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	3	0	ListStl	graph?	suggest	no Java type extends or implements ListStl -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	3	0	ListStl	graph?	evidence	no Java type named ListStl -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	3	0	MdSpecialNameLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	3	0	MockState	graph?	manual	
 TODO	1	3	0	NamespaceSymbol	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	3	0	OptionType	graph?	suggest	no Java type extends or implements OptionType -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	3	0	OptionType	graph?	promoted	Java declares OptionType as a enum and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-PARK	1	3	0	ParserContextStub	graph?	suggest	not declared in the crate (external type or unresolved stub)
 SUGGEST-ACCEPT	1	3	0	PcodeOpEntryVisitor	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 TODO	1	3	0	Plugin	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	3	0	PreprocessorDefinitions	graph?	suggest	small closed set: 3 Java subtypes
-SUGGEST-STRUCT	1	3	0	PreprocessorWriter	graph?	suggest	no Java type extends or implements PreprocessorWriter -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	3	0	PreprocessorWriter	graph?	evidence	no Java type named PreprocessorWriter -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	3	1076	ProgramUserData	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	3	0	PropertyEditor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	3	1245	QWordDataType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	3	0	RepositoryServerHandle	graph?	evidence	only 5 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-PARK	1	3	0	SchemaTrait	graph?	suggest	not declared in the crate (external type or unresolved stub)
-SUGGEST-STRUCT	1	3	0	SleighLanguages	graph?	suggest	no Java type extends or implements SleighLanguages -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	3	0	SleighLanguages	graph?	promoted	Java declares SleighLanguages as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	3	0	TableEntryKey	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	3	0	TimingTarget	graph?	suggest	no Java type extends or implements TimingTarget -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	3	7	Token	graph?	suggest	no Java type extends or implements Token -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	1	3	0	TimingTarget	graph?	evidence	no Java type named TimingTarget -- an abstraction the port invented, so Java says nothing about its shape
+STRUCT	1	3	7	Token	graph?	promoted	Java declares Token as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
 TODO	1	3	0	TwoWayBreakdownFactory	open-extension	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 ARENA	1	3	0	VariableStorageManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 SUGGEST-ENUM	1	3	0	Wiring	graph?	suggest	small closed set: 2 Java subtypes
 TODO	1	2	0	AbstractAssemblyGrammar	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	2	0	AddressIteratorConverter	graph?	suggest	no Java type extends or implements AddressIteratorConverter -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	2	0	AddressIteratorConverter	graph?	promoted	Java declares AddressIteratorConverter as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	2	0	AnimatorBehavior	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	ApplicationIdentifierLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	ApplicationLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	AsyncUtils	graph?	suggest	no Java type extends or implements AsyncUtils -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	1	2	0	AsyncUtils	graph?	evidence	Java declares AsyncUtils as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 SUGGEST-ENUM	1	2	0	AuthenticationModule	graph?	suggest	small closed set: 4 Java subtypes
 TODO	1	2	0	AutoReadMemorySpec	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 ACCEPT	1	2	0	AutoService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
@@ -708,27 +708,27 @@ SUGGEST-ENUM	1	2	0	CodeLocation	graph?	suggest	small closed set: 2 Java subtypes
 TODO	1	2	0	CodeUnitDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	CodeUnitLocation	graph?	evidence	19 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 TODO	1	2	0	ConstructorTraversal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	CoordinatedStructureDisplay	graph?	suggest	no Java type extends or implements CoordinatedStructureDisplay -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	2	0	CoordinatedStructureDisplay	graph?	promoted	Java declares CoordinatedStructureDisplay as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	2	0	CoordinatedStructureModel	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	2	0	CreateFunctionCmd	graph?	suggest	no Java type extends or implements CreateFunctionCmd -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	2	0	CreateStructureBehavior	graph?	suggest	no Java type extends or implements CreateStructureBehavior -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+STRUCT	1	2	0	CreateFunctionCmd	graph?	promoted	Java declares CreateFunctionCmd as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
+TODO	1	2	0	CreateStructureBehavior	graph?	evidence	no Java type named CreateStructureBehavior -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	2	0	CryptoSession	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	DBCachedObjectStore	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	DBCachedObjectStoreValueCollection	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	DBObjectColumn	graph?	suggest	no Java type extends or implements DBObjectColumn -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	2	0	DBObjectColumn	graph?	promoted	Java declares DBObjectColumn as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	2	0	DBTraceAddressSnapRangePropertyMapSpace	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	DBTreeNodeRecord	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	DBTreeRecord	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	DataDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	DataHighLevelShaderLanguageSymbolInternals32Extended	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	DataTypeArchiveDbChangeSet	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	1276	DataUtilities	graph?	suggest	no Java type extends or implements DataUtilities -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+STRUCT	1	2	1276	DataUtilities	graph?	promoted	Java declares DataUtilities as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (3 Rust impls notwithstanding)
 TODO	1	2	0	DecompileFunctionTask	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	DefaultGhidraProtocolHandler	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	DefaultTraceObjectSchema	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	DefaultTraceRmiAcceptor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	DerivedStreamProducer	graph?	suggest	no Java type extends or implements DerivedStreamProducer -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	2	0	DerivedStreamPushProducer	graph?	suggest	no Java type extends or implements DerivedStreamPushProducer -- it is a concrete class there, so there is no hierarchy to dispatch over (0 Rust impls notwithstanding)
+TODO	1	2	0	DerivedStreamProducer	graph?	evidence	no Java type named DerivedStreamProducer -- an abstraction the port invented, so Java says nothing about its shape
+TODO	1	2	0	DerivedStreamPushProducer	graph?	evidence	no Java type named DerivedStreamPushProducer -- an abstraction the port invented, so Java says nothing about its shape
 ITER	1	2	0	DirectedRecordIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 TODO	1	2	304	DisassemblerContextAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ACCEPT	1	2	0	DomainObjectClosedListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
@@ -742,7 +742,7 @@ SUGGEST-ENUM	1	2	0	ExpressionEvaluator	graph?	suggest	small closed set: 1 Java s
 SUGGEST-ENUM	1	2	0	ExpressionValue	graph?	suggest	small closed set: 5 Java subtypes
 TODO	1	2	0	FamilySymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	FieldIndexTable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	2	0	FileAttributeLike	graph?	suggest	no Java type extends or implements FileAttributeLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	2	0	FileAttributeLike	graph?	evidence	no Java type named FileAttributeLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	2	0	FileAttributesLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	FileCacheEntryBuilderLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	FileCacheEntryLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -765,14 +765,14 @@ TODO	1	2	0	InputStreamBufferByteSequence	graph?	manual
 TODO	1	2	0	InstructionBlock	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	InstructionError	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	IsolatedEntrySubModelLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	JarEntry	graph?	suggest	no Java type extends or implements JarEntry -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	2	0	JarFileFilter	open-extension	suggest	no Java type extends or implements JarFileFilter -- it is a concrete class there, so there is no hierarchy to dispatch over (0 Rust impls notwithstanding)
+TODO	1	2	0	JarEntry	graph?	evidence	no Java type named JarEntry -- an abstraction the port invented, so Java says nothing about its shape
+TODO	1	2	0	JarFileFilter	open-extension	evidence	no Java type named JarFileFilter -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	2	0	KeyManagerFactoryLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	LanguageTranslatorFactory	open-extension	suggest	no Java type extends or implements LanguageTranslatorFactory -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	2	0	LanguageTranslatorFactory	open-extension	promoted	Java declares LanguageTranslatorFactory as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	2	0	LegacyUserSettingsLocator	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	LineArrayListWriter	graph?	manual	
 TODO	1	2	0	LinkedGhidraFolder	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	ListenerErrorHandlerFactory	open-extension	suggest	no Java type extends or implements ListenerErrorHandlerFactory -- it is a concrete class there, so there is no hierarchy to dispatch over (3 Rust impls notwithstanding)
+TODO	1	2	0	ListenerErrorHandlerFactory	open-extension	evidence	Java declares ListenerErrorHandlerFactory as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 TODO	1	2	0	ListingPanel	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	LoadResultsLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	Loader	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -787,11 +787,11 @@ TODO	1	2	0	MemoryFaultHandler	open-extension	evidence	only 2 mock implementer(s)
 TODO	1	2	0	MemoryMapDB	graph?	manual	
 TODO	1	2	0	ModuleDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	ModuleMapEntry	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	MsfFileReaderLike	graph?	suggest	no Java type extends or implements MsfFileReaderLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	2	0	MsfFileReaderLike	graph?	evidence	no Java type named MsfFileReaderLike -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	2	0	MsfStreamLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	0	MultEntSubModel	graph?	suggest	no Java type extends or implements MultEntSubModel -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	2	0	MultEntSubModel	graph?	promoted	Java declares MultEntSubModel as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	2	0	MultiBlendedListingBackgroundColorModel	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	124	Op	graph?	suggest	no Java type extends or implements Op -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	1	2	124	Op	graph?	evidence	Java declares Op as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 TODO	1	2	0	OptionsEditor	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	1	2	0	OverlapCodeSubModel	graph?	suggest	small closed set: 1 Java subtypes
 SUGGEST-PARK	1	2	0	PCV	graph?	suggest	not declared in the crate (external type or unresolved stub)
@@ -799,7 +799,7 @@ SUGGEST-ENUM	1	2	0	Painter	graph?	suggest	small closed set: 1 Java subtypes
 TODO	1	2	0	ParamListStandard	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	ParentChildDBAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	2	0	PartialUnion	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	2	0	PartitionCodeSubModel	graph?	suggest	no Java type extends or implements PartitionCodeSubModel -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	2	0	PartitionCodeSubModel	graph?	promoted	Java declares PartitionCodeSubModel as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	2	0	PcodeTraversal	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	PreferencesLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	ProgramSelection	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
@@ -817,12 +817,12 @@ TODO	1	2	0	RegisterValueBuilder	graph?	evidence	seam_stubs.rs placeholder -- rev
 ACCEPT	1	2	0	RemoteAdapterListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
 TODO	1	2	0	RemoteBlockStreamHandleLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	0	SectionMapEntry	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	2	131	ServiceInfo	graph?	suggest	no Java type extends or implements ServiceInfo -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	2	131	ServiceInfo	graph?	evidence	no Java type named ServiceInfo -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	2	1241	SignedDWordDataType	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	2	1240	SignedQWordDataType	closed-hierarchy?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 SUGGEST-ENUM	1	2	0	SortedList	graph?	suggest	small closed set: 2 Java subtypes
 TODO	1	2	0	SourceLanguage	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-ENUM	1	2	0	Spliterator	graph?	suggest	small closed set: 3 Java subtypes
+TODO	1	2	0	Spliterator	graph?	evidence	this port models the JDK's Spliterator; the Spliterator in orig_src is an unrelated Ghidra class of the same simple name, so Java's shape here says nothing
 ACCEPT	1	2	0	StructDisplayDataProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
 SUGGEST-PARK	1	2	0	StubToolChest	graph?	suggest	not declared in the crate (external type or unresolved stub)
 ITER	1	2	0	SubroutineDestReferenceIterator	graph?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
@@ -853,18 +853,18 @@ TODO	1	1	0	AbstractCobol0MsType	closed-hierarchy?	evidence	only 1 mock implement
 TODO	1	1	0	AbstractDimensionedArrayConstBoundsLowerUpperMsType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ITER	1	1	0	AbstractDirectedLongKeyIterator	closed-hierarchy?	family	[family:Iterator] Delete the custom trait; implement std::Iterator<Item=T>. Callers take the concrete type or `impl Iterator`; a genuinely heterogeneous collection (e.g. a merge over one iterator per search category) uses Box<dyn Iterator<Item=T>>, which is idiomatic Rust and already excluded from debt scoring -- the erased type is std::Iterator itself. `has_next` has no replacement method: use Peekable to look without consuming, or `while let Some(x) = it.next()`. Worked example: searchtext/iterators/search_address_iterator.rs + listing_display_search_address_iterator.rs.
 TODO	1	1	0	AbstractExpressionSolver	closed-hierarchy?	evidence	9 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
-SUGGEST-STRUCT	1	1	0	AddressChangeSet	graph?	suggest	no Java type extends or implements AddressChangeSet -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+TODO	1	1	0	AddressChangeSet	graph?	evidence	Java declares AddressChangeSet as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 SUGGEST-ENUM	1	1	0	AddressCorrelator	graph?	suggest	small closed set: 5 Java subtypes
-SUGGEST-STRUCT	1	1	0	AddressRangeIteratorFactory	open-extension	suggest	no Java type extends or implements AddressRangeIteratorFactory -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	AddressRangeIteratorFactory	open-extension	evidence	no Java type named AddressRangeIteratorFactory -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	1	0	AddressSetPropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	1	0	AddressTranslator	graph?	suggest	small closed set: 3 Java subtypes
-SUGGEST-STRUCT	1	1	0	AddressXml	graph?	suggest	no Java type extends or implements AddressXml -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	AddressXml	graph?	evidence	no Java type named AddressXml -- an abstraction the port invented, so Java says nothing about its shape
 SUGGEST-ACCEPT	1	1	1202	AnnotationHandler	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 TODO	1	1	0	ApplicationUtilities	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	ArrayDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	AssemblerBuilder	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	AssemblyExtendedProduction	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
-SUGGEST-STRUCT	1	1	0	AssemblyFixedNumericTerminal	graph?	suggest	no Java type extends or implements AssemblyFixedNumericTerminal -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	AssemblyFixedNumericTerminal	graph?	promoted	Java declares AssemblyFixedNumericTerminal as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-ENUM	1	1	0	AssemblyNumericTerminal	graph?	suggest	small closed set: 2 Java subtypes
 TODO	1	1	0	AssemblyParseActionGotoTable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	AssemblyParseTransitionTable	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -879,10 +879,10 @@ TODO	1	1	0	BlockStreamServer	graph?	evidence	only 1 mock implementer(s) and no r
 SUGGEST-ENUM	1	1	0	BooleanSettingsDefinition	graph?	suggest	small closed set: 4 Java subtypes
 TODO	1	1	0	BufferFileAdapter	open-extension	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	ByteTrieNode	graph?	manual	
-SUGGEST-STRUCT	1	1	0	C13SectionLike	graph?	suggest	no Java type extends or implements C13SectionLike -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	1	0	CachedAddressSetView	graph?	suggest	no Java type extends or implements CachedAddressSetView -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	C13SectionLike	graph?	evidence	no Java type named C13SectionLike -- an abstraction the port invented, so Java says nothing about its shape
+STRUCT	1	1	0	CachedAddressSetView	graph?	promoted	Java declares CachedAddressSetView as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-ENUM	1	1	0	ChangeSet	graph?	suggest	small closed set: 6 Java subtypes
-SUGGEST-STRUCT	1	1	0	ClassStateHandler	open-extension	suggest	no Java type extends or implements ClassStateHandler -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	ClassStateHandler	open-extension	evidence	no Java type named ClassStateHandler -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	1	0	ClassSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ACCEPT	1	1	0	ClipboardService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 ACCEPT	1	1	0	CloseableTaskMonitor	open-extension	family	[family:Monitor] Progress/cancellation callback supplied by the caller. The textbook open extension point.
@@ -890,22 +890,22 @@ ARENA	1	1	0	CodeManager	graph?	family	[family:Manager] Java manager singletons t
 SUGGEST-ENUM	1	1	0	CodeUnitFormat	graph?	suggest	small closed set: 1 Java subtypes
 TODO	1	1	0	CommentHistoryAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	CommentsDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	ComparableMultiMapStl	graph?	suggest	no Java type extends or implements ComparableMultiMapStl -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	1	0	ComparableMultiSetStl	graph?	suggest	no Java type extends or implements ComparableMultiSetStl -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	ComparableMultiMapStl	graph?	evidence	no Java type named ComparableMultiMapStl -- an abstraction the port invented, so Java says nothing about its shape
+TODO	1	1	0	ComparableMultiSetStl	graph?	evidence	no Java type named ComparableMultiSetStl -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	1	0	CompositeDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	ConstantPool	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	5	ConstantSpace	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	ContextCache	graph?	suggest	no Java type extends or implements ContextCache -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	ContextCache	graph?	promoted	Java declares ContextCache as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	ContextSet	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	CountedDynamicDataType	closed-hierarchy?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	DBAnnotatedObjectFactory	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ARENA	1	1	0	DBPropertyMapManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	1	1	0	DBTraceAddressSnapRangePropertyMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	DBTraceAddressSnapRangePropertyMapAddressSetView	graph?	suggest	no Java type extends or implements DBTraceAddressSnapRangePropertyMapAddressSetView -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	DBTraceAddressSnapRangePropertyMapAddressSetView	graph?	promoted	Java declares DBTraceAddressSnapRangePropertyMapAddressSetView as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	DBTraceAddressSnapRangePropertyMapTree	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ARENA	1	1	0	DBTraceDelegatingManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	1	1	0	DBTraceObjectInterface	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	DBTraceObjectValueRStarTree	graph?	suggest	no Java type extends or implements DBTraceObjectValueRStarTree -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	DBTraceObjectValueRStarTree	graph?	promoted	Java declares DBTraceObjectValueRStarTree as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	DBTraceSpaceBased	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	1	356	DataConverter	graph?	suggest	small closed set: 3 Java subtypes
 TODO	1	1	0	DataDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -919,7 +919,7 @@ ACCEPT	1	1	98	DataTypeArchiveService	open-extension	family	[family:Service] Plug
 ACCEPT	1	1	259	DataTypeManagerService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 SUGGEST-PARK	1	1	0	DataTypeMerger	graph?	suggest	not declared in the crate (external type or unresolved stub)
 ACCEPT	1	1	99	DataTypeQueryService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
-SUGGEST-STRUCT	1	1	0	DataTypeUtilities	graph?	suggest	no Java type extends or implements DataTypeUtilities -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	DataTypeUtilities	graph?	promoted	Java declares DataTypeUtilities as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	DbObject	graph?	evidence	24 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
 ACCEPT	1	1	98	DebuggerAutoMappingService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 ACCEPT	1	1	98	DebuggerEmulationService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
@@ -936,13 +936,13 @@ SUGGEST-ENUM	1	1	0	DefaultProjectData	graph?	suggest	small closed set: 1 Java su
 TODO	1	1	0	DefaultSchemaContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	DefaultSslContextInitializer	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	DepthFirstSearch	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	DiscoverableAddressCorrelator	graph?	suggest	no Java type extends or implements DiscoverableAddressCorrelator -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	DiscoverableAddressCorrelator	graph?	evidence	Java declares DiscoverableAddressCorrelator as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 SUGGEST-ACCEPT	1	1	0	DomainFolderFilter	open-extension	suggest	1 Java subtypes and an extension-point name -- open set
 TODO	1	1	1209	DynamicDataType	closed-hierarchy?	evidence	17 Java subtypes -- too many for an enum; needs a human call (genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)
-SUGGEST-STRUCT	1	1	0	DynamicEntry	graph?	suggest	no Java type extends or implements DynamicEntry -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	DynamicEntry	graph?	promoted	Java declares DynamicEntry as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	EnumDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	EquateRefDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	ExtensionUtils	graph?	suggest	no Java type extends or implements ExtensionUtils -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	ExtensionUtils	graph?	promoted	Java declares ExtensionUtils as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	ExternalDisassembler	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	FileBytesAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ACCEPT	1	1	0	FileSystemService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
@@ -971,15 +971,15 @@ TODO	1	1	0	GhidraProgramMultiUserMergeManagerFactory	open-extension	evidence	onl
 TODO	1	1	0	GhidraServer	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	GhidraToolState	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	GhidraURL	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	GhidraURLConnection	graph?	suggest	no Java type extends or implements GhidraURLConnection -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	GhidraURLConnection	graph?	promoted	Java declares GhidraURLConnection as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	GhidraURLWrappedContentLike	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 ACCEPT	1	1	284	GoToService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 TODO	1	1	0	GraphAlgorithms	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	108	GraphDisplayBroker	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	HighCodeSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	HighConstant	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	HighFunctionDBUtil	graph?	suggest	no Java type extends or implements HighFunctionDBUtil -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	1	0	HighParamID	graph?	suggest	no Java type extends or implements HighParamID -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	HighFunctionDBUtil	graph?	promoted	Java declares HighFunctionDBUtil as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
+STRUCT	1	1	0	HighParamID	graph?	promoted	Java declares HighParamID as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	1199	ICategory	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	ImmutableTraceAddressSnapRange	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	IndexedLocalFileSystem	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -988,7 +988,7 @@ TODO	1	1	0	InlinedFunctionCallsiteExtendedMsSymbol	graph?	evidence	only 1 mock i
 TODO	1	1	0	Inner	graph?	manual	
 TODO	1	1	0	InstDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	InstructionAdapterFromPrototype	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	InstructionPcodeOverride	graph?	suggest	no Java type extends or implements InstructionPcodeOverride -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	InstructionPcodeOverride	graph?	promoted	Java declares InstructionPcodeOverride as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	1207	InternalDataTypeComponent	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ACCEPT	1	1	98	InternalTraceRmiService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.
 ACCEPT	1	1	0	IssueListener	open-extension	family	[family:Listener] Caller-supplied callback -- a genuine open-ended extension point, which OWNERSHIP_MIGRATION.md explicitly carves out for `dyn`.
@@ -996,9 +996,9 @@ TODO	1	1	0	JarEntryNode	graph?	manual
 TODO	1	1	0	JumpTable	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	1	1	0	LabelHistoryAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 ACCEPT	1	1	304	LanguageProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
-SUGGEST-STRUCT	1	1	0	LanguageTranslatorFactoryMinion	graph?	suggest	no Java type extends or implements LanguageTranslatorFactoryMinion -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	1	300	LanguageUtilities	graph?	suggest	no Java type extends or implements LanguageUtilities -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
-SUGGEST-STRUCT	1	1	0	LanguageVersionException	closed-hierarchy?	suggest	no Java type extends or implements LanguageVersionException -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	LanguageTranslatorFactoryMinion	graph?	evidence	Java declares LanguageTranslatorFactoryMinion as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
+TODO	1	1	300	LanguageUtilities	graph?	evidence	Java declares LanguageUtilities as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
+STRUCT	1	1	0	LanguageVersionException	closed-hierarchy?	promoted	Java declares LanguageVersionException as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 SUGGEST-ENUM	1	1	0	LesserList	graph?	suggest	small closed set: 3 Java subtypes
 TODO	1	1	0	ListingDB	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	Loaded	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -1008,21 +1008,21 @@ TODO	1	1	0	MdBasicName	graph?	evidence	only 1 mock implementer(s) and no real on
 TODO	1	1	0	MdComplexType	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	MdDataTypeParser	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	MdMangGenericize	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	MdMangUtils	graph?	suggest	no Java type extends or implements MdMangUtils -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	MdMangUtils	graph?	evidence	no Java type named MdMangUtils -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	1	0	MdMangVs2015	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	MdModifierType	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	MemoryBlockDB	graph?	manual	
 TODO	1	1	0	MemoryMapDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	1	0	MergeResolver	graph?	suggest	small closed set: 8 Java subtypes
 TODO	1	1	0	MockDomainObject	graph?	manual	
-SUGGEST-STRUCT	1	1	0	Module	graph?	suggest	no Java type extends or implements Module -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	Module	graph?	promoted	Java declares Module as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 ARENA	1	1	0	ModuleManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	1	1	0	Msf	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	NameSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	NavigatableActionContext	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	NavigationActionContext	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	586	OffsetReference	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	OldLanguageFactory	open-extension	suggest	no Java type extends or implements OldLanguageFactory -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+STRUCT	1	1	0	OldLanguageFactory	open-extension	promoted	Java declares OldLanguageFactory as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (1 Rust impls notwithstanding)
 TODO	1	1	0	OtherSpace	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	OverlaySpaceDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	1	0	ParamListStandardOut	graph?	suggest	small closed set: 1 Java subtypes
@@ -1033,7 +1033,7 @@ TODO	1	1	0	PluginInstaller	graph?	evidence	only 1 mock implementer(s) and no rea
 TODO	1	1	0	PluginUtils	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	PluginsConfiguration	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	PointerDb	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	1241	PointerTypedefBuilder	graph?	suggest	no Java type extends or implements PointerTypedefBuilder -- it is a concrete class there, so there is no hierarchy to dispatch over (2 Rust impls notwithstanding)
+STRUCT	1	1	1241	PointerTypedefBuilder	graph?	promoted	Java declares PointerTypedefBuilder as a class and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (2 Rust impls notwithstanding)
 TODO	1	1	0	PoolInner	graph?	manual	
 TODO	1	1	0	ProgramArchitectureTranslator	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 SUGGEST-ENUM	1	1	0	ProgramChangeSet	graph?	suggest	small closed set: 2 Java subtypes
@@ -1060,7 +1060,7 @@ SUGGEST-ENUM	1	1	0	RepositoryLogger	graph?	suggest	small closed set: 1 Java subt
 ARENA	1	1	0	RepositoryManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 SUGGEST-PARK	1	1	0	SeamRefType	graph?	suggest	not declared in the crate (external type or unresolved stub)
 SUGGEST-PARK	1	1	0	SeamReference	graph?	suggest	not declared in the crate (external type or unresolved stub)
-SUGGEST-STRUCT	1	1	0	SemanticEnvironment	graph?	suggest	no Java type extends or implements SemanticEnvironment -- it is a concrete class there, so there is no hierarchy to dispatch over (0 Rust impls notwithstanding)
+TODO	1	1	0	SemanticEnvironment	graph?	evidence	Java declares SemanticEnvironment as an interface with no in-tree implementers -- either an extension point (-> ACCEPT) or its implementers are unported; the count cannot tell which
 ACCEPT	1	1	0	ServiceProvider	open-extension	family	[family:Provider] Caller/plugin supplies the implementation (byte sources, component providers, script providers). Open set.
 TODO	1	1	0	SettingsDBAdapter	open-extension	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	SleighAssemblerBuilder	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
@@ -1099,11 +1099,11 @@ TODO	1	1	0	TransientProjectData	graph?	evidence	only 1 mock implementer(s) and n
 ARENA	1	1	0	TreeManager	graph?	family	[family:Manager] Java manager singletons that own collections of domain objects -- the manager becomes the arena/store and its contents become typed Copy IDs. Consistent with the Program/Listing/DataTypeManager verdicts.
 TODO	1	1	1224	Union	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	4	UniqueSpace	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	ValStrAny	graph?	suggest	no Java type extends or implements ValStrAny -- it is a concrete class there, so there is no hierarchy to dispatch over (1 Rust impls notwithstanding)
+TODO	1	1	0	ValStrAny	graph?	evidence	no Java type named ValStrAny -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	1	0	ValueMap	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	ValueMapSymbol	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	ValueShape	graph?	evidence	only 1 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-SUGGEST-STRUCT	1	1	0	VariableConflictHandler	open-extension	suggest	no Java type extends or implements VariableConflictHandler -- it is a concrete class there, so there is no hierarchy to dispatch over (0 Rust impls notwithstanding)
+TODO	1	1	0	VariableConflictHandler	open-extension	evidence	no Java type named VariableConflictHandler -- an abstraction the port invented, so Java says nothing about its shape
 TODO	1	1	0	VariableImpl	graph?	evidence	only 3 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	1	1	0	Version	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 ACCEPT	1	1	304	VersionedLanguageService	open-extension	family	[family:Service] Plugin-provided service interface; open set by design. `dyn` is the idiomatic Rust answer.

@@ -115,7 +115,7 @@ class TestCollectDeclarations(unittest.TestCase):
               "impl Thing for MockThing {}\n"
               "impl Thing for StubThing {}\n")
         write(os.path.join(d, "src", "seam_stubs.rs"), "pub trait Placeholder {}\n")
-        traits, _types, impls, mocks, stubs = dc.collect_declarations(os.path.join(d, "src"))
+        traits, _types, impls, mocks, stubs, _jdk = dc.collect_declarations(os.path.join(d, "src"))
         self.assertEqual(traits["Thing"], 1)
         self.assertEqual(impls["Thing"], 1)      # RealThing only
         self.assertEqual(mocks["Thing"], 2)      # Mock + Stub
@@ -181,14 +181,39 @@ class TestJavaSizedVerdicts(unittest.TestCase):
     happily recommended "small closed set -> enum" off that. These pin the corrected rules.
     """
 
-    def call(self, name, rust_impls, java):
-        return dc.suggest_verdict(name, {name: 1}, {}, {name: rust_impls}, set(), {}, set(), java)
+    def call(self, name, rust_impls, java, decls=None, jdk=frozenset()):
+        return dc.suggest_verdict(name, {name: 1}, {}, {name: rust_impls}, set(), {}, set(),
+                                  java, decls or {}, jdk)
 
-    def test_zero_java_subtypes_means_it_should_not_be_a_trait(self):
-        """`Lock` and `TokenPattern` are concrete classes in Java; nothing extends them."""
-        v, why = self.call("Lock", 11, {"Lock": 0})
+    def test_a_java_class_nothing_extends_should_not_be_a_trait(self):
+        """`TokenPattern` is a concrete class in Java; nothing extends it, so a trait is wrong."""
+        v, why = self.call("TokenPattern", 24, {"TokenPattern": 0}, {"TokenPattern": "class"})
         self.assertEqual(v, "SUGGEST-STRUCT")
-        self.assertIn("concrete class", why)
+        self.assertIn("no hierarchy to dispatch over", why)
+
+    def test_an_enum_counts_as_concrete_too(self):
+        v, _why = self.call("CheckoutType", 5, {"CheckoutType": 0}, {"CheckoutType": "enum"})
+        self.assertEqual(v, "SUGGEST-STRUCT")
+
+    def test_an_interface_with_no_in_tree_implementers_is_not_swept(self):
+        """It may be an extension point, or its implementers may be unported. The count cannot
+        tell which, so the proposer must decline rather than call it concrete."""
+        v, why = self.call("ToolSet", 2, {"ToolSet": 0}, {"ToolSet": "interface"})
+        self.assertIsNone(v)
+        self.assertIn("cannot tell which", why)
+
+    def test_a_name_java_never_declares_is_not_swept(self):
+        """`IteratorStl`, `RepositoryLike`, `C13SectionLike` -- abstractions the port invented."""
+        v, why = self.call("IteratorStl", 4, {"IteratorStl": 0}, {})
+        self.assertIsNone(v)
+        self.assertIn("the port invented", why)
+
+    def test_a_port_modelling_a_jdk_type_is_not_paired_with_ghidras_class(self):
+        """The Rust `Lock` trait documents java.util.concurrent.locks.Lock, while orig_src holds
+        an unrelated ghidra.util.Lock class. An orig_src-only scan cannot see that collision."""
+        v, why = self.call("Lock", 11, {"Lock": 0}, {"Lock": "class"}, jdk={"Lock"})
+        self.assertIsNone(v)
+        self.assertIn("models the JDK", why)
 
     def test_java_count_beats_a_misleading_rust_count(self):
         # 3 Rust impls would have said "small closed set"; Java says otherwise.

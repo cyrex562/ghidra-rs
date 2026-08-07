@@ -131,9 +131,56 @@ RE_IMPL_FOR = re.compile(
 # one real type and six mocks is not an open extension point.
 MOCK_PREFIXES = ("Mock", "Stub", "Fake", "Dummy", "Test", "Minimal")
 
+# A ported type whose doc names a JDK type of the SAME simple name is modelling that, not the
+# Ghidra class the name matches in orig_src. `Lock` is the case that surfaced it: the Rust trait
+# documents "Acquire/release contract of java.util.concurrent.locks.Lock", while orig_src holds
+# ghidra.util.Lock, an unrelated concrete class. An orig_src-only scan cannot see that collision,
+# so read the port's own doc comment for it.
+RE_JDK_REF = re.compile(r"java\.(?:util|lang|io|nio|net|time|math|security)[\w.]*\.(\w+)")
+
 
 RE_EXTENDS = re.compile(r"\b(?:class|interface)\s+\w+(?:<[^>]*>)?\s+extends\s+([\w.<>, ]+?)\s*(?:implements|\{)")
 RE_IMPLEMENTS = re.compile(r"\bimplements\s+([\w.<>, ]+?)\s*\{")
+
+
+RE_JAVA_DECL = re.compile(
+    r"^\s*public\s+(?:final\s+|abstract\s+|sealed\s+|static\s+)*(class|interface|enum|record)\s+(\w+)",
+    re.M,
+)
+
+
+def java_declarations(orig_src="orig_src"):
+    """Java type name -> what Java declares it AS (class/interface/enum/record).
+
+    The kind matters as much as the subtype count. "Nothing extends it" means one thing for a
+    `class` -- there is no hierarchy, so a Rust trait is the wrong shape -- and something else
+    entirely for an `interface`, where it may be an extension point, or its implementers may
+    simply not be ported yet. And a name with no Java file at all is something the port invented
+    (`MdMangLike`, `IteratorStl`, `RepositoryLike`), where the count says nothing.
+
+    Checking this split the 112 "zero-subtype" candidates into a solid batch and two that would
+    have been wrong to sweep.
+    """
+    decls = {}
+    if not os.path.isdir(orig_src):
+        return decls
+    for dirpath, _dirs, files in os.walk(orig_src):
+        for fn in files:
+            if not fn.endswith(".java"):
+                continue
+            name = fn[: -len(".java")]
+            if name in decls:
+                continue
+            try:
+                with open(os.path.join(dirpath, fn), encoding="utf-8", errors="ignore") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            for kind, decl_name in RE_JAVA_DECL.findall(text):
+                if decl_name == name:
+                    decls[name] = kind
+                    break
+    return decls
 
 
 def java_subtype_counts(orig_src="orig_src"):
@@ -196,7 +243,7 @@ def collect_declarations(root):
     implementers it has. A trait with many implementers is an open set; a trait with one or
     none is usually a type that should never have been a trait."""
     traits, types_, impls = defaultdict(int), defaultdict(int), defaultdict(int)
-    mock_impls, stub_decl = defaultdict(int), set()
+    mock_impls, stub_decl, jdk_modeled = defaultdict(int), set(), set()
     for dirpath, _dirs, files in os.walk(root):
         for fn in files:
             if not fn.endswith(".rs"):
@@ -218,10 +265,15 @@ def collect_declarations(root):
             if fn == "seam_stubs.rs":
                 for n in RE_TRAIT_DECL.findall(text):
                     stub_decl.add(n)
-    return traits, types_, impls, mock_impls, stub_decl
+            declared = set(RE_TRAIT_DECL.findall(text)) | set(RE_TYPE_DECL.findall(text))
+            for jdk_name in RE_JDK_REF.findall(text):
+                if jdk_name in declared:
+                    jdk_modeled.add(jdk_name)
+    return traits, types_, impls, mock_impls, stub_decl, jdk_modeled
 
 
-def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl, java_subtypes=None):
+def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl,
+                    java_subtypes=None, java_decls=None, jdk_modeled=frozenset()):
     """Propose a verdict from structural evidence. Deliberately conservative: anything the
     evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
     is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
@@ -240,12 +292,28 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         return None, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
                       f"implementations are not ported yet; revisit then")
     # Prefer Java's hierarchy over the port's: the port's count measures progress, not shape.
+    if name in jdk_modeled:
+        return None, (
+            f"this port models the JDK's {name}; the {name} in orig_src is an unrelated Ghidra "
+            f"class of the same simple name, so Java's shape here says nothing")
+
     if java_subtypes is not None:
         j = java_subtypes.get(name, 0)
         if j == 0:
-            return "SUGGEST-STRUCT", (
-                f"no Java type extends or implements {name} -- it is a concrete class there, so "
-                f"there is no hierarchy to dispatch over ({n_impl} Rust impls notwithstanding)")
+            kind = (java_decls or {}).get(name)
+            if kind in ("class", "enum", "record"):
+                return "SUGGEST-STRUCT", (
+                    f"Java declares {name} as a {kind} and nothing extends it -- there is no "
+                    f"hierarchy to dispatch over, so a trait is the wrong shape "
+                    f"({n_impl} Rust impls notwithstanding)")
+            if kind == "interface":
+                return None, (
+                    f"Java declares {name} as an interface with no in-tree implementers -- either "
+                    f"an extension point (-> ACCEPT) or its implementers are unported; the count "
+                    f"cannot tell which")
+            return None, (
+                f"no Java type named {name} -- an abstraction the port invented, so Java says "
+                f"nothing about its shape")
         if open_name:
             return "SUGGEST-ACCEPT", f"{j} Java subtypes and an extension-point name -- open set"
         if j <= ENUM_MAX_VARIANTS:
@@ -448,16 +516,19 @@ def main():
         return
 
     if args.suggest:
-        traits, types_, impls, mock_impls, stub_decl = collect_declarations(args.root)
+        traits, types_, impls, mock_impls, stub_decl, jdk_modeled = collect_declarations(args.root)
         unported = load_unported_classes(args.manifest)
         java_subtypes = java_subtype_counts(args.orig_src)
-        print(f"read {len(java_subtypes)} Java supertypes from {args.orig_src}", file=sys.stderr)
+        java_decls = java_declarations(args.orig_src)
+        print(f"read {len(java_subtypes)} Java supertypes and {len(java_decls)} declarations "
+              f"from {args.orig_src}", file=sys.stderr)
         n = 0
         for r in rows:
             if r["verdict"] != "TODO":
                 continue
             v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
-                                     mock_impls, stub_decl, java_subtypes)
+                                     mock_impls, stub_decl, java_subtypes, java_decls,
+                                     jdk_modeled)
             if v:
                 r["verdict"], r["source"], r["note"] = v, "suggest", why
                 n += 1
