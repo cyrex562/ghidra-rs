@@ -154,7 +154,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_thread_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceThreadManager> {
+        fn get_thread_manager(&self) -> Box<dyn crate::trace::model::thread::TraceThreadManager> {
             unimplemented!("not exercised by this smoke test")
         }
 

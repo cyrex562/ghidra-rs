@@ -809,7 +809,7 @@ mod tests {
         fn get_symbol_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_thread_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceThreadManager> {
+        fn get_thread_manager(&self) -> Box<dyn crate::trace::model::thread::TraceThreadManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_time_manager(&self) -> Box<dyn crate::trace::model::time::trace_time_manager::TraceTimeManager> {

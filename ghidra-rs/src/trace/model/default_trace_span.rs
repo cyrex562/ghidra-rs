@@ -106,12 +106,13 @@ mod tests {
     use crate::trace::model::trace_time_viewport::TraceTimeViewport;
     use crate::trace::model::time::trace_time_manager::TraceTimeManager;
     use crate::trace::model::target::trace_object_manager::TraceObjectManager;
+    use crate::trace::model::thread::TraceThreadManager;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceEquateManager, TraceMemoryManager,
         TracePlatformManager,
         TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
-        TraceSymbolManager, TraceThreadManager,
+        TraceSymbolManager,
         TraceVariableSnapProgramView,
     };
     use std::collections::hash_map::DefaultHasher;

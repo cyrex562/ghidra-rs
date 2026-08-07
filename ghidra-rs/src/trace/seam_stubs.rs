@@ -89,10 +89,6 @@ pub trait TraceSymbolManager {
     }
 }
 
-/// Placeholder for `ghidra.trace.model.thread.TraceThreadManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceThreadManager {}
-
 /// Placeholder for `ghidra.trace.model.time.TraceSnapshot`, referenced by
 /// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
 /// the real port is available. Mirrors the one member referenced in that interface's javadoc:

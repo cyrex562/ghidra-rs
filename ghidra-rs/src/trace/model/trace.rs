@@ -7,13 +7,14 @@ use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::time::trace_time_manager::TraceTimeManager;
 use crate::trace::model::target::trace_object_manager::TraceObjectManager;
+use crate::trace::model::thread::TraceThreadManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceEquateManager, TraceMemoryManager,
     TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
-    TraceSymbolManager, TraceThreadManager,
+    TraceSymbolManager,
     TraceVariableSnapProgramView,
 };
 use crate::util::lock_hold::{Lock, LockHold};
@@ -633,7 +634,69 @@ mod tests {
     struct MockSymbolManager;
     impl TraceSymbolManager for MockSymbolManager {}
     struct MockThreadManager;
-    impl TraceThreadManager for MockThreadManager {}
+    impl TraceThreadManager for MockThreadManager {
+        fn add_thread(
+            &mut self,
+            _path: &str,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn add_thread_with_display(
+            &mut self,
+            _path: &str,
+            _display: &str,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_thread(
+            &mut self,
+            _path: &str,
+            _creation_snap: i64,
+        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn create_thread_with_display(
+            &mut self,
+            _path: &str,
+            _display: &str,
+            _creation_snap: i64,
+        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_threads(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_threads_by_path(&self, _name: &str) -> Vec<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_live_thread_by_path(
+            &self,
+            _snap: i64,
+            _path: &str,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_thread(&self, _key: i64) -> Option<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_live_threads(&self, _snap: i64) -> Vec<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockTimeManager;
     impl TraceTimeManager for MockTimeManager {
         fn create_snapshot(
