@@ -7,6 +7,7 @@
 use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
+use crate::program::model::address::Address;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::symbol::Symbol;
 use crate::trace::model::program::TraceProgramView;
@@ -269,8 +270,25 @@ pub trait SchemaBuilder: Send + Sync {
 
 /// Placeholder for `ghidra.trace.model.guest.TracePlatform`, referenced by
 /// [`TraceCodeUnit`](crate::trace::model::listing::trace_code_unit::TraceCodeUnit) before the real
-/// port is available. No members are parsed from the Java source yet.
-pub trait TracePlatform: Send + Sync {}
+/// port is available. Grown to add the two members
+/// [`InstructionAdapterFromPrototype`](crate::trace::util::instruction_adapter_from_prototype::InstructionAdapterFromPrototype)
+/// needs to remap guest-language operand addresses into the trace's host address space. Both
+/// default to identity/host behavior so existing marker (`impl TracePlatform for T {}`)
+/// implementors keep compiling unchanged.
+pub trait TracePlatform: Send + Sync {
+    /// Whether this is the trace's host (native) platform, as opposed to a guest platform.
+    /// Mirrors `TracePlatform.isHost()`.
+    fn is_host(&self) -> bool {
+        true
+    }
+
+    /// Maps an address in this platform's language into the trace's host address space, or
+    /// `None` if it cannot be mapped. Mirrors `TracePlatform.mapGuestToHost(Address)`. Defaults
+    /// to the identity mapping, matching the host platform's behavior.
+    fn map_guest_to_host(&self, address: Address) -> Option<Address> {
+        Some(address)
+    }
+}
 
 /// Placeholder for `ghidra.trace.model.thread.TraceThread`, referenced by
 /// [`TraceCodeUnit`](crate::trace::model::listing::trace_code_unit::TraceCodeUnit) before the real
