@@ -1,4 +1,5 @@
 pub mod abstract_directed_long_key_iterator;
+pub mod abstract_directed_record_iterator;
 pub mod annotproc;
 pub mod directed_iterator;
 pub mod directed_long_key_iterator;
@@ -13,6 +14,7 @@ pub mod db_synchronized_iterator;
 pub mod db_synchronized_spliterator;
 
 pub use abstract_directed_long_key_iterator::AbstractDirectedLongKeyIterator;
+pub use abstract_directed_record_iterator::AbstractDirectedRecordIterator;
 pub use directed_iterator::{Direction, DirectedIterator};
 pub use directed_long_key_iterator::DirectedLongKeyIterator;
 pub use directed_record_iterator::DirectedRecordIterator;

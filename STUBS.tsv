@@ -430,7 +430,7 @@ ts	stub_class	referenced_by
 2026-08-07T04:00:00+00:00	BackwardLongKeyIterator	DirectedLongKeyIterator
 2026-08-07T04:00:00+00:00	ForwardLongKeyIterator	DirectedLongKeyIterator
 2026-08-07T04:00:00+00:00	DirectedLongKeyIteratorFactory	DirectedLongKeyIterator
-2026-08-06T00:00:00+00:00	AbstractDirectedRecordIterator	DirectedRecordIterator
 2026-08-06T00:00:00+00:00	BackwardRecordIterator	DirectedRecordIterator
 2026-08-06T00:00:00+00:00	ForwardRecordIterator	DirectedRecordIterator
 2026-08-06T00:00:00+00:00	DirectedRecordIteratorFactory	DirectedRecordIterator
+2026-08-07T00:00:00+00:00	RecordIteratorDelete	AbstractDirectedRecordIterator
