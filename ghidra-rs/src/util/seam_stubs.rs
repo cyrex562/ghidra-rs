@@ -372,3 +372,66 @@ pub trait DirectedLongKeyIteratorFactory {
         direction: crate::util::database::Direction,
     ) -> std::io::Result<Box<dyn crate::util::database::AbstractDirectedLongKeyIterator>>;
 }
+
+/// Placeholder for `ghidra.util.database.AbstractDirectedRecordIterator`, needed by
+/// [`crate::util::database::directed_record_iterator`].
+///
+/// Wraps a `db.RecordIterator` and implements only `delete()` by delegating to it, leaving
+/// `hasNext`/`next` to concrete subclasses (`ForwardRecordIterator`/`BackwardRecordIterator`, not
+/// yet ported) which impose the iteration direction. Also stands in for the anonymous subclass
+/// used to build `DirectedRecordIterator.EMPTY`.
+pub trait AbstractDirectedRecordIterator: Send + Sync {
+    fn delete(&self) -> std::io::Result<bool>;
+}
+
+/// Placeholder for `ghidra.util.database.BackwardRecordIterator`, needed by
+/// [`crate::util::database::directed_record_iterator`].
+///
+/// Wraps a `db.RecordIterator`, running it backward: `hasNext`/`next` delegate to the wrapped
+/// iterator's `hasPrevious`/`previous`.
+pub trait BackwardRecordIterator: Send + Sync {
+    fn has_next(&self) -> std::io::Result<bool>;
+    fn next(&self) -> std::io::Result<crate::framework::db::record::DBRecord>;
+}
+
+/// Placeholder for `ghidra.util.database.ForwardRecordIterator`, needed by
+/// [`crate::util::database::directed_record_iterator`].
+///
+/// Wraps a `db.RecordIterator`, running it forward: `hasNext`/`next` delegate directly to the
+/// wrapped iterator's `hasNext`/`next`.
+pub trait ForwardRecordIterator: Send + Sync {
+    fn has_next(&self) -> std::io::Result<bool>;
+    fn next(&self) -> std::io::Result<crate::framework::db::record::DBRecord>;
+}
+
+/// Placeholder for `ghidra.util.database.DirectedRecordIterator`'s two static factory methods
+/// (`getIterator`/`getIndexIterator`), needed by
+/// [`crate::util::database::directed_record_iterator`].
+///
+/// `getIterator` computes `min`/`max` from a `KeySpan` and calls `Table.iterator(min, max,
+/// start)` (not yet part of the ported [`Table`](crate::framework::db::table::Table) API) to
+/// obtain a `RecordIterator`, then wraps it in [`ForwardRecordIterator`] or
+/// [`BackwardRecordIterator`] depending on `direction`. `getIndexIterator` does the same via
+/// `Table.indexIterator(columnIndex, lower, upper, forward)` over a `FieldSpan`, then applies the
+/// `applyBegFilter`/`applyEndFilter` exclusive-bound filters. Until `Table`'s ranged/indexed
+/// iteration and those wrapper classes exist, this declares the construction contracts only.
+pub trait DirectedRecordIteratorFactory {
+    /// Builds a directed record iterator over `table`, restricted to `key_span`, running in
+    /// `direction`.
+    fn get_iterator(
+        &self,
+        table: &mut crate::framework::db::Table,
+        key_span: &dyn crate::util::database::KeySpan,
+        direction: crate::util::database::Direction,
+    ) -> std::io::Result<Box<dyn crate::util::database::DirectedRecordIterator>>;
+
+    /// Builds a directed record iterator over `table`'s index on `column_index`, restricted to
+    /// `field_span`, running in `direction`.
+    fn get_index_iterator(
+        &self,
+        table: &mut crate::framework::db::Table,
+        column_index: usize,
+        field_span: &dyn crate::util::database::FieldSpan,
+        direction: crate::util::database::Direction,
+    ) -> std::io::Result<Box<dyn crate::util::database::DirectedRecordIterator>>;
+}
