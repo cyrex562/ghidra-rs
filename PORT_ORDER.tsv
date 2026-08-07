@@ -11,7 +11,7 @@ DONE	trait	28	32	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	27	27	75	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceCodeManager.java
 DONE	trait	26	69	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemorySpace.java
 DONE	trait	27	31	6	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceSection.java
-TODO	trait	26	57	30	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModule.java
+DONE	trait	26	57	30	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModule.java
 TODO	trait	31	16	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/DBTraceManager.java
 TODO	trait	32	13	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/TraceTimeManager.java
 TODO	trait	35	19	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceStaticMappingManager.java
