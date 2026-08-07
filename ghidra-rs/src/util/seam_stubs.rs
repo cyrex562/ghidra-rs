@@ -527,3 +527,43 @@ pub trait DBCachedObjectStoreEntrySubSet: Send + Sync {
         inclusive: bool,
     ) -> Box<dyn DBCachedObjectStoreEntrySubSet>;
 }
+
+/// Placeholder for `ghidra.util.database.DBCachedObjectStoreKeySubSet`, needed by
+/// [`crate::util::database::db_cached_object_store_key_set::DBCachedObjectStoreKeySet`]'s
+/// `subSet`/`headSet`/`tailSet` return type.
+///
+/// Mirrors the same `NavigableSet<Long>` contract as
+/// [`DBCachedObjectStoreKeySet`](crate::util::database::db_cached_object_store_key_set::DBCachedObjectStoreKeySet)
+/// itself, restricted to a sub-range of keys; `DBCachedObjectStoreKeySet` only ever constructs
+/// and returns these, never calls into one, so the full shape here is a forward-looking hint for
+/// the real port (which will also need it as a return type from its own narrowing methods), not
+/// a requirement of this particular caller.
+pub trait DBCachedObjectStoreKeySubSet: Send + Sync {
+    fn first(&self) -> i64;
+    fn last(&self) -> i64;
+    fn size(&self) -> usize;
+    fn is_empty(&self) -> bool;
+    fn contains(&self, key: i64) -> bool;
+    fn to_vec(&self) -> Vec<i64>;
+    fn remove(&mut self, key: i64) -> bool;
+    fn contains_all(&self, c: &[i64]) -> bool;
+    fn retain_all(&mut self, c: &[i64]) -> bool;
+    fn remove_all(&mut self, c: &[i64]) -> bool;
+    fn clear(&mut self);
+    fn lower(&self, e: i64) -> Option<i64>;
+    fn floor(&self, e: i64) -> Option<i64>;
+    fn ceiling(&self, e: i64) -> Option<i64>;
+    fn higher(&self, e: i64) -> Option<i64>;
+    fn iter(&self) -> Box<dyn super::database::RemovableIterator<Item = i64> + '_>;
+    fn descending_set(&self) -> Box<dyn DBCachedObjectStoreKeySubSet>;
+    fn descending_iter(&self) -> Box<dyn super::database::RemovableIterator<Item = i64> + '_>;
+    fn sub_set(
+        &self,
+        from_element: i64,
+        from_inclusive: bool,
+        to_element: i64,
+        to_inclusive: bool,
+    ) -> Box<dyn DBCachedObjectStoreKeySubSet>;
+    fn head_set(&self, to_element: i64, inclusive: bool) -> Box<dyn DBCachedObjectStoreKeySubSet>;
+    fn tail_set(&self, from_element: i64, inclusive: bool) -> Box<dyn DBCachedObjectStoreKeySubSet>;
+}
