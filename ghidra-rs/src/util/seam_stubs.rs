@@ -333,19 +333,6 @@ pub trait UnionAddressRangeIteratorFactory {
     ) -> Box<dyn AddressRangeIterator>;
 }
 
-/// Placeholder for `ghidra.util.database.AbstractDirectedLongKeyIterator`, needed by
-/// [`crate::util::database::directed_long_key_iterator`].
-///
-/// The real class wraps a `db.DBLongIterator` (already ported as
-/// [`crate::framework::db::DBLongIterator`]) and implements
-/// [`DirectedLongKeyIterator`](crate::util::database::DirectedLongKeyIterator)'s `hasNext`/`next`
-/// by delegating to it in the direction imposed by the concrete subclass (see
-/// [`ForwardLongKeyIterator`]/[`BackwardLongKeyIterator`] below); only `delete()` is common to
-/// both subclasses, so only it is declared here.
-pub trait AbstractDirectedLongKeyIterator: Send + Sync {
-    fn delete(&self) -> std::io::Result<bool>;
-}
-
 /// Placeholder for `ghidra.util.database.BackwardLongKeyIterator`, needed by
 /// [`crate::util::database::directed_long_key_iterator`].
 ///
@@ -383,5 +370,5 @@ pub trait DirectedLongKeyIteratorFactory {
         table: &mut crate::framework::db::Table,
         key_span: &dyn crate::util::database::KeySpan,
         direction: crate::util::database::Direction,
-    ) -> std::io::Result<Box<dyn AbstractDirectedLongKeyIterator>>;
+    ) -> std::io::Result<Box<dyn crate::util::database::AbstractDirectedLongKeyIterator>>;
 }
