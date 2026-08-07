@@ -48,7 +48,7 @@ DONE	trait	35	17	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	34	21	18	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectInterface.java
 DONE	trait	44	5	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/EuclideanHyperSpace.java
 DONE	trait	43	9	1	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/HyperBox.java
-TODO	trait	42	7	1	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/Dimension.java
+DONE	trait	42	7	1	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/Dimension.java
 TODO	trait	41	1	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/spatial/hyper/LongDimension.java
 TODO	trait	39	10	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ValueBox.java
 TODO	trait	38	7	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ImmutableValueBox.java
