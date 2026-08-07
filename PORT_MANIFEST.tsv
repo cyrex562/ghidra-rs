@@ -958,7 +958,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/m
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceOverlappedRegionException.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceRegister.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceRegisterContainer.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model memory 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceConflictedMappingException.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceConflictedMappingException.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModule.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModuleManager.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModuleOperations.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model modules 

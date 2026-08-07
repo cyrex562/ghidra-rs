@@ -75,17 +75,6 @@ pub trait TraceRegisterContextManager {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceStackManager {}
 
-/// Placeholder for `ghidra.trace.model.modules.TraceConflictedMappingException`, referenced by
-/// [`TraceStaticMappingManager`](crate::trace::model::modules::trace_static_mapping_manager::TraceStaticMappingManager)
-/// before the real class is ported. Mirrors the one member that manager's `add` needs: the
-/// mappings that conflicted with the prospective one.
-pub trait TraceConflictedMappingException: Send + Sync {
-    /// Mirrors `TraceConflictedMappingException.getConflicts()`.
-    fn get_conflicts(
-        &self,
-    ) -> Vec<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>;
-}
-
 /// Placeholder for `ghidra.trace.model.symbol.TraceSymbolManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Grown to add
 /// the lookup

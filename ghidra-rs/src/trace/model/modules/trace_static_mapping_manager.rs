@@ -18,8 +18,8 @@
 
 use crate::program::model::address::{Address, AddressRange};
 use crate::trace::model::lifespan::Lifespan;
+use crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException;
 use crate::trace::model::modules::trace_static_mapping::TraceStaticMapping;
-use crate::trace::seam_stubs::TraceConflictedMappingException;
 
 /// Manages mappings from this trace into static images (Ghidra `Program`s).
 pub trait TraceStaticMappingManager {
@@ -110,11 +110,20 @@ mod tests {
         }
     }
 
+    #[derive(Debug)]
     struct MockConflict;
 
+    impl std::fmt::Display for MockConflict {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "mock conflicted mapping")
+        }
+    }
+
+    impl std::error::Error for MockConflict {}
+
     impl TraceConflictedMappingException for MockConflict {
-        fn get_conflicts(&self) -> Vec<Box<dyn TraceStaticMapping>> {
-            Vec::new()
+        fn get_conflicts(&self) -> &[Box<dyn TraceStaticMapping>] {
+            &[]
         }
     }
 

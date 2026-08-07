@@ -48,9 +48,9 @@ use std::pin::Pin;
 
 use crate::app::seam_stubs::{
     DebuggerAddressTranslator, MapEntry, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
-    RegionMapProposal, SectionMapEntry, SectionMapProposal, TraceConflictedMappingException,
-    TraceLocation,
+    RegionMapProposal, SectionMapEntry, SectionMapProposal, TraceLocation,
 };
+use crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException;
 use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::modules::trace_section::TraceSection;
 use crate::debug::api::modules::DebuggerStaticMappingChangeListener;
@@ -386,7 +386,14 @@ mod tests {
     }
 
     impl std::error::Error for MockConflictError {}
-    impl TraceConflictedMappingException for MockConflictError {}
+    impl TraceConflictedMappingException for MockConflictError {
+        fn get_conflicts(
+            &self,
+        ) -> &[Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>]
+        {
+            &[]
+        }
+    }
 
     struct MockTraceLocation;
     impl TraceLocation for MockTraceLocation {}

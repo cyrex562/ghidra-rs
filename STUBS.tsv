@@ -138,7 +138,6 @@ ts	stub_class	referenced_by
 2026-07-11T13:00:00Z	GraphDisplay	GraphDisplayBroker
 2026-07-11T14:00:00Z	DebuggerAddressTranslator	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	TraceLocation	DebuggerStaticMappingService
-2026-07-11T14:00:00Z	TraceConflictedMappingException	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	MapEntry	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	ModuleMapEntry	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	SectionMapEntry	DebuggerStaticMappingService
@@ -429,4 +428,3 @@ ts	stub_class	referenced_by
 2026-08-07T02:16:00.601054+00:00	TraceSnapshot	TraceTimeManager
 2026-08-07T02:16:00.602637+00:00	TraceSchedule	TraceTimeManager
 2026-08-07T02:22:42.658470+00:00	TimeRadix	TraceTimeManager
-2026-08-07T02:24:26.207472+00:00	TraceConflictedMappingException	TraceStaticMappingManager
