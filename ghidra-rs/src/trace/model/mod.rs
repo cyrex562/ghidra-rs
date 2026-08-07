@@ -6,6 +6,7 @@ pub mod default_trace_span;
 pub mod immutable_trace_address_snap_range;
 pub mod lifespan;
 pub mod listing;
+pub mod map;
 pub mod memory;
 pub mod modules;
 pub mod program;
