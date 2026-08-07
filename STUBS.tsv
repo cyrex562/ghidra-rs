@@ -429,3 +429,4 @@ ts	stub_class	referenced_by
 2026-08-06T05:50:59.453326+00:00	TraceThread	TraceCodeUnit
 2026-08-06T06:24:05.130000+00:00	TracePlatformManager	TraceBaseCodeUnitsView
 2026-08-06T06:30:00.000000+00:00	TraceStackFrame	TraceCodeManager
+2026-08-06T00:00:00.000000+00:00	TraceMemoryOperations	TraceMemorySpace
