@@ -7,6 +7,7 @@ pub mod enumerating_iterator;
 pub mod instruction_adapter_from_prototype;
 pub mod memory_adapter;
 pub mod method_protector;
+pub mod trace_change_manager;
 pub mod wrapping_code_unit_iterator;
 pub mod wrapping_data_iterator;
 pub mod wrapping_function_iterator;

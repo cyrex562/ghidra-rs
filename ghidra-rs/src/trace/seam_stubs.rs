@@ -319,3 +319,11 @@ pub trait DBTraceObjectManager: Send + Sync {}
 /// opaquely (as `getWrapper`'s return); no members are needed yet.
 pub trait DBTraceObjectValue: Send + Sync {}
 
+/// Placeholder for `ghidra.trace.util.TraceChangeRecord`, referenced by
+/// [`TraceChangeManager`](crate::trace::util::trace_change_manager::TraceChangeManager) before
+/// the real port is available. The Java interface only ever receives this type as an opaque,
+/// wildcard-typed (`TraceChangeRecord<?, ?>`) event parameter -- it never calls any of the
+/// type's own getters -- so this is a marker trait rather than reproducing
+/// `getAddressSpace`/`getAffectedObject`/`isOldKnown`/`getOldValue`/`getNewValue`.
+pub trait TraceChangeRecord: Send + Sync {}
+
