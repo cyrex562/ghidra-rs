@@ -441,3 +441,4 @@ ts	stub_class	referenced_by
 2026-08-07T04:37:11+00:00	DBCachedObjectStoreSubMap	DBCachedObjectStoreMap
 2026-08-07T04:37:11+00:00	DBCachedObjectStoreValueCollection	DBCachedObjectStoreMap
 2026-08-07T05:00:00+00:00	DBCachedObjectStore	DBAnnotatedObjectFactory
+2026-08-07T04:45:34.730566+00:00	DBDomainObjectSupport	DBCachedDomainObjectAdapter

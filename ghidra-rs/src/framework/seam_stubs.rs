@@ -853,3 +853,18 @@ pub trait AutoServiceListenerLike: Send + Sync {
     /// mirroring `AutoServiceListener.notifyCurrentServices(PluginTool)`.
     fn notify_current_services(&self, tool: &dyn PluginTool);
 }
+
+/// Placeholder for `ghidra.framework.data.DBDomainObjectSupport`, referenced by
+/// [`DBCachedDomainObjectAdapter`](crate::util::database::DBCachedDomainObjectAdapter) as its
+/// superclass (`DBCachedDomainObjectAdapter extends DBDomainObjectSupport` in Java) before the
+/// real class is ported. `DBDomainObjectSupport` in turn extends the already-ported
+/// [`DomainObjectAdapterDB`](crate::framework::data::DomainObjectAdapterDB), so that real
+/// relationship is kept as a supertrait bound here rather than re-declared. Only `init` (the one
+/// public member besides the inherited `DomainObjectAdapterDB`/`DomainObject` surface) is
+/// exposed; `finishedCreatingManagers`/`createManager` are protected extension points that no
+/// ported caller needs yet.
+pub trait DBDomainObjectSupport: crate::framework::data::DomainObjectAdapterDB {
+    /// Resolves this object's dependent managers and finalizes construction, mirroring
+    /// `DBDomainObjectSupport.init()`.
+    fn init(&mut self) -> std::io::Result<()>;
+}
