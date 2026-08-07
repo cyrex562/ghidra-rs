@@ -22,6 +22,19 @@ landed and the placeholder is pure debt. A `-` means no Java class of that name 
 name is probably a synthetic helper and the collision may be coincidental -- those need a human
 eye rather than a sweep.
 
+**Pairing is by Java class, not by bare name.** Ghidra reuses simple names across packages, and
+the first version of this tool collapsed them: `PatternExpression` is two unrelated classes --
+`ghidra.app.plugin.processors.sleigh.expression` (the runtime expression, ported as an enum) and
+`ghidra.pcodeCPort.slghpatexpress` (the sleigh compiler's AST node, ported as a trait with 32
+implementers) -- and pairing them by basename reported "real is an enum, stub is a trait" as an
+ENUM-vs-`dyn` design conflict. It is not a conflict; they are different types, both correctly
+placed. `Processor` (`program.model.lang` vs the PDB reader) and `Constructor` (sleigh runtime vs
+`pcodeCPort.slghsymbol`) were the same false alarm. 12 of 40 rows were this.
+
+Such rows carry `pairing = ambiguous(N)` and list every candidate Java class, and they sort below
+the actionable ones. `pairing` is deliberately a separate column from `status`: it is a fact
+about the name, and folding it into the triage value let a preserved `PARK` hide it.
+
 **A high importer count does NOT mean a big mechanical win.** Triaging the top rows showed three
 different shapes, and only one is a rewire:
 
@@ -53,7 +66,7 @@ from collections import defaultdict
 RE_DECL = re.compile(
     r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:unsafe\s+)?(?:trait|struct|enum)\s+(\w+)", re.M
 )
-COLUMNS = ["status", "importers", "stubs", "class", "manifest", "real_path", "stub_paths"]
+COLUMNS = ["status", "pairing", "importers", "stubs", "class", "manifest", "java_classes", "real_path", "stub_paths"]
 
 
 def scan_sources(root):
@@ -76,17 +89,28 @@ def scan_sources(root):
     return texts, stub_decl, real_decl
 
 
-def manifest_status(manifest):
-    """Java class name -> TODO/DONE."""
-    status = {}
+def manifest_classes(manifest):
+    """Java class name -> [(java_path, status), ...].
+
+    A LIST, not a single status: Ghidra reuses simple names across packages, and collapsing them
+    is what made this tool invent design conflicts. `PatternExpression` is two unrelated classes
+    -- ghidra.app.plugin.processors.sleigh.expression (the runtime expression, ported as an enum)
+    and ghidra.pcodeCPort.slghpatexpress (the sleigh compiler's AST node, ported as a trait with
+    32 implementers). Pairing them by basename reported "real is an enum, stub is a trait" and
+    called it an ENUM-vs-dyn conflict. It is not; they are different types that both belong.
+    `Processor` (program.model.lang vs pdb2.pdbreader) and `Constructor` (sleigh runtime vs
+    pcodeCPort.slghsymbol) are the same story.
+    """
+    classes = defaultdict(list)
     if not os.path.exists(manifest):
-        return status
+        return classes
     with open(manifest, encoding="utf-8") as fh:
         for line in fh:
             cols = line.rstrip("\n").split("\t")
             if len(cols) > 1 and cols[0].endswith(".java"):
-                status[os.path.basename(cols[0])[: -len(".java")]] = cols[1]
-    return status
+                name = os.path.basename(cols[0])[: -len(".java")]
+                classes[name].append((cols[0], cols[1]))
+    return classes
 
 
 def importers_of_stub(texts, name):
@@ -124,7 +148,7 @@ def load_prior_status(path):
 
 def build(root, manifest, out_path):
     texts, stub_decl, real_decl = scan_sources(root)
-    status = manifest_status(manifest)
+    classes = manifest_classes(manifest)
     prior = load_prior_status(out_path)
 
     rows = []
@@ -133,20 +157,35 @@ def build(root, manifest, out_path):
         if not real_paths:
             continue  # a placeholder with no real counterpart yet is legitimate, not debt
         importers = importers_of_stub(texts, name)
+        java = classes.get(name, [])
+        # More than one Java class shares this name, so which one the placeholder stands in for
+        # cannot be inferred from the name. Say AMBIGUOUS instead of asserting a conflict.
+        # `pairing` is a FACT about the name, kept separate from `status`, which is triage.
+        # Overloading status let a preserved TODO/PARK hide the ambiguity.
+        pairing = f"ambiguous({len(java)})" if len(java) > 1 else "unique"
+        manifest_col = (
+            "|".join(sorted({st for _p, st in java})) if java else "-"
+        )
         rows.append(
             {
                 "status": prior.get(name, "TODO"),
+                "pairing": pairing,
                 "importers": len(importers),
                 "stubs": len(stub_paths),
                 "class": name,
-                "manifest": status.get(name, "-"),
+                "manifest": manifest_col,
+                "java_classes": ";".join(
+                    p.replace("orig_src/Ghidra/", "").replace("/src/main/java/", ":")
+                    for p, _st in java
+                ) or "-",
                 "real_path": os.path.relpath(real_paths[0], os.path.dirname(root) or "."),
                 "stub_paths": ";".join(
                     os.path.relpath(p, os.path.dirname(root) or ".") for p in stub_paths
                 ),
             }
         )
-    rows.sort(key=lambda r: (-r["importers"], -r["stubs"], r["class"]))
+    # unique pairings first: an ambiguous row is not actionable until a human says which class
+    rows.sort(key=lambda r: (r["pairing"] != "unique", -r["importers"], -r["stubs"], r["class"]))
     return rows, len(stub_decl)
 
 
@@ -159,8 +198,10 @@ def main():
     args = ap.parse_args()
 
     rows, total_stubs = build(args.root, args.manifest, args.out)
-    wired = sum(r["importers"] for r in rows)
-    confirmed = [r for r in rows if r["manifest"] == "DONE"]
+    actionable = [r for r in rows if r["pairing"] == "unique"]
+    ambiguous = [r for r in rows if r["pairing"] != "unique"]
+    wired = sum(r["importers"] for r in actionable)
+    confirmed = [r for r in actionable if r["manifest"] == "DONE"]
 
     if args.out:
         with open(args.out, "w", newline="", encoding="utf-8") as fh:
@@ -168,9 +209,10 @@ def main():
             writer.writeheader()
             writer.writerows(rows)
         print(
-            f"wrote {len(rows)} shadowed stub(s) to {args.out} "
-            f"({len(confirmed)} whose class is already DONE; {wired} file(s) wired to a placeholder; "
-            f"{total_stubs} stub names in total)",
+            f"wrote {len(rows)} row(s) to {args.out}: {len(actionable)} shadowed "
+            f"({len(confirmed)} whose class is already DONE; {wired} file(s) wired to a placeholder), "
+            f"{len(ambiguous)} AMBIGUOUS (name shared by several Java classes -- not a conflict); "
+            f"{total_stubs} stub names in total",
             file=sys.stderr,
         )
     else:
