@@ -378,6 +378,33 @@ mod tests {
         }
     }
 
+    struct MockObjectKey(i32);
+
+    impl crate::trace::seam_stubs::ObjectKey for MockObjectKey {
+        fn equals(&self, obj: &dyn std::any::Any) -> bool {
+            obj.downcast_ref::<MockObjectKey>()
+                .is_some_and(|other| other.0 == self.0)
+        }
+
+        fn hash_code(&self) -> i32 {
+            self.0
+        }
+
+        fn compare_to(&self, that: &dyn crate::trace::seam_stubs::ObjectKey) -> i32 {
+            self.hash_code() - that.hash_code()
+        }
+    }
+
+    struct MockLifeSet {
+        empty: bool,
+    }
+
+    impl crate::trace::seam_stubs::LifeSet for MockLifeSet {
+        fn is_empty(&self) -> bool {
+            self.empty
+        }
+    }
+
     struct MockObject {
         schema: MockSchema,
     }
@@ -388,6 +415,14 @@ mod tests {
                 name: self.schema.name.clone(),
                 hidden_keys: self.schema.hidden_keys.clone(),
             })
+        }
+
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            Box::new(MockObjectKey(0))
+        }
+
+        fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {
+            Box::new(MockLifeSet { empty: false })
         }
     }
 
