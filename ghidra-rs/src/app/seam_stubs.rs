@@ -272,12 +272,6 @@ pub trait DebuggerAddressTranslator {}
 /// a parameter, so no members are needed yet.
 pub trait TraceLocation {}
 
-/// Placeholder for `ghidra.trace.model.modules.TraceConflictedMappingException`, thrown by
-/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
-/// the real class is ported. Extends `std::error::Error` so it can stand in for the Java checked
-/// exception as a boxed `Result` error.
-pub trait TraceConflictedMappingException: std::error::Error {}
-
 /// Placeholder for `ghidra.debug.api.modules.MapEntry`, referenced by
 /// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
 /// the real class is ported. Java's `MapEntry<?, ?>` wildcard generics are dropped, since this
@@ -598,7 +592,7 @@ impl std::fmt::Display for MaskedLong {
 /// [`AssemblySelector::filter_parse`](crate::app::plugin::assembler::AssemblySelector::filter_parse)'s
 /// default implementation before the real class is ported. Extends `std::error::Error` so it can
 /// stand in for the Java checked exception as a boxed `Result` error, mirroring
-/// [`TraceConflictedMappingException`].
+/// [`TraceConflictedMappingException`](crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException).
 pub trait AssemblySyntaxException: std::error::Error {}
 
 /// Minimal constructible implementor of [`AssemblySyntaxException`]. `AssemblySelector::filter_parse`'s

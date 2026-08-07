@@ -281,7 +281,9 @@ mod tests {
             _to_address: &str,
         ) -> Result<
             Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>,
-            Box<dyn crate::trace::seam_stubs::TraceConflictedMappingException>,
+            Box<
+                dyn crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException,
+            >,
         > {
             unimplemented!("not exercised by this smoke test")
         }
