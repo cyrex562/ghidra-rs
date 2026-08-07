@@ -174,7 +174,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_thread_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceThreadManager> {
+        fn get_thread_manager(&self) -> Box<dyn crate::trace::model::thread::TraceThreadManager> {
             unimplemented!()
         }
 
