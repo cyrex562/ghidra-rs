@@ -20,6 +20,10 @@ Verdicts (col 1 of CONVENTION_QUEUE.tsv), per OWNERSHIP_MIGRATION.md's conventio
   ARENA   shared/graph type -> arena + typed Copy ID (see group_tree.rs for the worked shape)
   ENUM    closed hierarchy -> enum dispatch
   ITER    Java iterator interface -> concrete Rust iterator implementing std::Iterator
+  GRAPH   AST/IR node set -> tagged arena graph (a `Kind` tag enum + arena + Copy ids), for
+          hierarchies a parser builds dynamically. Distinct from ENUM: the question is not
+          whether the set is closed -- both are -- but whether values are constructed statically
+          (ENUM) or built dynamically with operations accruing over time (GRAPH).
   STRUCT  shouldn't be a trait at all (a trait with 0-2 implementers is usually just a type)
   PARK    genuinely undecidable for now; keep it off the queue but don't keep re-asking
 
@@ -54,6 +58,14 @@ IDIOMATIC = {
 # Rust answer for these, so they are ACCEPT candidates rather than arena candidates.
 # Above this many real implementers, "closed hierarchy -> enum" stops being credible.
 ENUM_MAX_VARIANTS = 8
+
+# Name shapes for AST/IR nodes -- hierarchies a parser or lowering pass builds dynamically. Above
+# ENUM_MAX_VARIANTS these are the tagged-arena-graph case rather than an undecidable one; see
+# OWNERSHIP_MIGRATION.md convention 4.
+AST_NODE_SUFFIXES = (
+    "Expression", "Equation", "Value", "Pattern", "Symbol", "Node", "Op", "Instruction",
+    "Statement", "Term", "Operand",
+)
 
 OPEN_EXTENSION_SUFFIXES = (
     "Monitor", "Service", "Provider", "Listener", "Adapter", "Handler", "Callback",
@@ -192,6 +204,9 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         if open_name:
             return "SUGGEST-ACCEPT", f"{n_impl} implementers and an extension-point name -- open set"
         return "SUGGEST-ENUM", f"small closed set: {n_impl} real implementers, all in-crate"
+    if name.endswith(AST_NODE_SUFFIXES):
+        return "SUGGEST-GRAPH", (f"{n_impl} implementers with an AST/IR node name -- too many for "
+                                 f"an enum, but a tagged arena graph handles a node set of this size")
     # A large implementer set is evidence AGAINST a closed hierarchy, not for one: nobody
     # wants a 94-variant enum. Either it is a genuine open set, or it is a graph type wanting
     # an arena -- a call the evidence here cannot make, so say so instead of guessing.

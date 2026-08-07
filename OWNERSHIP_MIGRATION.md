@@ -146,6 +146,72 @@ path, exactly as Ghidra itself upgrades older project formats to the current ver
 than the live in-memory model. ghidra-rs is therefore not bound to Java Ghidra's on-disk layout
 going forward, provided the importer exists.
 
+**4. Tagged arena graph, for AST/IR node sets** (the sleigh compiler's expression nodes, p-code
+and decompiler IR, and anything else built by a parser or lowering pass). Decided 2026-08-07.
+
+Java models these as a class hierarchy with a virtual method per operation. Translated
+literally that becomes `Box<dyn Node>` everywhere, which loses exhaustiveness, makes every new
+operation a change to every implementer, and cannot be snapshotted cheaply. Translated into a
+*data-carrying* enum it fights back differently: recursive `Box` fields, no sub-expression
+sharing, and a wide type whose largest variant sets the size of every node.
+
+The shape that fits:
+
+```rust
+new_key_type! { pub struct ExprId; }          // Copy handle, an edge in the graph
+
+pub enum ExprKind { Constant, TokenField, ContextField, Plus, Sub, And, Not, ... }
+
+pub struct ExprNode {
+    kind: ExprKind,
+    children: [Option<ExprId>; 2],            // fixed arity -- see below
+    payload: Payload,                         // only for the kinds that carry data
+    location: Location,
+}
+
+pub struct ExprGraph { nodes: SlotMap<ExprId, ExprNode> }
+```
+
+Three rules that are the whole point, and are easy to lose:
+
+- **Fixed arity, not `Vec<ExprId>`.** A data-carrying enum makes `Plus(a, b)` unable to hold
+  three operands; a tag plus a growable child list gives that guarantee away and moves the error
+  to runtime. Size the child array to the language (2 for sleigh expressions) and make
+  constructors the only way to build a node.
+- **A payload enum, not side tables.** Measured on the 30 ported `pcodeCPort/slghpatexpress`
+  nodes: 12 are pure operator wrappers carrying nothing but their operands (`AndExpression`,
+  `DivExpression`, `LeftShiftExpression`, ... each a single `binary` field), and only three carry
+  real data -- `TokenField` (9 fields), `ContextField` (7), `OperandResolve` (5). With that
+  distribution a payload enum has few variants and most nodes carry `Payload::None`; side tables
+  would buy uniformity nobody needs and cost an indirection on every access.
+- **One tag enum per language, never one globally.** The crate already has two `OpCode` enums,
+  for p-code and for the decompiler, and that is correct: they are different languages. Sleigh
+  expressions get their own. Merging unrelated node sets into one enum would undo the
+  exhaustiveness this exists for.
+
+*What it buys:* adding an operation is one function with one match instead of a method added to
+32 implementers; adding a node kind is one arm, and the compiler then names every match that
+must handle it; sub-expression sharing falls out of the graph, which a tree of `Box` cannot
+express; and the arena composes directly with the snapshot convention above, so a whole AST
+version is an `Arc` clone.
+
+*When NOT to use it.* A small, fixed, statically-built hierarchy is better as a plain
+data-carrying enum -- the sleigh **runtime**'s `PatternExpression` is exactly that (18 variants,
+grammar fixed once the `.sla` is compiled, evaluated hot) and should stay as it is. Converting it
+would be churn for nothing. Genuine open-ended extension points stay `dyn`.
+
+*The two sleigh ports are the worked comparison,* and both are right: the runtime evaluates a
+fixed grammar (enum), while the compiler builds an AST dynamically across 30-odd node types with
+per-node encode/list-values behaviour (tagged graph). They are different Java classes in
+different packages, not one concept done twice -- `scripts/stub_audit.py` reported them as a
+conflict until it learned to pair by Java class rather than by bare name.
+
+*Choosing between conventions 2 and 4:* the question is not "is the hierarchy closed" -- both of
+these are closed. It is **how the values are built and how the operations grow**. Values
+constructed from a fixed source, few variants, operations rarely added: data-carrying enum.
+Nodes built dynamically by a parser, recursive or shared, operations added over time: tagged
+arena graph.
+
 **Ported Java locks** (decided 2026-08-06, applies across `util/database` and
 `util/stream_utils`). A Java class that takes a `ReadWriteLock`/`Lock`/`Object` monitor and
 wraps a delegate translates literally into a Rust struct holding `Arc<RwLock<()>>` beside a

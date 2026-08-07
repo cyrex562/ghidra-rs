@@ -143,5 +143,34 @@ class TestIdiomaticExclusion(unittest.TestCase):
         self.assertEqual(dc.types_in_file(p), {})
 
 
+
+class TestGraphVerdict(unittest.TestCase):
+    """Convention 4: a large AST/IR node set is the tagged-arena-graph case, not an undecidable
+    one. Before this the proposer declined on anything above ENUM_MAX_VARIANTS, which left the
+    sleigh compiler's 30-odd expression nodes with no verdict at all."""
+
+    def call(self, name, impls):
+        return dc.suggest_verdict(name, {name: 1}, {}, {name: impls}, set(), {}, set())
+
+    def test_large_ast_node_set_suggests_graph(self):
+        v, why = self.call("PatternExpression", 32)
+        self.assertEqual(v, "SUGGEST-GRAPH")
+        self.assertIn("tagged arena graph", why)
+
+    def test_small_ast_node_set_still_suggests_enum(self):
+        """Few variants, statically built -- a plain data-carrying enum is simpler."""
+        v, _why = self.call("PatternExpression", 5)
+        self.assertEqual(v, "SUGGEST-ENUM")
+
+    def test_a_large_non_ast_hierarchy_still_declines(self):
+        v, why = self.call("MemBuffer", 100)
+        self.assertIsNone(v)
+        self.assertIn("too many for an enum", why)
+
+    def test_extension_point_name_still_wins_over_graph(self):
+        v, _why = self.call("ScriptProvider", 40)
+        self.assertEqual(v, "SUGGEST-ACCEPT")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
