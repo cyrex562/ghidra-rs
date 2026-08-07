@@ -444,3 +444,86 @@ pub trait DirectedRecordIteratorFactory {
         direction: crate::util::database::Direction,
     ) -> std::io::Result<Box<dyn crate::util::database::DirectedRecordIterator>>;
 }
+
+/// Placeholder for `ghidra.util.database.DBAnnotatedObject`, needed by
+/// [`crate::util::database::db_cached_object_store_entry_set::DBCachedObjectStoreEntrySet`]
+/// (as the generic bound `T extends DBAnnotatedObject`, via
+/// [`StoreEntry`](crate::util::database::db_cached_object_store_entry_set::StoreEntry)).
+///
+/// `DBCachedObjectStoreEntrySet` never calls a method on a `T` instance itself -- it only stores
+/// and returns them -- so unlike the real `DBAnnotatedObject` (which carries `getObjectKey`,
+/// `isDeleted`, `getTableName`, and protected record-update machinery), this is a marker trait
+/// until the real port is needed by a consumer that actually calls into it.
+pub trait DBAnnotatedObject: Send + Sync {}
+
+/// Placeholder for `ghidra.util.database.DBCachedObjectStoreEntrySubSet`, needed by
+/// [`crate::util::database::db_cached_object_store_entry_set::DBCachedObjectStoreEntrySet`]'s
+/// `subSet`/`headSet`/`tailSet` return type.
+///
+/// Mirrors the same `NavigableSet<Entry<Long, T>>` contract as
+/// [`DBCachedObjectStoreEntrySet`](crate::util::database::db_cached_object_store_entry_set::DBCachedObjectStoreEntrySet)
+/// itself, restricted to a sub-range of keys; `DBCachedObjectStoreEntrySet` only ever constructs
+/// and returns these, never calls into one, so the full shape here is a forward-looking hint for
+/// the real port (which will also need it as a return type from its own narrowing methods), not
+/// a requirement of this particular caller.
+pub trait DBCachedObjectStoreEntrySubSet: Send + Sync {
+    fn first(&self) -> crate::util::database::db_cached_object_store_entry_set::StoreEntry;
+    fn last(&self) -> crate::util::database::db_cached_object_store_entry_set::StoreEntry;
+    fn size(&self) -> usize;
+    fn is_empty(&self) -> bool;
+    fn contains(&self, o: &crate::util::database::db_cached_object_store_entry_set::StoreEntry) -> bool;
+    fn to_vec(&self) -> Vec<crate::util::database::db_cached_object_store_entry_set::StoreEntry>;
+    fn remove(&mut self, o: &crate::util::database::db_cached_object_store_entry_set::StoreEntry) -> bool;
+    fn contains_all(&self, c: &[crate::util::database::db_cached_object_store_entry_set::StoreEntry]) -> bool;
+    fn retain_all(&mut self, c: &[crate::util::database::db_cached_object_store_entry_set::StoreEntry]) -> bool;
+    fn remove_all(&mut self, c: &[crate::util::database::db_cached_object_store_entry_set::StoreEntry]) -> bool;
+    fn clear(&mut self);
+    fn lower(
+        &self,
+        e: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+    ) -> Option<crate::util::database::db_cached_object_store_entry_set::StoreEntry>;
+    fn floor(
+        &self,
+        e: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+    ) -> Option<crate::util::database::db_cached_object_store_entry_set::StoreEntry>;
+    fn ceiling(
+        &self,
+        e: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+    ) -> Option<crate::util::database::db_cached_object_store_entry_set::StoreEntry>;
+    fn higher(
+        &self,
+        e: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+    ) -> Option<crate::util::database::db_cached_object_store_entry_set::StoreEntry>;
+    fn iter(
+        &self,
+    ) -> Box<
+        dyn super::database::RemovableIterator<
+                Item = crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+            > + '_,
+    >;
+    fn descending_set(&self) -> Box<dyn DBCachedObjectStoreEntrySubSet>;
+    fn descending_iter(
+        &self,
+    ) -> Box<
+        dyn super::database::RemovableIterator<
+                Item = crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+            > + '_,
+    >;
+    fn sub_set(
+        &self,
+        from_element: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+        from_inclusive: bool,
+        to_element: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+        to_inclusive: bool,
+    ) -> Box<dyn DBCachedObjectStoreEntrySubSet>;
+    fn head_set(
+        &self,
+        to_element: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+        inclusive: bool,
+    ) -> Box<dyn DBCachedObjectStoreEntrySubSet>;
+    fn tail_set(
+        &self,
+        from_element: &crate::util::database::db_cached_object_store_entry_set::StoreEntry,
+        inclusive: bool,
+    ) -> Box<dyn DBCachedObjectStoreEntrySubSet>;
+}
