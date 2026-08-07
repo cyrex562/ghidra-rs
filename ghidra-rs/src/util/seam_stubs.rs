@@ -585,3 +585,12 @@ pub trait DBCachedObjectStoreSubMap: Send + Sync {}
 /// itself, so this is a marker trait until a consumer that actually calls into it needs the real
 /// `Collection<T>` surface.
 pub trait DBCachedObjectStoreValueCollection: Send + Sync {}
+
+/// Placeholder for `ghidra.util.database.DBCachedObjectStore`, needed by
+/// [`crate::util::database::db_annotated_object_factory::DBAnnotatedObjectFactory`].
+///
+/// `DBAnnotatedObjectFactory.create` only ever receives the store to hand it along to the
+/// object being constructed; the factory interface itself never calls a method on it, so this
+/// is a marker trait until the real cached-object store (with `create`, index lookups, locking,
+/// etc.) is ported.
+pub trait DBCachedObjectStore<T: DBAnnotatedObject>: Send + Sync {}
