@@ -22,4 +22,5 @@ pub mod seam_stubs;
 pub mod stl;
 pub mod test;
 pub mod timer;
+pub mod ulong_span;
 pub mod unique;
