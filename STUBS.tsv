@@ -60,7 +60,6 @@ ts	stub_class	referenced_by
 2026-07-07T05:00:00Z	TraceAddressPropertyManager	Trace
 2026-07-07T05:00:00Z	TraceBookmarkManager	Trace
 2026-07-07T05:00:00Z	TraceBreakpointManager	Trace
-2026-07-07T05:00:00Z	TraceCodeManager	Trace
 2026-07-07T05:00:00Z	TraceBasedDataTypeManager	Trace
 2026-07-07T05:00:00Z	TraceEquateManager	Trace
 2026-07-07T05:00:00Z	TracePlatformManager	Trace
@@ -429,3 +428,4 @@ ts	stub_class	referenced_by
 2026-08-06T05:50:59.453305+00:00	TracePlatform	TraceCodeUnit
 2026-08-06T05:50:59.453326+00:00	TraceThread	TraceCodeUnit
 2026-08-06T06:24:05.130000+00:00	TracePlatformManager	TraceBaseCodeUnitsView
+2026-08-06T06:30:00.000000+00:00	TraceStackFrame	TraceCodeManager

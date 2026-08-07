@@ -1,5 +1,6 @@
 pub mod trace_base_code_units_view;
 pub mod trace_base_defined_units_view;
+pub mod trace_code_manager;
 pub mod trace_code_operations;
 pub mod trace_code_space;
 pub mod trace_code_unit;
@@ -14,6 +15,7 @@ pub mod trace_undefined_data_view;
 
 pub use trace_base_code_units_view::TraceBaseCodeUnitsView;
 pub use trace_base_defined_units_view::TraceBaseDefinedUnitsView;
+pub use trace_code_manager::TraceCodeManager;
 pub use trace_code_operations::TraceCodeOperations;
 pub use trace_code_space::TraceCodeSpace;
 pub use trace_code_unit::TraceCodeUnit;

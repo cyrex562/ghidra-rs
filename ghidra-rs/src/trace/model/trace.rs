@@ -1,11 +1,12 @@
 use crate::program::model::address::AddressFactory;
 use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
 use crate::program::model::lang::{CompilerSpec, Language};
+use crate::trace::model::listing::TraceCodeManager;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
-    TraceBreakpointManager, TraceCodeManager, TraceEquateManager, TraceMemoryManager,
+    TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
     TraceModuleManager, TraceObjectManager, TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
     TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager, TraceTimeManager,
@@ -183,7 +184,71 @@ mod tests {
     struct MockBreakpointManager;
     impl TraceBreakpointManager for MockBreakpointManager {}
     struct MockCodeManager;
-    impl TraceCodeManager for MockCodeManager {}
+    impl crate::trace::model::listing::TraceCodeOperations for MockCodeManager {
+        fn code_units(&self) -> Box<dyn crate::trace::model::listing::TraceCodeUnitsView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn instructions(&self) -> Box<dyn crate::trace::model::listing::TraceInstructionsView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn data(&self) -> Box<dyn crate::trace::model::listing::TraceDataView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn defined_data(&self) -> Box<dyn crate::trace::model::listing::TraceDefinedDataView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn undefined_data(&self) -> Box<dyn crate::trace::model::listing::TraceUndefinedDataView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn defined_units(&self) -> Box<dyn crate::trace::model::listing::TraceDefinedUnitsView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceCodeManager for MockCodeManager {
+        fn get_code_space(
+            &self,
+            _space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_register_space(
+            &self,
+            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_register_space_for_frame_level(
+            &self,
+            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _frame_level: i32,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_register_space_for_stack_frame(
+            &self,
+            _frame: &dyn crate::trace::seam_stubs::TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_added(
+            &self,
+            _from: i64,
+            _to: i64,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_code_removed(
+            &self,
+            _from: i64,
+            _to: i64,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockEquateManager;
     impl TraceEquateManager for MockEquateManager {}
     struct MockPlatformManager;
