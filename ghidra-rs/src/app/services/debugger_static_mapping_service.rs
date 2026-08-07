@@ -36,10 +36,11 @@
 //!
 //! `TraceLocation`, `TraceConflictedMappingException`, `MapEntry`, `ModuleMapEntry`,
 //! `SectionMapEntry`, `RegionMapEntry`, `ModuleMapProposal`, `SectionMapProposal`,
-//! `RegionMapProposal`, `TraceModule`, and `TraceSection` are not yet ported, so they are
-//! represented by placeholder traits in [`crate::app::seam_stubs`]. See `STUBS.tsv` for
-//! provenance. `TraceMemoryRegion` has a real port at
-//! [`crate::trace::model::memory::trace_memory_region::TraceMemoryRegion`].
+//! `RegionMapProposal`, and `TraceModule` are not yet ported, so they are represented by
+//! placeholder traits in [`crate::app::seam_stubs`]. See `STUBS.tsv` for provenance.
+//! `TraceMemoryRegion` and `TraceSection` have real ports at
+//! [`crate::trace::model::memory::trace_memory_region::TraceMemoryRegion`] and
+//! [`crate::trace::model::modules::trace_section::TraceSection`], respectively.
 
 use std::future::Future;
 use std::pin::Pin;
@@ -47,8 +48,9 @@ use std::pin::Pin;
 use crate::app::seam_stubs::{
     DebuggerAddressTranslator, MapEntry, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
     RegionMapProposal, SectionMapEntry, SectionMapProposal, TraceConflictedMappingException,
-    TraceLocation, TraceModule, TraceSection,
+    TraceLocation, TraceModule,
 };
+use crate::trace::model::modules::trace_section::TraceSection;
 use crate::debug::api::modules::DebuggerStaticMappingChangeListener;
 use crate::framework::model::DomainFile;
 use crate::program::model::address::{AddressSetView, AddressSpace};
@@ -434,7 +436,58 @@ mod tests {
     impl TraceModule for MockTraceModule {}
 
     struct MockTraceSection;
-    impl TraceSection for MockTraceSection {}
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockTraceSection {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl crate::trace::seam_stubs::TraceObjectInterface for MockTraceSection {}
+    impl TraceSection for MockTraceSection {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_module(&self) -> Box<dyn crate::trace::seam_stubs::TraceModule> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_path(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_name_at(
+            &mut self,
+            _snap: i64,
+            _name: &str,
+        ) -> Result<(), crate::util::exception::DuplicateNameException> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_range(
+            &mut self,
+            _lifespan: &dyn Lifespan,
+            _range: crate::program::model::address::AddressRange,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_range(&self, _snap: i64) -> Option<crate::program::model::address::AddressRange> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn delete(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn remove(&mut self, _snap: i64) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_valid(&self, _snap: i64) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockTraceMemoryRegion;
     impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockTraceMemoryRegion {
