@@ -8,6 +8,7 @@ pub mod trace_defined_data_view;
 pub mod trace_defined_units_view;
 pub mod trace_instruction;
 pub mod trace_instructions_view;
+pub mod trace_undefined_data_view;
 
 pub use trace_base_code_units_view::TraceBaseCodeUnitsView;
 pub use trace_base_defined_units_view::TraceBaseDefinedUnitsView;
@@ -19,3 +20,4 @@ pub use trace_defined_data_view::TraceDefinedDataView;
 pub use trace_defined_units_view::TraceDefinedUnitsView;
 pub use trace_instruction::TraceInstruction;
 pub use trace_instructions_view::TraceInstructionsView;
+pub use trace_undefined_data_view::TraceUndefinedDataView;
