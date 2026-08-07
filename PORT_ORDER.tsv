@@ -54,7 +54,7 @@ DONE	trait	39	10	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	38	7	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ImmutableValueBox.java
 DONE	trait	38	7	26	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/ValueShape.java
 DONE	trait	35	5	45	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectValueRStarTree.java
-TODO	trait	34	8	17	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectValueData.java
+DONE	trait	34	8	17	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectValueData.java
 TODO	trait	35	9	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceTogglable.java
 TODO	trait	34	19	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointSpec.java
 TODO	trait	35	10	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceExecutionStateful.java
