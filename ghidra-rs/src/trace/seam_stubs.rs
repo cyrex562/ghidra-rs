@@ -339,6 +339,20 @@ pub trait DBTraceObjectManager: Send + Sync {}
 /// opaquely (as `getWrapper`'s return); no members are needed yet.
 pub trait DBTraceObjectValue: Send + Sync {}
 
+/// Placeholder for `ghidra.trace.database.target.DBTraceObjectValueData`, referenced by
+/// [`DBTraceObjectValueRStarTree`](crate::trace::database::target::db_trace_object_value_r_star_tree::DBTraceObjectValueRStarTree)
+/// before the real port is available. That trait's `DBTraceObjectValueMap::get_address_set_view`
+/// only ever passes this type around opaquely (as the predicate's parameter); no members are
+/// needed yet.
+pub trait DBTraceObjectValueData: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.database.target.TraceObjectValueQuery`, referenced by
+/// [`DBTraceObjectValueRStarTree`](crate::trace::database::target::db_trace_object_value_r_star_tree::DBTraceObjectValueRStarTree)
+/// before the real port is available. That trait's `DBTraceObjectValueMap::reduce` only ever
+/// passes this type around opaquely (as the query to combine with any existing constraint); no
+/// members are needed yet.
+pub trait TraceObjectValueQuery: Send + Sync {}
+
 /// Placeholder for `ghidra.trace.util.TraceChangeRecord`, referenced by
 /// [`TraceChangeManager`](crate::trace::util::trace_change_manager::TraceChangeManager) before
 /// the real port is available. The Java interface only ever receives this type as an opaque,
