@@ -4,7 +4,8 @@ use thiserror::Error;
 
 use crate::framework::db::buffers::ManagedBufferFileHandle;
 use crate::framework::remote::{RepositoryChangeEvent, User};
-use crate::framework::seam_stubs::{CheckoutType, ItemCheckoutStatus, RepositoryItem};
+use crate::framework::seam_stubs::{ItemCheckoutStatus, RepositoryItem};
+use crate::framework::store::CheckoutType;
 use crate::framework::store::ItemVersion;
 use crate::util::exception::InvalidNameException;
 use crate::util::system_utilities::SystemUtilities;

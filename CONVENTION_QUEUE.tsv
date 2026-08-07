@@ -142,7 +142,7 @@ TODO	9	23	0	HighFunction	graph?	evidence	only 3 mock implementer(s) and no real 
 SUGGEST-ENUM	9	23	1208	ParameterDefinition	graph?	suggest	small closed set: 2 Java subtypes
 TODO	9	18	0	RecursiveDescentSolver	graph?	evidence	only 4 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
 TODO	9	13	0	PatchEncoder	graph?	evidence	only 2 mock implementer(s) and no real one -- the implementations are not ported yet; revisit then
-STRUCT	9	11	0	CheckoutType	graph?	promoted	Java declares CheckoutType as a enum and nothing extends it -- there is no hierarchy to dispatch over, so a trait is the wrong shape (3 Rust impls notwithstanding)
+DONE	9	11	0	CheckoutType	graph?	promoted	converted: Java enum, ported as a trait + a duplicate stub enum; now one enum in framework/store/checkout_type.rs
 TODO	9	10	0	PcodeInjectLibrary	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	9	10	0	RangeList	graph?	evidence	seam_stubs.rs placeholder -- revisit after the real port lands
 TODO	8	34	0	PatternEquationOps	graph?	evidence	no Java type named PatternEquationOps -- an abstraction the port invented, so Java says nothing about its shape

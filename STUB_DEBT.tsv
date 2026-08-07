@@ -8,7 +8,6 @@ TODO	unique	16	1	CommentHistory	DONE	Framework/SoftwareModeling:ghidra/program/m
 TODO	unique	14	1	RefType	DONE	Framework/SoftwareModeling:ghidra/program/model/symbol/RefType.java	src/program/model/symbol/ref_type.rs	src/program/seam_stubs.rs
 TODO	unique	14	1	Reference	DONE	Framework/SoftwareModeling:ghidra/program/model/symbol/Reference.java	src/program/model/symbol/reference.rs	src/program/seam_stubs.rs
 TODO	unique	10	1	HighSymbol	DONE	Framework/SoftwareModeling:ghidra/program/model/pcode/HighSymbol.java	src/program/model/pcode/high_symbol.rs	src/program/seam_stubs.rs
-TODO	unique	8	1	CheckoutType	DONE	Framework/FileSystem:ghidra/framework/store/CheckoutType.java	src/framework/store/checkout_type.rs	src/framework/seam_stubs.rs
 TODO	unique	8	1	ParserContext	DONE	Framework/SoftwareModeling:ghidra/program/model/lang/ParserContext.java	src/program/model/lang/parser_context.rs	src/program/seam_stubs.rs
 TODO	unique	6	1	GenericCallingConvention	DONE	Framework/SoftwareModeling:ghidra/program/model/data/GenericCallingConvention.java	src/program/model/data/generic_calling_convention.rs	src/program/seam_stubs.rs
 TODO	unique	5	1	Dimension	DONE	Debug/ProposedUtils:ghidra/util/database/spatial/hyper/Dimension.java	src/graph/visualization/jgt_tidier_tree_layout_algorithm.rs	src/util/seam_stubs.rs

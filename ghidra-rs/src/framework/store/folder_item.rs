@@ -2,7 +2,7 @@ use std::io;
 use std::path::Path;
 
 use crate::framework::seam_stubs::ItemCheckoutStatus;
-use crate::framework::store::checkout_type::CheckoutType;
+use crate::framework::store::CheckoutType;
 use crate::framework::store::local::OutputItemError;
 use crate::framework::store::ItemVersion;
 use crate::util::task::TaskMonitor;
@@ -185,7 +185,7 @@ pub trait FolderItem {
     /// Returns an `io::Error` if an IO error occurs or this item is not versioned.
     fn checkout(
         &mut self,
-        checkout_type: &dyn CheckoutType,
+        checkout_type: CheckoutType,
         user: &str,
         project_path: &str,
     ) -> io::Result<Option<Box<dyn ItemCheckoutStatus>>>;
@@ -415,7 +415,7 @@ mod tests {
 
         fn checkout(
             &mut self,
-            _checkout_type: &dyn CheckoutType,
+            _checkout_type: CheckoutType,
             _user: &str,
             _project_path: &str,
         ) -> io::Result<Option<Box<dyn ItemCheckoutStatus>>> {

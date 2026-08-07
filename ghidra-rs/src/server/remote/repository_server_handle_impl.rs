@@ -58,7 +58,8 @@ mod tests {
     use crate::framework::remote::{RepositoryHandle, User};
     use crate::framework::db::buffers::ManagedBufferFileHandle;
     use crate::framework::remote::RepositoryChangeEvent;
-    use crate::framework::seam_stubs::{CheckoutType, ItemCheckoutStatus, RepositoryItem};
+    use crate::framework::seam_stubs::{ItemCheckoutStatus, RepositoryItem};
+use crate::framework::store::CheckoutType;
     use crate::framework::store::ItemVersion;
     use crate::server::seam_stubs::{RepositoryLike, RepositoryManagerLike, UserManagerLike};
     use std::io;

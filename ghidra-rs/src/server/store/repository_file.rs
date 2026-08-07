@@ -160,7 +160,7 @@ pub trait RepositoryFile: Send + Sync {
     /// Returns an `io::Error` if the user is denied write access or an IO error occurs.
     fn checkout(
         &self,
-        checkout_type: &dyn CheckoutType,
+        checkout_type: CheckoutType,
         user: &str,
         project_path: &str,
     ) -> io::Result<Option<Box<dyn ItemCheckoutStatus>>>;
@@ -219,7 +219,7 @@ pub trait RepositoryFile: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::framework::store::{get_checkout_type, Exclusive};
+    use crate::framework::store::{get_checkout_type, CheckoutType};
     use std::sync::{Arc, Mutex};
 
     struct MockRepositoryFolder {
@@ -374,7 +374,7 @@ mod tests {
 
         fn checkout(
             &self,
-            _checkout_type: &dyn CheckoutType,
+            _checkout_type: CheckoutType,
             _user: &str,
             _project_path: &str,
         ) -> io::Result<Option<Box<dyn ItemCheckoutStatus>>> {
@@ -506,7 +506,7 @@ mod tests {
     #[test]
     fn test_checkout_type_placeholder_roundtrip() {
         // Sanity check that the already-ported `CheckoutType` trait plugs into `checkout()`.
-        let checkout_type = get_checkout_type(Exclusive.get_id()).unwrap();
+        let checkout_type = get_checkout_type(CheckoutType::Exclusive.get_id()).unwrap();
         let root = Arc::new(MockRepositoryFolder {
             pathname: "/".to_string(),
             deleted_files: Mutex::new(vec![]),
@@ -519,7 +519,7 @@ mod tests {
             is_admin: false,
         });
         assert!(file
-            .checkout(checkout_type.as_ref(), "alice", "/proj/MyProgram")
+            .checkout(checkout_type, "alice", "/proj/MyProgram")
             .unwrap()
             .is_none());
     }

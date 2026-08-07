@@ -101,6 +101,63 @@ unapproved stubs/placeholders/`TODO`s; revert or overwrite uncommitted user chan
 - Remaining high-level areas include ProgramDB, disassembler, decompiler, docking UI, and
   plugin loaders — most are high-dependency and surface later under `--port-order`.
 
+## Diagnosing the Port (read before concluding anything about a type's shape)
+
+The port is roughly 22% complete. **Any measurement taken from the Rust tree therefore measures
+how far the port has got, not how the code should be shaped.** Every analysis tool written for
+this repo has had to learn that the hard way, four times in one week:
+
+- A proposer counted Rust implementers and recommended "small closed set -> enum" for `CodeUnit`
+  (3 impls, because `Instruction` and `Data` are unported), for `Lock` (an extension point), and
+  for `PrototypeModel` (one implementer literally named `Foo`).
+- A trait with **no** implementers looked like a trait nobody wants; 198 of those were
+  `seam_stubs.rs` placeholders waiting for their port.
+- A trait whose only implementers were `Mock*`/`Stub*` looked collapsible; it meant the real
+  implementers are still queued (`Namespace` had 51 mocks and zero real ones).
+- A trait standing in for a concrete class looked like a shape defect; `TokenPattern`'s own doc
+  comment says it is a seam "so that callers do not need to depend on its full implementation,
+  which is not yet ported".
+
+**The rule: judge shape from `orig_src` and `PORT_MANIFEST.tsv`, not from the Rust tree.** Before
+concluding that a ported type is wrong, check:
+
+1. **Is the Java class still TODO?** Then a trait standing in for it is a deliberate seam. The
+   work is to port the class, not to "fix" the trait.
+2. **Are the only implementers test doubles?** Then you are looking at an unfinished port.
+3. **Is it declared in a `seam_stubs.rs`?** It is a placeholder by construction.
+4. **What does Java actually declare it as?** `class`/`enum` with nothing extending it means a
+   Rust trait is the wrong shape. `interface` with no in-tree implementers means you cannot tell
+   -- it may be an extension point, or its implementers may be unported.
+5. **Does the absence of a Rust type mean anything?** Usually not: constants-only Java classes
+   (`SquashConstants`, `MachHeaderFlags`) correctly port to modules of `const` items with no type
+   of that name at all.
+
+### Names are not identities
+
+The other recurring failure is matching on a *name* rather than on what the name refers to.
+Three flavours have bitten, all producing confident and wrong conclusions:
+
+- **Bare-name pairing.** `PatternExpression` is two unrelated Java classes -- the sleigh runtime
+  expression and the pcodeCPort compiler's AST node. Pairing by basename reported a
+  design conflict that does not exist.
+- **JDK collisions.** The Rust `Lock` trait models `java.util.concurrent.locks.Lock`; `orig_src`
+  holds an unrelated `ghidra.util.Lock` class. A scan of `orig_src` alone cannot see this.
+- **Method-name sweeps.** `get_data_type_manager` is declared by several unrelated traits, and a
+  regex for `Box<dyn [\w:]*DataTypeManager>` also matches `StandAloneDataTypeManager`. Both
+  rewrote the wrong code, and both compiled.
+
+Scope any rewrite to the *declaration* it belongs to (brace-matched `impl Trait for Type`
+blocks), never to a name pattern across the crate. Wide regexes on this codebase have been wrong
+every time they have been tried.
+
+### Compiling is not evidence
+
+Three behavioural breaks this week compiled cleanly and were caught only by running tests: a
+`while it.has_next() { push(it.next()) }` rewrite that consumed two items per iteration and
+dropped every other address; `unimplemented!()` bodies inserted for newly-required trait methods
+that were in fact exercised; and a self-deadlock that no compile-time check could see. Run the
+suite, and read what the failures say before assuming they are unrelated.
+
 ## Coding Standards
 
 - Write idiomatic Rust using standard naming, ownership, error handling, and safety conventions.

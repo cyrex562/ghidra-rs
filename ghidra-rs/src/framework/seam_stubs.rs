@@ -807,21 +807,6 @@ pub trait GhidraUrlHandlerLike {
     fn is_supported_url(&self, url: &str) -> bool;
 }
 
-/// Placeholder for `ghidra.framework.store.CheckoutType`, referenced by
-/// [`LocalFolderItem`](crate::framework::store::local::LocalFolderItem) before the real (Java
-/// `enum`) type is ported. Mirrors the three Java enum constants since call sites branch on which
-/// checkout type was requested.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CheckoutType {
-    /// Checkout is a normal non-exclusive checkout.
-    Normal,
-    /// Persistent exclusive checkout which ensures no other checkout can occur while it persists.
-    Exclusive,
-    /// Similar to `Exclusive`, but only persists while the associated client connection is alive;
-    /// only permitted for remote versioned file systems which support its use.
-    Transient,
-}
-
 /// Placeholder for `ghidra.framework.data.ProjectLock`, referenced by
 /// [`DefaultProjectData`](crate::framework::data::DefaultProjectData) before the real class is
 /// ported. `DefaultProjectData::is_locked` only ever constructs a fresh lock for a given

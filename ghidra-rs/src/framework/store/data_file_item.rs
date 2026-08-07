@@ -143,7 +143,7 @@ mod tests {
 
         fn checkout(
             &mut self,
-            _checkout_type: &dyn crate::framework::store::checkout_type::CheckoutType,
+            _checkout_type: crate::framework::store::CheckoutType,
             _user: &str,
             _project_path: &str,
         ) -> io::Result<Option<Box<dyn crate::framework::seam_stubs::ItemCheckoutStatus>>> {

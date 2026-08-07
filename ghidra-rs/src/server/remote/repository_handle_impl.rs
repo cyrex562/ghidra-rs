@@ -69,7 +69,8 @@ mod tests {
     use crate::framework::db::buffers::ManagedBufferFileHandle;
     use crate::framework::remote::repository_handle::RepositoryNameError;
     use crate::framework::remote::{Permission, User};
-    use crate::framework::seam_stubs::{CheckoutType, ItemCheckoutStatus, RepositoryItem};
+    use crate::framework::seam_stubs::{ItemCheckoutStatus, RepositoryItem};
+use crate::framework::store::CheckoutType;
     use crate::framework::store::ItemVersion;
     use std::cell::RefCell;
     use std::io;

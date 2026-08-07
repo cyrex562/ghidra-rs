@@ -2,7 +2,8 @@ use std::io;
 
 use thiserror::Error;
 
-use crate::framework::seam_stubs::{CheckoutType, ItemCheckoutStatus};
+use crate::framework::seam_stubs::{ItemCheckoutStatus};
+use crate::framework::store::CheckoutType;
 use crate::framework::store::{FolderItem, ItemVersion};
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -222,7 +223,7 @@ pub trait LocalFolderItem: FolderItem {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::framework::store::checkout_type::CheckoutType as RealCheckoutType;
+    use crate::framework::store::CheckoutType as CheckoutType;
     use crate::framework::store::local::OutputItemError;
     use std::cell::Cell;
     use std::path::Path;
@@ -359,7 +360,7 @@ mod tests {
 
         fn checkout(
             &mut self,
-            _checkout_type: &dyn RealCheckoutType,
+            _checkout_type: CheckoutType,
             _user: &str,
             _project_path: &str,
         ) -> io::Result<Option<Box<dyn ItemCheckoutStatus>>> {

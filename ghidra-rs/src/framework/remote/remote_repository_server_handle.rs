@@ -181,7 +181,7 @@ mod tests {
             &self,
             _parent_path: &str,
             _item_name: &str,
-            _checkout_type: crate::framework::seam_stubs::CheckoutType,
+            _checkout_type: crate::framework::store::CheckoutType,
             _project_path: &str,
         ) -> io::Result<Box<dyn crate::framework::seam_stubs::ItemCheckoutStatus>> {
             Err(io::Error::other("checkout not supported by mock"))

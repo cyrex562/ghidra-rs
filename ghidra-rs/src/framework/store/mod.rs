@@ -17,7 +17,7 @@ pub mod text_data_item;
 pub mod unknown_folder_item;
 pub mod version;
 
-pub use checkout_type::{get_checkout_type, CheckoutType, Exclusive, Normal, Transient};
+pub use checkout_type::{get_checkout_type, CheckoutType};
 pub use data_file_handle::DataFileHandle;
 pub use data_file_item::DataFileItem;
 pub use database_item::DatabaseItem;
