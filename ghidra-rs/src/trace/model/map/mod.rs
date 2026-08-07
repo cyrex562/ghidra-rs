@@ -1,5 +1,7 @@
+pub mod trace_address_snap_range_property_map;
 pub mod trace_address_snap_range_property_map_operations;
 pub mod trace_address_snap_range_property_map_space;
 
+pub use trace_address_snap_range_property_map::TraceAddressSnapRangePropertyMap;
 pub use trace_address_snap_range_property_map_operations::TraceAddressSnapRangePropertyMapOperations;
 pub use trace_address_snap_range_property_map_space::TraceAddressSnapRangePropertyMapSpace;
