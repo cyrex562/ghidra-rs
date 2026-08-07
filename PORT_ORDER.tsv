@@ -6,7 +6,7 @@ DONE	trait	29	22	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	30	27	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceInstruction.java
 DONE	trait	29	23	45	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceInstructionsView.java
 DONE	trait	29	22	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceUndefinedDataView.java
-TODO	trait	28	25	6	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceCodeOperations.java
+DONE	trait	28	25	6	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceCodeOperations.java
 TODO	trait	28	32	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceCodeSpace.java
 TODO	trait	27	27	75	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/listing/TraceCodeManager.java
 TODO	trait	26	69	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/memory/TraceMemorySpace.java
