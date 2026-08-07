@@ -23,10 +23,6 @@ pub trait TraceBookmarkManager {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceBreakpointManager {}
 
-/// Placeholder for `ghidra.trace.model.listing.TraceCodeManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceCodeManager {}
-
 /// Placeholder for `ghidra.trace.model.data.TraceBasedDataTypeManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Mirrors the
 /// Java interface's `extends ProgramBasedDataTypeManager` (itself a `DataTypeManager`) so that
@@ -259,3 +255,8 @@ pub trait TracePlatform: Send + Sync {}
 /// [`TraceCodeUnit`](crate::trace::model::listing::trace_code_unit::TraceCodeUnit) before the real
 /// port is available. No members are parsed from the Java source yet.
 pub trait TraceThread: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.model.stack.TraceStackFrame`, referenced by
+/// [`TraceCodeManager`](crate::trace::model::listing::trace_code_manager::TraceCodeManager)
+/// before the real port is available. No members are parsed from the Java source yet.
+pub trait TraceStackFrame: Send + Sync {}

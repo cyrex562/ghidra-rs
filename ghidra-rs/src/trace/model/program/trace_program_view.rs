@@ -91,7 +91,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_code_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceCodeManager> {
+        fn get_code_manager(&self) -> Box<dyn crate::trace::model::listing::TraceCodeManager> {
             unimplemented!("not exercised by this smoke test")
         }
 
