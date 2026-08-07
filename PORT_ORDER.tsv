@@ -20,7 +20,7 @@ DONE	trait	33	19	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	34	15	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModuleOperations.java
 DONE	trait	33	18	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModuleManager.java
 DONE	trait	33	13	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/modules/TraceModuleSpace.java
-TODO	trait	34	32	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceNamespaceSymbol.java
+DONE	trait	34	32	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceNamespaceSymbol.java
 TODO	trait	33	24	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbol.java
 TODO	trait	34	49	0	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedIterator.java
 TODO	trait	36	11	1	generic	Ghidra/Framework/Emulation/src/main/java/generic/ULongSpan.java
