@@ -146,7 +146,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_object_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectManager> {
+        fn get_object_manager(&self) -> Box<dyn crate::trace::model::target::trace_object_manager::TraceObjectManager> {
             unimplemented!()
         }
 

@@ -183,7 +183,7 @@ mod tests {
         fn get_module_manager(&self) -> Box<dyn crate::trace::model::modules::TraceModuleManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_object_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectManager> {
+        fn get_object_manager(&self) -> Box<dyn crate::trace::model::target::trace_object_manager::TraceObjectManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_reference_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceReferenceManager> {

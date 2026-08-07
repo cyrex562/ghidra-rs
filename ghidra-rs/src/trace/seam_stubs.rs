@@ -67,10 +67,6 @@ pub trait TraceMemoryManager {}
 /// members are ported here yet.
 pub trait TraceMemoryOperations: Send + Sync {}
 
-/// Placeholder for `ghidra.trace.model.target.TraceObjectManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceObjectManager {}
-
 /// Placeholder for `ghidra.trace.model.symbol.TraceReferenceManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceReferenceManager {}
@@ -264,6 +260,11 @@ pub trait TraceObject: Send + Sync {
     /// Mirrors `TraceObject.getLife()`.
     fn get_life(&self) -> Box<dyn LifeSet>;
 }
+
+/// Placeholder for `ghidra.trace.model.target.TraceObjectValPath`, referenced by
+/// [`TraceObjectManager`](crate::trace::model::target::trace_object_manager::TraceObjectManager)
+/// before the real port is available. No members are parsed from the Java source yet.
+pub trait TraceObjectValPath: Send + Sync {}
 
 /// Placeholder for the nested enum `ghidra.trace.model.target.TraceObject.ConflictResolution`,
 /// referenced by
