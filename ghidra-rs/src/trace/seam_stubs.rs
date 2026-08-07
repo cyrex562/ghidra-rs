@@ -48,6 +48,13 @@ pub trait TracePlatformManager {
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceMemoryManager {}
 
+/// Placeholder for `ghidra.trace.model.memory.TraceMemoryOperations`, referenced by
+/// [`TraceMemorySpace`](crate::trace::model::memory::trace_memory_space::TraceMemorySpace) before
+/// the real interface is ported. `TraceMemorySpace` only extends this interface as a supertrait
+/// and does not itself call any of its (large) surface of byte/state/register operations, so no
+/// members are ported here yet.
+pub trait TraceMemoryOperations: Send + Sync {}
+
 /// Placeholder for `ghidra.trace.model.modules.TraceModuleManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceModuleManager {}
