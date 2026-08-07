@@ -1,0 +1,3 @@
+pub mod db_trace_address_snap_range_property_map;
+
+pub use db_trace_address_snap_range_property_map::DBTraceAddressSnapRangePropertyMap;
