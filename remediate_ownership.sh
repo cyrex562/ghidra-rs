@@ -43,6 +43,16 @@ MAX_FANIN="${MAX_FANIN:-500}"
 # make real progress on the mechanical 34% (clone/unwrap/get-set density). Set to 0 after
 # Phase 2 to let it work the dyn-dominated rows too.
 MECHANICAL_ONLY="${MECHANICAL_ONLY:-1}"
+# LANE=debt   -- the original: file-by-file idiom smells from OWNERSHIP_DEBT.tsv.
+# LANE=struct -- type-by-type shape fixes from CONVENTION_QUEUE.tsv's STRUCT verdicts: a Java
+#                class/enum that nothing extends, ported as a Rust trait. Worked examples for the
+#                model to follow: CheckoutType (0a56d034), DataTypeManagerOwner (52d2059d).
+LANE="${LANE:-debt}"
+QUEUE="CONVENTION_QUEUE.tsv"
+MANIFEST="PORT_MANIFEST.tsv"
+# Cap how much of the crate one unattended conversion may touch. TokenPattern is 25 files; a
+# 37-file type is a human'"'"'s job.
+STRUCT_MAX_FILES="${STRUCT_MAX_FILES:-20}"
 DYN_BLOCK_THRESHOLD="${DYN_BLOCK_THRESHOLD:-5}"
 DEBT="OWNERSHIP_DEBT.tsv"; DOC="OWNERSHIP_MIGRATION.md"
 INTEGRATION="${INTEGRATION:-integration}"
@@ -77,6 +87,25 @@ open(tsv, "w", encoding="utf-8").write("\n".join(lines))
 sys.exit(0 if hit else 1)
 PY
 }
+# Same field-exact discipline as set_status: verdict is column 1, keyed on the type in column 5.
+set_verdict(){ # $1=type $2=new verdict
+  "$PY" - "$QUEUE" "$1" "$2" <<'PYEOF'
+import sys
+tsv, target, verdict = sys.argv[1], sys.argv[2], sys.argv[3]
+lines = open(tsv, encoding="utf-8").read().split("\n")
+hit = 0
+for i, ln in enumerate(lines):
+    c = ln.split("\t")
+    if len(c) > 6 and c[4] == target and c[0] == "STRUCT":
+        c[0] = verdict
+        c[6] = "promoted"
+        lines[i] = "\t".join(c)
+        hit += 1
+open(tsv, "w", encoding="utf-8").write("\n".join(lines))
+sys.exit(0 if hit else 1)
+PYEOF
+}
+
 git merge --abort >/dev/null 2>&1||true; git rebase --abort >/dev/null 2>&1||true
 # Preserve any uncommitted work before the checkout/reset below discards it.
 . scripts/harness_guard.sh
@@ -103,7 +132,57 @@ for ((i=1;i<=REMEDIATE_MAX;i++)); do
   # rows above MAX_FANIN. Without that filter this harness picks Listing/Function/DataType...
   # on iteration 1 -- precisely the Phase 2 types the header says must not run unattended.
   # The doc's constraint has to live in the code, not only in a comment above it.
-  row=$(awk -F'\t' -v maxfan="$MAX_FANIN" -v mech="$MECHANICAL_ONLY" -v dynmax="$DYN_BLOCK_THRESHOLD" '
+  if [ "$LANE" = "struct" ]; then
+    # Highest-leverage STRUCT verdict still to do, small enough for an unattended run.
+    # col 2 = leverage (distinct files wired to this type), col 5 = type, col 8 = the note that
+    # justifies the verdict. Reading files from col 3 (occurrences) sized the cap wrongly and the
+    # empty reason in the log line is what gave it away.
+    qrow=$(awk -F'\t' -v maxf="$STRUCT_MAX_FILES" '$1=="STRUCT" && ($2+0)<=maxf{print}' "$QUEUE" \
+           | sort -t$'\t' -k2,2 -rn | head -1)
+    if [ -z "$qrow" ]; then
+      held=$(awk -F'\t' -v maxf="$STRUCT_MAX_FILES" '$1=="STRUCT" && ($2+0)>maxf' "$QUEUE" | wc -l)
+      log "no eligible STRUCT rows left in $QUEUE (${held} above STRUCT_MAX_FILES=${STRUCT_MAX_FILES}, left for a human)."
+      break
+    fi
+    class=$(printf '%s' "$qrow" | cut -f5); files=$(printf '%s' "$qrow" | cut -f2)
+    why=$(printf '%s' "$qrow" | cut -f8)
+    hash=$(printf '%s' "$class" | cksum | cut -d' ' -f1); branch="ownership/struct-${class}-${hash}"
+    clog="$LOG_DIR/struct.${class}.${hash}.$(date +%s).log"; jlog="${clog%.log}.json"
+
+    log "struct ${i}/${REMEDIATE_MAX}: $class (${files} files) -- ${why}"
+    git checkout -f "$INTEGRATION" >/dev/null 2>&1
+    git branch -D "$branch" >/dev/null 2>&1 || true; git switch -c "$branch" >/dev/null 2>&1
+
+    prompt="Convert the Rust trait \`${class}\` into a concrete type, per ${DOC}.
+
+Java declares ${class} as a class or enum that NOTHING extends, so there is no hierarchy to
+dispatch over and a Rust trait is the wrong shape. The verdict's own evidence: ${why}
+Find the Java source under orig_src/ and read it before deciding the concrete shape.
+
+Read these two worked examples FIRST -- they are the pattern to follow:
+  ghidra-rs/src/framework/store/checkout_type.rs   (a Java enum that had been ported as a trait
+                                                    plus a duplicate placeholder enum)
+  ghidra-rs/src/app/merge/data_type_manager_owner.rs (importers moved off a placeholder)
+
+Then:
+- Read the Java source to decide the concrete shape: a Java enum becomes a Rust enum with the
+  same constants; a Java class becomes a struct with its fields. Mirror the Java methods as
+  inherent methods, keeping their names and semantics.
+- Replace the trait with that concrete type IN ITS EXISTING MODULE. Do not move the file.
+- If a placeholder of the same name also exists in a seam_stubs.rs, delete it and point every
+  importer at the real type -- two types with one name is the defect being removed here.
+- Update EVERY call site the compiler flags. \`&dyn ${class}\`/\`Box<dyn ${class}>\` parameters
+  usually become the concrete type by value when it is Copy, or by reference when it is not.
+- Keep behaviour identical. Do NOT weaken or delete tests; update them to the new shape, and add
+  one test that a match over the type is exhaustive (that is the property the trait could not
+  give).
+- If the trait turns out to be a SEAM for a class that is not ported yet -- check
+  PORT_MANIFEST.tsv -- then this is not a shape defect at all: STOP and end with
+  PORT_RESULT: PARKED <class> is still TODO in the manifest.
+- Verify with 'cargo build --lib' and 'cargo test --lib ${class}' (do NOT run git).
+Change ONLY what this conversion needs."
+  else
+    row=$(awk -F'\t' -v maxfan="$MAX_FANIN" -v mech="$MECHANICAL_ONLY" -v dynmax="$DYN_BLOCK_THRESHOLD" '
         $1=="TODO" && ($4+0)<=maxfan {
           if (mech=="1") {
             if ($8 ~ /rc_refcell=|arc_mutex=/) next
@@ -151,35 +230,71 @@ enum dispatch for closed hierarchies). Then:
 - Set the row for '${path}' in ${DEBT} from TODO to DONE (col 1).
 Change ONLY what's needed to fix the flagged smell in this file and its call sites."
 
+  fi
+
   timeout "$CLAUDE_TIMEOUT" claude -p "$prompt" --model "$MODEL" --permission-mode acceptEdits \
     --allowedTools "Read,Edit,Write,Bash(cargo build*),Bash(cargo check*)" \
     --output-format json >"$jlog" 2>>"$clog"; rc=$?
   "$PY" -c 'import json,sys;print(json.load(open(sys.argv[1])).get("result",""))' "$jlog" >>"$clog" 2>/dev/null||true
   iserr=$("$PY" -c 'import json,sys;print(1 if json.load(open(sys.argv[1])).get("is_error") else 0)' "$jlog" 2>/dev/null||echo 1)
 
-  status=$(grep -F "$path"$'\t' "$DEBT" | head -1 | cut -f1 | tr -d '[:space:]')
+  if [ "$LANE" = "struct" ]; then
+    # The model does not edit the queue; the harness owns it. Success is "the trait is gone and
+    # a concrete type of that name exists outside seam_stubs".
+    if grep -rqE --include='*.rs' "^\\s*(pub +)?trait +${class}\\b" ghidra-rs/src 2>/dev/null; then
+      status=STILL_A_TRAIT
+    elif grep -rqE --include='*.rs' --exclude='seam_stubs.rs' "^\\s*(pub +)?(struct|enum) +${class}\\b" ghidra-rs/src 2>/dev/null; then
+      status=DONE
+    else
+      status=NO_TYPE
+    fi
+  else
+    status=$(grep -F "$path"$'\t' "$DEBT" | head -1 | cut -f1 | tr -d '[:space:]')
+  fi
   if [ "$rc" -ne 124 ] && { [ "$rc" -ne 0 ] || [ "$iserr" = "1" ]; }; then
     log "API failure on $class -- stopping run (not parking)."; git checkout -f "$INTEGRATION" >/dev/null 2>&1
     git branch -D "$branch" >/dev/null 2>&1||true; break
   fi
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$clog"; then
-    harness_add; git commit -q -m "ownership: remediate ${class} (${path})" || true
+    if [ "$LANE" = "struct" ]; then
+      harness_add; git commit -q -m "ownership(struct): ${class} is a concrete type, not a trait" || true
+    else
+      harness_add; git commit -q -m "ownership: remediate ${class} (${path})" || true
+    fi
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
     pre_merge=$(git rev-parse HEAD)
     if git merge --no-ff "$branch" -m "merge ownership: ${class}" >>"$clog" 2>&1 && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$clog" \
        && run_test_gate "$class" "$clog" "$TEST_ERR_BASE"; then
       git branch -D "$branch" >/dev/null 2>&1||true
+      if [ "$LANE" = "struct" ]; then
+        set_verdict "$class" DONE || log "WARN: could not mark $class DONE in $QUEUE"
+        "$PY" scripts/stub_audit.py --root ghidra-rs/src --manifest "$MANIFEST" --out STUB_DEBT.tsv >/dev/null 2>&1 || true
+        git add "$QUEUE" STUB_DEBT.tsv >/dev/null 2>&1
+        git commit -q -m "ownership(struct): mark $class converted" >/dev/null 2>&1||true
+      fi
       fixed=$((fixed+1)); log "OK ownership: $class merged"
     else
       git merge --abort >/dev/null 2>&1||true; git reset --hard "$pre_merge" >/dev/null 2>&1||true
-      set_status "$path" PARK || log "WARN: could not park row for $path in $DEBT"
-      git add "$DEBT" >/dev/null 2>&1; git commit -q -m "ownership: park $class" >/dev/null 2>&1||true
+      if [ "$LANE" = "struct" ]; then
+        set_verdict "$class" PARK || log "WARN: could not park $class in $QUEUE"
+        git add "$QUEUE" >/dev/null 2>&1
+      else
+        set_status "$path" PARK || log "WARN: could not park row for $path in $DEBT"
+        git add "$DEBT" >/dev/null 2>&1
+      fi
+      git commit -q -m "ownership: park $class" >/dev/null 2>&1||true
       parked=$((parked+1)); log "PARK ownership: $class (post-merge build or test gate failed)"
     fi
   else
     git checkout -f "$INTEGRATION" >/dev/null 2>&1
-    set_status "$path" PARK || log "WARN: could not park row for $path in $DEBT"
-    git add "$DEBT" >/dev/null 2>&1; git commit -q -m "ownership: park $class" >/dev/null 2>&1||true
+    if [ "$LANE" = "struct" ]; then
+      set_verdict "$class" PARK || log "WARN: could not park $class in $QUEUE"
+      git add "$QUEUE" >/dev/null 2>&1
+    else
+      set_status "$path" PARK || log "WARN: could not park row for $path in $DEBT"
+      git add "$DEBT" >/dev/null 2>&1
+    fi
+    git commit -q -m "ownership: park $class" >/dev/null 2>&1||true
     parked=$((parked+1)); log "PARK ownership: $class (status=$status / build red). log: $clog"
   fi
 done
@@ -188,6 +303,6 @@ git checkout -f "$INTEGRATION" >/dev/null 2>&1 || true
 if [ "$PUSH" = "1" ] && [ "$fixed" -gt 0 ]; then
   git push "$PUSH_REMOTE" "$INTEGRATION" >/dev/null 2>&1 && log "pushed $PUSH_REMOTE/$INTEGRATION" || log "push FAILED (non-fatal; check SSH under cron)"
 fi
-line="[$(date '+%Y-%m-%d %H:%M')] ownership remediation run: +${fixed} fixed, ${parked} parked"
+line="[$(date '+%Y-%m-%d %H:%M')] ownership ${LANE} run: +${fixed} fixed, ${parked} parked"
 echo "$line" | tee -a "$LOG_DIR/port-summary.log"
 command -v notify-send >/dev/null 2>&1 && notify-send "ghidra-rs ownership" "$line" 2>/dev/null || true
