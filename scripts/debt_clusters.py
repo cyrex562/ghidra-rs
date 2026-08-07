@@ -28,9 +28,16 @@ Verdicts (col 1 of CONVENTION_QUEUE.tsv), per OWNERSHIP_MIGRATION.md's conventio
   PARK    genuinely undecidable for now; keep it off the queue but don't keep re-asking
 
 SUGGEST-<VERDICT> is a PROPOSAL, not a decision: --suggest writes them from structural
-evidence (is it declared a trait? how many implementers?), and nothing downstream acts on
-them -- pattern_audit.py honours a bare ACCEPT only, never SUGGEST-ACCEPT. Review, then
-promote in bulk with --promote.
+evidence, and nothing downstream acts on them -- pattern_audit.py honours a bare ACCEPT only,
+never SUGGEST-ACCEPT. Review, then promote in bulk with --promote.
+
+Hierarchies are sized from the JAVA sources, not from the port. Counting Rust implementers
+measures how far the port has got: `CodeUnit` showed three non-mock impls only because
+Instruction and Data are unported, and the proposer recommended "small closed set -> enum" off
+that number. Reading `extends`/`implements` out of orig_src gives the real shape, and one
+reading is worth calling out -- a count of ZERO means nothing in Java extends the type, so it is
+a concrete class and a Rust trait is simply the wrong shape. 14 types are in that state,
+`TokenPattern` (25 files) and `Lock` (19) among them.
 
 Usage:
   python scripts/debt_clusters.py --out CONVENTION_QUEUE.tsv
@@ -125,6 +132,46 @@ RE_IMPL_FOR = re.compile(
 MOCK_PREFIXES = ("Mock", "Stub", "Fake", "Dummy", "Test", "Minimal")
 
 
+RE_EXTENDS = re.compile(r"\b(?:class|interface)\s+\w+(?:<[^>]*>)?\s+extends\s+([\w.<>, ]+?)\s*(?:implements|\{)")
+RE_IMPLEMENTS = re.compile(r"\bimplements\s+([\w.<>, ]+?)\s*\{")
+
+
+def java_subtype_counts(orig_src="orig_src"):
+    """Java class/interface name -> how many Java types extend or implement it.
+
+    This is the signal the proposer should have been using all along. Counting RUST implementers
+    measures how far the port has got, not the shape of the hierarchy: `CodeUnit` shows 3
+    non-mock impls today only because Instruction and Data are not ported, and `Settings` shows
+    8 mostly-empty ones. Recommending "small closed set -> enum" off those numbers is
+    recommending against the source.
+
+    Two readings matter especially:
+      * a count of ZERO means the Java type is a concrete class or a leaf interface -- there is
+        no hierarchy to dispatch over at all, so a trait in Rust is simply wrong (`Lock` and
+        `TokenPattern` are both this);
+      * a large count means an enum was never viable, whatever the port currently shows.
+    """
+    counts = defaultdict(int)
+    if not os.path.isdir(orig_src):
+        return counts
+    for dirpath, _dirs, files in os.walk(orig_src):
+        for fn in files:
+            if not fn.endswith(".java"):
+                continue
+            try:
+                with open(os.path.join(dirpath, fn), encoding="utf-8", errors="ignore") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            for rx in (RE_EXTENDS, RE_IMPLEMENTS):
+                for group in rx.findall(text):
+                    for name in group.split(","):
+                        name = name.strip().split("<")[0].split(".")[-1]
+                        if name:
+                            counts[name] += 1
+    return counts
+
+
 def load_unported_classes(manifest):
     """Java class names still TODO in PORT_MANIFEST.tsv. A trait with no real implementers is
     NOT evidence that it should be a concrete type when its Java implementers simply haven't
@@ -174,7 +221,7 @@ def collect_declarations(root):
     return traits, types_, impls, mock_impls, stub_decl
 
 
-def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl):
+def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl, java_subtypes=None):
     """Propose a verdict from structural evidence. Deliberately conservative: anything the
     evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
     is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
@@ -192,6 +239,23 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         # signal: the real implementers are Java classes still in the queue.
         return None, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
                       f"implementations are not ported yet; revisit then")
+    # Prefer Java's hierarchy over the port's: the port's count measures progress, not shape.
+    if java_subtypes is not None:
+        j = java_subtypes.get(name, 0)
+        if j == 0:
+            return "SUGGEST-STRUCT", (
+                f"no Java type extends or implements {name} -- it is a concrete class there, so "
+                f"there is no hierarchy to dispatch over ({n_impl} Rust impls notwithstanding)")
+        if open_name:
+            return "SUGGEST-ACCEPT", f"{j} Java subtypes and an extension-point name -- open set"
+        if j <= ENUM_MAX_VARIANTS:
+            return "SUGGEST-ENUM", f"small closed set: {j} Java subtypes"
+        if name.endswith(AST_NODE_SUFFIXES):
+            return "SUGGEST-GRAPH", (f"{j} Java subtypes with an AST/IR node name -- too many for "
+                                     f"an enum, but a tagged arena graph suits a node set this size")
+        return None, (f"{j} Java subtypes -- too many for an enum; needs a human call "
+                      f"(genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)")
+
     if n_impl <= 2 and name in unported:
         # Mid-port state, not a design signal: the Java implementers are still queued.
         return None, (f"only {n_impl} real implementer(s), but {name} is still TODO in "
@@ -361,6 +425,9 @@ def main():
     ap.add_argument("--max-fanin", type=int, default=500,
                     help="Match remediate_ownership.sh's MAX_FANIN: rows above it are Phase 2")
     ap.add_argument("--dyn-threshold", type=int, default=5)
+    ap.add_argument("--orig-src", default="orig_src",
+                    help="Java sources, read to size each hierarchy at its source rather than "
+                         "by how far the port has got")
     ap.add_argument("--manifest", default="PORT_MANIFEST.tsv",
                     help="Port status, so a trait with no implementers YET isn't mistaken for "
                          "a trait that shouldn't exist")
@@ -383,12 +450,14 @@ def main():
     if args.suggest:
         traits, types_, impls, mock_impls, stub_decl = collect_declarations(args.root)
         unported = load_unported_classes(args.manifest)
+        java_subtypes = java_subtype_counts(args.orig_src)
+        print(f"read {len(java_subtypes)} Java supertypes from {args.orig_src}", file=sys.stderr)
         n = 0
         for r in rows:
             if r["verdict"] != "TODO":
                 continue
             v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
-                                     mock_impls, stub_decl)
+                                     mock_impls, stub_decl, java_subtypes)
             if v:
                 r["verdict"], r["source"], r["note"] = v, "suggest", why
                 n += 1

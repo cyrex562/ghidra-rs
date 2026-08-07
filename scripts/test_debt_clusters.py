@@ -172,5 +172,66 @@ class TestGraphVerdict(unittest.TestCase):
         self.assertEqual(v, "SUGGEST-ACCEPT")
 
 
+
+class TestJavaSizedVerdicts(unittest.TestCase):
+    """The proposer sizes hierarchies from Java, not from how far the port has got.
+
+    Counting Rust implementers in a 22%-complete port mostly measures what is missing: `CodeUnit`
+    showed 3 non-mock impls only because Instruction and Data are unported, and the proposer
+    happily recommended "small closed set -> enum" off that. These pin the corrected rules.
+    """
+
+    def call(self, name, rust_impls, java):
+        return dc.suggest_verdict(name, {name: 1}, {}, {name: rust_impls}, set(), {}, set(), java)
+
+    def test_zero_java_subtypes_means_it_should_not_be_a_trait(self):
+        """`Lock` and `TokenPattern` are concrete classes in Java; nothing extends them."""
+        v, why = self.call("Lock", 11, {"Lock": 0})
+        self.assertEqual(v, "SUGGEST-STRUCT")
+        self.assertIn("concrete class", why)
+
+    def test_java_count_beats_a_misleading_rust_count(self):
+        # 3 Rust impls would have said "small closed set"; Java says otherwise.
+        v, why = self.call("BigHierarchy", 3, {"BigHierarchy": 40})
+        self.assertIsNone(v)
+        self.assertIn("40 Java subtypes", why)
+
+    def test_small_java_hierarchy_suggests_enum(self):
+        v, why = self.call("Decoder2", 16, {"Decoder2": 2})
+        self.assertEqual(v, "SUGGEST-ENUM")
+        self.assertIn("2 Java subtypes", why)
+
+    def test_large_java_ast_hierarchy_suggests_graph(self):
+        v, _why = self.call("PatternValue", 11, {"PatternValue": 14})
+        self.assertEqual(v, "SUGGEST-GRAPH")
+
+    def test_extension_point_name_still_wins_regardless_of_size(self):
+        v, _why = self.call("ScriptProvider", 2, {"ScriptProvider": 30})
+        self.assertEqual(v, "SUGGEST-ACCEPT")
+
+    def test_falls_back_to_rust_counts_when_java_is_unavailable(self):
+        v, why = self.call("Thing", 4, None)
+        self.assertEqual(v, "SUGGEST-ENUM")
+        self.assertIn("real implementers", why)
+
+
+class TestJavaSubtypeScan(unittest.TestCase):
+    def test_counts_extends_and_implements_including_lists(self):
+        d = tempfile.mkdtemp()
+        files = {
+            "A.java": "public class A extends Base {}",
+            "B.java": "public interface B extends Base {}",
+            "C.java": "public class C implements Iface1, Iface2 {}",
+            "D.java": "public class D extends pkg.Base implements Iface1 {}",
+        }
+        for name, body in files.items():
+            write(os.path.join(d, name), body + chr(10))
+        counts = dc.java_subtype_counts(d)
+        self.assertEqual(counts["Base"], 3, "qualified names count too")
+        self.assertEqual(counts["Iface1"], 2)
+        self.assertEqual(counts["Iface2"], 1)
+        self.assertEqual(counts["Nothing"], 0)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
