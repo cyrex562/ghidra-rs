@@ -100,7 +100,8 @@ mod tests {
         ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, FlowOverride, InstructionContext, MemBuffer, ParserContext};
+    use crate::program::seam_stubs::{FlowOverride, InstructionContext, MemBuffer, ParserContext};
+use crate::program::model::listing::CommentType;
     use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView;
     use crate::trace::model::listing::trace_code_unit::TraceCodeUnit;
     use crate::trace::model::trace::Trace;

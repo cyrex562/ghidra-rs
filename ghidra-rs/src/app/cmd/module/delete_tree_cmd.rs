@@ -79,14 +79,14 @@ mod tests {
         }
         fn get_comment_code_unit_iterator(
             &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
             _addr_set: &dyn crate::program::model::address::AddressSetView,
         ) -> Box<dyn crate::program::seam_stubs::CodeUnitIterator> {
             unimplemented!("not needed for this smoke test")
         }
         fn get_comment_address_iterator(
             &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
             _addr_set: &dyn crate::program::model::address::AddressSetView,
             _forward: bool,
         ) -> crate::program::model::address::BoxedAddressIterator {
@@ -99,7 +99,7 @@ mod tests {
         ) -> crate::program::model::address::BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
-        fn get_comment(&self, _comment_type: crate::program::seam_stubs::CommentType, _address: &crate::program::model::address::Address) -> Option<String> {
+        fn get_comment(&self, _comment_type: crate::program::model::listing::CommentType, _address: &crate::program::model::address::Address) -> Option<String> {
             None
         }
         fn get_all_comments(&self, _address: &crate::program::model::address::Address) -> Box<dyn crate::program::seam_stubs::CodeUnitComments> {
@@ -110,7 +110,7 @@ mod tests {
         fn set_comment(
             &mut self,
             _address: &crate::program::model::address::Address,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
             _comment: Option<String>,
         ) {
         }
@@ -433,7 +433,7 @@ mod tests {
         fn get_comment_history(
             &self,
             _addr: &crate::program::model::address::Address,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
         ) -> Vec<Box<dyn crate::program::seam_stubs::CommentHistory>> {
             Vec::new()
         }

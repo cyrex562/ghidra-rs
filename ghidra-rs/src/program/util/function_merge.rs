@@ -94,7 +94,8 @@ mod tests {
     use crate::program::model::listing::{Function, FunctionSignature, FunctionTag, Parameter, Program, Variable};
     use crate::program::model::symbol::{ExternalLocation, Namespace, Reference, Symbol, SymbolType};
     use crate::program::model::lang::prototype_model::PrototypeModel;
-    use crate::program::seam_stubs::{CommentType, StackFrame, VariableFilter};
+    use crate::program::seam_stubs::{StackFrame, VariableFilter};
+use crate::program::model::listing::CommentType;
     use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::program::util::{FunctionMemberRenameError, MemoryMergeError};
     use crate::framework::model::DomainObject;

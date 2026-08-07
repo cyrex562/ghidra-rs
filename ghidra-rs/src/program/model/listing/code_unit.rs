@@ -9,7 +9,8 @@ use crate::program::model::symbol::{
     ExternalLocation, ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{CommentType, MemBuffer};
+use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::listing::CommentType;
 
 /// Indicator for a mnemonic (versus an operand).
 pub const MNEMONIC: i32 = -1;

@@ -124,7 +124,8 @@ mod tests {
         SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, RefType, Reference};
+    use crate::program::seam_stubs::{MemBuffer, RefType, Reference};
+use crate::program::model::listing::CommentType;
 
     fn mock_address(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);

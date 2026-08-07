@@ -93,7 +93,8 @@ mod tests {
         ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::listing::CommentType;
     use std::sync::Arc;
 
     struct MockReferenceIterator;

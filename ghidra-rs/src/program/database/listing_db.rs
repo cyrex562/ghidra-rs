@@ -50,10 +50,8 @@ mod tests {
     use crate::program::model::listing::CreateFunctionError;
     use crate::program::model::symbol::{Namespace, SourceType};
     use crate::program::model::util::PropertyMap;
-    use crate::program::seam_stubs::{
-        CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
-        FunctionIterator, InstructionIterator, InstructionSet, MemBuffer,
-    };
+    use crate::program::seam_stubs::{CodeUnitComments, CodeUnitIterator, CommentHistory, DataIterator, FunctionIterator, InstructionIterator, InstructionSet, MemBuffer};
+use crate::program::model::listing::CommentType;
     use crate::program::util::CodeUnitInsertionException;
     use crate::util::exception::{CancelledException, DuplicateNameException};
     use crate::util::task::TaskMonitor;

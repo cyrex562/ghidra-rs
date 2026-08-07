@@ -53,10 +53,8 @@ use crate::program::model::symbol::{
     reference::Reference, stack_reference::StackReference, symbol_utilities::DefaultSymbolUtilities,
     symbol_utilities::SymbolUtilities, Equate, Namespace, Symbol,
 };
-use crate::program::seam_stubs::{
-    comment_utils, namespace_utils, CodeUnitFormatOptions, CommentType, MemBuffer, ShowBlockName,
-    ShowNamespace,
-};
+use crate::program::seam_stubs::{comment_utils, namespace_utils, CodeUnitFormatOptions, MemBuffer, ShowBlockName, ShowNamespace};
+use crate::program::model::listing::CommentType;
 
 const PLUS: &str = "+";
 const UNDERSCORE: &str = "_";

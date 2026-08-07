@@ -72,7 +72,8 @@ mod tests {
     use crate::program::model::scalar::Scalar;
     use crate::program::model::symbol::{ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::listing::CommentType;
     use crate::program::model::lang::register::Register;
     use crate::program::model::listing::program::Program;
     use std::sync::Arc;

@@ -46,7 +46,8 @@ mod tests {
     use crate::program::model::listing::CodeUnit as _;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::listing::CommentType;
     use crate::util::task::DummyMonitor;
     use std::fmt;
     use std::sync::Arc;

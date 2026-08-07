@@ -2,7 +2,7 @@ use std::any::Any;
 use std::fmt;
 
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::CommentType;
+use crate::program::model::listing::CommentType;
 use crate::program::util::{ProgramChangeRecord, ProgramEvent};
 
 /// Change record generated when a comment is modified.

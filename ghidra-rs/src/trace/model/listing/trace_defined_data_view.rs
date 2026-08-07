@@ -512,25 +512,25 @@ mod tests {
         }
         fn get_comment(
             &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
         ) -> Option<String> {
             None
         }
         fn get_comment_as_array(
             &self,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
         ) -> Vec<String> {
             Vec::new()
         }
         fn set_comment(
             &mut self,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
             _comment: Option<String>,
         ) {
         }
         fn set_comment_as_array(
             &mut self,
-            _comment_type: crate::program::seam_stubs::CommentType,
+            _comment_type: crate::program::model::listing::CommentType,
             _comment: &[String],
         ) {
         }

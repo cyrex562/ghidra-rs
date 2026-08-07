@@ -117,7 +117,8 @@ mod tests {
     use crate::docking::settings::settings::Settings;
     use crate::program::model::lang::register::Register;
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::listing::CommentType;
     use std::sync::Arc;
 
     fn create_test_address_space() -> Arc<AddressSpace> {

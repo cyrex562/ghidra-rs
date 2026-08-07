@@ -15,7 +15,8 @@ use crate::program::model::symbol::{
     ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
 };
 use crate::program::model::util::PropertySet;
-use crate::program::seam_stubs::{CommentType, FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+use crate::program::seam_stubs::{FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+use crate::program::model::listing::CommentType;
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::NoValueException;
 use crate::util::saveable::Saveable;

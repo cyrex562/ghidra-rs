@@ -109,9 +109,8 @@ mod tests {
     };
     use crate::program::model::util::PropertySet;
     use crate::app::plugin::processors::generic::MemoryBlockDefinition;
-    use crate::program::seam_stubs::{
-        AddressLabelInfo, CommentType, MemBuffer, Processor,
-    };
+    use crate::program::seam_stubs::{AddressLabelInfo, MemBuffer, Processor};
+use crate::program::model::listing::CommentType;
     use crate::util::task::TaskMonitor;
 
     fn mock_address(offset: i64) -> Address {

@@ -40,7 +40,7 @@ use crate::program::model::address::{Address, AddressSet, AddressSetView};
 use crate::program::model::listing::{Function, FunctionTag, Program, Variable};
 use crate::program::model::mem::MemoryAccessException;
 use crate::program::model::symbol::{Namespace, Reference, SymbolTable, SymbolType};
-use crate::program::seam_stubs::CommentType;
+use crate::program::model::listing::CommentType;
 use crate::framework::store::LockException;
 use crate::util::exception::{CancelledException, DuplicateNameException, InvalidInputException};
 use crate::util::task::TaskMonitor;

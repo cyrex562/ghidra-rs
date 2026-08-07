@@ -206,7 +206,8 @@ pub(crate) mod tests {
     use crate::program::model::listing::ContextChangeException;
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, RegisterValue};
+    use crate::program::seam_stubs::{MemBuffer, RegisterValue};
+use crate::program::model::listing::CommentType;
 
     struct MockInstruction {
         address: Address,

@@ -45,7 +45,8 @@ mod tests {
     };
     use crate::program::model::util::PropertySet;
     use crate::docking::settings::settings::Settings;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::listing::CommentType;
 
     fn mock_address(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);

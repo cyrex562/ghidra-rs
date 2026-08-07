@@ -59,7 +59,8 @@ mod tests {
         ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::seam_stubs::{MemBuffer};
+use crate::program::model::listing::CommentType;
 
     fn ram_address(offset: i64) -> Address {
         let ram = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);

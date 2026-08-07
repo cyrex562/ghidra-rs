@@ -290,7 +290,8 @@ mod tests {
     use crate::program::model::pcode::{PcodeOp, SequenceNumber, Varnode};
     use crate::program::model::symbol::{ExternalReference, Reference, ReferenceIterator, RefType, SourceType, Symbol};
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+    use crate::program::seam_stubs::{FlowOverride, InstructionContext, MemBuffer, RegisterValue};
+use crate::program::model::listing::CommentType;
     use std::sync::Arc;
 
     fn ram_space() -> Arc<AddressSpace> {

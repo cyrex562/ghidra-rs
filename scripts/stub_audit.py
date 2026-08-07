@@ -22,6 +22,24 @@ landed and the placeholder is pure debt. A `-` means no Java class of that name 
 name is probably a synthetic helper and the collision may be coincidental -- those need a human
 eye rather than a sweep.
 
+**A high importer count does NOT mean a big mechanical win.** Triaging the top rows showed three
+different shapes, and only one is a rewire:
+
+  * MECHANICAL -- both sides are the same kind and the real one is a superset. Rewire the
+    references, delete the placeholder. `CommentType` (63 importers, identical enum variants,
+    zero implementers) and `DataTypeManagerOwner` (19) were these.
+  * CONSOLIDATION -- both sides are traits, but the implementers only satisfy one of them.
+    `MemBuffer` has 100 `impl` blocks of which just 17 define the real trait's four methods; the
+    other 83 implement the stub's single `get_address`. Converging means adding methods to 83
+    types, so it is a port consolidation, not a cleanup.
+  * DESIGN -- the two sides chose different Rust shapes for one Java concept, so they cannot be
+    merged at all. `PatternExpression` is an `enum` on one side and a trait with 81 implementers
+    on the other; `Processor` and `Constructor` likewise. These are ENUM-vs-`dyn` decisions and
+    belong in CONVENTION_QUEUE.tsv, not here.
+
+Rows in the latter two categories are marked PARK so the count is not mistaken for a backlog of
+sweeps.
+
     python scripts/stub_audit.py --out STUB_DEBT.tsv
     python scripts/stub_audit.py --top 20        # print, don't write
 """

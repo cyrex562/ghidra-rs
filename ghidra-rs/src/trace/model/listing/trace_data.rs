@@ -36,7 +36,8 @@ mod tests {
         SourceType, Symbol,
     };
     use crate::program::model::util::PropertySet;
-    use crate::program::seam_stubs::{CommentType, MemBuffer, RefType, Reference};
+    use crate::program::seam_stubs::{MemBuffer, RefType, Reference};
+use crate::program::model::listing::CommentType;
     use crate::docking::settings::settings::Settings;
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::trace::Trace;

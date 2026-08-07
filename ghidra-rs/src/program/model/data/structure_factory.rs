@@ -300,7 +300,8 @@ mod tests {
         EmptyReferenceIterator, ExternalReference, RefType as SymRefType, Reference as SymReference,
         ReferenceIterator, SourceType, Symbol,
     };
-    use crate::program::seam_stubs::{CommentType, InstructionIterator, MemBuffer, RefType, Reference};
+    use crate::program::seam_stubs::{InstructionIterator, MemBuffer, RefType, Reference};
+use crate::program::model::listing::CommentType;
     use std::any::{Any, TypeId};
     use std::cell::RefCell;
     use std::rc::Rc;

@@ -357,14 +357,14 @@ mod tests {
         fn get_mnemonic_string(&self) -> String {
             "mock".to_string()
         }
-        fn get_comment(&self, _comment_type: crate::program::seam_stubs::CommentType) -> Option<String> {
+        fn get_comment(&self, _comment_type: crate::program::model::listing::CommentType) -> Option<String> {
             None
         }
-        fn get_comment_as_array(&self, _comment_type: crate::program::seam_stubs::CommentType) -> Vec<String> {
+        fn get_comment_as_array(&self, _comment_type: crate::program::model::listing::CommentType) -> Vec<String> {
             Vec::new()
         }
-        fn set_comment(&mut self, _comment_type: crate::program::seam_stubs::CommentType, _comment: Option<String>) {}
-        fn set_comment_as_array(&mut self, _comment_type: crate::program::seam_stubs::CommentType, _comment: &[String]) {}
+        fn set_comment(&mut self, _comment_type: crate::program::model::listing::CommentType, _comment: Option<String>) {}
+        fn set_comment_as_array(&mut self, _comment_type: crate::program::model::listing::CommentType, _comment: &[String]) {}
         fn get_length(&self) -> i32 {
             1
         }
