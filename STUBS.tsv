@@ -64,7 +64,6 @@ ts	stub_class	referenced_by
 2026-07-07T05:00:00Z	TraceEquateManager	Trace
 2026-07-07T05:00:00Z	TracePlatformManager	Trace
 2026-07-07T05:00:00Z	TraceMemoryManager	Trace
-2026-07-07T05:00:00Z	TraceModuleManager	Trace
 2026-07-07T05:00:00Z	TraceObjectManager	Trace
 2026-07-07T05:00:00Z	TraceReferenceManager	Trace
 2026-07-07T05:00:00Z	TraceRegisterContextManager	Trace

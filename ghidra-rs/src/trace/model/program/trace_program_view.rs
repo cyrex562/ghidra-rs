@@ -113,7 +113,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_module_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceModuleManager> {
+        fn get_module_manager(&self) -> Box<dyn crate::trace::model::modules::TraceModuleManager> {
             unimplemented!("not exercised by this smoke test")
         }
 

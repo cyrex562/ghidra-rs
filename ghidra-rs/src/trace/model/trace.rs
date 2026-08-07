@@ -2,14 +2,14 @@ use crate::program::model::address::AddressFactory;
 use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
 use crate::program::model::lang::{CompilerSpec, Language};
 use crate::trace::model::listing::TraceCodeManager;
-use crate::trace::model::modules::TraceStaticMappingManager;
+use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::time::trace_time_manager::TraceTimeManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
-    TraceModuleManager, TraceObjectManager, TracePlatformManager,
+    TraceObjectManager, TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
     TraceSymbolManager, TraceThreadManager,
     TraceVariableSnapProgramView,
@@ -262,7 +262,115 @@ mod tests {
     struct MockMemoryManager;
     impl TraceMemoryManager for MockMemoryManager {}
     struct MockModuleManager;
-    impl TraceModuleManager for MockModuleManager {}
+    impl crate::trace::model::modules::TraceModuleOperations for MockModuleManager {
+        fn get_all_modules(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_loaded_modules(
+            &self,
+            _snap: i64,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_modules_at(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_modules_intersecting(
+            &self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_sections(
+            &self,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_sections_at(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_sections_intersecting(
+            &self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceModuleManager for MockModuleManager {
+        fn add_module(
+            &mut self,
+            _module_path: &str,
+            _module_name: &str,
+            _range: crate::program::model::address::AddressRange,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Result<
+            Box<dyn crate::trace::model::modules::TraceModule>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn add_loaded_module(
+            &mut self,
+            _module_path: &str,
+            _module_name: &str,
+            _range: crate::program::model::address::AddressRange,
+            _snap: i64,
+        ) -> Result<
+            Box<dyn crate::trace::model::modules::TraceModule>,
+            crate::util::exception::DuplicateNameException,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_modules_by_path(
+            &self,
+            _module_path: &str,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_loaded_module_by_path(
+            &self,
+            _snap: i64,
+            _module_path: &str,
+        ) -> Option<Box<dyn crate::trace::model::modules::TraceModule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_sections_by_path(
+            &self,
+            _section_path: &str,
+        ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_loaded_section_by_path(
+            &self,
+            _snap: i64,
+            _section_path: &str,
+        ) -> Option<Box<dyn crate::trace::model::modules::TraceSection>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockObjectManager;
     impl TraceObjectManager for MockObjectManager {}
     struct MockReferenceManager;

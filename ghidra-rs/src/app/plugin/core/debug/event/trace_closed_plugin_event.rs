@@ -142,7 +142,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_module_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceModuleManager> {
+        fn get_module_manager(&self) -> Box<dyn crate::trace::model::modules::TraceModuleManager> {
             unimplemented!()
         }
 

@@ -110,7 +110,7 @@ mod tests {
     use crate::program::model::symbol::{SourceType, SymbolType};
     use crate::program::seam_stubs::DataTypeManagerOwner;
     use crate::trace::model::listing::TraceCodeManager;
-    use crate::trace::model::modules::TraceStaticMappingManager;
+    use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
     use crate::trace::model::program::TraceProgramView;
     use crate::trace::model::trace::TraceProgramViewListener;
     use crate::trace::model::time::trace_time_manager::TraceTimeManager;
@@ -118,7 +118,7 @@ mod tests {
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
-        TraceModuleManager, TraceObjectManager, TracePlatformManager, TraceReferenceManager,
+        TraceObjectManager, TracePlatformManager, TraceReferenceManager,
         TraceRegisterContextManager, TraceStackManager,
         TraceSymbolManager, TraceThreadManager, TraceVariableSnapProgramView,
     };
