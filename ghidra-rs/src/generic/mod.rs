@@ -7,6 +7,7 @@ pub mod filtered_iterator;
 pub mod range_map_setter;
 pub mod catenated_collection;
 pub mod depends;
+pub mod end;
 pub mod id;
 pub mod algorithms;
 pub mod cache;
