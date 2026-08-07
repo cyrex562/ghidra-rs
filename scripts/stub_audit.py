@@ -72,11 +72,23 @@ def manifest_status(manifest):
 
 
 def importers_of_stub(texts, name):
-    """Files importing `name` from a seam_stubs module -- i.e. wired to the placeholder."""
-    pattern = re.compile(
-        rf"use [^;]*seam_stubs::(?:\{{[^}}]*\b{re.escape(name)}\b[^}}]*\}}|{re.escape(name)})\b"
-    )
-    return [p for p, t in texts.items() if pattern.search(t)]
+    """Files wired to the placeholder, by `use` OR by fully-qualified path.
+
+    Counting only `use` statements undercounted badly -- MemBuffer reported 23 against 92 real
+    references -- because a call site can name the stub inline (`impl
+    crate::program::seam_stubs::MemBuffer for X`) with no import at all. That form is exactly
+    what had to be hand-fixed when retiring DataTypeManagerOwner, so it is the form that matters.
+    """
+    n = re.escape(name)
+    patterns = [
+        # use crate::..::seam_stubs::{ .., Name, .. };  (single- or multi-line)
+        re.compile(rf"use\s+[\w:]*seam_stubs::\{{[^}}]*\b{n}\b[^}}]*\}}\s*;", re.S),
+        # use crate::..::seam_stubs::Name;   (optionally `as Alias`)
+        re.compile(rf"use\s+[\w:]*seam_stubs::{n}\b"),
+        # any inline fully-qualified mention
+        re.compile(rf"[\w:]*seam_stubs::{n}\b"),
+    ]
+    return [p for p, t in texts.items() if any(rx.search(t) for rx in patterns)]
 
 
 def load_prior_status(path):
