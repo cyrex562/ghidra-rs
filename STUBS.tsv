@@ -453,3 +453,4 @@ ts	stub_class	referenced_by
 2026-08-07T06:45:56.952189+00:00	TraceBreakpointCommon	TraceBreakpointSpec
 2026-08-07T06:45:56.953662+00:00	TraceBreakpointLocation	TraceBreakpointSpec
 2026-08-07T07:00:00.000000+00:00	TraceObjectValPath	TraceObjectManager
+2026-08-07T07:20:04.910000+00:00	TraceAddressSnapRangeQuery	TraceAddressSnapRangePropertyMapOperations

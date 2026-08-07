@@ -376,3 +376,10 @@ pub trait TraceRegisterUtils: Send + Sync {
     fn get_frame_level(&self, trace: &dyn Trace, space: &Arc<AddressSpace>) -> i32;
 }
 
+/// Placeholder for the nested `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.TraceAddressSnapRangeQuery`,
+/// referenced by
+/// [`TraceAddressSnapRangePropertyMapOperations`](crate::trace::model::map::trace_address_snap_range_property_map_operations::TraceAddressSnapRangePropertyMapOperations)
+/// before the real port is available. That trait only ever passes this type around opaquely (as
+/// the `Q` type parameter of the `SpatialMap` supertrait it extends); no members are needed yet.
+pub trait TraceAddressSnapRangeQuery: Send + Sync {}
+
