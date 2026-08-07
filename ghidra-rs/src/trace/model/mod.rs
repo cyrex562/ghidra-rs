@@ -11,6 +11,7 @@ pub mod modules;
 pub mod program;
 pub mod symbol;
 pub mod target;
+pub mod thread;
 pub mod time;
 pub mod trace;
 pub mod trace_address_snap_range;
