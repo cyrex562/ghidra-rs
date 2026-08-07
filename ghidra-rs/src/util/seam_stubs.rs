@@ -404,6 +404,15 @@ pub trait ForwardRecordIterator: Send + Sync {
     fn next(&self) -> std::io::Result<crate::framework::db::record::DBRecord>;
 }
 
+/// Placeholder for `ghidra.util.database.DBCachedObjectStoreFactory.DBFieldCodec`, needed by
+/// [`crate::util::database::annot::DBAnnotatedField::codec`].
+///
+/// `DBAnnotatedField.codec()` only carries a `Class<? extends DBFieldCodec>` type token (which
+/// concrete codec to reflectively instantiate later); it never calls a method on the codec
+/// itself, so this is a marker trait until the real generic `store`/`load`/`getValueType` codec
+/// interface is ported.
+pub trait DBFieldCodec: Send + Sync {}
+
 /// Placeholder for `ghidra.util.database.DirectedRecordIterator`'s two static factory methods
 /// (`getIterator`/`getIndexIterator`), needed by
 /// [`crate::util::database::directed_record_iterator`].
