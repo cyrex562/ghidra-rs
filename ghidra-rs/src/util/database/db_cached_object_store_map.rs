@@ -33,13 +33,12 @@
 use std::cmp::Ordering;
 use std::sync::Arc;
 
+use crate::util::database::db_annotated_object::DBAnnotatedObject;
 use crate::util::database::{
     db_cached_object_store_entry_set::StoreEntry, DBCachedObjectStoreEntrySet,
     DBCachedObjectStoreKeySet, Direction,
 };
-use crate::util::seam_stubs::{
-    DBAnnotatedObject, DBCachedObjectStoreSubMap, DBCachedObjectStoreValueCollection,
-};
+use crate::util::seam_stubs::{DBCachedObjectStoreSubMap, DBCachedObjectStoreValueCollection};
 
 /// Mirrors `DBCachedObjectStoreMap<T>`: a navigable map from object key (`long`) to object,
 /// ordered forward or backward depending on [`direction`](Self::direction).
@@ -206,7 +205,31 @@ mod tests {
     use super::*;
 
     struct MockObject(i64);
-    impl DBAnnotatedObject for MockObject {}
+    impl crate::program::database::db_object::DbObject for MockObject {
+        fn state(&self) -> &crate::program::database::db_object::DbObjectState {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn refresh(&self, _record: Option<&crate::framework::db::record::DBRecord>) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl DBAnnotatedObject for MockObject {
+        fn store(&self) -> &dyn crate::util::seam_stubs::DBCachedObjectStoreCore {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn adapter(&self) -> &dyn crate::util::database::db_cached_domain_object_adapter::DBCachedDomainObjectAdapter {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn codecs(&self) -> &[Box<dyn crate::util::seam_stubs::DBFieldCodec>] {
+            &[]
+        }
+        fn record(&self) -> crate::framework::db::record::DBRecord {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_record(&self, _record: crate::framework::db::record::DBRecord) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     fn entry(key: i64) -> StoreEntry {
         (key, Arc::new(MockObject(key)) as Arc<dyn DBAnnotatedObject>)
