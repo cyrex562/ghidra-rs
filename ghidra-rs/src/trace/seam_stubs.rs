@@ -379,3 +379,16 @@ pub trait TraceRegisterUtils: Send + Sync {
 /// the `Q` type parameter of the `SpatialMap` supertrait it extends); no members are needed yet.
 pub trait TraceAddressSnapRangeQuery: Send + Sync {}
 
+/// Placeholder for the nested
+/// `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.AbstractDBTraceAddressSnapRangePropertyMapData`,
+/// referenced by
+/// [`DBTraceAddressSnapRangePropertyMap`](crate::trace::database::map::db_trace_address_snap_range_property_map::DBTraceAddressSnapRangePropertyMap)
+/// before the real port is available. That trait's `deleteData(DR)` only ever reads one field off
+/// the record: the address space its backing range belongs to (`data.range.getAddressSpace()`),
+/// used to pick which per-space delegate owns it.
+pub trait AbstractDBTraceAddressSnapRangePropertyMapData: Send + Sync {
+    /// The address space that this record's range belongs to. Mirrors
+    /// `data.range.getAddressSpace()`.
+    fn address_space(&self) -> Arc<AddressSpace>;
+}
+
