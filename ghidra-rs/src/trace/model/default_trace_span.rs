@@ -100,14 +100,14 @@ mod tests {
     use crate::program::model::lang::{CompilerSpec, Language};
     use crate::program::seam_stubs::DataTypeManagerOwner;
     use crate::trace::model::listing::TraceCodeManager;
-    use crate::trace::model::modules::TraceStaticMappingManager;
+    use crate::trace::model::modules::{TraceModuleManager, TraceStaticMappingManager};
     use crate::trace::model::program::TraceProgramView;
     use crate::trace::model::trace_time_viewport::TraceTimeViewport;
     use crate::trace::model::time::trace_time_manager::TraceTimeManager;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
-        TraceModuleManager, TraceObjectManager, TracePlatformManager,
+        TraceObjectManager, TracePlatformManager,
         TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
         TraceSymbolManager, TraceThreadManager,
         TraceVariableSnapProgramView,
