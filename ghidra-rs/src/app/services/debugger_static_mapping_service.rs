@@ -805,7 +805,7 @@ mod tests {
         fn get_thread_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceThreadManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_time_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceTimeManager> {
+        fn get_time_manager(&self) -> Box<dyn crate::trace::model::time::trace_time_manager::TraceTimeManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_fixed_program_view(

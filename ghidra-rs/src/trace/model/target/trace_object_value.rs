@@ -161,13 +161,14 @@ mod tests {
     use crate::trace::model::listing::TraceCodeManager;
     use crate::trace::model::program::TraceProgramView;
     use crate::trace::model::trace::TraceProgramViewListener;
+    use crate::trace::model::time::trace_time_manager::TraceTimeManager;
     use crate::trace::model::trace_time_viewport::TraceTimeViewport;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
         TraceModuleManager, TraceObjectManager, TracePlatformManager, TraceReferenceManager,
         TraceRegisterContextManager, TraceStackManager, TraceStaticMappingManager,
-        TraceSymbolManager, TraceThreadManager, TraceTimeManager, TraceVariableSnapProgramView,
+        TraceSymbolManager, TraceThreadManager, TraceVariableSnapProgramView,
     };
     use crate::util::lock_hold::{Lock, LockHold};
     use crate::debug::api::tracermi::SchemaName;

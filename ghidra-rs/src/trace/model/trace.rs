@@ -3,13 +3,14 @@ use crate::program::model::data::data_type_manager_domain_object::DataTypeManage
 use crate::program::model::lang::{CompilerSpec, Language};
 use crate::trace::model::listing::TraceCodeManager;
 use crate::trace::model::program::TraceProgramView;
+use crate::trace::model::time::trace_time_manager::TraceTimeManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceBreakpointManager, TraceEquateManager, TraceMemoryManager,
     TraceModuleManager, TraceObjectManager, TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
-    TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager, TraceTimeManager,
+    TraceStaticMappingManager, TraceSymbolManager, TraceThreadManager,
     TraceVariableSnapProgramView,
 };
 use crate::util::lock_hold::{Lock, LockHold};
@@ -276,7 +277,84 @@ mod tests {
     struct MockThreadManager;
     impl TraceThreadManager for MockThreadManager {}
     struct MockTimeManager;
-    impl TraceTimeManager for MockTimeManager {}
+    impl TraceTimeManager for MockTimeManager {
+        fn create_snapshot(
+            &self,
+            _description: &str,
+        ) -> Box<dyn crate::trace::seam_stubs::TraceSnapshot> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshot(
+            &self,
+            _snap: i64,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_snapshot(
+            &self,
+            _snap: i64,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_fork(&self, _snap: i64) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshots_with_schedule(
+            &self,
+            _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_scratch_snapshot(
+            &self,
+            _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
+        ) -> Box<dyn crate::trace::seam_stubs::TraceSnapshot> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_snapshot_with_nearest_prefix(
+            &self,
+            _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_all_snapshots(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshots(
+            &self,
+            _from_snap: i64,
+            _from_inclusive: bool,
+            _to_snap: i64,
+            _to_inclusive: bool,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_max_snap(&self) -> Option<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snapshot_count(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_time_radix(&mut self, _radix: Box<dyn crate::trace::seam_stubs::TimeRadix>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_time_radix(&self) -> Box<dyn crate::trace::seam_stubs::TimeRadix> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockProgramView;
 
     impl DomainObject for MockProgramView {}

@@ -97,9 +97,31 @@ pub trait TraceSymbolManager {
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceThreadManager {}
 
-/// Placeholder for `ghidra.trace.model.time.TraceTimeManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceTimeManager {}
+/// Placeholder for `ghidra.trace.model.time.TraceSnapshot`, referenced by
+/// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
+/// the real port is available. Mirrors the one member referenced in that interface's javadoc:
+/// whether a snapshot is a fork point.
+pub trait TraceSnapshot: Send + Sync {
+    /// Mirrors `TraceSnapshot.isFork()`.
+    fn is_fork(&self) -> bool;
+}
+
+/// Placeholder for `ghidra.trace.model.time.schedule.TraceSchedule`, referenced by
+/// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
+/// the real port is available. `TraceTimeManager` only ever passes these around opaquely (as a
+/// lookup/creation key), never inspecting them, so this is a marker trait.
+pub trait TraceSchedule: Send + Sync {}
+
+/// Placeholder for the nested enum `ghidra.trace.model.time.schedule.TraceSchedule.TimeRadix`,
+/// referenced by
+/// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
+/// the real port is available. Mirrors the one member needed to make a round-trip
+/// `set_time_radix`/`get_time_radix` observable: the radix's numeric value (Java's
+/// `TimeRadix.getRadix()`).
+pub trait TimeRadix: Send + Sync {
+    /// Mirrors `TimeRadix.getRadix()`.
+    fn radix(&self) -> i32;
+}
 
 /// Placeholder for `ghidra.trace.model.program.TraceVariableSnapProgramView`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Mirrors the
