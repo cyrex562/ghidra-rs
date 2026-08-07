@@ -267,3 +267,8 @@ pub trait TraceThread: Send + Sync {}
 /// [`TraceCodeManager`](crate::trace::model::listing::trace_code_manager::TraceCodeManager)
 /// before the real port is available. No members are parsed from the Java source yet.
 pub trait TraceStackFrame: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.model.modules.TraceModule`, referenced by
+/// [`TraceSection`](crate::trace::model::modules::trace_section::TraceSection) before the real
+/// port is available. No members are parsed from the Java source yet.
+pub trait TraceModule: Send + Sync {}

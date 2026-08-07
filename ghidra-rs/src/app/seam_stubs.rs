@@ -327,12 +327,6 @@ pub trait RegionMapProposal {}
 /// as a parameter, so no members are needed yet.
 pub trait TraceModule {}
 
-/// Placeholder for `ghidra.trace.model.modules.TraceSection`, referenced by
-/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
-/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
-/// as a parameter, so no members are needed yet.
-pub trait TraceSection {}
-
 /// Placeholder for `javax.swing.tree.TreePath`, referenced by
 /// [`DataTypeManagerService`](crate::app::services::DataTypeManagerService) before the real class
 /// is ported. `DataTypeManagerService` only ever passes this type through as a parameter, so no
