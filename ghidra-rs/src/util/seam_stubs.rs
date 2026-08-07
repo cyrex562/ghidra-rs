@@ -332,3 +332,56 @@ pub trait UnionAddressRangeIteratorFactory {
         forward: bool,
     ) -> Box<dyn AddressRangeIterator>;
 }
+
+/// Placeholder for `ghidra.util.database.AbstractDirectedLongKeyIterator`, needed by
+/// [`crate::util::database::directed_long_key_iterator`].
+///
+/// The real class wraps a `db.DBLongIterator` (already ported as
+/// [`crate::framework::db::DBLongIterator`]) and implements
+/// [`DirectedLongKeyIterator`](crate::util::database::DirectedLongKeyIterator)'s `hasNext`/`next`
+/// by delegating to it in the direction imposed by the concrete subclass (see
+/// [`ForwardLongKeyIterator`]/[`BackwardLongKeyIterator`] below); only `delete()` is common to
+/// both subclasses, so only it is declared here.
+pub trait AbstractDirectedLongKeyIterator: Send + Sync {
+    fn delete(&self) -> std::io::Result<bool>;
+}
+
+/// Placeholder for `ghidra.util.database.BackwardLongKeyIterator`, needed by
+/// [`crate::util::database::directed_long_key_iterator`].
+///
+/// Wraps a `db.DBLongIterator`, running it backward: `hasNext`/`next` delegate to the wrapped
+/// iterator's `hasPrevious`/`previous`.
+pub trait BackwardLongKeyIterator: Send + Sync {
+    fn has_next(&self) -> std::io::Result<bool>;
+    fn next(&self) -> std::io::Result<i64>;
+}
+
+/// Placeholder for `ghidra.util.database.ForwardLongKeyIterator`, needed by
+/// [`crate::util::database::directed_long_key_iterator`].
+///
+/// Wraps a `db.DBLongIterator`, running it forward: `hasNext`/`next` delegate directly to the
+/// wrapped iterator's `hasNext`/`next`.
+pub trait ForwardLongKeyIterator: Send + Sync {
+    fn has_next(&self) -> std::io::Result<bool>;
+    fn next(&self) -> std::io::Result<i64>;
+}
+
+/// Placeholder for `ghidra.util.database.DirectedLongKeyIterator.getIterator`'s construction
+/// contract, needed by [`crate::util::database::directed_long_key_iterator`].
+///
+/// The real static factory computes `min`/`max` from a `KeySpan` and calls
+/// `Table.longKeyIterator(min, max, start)` (not yet part of the ported
+/// [`Table`](crate::framework::db::Table) API) to obtain a `DBLongIterator` over that range,
+/// then wraps it in [`ForwardLongKeyIterator`] or [`BackwardLongKeyIterator`] depending on
+/// `direction`. Until `Table`'s ranged key iteration and those two wrappers exist, this
+/// declares the construction contract only.
+pub trait DirectedLongKeyIteratorFactory {
+    /// Builds a directed key iterator over `table`, restricted to `key_span`, running in
+    /// `direction`.
+    fn get_iterator(
+        &self,
+        table: &mut crate::framework::db::Table,
+        key_span: &dyn crate::util::database::KeySpan,
+        direction: crate::util::database::Direction,
+    ) -> std::io::Result<Box<dyn AbstractDirectedLongKeyIterator>>;
+}

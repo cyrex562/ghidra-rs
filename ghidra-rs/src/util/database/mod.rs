@@ -1,5 +1,6 @@
 pub mod annotproc;
 pub mod directed_iterator;
+pub mod directed_long_key_iterator;
 pub mod err;
 pub mod key_span;
 pub mod spatial;
@@ -9,6 +10,7 @@ pub mod db_synchronized_iterator;
 pub mod db_synchronized_spliterator;
 
 pub use directed_iterator::{Direction, DirectedIterator};
+pub use directed_long_key_iterator::DirectedLongKeyIterator;
 pub use key_span::KeySpan;
 pub use synchronized_spliterator::Spliterator;
 pub use db_synchronized_collection::Collection;
