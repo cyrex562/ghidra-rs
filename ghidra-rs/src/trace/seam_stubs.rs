@@ -227,13 +227,32 @@ pub trait TraceObjectSchema: Send + Sync {
     }
 }
 
+/// Placeholder for the nested `ghidra.trace.model.Lifespan.LifeSet`, referenced by
+/// [`TraceObject`] before the real port is available. Mirrors the one member
+/// `DBTraceObjectInterface`'s default `isDeleted()` needs: whether the set of lifespans is empty.
+pub trait LifeSet: Send + Sync {
+    /// Mirrors `Span.SpanSet.isEmpty()`, as inherited by `LifeSet`.
+    fn is_empty(&self) -> bool;
+}
+
 /// Placeholder for `ghidra.trace.model.target.TraceObject`, referenced by
-/// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue) before
-/// the real port is available. Only the member `TraceObjectValue`'s default methods need: the
-/// object's schema, used to resolve aliased attribute keys and hidden/target-schema lookups.
+/// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue) and
+/// [`DBTraceObjectInterface`](crate::trace::database::target::db_trace_object_interface::DBTraceObjectInterface)
+/// before the real port is available. Grown beyond the schema lookup `TraceObjectValue`'s
+/// defaults need to add the two members `DBTraceObjectInterface`'s defaults need: the object's
+/// key and life. In the real Java hierarchy both are inherited from `TraceUniqueObject` (which
+/// `TraceObject` extends); they're declared directly here instead of via that supertrait to avoid
+/// requiring every existing placeholder implementor of this trait to also implement
+/// `TraceUniqueObject`.
 pub trait TraceObject: Send + Sync {
     /// Mirrors `TraceObject.getSchema()`.
     fn get_schema(&self) -> Box<dyn TraceObjectSchema>;
+
+    /// Mirrors `TraceUniqueObject.getObjectKey()`, as inherited by `TraceObject`.
+    fn get_object_key(&self) -> Box<dyn ObjectKey>;
+
+    /// Mirrors `TraceObject.getLife()`.
+    fn get_life(&self) -> Box<dyn LifeSet>;
 }
 
 /// Placeholder for the nested enum `ghidra.trace.model.target.TraceObject.ConflictResolution`,
