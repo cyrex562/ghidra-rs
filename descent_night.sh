@@ -30,6 +30,7 @@ DEBT="OWNERSHIP_DEBT.tsv"                                           # Java-idiom
 AUDIT_STEP="${AUDIT_STEP:-1}"                                       # post-run idiom-drift scan; detection only, never blocks a port
 DESCENT_PARKED="DESCENT_PARKED.tsv"   # durable park-list: classes too big for the nightly loop (timeouts);
                                       # excluded from the regenerated order, worked interactively in daytime
+SHAPES_TSV="${SHAPES_TSV:-SHAPES.tsv}"  # Java declaration -> Rust shape, from scripts/shape_rules.py
 INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
@@ -77,6 +78,18 @@ if [ "$REGEN" = "1" ] && [ -z "${DESCENT_ONLY:-}" ]; then
   "$PY" scripts/desc_order.py --write >/dev/null 2>>"$LOG_DIR/descent_night.log" || log "WARN: desc_order regen failed, using existing $ORDER"
   git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: refresh PORT_ORDER.tsv" >/dev/null 2>&1||true
 fi
+
+# SHAPES.tsv answers "what Rust shape should this Java file become?", which is a different
+# question from PORT_ORDER's `mode` ("is this file a dependency-cycle cut point?"). Conflating
+# the two is what turned `sealed interface Lifespan` -- a closed set over a long range -- into
+# `pub trait Lifespan` with 613 `dyn Lifespan` uses behind it. `mode` still decides ORDER;
+# `shape` decides the TYPE. It is keyed by path rather than added as a PORT_ORDER column
+# on purpose: the row-rewriting seds below match a fixed seven-column layout.
+if [ "${SHAPE_RULES:-1}" = "1" ] && [ ! -s "$SHAPES_TSV" ]; then
+  log "building $SHAPES_TSV (first run)"
+  "$PY" scripts/shape_rules.py index >/dev/null 2>>"$LOG_DIR/descent_night.log" \
+    || log "WARN: shape index failed -- falling back to mode-only prompts"
+fi
 [ -f "$ORDER" ] || { log "no $ORDER worklist -- run scripts/desc_order.py --write"; exit 1; }
 
 ported=0; parked=0; reconciled=0
@@ -123,7 +136,29 @@ for ((i=1;i<=DESCENT_MAX;i++)); do
     git commit -q -m "descent reconcile: $class already ported -> DONE" >/dev/null 2>&1 || true
     reconciled=$((reconciled+1)); log "reconciled (already ported): $class -> DONE (no LLM turn)"; ((i--)); continue
   fi
-  log "descent ${i}/${DESCENT_MAX}: $class -> ${module}/ (${mode}, ${tier}/${portmodel}, rem=${rem} lines=${lines})"
+
+  # SHAPE: what Rust construct this Java declaration should become, decided from the Java
+  # source by scripts/shape_rules.py. Empty when the index is missing or the file is not in it.
+  shape=""; shape_rule=""
+  if [ "${SHAPE_RULES:-1}" = "1" ] && [ -s "$SHAPES_TSV" ]; then
+    read -r shape shape_rule < <(awk -F'\t' -v p="$ordpath" '$1==p{print $4"\t"$5; exit}' "$SHAPES_TSV")
+  fi
+
+  # A shape the rules cannot decide (marker interfaces, constant-carrying type tags,
+  # annotation types) is a question for a human, not a coin flip for the porter. Park it
+  # WITHOUT an LLM turn -- at $3.26 per turn last run, guessing 169 of these is real money
+  # spent producing code that would then have to be found and undone.
+  if [ "$shape" = "park" ]; then
+    why=$(awk -F'\t' -v p="$ordpath" '$1==p{print $8; exit}' "$SHAPES_TSV")
+    printf '%s\tshape-undecided (%s)\t%s\n' "$(date '+%Y-%m-%dT%H:%M')" "${shape_rule}" "$next" >> "$DESCENT_PARKED"
+    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
+    git add "$DESCENT_PARKED" "$ORDER" >/dev/null 2>&1
+    git commit -q -m "descent: park $class (shape undecided: ${shape_rule})" >/dev/null 2>&1||true
+    log "PARK descent: $class (shape undecided, ${shape_rule}: ${why}) -- no LLM turn"
+    parked=$((parked+1)); ((i--)); continue
+  fi
+
+  log "descent ${i}/${DESCENT_MAX}: $class -> ${module}/ (${mode}${shape:+, shape=$shape}, ${tier}/${portmodel}, rem=${rem} lines=${lines})"
 
   git checkout -f "$INTEGRATION" >/dev/null 2>&1
   git branch -D "$branch" >/dev/null 2>&1 || true; git switch -c "$branch" >/dev/null 2>&1
@@ -178,51 +213,52 @@ the same name, which compiles and silently cannot interoperate.
 "
   fi
 
+  # SHAPE DIRECTIVE. The single most expensive class of defect in this port has not been a
+  # wrong method body -- it has been a correct method body hung off the wrong Rust construct,
+  # because that mistake is contagious: every caller written afterwards is written against it.
+  # The rules live in scripts/shape_rules.py, decided from the Java declaration alone.
+  shape_note=""
+  if [ -n "$shape" ]; then
+    sd=$(timeout 60 "$PY" scripts/shape_rules.py directive "$ordpath" 2>/dev/null)
+    [ -n "$sd" ] && shape_note="
+
+REQUIRED SHAPE (rule ${shape_rule} -- this is not a suggestion; if you believe it is wrong for
+this type, do NOT port it: end with PORT_RESULT: PARKED and say why):
+${sd}"
+  fi
+
+  # A cycle cut-point is a fact about the dependency GRAPH, not about the type. It used to be
+  # translated as "port this as a trait", which deformed value types into trait objects to
+  # solve an ordering problem -- `sealed interface Lifespan` became `pub trait Lifespan` and
+  # 613 `dyn Lifespan` uses followed it. Cut the cycle at the forward reference (a stub),
+  # never by changing what this type is.
+  cycle_note=""
   if [ "$mode" = "trait" ]; then
-    prompt="You are breaking a dependency CYCLE in a Java->Rust port. Port the Java type at
-${srcpath} to a Rust TRAIT (it was selected as a cycle cut-point).
-${promote}
-Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in snake_case;
-create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}${ownership_note}
+    cycle_note="
+CYCLE NOTE: this file sits on a dependency cycle, which is why it comes up now. Break the cycle
+by STUBBING the forward reference (see the placeholder rule below) -- not by changing this type's
+shape. The required shape above already accounts for it."
+  fi
 
-Rules for breaking the cycle:
-- Map the Java type's public API to a Rust trait (methods -> trait methods). Prefer object-safe traits
-  (&self, owned/boxed returns); where a method returns/takes another core type, use a trait object
-  (Box<dyn T>/Arc<dyn T>) or a generic, NOT a concrete struct.
-- For any in-repo core type this references that is NOT yet defined in the Rust crate, do NOT port it
-  here and do NOT fail: define a MINIMAL placeholder trait for it (only the methods THIS type needs) in
-  ghidra-rs/src/${module}/seam_stubs.rs (create/extend it; wire into mod.rs), and append a line to
-  STUBS.tsv: '<ISO-time>\t<PlaceholderName>\t${class}'.
-- Add a #[cfg(test)] mod with at least one smoke test (a mock impl proving object-safety) that
-  exercises real behavior, not trivially-true asserts.
-- MANDATORY test-green loop before finishing: (1) 'cargo build --lib' must pass; (2) 'cargo test --lib
-  --no-run' must compile with ZERO errors -- if your trait/signature change broke EXISTING test code
-  elsewhere (stale mocks, dyn-safety, ambiguous methods), you MUST update that test code to match;
-  (3) run ONLY your class's OWN module tests (e.g. 'cargo test --lib the_module_path') and make them PASS
-  -- do NOT run the full 'cargo test --lib' suite yourself; it is slow (18k tests) and the harness runs
-  it as a final gate. Fast cycles = build + your module only. Iterate: build/test -> read failures -> fix ->
-  repeat until BOTH compile clean AND all tests pass. Do NOT run git. Run cargo SYNCHRONOUSLY
-  and wait for each command to finish -- this is a SINGLE-SHOT non-interactive session: never
-  background a command, schedule a wakeup, or defer work to 'report back later'. Everything,
-  including the final passing test run, must complete within this turn before you stop.
-- In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
-Port this type (plus placeholder stubs for its references) and fix any test code your change breaks.
-If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
-  else
-    prompt="Port the Java class at ${srcpath} to idiomatic Rust (struct + impl).
+  prompt="Port the Java type at ${srcpath} to idiomatic Rust.
 ${promote}
-This class was chosen by RECURSIVE-DESCENT order: its in-repo dependencies have already been ported,
-so REUSE the existing Rust types -- read them first; do not redefine them.
+It was chosen by RECURSIVE-DESCENT order: its in-repo dependencies are already ported, so REUSE
+the existing Rust types -- read them first; do not redefine them.
 
 Destination: ghidra-rs/src/${module}/ -- mirror the remaining Java package path in snake_case;
-create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}${ownership_note}
+create the file and wire it into mod.rs up the chain. Read sibling .rs files first for conventions.${depctx_note}${shape_note}${cycle_note}${ownership_note}
 
 Rules:
-- Map the class to a Rust struct with an impl block; map fields and methods faithfully. Implement any
-  Rust trait that corresponds to a Java interface this class implements (those traits are already ported).
+- Map fields and methods faithfully, and implement any Rust trait corresponding to a Java interface
+  this type implements (those traits are already ported).
+- OWNERSHIP: reach for \`Box<dyn T>\`/\`Arc<dyn T>\`/\`Rc<RefCell<_>>\`/\`Arc<Mutex<_>>\` only when THIS
+  call site genuinely needs runtime polymorphism or shared mutation. A Java interface is not by itself
+  a reason for \`dyn\`, and a Java field with a getter is not a reason for a \`get_x\`/\`set_x\` pair.
+  Prefer a generic \`impl T\` parameter over \`&dyn T\`, a concrete type over a trait object, and a
+  public field or a single accessor over a bean pair. See OWNERSHIP_MIGRATION.md.
 - Prefer reusing already-ported types by their real path. If a referenced in-repo core type is genuinely
-  NOT yet in the crate (a forward cycle edge), define a MINIMAL placeholder trait for it in
-  ghidra-rs/src/${module}/seam_stubs.rs (only the methods THIS class needs; wire into mod.rs) and append
+  NOT yet in the crate (a forward cycle edge), define a MINIMAL placeholder for it in
+  ghidra-rs/src/${module}/seam_stubs.rs (only the methods THIS type needs; wire into mod.rs) and append
   '<ISO-time>\t<PlaceholderName>\t${class}' to STUBS.tsv -- do NOT fail for a missing type.
 - Add a #[cfg(test)] mod with at least one smoke test that compares against expected values from the
   Java behavior, not trivially-true asserts.
@@ -236,9 +272,8 @@ Rules:
   background a command, schedule a wakeup, or defer work to 'report back later'. Everything,
   including the final passing test run, must complete within this turn before you stop.
 - In ${MANIFEST}, set the row whose first column is exactly '${srcpath}' from TODO to DONE.
-Port this class and fix any test code your change breaks.
+Port this type and fix any test code your change breaks.
 If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARKED <reason>."
-  fi
 
   # Invoke the porter with bounded retry on TRANSIENT API failure (e.g. "connection closed
   # mid-response" cost ~1h of window 2026-07-23). rc=124 is a per-port TIMEOUT, not an API error --

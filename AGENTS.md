@@ -158,6 +158,57 @@ dropped every other address; `unimplemented!()` bodies inserted for newly-requir
 that were in fact exercised; and a self-deadlock that no compile-time check could see. Run the
 suite, and read what the failures say before assuming they are unrelated.
 
+## Choosing the Rust shape (automated: `scripts/shape_rules.py`)
+
+The most expensive defect class in this port has never been a wrong method body. It is a
+*correct* method body hung off the wrong Rust construct — because that mistake is contagious.
+`ghidra.trace.model.Lifespan` is declared `public sealed interface Lifespan`: a closed set over
+a range of longs, which is a Rust `enum`. It was ported as `pub trait Lifespan`, and the crate
+now carries **613 `dyn Lifespan`** uses written against that shape, plus doc comments in later
+ports explaining which methods *could not* be default methods because `Lifespan` has no
+constructible implementor. Nothing failed a build or a test. The shape decision has to be made
+before the port, not audited after it.
+
+**Do not decide the shape by hand.** Ask:
+
+```
+python3 scripts/shape_rules.py directive <path/under/orig_src>   # the rule + why, as prose
+python3 scripts/shape_rules.py classify  <path/under/orig_src>   # the same, as JSON
+```
+
+`SHAPES.tsv` holds the answer for all 15,601 Java files; `shape_rules.py index` rebuilds it in
+~15s. The rules read the Java declaration only — never the Rust tree, for the reasons in
+"Diagnosing the Port" above.
+
+| Rule | Java declaration | Rust shape |
+|---|---|---|
+| R1 | `enum` | `enum` (constant bodies become `match self`) |
+| R2 | `sealed interface` / `sealed class` | `enum` — `permits` **is** the variant list |
+| R3 | `record` | `struct`, accessors are field reads |
+| R5 | extends/names a `Throwable` | error type: `Display` + `std::error::Error` |
+| R6 | extends `Iterator`/`Iterable`/`Enumeration` | implement `std::iter::Iterator` |
+| R7 | only statics, no instance state | plain module — **no type of that name** |
+| R9 | open `interface` with methods | `trait` |
+| R10 | `abstract class`, no in-repo subclasses | `struct` |
+| R11 | `abstract class` **with instance fields** | shared-state `struct` **+** `trait` |
+| R12 | `abstract class`, no instance state | `trait` |
+| R13 | private ctor + static `INSTANCE` | `struct` + `OnceLock`, not a global `Arc<Mutex<_>>` |
+| R14 | concrete `class` | `struct` |
+| R4, R8a, R8b | annotation type; marker interface; constants-only interface | **park** — ask a human |
+
+Two things this table is deliberate about:
+
+- **A cycle cut-point is not a shape.** `PORT_ORDER.tsv`'s `mode` column says whether a file sits
+  on a dependency cycle — a fact about the graph, which decides *when* it is ported, not *what*
+  it becomes. Break a cycle by stubbing the forward reference in `seam_stubs.rs`; never by
+  turning a value type into a trait object. Conflating the two is how `Lifespan` happened.
+- **Ambiguity parks.** R4/R8a/R8b cover cases the Java source genuinely does not answer (does
+  anything dispatch on this marker?). `descent_night.sh` parks these *without* an LLM turn.
+
+`shape_rules.py audit` compares shipped `pub trait`/`struct`/`enum` declarations against the
+rules and writes `SHAPE_DEBT.tsv`. It excludes traits standing in for still-TODO Java classes
+(those are deliberate seams) and ambiguous basenames.
+
 ## Coding Standards
 
 - Write idiomatic Rust using standard naming, ownership, error handling, and safety conventions.

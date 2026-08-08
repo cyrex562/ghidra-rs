@@ -1,0 +1,657 @@
+#!/usr/bin/env python3
+"""Decide the Rust SHAPE a Java source file should port to, from the Java source.
+
+Why this exists
+---------------
+`desc_order.py` emits a binary `mode` column: `trait` if the class is a DFS back-edge
+cut-point or a Java `interface`, else `struct`. Java has more than two shapes, so that
+column has been wrong in bulk:
+
+  * 133 queued Java `enum`s and 121 `record`s were told "map the class to a Rust struct
+    with an impl block";
+  * 405 queued Java classes/records/enums were told to become traits because they sat on
+    a dependency cycle;
+  * `Lifespan` -- `public sealed interface Lifespan`, a closed set over a long range --
+    became `pub trait Lifespan`, and the crate now carries 613 `dyn Lifespan` uses.
+
+A cycle cut-point is a statement about the dependency graph, not about the type. This
+module answers the type question separately, from `orig_src` only -- never from the Rust
+tree, which measures how far the port got rather than how code should be shaped
+(AGENTS.md, "Diagnosing the Port").
+
+Shapes
+------
+  enum         Rust `enum` + `match`. Closed set of alternatives.
+  struct       Rust `struct` + `impl`.
+  module       Module of `pub const` items / free `pub fn`s and NO type of that name.
+  trait        Rust `trait`. Genuine open extension point.
+  struct_trait Shared-state `struct` + `trait` for the abstract operations.
+  error        `struct`/`enum` implementing `std::error::Error` + `Display`.
+  iterator     A type implementing `std::iter::Iterator`.
+  park         Cannot be decided mechanically -- stop and ask.
+
+Usage
+-----
+  shape_rules.py index [--out SHAPES.tsv]      build/refresh the shape table
+  shape_rules.py classify <rel-java-path>      one file, JSON to stdout
+  shape_rules.py directive <rel-java-path>     prompt block for the porting harness
+  shape_rules.py audit [--out SHAPE_DEBT.tsv]  shipped Rust decls vs. the rules
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+ORIG = os.path.join(REPO, "orig_src")
+SHAPES = os.path.join(REPO, "SHAPES.tsv")
+
+# ---------------------------------------------------------------------------
+# Java surface parsing
+#
+# This is a scanner, not a parser. It only has to be right about the *primary*
+# declaration in a file (the type whose name matches the file stem), which Java
+# guarantees is public and top-level. Everything nested is deliberately ignored.
+# ---------------------------------------------------------------------------
+
+_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+_LINE_COMMENT = re.compile(r"//[^\n]*")
+_STRING = re.compile(r'"(?:\\.|[^"\\])*"')
+_CHAR = re.compile(r"'(?:\\.|[^'\\])'")
+
+MODS = r"(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp|@\w+(?:\([^)]*\))?|\s)*"
+
+THROWABLE_SUFFIXES = ("Exception", "Error", "Throwable")
+
+# Java iterator-shaped supertypes. Porting these literally is what produced the
+# `while it.has_next() { push(it.next()) }` double-consume bug in AGENTS.md.
+ITERATOR_SUPERS = {"Iterator", "Iterable", "ListIterator", "Enumeration"}
+
+
+def strip_java(src: str) -> str:
+    """Remove comments and literal contents so brace/keyword scanning is safe."""
+    src = _BLOCK_COMMENT.sub(" ", src)
+    src = _LINE_COMMENT.sub(" ", src)
+    src = _STRING.sub('""', src)
+    src = _CHAR.sub("' '", src)
+    return src
+
+
+def find_primary(src: str, name: str):
+    """Locate the top-level declaration named `name`. Returns (kind, mods, header_end)."""
+    pat = re.compile(
+        r"(?P<mods>" + MODS + r")\b(?P<kind>class|interface|enum|record|@interface)\s+"
+        + re.escape(name)
+        + r"\b"
+    )
+    for m in pat.finditer(src):
+        # Reject matches nested inside another type body by checking brace depth.
+        if src.count("{", 0, m.start()) == src.count("}", 0, m.start()):
+            return m.group("kind"), m.group("mods") or "", m.end()
+    return None, "", -1
+
+
+def header_and_body(src: str, start: int):
+    """Split the declaration header (up to `{`) from its brace-matched body."""
+    open_at = src.find("{", start)
+    if open_at < 0:
+        return src[start:].strip(), ""
+    header = src[start:open_at]
+    depth, i = 0, open_at
+    while i < len(src):
+        if src[i] == "{":
+            depth += 1
+        elif src[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return header, src[open_at + 1 : i]
+        i += 1
+    return header, src[open_at + 1 :]
+
+
+def split_types(clause: str):
+    """Split an extends/implements clause on top-level commas (generics-aware)."""
+    out, depth, cur = [], 0, ""
+    for ch in clause:
+        if ch == "<":
+            depth += 1
+        elif ch == ">":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        out.append(cur)
+    return [re.sub(r"<.*", "", t).strip().split(".")[-1] for t in out if t.strip()]
+
+
+def parse_header(header: str):
+    """Pull extends / implements / permits lists out of a declaration header."""
+    ext = re.search(r"\bextends\b(.*?)(?=\bimplements\b|\bpermits\b|$)", header, re.S)
+    imp = re.search(r"\bimplements\b(.*?)(?=\bpermits\b|$)", header, re.S)
+    per = re.search(r"\bpermits\b(.*)$", header, re.S)
+    return (
+        split_types(ext.group(1)) if ext else [],
+        split_types(imp.group(1)) if imp else [],
+        split_types(per.group(1)) if per else [],
+    )
+
+
+def enum_constants(body: str):
+    """Enum constant names, and whether any constant carries a class body."""
+    head = body.split(";", 1)[0] if ";" in body else body
+    consts, depth, cur = [], 0, ""
+    for ch in head:
+        if ch in "({<":
+            depth += 1
+        elif ch in ")}>":
+            depth -= 1
+        if ch == "," and depth == 0:
+            consts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    consts.append(cur)
+    names, bodies = [], False
+    for c in consts:
+        m = re.match(r"\s*(?:@\w+\s*)*([A-Z_][A-Za-z0-9_]*)", c)
+        if m:
+            names.append(m.group(1))
+            if "{" in c:
+                bodies = True
+    return names, bodies
+
+
+def _top_level_members(body: str):
+    """Yield member declarations at brace depth 0 of a type body."""
+    depth, cur = 0, ""
+    for ch in body:
+        if ch == "{":
+            depth += 1
+            if depth == 1:
+                # Method/initialiser body -- emit the signature, skip the body.
+                yield cur
+                cur = ""
+                continue
+        elif ch == "}":
+            depth -= 1
+            continue
+        if depth == 0:
+            if ch == ";":
+                yield cur
+                cur = ""
+            else:
+                cur += ch
+    if cur.strip():
+        yield cur
+
+
+def analyse_body(kind: str, body: str, name: str):
+    """Count the members that decide a shape."""
+    static_fields = instance_fields = 0
+    abstract_methods = concrete_methods = static_methods = 0
+    private_ctor = public_ctor = False
+    has_instance_singleton = False
+
+    for decl in _top_level_members(body):
+        d = decl.strip()
+        if not d or d.startswith("@") and "\n" not in d and "(" not in d:
+            continue
+        is_static = re.search(r"\bstatic\b", d) is not None
+        is_abstract = re.search(r"\babstract\b", d) is not None
+        # A constructor: the type's own name opening the declaration, after modifiers
+        # only. Anchoring matters -- an unanchored search also matches the `new
+        # Registry()` inside `static final Registry INSTANCE = new Registry()`, which
+        # read the singleton's field as a public constructor and hid rule R13.
+        ctor = re.match(
+            r"\s*(?:(?:public|protected|private|static|final|abstract|synchronized"
+            r"|native|@\w+(?:\([^)]*\))?|<[^<>]*>)\s+)*" + re.escape(name) + r"\s*\(",
+            d,
+        )
+        if ctor and not re.search(r"\b(class|interface|enum|record)\b", d):
+            if re.search(r"\bprivate\b", d):
+                private_ctor = True
+            else:
+                public_ctor = True
+            continue
+        # A `=` ahead of any `(` means an initialised field, not a method -- otherwise
+        # `static final Registry INSTANCE = new Registry()` reads as a method signature
+        # (it does end in `)`) and the singleton rule never fires.
+        eq, par = d.find("="), d.find("(")
+        initialised_field = eq >= 0 and (par < 0 or eq < par)
+        if not initialised_field and "(" in d and re.search(r"\)\s*(throws[\w\s,.]*)?$", d):
+            # Method signature.
+            if is_static:
+                static_methods += 1
+            elif is_abstract or (kind == "interface" and not re.search(r"\bdefault\b", d)):
+                abstract_methods += 1
+            else:
+                concrete_methods += 1
+            continue
+        if initialised_field or re.search(r"[\w\]>]\s+\w+\s*(=|$)", d):
+            # Interface fields are implicitly public static final; the keyword is almost
+            # never written, so trusting `is_static` here counts every interface constant
+            # as instance state and hides R8a behind R8b.
+            if is_static or kind == "interface":
+                static_fields += 1
+                if re.search(r"\b(INSTANCE|DEFAULT)\b", d) and re.search(r"\bfinal\b", d):
+                    has_instance_singleton = True
+            else:
+                instance_fields += 1
+
+    return dict(
+        static_fields=static_fields,
+        instance_fields=instance_fields,
+        abstract_methods=abstract_methods,
+        concrete_methods=concrete_methods,
+        static_methods=static_methods,
+        private_ctor=private_ctor,
+        public_ctor=public_ctor,
+        singleton=private_ctor and has_instance_singleton,
+    )
+
+
+def parse_file(path: str, name: str):
+    """Parse one Java file into the facts the rules consume. None if unparseable."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            raw = fh.read()
+    except OSError:
+        return None
+    src = strip_java(raw)
+    kind, mods, end = find_primary(src, name)
+    if kind is None:
+        return None
+    header, body = header_and_body(src, end)
+    extends, implements, permits = parse_header(header)
+    facts = dict(
+        name=name,
+        kind=kind,
+        sealed="sealed" in mods and "non-sealed" not in mods,
+        abstract="abstract" in mods,
+        final=re.search(r"\bfinal\b", mods) is not None,
+        extends=extends,
+        implements=implements,
+        permits=permits,
+        annotations=re.findall(r"@(\w+)", mods),
+    )
+    if kind == "enum":
+        consts, bodies = enum_constants(body)
+        facts["enum_constants"] = consts
+        facts["enum_constant_bodies"] = bodies
+    facts.update(analyse_body(kind, body, name))
+    return facts
+
+
+# ---------------------------------------------------------------------------
+# Subtype index -- "how many things extend/implement this?", answered from
+# orig_src. Counting implementers in the Rust tree is the mistake AGENTS.md
+# documents four times over; orig_src is the authority.
+# ---------------------------------------------------------------------------
+
+
+def build_index(verbose=False):
+    files, facts = [], {}
+    for root, _dirs, names in os.walk(ORIG):
+        for f in names:
+            if f.endswith(".java"):
+                files.append(os.path.join(root, f))
+    subtypes: dict[str, set] = {}
+    for i, p in enumerate(sorted(files)):
+        name = os.path.basename(p)[:-5]
+        rel = os.path.relpath(p, ORIG)
+        fa = parse_file(p, name)
+        if fa is None:
+            continue
+        fa["rel"] = rel
+        facts.setdefault(name, []).append(fa)
+        for sup in fa["extends"] + fa["implements"]:
+            subtypes.setdefault(sup, set()).add(name)
+        if verbose and i % 2000 == 0:
+            print(f"  indexed {i}/{len(files)}", file=sys.stderr)
+    return facts, subtypes
+
+
+# ---------------------------------------------------------------------------
+# Rules
+# ---------------------------------------------------------------------------
+
+# shape -> the directive injected into the porting prompt. Kept terse on purpose:
+# every one of these is paid for on every port.
+DIRECTIVES = {
+    "enum": """SHAPE: Rust `enum`. This Java type is a CLOSED set of alternatives ({why}).
+Emit `pub enum {name}` with one variant per alternative and implement its methods with
+`match self`. Do NOT emit a trait: a trait would reopen a set the Java source deliberately
+closed, and every caller would then take `&dyn {name}` for what is a plain value.""",
+    "struct": """SHAPE: Rust `struct` + `impl`. This Java type is a concrete data type ({why}).
+Emit `pub struct {name}` and take/return it BY VALUE or by `&`/`&mut` reference. Do NOT emit a
+trait and do NOT let it appear as `Box<dyn {name}>`/`Arc<dyn {name}>` anywhere.""",
+    "module": """SHAPE: a plain module -- `pub const` items and/or free `pub fn`s, and NO type
+named `{name}` at all ({why}).
+Java needs a class to hang statics off; Rust does not. Emit the constants and functions directly
+in the module. A field-less struct that is never instantiated is not the port of a statics holder,
+and it drags an unnecessary `impl` block and receiver argument through every call site.""",
+    "trait": """SHAPE: Rust `trait`. This is a genuine open extension point ({why}).
+Emit `pub trait {name}`. Use `&dyn {name}`/`Box<dyn {name}>` ONLY where the call site really is
+polymorphic over unknown implementers; prefer a generic `impl {name}` parameter otherwise.""",
+    "struct_trait": """SHAPE: shared-state `struct` + `trait` for the abstract operations ({why}).
+Java abstract classes carry BOTH state and behaviour. Split them: `pub struct {name}Base` (or
+give the shared fields to each concrete type) holds the fields and the concrete methods; `pub
+trait {name}` declares ONLY the abstract methods. Do not emit a bare trait -- the shared state
+has to live somewhere, and a trait cannot hold it.""",
+    "error": """SHAPE: an error type ({why}). Emit a `struct`/`enum` implementing
+`std::fmt::Display` and `std::error::Error`, returned as `Err(...)` from `Result`. Do NOT model
+the Java exception hierarchy as a Rust trait hierarchy, and do NOT panic where Java throws.""",
+    "iterator": """SHAPE: implement `std::iter::Iterator` ({why}).
+Emit a type whose `Iterator::next` returns `Option<Item>`. Do NOT port `hasNext()`/`next()` as a
+pair of Rust methods: `while it.has_next() {{ v.push(it.next()) }}` advanced the cursor twice per
+turn and silently dropped every other element (AGENTS.md, "Compiling is not evidence").""",
+    "park": """SHAPE: UNDECIDED. {why}
+Do not guess. Port nothing and end with: PORT_RESULT: PARKED shape undecided -- {why}""",
+}
+
+
+def classify(facts: dict, subtype_count: int, permits_resolved=None) -> dict:
+    """Apply the shape rules. Returns {shape, rule, why, confidence}."""
+    name, kind = facts["name"], facts["kind"]
+
+    def r(rule, shape, why, conf="hard"):
+        return dict(shape=shape, rule=rule, why=why, confidence=conf, name=name)
+
+    # R1 -- Java enum. Always a Rust enum, constant bodies or not.
+    if kind == "enum":
+        n = len(facts.get("enum_constants", []))
+        extra = " with constant-specific bodies -> `match self` in each method" if facts.get(
+            "enum_constant_bodies"
+        ) else ""
+        return r("R1-java-enum", "enum", f"Java `enum` with {n} constants{extra}")
+
+    # R2 -- sealed type. `permits` IS the variant list; this is the Lifespan case.
+    if facts["sealed"]:
+        p = permits_resolved or facts["permits"]
+        listed = ", ".join(p) if p else "its nested implementors"
+        return r(
+            "R2-sealed",
+            "enum",
+            f"Java `sealed {kind}` -- the permitted set is closed: {listed}",
+        )
+
+    # R3 -- record. An immutable value; accessors are field reads.
+    if kind == "record":
+        return r("R3-record", "struct", "Java `record` -- an immutable value type")
+
+    # R4 -- annotation type. Not a runtime type at all.
+    if kind == "@interface":
+        return r(
+            "R4-annotation",
+            "park",
+            "Java annotation type -- has no direct Rust equivalent; decide with a human",
+            "ambiguous",
+        )
+
+    # R5 -- exception. Decided by supertype/name before any structural rule.
+    supers = facts["extends"] + facts["implements"]
+    if any(s.endswith(THROWABLE_SUFFIXES) for s in supers) or name.endswith(THROWABLE_SUFFIXES):
+        return r("R5-exception", "error", f"extends/names a Java throwable ({', '.join(supers) or name})")
+
+    # R6 -- iterator-shaped. Must become a real Iterator, never has_next/next.
+    if any(s in ITERATOR_SUPERS for s in supers):
+        return r("R6-iterator", "iterator", f"extends {', '.join(s for s in supers if s in ITERATOR_SUPERS)}")
+
+    # R7 -- statics holder: a class that exists only because Java has nowhere else to put
+    # constants and free functions. No instance state, no instance methods.
+    if (
+        kind == "class"
+        and facts["instance_fields"] == 0
+        and facts["concrete_methods"] == 0
+        and facts["abstract_methods"] == 0
+        and (facts["static_fields"] > 0 or facts["static_methods"] > 0)
+        and not facts["public_ctor"]
+    ):
+        bits = []
+        if facts["static_fields"]:
+            bits.append(f"{facts['static_fields']} static field(s)")
+        if facts["static_methods"]:
+            bits.append(f"{facts['static_methods']} static method(s)")
+        return r(
+            "R7-statics-holder",
+            "module",
+            f"{' and '.join(bits)}, no instance state and no instance methods",
+        )
+
+    if kind == "interface":
+        if facts["abstract_methods"] == 0 and facts["concrete_methods"] == 0:
+            # R8a -- an interface whose only members are constants (implicitly
+            # public static final). It is part constants module, part type tag, and
+            # which half matters depends on whether anything dispatches on the tag --
+            # which the Java source alone does not say.
+            if facts["static_fields"] > 0:
+                return r(
+                    "R8a-constants-interface",
+                    "park",
+                    f"interface with {facts['static_fields']} constant(s) and no methods: "
+                    f"the constants want a plain module, but "
+                    f"{'the ' + ', '.join(facts['extends']) + ' supertype means' if facts['extends'] else 'it may mean'}"
+                    " something dispatches on it as a type tag -- decide with a human",
+                    "ambiguous",
+                )
+            # R8b -- a true marker interface: no members at all.
+            return r(
+                "R8b-marker",
+                "park",
+                "marker interface -- no methods, no constants; Rust has no equivalent "
+                "and the right seam depends on what tests the marker",
+                "ambiguous",
+            )
+        # R9 -- open interface. The one case a trait is unambiguously right.
+        return r(
+            "R9-open-interface",
+            "trait",
+            f"Java `interface` with {facts['abstract_methods']} abstract method(s), "
+            f"{subtype_count} in-repo implementor(s)",
+        )
+
+    # kind == class from here.
+    if facts["abstract"]:
+        # R10 -- abstract base with no subclasses left in-repo: nothing to abstract over.
+        if subtype_count == 0:
+            return r("R10-abstract-orphan", "struct", "abstract class with no in-repo subclasses")
+        # R11 -- abstract base carrying state: needs the struct half.
+        if facts["instance_fields"] > 0:
+            return r(
+                "R11-abstract-stateful",
+                "struct_trait",
+                f"abstract class with {facts['instance_fields']} instance field(s) and "
+                f"{subtype_count} in-repo subclass(es)",
+            )
+        # R12 -- pure abstract base: behaves as an interface.
+        return r(
+            "R12-abstract-pure",
+            "trait",
+            f"abstract class with no instance state and {subtype_count} in-repo subclass(es)",
+        )
+
+    # R13 -- singleton. Concrete, but its instance identity is the point.
+    if facts["singleton"]:
+        return r(
+            "R13-singleton",
+            "struct",
+            "singleton (private constructor + static INSTANCE) -- expose a `fn` or a "
+            "`OnceLock`, not a global `Arc<Mutex<_>>`",
+        )
+
+    # R14 -- concrete class. The default, and the largest bucket.
+    return r("R14-concrete-class", "struct", f"concrete Java `class` ({subtype_count} in-repo subclass(es))")
+
+
+def directive_for(res: dict) -> str:
+    return DIRECTIVES[res["shape"]].format(name=res["name"], why=res["why"])
+
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+COLS = ["path", "class", "kind", "shape", "rule", "confidence", "subtypes", "why"]
+
+
+def cmd_index(args):
+    facts, subtypes = build_index(verbose=True)
+    rows = []
+    for name, entries in facts.items():
+        for fa in entries:
+            res = classify(fa, len(subtypes.get(name, ())))
+            rows.append(
+                [
+                    fa["rel"],
+                    name,
+                    fa["kind"] + ("/sealed" if fa["sealed"] else "") + ("/abstract" if fa["abstract"] else ""),
+                    res["shape"],
+                    res["rule"],
+                    res["confidence"],
+                    str(len(subtypes.get(name, ()))),
+                    res["why"],
+                ]
+            )
+    rows.sort(key=lambda r: r[0])
+    with open(args.out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(COLS) + "\n")
+        for r in rows:
+            fh.write("\t".join(c.replace("\t", " ").replace("\n", " ") for c in r) + "\n")
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r[3]] = counts.get(r[3], 0) + 1
+    print(f"wrote {len(rows)} rows to {args.out}")
+    for k, v in sorted(counts.items(), key=lambda x: -x[1]):
+        print(f"  {v:6d}  {k}")
+    return 0
+
+
+def _lookup(rel: str):
+    """Shape row for a path, from SHAPES.tsv when present, else parsed live."""
+    rel = rel[len("orig_src/") :] if rel.startswith("orig_src/") else rel
+    if os.path.exists(SHAPES):
+        with open(SHAPES, encoding="utf-8") as fh:
+            next(fh, None)
+            for line in fh:
+                c = line.rstrip("\n").split("\t")
+                if c and c[0] == rel:
+                    return dict(zip(COLS, c)) | {"name": c[1]}
+    name = os.path.basename(rel)[:-5]
+    fa = parse_file(os.path.join(ORIG, rel), name)
+    if fa is None:
+        return None
+    _facts, subtypes = build_index()
+    res = classify(fa, len(subtypes.get(name, ())))
+    return dict(path=rel, **{k: res[k] for k in ("shape", "rule", "confidence", "why", "name")})
+
+
+def cmd_classify(args):
+    row = _lookup(args.path)
+    if row is None:
+        print(json.dumps({"shape": "park", "why": "could not parse the Java declaration"}))
+        return 1
+    print(json.dumps(row, indent=2))
+    return 0
+
+
+def cmd_directive(args):
+    row = _lookup(args.path)
+    if row is None:
+        return 1
+    print(DIRECTIVES[row["shape"]].format(name=row["name"], why=row["why"]))
+    return 0
+
+
+def cmd_audit(args):
+    """Compare shipped Rust declarations against the rules.
+
+    A trait standing in for a still-TODO Java class is a deliberate seam, not a defect
+    (AGENTS.md), so those are excluded. So are ambiguous basenames: `PatternExpression`
+    is two unrelated Java classes, and pairing by basename has produced confident wrong
+    answers before.
+    """
+    if not os.path.exists(SHAPES):
+        print(f"{SHAPES} missing -- run `shape_rules.py index` first", file=sys.stderr)
+        return 1
+    shapes: dict[str, list] = {}
+    with open(SHAPES, encoding="utf-8") as fh:
+        next(fh, None)
+        for line in fh:
+            c = line.rstrip("\n").split("\t")
+            if len(c) == len(COLS):
+                shapes.setdefault(c[1], []).append(dict(zip(COLS, c)))
+    status = {}
+    with open(os.path.join(REPO, "PORT_MANIFEST.tsv"), encoding="utf-8") as fh:
+        for line in fh:
+            c = line.split("\t")
+            if len(c) > 1:
+                status[c[0]] = c[1].strip()
+
+    decl = re.compile(r"^\s*pub (trait|struct|enum) ([A-Za-z0-9_]+)")
+    rust: dict[str, list] = {}
+    for root, _d, files in os.walk(os.path.join(REPO, "ghidra-rs", "src")):
+        for f in files:
+            if not f.endswith(".rs") or f == "seam_stubs.rs":
+                continue
+            p = os.path.join(root, f)
+            for i, line in enumerate(open(p, encoding="utf-8", errors="replace"), 1):
+                m = decl.match(line)
+                if m:
+                    rust.setdefault(m.group(2), []).append((m.group(1), os.path.relpath(p, REPO), i))
+
+    want = {"enum": "enum", "struct": "struct", "trait": "trait", "iterator": "struct",
+            "error": ("struct", "enum"), "struct_trait": ("struct", "trait")}
+    rows = []
+    for name, decls in sorted(rust.items()):
+        cand = shapes.get(name)
+        if not cand or len(cand) > 1:
+            continue  # unmatched, or an ambiguous basename -- do not guess
+        sh = cand[0]
+        if sh["shape"] not in want:
+            continue
+        if status.get("orig_src/" + sh["path"]) != "DONE":
+            continue  # trait standing in for an unported class = deliberate seam
+        ok = want[sh["shape"]]
+        ok = (ok,) if isinstance(ok, str) else ok
+        kinds = {d[0] for d in decls}
+        if kinds & set(ok):
+            continue
+        for k, p, ln in decls:
+            rows.append([name, k, sh["shape"], sh["rule"], sh["kind"], f"{p}:{ln}", sh["why"]])
+
+    hdr = ["class", "rust_is", "should_be", "rule", "java_kind", "location", "why"]
+    with open(args.out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(hdr) + "\n")
+        for r in rows:
+            fh.write("\t".join(str(c).replace("\t", " ") for c in r) + "\n")
+    print(f"wrote {len(rows)} shape mismatches to {args.out}")
+    by: dict[str, int] = {}
+    for r in rows:
+        by[f"{r[1]} -> {r[2]} ({r[3]})"] = by.get(f"{r[1]} -> {r[2]} ({r[3]})", 0) + 1
+    for k, v in sorted(by.items(), key=lambda x: -x[1])[:12]:
+        print(f"  {v:5d}  {k}")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    p = sub.add_parser("index"); p.add_argument("--out", default=SHAPES); p.set_defaults(fn=cmd_index)
+    p = sub.add_parser("classify"); p.add_argument("path"); p.set_defaults(fn=cmd_classify)
+    p = sub.add_parser("directive"); p.add_argument("path"); p.set_defaults(fn=cmd_directive)
+    p = sub.add_parser("audit"); p.add_argument("--out", default=os.path.join(REPO, "SHAPE_DEBT.tsv"))
+    p.set_defaults(fn=cmd_audit)
+    args = ap.parse_args()
+    return args.fn(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
