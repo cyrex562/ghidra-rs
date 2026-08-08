@@ -25,7 +25,7 @@ DONE	trait	36	13	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	35	12	93	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/guest/InternalTracePlatform.java
 DONE	trait	45	9	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/AbstractSingleDBTraceCodeUnitsView.java
 PARK	trait	45	10	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/InternalBaseCodeUnitsView.java
-TODO	trait	44	8	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/InternalTraceBaseDefinedUnitsView.java
+DONE	trait	44	8	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/InternalTraceBaseDefinedUnitsView.java
 TODO	trait	43	9	9	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceDefinedUnitsView.java
 TODO	trait	50	10	28	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/property/TracePropertyMapOperations.java
 TODO	trait	50	12	7	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/property/TracePropertyMapSpace.java
