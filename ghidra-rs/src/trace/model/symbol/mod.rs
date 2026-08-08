@@ -1,4 +1,5 @@
 pub mod trace_class_symbol;
+pub mod trace_label_symbol;
 pub mod trace_namespace_symbol;
 pub mod trace_offset_reference;
 pub mod trace_reference;
@@ -8,6 +9,7 @@ pub mod trace_symbol;
 pub mod trace_symbol_with_lifespan;
 
 pub use trace_class_symbol::TraceClassSymbol;
+pub use trace_label_symbol::TraceLabelSymbol;
 pub use trace_namespace_symbol::TraceNamespaceSymbol;
 pub use trace_offset_reference::TraceOffsetReference;
 pub use trace_reference::TraceReference;
