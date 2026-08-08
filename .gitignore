@@ -39,4 +39,5 @@ PORT_PARKED.tsv
 dep_stats.json
 port_history.tsv
 test_health.txt
+FLAKY_TESTS.tsv
 /tools/jdk/
