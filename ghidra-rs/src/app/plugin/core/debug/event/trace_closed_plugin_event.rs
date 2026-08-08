@@ -161,7 +161,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_stack_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceStackManager> {
+        fn get_stack_manager(&self) -> Box<dyn crate::trace::model::stack::trace_stack_manager::TraceStackManager> {
             unimplemented!()
         }
 

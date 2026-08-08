@@ -217,10 +217,6 @@ pub trait TraceMemoryOperations: Send + Sync {
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceRegisterContextManager {}
 
-/// Placeholder for `ghidra.trace.model.stack.TraceStackManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceStackManager {}
-
 /// Placeholder for `ghidra.trace.model.time.TraceSnapshot`, referenced by
 /// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
 /// the real port is available. Mirrors the one member referenced in that interface's javadoc:
@@ -538,9 +534,15 @@ pub trait TracePlatform: Send + Sync {
 pub trait TraceThread: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.model.stack.TraceStackFrame`, referenced by
-/// [`TraceCodeManager`](crate::trace::model::listing::trace_code_manager::TraceCodeManager)
+/// [`TraceCodeManager`](crate::trace::model::listing::trace_code_manager::TraceCodeManager) and
+/// [`TraceStackManager`](crate::trace::model::stack::trace_stack_manager::TraceStackManager)
 /// before the real port is available. No members are parsed from the Java source yet.
 pub trait TraceStackFrame: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.model.stack.TraceStack`, referenced by
+/// [`TraceStackManager`](crate::trace::model::stack::trace_stack_manager::TraceStackManager)
+/// before the real port is available. No members are parsed from the Java source yet.
+pub trait TraceStack: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.model.property.TracePropertyMapSpace`, referenced by
 /// [`TracePropertyMap`](crate::trace::model::property::trace_property_map::TracePropertyMap)

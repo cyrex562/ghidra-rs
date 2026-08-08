@@ -109,11 +109,11 @@ mod tests {
     use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
     use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
     use crate::trace::model::program::TraceVariableSnapProgramView;
+    use crate::trace::model::stack::trace_stack_manager::TraceStackManager;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceMemoryManager,
         TraceRegisterContextManager,
-        TraceStackManager,
     };
     use crate::util::lock_hold::{Lock, LockHold};
     use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
