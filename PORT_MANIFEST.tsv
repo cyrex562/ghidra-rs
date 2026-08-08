@@ -830,7 +830,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/databas
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/AbstractDBTraceSymbolSingleTypeWithLocationView.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceClassSymbol.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceClassSymbolView.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceEquate.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceEquate.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceEquateManager.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceEquateSpace.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceLabelSymbol.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database symbol 
