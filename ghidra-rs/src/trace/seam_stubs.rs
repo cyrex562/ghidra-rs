@@ -10,9 +10,9 @@ use crate::debug::api::tracermi::SchemaName;
 use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::Register;
-use crate::program::model::symbol::Symbol;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
+use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace::Trace;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
@@ -77,30 +77,10 @@ pub trait TraceRegisterContextManager {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceStackManager {}
 
-/// Placeholder for `ghidra.trace.model.symbol.TraceSymbolManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Grown to add
-/// the lookup
-/// [`TraceReference`](crate::trace::model::symbol::trace_reference::TraceReference)'s default
-/// `get_associated_symbol()` needs. The real Java default resolves this via the manager's full
-/// symbol table (`SymbolTable.getSymbolByID(long)`), not yet ported, so this placeholder always
-/// reports no symbol found until that machinery exists.
-///
-/// Grown again to add the two members
-/// [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView)'s
-/// defaults need: the owning trace (mirrors `TraceSymbolManager.getTrace()`) and the global
-/// namespace symbol (mirrors `TraceSymbolManager.getGlobalNamespace()`).
-pub trait TraceSymbolManager {
-    /// Looks up a symbol by its ID. Mirrors `SymbolTable.getSymbolByID(long)`.
-    fn get_symbol_by_id(&self, _id: i64) -> Option<Arc<dyn Symbol>> {
-        None
-    }
-
-    /// Get the trace for this manager. Mirrors `TraceSymbolManager.getTrace()`.
-    fn get_trace(&self) -> Box<dyn Trace>;
-
-    /// Get the global (root) namespace symbol. Mirrors `TraceSymbolManager.getGlobalNamespace()`.
-    fn get_global_namespace(&self) -> Arc<dyn TraceNamespaceSymbol>;
-}
+/// Placeholder for `ghidra.trace.model.symbol.TraceClassSymbolView`, referenced by
+/// [`TraceSymbolManager`](crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager)
+/// before the real interface is ported. No members are parsed from the Java source yet.
+pub trait TraceClassSymbolView: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.model.symbol.TraceSymbolView`, referenced by
 /// [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView)

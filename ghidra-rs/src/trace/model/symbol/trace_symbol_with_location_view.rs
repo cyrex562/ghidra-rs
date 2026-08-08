@@ -225,7 +225,7 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::symbol::{Namespace, NamespaceType, SourceType, Symbol, SymbolType};
     use crate::trace::model::symbol::trace_reference::TraceReference;
-    use crate::trace::seam_stubs::TraceSymbolManager;
+    use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
     use crate::util::task::TaskMonitor;
     use std::cell::RefCell;
 
@@ -375,6 +375,38 @@ mod tests {
 
         fn get_global_namespace(&self) -> Arc<dyn TraceNamespaceSymbol> {
             self.global.clone()
+        }
+
+        fn labels(&self) -> Box<dyn crate::trace::model::symbol::trace_label_symbol_view::TraceLabelSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_namespace_symbol_view::TraceNamespaceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn classes(&self) -> Box<dyn crate::trace::seam_stubs::TraceClassSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn all_namespaces(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn not_labels(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolNoDuplicatesView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn all_symbols(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_ids_added(&self, _from: i64, _to: i64) -> Vec<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_ids_removed(&self, _from: i64, _to: i64) -> Vec<i64> {
+            unimplemented!("not exercised by this smoke test")
         }
     }
 

@@ -173,7 +173,8 @@ mod tests {
     use crate::trace::model::symbol::trace_symbol_with_lifespan::TraceSymbolWithLifespan;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::{TraceRegisterUtils, TraceSymbolManager, TraceSymbolView};
+    use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
+    use crate::trace::seam_stubs::{TraceRegisterUtils, TraceSymbolView};
     use crate::util::task::TaskMonitor;
     use std::cell::RefCell;
 
@@ -524,6 +525,30 @@ mod tests {
         }
         fn get_global_namespace(&self) -> Arc<dyn TraceNamespaceSymbol> {
             self.global.clone()
+        }
+        fn labels(&self) -> Box<dyn TraceLabelSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_namespace_symbol_view::TraceNamespaceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn classes(&self) -> Box<dyn crate::trace::seam_stubs::TraceClassSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn all_namespaces(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn not_labels(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolNoDuplicatesView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn all_symbols(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_ids_added(&self, _from: i64, _to: i64) -> Vec<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_ids_removed(&self, _from: i64, _to: i64) -> Vec<i64> {
+            unimplemented!("not exercised by this smoke test")
         }
     }
 

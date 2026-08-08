@@ -204,7 +204,7 @@ use crate::program::model::listing::CommentType;
         ) -> Box<dyn crate::trace::model::modules::TraceStaticMappingManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_symbol_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolManager> {
+        fn get_symbol_manager(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_thread_manager(&self) -> Box<dyn crate::trace::model::thread::TraceThreadManager> {
