@@ -12,6 +12,7 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::Register;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
+use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::trace::Trace;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
@@ -202,6 +203,18 @@ pub trait TraceObjectSchema: Send + Sync {
         }
         Box::new(FallbackAnySchema)
     }
+
+    /// Resolves the schema of the (possibly indirect) successor object at the given path from
+    /// this schema. Mirrors `TraceObjectSchema.getSuccessorSchema(KeyPath)`, used by
+    /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)'s
+    /// `getConventionalRegisterPath(AddressSpace, Register)` default.
+    ///
+    /// The real Java method walks the element/attribute schema maps (not yet ported) to resolve
+    /// each path component, so this placeholder defaults to "unresolved" until that machinery
+    /// exists.
+    fn get_successor_schema(&self, _path: &KeyPath) -> Option<Box<dyn TraceObjectSchema>> {
+        None
+    }
 }
 
 /// Placeholder for the nested `ghidra.trace.model.Lifespan.LifeSet`, referenced by
@@ -230,6 +243,17 @@ pub trait TraceObject: Send + Sync {
 
     /// Mirrors `TraceObject.getLife()`.
     fn get_life(&self) -> Box<dyn LifeSet>;
+
+    /// The path from the trace's root object to this object. Mirrors
+    /// `TraceObject.getCanonicalPath()`, used by
+    /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)'s
+    /// `getConventionalRegisterPath(TraceObject, Register)` default.
+    ///
+    /// Defaults to the root path so existing implementors are unaffected; concrete
+    /// implementations should override once this placeholder is replaced by the real port.
+    fn get_canonical_path(&self) -> KeyPath {
+        KeyPath::root()
+    }
 }
 
 /// Placeholder for `ghidra.trace.model.target.TraceObjectValPath`, referenced by
@@ -284,11 +308,39 @@ pub trait TracePlatform: Send + Sync {
         true
     }
 
+    /// Get the trace this platform belongs to. Mirrors `TracePlatform.getTrace()`.
+    ///
+    /// Real Java method, abstract (no default), so every platform must supply it. This
+    /// placeholder instead defaults to panicking, matching this crate's other
+    /// grown-but-not-yet-implemented placeholder members (see
+    /// [`TraceRegisterUtils::require_byte_bound`]'s panic for the same reasoning): that keeps the
+    /// several existing marker (`impl TracePlatform for T {}`) implementors compiling unchanged,
+    /// since none of them are exercised through a path that calls this method.
+    ///
+    /// Grown for
+    /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform),
+    /// whose defaults need it to reach the owning trace's symbol/object managers.
+    fn get_trace(&self) -> Box<dyn Trace> {
+        unimplemented!("TracePlatform::get_trace placeholder not overridden")
+    }
+
     /// Maps an address in this platform's language into the trace's host address space, or
     /// `None` if it cannot be mapped. Mirrors `TracePlatform.mapGuestToHost(Address)`. Defaults
     /// to the identity mapping, matching the host platform's behavior.
     fn map_guest_to_host(&self, address: Address) -> Option<Address> {
         Some(address)
+    }
+
+    /// Maps a range in this platform's language into the trace's host address space, or `None`
+    /// if it cannot be mapped (the Java method requires the entire range map to a single range).
+    /// Mirrors `TracePlatform.mapGuestToHost(AddressRange)`. Defaults to the identity mapping,
+    /// matching the host platform's behavior.
+    ///
+    /// Grown for
+    /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform),
+    /// whose `getConventionalRegisterRange` default needs the range-taking overload.
+    fn map_guest_to_host_range(&self, range: &AddressRange) -> Option<AddressRange> {
+        Some(range.clone())
     }
 
     /// Get the conventional (register-space-overlay) address range for the given platform
@@ -400,6 +452,20 @@ pub trait TraceRegisterUtils: Send + Sync {
             panic!("register {} is not byte-bound", register.name());
         }
     }
+
+    /// Get the (byte-addressed) range a register occupies in its own address space. Mirrors the
+    /// static `TraceRegisterUtils.rangeForRegister(Register)`, used by
+    /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)'s
+    /// `getConventionalRegisterRange` default.
+    ///
+    /// Unlike this trait's other members, this one is implemented directly against the ported
+    /// [`Register`] (its address and byte length), since the computation depends only on the
+    /// register itself, not on any manager state.
+    fn range_for_register(&self, register: &Register) -> AddressRange {
+        let start = register.address().clone();
+        let end = start.add_wrap((register.num_bytes() as i64) - 1);
+        AddressRange::new(start, end)
+    }
 }
 
 /// Placeholder for the nested `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.TraceAddressSnapRangeQuery`,
@@ -408,6 +474,13 @@ pub trait TraceRegisterUtils: Send + Sync {
 /// before the real port is available. That trait only ever passes this type around opaquely (as
 /// the `Q` type parameter of the `SpatialMap` supertrait it extends); no members are needed yet.
 pub trait TraceAddressSnapRangeQuery: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.database.guest.DBTraceGuestPlatform.DBTraceGuestLanguage`,
+/// referenced by
+/// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)
+/// before the real port is available. `InternalTracePlatform` only ever passes this type around
+/// opaquely (as `getLanguageEntry()`'s return); no members are needed yet.
+pub trait DBTraceGuestLanguage: Send + Sync {}
 
 /// Placeholder for the nested
 /// `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.AbstractDBTraceAddressSnapRangePropertyMapData`,
