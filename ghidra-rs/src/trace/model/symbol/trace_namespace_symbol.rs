@@ -166,7 +166,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn create_program_view(&self, _snap: i64) -> Box<dyn crate::trace::seam_stubs::TraceVariableSnapProgramView> {
+        fn create_program_view(&self, _snap: i64) -> Box<dyn crate::trace::model::program::TraceVariableSnapProgramView> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -174,7 +174,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_program_view(&self) -> Box<dyn crate::trace::seam_stubs::TraceVariableSnapProgramView> {
+        fn get_program_view(&self) -> Box<dyn crate::trace::model::program::TraceVariableSnapProgramView> {
             unimplemented!("not exercised by this smoke test")
         }
 
