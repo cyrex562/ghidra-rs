@@ -16,7 +16,7 @@ DONE	trait	37	15	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	36	15	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceEquate.java
 DONE	trait	37	14	25	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceEquateOperations.java
 DONE	trait	37	14	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceEquateSpace.java
-TODO	trait	36	13	5	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceEquateManager.java
+DONE	trait	36	13	5	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceEquateManager.java
 TODO	trait	37	16	37	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceReferenceOperations.java
 TODO	trait	37	14	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceReferenceSpace.java
 TODO	trait	36	15	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceReferenceManager.java
