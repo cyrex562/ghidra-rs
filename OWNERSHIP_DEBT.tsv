@@ -436,12 +436,14 @@ TODO	45.0	45.0	0	DebuggerListingService	app	src/app/services/debugger_listing_se
 TODO	45.0	45.0	0	RepositoryHandle	framework	src/framework/remote/repository_handle.rs	dyn=22,getset_pairs=1
 TODO	44.7	44.7	0	ComparableMultiSetStl	generic	src/generic/stl/comparable_multi_set_stl.rs	dyn=21,clone/100L=2.7
 TODO	44.7	44.7	0	SourceFileManagerDb	program	src/program/database/sourcemap/source_file_manager_db.rs	dyn=21,clone/100L=2.7
+TODO	44.7	44.7	0	TracePropertyMapSpace	trace	src/trace/model/property/trace_property_map_space.rs	dyn=21,clone/100L=1.7,getset_pairs=1
 TODO	44.6	44.6	0	AssemblyParser	app	src/app/plugin/assembler/sleigh/parse/assembly_parser.rs	dyn=22
 TODO	44.6	44.6	0	HexagonParallelInstructionHelper	app	src/app/util/viewer/field/hexagon_parallel_instruction_helper.rs	dyn=19,getset_pairs=6
 TODO	44.6	44.6	0	VarKeyInteriorNode	framework	src/framework/db/var_key_interior_node.rs	dyn=21,clone/100L=1.6,getset_pairs=1
 TODO	44.6	44.6	0	InstructionBlock	program	src/program/model/lang/instruction_block.rs	dyn=20,clone/100L=1.6,getset_pairs=3
 TODO	44.6	44.6	0	DbCachedObjectIndex	util	src/util/database/db_cached_object_index.rs	dyn=22
 TODO	44.5	44.5	0	GlobalSymbolMap	program	src/program/model/pcode/global_symbol_map.rs	dyn=21,clone/100L=2.5
+TODO	44.5	44.5	0	TracePropertyMap	trace	src/trace/model/property/trace_property_map.rs	dyn=21,clone/100L=1.5,getset_pairs=1
 TODO	44.3	44.3	0	Fsrl	filesystem	src/filesystem/gfilesystem/fsrl.rs	dyn=22
 TODO	44.2	44.2	0	FixedKeyFixedRecNode	framework	src/framework/db/fixed_key_fixed_rec_node.rs	dyn=20,clone/100L=3.2,getset_pairs=1
 TODO	44.1	44.1	0	Module	format	src/format/pdb2/pdbreader/module.rs	dyn=22
@@ -532,7 +534,6 @@ TODO	35.3	35.3	0	MemoryBlockDefinition	app	src/app/plugin/processors/generic/mem
 TODO	35.3	35.3	0	ProgramDb	program	src/program/database/program_db.rs	dyn=3,arc_mutex=7,clone/100L=8.3
 TODO	35.1	35.1	0	AbstractAddressSetView		src/util/abstract_address_set_view.rs	dyn=16,clone/100L=3.1
 TODO	34.9	34.9	0	SolverHint	app	src/app/plugin/assembler/sleigh/expr/solver_hint.rs	dyn=17
-TODO	34.9	34.9	0	TracePropertyMap	trace	src/trace/model/property/trace_property_map.rs	dyn=16,clone/100L=1.9,getset_pairs=1
 TODO	34.8	17.0	105	TraceRmiService	app	src/app/services/trace_rmi_service.rs	dyn=8,getset_pairs=1
 TODO	34.6	34.6	0	LocalFolderItem	framework	src/framework/store/local/local_folder_item.rs	dyn=16,getset_pairs=2
 TODO	34.5	34.5	0	UnaryExpression	decompiler	src/decompiler/slghpatexpress/unary_expression.rs	dyn=15,clone/100L=2.5,getset_pairs=2
