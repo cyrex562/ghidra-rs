@@ -297,7 +297,7 @@ mod tests {
         }
         fn contains_set(&self, set: &dyn AddressSetView) -> bool {
             let mut ranges = set.address_ranges();
-            while let Some(range) = ranges.next_range() {
+            while let Some(range) = ranges.next() {
                 if !self.contains_range(range.min_address(), range.max_address()) {
                     return false;
                 }

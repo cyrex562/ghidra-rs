@@ -10,10 +10,7 @@ use crate::program::model::address::{
 /// Mirrors the protected static `AbstractAddressSetView.fixStart` helper. Callers must
 /// position `rev` themselves, exactly as documented on the Java original.
 pub fn fix_start(rev: &mut dyn AddressRangeIterator, start: Address, forward: bool) -> Address {
-    if !rev.has_next() {
-        return start;
-    }
-    match rev.next_range() {
+    match rev.next() {
         Some(range) if range.contains(&start) => {
             if forward {
                 range.min_address().clone()
@@ -57,7 +54,7 @@ pub trait AbstractAddressSetView {
 
     /// Mirrors `isEmpty`.
     fn is_empty(&self) -> bool {
-        !self.address_ranges().has_next()
+        self.address_ranges().next().is_none()
     }
 
     /// Mirrors `contains(Address start, Address end)`.
@@ -69,7 +66,7 @@ pub trait AbstractAddressSetView {
     /// Mirrors `contains(AddressSetView rangeSet)`.
     fn contains_set(&self, range_set: &dyn AddressSetView) -> bool {
         let mut it = range_set.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             if !self.contains_range(range.min_address(), range.max_address()) {
                 return false;
             }
@@ -80,14 +77,14 @@ pub trait AbstractAddressSetView {
     /// Mirrors `getMinAddress`.
     fn min_address(&self) -> Option<Address> {
         self.address_ranges_ordered(true)
-            .next_range()
+            .next()
             .map(|range| range.min_address().clone())
     }
 
     /// Mirrors `getMaxAddress`.
     fn max_address(&self) -> Option<Address> {
         self.address_ranges_ordered(false)
-            .next_range()
+            .next()
             .map(|range| range.max_address().clone())
     }
 
@@ -95,7 +92,7 @@ pub trait AbstractAddressSetView {
     fn num_address_ranges(&self) -> usize {
         let mut it = self.address_ranges();
         let mut count = 0;
-        while it.next_range().is_some() {
+        while it.next().is_some() {
             count += 1;
         }
         count
@@ -105,7 +102,7 @@ pub trait AbstractAddressSetView {
     fn num_addresses(&self) -> u64 {
         let mut it = self.address_ranges();
         let mut count = 0u64;
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             count += range.length();
         }
         count
@@ -115,7 +112,7 @@ pub trait AbstractAddressSetView {
     fn addresses(&self, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_ordered(forward);
         let mut addresses = Vec::new();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             let mut range_addresses: Vec<Address> = range.addresses().collect();
             if !forward {
                 range_addresses.reverse();
@@ -129,7 +126,7 @@ pub trait AbstractAddressSetView {
     fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_from(start, forward);
         let mut addresses = Vec::new();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             let mut range_addresses: Vec<Address> = range
                 .addresses()
                 .filter(|address| if forward { address >= start } else { address <= start })
@@ -147,7 +144,7 @@ pub trait AbstractAddressSetView {
         let mut ait = self.address_ranges();
         let mut bit = view.address_ranges();
         loop {
-            match (ait.next_range(), bit.next_range()) {
+            match (ait.next(), bit.next()) {
                 (Some(a), Some(b)) => {
                     if a != b {
                         return false;
@@ -161,20 +158,20 @@ pub trait AbstractAddressSetView {
 
     /// Mirrors `getFirstRange`.
     fn first_range(&self) -> Option<AddressRange> {
-        self.address_ranges_ordered(true).next_range()
+        self.address_ranges_ordered(true).next()
     }
 
     /// Mirrors `getLastRange`.
     fn last_range(&self) -> Option<AddressRange> {
-        self.address_ranges_ordered(false).next_range()
+        self.address_ranges_ordered(false).next()
     }
 
     /// Mirrors `intersects(AddressSetView addrSet)`.
     fn intersects_set(&self, addr_set: &dyn AddressSetView) -> bool {
         let mut ait = self.address_ranges();
-        while let Some(a) = ait.next_range() {
+        while let Some(a) = ait.next() {
             let mut bit = addr_set.address_ranges();
-            while let Some(b) = bit.next_range() {
+            while let Some(b) = bit.next() {
                 if a.intersects(&b) {
                     return true;
                 }
@@ -187,7 +184,7 @@ pub trait AbstractAddressSetView {
     fn intersects_range(&self, start: &Address, end: &Address) -> bool {
         let target = AddressRange::new(start.clone(), end.clone());
         let mut it = self.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             if range.intersects(&target) {
                 return true;
             }
@@ -199,9 +196,9 @@ pub trait AbstractAddressSetView {
     fn intersect(&self, view: &dyn AddressSetView) -> AddressSet {
         let mut result = AddressSet::new();
         let mut ait = self.address_ranges();
-        while let Some(a) = ait.next_range() {
+        while let Some(a) = ait.next() {
             let mut bit = view.address_ranges();
-            while let Some(b) = bit.next_range() {
+            while let Some(b) = bit.next() {
                 if let Some(overlap) = a.intersect(&b) {
                     result.add_range_object(&overlap);
                 }
@@ -219,7 +216,7 @@ pub trait AbstractAddressSetView {
     fn union(&self, addr_set: &dyn AddressSetView) -> AddressSet {
         let mut result = AddressSet::new();
         let mut it = self.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             result.add_range_object(&range);
         }
         result.add_set(addr_set);
@@ -230,7 +227,7 @@ pub trait AbstractAddressSetView {
     fn subtract(&self, addr_set: &dyn AddressSetView) -> AddressSet {
         let mut result = AddressSet::new();
         let mut it = self.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             result.add_range_object(&range);
         }
         result.delete_set(addr_set);
@@ -251,7 +248,7 @@ pub trait AbstractAddressSetView {
 
     /// Mirrors `getRangeContaining(Address address)`.
     fn range_containing(&self, address: &Address) -> Option<AddressRange> {
-        let range = self.address_ranges_from(address, true).next_range()?;
+        let range = self.address_ranges_from(address, true).next()?;
         if range.contains(address) {
             Some(range)
         } else {

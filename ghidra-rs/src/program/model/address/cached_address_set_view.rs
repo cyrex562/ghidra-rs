@@ -96,7 +96,7 @@ impl SharedState {
         }
 
         let mut ranges_backward = self.delegate.address_ranges_from(&min, false);
-        if let Some(prev) = ranges_backward.next_range() {
+        if let Some(prev) = ranges_backward.next() {
             self.cache.borrow_mut().add_range_object(&prev);
             Self::add_mixed(&mut self.known.borrow_mut(), prev.min_address(), &min);
         } else {
@@ -105,7 +105,7 @@ impl SharedState {
 
         let mut ranges_forward = self.delegate.address_ranges_from(&min, true);
         loop {
-            match ranges_forward.next_range() {
+            match ranges_forward.next() {
                 None => {
                     Self::add_mixed(&mut self.known.borrow_mut(), &min, &bound_max);
                     break;
@@ -163,7 +163,7 @@ impl CachedRangeIterator {
         let result = {
             let cache = self.shared.cache.borrow();
             let mut it = cache.address_ranges_from(&cur, self.forward);
-            it.next_range()
+            it.next()
         }?;
 
         let next_cur = if self.forward {
@@ -183,21 +183,16 @@ impl CachedRangeIterator {
     }
 }
 
-impl AddressRangeIterator for CachedRangeIterator {
-    fn has_next(&self) -> bool {
-        self.ensure_cached();
-        self.cached_next
-            .borrow()
-            .as_ref()
-            .map(|opt| opt.is_some())
-            .unwrap_or(false)
-    }
+impl Iterator for CachedRangeIterator {
+    type Item = AddressRange;
 
-    fn next_range(&mut self) -> Option<AddressRange> {
+    fn next(&mut self) -> Option<Self::Item> {
         self.ensure_cached();
         self.cached_next.borrow_mut().take().flatten()
     }
 }
+
+impl AddressRangeIterator for CachedRangeIterator {}
 
 /// Concrete [`CachedAddressSetView`] implementation that wraps an arbitrary delegate
 /// [`AddressSetView`] and caches ranges as they're queried.
@@ -228,7 +223,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
 
     fn contains_set(&self, set: &dyn AddressSetView) -> bool {
         let mut it = set.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             if !self.contains_range(range.min_address(), range.max_address()) {
                 return false;
             }
@@ -295,7 +290,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
     fn addresses(&self, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_ordered(true);
         let mut addresses = Vec::new();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             addresses.extend(range.addresses());
         }
         if !forward {
@@ -311,7 +306,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
     fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
         let mut it = self.address_ranges_ordered(true);
         let mut addresses: Vec<Address> = Vec::new();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             addresses.extend(range.addresses());
         }
         addresses.retain(|addr| if forward { addr >= start } else { addr <= start });
@@ -327,7 +322,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
 
     fn intersects_set(&self, set: &dyn AddressSetView) -> bool {
         let mut it = set.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             if self.intersects_range(range.min_address(), range.max_address()) {
                 return true;
             }
@@ -343,7 +338,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
     fn intersect(&self, set: &dyn AddressSetView) -> AddressSet {
         let mut result = AddressSet::new();
         let mut it = set.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             let piece = self.intersect_range(range.min_address(), range.max_address());
             result.add_set(&piece);
         }
@@ -372,7 +367,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
 
     fn has_same_addresses(&self, set: &dyn AddressSetView) -> bool {
         let mut it = set.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             let min = range.min_address();
             self.shared.ensure_known(min, range.max_address());
             match self.shared.cache.borrow().range_containing(min) {
@@ -402,7 +397,7 @@ impl AddressSetView for CachedAddressSetViewImpl {
 
     fn find_first_address_in_common(&self, set: &dyn AddressSetView) -> Option<Address> {
         let mut it = set.address_ranges();
-        while let Some(range) = it.next_range() {
+        while let Some(range) = it.next() {
             self.shared
                 .ensure_known(range.min_address(), range.max_address());
             let intersection = self
@@ -463,7 +458,7 @@ mod tests {
         let ranges: Vec<AddressRange> = {
             let mut it = view.address_ranges();
             let mut out = Vec::new();
-            while let Some(r) = it.next_range() {
+            while let Some(r) = it.next() {
                 out.push(r);
             }
             out
@@ -508,7 +503,7 @@ mod tests {
         let backward: Vec<AddressRange> = {
             let mut it = view.address_ranges_ordered(false);
             let mut out = Vec::new();
-            while let Some(r) = it.next_range() {
+            while let Some(r) = it.next() {
                 out.push(r);
             }
             out

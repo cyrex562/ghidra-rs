@@ -4,7 +4,6 @@ AbstractAssemblyGrammar	trait	iterator	R6b-bare-iterable	class/abstract	ghidra-r
 AddrSpace	trait	struct	R14-concrete-class	class	ghidra-rs/src/decompiler/space/addr_space.rs:51	concrete Java `class` (3 in-repo subclass(es))
 AddressFieldLocation	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/util/address_field_location.rs:24	concrete Java `class` (0 in-repo subclass(es))
 AddressIteratorConverter	iterator_trait	struct	R14-concrete-class	class	ghidra-rs/src/program/util/address_iterator_converter.rs:29	concrete Java `class` (0 in-repo subclass(es))
-AddressRangeIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/address/iterator.rs:69	extends Iterator
 AddressSourceInfo	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/mem/address_source_info.rs:29	concrete Java `class` (0 in-repo subclass(es))
 AddressSpace	struct	trait	R9-open-interface	interface	ghidra-rs/src/program/model/address/mod.rs:83	Java `interface` with 48 abstract method(s), 1 in-repo implementor(s)
 AlignedStructurePacker	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/aligned_structure_packer.rs:78	concrete Java `class` (1 in-repo subclass(es))

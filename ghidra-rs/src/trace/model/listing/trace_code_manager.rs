@@ -391,15 +391,15 @@ mod tests {
 
     struct EmptyAddressRangeIterator;
 
-    impl AddressRangeIterator for EmptyAddressRangeIterator {
-        fn has_next(&self) -> bool {
-            false
-        }
+    impl Iterator for EmptyAddressRangeIterator {
+        type Item = AddressRange;
 
-        fn next_range(&mut self) -> Option<AddressRange> {
+        fn next(&mut self) -> Option<Self::Item> {
             None
         }
     }
+
+    impl AddressRangeIterator for EmptyAddressRangeIterator {}
 
     /// An address-set view reporting no addresses, standing in for `TraceCodeManager`'s
     /// added/removed queries.

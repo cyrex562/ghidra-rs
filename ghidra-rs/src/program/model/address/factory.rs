@@ -235,7 +235,7 @@ impl AddressFactory for DefaultAddressFactory {
         }
         let mut set = AddressSet::new();
         let mut ranges = self.memory_address_set.address_ranges();
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             if range.max_address() < min || range.min_address() > max {
                 continue;
             }

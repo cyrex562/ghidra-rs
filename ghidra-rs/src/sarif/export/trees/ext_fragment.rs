@@ -30,7 +30,7 @@ impl ExtFragment {
         let mut ranges = Vec::new();
         let mut iter = fragment.address_ranges();
 
-        while let Some(range) = iter.next_range() {
+        while let Some(range) = iter.next() {
             ranges.push(ExtFragmentRange::new(&range));
         }
 

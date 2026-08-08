@@ -125,10 +125,10 @@ mod tests {
         assert_eq!(count, 0x11);
 
         let mut range_iter = map.get_address_ranges();
-        let range = range_iter.next_range().unwrap();
+        let range = range_iter.next().unwrap();
         assert_eq!(*range.min_address(), addr(0x2000));
         assert_eq!(*range.max_address(), addr(0x2010));
-        assert!(range_iter.next_range().is_none());
+        assert!(range_iter.next().is_none());
         map.remove_address_set(&other);
         assert!(!map.contains(&addr(0x2005)));
 

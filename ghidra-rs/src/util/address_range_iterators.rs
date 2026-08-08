@@ -30,17 +30,16 @@ impl WrappingAddressRangeIterator {
     }
 }
 
-impl AddressRangeIterator for WrappingAddressRangeIterator {
-    fn has_next(&self) -> bool {
-        self.ensure_cached();
-        self.cached_next.borrow().as_ref().map(|opt| opt.is_some()).unwrap_or(false)
-    }
+impl Iterator for WrappingAddressRangeIterator {
+    type Item = AddressRange;
 
-    fn next_range(&mut self) -> Option<AddressRange> {
+    fn next(&mut self) -> Option<Self::Item> {
         self.ensure_cached();
         self.cached_next.borrow_mut().take().flatten()
     }
 }
+
+impl AddressRangeIterator for WrappingAddressRangeIterator {}
 
 /// Returns whether `range` should be included given the iteration `start` bound.
 ///
@@ -129,14 +128,9 @@ pub trait AddressRangeIteratorFactory {
         let mut unioned = union_factory.build_union(vec![Box::new(xor_ranges.into_iter())], forward);
         let mut result = Vec::new();
         // Have to filter by start after the union, otherwise parts of ranges are omitted.
-        while unioned.has_next() {
-            match unioned.next_range() {
-                Some(range) => {
-                    if check_start(&range, start.as_ref(), forward) {
-                        result.push(range);
-                    }
-                }
-                None => break,
+        for range in unioned.by_ref() {
+            if check_start(&range, start.as_ref(), forward) {
+                result.push(range);
             }
         }
         Box::new(WrappingAddressRangeIterator::new(Box::new(result.into_iter())))
@@ -246,13 +240,10 @@ mod tests {
         let factory = DefaultAddressRangeIteratorFactory;
         let ranges = vec![range(0x1000, 0x100f), range(0x2000, 0x200f)];
         let mut wrapped = factory.cast_or_wrap(Box::new(ranges.clone().into_iter()));
-
-        assert!(wrapped.has_next());
-        assert_eq!(wrapped.next_range(), Some(ranges[0].clone()));
-        assert!(wrapped.has_next());
-        assert_eq!(wrapped.next_range(), Some(ranges[1].clone()));
-        assert!(!wrapped.has_next());
-        assert_eq!(wrapped.next_range(), None);
+        assert_eq!(wrapped.next(), Some(ranges[0].clone()));
+        assert_eq!(wrapped.next(), Some(ranges[1].clone()));
+        assert!(wrapped.next().is_none());
+        assert_eq!(wrapped.next(), None);
     }
 
     #[test]
@@ -267,9 +258,9 @@ mod tests {
         ];
         let mut unioned = factory.union(&union_factory, iterators, true);
 
-        assert_eq!(unioned.next_range(), Some(range(0x1000, 0x1100)));
-        assert_eq!(unioned.next_range(), Some(range(0x2000, 0x2100)));
-        assert_eq!(unioned.next_range(), None);
+        assert_eq!(unioned.next(), Some(range(0x1000, 0x1100)));
+        assert_eq!(unioned.next(), Some(range(0x2000, 0x2100)));
+        assert_eq!(unioned.next(), None);
     }
 
     #[test]
@@ -282,8 +273,8 @@ mod tests {
         let b: Box<dyn Iterator<Item = AddressRange>> = Box::new(vec![range(0x1000, 0x1100)].into_iter());
 
         let mut result = factory.subtract(&breakdown, a, b, None, true);
-        assert_eq!(result.next_range(), Some(range(0x3000, 0x3100)));
-        assert_eq!(result.next_range(), None);
+        assert_eq!(result.next(), Some(range(0x3000, 0x3100)));
+        assert_eq!(result.next(), None);
     }
 
     #[test]
@@ -297,8 +288,8 @@ mod tests {
 
         // Start after the first range's max address excludes it (forward iteration).
         let mut result = factory.subtract(&breakdown, a, b, Some(addr(0x2000)), true);
-        assert_eq!(result.next_range(), Some(range(0x3000, 0x3100)));
-        assert_eq!(result.next_range(), None);
+        assert_eq!(result.next(), Some(range(0x3000, 0x3100)));
+        assert_eq!(result.next(), None);
     }
 
     #[test]
@@ -311,8 +302,8 @@ mod tests {
         let b: Box<dyn Iterator<Item = AddressRange>> = Box::new(vec![range(0x1000, 0x1100)].into_iter());
 
         let mut result = factory.intersect(&breakdown, a, b, true);
-        assert_eq!(result.next_range(), Some(range(0x1000, 0x1100)));
-        assert_eq!(result.next_range(), None);
+        assert_eq!(result.next(), Some(range(0x1000, 0x1100)));
+        assert_eq!(result.next(), None);
     }
 
     #[test]
@@ -327,8 +318,8 @@ mod tests {
             Box::new(vec![range(0x2000, 0x2100)].into_iter());
 
         let mut result = factory.xor(&breakdown, &union_factory, a, b, None, true);
-        assert_eq!(result.next_range(), Some(range(0x1000, 0x1100)));
-        assert_eq!(result.next_range(), Some(range(0x2000, 0x2100)));
-        assert_eq!(result.next_range(), None);
+        assert_eq!(result.next(), Some(range(0x1000, 0x1100)));
+        assert_eq!(result.next(), Some(range(0x2000, 0x2100)));
+        assert_eq!(result.next(), None);
     }
 }

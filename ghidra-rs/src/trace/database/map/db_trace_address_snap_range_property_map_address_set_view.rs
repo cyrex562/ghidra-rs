@@ -82,7 +82,7 @@ mod tests {
 
         fn contains_set(&self, set: &dyn AddressSetView) -> bool {
             let mut it = set.address_ranges();
-            while let Some(range) = it.next_range() {
+            while let Some(range) = it.next() {
                 if !self.contains_range(range.min_address(), range.max_address()) {
                     return false;
                 }
@@ -145,7 +145,7 @@ mod tests {
         fn addresses(&self, forward: bool) -> BoxedAddressIterator {
             let mut it = self.address_ranges_ordered(forward);
             let mut addrs = Vec::new();
-            while let Some(range) = it.next_range() {
+            while let Some(range) = it.next() {
                 addrs.extend(range.addresses());
             }
             Box::new(AddressIteratorAdapter::new(addrs.into_iter()))
@@ -154,7 +154,7 @@ mod tests {
         fn addresses_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator {
             let mut it = self.address_ranges_from(start, forward);
             let mut addrs = Vec::new();
-            while let Some(range) = it.next_range() {
+            while let Some(range) = it.next() {
                 addrs.extend(range.addresses());
             }
             Box::new(AddressIteratorAdapter::new(addrs.into_iter()))
@@ -162,7 +162,7 @@ mod tests {
 
         fn intersects_set(&self, set: &dyn AddressSetView) -> bool {
             let mut it = set.address_ranges();
-            while let Some(r) = it.next_range() {
+            while let Some(r) = it.next() {
                 if self.intersects_range(r.min_address(), r.max_address()) {
                     return true;
                 }
@@ -179,7 +179,7 @@ mod tests {
             let mut result = AddressSet::new();
             for r in self.passing_ranges() {
                 let mut it = set.address_ranges();
-                while let Some(other) = it.next_range() {
+                while let Some(other) = it.next() {
                     if let Some(overlap) = r.intersect(&other) {
                         result.add_range_object(&overlap);
                     }
@@ -220,7 +220,7 @@ mod tests {
             let mut a = self.address_ranges();
             let mut b = set.address_ranges();
             loop {
-                match (a.next_range(), b.next_range()) {
+                match (a.next(), b.next()) {
                     (Some(x), Some(y)) => {
                         if x != y {
                             return false;
@@ -233,11 +233,11 @@ mod tests {
         }
 
         fn first_range(&self) -> Option<AddressRange> {
-            self.address_ranges_ordered(true).next_range()
+            self.address_ranges_ordered(true).next()
         }
 
         fn last_range(&self) -> Option<AddressRange> {
-            self.address_ranges_ordered(false).next_range()
+            self.address_ranges_ordered(false).next()
         }
 
         fn range_containing(&self, address: &Address) -> Option<AddressRange> {

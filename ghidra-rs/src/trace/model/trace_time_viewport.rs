@@ -143,10 +143,7 @@ pub trait SetQueryOcclusion: QueryOcclusion {
     fn remove_item_by_set(&self, remains: &mut AddressSet, t: &dyn Any, snap: i64) {
         let set = self.set(t, snap);
         let mut ranges = set.address_ranges_ordered(true);
-        while ranges.has_next() {
-            let Some(range) = ranges.next_range() else {
-                break;
-            };
+        while let Some(range) = ranges.next() {
             remains.delete_range_object(&range);
             if remains.is_empty() {
                 return;

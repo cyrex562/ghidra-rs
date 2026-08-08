@@ -107,7 +107,7 @@ impl AddressSet {
 
     pub fn add_set(&mut self, set: &dyn AddressSetView) {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             self.ranges.push(range);
         }
         self.normalize();
@@ -139,7 +139,7 @@ impl AddressSet {
 
     pub fn delete_set(&mut self, set: &dyn AddressSetView) {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             self.delete_range_object(&range);
         }
     }
@@ -206,7 +206,7 @@ impl AddressSetView for AddressSet {
 
     fn contains_set(&self, set: &dyn AddressSetView) -> bool {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             if !self.contains_range(range.min_address(), range.max_address()) {
                 return false;
             }
@@ -309,7 +309,7 @@ impl AddressSetView for AddressSet {
 
     fn intersects_set(&self, set: &dyn AddressSetView) -> bool {
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             if self.intersects_range(range.min_address(), range.max_address()) {
                 return true;
             }
@@ -327,7 +327,7 @@ impl AddressSetView for AddressSet {
     fn intersect(&self, set: &dyn AddressSetView) -> AddressSet {
         let mut result = AddressSet::new();
         let mut iterator = set.address_ranges();
-        while let Some(range) = iterator.next_range() {
+        while let Some(range) = iterator.next() {
             result.add_set(&self.intersect_range(range.min_address(), range.max_address()));
         }
         result
@@ -471,8 +471,8 @@ mod tests {
         assert_eq!(reverse.next(), Some(addr(0x2000)));
 
         let mut from = set.address_ranges_from(&addr(0x1001), true);
-        assert_eq!(from.next_range().unwrap().min_address(), &addr(0x1000));
-        assert_eq!(from.next_range().unwrap().min_address(), &addr(0x2000));
+        assert_eq!(from.next().unwrap().min_address(), &addr(0x1000));
+        assert_eq!(from.next().unwrap().min_address(), &addr(0x2000));
     }
 
     #[test]

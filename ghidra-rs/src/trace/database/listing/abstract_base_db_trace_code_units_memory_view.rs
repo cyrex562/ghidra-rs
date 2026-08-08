@@ -141,9 +141,9 @@ where
         }
         let factory = self.manager().get_base_language().get_address_factory();
         let mut ranges = factory.get_address_set().address_ranges_from(address, false);
-        let mut prev_range = ranges.next_range()?;
+        let mut prev_range = ranges.next()?;
         if prev_range.contains(address) {
-            prev_range = ranges.next_range()?;
+            prev_range = ranges.next()?;
         }
         Some(prev_range.max_address().clone())
     }
@@ -158,9 +158,9 @@ where
         }
         let factory = self.manager().get_base_language().get_address_factory();
         let mut ranges = factory.get_address_set().address_ranges_from(address, true);
-        let mut next_range = ranges.next_range()?;
+        let mut next_range = ranges.next()?;
         if next_range.contains(address) {
-            next_range = ranges.next_range()?;
+            next_range = ranges.next()?;
         }
         Some(next_range.min_address().clone())
     }
@@ -187,7 +187,7 @@ where
         let factory = self.manager().get_trace().get_base_address_factory();
         let set = DBTraceUtils::get_address_set(factory.as_ref(), address, false);
         let mut ranges = set.address_ranges_ordered(false);
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             let candidate = match self.get_for_space(range.space(), false) {
                 None => self.null_or_undefined(snap, range.max_address()),
                 Some(m) => m.get_floor(snap, range.max_address()),
@@ -223,7 +223,7 @@ where
         let factory = self.manager().get_trace().get_base_address_factory();
         let set = DBTraceUtils::get_address_set(factory.as_ref(), address, true);
         let mut ranges = set.address_ranges_ordered(true);
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             let candidate = match self.get_for_space(range.space(), false) {
                 None => self.null_or_undefined(snap, range.min_address()),
                 Some(m) => m.get_ceiling(snap, range.min_address()),
@@ -258,7 +258,7 @@ where
     fn get_in_set(&self, snap: i64, set: &dyn AddressSetView, forward: bool) -> Vec<T> {
         let mut result = Vec::new();
         let mut ranges = set.address_ranges_ordered(forward);
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             result.extend(self.get_in_range(snap, &range, forward));
         }
         result
@@ -313,7 +313,7 @@ where
         let mut result = AddressSet::new();
         let all = factory.get_address_set();
         let mut ranges = all.address_ranges_ordered(true);
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             match self.get_for_space(range.space(), false) {
                 None => result.add_set(self.empty_or_full_address_set_undefined(&range).as_ref()),
                 Some(m) => result.add_set(m.get_address_set_view(snap).as_ref()),

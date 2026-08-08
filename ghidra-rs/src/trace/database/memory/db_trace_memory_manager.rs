@@ -269,7 +269,7 @@ pub trait DBTraceMemoryManager:
     /// TraceMemoryState)`.
     fn set_state_over(&mut self, snap: i64, set: &dyn AddressSetView, state: TraceMemoryState) {
         let mut ranges = set.address_ranges();
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             self.set_state(snap, &range, state);
         }
     }

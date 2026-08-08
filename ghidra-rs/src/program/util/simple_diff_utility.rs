@@ -210,7 +210,7 @@ pub trait SimpleDiffUtility: Send + Sync {
     ) -> Box<dyn AddressSetView> {
         let mut expanded: Option<AddressSet> = None;
         let mut ranges = original_set.address_ranges();
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             if let Some(instr) = listing.get_instruction_at(range.min_address()) {
                 if instr.is_in_delay_slot() {
                     let new_min = self.get_start_of_delay_slots(listing, instr.as_ref());
