@@ -15,6 +15,7 @@ use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::trace::Trace;
+use crate::trace::util::trace_change_manager::TraceChangeManager;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -544,6 +545,27 @@ pub trait AbstractDBTraceAddressSnapRangePropertyMapData: Send + Sync {
     /// `data.range.getAddressSpace()`.
     fn address_space(&self) -> Arc<AddressSpace>;
 }
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceCodeUnitAdapter`, referenced (as a
+/// supertrait) by
+/// [`DBTraceDataAdapter`](crate::trace::database::listing::db_trace_data_adapter::DBTraceDataAdapter)
+/// before the real port is available. In Java this interface overrides `TraceCodeUnit.getTrace()`
+/// to covariantly narrow its return type from `Trace` to `DBTrace` (which implements
+/// `ghidra.trace.util.TraceChangeManager`), letting `DBTraceDataAdapter`'s settings-change
+/// defaults call `getTrace().setChanged(...)` directly. Rust has no covariant trait-method
+/// override (see `TraceData`'s docs for the same issue), so this placeholder instead exposes the
+/// change-notification sink those defaults need as its own accessor, rather than reproducing the
+/// covariant `getTrace()`.
+pub trait DBTraceCodeUnitAdapter: Send + Sync {
+    /// Mirrors reaching the owning trace's `TraceChangeManager` through the covariant
+    /// `getTrace()` override.
+    fn trace_change_manager(&mut self) -> &mut dyn TraceChangeManager;
+}
+
+/// Placeholder for `ghidra.trace.util.DataAdapterFromDataType`, referenced (as a supertrait) by
+/// [`DBTraceDataAdapter`](crate::trace::database::listing::db_trace_data_adapter::DBTraceDataAdapter)
+/// before the real port is available. No members are parsed from the Java source yet.
+pub trait DataAdapterFromDataType: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapSpace`,
 /// referenced by
