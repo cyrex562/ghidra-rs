@@ -556,3 +556,31 @@ pub trait InternalBaseCodeUnitsView: TraceBaseCodeUnitsView {
     fn get_space(&self) -> Arc<AddressSpace>;
 }
 
+/// Placeholder for `ghidra.trace.database.listing.AbstractBaseDBTraceDefinedUnitsView`,
+/// referenced by
+/// [`DBTraceDefinedUnitsView`](crate::trace::database::listing::db_trace_defined_units_view::DBTraceDefinedUnitsView)
+/// before the real port is available. The real Java class is a large abstract base (caching,
+/// spatial-map queries, generic in `T extends AbstractDBTraceCodeUnit<T>`) that backs one "part"
+/// (e.g. instructions, or defined data) of a composed view; `DBTraceDefinedUnitsView` only ever
+/// calls three of its members -- on each part, to aggregate across all parts -- so only those are
+/// stubbed here, with the same signatures as the overridden
+/// [`TraceBaseCodeUnitsView`]/[`TraceBaseDefinedUnitsView`](crate::trace::model::listing::trace_base_defined_units_view::TraceBaseDefinedUnitsView)
+/// methods they implement.
+pub trait AbstractBaseDBTraceDefinedUnitsView: Send + Sync {
+    /// Mirrors `AbstractBaseDBTraceDefinedUnitsView.coversRange(Lifespan, AddressRange)`.
+    fn covers_range(&self, span: &dyn crate::trace::model::lifespan::Lifespan, range: &AddressRange) -> bool;
+
+    /// Mirrors `AbstractBaseDBTraceDefinedUnitsView.intersectsRange(Lifespan, AddressRange)`.
+    fn intersects_range(&self, span: &dyn crate::trace::model::lifespan::Lifespan, range: &AddressRange) -> bool;
+
+    /// Mirrors the abstract `clear(Lifespan, AddressRange, boolean, TaskMonitor)` this part
+    /// implements (declared on `TraceBaseDefinedUnitsView`).
+    fn clear(
+        &mut self,
+        span: &dyn crate::trace::model::lifespan::Lifespan,
+        range: &AddressRange,
+        clear_context: bool,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> Result<(), crate::util::exception::CancelledException>;
+}
+
