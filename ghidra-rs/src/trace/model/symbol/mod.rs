@@ -2,6 +2,7 @@ pub mod trace_class_symbol;
 pub mod trace_label_symbol;
 pub mod trace_label_symbol_view;
 pub mod trace_namespace_symbol;
+pub mod trace_namespace_symbol_view;
 pub mod trace_offset_reference;
 pub mod trace_reference;
 pub mod trace_shifted_reference;
