@@ -713,7 +713,41 @@ pub trait DBTraceCodeManager: Send + Sync {
 pub trait DBTraceCodeSpace: Send + Sync {
     /// Mirrors the `DBTraceCodeSpace.space` field.
     fn get_address_space(&self) -> Arc<AddressSpace>;
+
+    /// Mirrors the covariantly-narrowed `DBTraceCodeSpace.getTrace()` (the `trace` field's
+    /// getter), which narrows the inherited `TraceSpaceMixin.getTrace()`'s `Trace` return type to
+    /// `DBTrace`. Grown for
+    /// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit),
+    /// whose `getTrace()` reads `space.trace` directly.
+    ///
+    /// Defaults to panicking, matching this file's established growth convention for members not
+    /// yet needed by any existing implementor (see [`TracePlatform::get_trace`]'s default for the
+    /// same reasoning), so existing marker implementors of this trait keep compiling unchanged.
+    fn get_trace(&self) -> Box<dyn DBTrace> {
+        unimplemented!("DBTraceCodeSpace::get_trace placeholder not overridden")
+    }
+
+    /// Mirrors `DBTraceCodeSpace.getThread()` (inherited from `TraceSpaceMixin`). Grown for
+    /// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit),
+    /// whose `getThread()` delegates to `space.getThread()`.
+    ///
+    /// Defaults to panicking; see [`Self::get_trace`]'s docs for why.
+    fn get_thread(&self) -> Box<dyn TraceThread> {
+        unimplemented!("DBTraceCodeSpace::get_thread placeholder not overridden")
+    }
 }
+
+/// Placeholder for `ghidra.trace.database.DBTrace`, referenced by
+/// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit)
+/// before the real port is available. `AbstractDBTraceCodeUnit.getTrace()` only ever passes this
+/// type around opaquely (returning `space.trace`, covariantly narrowed from the base `Trace`
+/// interface -- see [`DBTraceCodeSpace::get_trace`]'s docs for that same narrowing); no members
+/// are needed yet. Not declared `: Trace`, since nothing currently reachable through this
+/// placeholder needs any of `Trace`'s ~20 members, and requiring them would force every
+/// implementor (including this module's own tests) to stub out that whole surface for no benefit;
+/// the real port should implement both `Trace` and this trait, matching Java's `DBTrace implements
+/// Trace`.
+pub trait DBTrace: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.database.DBTraceUtils`, referenced by
 /// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)

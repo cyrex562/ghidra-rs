@@ -473,3 +473,5 @@ ts	stub_class	referenced_by
 2026-08-08T06:28:19+00:00	DBTraceSymbolManager	DBTraceNamespaceSymbol
 2026-08-08T07:00:00+00:00	DBTraceOverlaySpaceAdapter	AbstractDBTraceSymbol
 2026-08-08T07:00:00+00:00	DBTraceProgramView	AbstractDBTraceSymbol
+2026-08-08T08:15:00+00:00	DBTrace	AbstractDBTraceCodeUnit
+2026-08-08T08:15:00+00:00	DBTraceCodeSpace	AbstractDBTraceCodeUnit
