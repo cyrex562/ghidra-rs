@@ -2,7 +2,7 @@ status	mode	depth	fanin	rem	module	path
 DONE	trait	32	40	2	util	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectIndex.java
 DONE	trait	34	2	67	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/context/TraceRegisterContextOperations.java
 DONE	trait	33	2	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/context/TraceRegisterContextSpace.java
-TODO	trait	36	14	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceClassSymbol.java
+DONE	trait	36	14	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceClassSymbol.java
 TODO	trait	42	14	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolWithLifespan.java
 TODO	trait	41	18	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceLabelSymbol.java
 TODO	trait	41	15	29	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolWithLocationView.java
