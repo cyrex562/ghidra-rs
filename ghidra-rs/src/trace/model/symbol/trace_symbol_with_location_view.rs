@@ -5,8 +5,9 @@ use crate::program::model::lang::Register;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::symbol::trace_symbol::TraceSymbol;
+use crate::trace::model::symbol::trace_symbol_view::TraceSymbolView;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{TracePlatform, TraceRegisterUtils, TraceSymbolView, TraceThread};
+use crate::trace::seam_stubs::{TracePlatform, TraceRegisterUtils, TraceThread};
 
 /// A symbol view for things bound by an address range and lifespan.
 ///
@@ -46,14 +47,6 @@ pub trait TraceSymbolWithLocationView: TraceSymbolView {
     /// static `TraceRegisterUtils.getRegisterAddressSpace` calls made by the Java default
     /// methods.
     fn trace_register_utils(&self) -> &dyn TraceRegisterUtils;
-
-    /// Get the trace that contains this view.
-    ///
-    /// Mirrors the inherited `TraceSymbolView.getTrace()` default, which delegates to
-    /// `getManager().getTrace()`.
-    fn get_trace(&self) -> Box<dyn Trace> {
-        self.get_manager().get_trace()
-    }
 
     /// Get the child of the given parent having the given name at the given point.
     fn get_child_with_name_at(
@@ -389,7 +382,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn all_namespaces(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+        fn all_namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -397,7 +390,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn all_symbols(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+        fn all_symbols(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -424,6 +417,30 @@ mod tests {
     impl TraceSymbolView for MockView {
         fn get_manager(&self) -> Box<dyn TraceSymbolManager> {
             Box::new(self.manager.clone())
+        }
+
+        fn get_all(&self, _include_dynamic_symbols: bool) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_children_named(&self, _name: &str, _parent: &dyn TraceNamespaceSymbol) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_children(&self, _parent: &dyn TraceNamespaceSymbol) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_named(&self, _name: &str) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_with_matching_name(&self, _glob: &str, _case_sensitive: bool) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn scan_by_name(&self, _start_name: &str) -> Box<dyn Iterator<Item = Arc<dyn TraceSymbol>> + '_> {
+            unimplemented!("not exercised by this smoke test")
         }
     }
 

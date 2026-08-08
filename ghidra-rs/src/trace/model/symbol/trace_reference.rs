@@ -229,7 +229,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn all_namespaces(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+        fn all_namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -237,7 +237,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn all_symbols(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+        fn all_symbols(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
 
