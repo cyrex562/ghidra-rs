@@ -114,7 +114,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_equate_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceEquateManager> {
+        fn get_equate_manager(&self) -> Box<dyn crate::trace::model::symbol::trace_equate_manager::TraceEquateManager> {
             unimplemented!("not exercised by this smoke test")
         }
 

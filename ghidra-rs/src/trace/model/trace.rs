@@ -8,11 +8,12 @@ use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::time::trace_time_manager::TraceTimeManager;
 use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::thread::TraceThreadManager;
+use crate::trace::model::symbol::trace_equate_manager::TraceEquateManager;
 use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
-    TraceEquateManager, TraceMemoryManager,
+    TraceMemoryManager,
     TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
     TraceVariableSnapProgramView,
@@ -352,7 +353,97 @@ mod tests {
         }
     }
     struct MockEquateManager;
-    impl TraceEquateManager for MockEquateManager {}
+    impl crate::trace::model::symbol::trace_equate_operations::TraceEquateOperations for MockEquateManager {
+        fn get_referring_addresses(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references(
+            &mut self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _asv: &dyn crate::program::model::address::AddressSetView,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references_range(
+            &mut self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_referenced_by_value(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+            _operand_index: i32,
+            _value: i64,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_referenced(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_referenced_all_operands(
+            &self,
+            _snap: i64,
+            _address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceEquateManager for MockEquateManager {
+        fn get_equate_space(
+            &mut self,
+            _space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_equate_register_space_for_thread(
+            &mut self,
+            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_equate_register_space_for_frame(
+            &mut self,
+            _frame: &dyn crate::trace::seam_stubs::TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn create(
+            &mut self,
+            _name: &str,
+            _value: i64,
+        ) -> Result<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>, crate::util::exception::DuplicateNameException>
+        {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_by_name(&self, _name: &str) -> Option<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_by_key(&self, _key: i64) -> Option<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_by_value(&self, _value: i64) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_all(&self) -> Vec<Box<dyn crate::trace::model::symbol::trace_equate::TraceEquate>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockPlatformManager;
     impl TracePlatformManager for MockPlatformManager {
         fn get_host_platform(&self) -> Box<dyn crate::trace::seam_stubs::TracePlatform> {

@@ -173,7 +173,7 @@ use crate::program::model::listing::CommentType;
         fn get_base_data_type_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceBasedDataTypeManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_equate_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceEquateManager> {
+        fn get_equate_manager(&self) -> Box<dyn crate::trace::model::symbol::trace_equate_manager::TraceEquateManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_platform_manager(&self) -> Box<dyn TracePlatformManager> {
