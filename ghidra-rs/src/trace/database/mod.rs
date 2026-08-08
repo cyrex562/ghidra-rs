@@ -1,5 +1,6 @@
 pub mod db_trace_direct_change_listener;
 pub mod db_trace_manager;
+pub mod guest;
 pub mod map;
 pub mod program;
 pub mod space;
