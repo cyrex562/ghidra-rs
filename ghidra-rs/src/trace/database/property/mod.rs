@@ -1,0 +1,3 @@
+pub mod db_trace_address_property_manager;
+
+pub use db_trace_address_property_manager::DBTraceAddressPropertyManager;
