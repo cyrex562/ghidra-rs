@@ -39,7 +39,8 @@ use crate::trace::model::symbol::trace_namespace_symbol_view::TraceNamespaceSymb
 use crate::trace::model::symbol::trace_symbol::TraceSymbol;
 use crate::trace::model::symbol::trace_symbol_view::TraceSymbolView;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{TraceClassSymbolView, TraceSymbolNoDuplicatesView};
+use crate::trace::model::symbol::trace_symbol_no_duplicates_view::TraceSymbolNoDuplicatesView;
+use crate::trace::seam_stubs::TraceClassSymbolView;
 
 /// Orders symbols so that primary symbols sort first.
 ///
