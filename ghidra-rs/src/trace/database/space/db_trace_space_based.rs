@@ -91,6 +91,15 @@ mod tests {
         fn get_frame_level(&self, _trace: &dyn Trace, _space: &Arc<AddressSpace>) -> i32 {
             0
         }
+
+        fn get_register_address_space(
+            &self,
+            _thread: &dyn TraceThread,
+            _frame_level: i32,
+            _create_if_absent: bool,
+        ) -> Option<Arc<AddressSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
     }
 
     struct MockSpaceBased {

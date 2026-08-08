@@ -205,6 +205,16 @@ mod tests {
                 None
             }
         }
+
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_global_namespace(
+            &self,
+        ) -> Arc<dyn crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol> {
+            unimplemented!("not exercised by this smoke test")
+        }
     }
 
     struct MockTrace {
