@@ -486,3 +486,4 @@ ts	stub_class	referenced_by
 2026-08-08T08:53:37.732517+00:00	TraceGuestPlatform	TracePlatformManager
 2026-08-08T12:00:00+00:00	DBTraceRegisterContextSpace	DBTraceRegisterContextManager
 2026-08-08T12:00:00+00:00	TracePlatform	DBTraceRegisterContextManager
+2026-08-08T09:54:28+00:00	AbstractDBTracePropertyMap	DBTraceAddressPropertyManager
