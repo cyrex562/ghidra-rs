@@ -7,7 +7,7 @@ TODO	trait	33	11	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 PARK	trait	33	10	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEventScope.java
 TODO	trait	69	6	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/BreakTable.java
 TODO	trait	70	19	0	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/memstate/MemoryState.java
-TODO	trait	69	10	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/callother/OpBehaviorOther.java
+DONE	trait	69	10	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/callother/OpBehaviorOther.java
 TODO	trait	73	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/Appender.java
 TODO	trait	72	8	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractAppender.java
 TODO	trait	73	2	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/PcodeFormatter.java
