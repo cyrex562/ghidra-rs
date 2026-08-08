@@ -12,7 +12,6 @@ use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::Register;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
-use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace::Trace;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
@@ -81,19 +80,6 @@ pub trait TraceStackManager {}
 /// [`TraceSymbolManager`](crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager)
 /// before the real interface is ported. No members are parsed from the Java source yet.
 pub trait TraceClassSymbolView: Send + Sync {}
-
-/// Placeholder for `ghidra.trace.model.symbol.TraceSymbolView`, referenced by
-/// [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView)
-/// before the real interface is ported. The Java interface is generic over `T extends
-/// TraceSymbol`; following the convention set by
-/// [`TraceBaseCodeUnitsView`](crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView),
-/// this is not represented as a Rust generic. Restricted to the one member
-/// `TraceSymbolWithLocationView`'s defaults need: the owning symbol manager (used to reach the
-/// trace and the global namespace).
-pub trait TraceSymbolView {
-    /// Get the symbol manager for the trace. Mirrors `TraceSymbolView.getManager()`.
-    fn get_manager(&self) -> Box<dyn TraceSymbolManager>;
-}
 
 /// Placeholder for `ghidra.trace.model.time.TraceSnapshot`, referenced by
 /// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before

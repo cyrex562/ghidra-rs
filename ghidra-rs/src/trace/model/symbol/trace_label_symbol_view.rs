@@ -174,7 +174,8 @@ mod tests {
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
     use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
-    use crate::trace::seam_stubs::{TraceRegisterUtils, TraceSymbolView};
+    use crate::trace::model::symbol::trace_symbol_view::TraceSymbolView;
+    use crate::trace::seam_stubs::TraceRegisterUtils;
     use crate::util::task::TaskMonitor;
     use std::cell::RefCell;
 
@@ -535,13 +536,13 @@ mod tests {
         fn classes(&self) -> Box<dyn crate::trace::seam_stubs::TraceClassSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn all_namespaces(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+        fn all_namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn not_labels(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolNoDuplicatesView> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn all_symbols(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+        fn all_symbols(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_ids_added(&self, _from: i64, _to: i64) -> Vec<i64> {
@@ -591,6 +592,30 @@ mod tests {
     impl TraceSymbolView for MockView {
         fn get_manager(&self) -> Box<dyn TraceSymbolManager> {
             Box::new(self.manager.clone())
+        }
+
+        fn get_all(&self, _include_dynamic_symbols: bool) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_children_named(&self, _name: &str, _parent: &dyn TraceNamespaceSymbol) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_children(&self, _parent: &dyn TraceNamespaceSymbol) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_named(&self, _name: &str) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_with_matching_name(&self, _glob: &str, _case_sensitive: bool) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn scan_by_name(&self, _start_name: &str) -> Box<dyn Iterator<Item = Arc<dyn TraceSymbol>> + '_> {
+            unimplemented!("not exercised by this smoke test")
         }
     }
 
