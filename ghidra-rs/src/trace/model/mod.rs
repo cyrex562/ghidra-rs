@@ -1,6 +1,7 @@
 pub mod address_snap;
 pub mod bookmark;
 pub mod breakpoint;
+pub mod context;
 pub mod default_address_snap;
 pub mod default_trace_span;
 pub mod immutable_trace_address_snap_range;
