@@ -490,6 +490,49 @@ pub trait TraceAddressSnapRangeQuery: Send + Sync {}
 pub trait DBTraceGuestLanguage: Send + Sync {}
 
 /// Placeholder for the nested
+/// `ghidra.trace.database.data.DBTraceDataSettingsAdapter.DBTraceSettingsEntry`, referenced by
+/// [`DBTraceDataSettingsOperations`](crate::trace::database::data::db_trace_data_settings_operations::DBTraceDataSettingsOperations)
+/// before the real (DB-record-backed) type is ported. Mirrors the subset of members that
+/// interface's default methods call: the lifespan and name accessors, plus the
+/// `setLong`/`getLong`/`setString`/`getString`/`setValue`/`getValue` value accessors. The Java
+/// class's `setBytes`/`getBytes` pair is not referenced by that interface (only reachable through
+/// `setValue`/`getValue`, which already cover the `byte[]` case via
+/// [`SettingsValue::Bytes`](crate::trace::database::data::db_trace_data_settings_operations::SettingsValue::Bytes)),
+/// so it is omitted here.
+pub trait DBTraceSettingsEntry: Send + Sync {
+    /// Mirrors the record's `getLifespan()` (inherited from
+    /// `AbstractDBTraceAddressSnapRangePropertyMapData`).
+    fn get_lifespan(&self) -> Box<dyn crate::trace::model::lifespan::Lifespan>;
+
+    /// Mirrors the `name` field's getter.
+    fn name(&self) -> Option<String>;
+
+    /// Mirrors `setName(String)`.
+    fn set_name(&mut self, name: String);
+
+    /// Mirrors `getLong()`.
+    fn get_long(&self) -> Option<i64>;
+
+    /// Mirrors `setLong(long)`.
+    fn set_long(&mut self, value: i64);
+
+    /// Mirrors `getString()`.
+    fn get_string(&self) -> Option<String>;
+
+    /// Mirrors `setString(String)`.
+    fn set_string(&mut self, value: String);
+
+    /// Mirrors `getValue()`.
+    fn get_value(&self) -> crate::trace::database::data::db_trace_data_settings_operations::SettingsValue;
+
+    /// Mirrors `setValue(Object)`.
+    fn set_value(
+        &mut self,
+        value: crate::trace::database::data::db_trace_data_settings_operations::SettingsValue,
+    );
+}
+
+/// Placeholder for the nested
 /// `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.AbstractDBTraceAddressSnapRangePropertyMapData`,
 /// referenced by
 /// [`DBTraceAddressSnapRangePropertyMap`](crate::trace::database::map::db_trace_address_snap_range_property_map::DBTraceAddressSnapRangePropertyMap)
