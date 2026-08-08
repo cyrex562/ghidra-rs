@@ -1,1 +1,2 @@
 pub mod trace_register_context_operations;
+pub mod trace_register_context_space;
