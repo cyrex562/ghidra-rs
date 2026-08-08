@@ -8,7 +8,7 @@ DONE	trait	41	18	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	41	15	29	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolWithLocationView.java
 DONE	trait	40	15	29	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceLabelSymbolView.java
 DONE	trait	40	14	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceNamespaceSymbolView.java
-TODO	trait	39	15	5	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolManager.java
+DONE	trait	39	15	5	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolManager.java
 TODO	trait	38	16	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolView.java
 TODO	trait	37	17	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceSymbolNoDuplicatesView.java
 TODO	trait	36	14	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/symbol/TraceClassSymbolView.java
