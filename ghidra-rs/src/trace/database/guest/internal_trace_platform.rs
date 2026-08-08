@@ -364,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn list_reg_names_dedupes_case_variants_and_aliases_in_order() {
+    fn list_reg_names_dedupes_case_variants_and_puts_the_name_first() {
         let space = make_space();
         let reg = make_register(&space, "R0", 0, 4, &["zero", "ZR"]);
         let platform = MockPlatform {
@@ -373,7 +373,21 @@ mod tests {
         };
 
         let names = platform.list_reg_names(&reg.borrow());
-        assert_eq!(names, vec!["R0", "r0", "zero", "ZERO", "ZR", "zr"]);
+
+        // The register's own name and its case variants come first, in that order -- that part
+        // is a real ordering guarantee, and Java's `getConventionalRegisterObjectNames` relies
+        // on it.
+        assert_eq!(&names[..2], &["R0", "r0"]);
+
+        // The alias-derived names are NOT ordered. `Register::aliases` is a `HashSet`, exactly as
+        // Java's `Register.aliases` is a `HashSet<String>`, so their relative order varies per
+        // run. Asserting one made this test fail on roughly 40% of runs -- and because the
+        // nightly gate parks any port that leaves a test failing, it parked six otherwise-good
+        // ports in the hours after it landed. Assert the contract the code actually provides:
+        // every alias contributes its own case variants, deduped.
+        let mut aliases: Vec<&str> = names[2..].iter().map(String::as_str).collect();
+        aliases.sort_unstable();
+        assert_eq!(aliases, ["ZERO", "ZR", "zero", "zr"]);
     }
 
     #[test]
