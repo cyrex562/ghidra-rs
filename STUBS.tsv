@@ -459,3 +459,4 @@ ts	stub_class	referenced_by
 2026-08-08T03:11:47.088490+00:00	DBTraceGuestLanguage	InternalTracePlatform
 2026-08-08T04:00:00.000000+00:00	AbstractBaseDBTraceCodeUnitsView	AbstractSingleDBTraceCodeUnitsView
 2026-08-08T03:50:34.014492+00:00	InternalBaseCodeUnitsView	InternalTraceBaseDefinedUnitsView
+2026-08-08T03:59:16.976766+00:00	AbstractBaseDBTraceDefinedUnitsView	DBTraceDefinedUnitsView
