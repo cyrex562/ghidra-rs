@@ -11,6 +11,7 @@ pub mod map;
 pub mod memory;
 pub mod modules;
 pub mod program;
+pub mod property;
 pub mod symbol;
 pub mod target;
 pub mod thread;
