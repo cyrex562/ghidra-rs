@@ -8,13 +8,13 @@ use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::time::trace_time_manager::TraceTimeManager;
 use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::thread::TraceThreadManager;
+use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceEquateManager, TraceMemoryManager,
     TracePlatformManager,
     TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
-    TraceSymbolManager,
     TraceVariableSnapProgramView,
 };
 use crate::util::lock_hold::{Lock, LockHold};
@@ -643,6 +643,38 @@ mod tests {
         ) -> std::sync::Arc<
             dyn crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol,
         > {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn labels(&self) -> Box<dyn crate::trace::model::symbol::trace_label_symbol_view::TraceLabelSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_namespace_symbol_view::TraceNamespaceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn classes(&self) -> Box<dyn crate::trace::seam_stubs::TraceClassSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn all_namespaces(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn not_labels(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolNoDuplicatesView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn all_symbols(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_ids_added(&self, _from: i64, _to: i64) -> Vec<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_ids_removed(&self, _from: i64, _to: i64) -> Vec<i64> {
             unimplemented!("not exercised by this smoke test")
         }
     }
