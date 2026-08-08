@@ -370,6 +370,27 @@ pub trait TracePlatform: Send + Sync {
         unimplemented!("TracePlatform::get_trace placeholder not overridden")
     }
 
+    /// Get the language this platform disassembles/decodes with. Mirrors
+    /// `TracePlatform.getLanguage()`.
+    ///
+    /// Named `platform_language` rather than `get_language` to avoid an inherent-method-style
+    /// ambiguity: [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)
+    /// already implements the unrelated [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)`::get_language`,
+    /// and Rust rejects a bare `self.get_language()` call when both are in scope on the same
+    /// concrete type.
+    ///
+    /// Real Java method, abstract (no default). Defaults to panicking, matching
+    /// [`Self::get_trace`]'s established growth convention, so existing marker
+    /// (`impl TracePlatform for T {}`) implementors keep compiling unchanged.
+    ///
+    /// Grown for
+    /// [`DBTraceRegisterContextManager`](crate::trace::database::context::db_trace_register_context_manager::DBTraceRegisterContextManager)'s
+    /// `get_value_with_default` default, which needs the platform's language to resolve both the
+    /// per-space delegate call and the language-defined default fallback.
+    fn platform_language(&self) -> Box<dyn Language> {
+        unimplemented!("TracePlatform::platform_language placeholder not overridden")
+    }
+
     /// Maps an address in this platform's language into the trace's host address space, or
     /// `None` if it cannot be mapped. Mirrors `TracePlatform.mapGuestToHost(Address)`. Defaults
     /// to the identity mapping, matching the host platform's behavior.
@@ -1199,5 +1220,112 @@ pub trait DBTraceMemorySpace: Send + Sync {
 
     /// Mirrors `pack()`.
     fn pack(&self);
+}
+
+/// Placeholder for `ghidra.trace.database.context.DBTraceRegisterContextSpace`, referenced (as the
+/// per-address-space delegate `M` of its
+/// [`DBTraceDelegatingManager`](crate::trace::database::space::db_trace_delegating_manager::DBTraceDelegatingManager))
+/// by
+/// [`DBTraceRegisterContextManager`](crate::trace::database::context::db_trace_register_context_manager::DBTraceRegisterContextManager)
+/// before the real port is available.
+///
+/// The real Java class implements the model-level `TraceRegisterContextSpace` interface (already
+/// ported as [`TraceRegisterContextSpace`](crate::trace::model::context::trace_register_context_space::TraceRegisterContextSpace),
+/// whose mutating members take `&mut self`) plus DB-record-backed bookkeeping. This manager hands
+/// the delegate out by value as `Arc<dyn DBTraceRegisterContextSpace>` (matching
+/// [`DBTraceMemorySpace`]'s established convention for `Arc`-shared, lock-synchronized DB
+/// delegates), so its members are `&self`-receiver throughout rather than reusing the `&mut self`
+/// model trait. `get_value_with_default` is modeled on the concrete class's package-private
+/// `getValueWithDefault(Language, Register, long, Address hostAddress, Address langAddress)`
+/// helper (already resolved to a host address), which is what
+/// `DBTraceRegisterContextManager.getValueWithDefault` actually calls -- not the model-level,
+/// platform-taking overload -- since the manager itself is the one that maps guest to host and
+/// resolves the language via `TracePlatform`.
+pub trait DBTraceRegisterContextSpace: Send + Sync {
+    /// The address space this register-context space is bound to. Mirrors
+    /// `DBTraceRegisterContextSpace.getAddressSpace()`.
+    fn get_address_space(&self) -> Arc<AddressSpace>;
+
+    /// Mirrors `setValue(Language, RegisterValue, Lifespan, AddressRange)`.
+    fn set_value(
+        &self,
+        language: &dyn Language,
+        value: &dyn ProgramRegisterValue,
+        lifespan: &dyn Lifespan,
+        range: &AddressRange,
+    );
+
+    /// Mirrors `removeValue(Language, Register, Lifespan, AddressRange)`.
+    fn remove_value(
+        &self,
+        language: &dyn Language,
+        register: &Register,
+        span: &dyn Lifespan,
+        range: &AddressRange,
+    );
+
+    /// Mirrors `getValue(Language, Register, long, Address)`.
+    fn get_value(
+        &self,
+        language: &dyn Language,
+        register: &Register,
+        snap: i64,
+        address: &Address,
+    ) -> Option<Box<dyn ProgramRegisterValue>>;
+
+    /// Mirrors `getEntry(Language, Register, long, Address)`.
+    fn get_entry(
+        &self,
+        language: &dyn Language,
+        register: &Register,
+        snap: i64,
+        address: &Address,
+    ) -> Option<(Box<dyn TraceAddressSnapRange>, Box<dyn ProgramRegisterValue>)>;
+
+    /// Mirrors the package-private `getValueWithDefault(Language, Register, long, Address
+    /// hostAddress, Address langAddress)` helper, called by
+    /// `DBTraceRegisterContextManager.getValueWithDefault(TracePlatform, Register, long, Address)`
+    /// after it has already mapped the guest address to `host_address` and resolved `language`
+    /// from the platform.
+    fn get_value_with_default(
+        &self,
+        language: &dyn Language,
+        register: &Register,
+        snap: i64,
+        host_address: &Address,
+        guest_address: &Address,
+    ) -> Option<Box<dyn ProgramRegisterValue>>;
+
+    /// Mirrors `getRegisterValueAddressRanges(Language, Register, long, AddressRange)`.
+    fn get_register_value_address_ranges_within(
+        &self,
+        language: &dyn Language,
+        register: &Register,
+        snap: i64,
+        within: &AddressRange,
+    ) -> Box<dyn AddressSetView>;
+
+    /// Mirrors the all-space overload `getRegisterValueAddressRanges(Language, Register, long)`.
+    fn get_register_value_address_ranges(
+        &self,
+        language: &dyn Language,
+        register: &Register,
+        snap: i64,
+    ) -> Box<dyn AddressSetView>;
+
+    /// Mirrors `hasRegisterValueInAddressRange(Language, Register, long, AddressRange)`.
+    fn has_register_value_in_address_range(
+        &self,
+        language: &dyn Language,
+        register: &Register,
+        snap: i64,
+        within: &AddressRange,
+    ) -> bool;
+
+    /// Mirrors the all-space overload `hasRegisterValue(Language, Register, long)`.
+    fn has_register_value(&self, language: &dyn Language, register: &Register, snap: i64) -> bool;
+
+    /// Mirrors `clear(Lifespan, AddressRange)`.
+    fn clear(&self, span: &dyn Lifespan, range: &AddressRange);
 }
 
