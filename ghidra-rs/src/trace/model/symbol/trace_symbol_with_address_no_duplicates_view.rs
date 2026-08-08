@@ -47,9 +47,10 @@ mod tests {
     use crate::trace::model::time::trace_time_manager::TraceTimeManager;
     use crate::trace::model::trace::{Trace, TraceProgramViewListener};
     use crate::trace::model::trace_time_viewport::TraceTimeViewport;
+    use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
-        TraceMemoryManager, TracePlatformManager, TraceRegisterContextManager, TraceStackManager,
+        TraceMemoryManager, TraceRegisterContextManager, TraceStackManager,
         TraceThread, TraceVariableSnapProgramView,
     };
     use crate::util::lock_hold::{Lock, LockHold};

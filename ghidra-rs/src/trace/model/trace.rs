@@ -12,10 +12,10 @@ use crate::trace::model::symbol::trace_equate_manager::TraceEquateManager;
 use crate::trace::model::symbol::trace_reference_manager::TraceReferenceManager;
 use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
+use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceMemoryManager,
-    TracePlatformManager,
     TraceRegisterContextManager, TraceStackManager,
     TraceVariableSnapProgramView,
 };
