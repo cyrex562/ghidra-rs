@@ -1,5 +1,6 @@
 pub mod trace_class_symbol;
 pub mod trace_class_symbol_view;
+pub mod trace_equate;
 pub mod trace_equate_reference;
 pub mod trace_label_symbol;
 pub mod trace_label_symbol_view;
@@ -18,6 +19,7 @@ pub mod trace_symbol_with_location_view;
 
 pub use trace_class_symbol::TraceClassSymbol;
 pub use trace_class_symbol_view::TraceClassSymbolView;
+pub use trace_equate::TraceEquate;
 pub use trace_equate_reference::TraceEquateReference;
 pub use trace_label_symbol::TraceLabelSymbol;
 pub use trace_label_symbol_view::TraceLabelSymbolView;
