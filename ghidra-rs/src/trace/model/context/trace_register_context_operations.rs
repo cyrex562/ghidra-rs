@@ -363,6 +363,14 @@ mod tests {
         fn get_unsigned_value_ignore_mask(&self) -> u128 {
             self.value
         }
+
+        fn has_value(&self) -> bool {
+            self.has_any_value()
+        }
+
+        fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
+            unimplemented!("not exercised by this smoke test")
+        }
     }
 
     struct MockPlatform;

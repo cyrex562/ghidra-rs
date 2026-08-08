@@ -245,6 +245,22 @@ mod tests {
         ) -> Option<Arc<AddressSpace>> {
             unimplemented!("not exercised by this smoke test")
         }
+
+        fn buffer_for_value(
+            &self,
+            _register: &crate::program::model::lang::Register,
+            _value: &dyn crate::program::seam_stubs::RegisterValue,
+        ) -> Vec<u8> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn finish_buffer(
+            &self,
+            _buf: &[u8],
+            _register: &crate::program::model::lang::Register,
+        ) -> Box<dyn crate::program::seam_stubs::RegisterValue> {
+            unimplemented!("not exercised by this smoke test")
+        }
     }
 
     struct MockSpaceObject {

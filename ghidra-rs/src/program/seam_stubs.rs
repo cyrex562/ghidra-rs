@@ -848,6 +848,12 @@ pub trait InstructionBlockFlow {}
 /// only ever passes this type through) and by
 /// [`ProcessorContextView`](crate::program::model::lang::processor_context_view::ProcessorContextView)
 /// and its `dump_context_value` helper, before the real class is ported.
+///
+/// Grown to add
+/// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
+/// `setValue` default needs: whether the value's mask actually covers any bits (as opposed to
+/// merely being non-zero, see [`RegisterValue::has_any_value`]), and combining a fresh value onto
+/// an existing one.
 pub trait RegisterValue {
     /// The base register this value is associated with.
     fn get_register(&self) -> RegisterRef;
@@ -861,6 +867,14 @@ pub trait RegisterValue {
 
     /// The unsigned value of this register value, ignoring any mask bits.
     fn get_unsigned_value_ignore_mask(&self) -> u128;
+
+    /// True if this value's mask has any bits set (as opposed to only ever recording an
+    /// unmasked/unknown value). Mirrors `RegisterValue.hasValue()`.
+    fn has_value(&self) -> bool;
+
+    /// Combines `other`'s masked bits onto this value, preferring `other` wherever both specify a
+    /// bit. Mirrors `RegisterValue.combineValues(RegisterValue)`.
+    fn combine_values(&self, other: &dyn RegisterValue) -> Box<dyn RegisterValue>;
 }
 
 /// Placeholder for `ghidra.program.model.lang.ParserContext`, referenced by

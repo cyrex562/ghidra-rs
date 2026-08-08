@@ -324,6 +324,17 @@ impl RegisterValue for LowBitCodeModeValue {
     fn get_unsigned_value_ignore_mask(&self) -> u128 {
         1
     }
+
+    fn has_value(&self) -> bool {
+        // Constructed as `new RegisterValue(register, BigInteger.ONE)`, whose mask is always full.
+        true
+    }
+
+    fn combine_values(&self, _other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
+        Box::new(LowBitCodeModeValue {
+            register: self.register.clone(),
+        })
+    }
 }
 
 /// Get an address that can be used for disassembly. Useful for some processors where pointers to

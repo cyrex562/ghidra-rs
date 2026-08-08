@@ -479,3 +479,6 @@ ts	stub_class	referenced_by
 2026-08-08T09:00:00+00:00	DBTraceDefinedDataView	DBTraceCodeSpace
 2026-08-08T09:00:00+00:00	DBTraceUndefinedDataView	DBTraceCodeSpace
 2026-08-08T09:00:00+00:00	DBTraceGuestPlatform	DBTraceCodeSpace
+2026-08-08T10:00:00+00:00	TraceMemoryOperations	InternalTraceMemoryOperations
+2026-08-08T10:00:00+00:00	TraceRegisterUtils	InternalTraceMemoryOperations
+2026-08-08T10:00:00+00:00	RegisterValue	InternalTraceMemoryOperations

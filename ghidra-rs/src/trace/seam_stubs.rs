@@ -12,9 +12,11 @@ use crate::program::model::address::{
 };
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::{Language, Register};
+use crate::program::seam_stubs::RegisterValue as ProgramRegisterValue;
 use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView;
+use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::target::path::key_path::KeyPath;
@@ -66,8 +68,45 @@ pub trait TraceMemoryManager {}
 /// [`TraceMemorySpace`](crate::trace::model::memory::trace_memory_space::TraceMemorySpace) before
 /// the real interface is ported. `TraceMemorySpace` only extends this interface as a supertrait
 /// and does not itself call any of its (large) surface of byte/state/register operations, so no
-/// members are ported here yet.
-pub trait TraceMemoryOperations: Send + Sync {}
+/// members were needed there.
+///
+/// Grown to add the six abstract (non-register) primitives
+/// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
+/// register-taking defaults reduce to: setting/querying state and reading/writing/removing bytes
+/// over a plain address range. Java's `ByteBuffer` position/limit-bounded parameters become `&mut
+/// [u8]` slices, the convention already established by
+/// [`MemBuffer`](crate::program::model::mem::MemBuffer) and
+/// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit).
+/// The `Collection<Entry<TraceAddressSnapRange, TraceMemoryState>>` returned by `getStates` becomes
+/// a `Vec` of pairs.
+pub trait TraceMemoryOperations: Send + Sync {
+    /// Set the state of memory over a given time and address range. Mirrors
+    /// `setState(long, AddressRange, TraceMemoryState)`.
+    fn set_state(&mut self, snap: i64, range: &AddressRange, state: TraceMemoryState);
+
+    /// Get all the entries covering the given range effective at the given snap. Mirrors
+    /// `getStates(long, AddressRange)`.
+    fn get_states(
+        &self,
+        snap: i64,
+        range: &AddressRange,
+    ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)>;
+
+    /// Write bytes at the given snap and address, returning the number of bytes written. Mirrors
+    /// `putBytes(long, Address, ByteBuffer)`.
+    fn put_bytes(&mut self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
+
+    /// Read the most recent bytes from the given snap and address, returning the number of bytes
+    /// read. Mirrors `getBytes(long, Address, ByteBuffer)`.
+    fn get_bytes(&self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
+
+    /// Read the most recent bytes from the given snap and address, following schedule forks.
+    /// Mirrors `getViewBytes(long, Address, ByteBuffer)`.
+    fn get_view_bytes(&self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
+
+    /// Remove bytes from the given time and location. Mirrors `removeBytes(long, Address, int)`.
+    fn remove_bytes(&mut self, snap: i64, start: &Address, len: i32);
+}
 
 /// Placeholder for `ghidra.trace.model.context.TraceRegisterContextManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -480,6 +519,56 @@ pub trait TraceRegisterUtils: Send + Sync {
         let end = start.add_wrap((register.num_bytes() as i64) - 1);
         AddressRange::new(start, end)
     }
+
+    /// Whether `register` starts and ends on a byte boundary. Mirrors the static
+    /// `TraceRegisterUtils.isByteBound(Register)`, used by
+    /// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
+    /// `setValue` default.
+    ///
+    /// Like [`Self::range_for_register`], this is implemented directly against the ported
+    /// [`Register`]: the same check [`Self::require_byte_bound`] already makes, but as a predicate
+    /// rather than a panic.
+    fn is_byte_bound(&self, register: &Register) -> bool {
+        register.least_significant_bit() % 8 == 0 && register.bit_length() % 8 == 0
+    }
+
+    /// Allocate a zeroed buffer sized to receive `register`'s bytes. Mirrors the static
+    /// `TraceRegisterUtils.prepareBuffer(Register)`, used by
+    /// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
+    /// `getValue`/`getViewValue` defaults, which fill it via `TraceMemoryOperations::get_bytes`/
+    /// `get_view_bytes` before handing it to [`Self::finish_buffer`].
+    ///
+    /// The real Java method over-allocates to the base register's mask width and slices a
+    /// byte-order-dependent window into it (see [`Self::finish_buffer`]'s docs for why that
+    /// endianness handling has no home here yet); since callers only ever observe the buffer's
+    /// length (`register.getNumBytes()`), a buffer of exactly that length is a faithful
+    /// placeholder.
+    fn prepare_buffer(&self, register: &Register) -> Vec<u8> {
+        vec![0u8; register.num_bytes() as usize]
+    }
+
+    /// Extract the byte-ordered, mask-offset window of `value`'s bytes that corresponds to
+    /// `register`. Mirrors the static `TraceRegisterUtils.bufferForValue(Register,
+    /// RegisterValue)`, used by
+    /// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
+    /// `setValue` default.
+    ///
+    /// Required rather than defaulted: the real computation reads `value`'s raw mask/value byte
+    /// array (`RegisterValue.toBytes()`), which the
+    /// [`RegisterValue`](crate::program::seam_stubs::RegisterValue) placeholder does not yet
+    /// expose.
+    fn buffer_for_value(&self, register: &Register, value: &dyn ProgramRegisterValue) -> Vec<u8>;
+
+    /// Reconstruct a register value from a buffer previously filled via [`Self::prepare_buffer`].
+    /// Mirrors the static `TraceRegisterUtils.finishBuffer(ByteBuffer, Register)`, used by
+    /// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
+    /// `getValue`/`getViewValue` defaults.
+    ///
+    /// Required rather than defaulted: constructing a `RegisterValue` from raw bytes has no
+    /// implementation to call through to on the
+    /// [`RegisterValue`](crate::program::seam_stubs::RegisterValue) placeholder trait (it can only
+    /// be built by a concrete type).
+    fn finish_buffer(&self, buf: &[u8], register: &Register) -> Box<dyn ProgramRegisterValue>;
 }
 
 /// Placeholder for the nested `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.TraceAddressSnapRangeQuery`,
