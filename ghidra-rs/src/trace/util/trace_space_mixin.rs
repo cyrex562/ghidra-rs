@@ -134,7 +134,7 @@ mod tests {
 
         fn get_reference_manager(
             &self,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceReferenceManager> {
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference_manager::TraceReferenceManager> {
             unimplemented!("not exercised by this smoke test")
         }
 
