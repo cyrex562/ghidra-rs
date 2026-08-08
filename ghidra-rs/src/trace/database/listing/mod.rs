@@ -1,3 +1,5 @@
 pub mod abstract_single_db_trace_code_units_view;
+pub mod internal_trace_base_defined_units_view;
 
 pub use abstract_single_db_trace_code_units_view::AbstractSingleDBTraceCodeUnitsView;
+pub use internal_trace_base_defined_units_view::InternalTraceBaseDefinedUnitsView;
