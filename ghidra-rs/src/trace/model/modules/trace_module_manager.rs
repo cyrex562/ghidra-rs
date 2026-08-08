@@ -34,7 +34,7 @@ pub trait TraceModuleManager: TraceModuleOperations {
         module_path: &str,
         module_name: &str,
         range: AddressRange,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
     ) -> Result<Box<dyn TraceModule>, DuplicateNameException>;
 
     /// Add a module which is still loaded.
@@ -114,36 +114,7 @@ mod tests {
         Address::new(space, offset)
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockModule {
@@ -182,7 +153,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {}
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {}
 
         fn set_name_at(&mut self, _snap: i64, _name: &str) {}
 
@@ -190,7 +161,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, range: AddressRange) {
+        fn set_range(&mut self, _lifespan: Lifespan, range: AddressRange) {
             self.range = range;
         }
 
@@ -242,7 +213,7 @@ mod tests {
             true
         }
 
-        fn is_alive(&self, _span: &dyn Lifespan) -> bool {
+        fn is_alive(&self, _span: Lifespan) -> bool {
             true
         }
     }
@@ -281,7 +252,7 @@ mod tests {
 
         fn get_modules_intersecting(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             range: &AddressRange,
         ) -> Vec<Box<dyn TraceModule>> {
             self.modules
@@ -303,7 +274,7 @@ mod tests {
 
         fn get_sections_intersecting(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _range: &AddressRange,
         ) -> Vec<Box<dyn TraceSection>> {
             Vec::new()
@@ -316,7 +287,7 @@ mod tests {
             module_path: &str,
             _module_name: &str,
             range: AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
         ) -> Result<Box<dyn TraceModule>, DuplicateNameException> {
             if self.modules.borrow().iter().any(|m| m.path == module_path) {
                 return Err(DuplicateNameException::with_message(module_path));
@@ -340,7 +311,7 @@ mod tests {
                 module_path,
                 module_name,
                 range,
-                &MockLifespan { min: snap, max: i64::MAX },
+                Lifespan::span(snap, i64::MAX),
             )
         }
 
@@ -375,12 +346,12 @@ mod tests {
     #[test]
     fn add_module_rejects_duplicate_path() {
         let mut mgr = MockManager::default();
-        let lifespan = MockLifespan { min: 0, max: i64::MAX };
+        let lifespan = Lifespan::span(0, i64::MAX);
         let range = AddressRange::new(addr(0x1000), addr(0x1fff));
         assert!(mgr
-            .add_module("Modules[libc.so]", "libc.so", range.clone(), &lifespan)
+            .add_module("Modules[libc.so]", "libc.so", range.clone(), lifespan)
             .is_ok());
-        let result = mgr.add_module("Modules[libc.so]", "libc.so", range, &lifespan);
+        let result = mgr.add_module("Modules[libc.so]", "libc.so", range, lifespan);
         match result {
             Ok(_) => panic!("expected duplicate-name error"),
             Err(err) => assert!(err.0.contains("Modules[libc.so]")),

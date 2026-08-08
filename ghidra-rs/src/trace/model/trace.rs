@@ -152,6 +152,7 @@ pub trait Trace: DataTypeManagerDomainObject {
 
 #[cfg(test)]
 mod tests {
+    use crate::trace::model::lifespan::Lifespan;
     use super::*;
     use crate::framework::model::DomainObject;
     use crate::program::model::data::data_type_manager::DataTypeManager;
@@ -195,7 +196,7 @@ mod tests {
         fn add_breakpoint(
             &mut self,
             _path: &str,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _range: crate::program::model::address::AddressRange,
             _threads: &[Box<dyn crate::trace::seam_stubs::TraceThread>],
             _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
@@ -282,7 +283,7 @@ mod tests {
 
         fn get_breakpoints_intersecting(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
         ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
             unimplemented!("not exercised by this smoke test")
@@ -358,13 +359,13 @@ mod tests {
     impl crate::trace::model::symbol::trace_equate_operations::TraceEquateOperations for MockEquateManager {
         fn get_referring_addresses(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
         ) -> Box<dyn crate::program::model::address::AddressSetView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn clear_references(
             &mut self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _asv: &dyn crate::program::model::address::AddressSetView,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<(), crate::util::exception::CancelledException> {
@@ -372,7 +373,7 @@ mod tests {
         }
         fn clear_references_range(
             &mut self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
             _monitor: &dyn crate::util::task::TaskMonitor,
         ) -> Result<(), crate::util::exception::CancelledException> {
@@ -479,7 +480,7 @@ mod tests {
 
         fn get_modules_intersecting(
             &self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _range: &crate::program::model::address::AddressRange,
         ) -> Vec<Box<dyn crate::trace::model::modules::TraceModule>> {
             unimplemented!("not exercised by this smoke test")
@@ -501,7 +502,7 @@ mod tests {
 
         fn get_sections_intersecting(
             &self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _range: &crate::program::model::address::AddressRange,
         ) -> Vec<Box<dyn crate::trace::model::modules::TraceSection>> {
             unimplemented!("not exercised by this smoke test")
@@ -513,7 +514,7 @@ mod tests {
             _module_path: &str,
             _module_name: &str,
             _range: crate::program::model::address::AddressRange,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
         ) -> Result<
             Box<dyn crate::trace::model::modules::TraceModule>,
             crate::util::exception::DuplicateNameException,
@@ -605,7 +606,7 @@ mod tests {
 
         fn get_objects_by_path(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _path: &crate::trace::model::target::path::key_path::KeyPath,
         ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObject>> {
             unimplemented!("not exercised by this smoke test")
@@ -613,7 +614,7 @@ mod tests {
 
         fn get_value_paths(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _predicates: &dyn crate::trace::model::target::path::PathFilter,
         ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObjectValPath>> {
             unimplemented!("not exercised by this smoke test")
@@ -635,7 +636,7 @@ mod tests {
 
         fn get_values_intersecting(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
             _entry_key: Option<&str>,
         ) -> Vec<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
@@ -644,7 +645,7 @@ mod tests {
 
         fn query_all_interface<I: crate::trace::seam_stubs::TraceObjectInterface>(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
         ) -> Vec<I>
         where
             Self: Sized,
@@ -676,14 +677,14 @@ mod tests {
         }
         fn add_reference_for_lifespan(
             &mut self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _reference: &dyn crate::program::model::symbol::Reference,
         ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
             unimplemented!("not exercised by this smoke test")
         }
         fn add_memory_reference(
             &mut self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _from_address: &crate::program::model::address::Address,
             _to_range: crate::program::model::address::AddressRange,
             _ref_type: crate::program::model::symbol::RefType,
@@ -694,7 +695,7 @@ mod tests {
         }
         fn add_offset_reference(
             &mut self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _from_address: &crate::program::model::address::Address,
             _to_address: &crate::program::model::address::Address,
             _to_addr_is_base: bool,
@@ -707,7 +708,7 @@ mod tests {
         }
         fn add_shifted_reference(
             &mut self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _from_address: &crate::program::model::address::Address,
             _to_address: &crate::program::model::address::Address,
             _shift: i32,
@@ -719,7 +720,7 @@ mod tests {
         }
         fn add_register_reference(
             &mut self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _from_address: &crate::program::model::address::Address,
             _to_register: &crate::program::model::lang::Register,
             _ref_type: crate::program::model::symbol::RefType,
@@ -730,7 +731,7 @@ mod tests {
         }
         fn add_stack_reference(
             &mut self,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _from_address: &crate::program::model::address::Address,
             _to_stack_offset: i32,
             _ref_type: crate::program::model::symbol::RefType,
@@ -774,7 +775,7 @@ mod tests {
         }
         fn get_references_from_range(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
         ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
             unimplemented!("not exercised by this smoke test")
@@ -796,7 +797,7 @@ mod tests {
         }
         fn clear_references_from(
             &mut self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
         ) {
             unimplemented!("not exercised by this smoke test")
@@ -810,14 +811,14 @@ mod tests {
         }
         fn clear_references_to(
             &mut self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
         ) {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_references_to_range(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
             _order: Option<&dyn crate::trace::seam_stubs::Rectangle2DDirection>,
         ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
@@ -825,7 +826,7 @@ mod tests {
         }
         fn get_references_to_range_unordered(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
         ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
             unimplemented!("not exercised by this smoke test")
@@ -861,13 +862,13 @@ mod tests {
         }
         fn get_reference_sources(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
         ) -> Box<dyn crate::program::model::address::AddressSetView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_reference_destinations(
             &self,
-            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _span: Lifespan,
         ) -> Box<dyn crate::program::model::address::AddressSetView> {
             unimplemented!("not exercised by this smoke test")
         }
@@ -942,7 +943,7 @@ mod tests {
         fn add(
             &mut self,
             _range: crate::program::model::address::AddressRange,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _to_program_url: &str,
             _to_address: &str,
         ) -> Result<
@@ -973,7 +974,7 @@ mod tests {
         fn find_any_conflicting(
             &self,
             _range: &crate::program::model::address::AddressRange,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _to_program_url: &str,
             _to_address: &str,
         ) -> Option<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
@@ -984,7 +985,7 @@ mod tests {
         fn find_all_overlapping(
             &self,
             _range: &crate::program::model::address::AddressRange,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
         ) -> Vec<Box<dyn crate::trace::model::modules::trace_static_mapping::TraceStaticMapping>>
         {
             unimplemented!("not exercised by this smoke test")
@@ -1041,7 +1042,7 @@ mod tests {
         fn add_thread(
             &mut self,
             _path: &str,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
         ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
         {
             unimplemented!("not exercised by this smoke test")
@@ -1051,7 +1052,7 @@ mod tests {
             &mut self,
             _path: &str,
             _display: &str,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
         ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
         {
             unimplemented!("not exercised by this smoke test")
@@ -1272,14 +1273,14 @@ mod tests {
             false
         }
 
-        fn contains_any_upper(&self, _lifespan: &dyn crate::trace::model::lifespan::Lifespan) -> bool {
+        fn contains_any_upper(&self, _lifespan: Lifespan) -> bool {
             false
         }
 
         fn is_completely_visible(
             &self,
             _range: &crate::program::model::address::range::AddressRange,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _object: &dyn std::any::Any,
             _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
         ) -> bool {
@@ -1289,18 +1290,18 @@ mod tests {
         fn compute_visible_parts(
             &self,
             _set: &dyn crate::program::model::address::address_set::AddressSetView,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _object: &dyn std::any::Any,
             _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
         ) -> crate::program::model::address::address_set::AddressSet {
             crate::program::model::address::address_set::AddressSet::new()
         }
 
-        fn get_ordered_spans(&self) -> Vec<Box<dyn crate::trace::model::lifespan::Lifespan>> {
+        fn get_ordered_spans(&self) -> Vec<Lifespan> {
             Vec::new()
         }
 
-        fn get_reversed_spans(&self) -> Vec<Box<dyn crate::trace::model::lifespan::Lifespan>> {
+        fn get_reversed_spans(&self) -> Vec<Lifespan> {
             Vec::new()
         }
 

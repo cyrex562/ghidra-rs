@@ -29,10 +29,10 @@ pub trait TraceObjectValueStorage: Send + Sync {
     /// Just set the lifespan, no notifications.
     ///
     /// The wrapper will notify the parent and child, if necessary.
-    fn do_set_lifespan(&mut self, lifespan: &dyn Lifespan);
+    fn do_set_lifespan(&mut self, lifespan: Lifespan);
 
     /// Get the lifespan.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Get the child object, or `None` if this entry's value is not an object.
     fn get_child_or_null(&self) -> Option<Box<dyn DBTraceObject>>;
@@ -51,37 +51,7 @@ pub trait TraceObjectValueStorage: Send + Sync {
 mod tests {
     use super::*;
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockManager;
     impl DBTraceObjectManager for MockManager {}
@@ -93,7 +63,7 @@ mod tests {
     impl DBTraceObject for MockObject {}
 
     struct MockStorage {
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
         value: i64,
         deleted: bool,
         has_child: bool,
@@ -116,15 +86,12 @@ mod tests {
             "key1".to_string()
         }
 
-        fn do_set_lifespan(&mut self, lifespan: &dyn Lifespan) {
-            self.lifespan = MockLifespan {
-                min: lifespan.lmin(),
-                max: lifespan.lmax(),
-            };
+        fn do_set_lifespan(&mut self, lifespan: Lifespan) {
+            self.lifespan = Lifespan::span(lifespan.lmin(), lifespan.lmax());
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(self.lifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            self.lifespan
         }
 
         fn get_child_or_null(&self) -> Option<Box<dyn DBTraceObject>> {
@@ -150,7 +117,7 @@ mod tests {
 
     fn make_storage() -> MockStorage {
         MockStorage {
-            lifespan: MockLifespan { min: 0, max: 10 },
+            lifespan: Lifespan::span(0, 10),
             value: 42,
             deleted: false,
             has_child: false,
@@ -163,7 +130,7 @@ mod tests {
         assert_eq!(storage.get_lifespan().lmin(), 0);
         assert_eq!(storage.get_lifespan().lmax(), 10);
 
-        storage.do_set_lifespan(&MockLifespan { min: 5, max: 20 });
+        storage.do_set_lifespan(Lifespan::span(5, 20));
 
         assert_eq!(storage.get_lifespan().lmin(), 5);
         assert_eq!(storage.get_lifespan().lmax(), 20);

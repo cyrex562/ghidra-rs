@@ -119,7 +119,7 @@ pub trait DBTraceObjectValueData: TraceObjectValueStorage {
         parent: Box<dyn DBTraceObject>,
         child: Option<Box<dyn DBTraceObject>>,
         entry_key: String,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
     );
 }
 
@@ -138,36 +138,11 @@ mod tests {
     struct MockObject(&'static str);
     impl DBTraceObject for MockObject {}
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockData {
         entry_key: String,
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
         has_child: bool,
         deleted: bool,
         address_space_id: i32,
@@ -193,12 +168,12 @@ mod tests {
             self.entry_key.clone()
         }
 
-        fn do_set_lifespan(&mut self, lifespan: &dyn Lifespan) {
-            self.lifespan = MockLifespan { min: lifespan.lmin(), max: lifespan.lmax() };
+        fn do_set_lifespan(&mut self, lifespan: Lifespan) {
+            self.lifespan = Lifespan::span(lifespan.lmin(), lifespan.lmax());
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(self.lifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            self.lifespan
         }
 
         fn get_child_or_null(&self) -> Option<Box<dyn DBTraceObject>> {
@@ -252,18 +227,18 @@ mod tests {
             _parent: Box<dyn DBTraceObject>,
             child: Option<Box<dyn DBTraceObject>>,
             entry_key: String,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
         ) {
             self.entry_key = entry_key;
             self.has_child = child.is_some();
-            self.lifespan = MockLifespan { min: lifespan.lmin(), max: lifespan.lmax() };
+            self.lifespan = Lifespan::span(lifespan.lmin(), lifespan.lmax());
         }
     }
 
     fn make_data() -> MockData {
         MockData {
             entry_key: "key1".to_string(),
-            lifespan: MockLifespan { min: 0, max: 10 },
+            lifespan: Lifespan::span(0, 10),
             has_child: false,
             deleted: false,
             address_space_id: -1,
@@ -315,7 +290,7 @@ mod tests {
             Box::new(MockObject("new_parent")),
             Some(Box::new(MockObject("new_child"))),
             "key2".to_string(),
-            &MockLifespan { min: 5, max: 20 },
+            Lifespan::span(5, 20),
         );
 
         assert_eq!(data.get_entry_key(), "key2");

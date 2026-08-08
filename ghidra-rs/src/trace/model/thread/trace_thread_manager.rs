@@ -32,7 +32,7 @@ pub trait TraceThreadManager {
     fn add_thread(
         &mut self,
         path: &str,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
     ) -> Result<Box<dyn TraceThread>, DuplicateNameException>;
 
     /// Add a thread with the given lifespan and a short display name.
@@ -49,7 +49,7 @@ pub trait TraceThreadManager {
         &mut self,
         path: &str,
         display: &str,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
     ) -> Result<Box<dyn TraceThread>, DuplicateNameException>;
 
     /// Add a thread with the given creation snap.
@@ -106,36 +106,7 @@ mod tests {
     use super::*;
     use std::cell::RefCell;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockThread {
@@ -160,7 +131,7 @@ mod tests {
         fn add_thread(
             &mut self,
             path: &str,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
         ) -> Result<Box<dyn TraceThread>, DuplicateNameException> {
             self.add_thread_with_display(path, path, lifespan)
         }
@@ -169,7 +140,7 @@ mod tests {
             &mut self,
             path: &str,
             _display: &str,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
         ) -> Result<Box<dyn TraceThread>, DuplicateNameException> {
             if self
                 .threads
@@ -197,7 +168,7 @@ mod tests {
             path: &str,
             creation_snap: i64,
         ) -> Result<Box<dyn TraceThread>, DuplicateNameException> {
-            self.add_thread(path, &MockLifespan { min: creation_snap, max: i64::MAX })
+            self.add_thread(path, Lifespan::span(creation_snap, i64::MAX))
         }
 
         fn create_thread_with_display(
@@ -209,7 +180,7 @@ mod tests {
             self.add_thread_with_display(
                 path,
                 display,
-                &MockLifespan { min: creation_snap, max: i64::MAX },
+                Lifespan::span(creation_snap, i64::MAX),
             )
         }
 
@@ -265,9 +236,9 @@ mod tests {
     fn add_thread_rejects_duplicate_overlapping_path() {
         let mut mgr = MockManager::default();
         assert!(mgr
-            .add_thread("Threads[0]", &MockLifespan { min: 0, max: 10 })
+            .add_thread("Threads[0]", Lifespan::span(0, 10))
             .is_ok());
-        let result = mgr.add_thread("Threads[0]", &MockLifespan { min: 5, max: 15 });
+        let result = mgr.add_thread("Threads[0]", Lifespan::span(5, 15));
         match result {
             Ok(_) => panic!("expected duplicate-name error"),
             Err(err) => assert!(err.0.contains("Threads[0]")),

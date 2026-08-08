@@ -32,7 +32,7 @@ pub trait TraceReferenceOperations {
     /// Mirrors the Java overload `addReference(Lifespan, Reference)`.
     fn add_reference_for_lifespan(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         reference: &dyn Reference,
     ) -> Box<dyn TraceReference>;
 
@@ -42,7 +42,7 @@ pub trait TraceReferenceOperations {
     /// SourceType, int)`.
     fn add_memory_reference(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         from_address: &Address,
         to_range: AddressRange,
         ref_type: RefType,
@@ -57,7 +57,7 @@ pub trait TraceReferenceOperations {
     /// delegates to [`Self::add_memory_reference`].
     fn add_memory_reference_to_address(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         from_address: &Address,
         to_address: &Address,
         ref_type: RefType,
@@ -80,7 +80,7 @@ pub trait TraceReferenceOperations {
     /// `to_address = base + offset`; `true` means `to_address = base`.
     fn add_offset_reference(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         from_address: &Address,
         to_address: &Address,
         to_addr_is_base: bool,
@@ -93,7 +93,7 @@ pub trait TraceReferenceOperations {
     /// Add a shifted memory reference. `shift` is the number of bits to shift left.
     fn add_shifted_reference(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         from_address: &Address,
         to_address: &Address,
         shift: i32,
@@ -105,7 +105,7 @@ pub trait TraceReferenceOperations {
     /// Add a register reference.
     fn add_register_reference(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         from_address: &Address,
         to_register: &Register,
         ref_type: RefType,
@@ -116,7 +116,7 @@ pub trait TraceReferenceOperations {
     /// Add a (static) stack reference.
     fn add_stack_reference(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         from_address: &Address,
         to_stack_offset: i32,
         ref_type: RefType,
@@ -176,7 +176,7 @@ pub trait TraceReferenceOperations {
     /// Find all references with from addresses contained in the given lifespan and address range.
     fn get_references_from_range(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
     ) -> Vec<Box<dyn TraceReference>>;
 
@@ -195,7 +195,7 @@ pub trait TraceReferenceOperations {
     ///
     /// Any reference intersecting the given "from" parameters will have its lifespan truncated to
     /// the start of the given lifespan.
-    fn clear_references_from(&mut self, span: &dyn Lifespan, range: &AddressRange);
+    fn clear_references_from(&mut self, span: Lifespan, range: &AddressRange);
 
     /// Get all references whose to address (or range) contains the given snapshot and address.
     fn get_references_to(&self, snap: i64, to_address: &Address) -> Vec<Box<dyn TraceReference>>;
@@ -204,7 +204,7 @@ pub trait TraceReferenceOperations {
     ///
     /// Any reference intersecting the given "to" parameters will have its lifespan truncated to
     /// the start of the given lifespan.
-    fn clear_references_to(&mut self, span: &dyn Lifespan, range: &AddressRange);
+    fn clear_references_to(&mut self, span: Lifespan, range: &AddressRange);
 
     /// Get all references whose to address range intersects the given lifespan and address
     /// range, in the given order.
@@ -214,7 +214,7 @@ pub trait TraceReferenceOperations {
     /// [`Rectangle2DDirection`]. "Secondary" sorting is not supported.
     fn get_references_to_range(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
         order: Option<&dyn Rectangle2DDirection>,
     ) -> Vec<Box<dyn TraceReference>>;
@@ -226,7 +226,7 @@ pub trait TraceReferenceOperations {
     /// body delegates to [`Self::get_references_to_range`] with a `null` order.
     fn get_references_to_range_unordered(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
     ) -> Vec<Box<dyn TraceReference>> {
         self.get_references_to_range(span, range, None)
@@ -258,10 +258,10 @@ pub trait TraceReferenceOperations {
 
     /// Get an address set of all "from" addresses in any reference intersecting the given
     /// lifespan.
-    fn get_reference_sources(&self, span: &dyn Lifespan) -> Box<dyn AddressSetView>;
+    fn get_reference_sources(&self, span: Lifespan) -> Box<dyn AddressSetView>;
 
     /// Get an address set of all "to" addresses in any reference intersecting the given lifespan.
-    fn get_reference_destinations(&self, span: &dyn Lifespan) -> Box<dyn AddressSetView>;
+    fn get_reference_destinations(&self, span: Lifespan) -> Box<dyn AddressSetView>;
 
     /// Count the number of references from the given snapshot and address.
     fn get_reference_count_from(&self, snap: i64, from_address: &Address) -> i32;
@@ -351,7 +351,7 @@ mod tests {
         fn get_trace(&self) -> Box<dyn Trace> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_start_snap(&self) -> i64 {
@@ -400,7 +400,7 @@ mod tests {
 
         fn add_reference_for_lifespan(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             reference: &dyn Reference,
         ) -> Box<dyn TraceReference> {
             let to = reference.to_address();
@@ -418,7 +418,7 @@ mod tests {
 
         fn add_memory_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             from_address: &Address,
             to_range: AddressRange,
             ref_type: RefType,
@@ -441,7 +441,7 @@ mod tests {
 
         fn add_offset_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_address: &Address,
             _to_addr_is_base: bool,
@@ -455,7 +455,7 @@ mod tests {
 
         fn add_shifted_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_address: &Address,
             _shift: i32,
@@ -468,7 +468,7 @@ mod tests {
 
         fn add_register_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_register: &Register,
             _ref_type: RefType,
@@ -480,7 +480,7 @@ mod tests {
 
         fn add_stack_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_stack_offset: i32,
             _ref_type: RefType,
@@ -531,7 +531,7 @@ mod tests {
 
         fn get_references_from_range(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
         ) -> Vec<Box<dyn TraceReference>> {
             self.refs
@@ -561,7 +561,7 @@ mod tests {
                 .collect()
         }
 
-        fn clear_references_from(&mut self, _span: &dyn Lifespan, range: &AddressRange) {
+        fn clear_references_from(&mut self, _span: Lifespan, range: &AddressRange) {
             self.refs.retain(|r| !range.contains(&r.from));
         }
 
@@ -573,13 +573,13 @@ mod tests {
                 .collect()
         }
 
-        fn clear_references_to(&mut self, _span: &dyn Lifespan, range: &AddressRange) {
+        fn clear_references_to(&mut self, _span: Lifespan, range: &AddressRange) {
             self.refs.retain(|r| range.intersect(&r.to_range).is_none());
         }
 
         fn get_references_to_range(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
             _order: Option<&dyn Rectangle2DDirection>,
         ) -> Vec<Box<dyn TraceReference>> {
@@ -590,7 +590,7 @@ mod tests {
                 .collect()
         }
 
-        fn get_reference_sources(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_reference_sources(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             let mut set = AddressSet::new();
             for r in &self.refs {
                 set.add_address(&r.from);
@@ -598,7 +598,7 @@ mod tests {
             Box::new(set)
         }
 
-        fn get_reference_destinations(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_reference_destinations(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             let mut set = AddressSet::new();
             for r in &self.refs {
                 set.add_range_object(&r.to_range);
@@ -615,41 +615,17 @@ mod tests {
         }
     }
 
-    struct DummyLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[test]
     fn add_and_query_memory_references() {
         let mut ops = MockOperations::new();
-        let span = DummyLifespan { min: 0, max: 100 };
+        let span = Lifespan::span(0, 100);
         let from = addr(0x1000);
         let to = addr(0x2000);
 
         let first = ops.add_memory_reference_to_address(
-            &span,
+            span,
             &from,
             &to,
             RefType::Data,
@@ -662,7 +638,7 @@ mod tests {
         // A second reference at the same from-address/operand is not primary.
         let second_to = addr(0x3000);
         let second = ops.add_memory_reference_to_address(
-            &span,
+            span,
             &from,
             &second_to,
             RefType::Data,
@@ -695,20 +671,20 @@ mod tests {
     #[test]
     fn dyn_trait_object_supports_clearing_and_unordered_range_query() {
         let mut boxed: Box<dyn TraceReferenceOperations> = Box::new(MockOperations::new());
-        let span = DummyLifespan { min: 0, max: 100 };
+        let span = Lifespan::span(0, 100);
         let from = addr(0x1000);
         let to = addr(0x2000);
 
-        boxed.add_memory_reference_to_address(&span, &from, &to, RefType::Data, SourceType::UserDefined, 0);
+        boxed.add_memory_reference_to_address(span, &from, &to, RefType::Data, SourceType::UserDefined, 0);
         assert!(boxed.has_references_from(10, &from));
 
         let range = AddressRange::new(to.clone(), to.clone());
-        let hits = boxed.get_references_to_range_unordered(&span, &range);
+        let hits = boxed.get_references_to_range_unordered(span, &range);
         assert_eq!(hits.len(), 1);
 
         let clear_range = AddressRange::new(from.clone(), from.clone());
-        boxed.clear_references_from(&span, &clear_range);
+        boxed.clear_references_from(span, &clear_range);
         assert!(!boxed.has_references_from(10, &from));
-        assert!(boxed.get_references_to_range_unordered(&span, &range).is_empty());
+        assert!(boxed.get_references_to_range_unordered(span, &range).is_empty());
     }
 }

@@ -90,36 +90,7 @@ mod tests {
         Address::new(space, 0)
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     /// A namespace symbol whose `parent` is tracked both as a `TraceNamespaceSymbol` (satisfying
     /// the supertrait contract) and, redundantly, as an id chain -- standing in for the Java
@@ -261,8 +232,8 @@ mod tests {
             Box::new(MockOverlaySpaceAdapter)
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: 0, max: 0 })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, 0)
         }
 
         fn get_address_set(&self) -> AddressSet {

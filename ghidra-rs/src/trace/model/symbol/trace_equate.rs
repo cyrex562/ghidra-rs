@@ -42,7 +42,7 @@ pub trait TraceEquate {
     /// given address, effective for the given lifespan and (if applicable) thread.
     fn add_reference(
         &mut self,
-        lifespan: Box<dyn Lifespan>,
+        lifespan: Lifespan,
         thread: Option<Box<dyn TraceThread>>,
         address: Address,
         operand_index: i32,
@@ -54,7 +54,7 @@ pub trait TraceEquate {
     /// Mirrors the Java overload `addReference(Lifespan, TraceThread, Address, Varnode)`.
     fn add_reference_varnode(
         &mut self,
-        lifespan: Box<dyn Lifespan>,
+        lifespan: Lifespan,
         thread: Option<Box<dyn TraceThread>>,
         address: Address,
         varnode: Varnode,
@@ -105,36 +105,7 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockThread;
 
@@ -161,11 +132,8 @@ mod tests {
             }
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.start_snap,
-                max: i64::MAX,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.start_snap, i64::MAX)
         }
 
         fn get_thread(&self) -> Box<dyn TraceThread> {
@@ -209,7 +177,7 @@ mod tests {
 
         fn add_reference(
             &mut self,
-            lifespan: Box<dyn Lifespan>,
+            lifespan: Lifespan,
             _thread: Option<Box<dyn TraceThread>>,
             address: Address,
             operand_index: i32,
@@ -225,7 +193,7 @@ mod tests {
 
         fn add_reference_varnode(
             &mut self,
-            lifespan: Box<dyn Lifespan>,
+            lifespan: Lifespan,
             thread: Option<Box<dyn TraceThread>>,
             address: Address,
             _varnode: Varnode,
@@ -302,7 +270,7 @@ mod tests {
         let mut equate = make_equate();
         let addr1 = addr(0x400);
 
-        equate.add_reference(Box::new(MockLifespan { min: 5, max: 100 }), None, addr1.clone(), 0);
+        equate.add_reference(Lifespan::span(5, 100), None, addr1.clone(), 0);
 
         assert_eq!(equate.get_reference_count(), 1);
         let found = equate.get_reference(10, None, &addr1, 0);
@@ -325,7 +293,7 @@ mod tests {
 
         let addr1 = addr(0x2000);
         boxed.add_reference_varnode(
-            Box::new(MockLifespan { min: 0, max: 50 }),
+            Lifespan::span(0, 50),
             None,
             addr1.clone(),
             Varnode::new(addr1.clone(), 4),

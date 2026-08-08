@@ -32,7 +32,7 @@ pub trait TraceStaticMapping: TraceUniqueObject + Send + Sync {
     fn get_shift(&self) -> i64;
 
     /// Get the span of time of the mapping.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Get the starting snap of the lifespan.
     fn get_start_snap(&self) -> i64;
@@ -56,7 +56,7 @@ pub trait TraceStaticMapping: TraceUniqueObject + Send + Sync {
     fn conflicts_with(
         &self,
         range: &AddressRange,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         to_program_url: &str,
         to_address: &str,
     ) -> bool;
@@ -86,36 +86,7 @@ mod tests {
         }
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockMapping {
         range: AddressRange,
@@ -159,8 +130,8 @@ mod tests {
             0
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: 0, max: i64::MAX })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, i64::MAX)
         }
 
         fn get_start_snap(&self) -> i64 {
@@ -186,7 +157,7 @@ mod tests {
         fn conflicts_with(
             &self,
             range: &AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             to_program_url: &str,
             _to_address: &str,
         ) -> bool {
@@ -213,19 +184,19 @@ mod tests {
         let mapping = make_mapping();
         assert!(mapping.conflicts_with(
             &AddressRange::new(addr(0x1800), addr(0x2800)),
-            &MockLifespan { min: 0, max: 10 },
+            Lifespan::span(0, 10),
             "ghidra://repo/b",
             "0x0",
         ));
         assert!(!mapping.conflicts_with(
             &AddressRange::new(addr(0x1800), addr(0x2800)),
-            &MockLifespan { min: 0, max: 10 },
+            Lifespan::span(0, 10),
             "ghidra://repo/a",
             "0x0",
         ));
         assert!(!mapping.conflicts_with(
             &AddressRange::new(addr(0x3000), addr(0x3fff)),
-            &MockLifespan { min: 0, max: 10 },
+            Lifespan::span(0, 10),
             "ghidra://repo/b",
             "0x0",
         ));

@@ -44,10 +44,10 @@ fn is_same_object(a: &dyn Any, b: &dyn Any) -> bool {
 pub trait Occlusion {
     /// Checks whether `object`, occupying `range` over `span`, is occluded by some other,
     /// more-recent object.
-    fn occluded(&self, object: &dyn Any, range: &AddressRange, span: &dyn Lifespan) -> bool;
+    fn occluded(&self, object: &dyn Any, range: &AddressRange, span: Lifespan) -> bool;
 
     /// Removes from `remains` the parts occluded by some other, more-recent object.
-    fn remove(&self, object: &dyn Any, remains: &mut AddressSet, span: &dyn Lifespan);
+    fn remove(&self, object: &dyn Any, remains: &mut AddressSet, span: Lifespan);
 }
 
 /// An [`Occlusion`] whose occluding objects are found by querying a range and span.
@@ -55,7 +55,7 @@ pub trait Occlusion {
 /// Java: `TraceTimeViewport.QueryOcclusion<T>`.
 pub trait QueryOcclusion: Occlusion {
     /// Finds the objects, other than the one under test, that occupy `range` over `span`.
-    fn query(&self, range: &AddressRange, span: &dyn Lifespan) -> Vec<Arc<dyn Any>>;
+    fn query(&self, range: &AddressRange, span: Lifespan) -> Vec<Arc<dyn Any>>;
 
     /// Checks whether `item` (found by [`Self::query`]) occludes `range` at `snap`.
     fn item_occludes(&self, range: &AddressRange, item: &dyn Any, snap: i64) -> bool;
@@ -67,7 +67,7 @@ pub trait QueryOcclusion: Occlusion {
     /// [`Self::item_occludes`].
     ///
     /// Java: `QueryOcclusion.occluded` (default method).
-    fn occluded_by_query(&self, object: &dyn Any, range: &AddressRange, span: &dyn Lifespan) -> bool {
+    fn occluded_by_query(&self, object: &dyn Any, range: &AddressRange, span: Lifespan) -> bool {
         for found in self.query(range, span) {
             if is_same_object(found.as_ref(), object) {
                 continue;
@@ -83,7 +83,7 @@ pub trait QueryOcclusion: Occlusion {
     /// [`Self::remove_item`].
     ///
     /// Java: `QueryOcclusion.remove` (default method).
-    fn remove_by_query(&self, object: &dyn Any, remains: &mut AddressSet, span: &dyn Lifespan) {
+    fn remove_by_query(&self, object: &dyn Any, remains: &mut AddressSet, span: Lifespan) {
         let (Some(min), Some(max)) = (remains.min_address(), remains.max_address()) else {
             return;
         };
@@ -178,7 +178,7 @@ pub trait TraceTimeViewport {
     fn is_forked(&self) -> bool;
 
     /// Checks if the given lifespan contains any upper snap among the involved spans.
-    fn contains_any_upper(&self, lifespan: &dyn Lifespan) -> bool;
+    fn contains_any_upper(&self, lifespan: Lifespan) -> bool;
 
     /// Checks if any part of the given object is occluded by more-recent objects.
     ///
@@ -186,7 +186,7 @@ pub trait TraceTimeViewport {
     fn is_completely_visible(
         &self,
         range: &AddressRange,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         object: &dyn Any,
         occlusion: &dyn Occlusion,
     ) -> bool;
@@ -195,16 +195,16 @@ pub trait TraceTimeViewport {
     fn compute_visible_parts(
         &self,
         set: &dyn AddressSetView,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         object: &dyn Any,
         occlusion: &dyn Occlusion,
     ) -> AddressSet;
 
     /// Gets the spans involved in the view in most-recent-first order.
-    fn get_ordered_spans(&self) -> Vec<Box<dyn Lifespan>>;
+    fn get_ordered_spans(&self) -> Vec<Lifespan>;
 
     /// Gets the spans involved in the view in least-recent-first order.
-    fn get_reversed_spans(&self) -> Vec<Box<dyn Lifespan>>;
+    fn get_reversed_spans(&self) -> Vec<Lifespan>;
 
     /// Gets the snaps involved in the view in most-recent-first order.
     ///
@@ -241,37 +241,7 @@ mod tests {
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use std::sync::{Arc, Mutex};
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     /// A concrete, testable object identity: an "item" placed at a range, born at a snap.
     #[derive(Debug, PartialEq, Eq)]
@@ -307,7 +277,7 @@ mod tests {
     }
 
     impl QueryOcclusion for RangeOcclusion {
-        fn query(&self, range: &AddressRange, span: &dyn Lifespan) -> Vec<Arc<dyn Any>> {
+        fn query(&self, range: &AddressRange, span: Lifespan) -> Vec<Arc<dyn Any>> {
             // Mirrors how a real `TraceTimeViewport` would drive this: a caller invokes
             // `occluded`/`remove` once per involved layer, so `span` here identifies a single
             // layer (an item's `birth_snap`) rather than a broad range of snaps.
@@ -339,11 +309,11 @@ mod tests {
     }
 
     impl Occlusion for RangeOcclusion {
-        fn occluded(&self, object: &dyn Any, range: &AddressRange, span: &dyn Lifespan) -> bool {
+        fn occluded(&self, object: &dyn Any, range: &AddressRange, span: Lifespan) -> bool {
             self.occluded_by_query(object, range, span)
         }
 
-        fn remove(&self, object: &dyn Any, remains: &mut AddressSet, span: &dyn Lifespan) {
+        fn remove(&self, object: &dyn Any, remains: &mut AddressSet, span: Lifespan) {
             self.remove_by_query(object, remains, span)
         }
     }
@@ -368,10 +338,10 @@ mod tests {
         let (space, occlusion) = setup();
         let addr = |off: i64| Address::new(space.clone(), off);
         let old = occlusion.object_for(1);
-        let span = MockLifespan { min: 0, max: 10 };
+        let span = Lifespan::span(0, 10);
         let range = AddressRange::new(addr(0x1000), addr(0x1010));
 
-        assert!(occlusion.occluded(&*old, &range, &span));
+        assert!(occlusion.occluded(&*old, &range, span));
     }
 
     #[test]
@@ -381,10 +351,10 @@ mod tests {
         let newer = occlusion.object_for(2);
         // Scoped to the newer item's own layer: querying it finds only itself, which the
         // `found == object` identity check excludes.
-        let span = MockLifespan { min: 5, max: 5 };
+        let span = Lifespan::span(5, 5);
         let range = AddressRange::new(addr(0x1005), addr(0x1020));
 
-        assert!(!occlusion.occluded(&*newer, &range, &span));
+        assert!(!occlusion.occluded(&*newer, &range, span));
     }
 
     #[test]
@@ -394,12 +364,12 @@ mod tests {
         let old = occlusion.object_for(1);
         // A real caller drives `remove` once per more-recent layer; here that's just the
         // newer item's layer.
-        let span = MockLifespan { min: 5, max: 5 };
+        let span = Lifespan::span(5, 5);
 
         let mut remains = AddressSet::new();
         remains.add_range(&addr(0x1000), &addr(0x1010));
 
-        occlusion.remove(&*old, &mut remains, &span);
+        occlusion.remove(&*old, &mut remains, span);
 
         // [0x1000, 0x1010] minus the newer item's [0x1005, 0x1020] leaves [0x1000, 0x1004].
         assert!(remains.contains(&addr(0x1000)));
@@ -437,14 +407,14 @@ mod tests {
             self.forked
         }
 
-        fn contains_any_upper(&self, lifespan: &dyn Lifespan) -> bool {
+        fn contains_any_upper(&self, lifespan: Lifespan) -> bool {
             lifespan.contains(self.snap)
         }
 
         fn is_completely_visible(
             &self,
             range: &AddressRange,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             object: &dyn Any,
             occlusion: &dyn Occlusion,
         ) -> bool {
@@ -454,7 +424,7 @@ mod tests {
         fn compute_visible_parts(
             &self,
             set: &dyn AddressSetView,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             object: &dyn Any,
             occlusion: &dyn Occlusion,
         ) -> AddressSet {
@@ -463,11 +433,11 @@ mod tests {
             remains
         }
 
-        fn get_ordered_spans(&self) -> Vec<Box<dyn Lifespan>> {
-            vec![Box::new(MockLifespan { min: 0, max: self.snap })]
+        fn get_ordered_spans(&self) -> Vec<Lifespan> {
+            vec![Lifespan::span(0, self.snap)]
         }
 
-        fn get_reversed_spans(&self) -> Vec<Box<dyn Lifespan>> {
+        fn get_reversed_spans(&self) -> Vec<Lifespan> {
             self.get_ordered_spans()
         }
 
@@ -516,13 +486,13 @@ mod tests {
 
         // Scoped to the newer item's own layer, matching how a real caller would drive
         // occlusion checks one more-recent layer at a time.
-        let span = MockLifespan { min: 5, max: 5 };
+        let span = Lifespan::span(5, 5);
         let range = AddressRange::new(addr(0x1000), addr(0x1010));
-        assert!(!viewport.is_completely_visible(&range, &span, &*old, &occlusion));
+        assert!(!viewport.is_completely_visible(&range, span, &*old, &occlusion));
 
         let mut set = AddressSet::new();
         set.add_range(&addr(0x1000), &addr(0x1010));
-        let visible = viewport.compute_visible_parts(&set, &span, &*old, &occlusion);
+        let visible = viewport.compute_visible_parts(&set, span, &*old, &occlusion);
         assert!(visible.contains(&addr(0x1000)));
         assert!(!visible.contains(&addr(0x1005)));
 

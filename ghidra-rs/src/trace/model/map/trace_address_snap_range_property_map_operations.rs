@@ -50,7 +50,7 @@ pub trait TraceAddressSnapRangePropertyMapOperations<T>:
     /// Associates `value` with the single-address, single-snap rectangle at `(address, lifespan)`.
     ///
     /// Mirrors the Java default `put(Address, Lifespan, T)`.
-    fn put_address(&mut self, address: Address, lifespan: Box<dyn Lifespan>, value: T) -> T {
+    fn put_address(&mut self, address: Address, lifespan: Lifespan, value: T) -> T {
         let shape = self.make_shape(address.clone(), address, lifespan.lmin(), lifespan.lmax());
         self.put(shape, value)
     }
@@ -88,7 +88,7 @@ pub trait TraceAddressSnapRangePropertyMapOperations<T>:
     /// Associates `value` with the rectangle over `range` by `lifespan`.
     ///
     /// Mirrors the Java default `put(AddressRange, Lifespan, T)`.
-    fn put_range(&mut self, range: AddressRange, lifespan: Box<dyn Lifespan>, value: T) -> T {
+    fn put_range(&mut self, range: AddressRange, lifespan: Lifespan, value: T) -> T {
         let shape = self.make_shape(
             range.min_address().clone(),
             range.max_address().clone(),
@@ -104,14 +104,14 @@ pub trait TraceAddressSnapRangePropertyMapOperations<T>:
     /// Mirrors `getAddressSetView(Lifespan, Predicate<T>)`.
     fn get_address_set_view_filtered(
         &self,
-        span: Box<dyn Lifespan>,
+        span: Lifespan,
         predicate: Box<dyn Fn(&T) -> bool + Send + Sync>,
     ) -> Box<dyn AddressSetView>;
 
     /// Returns the addresses covered by entries overlapping `span`.
     ///
     /// Mirrors `getAddressSetView(Lifespan)`.
-    fn get_address_set_view(&self, span: Box<dyn Lifespan>) -> Box<dyn AddressSetView>;
+    fn get_address_set_view(&self, span: Lifespan) -> Box<dyn AddressSetView>;
 
     /// For maps where values are the entries, removes a value.
     ///
@@ -125,32 +125,7 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use std::sync::Arc;
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockRange {
@@ -160,11 +135,8 @@ mod tests {
     }
 
     impl TraceAddressSnapRange for MockRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.y1,
-                max: self.y2,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.y1, self.y2)
         }
 
         fn get_range(&self) -> AddressRange {
@@ -298,7 +270,7 @@ mod tests {
 
         fn get_address_set_view_filtered(
             &self,
-            span: Box<dyn Lifespan>,
+            span: Lifespan,
             predicate: Box<dyn Fn(&i32) -> bool + Send + Sync>,
         ) -> Box<dyn AddressSetView> {
             let mut set = crate::program::model::address::AddressSet::new();
@@ -313,7 +285,7 @@ mod tests {
             Box::new(set)
         }
 
-        fn get_address_set_view(&self, span: Box<dyn Lifespan>) -> Box<dyn AddressSetView> {
+        fn get_address_set_view(&self, span: Lifespan) -> Box<dyn AddressSetView> {
             self.get_address_set_view_filtered(span, Box::new(|_| true))
         }
 
@@ -333,7 +305,7 @@ mod tests {
     #[test]
     fn put_address_stores_single_point_rectangle() {
         let mut map = MockMap { entries: vec![] };
-        map.put_address(addr(0x1000), Box::new(MockLifespan { min: 5, max: 5 }), 42);
+        map.put_address(addr(0x1000), Lifespan::span(5, 5), 42);
         assert_eq!(map.size(), 1);
         let (shape, value) = map.first_entry().unwrap();
         assert_eq!(value, 42);
@@ -356,7 +328,7 @@ mod tests {
     fn put_range_uses_range_bounds_and_lifespan() {
         let mut map = MockMap { entries: vec![] };
         let range = AddressRange::new(addr(0x1000), addr(0x2000));
-        map.put_range(range, Box::new(MockLifespan { min: 1, max: 2 }), 7);
+        map.put_range(range, Lifespan::span(1, 2), 7);
         let (shape, value) = map.first_entry().unwrap();
         assert_eq!(value, 7);
         assert_eq!(shape.get_x1().offset(), 0x1000);
@@ -366,8 +338,8 @@ mod tests {
     #[test]
     fn delete_value_removes_matching_entries() {
         let mut map = MockMap { entries: vec![] };
-        map.put_address(addr(0x1000), Box::new(MockLifespan { min: 0, max: 0 }), 1);
-        map.put_address(addr(0x2000), Box::new(MockLifespan { min: 0, max: 0 }), 2);
+        map.put_address(addr(0x1000), Lifespan::span(0, 0), 1);
+        map.put_address(addr(0x2000), Lifespan::span(0, 0), 2);
         map.delete_value(1);
         assert_eq!(map.size(), 1);
         assert_eq!(map.first_value(), Some(2));
@@ -379,7 +351,7 @@ mod tests {
         map.put_bounds(addr(0x1000), addr(0x1010), 0, 10, 1);
         map.put_bounds(addr(0x2000), addr(0x2010), 0, 10, 2);
         let set = map.get_address_set_view_filtered(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             Box::new(|v: &i32| *v == 2),
         );
         assert!(!set.contains(&addr(0x1000)));
@@ -390,14 +362,14 @@ mod tests {
     fn get_address_set_view_excludes_entries_outside_span() {
         let mut map = MockMap { entries: vec![] };
         map.put_bounds(addr(0x1000), addr(0x1010), 100, 200, 1);
-        let set = map.get_address_set_view(Box::new(MockLifespan { min: 0, max: 10 }));
+        let set = map.get_address_set_view(Lifespan::span(0, 10));
         assert!(set.is_empty());
     }
 
     #[test]
     fn dyn_trait_object_is_usable() {
         let mut map = MockMap { entries: vec![] };
-        map.put_address(addr(0x1000), Box::new(MockLifespan { min: 0, max: 0 }), 5);
+        map.put_address(addr(0x1000), Lifespan::span(0, 0), 5);
         let boxed: Box<dyn TraceAddressSnapRangePropertyMapOperations<i32>> = Box::new(map);
         assert_eq!(boxed.size(), 1);
     }

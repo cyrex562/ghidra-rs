@@ -83,7 +83,7 @@ pub trait AbstractDBTraceSymbol: TraceSymbol {
     /// this symbol occupies, or `null` if it occupies none. No default is provided: computing it
     /// requires iterating the owning manager's per-space ID index, which this trait does not
     /// expose.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Mirrors `getAddressSet()` (documented `// Internal` in Java): the union of the address
     /// ranges this symbol occupies. No default is provided for the same reason as
@@ -206,28 +206,7 @@ mod tests {
         Address::new(space, 0)
     }
 
-    struct MockLifespan;
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            0
-        }
-        fn contains(&self, n: i64) -> bool {
-            n == 0
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(std::iter::once(0))
-        }
-    }
 
     struct MockOverlaySpaceAdapter;
     impl DBTraceOverlaySpaceAdapter for MockOverlaySpaceAdapter {}
@@ -297,8 +276,8 @@ mod tests {
         fn get_overlay_space_adapter(&self) -> Box<dyn DBTraceOverlaySpaceAdapter> {
             Box::new(MockOverlaySpaceAdapter)
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, 10)
         }
         fn get_address_set(&self) -> AddressSet {
             AddressSet::from_address(self.get_address())
@@ -462,8 +441,8 @@ mod tests {
             fn get_overlay_space_adapter(&self) -> Box<dyn DBTraceOverlaySpaceAdapter> {
                 Box::new(MockOverlaySpaceAdapter)
             }
-            fn get_lifespan(&self) -> Box<dyn Lifespan> {
-                Box::new(MockLifespan)
+            fn get_lifespan(&self) -> Lifespan {
+                Lifespan::span(0, 10)
             }
             fn get_address_set(&self) -> AddressSet {
                 AddressSet::new()

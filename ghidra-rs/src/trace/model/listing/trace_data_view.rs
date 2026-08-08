@@ -131,7 +131,7 @@ mod tests {
             snap >= 0 && address.offset() == self.address.offset()
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -139,7 +139,7 @@ mod tests {
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -410,7 +410,7 @@ mod tests {
             AddressRange::new(self.address.clone(), self.address.clone())
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 

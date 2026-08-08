@@ -100,7 +100,7 @@ pub trait DebuggerStaticMappingService: DebuggerAddressTranslator {
         &mut self,
         from: &dyn Trace,
         to_program: &dyn Program,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         truncate_existing: bool,
     );
 
@@ -469,7 +469,7 @@ mod tests {
         fn get_path(&self) -> String {
             unimplemented!("not exercised by this smoke test")
         }
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {
             unimplemented!("not exercised by this smoke test")
         }
         fn set_name_at(&mut self, _snap: i64, _name: &str) {
@@ -480,7 +480,7 @@ mod tests {
         }
         fn set_range(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _range: crate::program::model::address::AddressRange,
         ) {
             unimplemented!("not exercised by this smoke test")
@@ -531,7 +531,7 @@ mod tests {
         fn is_valid(&self, _snap: i64) -> bool {
             unimplemented!("not exercised by this smoke test")
         }
-        fn is_alive(&self, _span: &dyn Lifespan) -> bool {
+        fn is_alive(&self, _span: Lifespan) -> bool {
             unimplemented!("not exercised by this smoke test")
         }
     }
@@ -556,7 +556,7 @@ mod tests {
         fn get_path(&self) -> String {
             unimplemented!("not exercised by this smoke test")
         }
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {
             unimplemented!("not exercised by this smoke test")
         }
         fn set_name_at(
@@ -571,7 +571,7 @@ mod tests {
         }
         fn set_range(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _range: crate::program::model::address::AddressRange,
         ) {
             unimplemented!("not exercised by this smoke test")
@@ -611,7 +611,7 @@ mod tests {
         fn get_path(&self) -> String {
             unimplemented!("not exercised by this smoke test")
         }
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {
             unimplemented!("not exercised by this smoke test")
         }
         fn set_name_at(&mut self, _snap: i64, _name: &str) {
@@ -620,7 +620,7 @@ mod tests {
         fn get_name(&self, _snap: i64) -> String {
             unimplemented!("not exercised by this smoke test")
         }
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, _range: crate::program::model::address::AddressRange) {
+        fn set_range(&mut self, _lifespan: Lifespan, _range: crate::program::model::address::AddressRange) {
             unimplemented!("not exercised by this smoke test")
         }
         fn set_range_at(
@@ -665,7 +665,7 @@ mod tests {
         }
         fn set_flags(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _flags: &[crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag],
         ) {
             unimplemented!("not exercised by this smoke test")
@@ -679,7 +679,7 @@ mod tests {
         }
         fn add_flags(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _flags: &[crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag],
         ) {
             unimplemented!("not exercised by this smoke test")
@@ -693,7 +693,7 @@ mod tests {
         }
         fn clear_flags(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _flags: &[crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag],
         ) {
             unimplemented!("not exercised by this smoke test")
@@ -871,27 +871,6 @@ mod tests {
         }
     }
 
-    struct MockLifespan;
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            0
-        }
-        fn contains(&self, _n: i64) -> bool {
-            false
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(std::iter::empty())
-        }
-    }
 
     struct MockAddressSetView;
     impl AddressSetView for MockAddressSetView {
@@ -1079,7 +1058,7 @@ mod tests {
             &mut self,
             _from: &dyn Trace,
             _to_program: &dyn Program,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _truncate_existing: bool,
         ) {
         }
@@ -1295,7 +1274,7 @@ mod tests {
             .is_err());
         assert!(service.add_mapping_entry(&MockMapEntry, false).is_ok());
 
-        service.add_identity_mapping(&MockTrace, &MockProgram, &MockLifespan, true);
+        service.add_identity_mapping(&MockTrace, &MockProgram, Lifespan::span(0, 10), true);
 
         service.add_change_listener(Box::new(MockListener));
         service.remove_change_listener(&MockListener);

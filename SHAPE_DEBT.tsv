@@ -196,7 +196,6 @@ JdiEventsListenerAdapter	struct	trait	R9-open-interface	interface	ghidra-rs/src/
 KeySpan	trait	enum	R2-sealed	interface/sealed	ghidra-rs/src/util/database/key_span.rs:17	Java `sealed interface` -- the permitted set is closed: its nested implementors
 LanguageVersionException	trait	error	R5-exception	class	ghidra-rs/src/program/model/lang/language_version_exception.rs:26	extends/names a Java throwable (VersionException)
 LazyLoadingCachingMap	trait	struct	R10-abstract-orphan	class/abstract	ghidra-rs/src/program/database/data/lazy_loading_caching_map.rs:22	abstract class with no in-repo subclasses
-Lifespan	trait	enum	R2-sealed	interface/sealed	ghidra-rs/src/trace/model/lifespan.rs:16	Java `sealed interface` -- the permitted set is closed: its nested implementors
 ListIterator	trait	struct	R14-concrete-class	class	ghidra-rs/src/util/reversed_list_iterator.rs:5	concrete Java `class` (3 in-repo subclass(es))
 ListingDB	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/listing_db.rs:28	concrete Java `class` (0 in-repo subclass(es))
 Loaded	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/util/opinion/loaded.rs:62	concrete Java `class` (0 in-repo subclass(es))

@@ -41,7 +41,7 @@ mod tests {
             &mut self,
             _language: &dyn Language,
             _value: &dyn RegisterValue,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _range: &AddressRange,
         ) {
         }
@@ -50,7 +50,7 @@ mod tests {
             &mut self,
             _language: &dyn Language,
             _register: &Register,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
         ) {
         }
@@ -118,7 +118,7 @@ mod tests {
             false
         }
 
-        fn clear(&mut self, _span: &dyn Lifespan, _range: &AddressRange) {}
+        fn clear(&mut self, _span: Lifespan, _range: &AddressRange) {}
     }
 
     impl TraceRegisterContextSpace for MockContextSpace {

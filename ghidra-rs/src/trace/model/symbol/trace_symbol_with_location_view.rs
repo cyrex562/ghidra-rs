@@ -110,7 +110,7 @@ pub trait TraceSymbolWithLocationView: TraceSymbolView {
     /// Get symbols in this view intersecting the given box.
     fn get_intersecting(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
         include_dynamic_symbols: bool,
         forward: bool,
@@ -123,7 +123,7 @@ pub trait TraceSymbolWithLocationView: TraceSymbolView {
     fn get_intersecting_register(
         &self,
         platform: &dyn TracePlatform,
-        span: &dyn Lifespan,
+        span: Lifespan,
         thread: &dyn TraceThread,
         register: &Register,
         include_dynamic_symbols: bool,
@@ -146,7 +146,7 @@ pub trait TraceSymbolWithLocationView: TraceSymbolView {
     /// `getIntersecting(Lifespan, TraceThread, Register, boolean, boolean)`.
     fn get_intersecting_thread(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         thread: &dyn TraceThread,
         register: &Register,
         include_dynamic_symbols: bool,
@@ -222,36 +222,7 @@ mod tests {
     use crate::util::task::TaskMonitor;
     use std::cell::RefCell;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockNamespaceSymbol {
         id: i64,
@@ -465,7 +436,7 @@ mod tests {
 
         fn get_intersecting(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
             _include_dynamic_symbols: bool,
             _forward: bool,
@@ -480,7 +451,7 @@ mod tests {
         fn get_at(&self, snap: i64, address: &Address, include_dynamic_symbols: bool) -> Vec<Arc<dyn TraceSymbol>> {
             *self.get_at_calls.borrow_mut() += 1;
             self.get_intersecting(
-                &MockLifespan { min: snap, max: snap },
+                Lifespan::span(snap, snap),
                 &AddressRange::new(address.clone(), address.clone()),
                 include_dynamic_symbols,
                 true,
@@ -548,12 +519,12 @@ mod tests {
     fn get_intersecting_reports_symbol_in_range() {
         let view = make_view();
         let range = AddressRange::new(view.symbol_address.clone(), view.symbol_address.clone());
-        let span = MockLifespan { min: 0, max: 0 };
-        let found = view.get_intersecting(&span, &range, true, true);
+        let span = Lifespan::span(0, 0);
+        let found = view.get_intersecting(span, &range, true, true);
         assert_eq!(found.len(), 1);
 
         let elsewhere = view.space.address(0x2000);
         let miss_range = AddressRange::new(elsewhere.clone(), elsewhere);
-        assert!(view.get_intersecting(&span, &miss_range, true, true).is_empty());
+        assert!(view.get_intersecting(span, &miss_range, true, true).is_empty());
     }
 }

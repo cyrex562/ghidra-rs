@@ -61,32 +61,7 @@ mod tests {
     use crate::util::lock_hold::Lock;
     use std::sync::Arc;
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockRange {
@@ -96,11 +71,8 @@ mod tests {
     }
 
     impl TraceAddressSnapRange for MockRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.y1,
-                max: self.y2,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.y1, self.y2)
         }
 
         fn get_range(&self) -> AddressRange {
@@ -269,7 +241,7 @@ mod tests {
 
         fn get_address_set_view_filtered(
             &self,
-            span: Box<dyn Lifespan>,
+            span: Lifespan,
             predicate: Box<dyn Fn(&i32) -> bool + Send + Sync>,
         ) -> Box<dyn AddressSetView> {
             let mut set = crate::program::model::address::AddressSet::new();
@@ -284,7 +256,7 @@ mod tests {
             Box::new(set)
         }
 
-        fn get_address_set_view(&self, span: Box<dyn Lifespan>) -> Box<dyn AddressSetView> {
+        fn get_address_set_view(&self, span: Lifespan) -> Box<dyn AddressSetView> {
             self.get_address_set_view_filtered(span, Box::new(|_| true))
         }
 

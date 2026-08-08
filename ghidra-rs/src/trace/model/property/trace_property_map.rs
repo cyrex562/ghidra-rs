@@ -83,32 +83,7 @@ mod tests {
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
     use std::any::TypeId;
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockRange {
@@ -118,11 +93,8 @@ mod tests {
     }
 
     impl TraceAddressSnapRange for MockRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.y1,
-                max: self.y2,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.y1, self.y2)
         }
 
         fn get_range(&self) -> AddressRange {
@@ -160,11 +132,11 @@ mod tests {
             TypeId::of::<i32>()
         }
 
-        fn set(&mut self, lifespan: Box<dyn Lifespan>, address: Address, value: i32) {
+        fn set(&mut self, lifespan: Lifespan, address: Address, value: i32) {
             self.set_range(lifespan, AddressRange::new(address.clone(), address), value)
         }
 
-        fn set_range(&mut self, lifespan: Box<dyn Lifespan>, range: AddressRange, value: i32) {
+        fn set_range(&mut self, lifespan: Lifespan, range: AddressRange, value: i32) {
             self.entries.push((
                 MockRange {
                     range,
@@ -192,7 +164,7 @@ mod tests {
 
         fn get_entries(
             &self,
-            lifespan: Box<dyn Lifespan>,
+            lifespan: Lifespan,
             range: AddressRange,
         ) -> Vec<(Box<dyn TraceAddressSnapRange>, i32)> {
             self.entries
@@ -204,7 +176,7 @@ mod tests {
                 .collect()
         }
 
-        fn get_address_set_view(&self, span: Box<dyn Lifespan>) -> Box<dyn AddressSetView> {
+        fn get_address_set_view(&self, span: Lifespan) -> Box<dyn AddressSetView> {
             let mut set = AddressSet::new();
             for (shape, _) in &self.entries {
                 if shape.y1 <= span.lmax() && span.lmin() <= shape.y2 {
@@ -214,7 +186,7 @@ mod tests {
             Box::new(set)
         }
 
-        fn clear(&mut self, _span: Box<dyn Lifespan>, _range: AddressRange) -> bool {
+        fn clear(&mut self, _span: Lifespan, _range: AddressRange) -> bool {
             let had = !self.entries.is_empty();
             self.entries.clear();
             had
@@ -269,7 +241,7 @@ mod tests {
             deleted: false,
             entries: vec![],
         };
-        map.set(Box::new(MockLifespan { min: 0, max: 10 }), addr(0x1000), 42);
+        map.set(Lifespan::span(0, 10), addr(0x1000), 42);
         assert_eq!(map.get(5, &addr(0x1000)), Some(42));
         assert!(map.get_property_map_space(&ram_space(), false).is_some());
 
@@ -285,7 +257,7 @@ mod tests {
             deleted: false,
             entries: vec![],
         };
-        map.set(Box::new(MockLifespan { min: 0, max: 0 }), addr(0x1000), 7);
+        map.set(Lifespan::span(0, 0), addr(0x1000), 7);
         let boxed: Box<dyn TracePropertyMap<i32>> = Box::new(map);
         assert_eq!(boxed.get(0, &addr(0x1000)), Some(7));
         assert!(boxed

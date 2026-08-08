@@ -125,7 +125,7 @@ mod tests {
             false
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -133,7 +133,7 @@ mod tests {
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -173,7 +173,7 @@ mod tests {
     impl TraceBaseDefinedUnitsView for MockView {
         fn clear(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
             _clear_context: bool,
             monitor: &dyn TaskMonitor,
@@ -185,7 +185,7 @@ mod tests {
 
         fn clear_register(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -197,7 +197,7 @@ mod tests {
         fn clear_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            span: &dyn Lifespan,
+            span: Lifespan,
             register: &Register,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -249,27 +249,6 @@ mod tests {
         fn clear_cancelled(&self) {}
     }
 
-    struct DummyLifespan;
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            10
-        }
-        fn contains(&self, n: i64) -> bool {
-            (0..=10).contains(&n)
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=10)
-        }
-    }
 
     #[test]
     fn usable_as_trait_object_and_inherits_defined_units_behavior() {
@@ -280,7 +259,7 @@ mod tests {
         assert_eq!(view.size(), 2);
 
         let full_range = AddressRange::new(addr(0x0), addr(0x1000));
-        view.clear(&DummyLifespan, &full_range, false, &NeverCancelled)
+        view.clear(Lifespan::span(0, 10), &full_range, false, &NeverCancelled)
             .expect("clear should succeed when not cancelled");
         assert_eq!(view.size(), 0);
     }

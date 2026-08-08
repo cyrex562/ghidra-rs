@@ -19,19 +19,19 @@ use crate::trace::model::trace_span::TraceSpan;
 /// trace, not its contents.
 pub struct DefaultTraceSpan {
     trace: Arc<dyn Trace>,
-    span: Box<dyn Lifespan>,
+    span: Lifespan,
 }
 
 impl DefaultTraceSpan {
     /// Creates a new span pairing `trace` with `span`.
-    pub fn new(trace: Arc<dyn Trace>, span: Box<dyn Lifespan>) -> Self {
+    pub fn new(trace: Arc<dyn Trace>, span: Lifespan) -> Self {
         Self { trace, span }
     }
 }
 
 impl TraceSpan for DefaultTraceSpan {
     type Trace = Arc<dyn Trace>;
-    type Lifespan = Box<dyn Lifespan>;
+    type Lifespan = Lifespan;
 
     fn get_trace(&self) -> &Self::Trace {
         &self.trace
@@ -59,7 +59,7 @@ impl PartialEq for DefaultTraceSpan {
         if !Arc::ptr_eq(&self.trace, &other.trace) {
             return false;
         }
-        self.span.compare_to(other.span.as_ref()) == Ordering::Equal
+        self.span.cmp(&other.span) == Ordering::Equal
     }
 }
 
@@ -87,7 +87,7 @@ impl Ord for DefaultTraceSpan {
         self.trace
             .get_name()
             .cmp(&other.trace.get_name())
-            .then_with(|| self.span.compare_to(other.span.as_ref()))
+            .then_with(|| self.span.cmp(&other.span))
     }
 }
 
@@ -120,37 +120,7 @@ mod tests {
     };
     use std::collections::hash_map::DefaultHasher;
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockTrace {
         name: String,
@@ -318,8 +288,8 @@ mod tests {
         })
     }
 
-    fn make_span(min: i64, max: i64) -> Box<dyn Lifespan> {
-        Box::new(MockLifespan { min, max })
+    fn make_span(min: i64, max: i64) -> Lifespan {
+        Lifespan::span(min, max)
     }
 
     #[test]

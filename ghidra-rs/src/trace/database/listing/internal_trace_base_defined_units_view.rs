@@ -34,7 +34,7 @@ pub trait InternalTraceBaseDefinedUnitsView: TraceBaseDefinedUnitsView + Interna
     fn clear_platform_register(
         &mut self,
         platform: &dyn TracePlatform,
-        span: &dyn Lifespan,
+        span: Lifespan,
         register: &Register,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException> {
@@ -48,7 +48,7 @@ pub trait InternalTraceBaseDefinedUnitsView: TraceBaseDefinedUnitsView + Interna
     /// ...)`.
     fn clear_register(
         &mut self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         register: &Register,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException> {
@@ -173,7 +173,7 @@ mod tests {
             false
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -181,7 +181,7 @@ mod tests {
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -227,7 +227,7 @@ mod tests {
     impl TraceBaseDefinedUnitsView for MockView {
         fn clear(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
             _clear_context: bool,
             monitor: &dyn TaskMonitor,
@@ -239,7 +239,7 @@ mod tests {
 
         fn clear_register(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -249,7 +249,7 @@ mod tests {
         fn clear_platform_register(
             &mut self,
             platform: &dyn TracePlatform,
-            span: &dyn Lifespan,
+            span: Lifespan,
             register: &Register,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -340,27 +340,6 @@ mod tests {
         fn clear_cancelled(&self) {}
     }
 
-    struct DummyLifespan;
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            10
-        }
-        fn contains(&self, n: i64) -> bool {
-            (0..=10).contains(&n)
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=10)
-        }
-    }
 
     fn make_space() -> Arc<AddressSpace> {
         AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
@@ -382,7 +361,7 @@ mod tests {
         InternalTraceBaseDefinedUnitsView::clear_platform_register(
             &mut view,
             &HostPlatform,
-            &DummyLifespan,
+            Lifespan::span(0, 10),
             &reg.borrow(),
             &NeverCancelled,
         )
@@ -405,7 +384,7 @@ mod tests {
         let result = InternalTraceBaseDefinedUnitsView::clear_platform_register(
             &mut view,
             &HostPlatform,
-            &DummyLifespan,
+            Lifespan::span(0, 10),
             &reg.borrow(),
             &AlwaysCancelled,
         );
@@ -431,7 +410,7 @@ mod tests {
             units: vec![(space.address(0x100), 0, 10)],
         });
         boxed
-            .clear_platform_register(&HostPlatform, &DummyLifespan, &reg.borrow(), &NeverCancelled)
+            .clear_platform_register(&HostPlatform, Lifespan::span(0, 10), &reg.borrow(), &NeverCancelled)
             .expect("clear should succeed when not cancelled");
         assert_eq!(boxed.size(), 0);
     }

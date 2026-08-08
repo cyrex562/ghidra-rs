@@ -77,7 +77,7 @@ mod tests {
             false
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -85,7 +85,7 @@ mod tests {
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 

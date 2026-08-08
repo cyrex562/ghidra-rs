@@ -99,7 +99,7 @@ pub trait DBTraceRegisterContextManager: DBTraceDelegatingManager<RegisterContex
         &self,
         language: &dyn Language,
         value: &dyn RegisterValue,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: &AddressRange,
     ) where
         Self: Sized,
@@ -115,7 +115,7 @@ pub trait DBTraceRegisterContextManager: DBTraceDelegatingManager<RegisterContex
         &self,
         language: &dyn Language,
         register: &Register,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
     ) where
         Self: Sized,
@@ -254,7 +254,7 @@ pub trait DBTraceRegisterContextManager: DBTraceDelegatingManager<RegisterContex
     }
 
     /// Mirrors `clear(Lifespan, AddressRange)`.
-    fn clear(&self, span: &dyn Lifespan, range: &AddressRange)
+    fn clear(&self, span: Lifespan, range: &AddressRange)
     where
         Self: Sized,
     {
@@ -279,7 +279,7 @@ mod tests {
     use crate::program::model::listing::context_change_exception::ContextChangeException;
     use crate::program::model::mem::MemBuffer;
     use crate::program::seam_stubs::{AddressLabelInfo, Processor};
-    use crate::trace::model::lifespan::Lifespan as LifespanTrait;
+    use crate::trace::model::lifespan::Lifespan;
     use crate::util::lock_hold::Lock;
     use std::cell::RefCell;
     use std::sync::Mutex;
@@ -485,42 +485,17 @@ mod tests {
         }
     }
 
-    #[derive(Clone, Copy)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl LifespanTrait for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn LifespanTrait> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn LifespanTrait> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockSnapRange {
         range: AddressRange,
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
     }
 
     impl TraceAddressSnapRange for MockSnapRange {
-        fn get_lifespan(&self) -> Box<dyn LifespanTrait> {
-            Box::new(self.lifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            self.lifespan
         }
         fn get_range(&self) -> AddressRange {
             self.range.clone()
@@ -529,7 +504,7 @@ mod tests {
             Box::new(self.clone())
         }
         fn immutable(&self, x1: Address, x2: Address, y1: i64, y2: i64) -> Box<dyn TraceAddressSnapRange> {
-            Box::new(MockSnapRange { range: AddressRange::new(x1, x2), lifespan: MockLifespan { min: y1, max: y2 } })
+            Box::new(MockSnapRange { range: AddressRange::new(x1, x2), lifespan: Lifespan::span(y1, y2) })
         }
     }
 
@@ -669,13 +644,13 @@ mod tests {
         fn get_address_space(&self) -> Arc<AddressSpace> {
             self.space.clone()
         }
-        fn set_value(&self, _language: &dyn Language, value: &dyn RegisterValue, lifespan: &dyn LifespanTrait, range: &AddressRange) {
+        fn set_value(&self, _language: &dyn Language, value: &dyn RegisterValue, lifespan: Lifespan, range: &AddressRange) {
             self.entries
                 .lock()
                 .unwrap()
                 .insert(lifespan.lmin(), (range.clone(), value.get_unsigned_value_ignore_mask()));
         }
-        fn remove_value(&self, _language: &dyn Language, _register: &Register, span: &dyn LifespanTrait, _range: &AddressRange) {
+        fn remove_value(&self, _language: &dyn Language, _register: &Register, span: Lifespan, _range: &AddressRange) {
             self.entries.lock().unwrap().remove(&span.lmin());
         }
         fn get_value(&self, _language: &dyn Language, register: &Register, snap: i64, address: &Address) -> Option<Box<dyn RegisterValue>> {
@@ -699,7 +674,7 @@ mod tests {
                 return None;
             }
             let snap_range: Box<dyn TraceAddressSnapRange> =
-                Box::new(MockSnapRange { range: range.clone(), lifespan: MockLifespan { min: snap, max: snap } });
+                Box::new(MockSnapRange { range: range.clone(), lifespan: Lifespan::span(snap, snap) });
             let reg_value: Box<dyn RegisterValue> =
                 Box::new(MockRegisterValue { register: Register::from_register(register), value: *value });
             Some((snap_range, reg_value))
@@ -748,7 +723,7 @@ mod tests {
         fn has_register_value(&self, _language: &dyn Language, _register: &Register, snap: i64) -> bool {
             self.entries.lock().unwrap().contains_key(&snap)
         }
-        fn clear(&self, span: &dyn LifespanTrait, _range: &AddressRange) {
+        fn clear(&self, span: Lifespan, _range: &AddressRange) {
             self.entries.lock().unwrap().remove(&span.lmin());
         }
     }
@@ -817,12 +792,12 @@ mod tests {
         let addr = Address::new(space.clone(), 4);
         let register = mock_register();
         let language = MockLanguage;
-        let lifespan = MockLifespan { min: 0, max: 10 };
+        let lifespan = Lifespan::span(0, 10);
         let value = MockRegisterValue { register: register.clone(), value: 0x2a };
 
         assert!(!mgr.has_register_value(&language, &register.borrow(), 0));
 
-        mgr.set_value(&language, &value, &lifespan, &range);
+        mgr.set_value(&language, &value, lifespan, &range);
 
         assert!(mgr.has_register_value(&language, &register.borrow(), 0));
         assert!(mgr.has_register_value_in_address_range(&language, &register.borrow(), 0, &range));
@@ -837,11 +812,11 @@ mod tests {
         assert_eq!(entry_range.get_range(), range);
         assert_eq!(entry_value.get_unsigned_value_ignore_mask(), 0x2a);
 
-        mgr.remove_value(&language, &register.borrow(), &lifespan, &range);
+        mgr.remove_value(&language, &register.borrow(), lifespan, &range);
         assert!(!mgr.has_register_value(&language, &register.borrow(), 0));
 
-        mgr.set_value(&language, &value, &lifespan, &range);
-        mgr.clear(&lifespan, &range);
+        mgr.set_value(&language, &value, lifespan, &range);
+        mgr.clear(lifespan, &range);
         assert!(!mgr.has_register_value(&language, &register.borrow(), 0));
     }
 

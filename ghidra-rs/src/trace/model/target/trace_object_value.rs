@@ -90,7 +90,7 @@ pub trait TraceObjectValue: Send + Sync {
     }
 
     /// Set the lifespan of this entry, truncating duplicates.
-    fn set_lifespan(&mut self, lifespan: Box<dyn Lifespan>);
+    fn set_lifespan(&mut self, lifespan: Lifespan);
 
     /// Set the lifespan of this entry.
     ///
@@ -103,12 +103,12 @@ pub trait TraceObjectValue: Send + Sync {
     /// conflicts must be resolved.
     fn set_lifespan_with_resolution(
         &mut self,
-        span: Box<dyn Lifespan>,
+        span: Lifespan,
         resolution: ConflictResolution,
     ) -> Result<(), DuplicateKeyException>;
 
     /// Get the lifespan of this entry.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Set the minimum snap of this entry.
     ///
@@ -138,7 +138,7 @@ pub trait TraceObjectValue: Send + Sync {
     /// If the given span and the current lifespan are already disjoint, this does nothing. If the
     /// given span splits the current lifespan in two, then a new entry is created for the later
     /// lifespan.
-    fn truncate_or_delete(&mut self, span: Box<dyn Lifespan>) -> TruncateOrDelete;
+    fn truncate_or_delete(&mut self, span: Lifespan) -> TruncateOrDelete;
 
     /// Check if the schema designates this value as hidden.
     fn is_hidden(&self) -> bool {
@@ -181,39 +181,7 @@ mod tests {
     use crate::util::lock_hold::{Lock, LockHold};
     use crate::debug::api::tracermi::SchemaName;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.min,
-                max,
-            })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockLock;
     impl Lock for MockLock {
@@ -444,7 +412,7 @@ mod tests {
         entry_key: String,
         path: KeyPath,
         value: i64,
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
         deleted: bool,
     }
 
@@ -488,16 +456,13 @@ mod tests {
             false
         }
 
-        fn set_lifespan(&mut self, lifespan: Box<dyn Lifespan>) {
-            self.lifespan = MockLifespan {
-                min: lifespan.lmin(),
-                max: lifespan.lmax(),
-            };
+        fn set_lifespan(&mut self, lifespan: Lifespan) {
+            self.lifespan = Lifespan::span(lifespan.lmin(), lifespan.lmax());
         }
 
         fn set_lifespan_with_resolution(
             &mut self,
-            span: Box<dyn Lifespan>,
+            span: Lifespan,
             resolution: ConflictResolution,
         ) -> Result<(), DuplicateKeyException> {
             if resolution == ConflictResolution::Deny {
@@ -507,27 +472,24 @@ mod tests {
             Ok(())
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.lifespan.min,
-                max: self.lifespan.max,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.lifespan.lmin(), self.lifespan.lmax())
         }
 
         fn set_min_snap(&mut self, min_snap: i64) {
-            self.lifespan.min = min_snap;
+            self.lifespan = self.lifespan.with_min(min_snap);
         }
 
         fn get_min_snap(&self) -> i64 {
-            self.lifespan.min
+            self.lifespan.lmin()
         }
 
         fn set_max_snap(&mut self, max_snap: i64) {
-            self.lifespan.max = max_snap;
+            self.lifespan = self.lifespan.with_max(max_snap);
         }
 
         fn get_max_snap(&self) -> i64 {
-            self.lifespan.max
+            self.lifespan.lmax()
         }
 
         fn delete(&mut self) {
@@ -538,8 +500,8 @@ mod tests {
             self.deleted
         }
 
-        fn truncate_or_delete(&mut self, span: Box<dyn Lifespan>) -> TruncateOrDelete {
-            if span.lmin() <= self.lifespan.min && span.lmax() >= self.lifespan.max {
+        fn truncate_or_delete(&mut self, span: Lifespan) -> TruncateOrDelete {
+            if span.lmin() <= self.lifespan.lmin() && span.lmax() >= self.lifespan.lmax() {
                 self.deleted = true;
                 TruncateOrDelete::Deleted
             } else {
@@ -554,7 +516,7 @@ mod tests {
             entry_key: entry_key.to_string(),
             path: KeyPath::of(&[entry_key]),
             value: 42,
-            lifespan: MockLifespan { min: 0, max: 10 },
+            lifespan: Lifespan::span(0, 10),
             deleted: false,
         }
     }
@@ -612,7 +574,7 @@ mod tests {
         let mut value = make_value("foo", None);
         let err = value
             .set_lifespan_with_resolution(
-                Box::new(MockLifespan { min: 0, max: 5 }),
+                Lifespan::span(0, 5),
                 ConflictResolution::Deny,
             )
             .unwrap_err();
@@ -624,7 +586,7 @@ mod tests {
         let mut value = make_value("foo", None);
         value
             .set_lifespan_with_resolution(
-                Box::new(MockLifespan { min: 1, max: 9 }),
+                Lifespan::span(1, 9),
                 ConflictResolution::Truncate,
             )
             .unwrap();
@@ -635,7 +597,7 @@ mod tests {
     #[test]
     fn truncate_or_delete_removes_entry_when_span_covers_lifespan() {
         let mut value = make_value("foo", None);
-        let result = value.truncate_or_delete(Box::new(MockLifespan { min: 0, max: 10 }));
+        let result = value.truncate_or_delete(Lifespan::span(0, 10));
         assert!(matches!(result, TruncateOrDelete::Deleted));
         assert!(value.is_deleted());
     }
@@ -643,7 +605,7 @@ mod tests {
     #[test]
     fn truncate_or_delete_leaves_entry_when_span_disjoint() {
         let mut value = make_value("foo", None);
-        let result = value.truncate_or_delete(Box::new(MockLifespan { min: 20, max: 30 }));
+        let result = value.truncate_or_delete(Lifespan::span(20, 30));
         assert!(matches!(result, TruncateOrDelete::Unchanged));
         assert!(!value.is_deleted());
     }

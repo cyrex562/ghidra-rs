@@ -206,7 +206,7 @@ mod tests {
             false
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -214,7 +214,7 @@ mod tests {
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -254,7 +254,7 @@ mod tests {
     impl TraceBaseDefinedUnitsView for EmptyView {
         fn clear(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             _clear_context: bool,
             _monitor: &dyn TaskMonitor,
@@ -264,7 +264,7 @@ mod tests {
 
         fn clear_register(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -274,7 +274,7 @@ mod tests {
         fn clear_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -285,7 +285,7 @@ mod tests {
     impl TraceDefinedDataView for EmptyView {
         fn create_sized(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _address: &Address,
             _data_type: &dyn DataType,
             _length: i32,
@@ -295,7 +295,7 @@ mod tests {
 
         fn create_sized_on_platform(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _address: &Address,
             _platform: &dyn TracePlatform,
             _data_type: &dyn DataType,
@@ -306,7 +306,7 @@ mod tests {
 
         fn create_unsized(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _address: &Address,
             _data_type: &dyn DataType,
         ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException> {
@@ -315,7 +315,7 @@ mod tests {
 
         fn create_unsized_on_platform(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _address: &Address,
             _platform: &dyn TracePlatform,
             _data_type: &dyn DataType,
@@ -325,7 +325,7 @@ mod tests {
 
         fn create_on_register(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _register: &Register,
             _data_type: &dyn DataType,
         ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException> {
@@ -335,7 +335,7 @@ mod tests {
         fn create_on_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _register: &Register,
             _data_type: &dyn DataType,
         ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException> {
@@ -348,7 +348,7 @@ mod tests {
     impl TraceInstructionsView for EmptyView {
         fn create(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _address: &Address,
             _platform: &dyn TracePlatform,
             _prototype: &dyn InstructionPrototype,
@@ -360,7 +360,7 @@ mod tests {
 
         fn create_on_host(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _address: &Address,
             _prototype: &dyn InstructionPrototype,
             _context: &dyn ProcessorContextView,
@@ -371,7 +371,7 @@ mod tests {
 
         fn add_instruction_set(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _platform: &dyn TracePlatform,
             _instruction_set: &dyn InstructionSet,
             _overwrite: bool,
@@ -381,7 +381,7 @@ mod tests {
 
         fn add_instruction_set_on_host(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _instruction_set: &dyn InstructionSet,
             _overwrite: bool,
         ) -> Box<dyn AddressSetView> {

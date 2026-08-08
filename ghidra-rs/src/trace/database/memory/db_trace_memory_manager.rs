@@ -136,7 +136,7 @@ pub trait DBTraceMemoryManager:
     /// Predicate<TraceMemoryState>)`.
     fn get_addresses_with_state_in(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         set: &dyn AddressSetView,
         predicate: &dyn Fn(TraceMemoryState) -> bool,
     ) -> AddressSet;
@@ -145,7 +145,7 @@ pub trait DBTraceMemoryManager:
     /// `getAddressesWithState(Lifespan, Predicate<TraceMemoryState>)`.
     fn get_addresses_with_state_over(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         predicate: &dyn Fn(TraceMemoryState) -> bool,
     ) -> AddressSet;
 
@@ -195,7 +195,7 @@ pub trait DBTraceMemoryManager:
     fn add_region(
         &self,
         path: &str,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: AddressRange,
         flags: &[TraceMemoryFlag],
     ) -> Result<Box<dyn TraceMemoryRegion>, Box<dyn TraceOverlappedRegionException>> {
@@ -223,7 +223,7 @@ pub trait DBTraceMemoryManager:
     /// `getRegionsIntersecting(Lifespan, AddressRange)`.
     fn get_regions_intersecting(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: &AddressRange,
     ) -> Vec<Box<dyn TraceMemoryRegion>> {
         self.trace().get_object_manager().get_regions_intersecting(lifespan, range)
@@ -779,7 +779,7 @@ mod tests {
 
         fn get_addresses_with_state_in(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _set: &dyn AddressSetView,
             _predicate: &dyn Fn(TraceMemoryState) -> bool,
         ) -> AddressSet {
@@ -788,7 +788,7 @@ mod tests {
 
         fn get_addresses_with_state_over(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _predicate: &dyn Fn(TraceMemoryState) -> bool,
         ) -> AddressSet {
             unimplemented!("not exercised by this smoke test")

@@ -15,14 +15,14 @@ use crate::util::task::TaskMonitor;
 /// [`TraceEquate`](crate::trace::model::symbol::trace_equate::TraceEquate).
 pub trait TraceEquateOperations {
     /// Get the addresses which have at least one equate reference active during the given span.
-    fn get_referring_addresses(&self, span: &dyn Lifespan) -> Box<dyn AddressSetView>;
+    fn get_referring_addresses(&self, span: Lifespan) -> Box<dyn AddressSetView>;
 
     /// Clear all equate references in the given span and address set.
     ///
     /// Mirrors the Java overload `clearReferences(Lifespan, AddressSetView, TaskMonitor)`.
     fn clear_references(
         &mut self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         asv: &dyn AddressSetView,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException>;
@@ -32,7 +32,7 @@ pub trait TraceEquateOperations {
     /// Mirrors the Java overload `clearReferences(Lifespan, AddressRange, TaskMonitor)`.
     fn clear_references_range(
         &mut self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException>;
@@ -65,36 +65,7 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressSet, AddressSpace, AddressSpaceType};
 
-    struct DummyLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct NeverCancelled;
 
@@ -158,7 +129,7 @@ mod tests {
         }
         fn add_reference(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn crate::trace::seam_stubs::TraceThread>>,
             _address: Address,
             _operand_index: i32,
@@ -167,7 +138,7 @@ mod tests {
         }
         fn add_reference_varnode(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn crate::trace::seam_stubs::TraceThread>>,
             _address: Address,
             _varnode: crate::program::model::pcode::Varnode,
@@ -219,13 +190,13 @@ mod tests {
     }
 
     impl TraceEquateOperations for MockOperations {
-        fn get_referring_addresses(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_referring_addresses(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             Box::new(self.referring.clone())
         }
 
         fn clear_references(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             asv: &dyn AddressSetView,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -239,7 +210,7 @@ mod tests {
 
         fn clear_references_range(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -305,7 +276,7 @@ mod tests {
     #[test]
     fn get_referenced_filters_by_operand_index() {
         let ops = make_ops();
-        let span = DummyLifespan { min: 0, max: 100 };
+        let span = Lifespan::span(0, 100);
         let a = addr(0x1000);
 
         let at_op0 = ops.get_referenced(10, &a, 0);
@@ -322,13 +293,13 @@ mod tests {
         let missing = ops.get_referenced_by_value(10, &a, 1, 999);
         assert!(missing.is_none());
 
-        let _ = ops.get_referring_addresses(&span);
+        let _ = ops.get_referring_addresses(span);
     }
 
     #[test]
     fn dyn_trait_object_supports_clearing() {
         let mut boxed: Box<dyn TraceEquateOperations> = Box::new(make_ops());
-        let span = DummyLifespan { min: 0, max: 100 };
+        let span = Lifespan::span(0, 100);
         let monitor = NeverCancelled;
 
         let a = addr(0x1000);
@@ -336,7 +307,7 @@ mod tests {
         set.add_address(&a);
 
         boxed
-            .clear_references(&span, &set, &monitor)
+            .clear_references(span, &set, &monitor)
             .expect("clear should not be cancelled");
         assert!(boxed.get_referenced_all_operands(10, &a).is_empty());
 
@@ -345,7 +316,7 @@ mod tests {
 
         let range = AddressRange::new(b.clone(), b.clone());
         boxed
-            .clear_references_range(&span, &range, &monitor)
+            .clear_references_range(span, &range, &monitor)
             .expect("clear range should not be cancelled");
         assert!(boxed.get_referenced_all_operands(10, &b).is_empty());
     }

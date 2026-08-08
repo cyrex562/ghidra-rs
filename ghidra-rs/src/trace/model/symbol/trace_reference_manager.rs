@@ -68,27 +68,6 @@ mod tests {
     use crate::trace::seam_stubs::Rectangle2DDirection;
     use std::any::Any;
 
-    struct DummySpan;
-    impl Lifespan for DummySpan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            0
-        }
-        fn contains(&self, n: i64) -> bool {
-            n == 0
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummySpan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummySpan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(std::iter::once(0))
-        }
-    }
 
     #[derive(Clone)]
     struct MockReference {
@@ -158,7 +137,7 @@ mod tests {
         fn get_trace(&self) -> Box<dyn Trace> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_start_snap(&self) -> i64 {
@@ -199,7 +178,7 @@ mod tests {
         }
         fn add_reference_for_lifespan(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             reference: &dyn Reference,
         ) -> Box<dyn TraceReference> {
             let to = reference.to_address();
@@ -216,7 +195,7 @@ mod tests {
         }
         fn add_memory_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             from_address: &Address,
             to_range: AddressRange,
             ref_type: RefType,
@@ -238,7 +217,7 @@ mod tests {
         }
         fn add_offset_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_address: &Address,
             _to_addr_is_base: bool,
@@ -251,7 +230,7 @@ mod tests {
         }
         fn add_shifted_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_address: &Address,
             _shift: i32,
@@ -263,7 +242,7 @@ mod tests {
         }
         fn add_register_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_register: &Register,
             _ref_type: RefType,
@@ -274,7 +253,7 @@ mod tests {
         }
         fn add_stack_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_stack_offset: i32,
             _ref_type: RefType,
@@ -337,7 +316,7 @@ mod tests {
         }
         fn get_references_from_range(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
         ) -> Vec<Box<dyn TraceReference>> {
             self.refs
@@ -364,7 +343,7 @@ mod tests {
                 .map(|r| Box::new(r.clone()) as Box<dyn TraceReference>)
                 .collect()
         }
-        fn clear_references_from(&mut self, _span: &dyn Lifespan, range: &AddressRange) {
+        fn clear_references_from(&mut self, _span: Lifespan, range: &AddressRange) {
             self.refs.retain(|r| !range.contains(&r.from));
         }
         fn get_references_to(&self, _snap: i64, to_address: &Address) -> Vec<Box<dyn TraceReference>> {
@@ -374,12 +353,12 @@ mod tests {
                 .map(|r| Box::new(r.clone()) as Box<dyn TraceReference>)
                 .collect()
         }
-        fn clear_references_to(&mut self, _span: &dyn Lifespan, range: &AddressRange) {
+        fn clear_references_to(&mut self, _span: Lifespan, range: &AddressRange) {
             self.refs.retain(|r| range.intersect(&r.to_range).is_none());
         }
         fn get_references_to_range(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
             _order: Option<&dyn Rectangle2DDirection>,
         ) -> Vec<Box<dyn TraceReference>> {
@@ -391,7 +370,7 @@ mod tests {
         }
         fn get_references_to_range_unordered(
             &self,
-            span: &dyn Lifespan,
+            span: Lifespan,
             range: &AddressRange,
         ) -> Vec<Box<dyn TraceReference>> {
             self.get_references_to_range(span, range, None)
@@ -408,14 +387,14 @@ mod tests {
         fn has_references_to(&self, snap: i64, to_address: &Address) -> bool {
             !self.get_references_to(snap, to_address).is_empty()
         }
-        fn get_reference_sources(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_reference_sources(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             let mut set = crate::program::model::address::AddressSet::new();
             for r in &self.refs {
                 set.add_address(&r.from);
             }
             Box::new(set)
         }
-        fn get_reference_destinations(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_reference_destinations(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             let mut set = crate::program::model::address::AddressSet::new();
             for r in &self.refs {
                 set.add_range_object(&r.to_range);
@@ -453,14 +432,14 @@ mod tests {
         }
         fn add_reference_for_lifespan(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _reference: &dyn Reference,
         ) -> Box<dyn TraceReference> {
             unimplemented!("not exercised by this smoke test")
         }
         fn add_memory_reference(
             &mut self,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             from_address: &Address,
             to_range: AddressRange,
             ref_type: RefType,
@@ -483,7 +462,7 @@ mod tests {
         }
         fn add_offset_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_address: &Address,
             _to_addr_is_base: bool,
@@ -496,7 +475,7 @@ mod tests {
         }
         fn add_shifted_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_address: &Address,
             _shift: i32,
@@ -508,7 +487,7 @@ mod tests {
         }
         fn add_register_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_register: &Register,
             _ref_type: RefType,
@@ -519,7 +498,7 @@ mod tests {
         }
         fn add_stack_reference(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _from_address: &Address,
             _to_stack_offset: i32,
             _ref_type: RefType,
@@ -569,7 +548,7 @@ mod tests {
         }
         fn get_references_from_range(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
         ) -> Vec<Box<dyn TraceReference>> {
             unimplemented!("not exercised by this smoke test")
@@ -585,18 +564,18 @@ mod tests {
         fn get_flow_references_from(&self, _snap: i64, _from_address: &Address) -> Vec<Box<dyn TraceReference>> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn clear_references_from(&mut self, _span: &dyn Lifespan, _range: &AddressRange) {
+        fn clear_references_from(&mut self, _span: Lifespan, _range: &AddressRange) {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_references_to(&self, _snap: i64, _to_address: &Address) -> Vec<Box<dyn TraceReference>> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn clear_references_to(&mut self, _span: &dyn Lifespan, _range: &AddressRange) {
+        fn clear_references_to(&mut self, _span: Lifespan, _range: &AddressRange) {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_references_to_range(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             _order: Option<&dyn Rectangle2DDirection>,
         ) -> Vec<Box<dyn TraceReference>> {
@@ -604,7 +583,7 @@ mod tests {
         }
         fn get_references_to_range_unordered(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
         ) -> Vec<Box<dyn TraceReference>> {
             unimplemented!("not exercised by this smoke test")
@@ -621,10 +600,10 @@ mod tests {
         fn has_references_to(&self, _snap: i64, _to_address: &Address) -> bool {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_reference_sources(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_reference_sources(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_reference_destinations(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_reference_destinations(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_reference_count_from(&self, snap: i64, from_address: &Address) -> i32 {
@@ -692,7 +671,7 @@ mod tests {
 
         let from = ram.address(0x1000);
         let to_range = AddressRange::new(ram.address(0x2000), ram.address(0x2000));
-        mgr.add_memory_reference(&DummySpan, &from, to_range, RefType::Data, SourceType::UserDefined, 0);
+        mgr.add_memory_reference(Lifespan::span(0, 10), &from, to_range, RefType::Data, SourceType::UserDefined, 0);
 
         let space = mgr.get_reference_space(&ram, true).expect("space should now exist");
         assert_eq!(space.get_address_space().name(), "ram");
@@ -718,7 +697,7 @@ mod tests {
         let ram = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         let from = ram.address(0x1000);
         let to_range = AddressRange::new(ram.address(0x2000), ram.address(0x2000));
-        boxed.add_memory_reference(&DummySpan, &from, to_range, RefType::Data, SourceType::UserDefined, 0);
+        boxed.add_memory_reference(Lifespan::span(0, 10), &from, to_range, RefType::Data, SourceType::UserDefined, 0);
         assert!(boxed.has_references_from(0, &from));
     }
 }

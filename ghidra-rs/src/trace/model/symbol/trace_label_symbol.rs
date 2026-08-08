@@ -249,7 +249,7 @@ mod tests {
             )
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -332,7 +332,7 @@ mod tests {
     }
 
     impl TraceSymbolWithLifespan for MockLabelSymbol {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 

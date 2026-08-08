@@ -27,10 +27,10 @@ pub trait TraceBookmark: Bookmark {
     fn get_thread(&self) -> Option<Box<dyn TraceThread>>;
 
     /// Sets the lifespan (range of snapshots) over which this bookmark applies.
-    fn set_lifespan(&mut self, lifespan: Box<dyn Lifespan>);
+    fn set_lifespan(&mut self, lifespan: Lifespan);
 
     /// Returns the lifespan (range of snapshots) over which this bookmark applies.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Returns the type of this bookmark, narrowed to a [`TraceBookmarkType`].
     ///
@@ -75,39 +75,7 @@ mod tests {
     use crate::util::lock_hold::{Lock, LockHold};
     use std::cmp::Ordering;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.min,
-                max,
-            })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockLock;
     impl Lock for MockLock {
@@ -291,7 +259,7 @@ mod tests {
         address: Address,
         category: String,
         comment: String,
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
         thread: Option<()>,
         deleted: bool,
     }
@@ -342,18 +310,12 @@ mod tests {
             self.thread.map(|_| Box::new(MockThread) as Box<dyn TraceThread>)
         }
 
-        fn set_lifespan(&mut self, lifespan: Box<dyn Lifespan>) {
-            self.lifespan = MockLifespan {
-                min: lifespan.lmin(),
-                max: lifespan.lmax(),
-            };
+        fn set_lifespan(&mut self, lifespan: Lifespan) {
+            self.lifespan = Lifespan::span(lifespan.lmin(), lifespan.lmax());
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.lifespan.min,
-                max: self.lifespan.max,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.lifespan.lmin(), self.lifespan.lmax())
         }
 
         fn get_trace_bookmark_type(&self) -> Box<dyn TraceBookmarkType> {
@@ -376,7 +338,7 @@ mod tests {
             address: test_address(0x1000),
             category: String::new(),
             comment: String::new(),
-            lifespan: MockLifespan { min: 0, max: 10 },
+            lifespan: Lifespan::span(0, 10),
             thread: None,
             deleted: false,
         }
@@ -385,7 +347,7 @@ mod tests {
     #[test]
     fn set_lifespan_updates_bounds() {
         let mut bookmark = make_bookmark();
-        bookmark.set_lifespan(Box::new(MockLifespan { min: 5, max: 20 }));
+        bookmark.set_lifespan(Lifespan::span(5, 20));
         let span = bookmark.get_lifespan();
         assert_eq!(span.lmin(), 5);
         assert_eq!(span.lmax(), 20);

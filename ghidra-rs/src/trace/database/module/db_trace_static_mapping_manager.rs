@@ -49,36 +49,7 @@ mod tests {
     };
     use std::sync::Mutex;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockMapping {
@@ -122,8 +93,8 @@ mod tests {
             0
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: 0, max: i64::MAX })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, i64::MAX)
         }
 
         fn get_start_snap(&self) -> i64 {
@@ -149,7 +120,7 @@ mod tests {
         fn conflicts_with(
             &self,
             range: &AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             to_program_url: &str,
             _to_address: &str,
         ) -> bool {
@@ -182,13 +153,13 @@ mod tests {
         fn add(
             &mut self,
             range: AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             to_program_url: &str,
             _to_address: &str,
         ) -> Result<Box<dyn TraceStaticMapping>, Box<dyn TraceConflictedMappingException>> {
             let mut entries = self.entries.lock().unwrap();
             for existing in entries.iter() {
-                if existing.conflicts_with(&range, &MockLifespan { min: 0, max: i64::MAX }, to_program_url, "0x0") {
+                if existing.conflicts_with(&range, Lifespan::span(0, i64::MAX), to_program_url, "0x0") {
                     return Err(Box::new(TraceConflictedMappingError::new(
                         "conflict",
                         vec![Box::new(existing.clone())],
@@ -223,7 +194,7 @@ mod tests {
         fn find_any_conflicting(
             &self,
             range: &AddressRange,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             to_program_url: &str,
             to_address: &str,
         ) -> Option<Box<dyn TraceStaticMapping>> {
@@ -239,7 +210,7 @@ mod tests {
         fn find_all_overlapping(
             &self,
             range: &AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
         ) -> Vec<Box<dyn TraceStaticMapping>> {
             self.entries
                 .lock()
@@ -278,8 +249,8 @@ mod tests {
         let mut manager = make_manager();
         let mgr: &mut dyn DBTraceStaticMappingManager = &mut manager;
 
-        let lifespan = MockLifespan { min: 0, max: i64::MAX };
-        mgr.add(AddressRange::new(addr(0x1000), addr(0x1fff)), &lifespan, "ghidra://repo/a", "0x0")
+        let lifespan = Lifespan::span(0, i64::MAX);
+        mgr.add(AddressRange::new(addr(0x1000), addr(0x1fff)), lifespan, "ghidra://repo/a", "0x0")
             .expect("first mapping should not conflict");
         assert_eq!(mgr.get_all_entries().len(), 1);
 
@@ -296,7 +267,7 @@ mod tests {
 
         mgr.invalidate_cache(true);
         mgr.db_error(std::io::Error::new(std::io::ErrorKind::Other, "disk full"));
-        assert!(mgr.find_all_overlapping(&AddressRange::new(addr(0), addr(0xff)), &MockLifespan { min: 0, max: 10 }).is_empty());
+        assert!(mgr.find_all_overlapping(&AddressRange::new(addr(0), addr(0xff)), Lifespan::span(0, 10)).is_empty());
 
         assert_eq!(manager.invalidate_calls.lock().unwrap().as_slice(), &[true]);
         assert_eq!(manager.last_error.lock().unwrap().as_deref(), Some("disk full"));

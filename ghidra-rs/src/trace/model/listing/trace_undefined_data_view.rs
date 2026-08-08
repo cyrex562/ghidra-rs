@@ -238,7 +238,7 @@ use crate::program::model::listing::CommentType;
             AddressRange::new(self.address.clone(), self.address.add_wrap(self.length as i64 - 1))
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -361,7 +361,7 @@ use crate::program::model::listing::CommentType;
             !self.is_defined(address)
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -369,7 +369,7 @@ use crate::program::model::listing::CommentType;
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 

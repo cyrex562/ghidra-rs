@@ -465,8 +465,8 @@ mod tests {
         fn get_range(&self) -> AddressRange {
             AddressRange::new(self.address.clone(), addr(self.address.offset() + self.length as i64 - 1))
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min: self.start_snap, max: self.end_snap })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.start_snap, self.end_snap)
         }
         fn get_start_snap(&self) -> i64 {
             self.start_snap
@@ -514,30 +514,6 @@ mod tests {
         }
     }
 
-    struct DummyLifespan {
-        min: i64,
-        max: i64,
-    }
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            (self.min..=self.max).contains(&n)
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);

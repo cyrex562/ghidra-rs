@@ -36,7 +36,7 @@ pub trait TraceStaticMappingManager {
     fn add(
         &mut self,
         range: AddressRange,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         to_program_url: &str,
         to_address: &str,
     ) -> Result<Box<dyn TraceStaticMapping>, Box<dyn TraceConflictedMappingException>>;
@@ -58,7 +58,7 @@ pub trait TraceStaticMappingManager {
     fn find_any_conflicting(
         &self,
         range: &AddressRange,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         to_program_url: &str,
         to_address: &str,
     ) -> Option<Box<dyn TraceStaticMapping>>;
@@ -69,7 +69,7 @@ pub trait TraceStaticMappingManager {
     fn find_all_overlapping(
         &self,
         range: &AddressRange,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
     ) -> Vec<Box<dyn TraceStaticMapping>>;
 }
 
@@ -79,36 +79,7 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use std::sync::Mutex;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Debug)]
     struct MockConflict;
@@ -164,7 +135,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -191,7 +162,7 @@ mod tests {
         fn conflicts_with(
             &self,
             _range: &AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _to_program_url: &str,
             _to_address: &str,
         ) -> bool {
@@ -215,7 +186,7 @@ mod tests {
         fn add(
             &mut self,
             range: AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             to_program_url: &str,
             _to_address: &str,
         ) -> Result<Box<dyn TraceStaticMapping>, Box<dyn TraceConflictedMappingException>> {
@@ -244,7 +215,7 @@ mod tests {
         fn find_any_conflicting(
             &self,
             range: &AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             to_program_url: &str,
             _to_address: &str,
         ) -> Option<Box<dyn TraceStaticMapping>> {
@@ -260,7 +231,7 @@ mod tests {
         fn find_all_overlapping(
             &self,
             _range: &AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
         ) -> Vec<Box<dyn TraceStaticMapping>> {
             Vec::new()
         }
@@ -276,13 +247,13 @@ mod tests {
     #[test]
     fn add_accepts_first_mapping_then_rejects_conflicting_overlap() {
         let mut manager = make_manager();
-        let lifespan = MockLifespan { min: 0, max: i64::MAX };
+        let lifespan = Lifespan::span(0, i64::MAX);
 
         assert!(
             manager
                 .add(
                     AddressRange::new(addr(0x1000), addr(0x1fff)),
-                    &lifespan,
+                    lifespan,
                     "ghidra://repo/a",
                     "0x0",
                 )
@@ -292,7 +263,7 @@ mod tests {
 
         let result = manager.add(
             AddressRange::new(addr(0x1800), addr(0x2800)),
-            &lifespan,
+            lifespan,
             "ghidra://repo/b",
             "0x0",
         );
@@ -306,7 +277,7 @@ mod tests {
             manager
                 .find_any_conflicting(
                     &AddressRange::new(addr(0x1800), addr(0x2800)),
-                    &lifespan,
+                    lifespan,
                     "ghidra://repo/c",
                     "0x0",
                 )
@@ -321,11 +292,11 @@ mod tests {
         assert!(manager.get_all_entries().is_empty());
         assert!(manager.find_all_overlapping(
             &AddressRange::new(addr(0x1000), addr(0x1fff)),
-            &MockLifespan { min: 0, max: 10 }
+            Lifespan::span(0, 10)
         ).is_empty());
         assert!(manager.find_any_conflicting(
             &AddressRange::new(addr(0x1000), addr(0x1fff)),
-            &MockLifespan { min: 0, max: 10 },
+            Lifespan::span(0, 10),
             "ghidra://repo/a",
             "0x0"
         ).is_none());

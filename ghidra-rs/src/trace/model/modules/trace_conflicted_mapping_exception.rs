@@ -99,33 +99,7 @@ mod tests {
         }
     }
 
-    struct MockLifespan;
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-
-        fn lmax(&self) -> i64 {
-            i64::MAX
-        }
-
-        fn contains(&self, _n: i64) -> bool {
-            true
-        }
-
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=0)
-        }
-    }
 
     struct MockMapping {
         to_program_url: String,
@@ -166,8 +140,8 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, 10)
         }
 
         fn get_start_snap(&self) -> i64 {
@@ -191,7 +165,7 @@ mod tests {
         fn conflicts_with(
             &self,
             _range: &AddressRange,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _to_program_url: &str,
             _to_address: &str,
         ) -> bool {

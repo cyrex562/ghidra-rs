@@ -228,7 +228,7 @@ mod tests {
         }
         fn add_reference(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn TraceThread>>,
             _address: Address,
             _operand_index: i32,
@@ -237,7 +237,7 @@ mod tests {
         }
         fn add_reference_varnode(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn TraceThread>>,
             _address: Address,
             _varnode: Varnode,

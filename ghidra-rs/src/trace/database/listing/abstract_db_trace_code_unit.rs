@@ -63,7 +63,7 @@ pub trait AbstractDBTraceCodeUnit: TraceAddressSnapRange {
 
     /// Persists a new lifespan for this unit's storage record. Mirrors the protected
     /// `doSetLifespan(Lifespan)`.
-    fn do_set_lifespan(&mut self, lifespan: Box<dyn Lifespan>);
+    fn do_set_lifespan(&mut self, lifespan: Lifespan);
 
     /// Mirrors `AbstractDBTraceCodeUnit.getAddress()`.
     fn get_address(&self) -> Address {
@@ -115,32 +115,7 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use std::sync::Arc;
 
-    #[derive(Clone, Copy)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     /// A bare `TraceAddressSnapRange`, standing in for the boxed rectangles
     /// `get_bounds`/`immutable` return -- distinct from [`MockUnit`] since those don't need a
@@ -148,12 +123,12 @@ mod tests {
     #[derive(Clone)]
     struct SimpleRange {
         range: AddressRange,
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
     }
 
     impl TraceAddressSnapRange for SimpleRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(self.lifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            self.lifespan
         }
         fn get_range(&self) -> AddressRange {
             self.range.clone()
@@ -164,7 +139,7 @@ mod tests {
         fn immutable(&self, x1: Address, x2: Address, y1: i64, y2: i64) -> Box<dyn TraceAddressSnapRange> {
             Box::new(SimpleRange {
                 range: AddressRange::new(x1, x2),
-                lifespan: MockLifespan { min: y1, max: y2 },
+                lifespan: Lifespan::span(y1, y2),
             })
         }
     }
@@ -202,8 +177,8 @@ mod tests {
     }
 
     impl TraceAddressSnapRange for MockUnit {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min_snap, max: self.max_snap })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.min_snap, self.max_snap)
         }
         fn get_range(&self) -> AddressRange {
             self.range.clone()
@@ -211,13 +186,13 @@ mod tests {
         fn get_bounds(&self) -> Box<dyn TraceAddressSnapRange> {
             Box::new(SimpleRange {
                 range: self.range.clone(),
-                lifespan: MockLifespan { min: self.min_snap, max: self.max_snap },
+                lifespan: Lifespan::span(self.min_snap, self.max_snap),
             })
         }
         fn immutable(&self, x1: Address, x2: Address, y1: i64, y2: i64) -> Box<dyn TraceAddressSnapRange> {
             Box::new(SimpleRange {
                 range: AddressRange::new(x1, x2),
-                lifespan: MockLifespan { min: y1, max: y2 },
+                lifespan: Lifespan::span(y1, y2),
             })
         }
     }
@@ -226,7 +201,7 @@ mod tests {
         fn space(&self) -> &dyn DBTraceCodeSpace {
             &self.space
         }
-        fn do_set_lifespan(&mut self, lifespan: Box<dyn Lifespan>) {
+        fn do_set_lifespan(&mut self, lifespan: Lifespan) {
             self.min_snap = lifespan.lmin();
             self.max_snap = lifespan.lmax();
         }

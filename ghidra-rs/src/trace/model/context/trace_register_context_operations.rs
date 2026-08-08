@@ -24,7 +24,7 @@ pub trait TraceRegisterContextOperations {
         &mut self,
         language: &dyn Language,
         value: &dyn RegisterValue,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: &AddressRange,
     );
 
@@ -33,7 +33,7 @@ pub trait TraceRegisterContextOperations {
         &mut self,
         language: &dyn Language,
         register: &Register,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
     );
 
@@ -99,7 +99,7 @@ pub trait TraceRegisterContextOperations {
     fn has_register_value(&self, language: &dyn Language, register: &Register, snap: i64) -> bool;
 
     /// Removes all register values over the given span and address range.
-    fn clear(&mut self, span: &dyn Lifespan, range: &AddressRange);
+    fn clear(&mut self, span: Lifespan, range: &AddressRange);
 }
 
 #[cfg(test)]
@@ -399,7 +399,7 @@ mod tests {
             &mut self,
             _language: &dyn Language,
             value: &dyn RegisterValue,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             range: &AddressRange,
         ) {
             self.entries.borrow_mut().insert(
@@ -412,7 +412,7 @@ mod tests {
             &mut self,
             _language: &dyn Language,
             _register: &Register,
-            span: &dyn Lifespan,
+            span: Lifespan,
             _range: &AddressRange,
         ) {
             self.entries.borrow_mut().remove(&span.lmin());
@@ -450,7 +450,7 @@ mod tests {
             }
             let snap_range: Box<dyn TraceAddressSnapRange> = Box::new(MockSnapRange {
                 range: range.clone(),
-                lifespan: MockLifespan { min: snap, max: snap },
+                lifespan: Lifespan::span(snap, snap),
             });
             let reg_value: Box<dyn RegisterValue> = Box::new(MockRegisterValue {
                 register: Register::from_register(register),
@@ -515,52 +515,22 @@ mod tests {
             self.entries.borrow().contains_key(&snap)
         }
 
-        fn clear(&mut self, span: &dyn Lifespan, _range: &AddressRange) {
+        fn clear(&mut self, span: Lifespan, _range: &AddressRange) {
             self.entries.borrow_mut().remove(&span.lmin());
         }
     }
 
-    #[derive(Clone, Copy)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockSnapRange {
         range: AddressRange,
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
     }
 
     impl TraceAddressSnapRange for MockSnapRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(self.lifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            self.lifespan
         }
 
         fn get_range(&self) -> AddressRange {
@@ -580,7 +550,7 @@ mod tests {
         ) -> Box<dyn TraceAddressSnapRange> {
             Box::new(MockSnapRange {
                 range: AddressRange::new(x1, x2),
-                lifespan: MockLifespan { min: y1, max: y2 },
+                lifespan: Lifespan::span(y1, y2),
             })
         }
     }
@@ -605,7 +575,7 @@ mod tests {
         let register = mock_register();
         let language = MockLanguage { registers: vec![register.clone()] };
         let platform = MockPlatform;
-        let lifespan = MockLifespan { min: 0, max: 10 };
+        let lifespan = Lifespan::span(0, 10);
 
         let mut ops: Box<dyn TraceRegisterContextOperations> =
             Box::new(MockOperations { entries: RefCell::new(HashMap::new()) });
@@ -613,7 +583,7 @@ mod tests {
         assert!(!ops.has_register_value(&language, &register.borrow(), 0));
 
         let value = MockRegisterValue { register: register.clone(), value: 0x2a };
-        ops.set_value(&language, &value, &lifespan, &range);
+        ops.set_value(&language, &value, lifespan, &range);
 
         assert!(ops.has_register_value(&language, &register.borrow(), 0));
         assert!(ops.has_register_value_in_address_range(&language, &register.borrow(), 0, &range));
@@ -634,11 +604,11 @@ mod tests {
         assert_eq!(entry_range.get_range(), range);
         assert_eq!(entry_value.get_unsigned_value_ignore_mask(), 0x2a);
 
-        ops.remove_value(&language, &register.borrow(), &lifespan, &range);
+        ops.remove_value(&language, &register.borrow(), lifespan, &range);
         assert!(!ops.has_register_value(&language, &register.borrow(), 0));
 
-        ops.set_value(&language, &value, &lifespan, &range);
-        ops.clear(&lifespan, &range);
+        ops.set_value(&language, &value, lifespan, &range);
+        ops.clear(lifespan, &range);
         assert!(!ops.has_register_value(&language, &register.borrow(), 0));
     }
 }

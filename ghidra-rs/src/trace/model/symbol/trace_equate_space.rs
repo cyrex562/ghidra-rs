@@ -23,31 +23,7 @@ mod tests {
     use crate::util::exception::CancelledException;
     use crate::util::task::TaskMonitor;
 
-    struct DummyLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockSpace {
         space: Arc<AddressSpace>,
@@ -55,13 +31,13 @@ mod tests {
     }
 
     impl TraceEquateOperations for MockSpace {
-        fn get_referring_addresses(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_referring_addresses(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             Box::new(self.referring.clone())
         }
 
         fn clear_references(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _asv: &dyn AddressSetView,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -70,7 +46,7 @@ mod tests {
 
         fn clear_references_range(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -116,8 +92,8 @@ mod tests {
         assert_eq!(boxed.get_address_space().name(), "ram");
 
         // Supertrait (TraceEquateOperations) methods remain reachable.
-        let lifespan = DummyLifespan { min: 0, max: 100 };
-        let referring = boxed.get_referring_addresses(&lifespan);
+        let lifespan = Lifespan::span(0, 100);
+        let referring = boxed.get_referring_addresses(lifespan);
         assert!(referring.contains(&space.address(0x1000)));
     }
 }

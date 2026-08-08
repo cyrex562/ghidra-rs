@@ -24,6 +24,7 @@ pub trait TraceVariableSnapProgramView: TraceProgramView {
 
 #[cfg(test)]
 mod tests {
+    use crate::trace::model::lifespan::Lifespan;
     use super::*;
     use crate::app::merge::DataTypeManagerOwner;
     use crate::framework::model::DomainObject;
@@ -248,14 +249,14 @@ mod tests {
             false
         }
 
-        fn contains_any_upper(&self, _lifespan: &dyn crate::trace::model::lifespan::Lifespan) -> bool {
+        fn contains_any_upper(&self, _lifespan: Lifespan) -> bool {
             false
         }
 
         fn is_completely_visible(
             &self,
             _range: &crate::program::model::address::range::AddressRange,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _object: &dyn std::any::Any,
             _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
         ) -> bool {
@@ -265,18 +266,18 @@ mod tests {
         fn compute_visible_parts(
             &self,
             _set: &dyn crate::program::model::address::address_set::AddressSetView,
-            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _lifespan: Lifespan,
             _object: &dyn std::any::Any,
             _occlusion: &dyn crate::trace::model::trace_time_viewport::Occlusion,
         ) -> crate::program::model::address::address_set::AddressSet {
             crate::program::model::address::address_set::AddressSet::new()
         }
 
-        fn get_ordered_spans(&self) -> Vec<Box<dyn crate::trace::model::lifespan::Lifespan>> {
+        fn get_ordered_spans(&self) -> Vec<Lifespan> {
             Vec::new()
         }
 
-        fn get_reversed_spans(&self) -> Vec<Box<dyn crate::trace::model::lifespan::Lifespan>> {
+        fn get_reversed_spans(&self) -> Vec<Lifespan> {
             Vec::new()
         }
 

@@ -57,7 +57,7 @@ pub trait TraceBreakpointSpec: TraceBreakpointCommon {
     /// See [`Self::get_kinds`]. Note that it is unusual for a breakpoint to change kinds during
     /// its life. Nevertheless, in the course of recording a trace, it may happen, or at least
     /// appear to happen.
-    fn set_kinds(&mut self, lifespan: &dyn Lifespan, kinds: &[TraceBreakpointKind]);
+    fn set_kinds(&mut self, lifespan: Lifespan, kinds: &[TraceBreakpointKind]);
 
     /// Set the kinds included in this breakpoint from the given snap on.
     ///
@@ -80,33 +80,7 @@ pub trait TraceBreakpointSpec: TraceBreakpointCommon {
 mod tests {
     use super::*;
 
-    struct MockLifespan;
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-
-        fn lmax(&self) -> i64 {
-            i64::MAX
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            n >= 0
-        }
-
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan)
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(std::iter::empty())
-        }
-    }
 
     struct MockBreakpointSpec {
         kinds: HashSet<TraceBreakpointKind>,
@@ -119,7 +93,7 @@ mod tests {
             "*0x1234".to_string()
         }
 
-        fn set_kinds(&mut self, _lifespan: &dyn Lifespan, kinds: &[TraceBreakpointKind]) {
+        fn set_kinds(&mut self, _lifespan: Lifespan, kinds: &[TraceBreakpointKind]) {
             self.kinds = kinds.iter().copied().collect();
         }
 
@@ -153,7 +127,7 @@ mod tests {
         let mut spec = MockBreakpointSpec {
             kinds: HashSet::new(),
         };
-        spec.set_kinds(&MockLifespan, &[TraceBreakpointKind::Read, TraceBreakpointKind::Write]);
+        spec.set_kinds(Lifespan::span(0, 10), &[TraceBreakpointKind::Read, TraceBreakpointKind::Write]);
         let kinds = spec.get_kinds(0);
         assert_eq!(kinds.len(), 2);
         assert!(kinds.contains(&TraceBreakpointKind::Read));

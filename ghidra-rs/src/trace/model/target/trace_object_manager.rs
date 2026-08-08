@@ -59,7 +59,7 @@ pub trait TraceObjectManager: Send + Sync {
     fn get_object_by_canonical_path(&self, path: &KeyPath) -> Option<Box<dyn TraceObject>>;
 
     /// Get objects in the database having the given path intersecting the given span.
-    fn get_objects_by_path(&self, span: &dyn Lifespan, path: &KeyPath) -> Vec<Box<dyn TraceObject>>;
+    fn get_objects_by_path(&self, span: Lifespan, path: &KeyPath) -> Vec<Box<dyn TraceObject>>;
 
     /// Get value entries in the database matching the given predicates intersecting the given
     /// span.
@@ -71,7 +71,7 @@ pub trait TraceObjectManager: Send + Sync {
     /// ancestors' lifespans all intersect the given span.
     fn get_value_paths(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         predicates: &dyn PathFilter,
     ) -> Vec<Box<dyn TraceObjectValPath>>;
 
@@ -89,7 +89,7 @@ pub trait TraceObjectManager: Send + Sync {
     /// `entry_key`, if given, restricts the match to a single entry key.
     fn get_values_intersecting(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
         entry_key: Option<&str>,
     ) -> Vec<Box<dyn TraceObjectValue>>;
@@ -100,7 +100,7 @@ pub trait TraceObjectManager: Send + Sync {
     /// passed explicitly. This keeps `dyn TraceObjectManager` object-safe (the same trade-off
     /// documented on `ProgressService::execute_with_future`), so it is unavailable through a
     /// trait object -- callers need a concrete (or otherwise `Sized`) manager type.
-    fn query_all_interface<I: TraceObjectInterface>(&self, span: &dyn Lifespan) -> Vec<I>
+    fn query_all_interface<I: TraceObjectInterface>(&self, span: Lifespan) -> Vec<I>
     where
         Self: Sized;
 
@@ -134,39 +134,7 @@ mod tests {
     use crate::program::model::address::{Address, AddressSpace};
     use crate::trace::seam_stubs::{ObjectKey, TraceObjectSchema as SchemaTrait};
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.min,
-                max,
-            })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockBypassWriteCache {
         closed: bool,
@@ -273,13 +241,13 @@ mod tests {
             None
         }
 
-        fn get_objects_by_path(&self, _span: &dyn Lifespan, _path: &KeyPath) -> Vec<Box<dyn TraceObject>> {
+        fn get_objects_by_path(&self, _span: Lifespan, _path: &KeyPath) -> Vec<Box<dyn TraceObject>> {
             Vec::new()
         }
 
         fn get_value_paths(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _predicates: &dyn PathFilter,
         ) -> Vec<Box<dyn TraceObjectValPath>> {
             Vec::new()
@@ -299,14 +267,14 @@ mod tests {
 
         fn get_values_intersecting(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             _entry_key: Option<&str>,
         ) -> Vec<Box<dyn TraceObjectValue>> {
             Vec::new()
         }
 
-        fn query_all_interface<I: TraceObjectInterface>(&self, _span: &dyn Lifespan) -> Vec<I>
+        fn query_all_interface<I: TraceObjectInterface>(&self, _span: Lifespan) -> Vec<I>
         where
             Self: Sized,
         {
@@ -380,8 +348,8 @@ mod tests {
         let mut manager: Box<dyn TraceObjectManager> =
             Box::new(MockManager { root: None, object_count: 0 });
         let range = AddressRange::new(make_address(0), make_address(0x10));
-        let span = MockLifespan { min: 0, max: 10 };
-        assert!(manager.get_values_intersecting(&span, &range, None).is_empty());
+        let span = Lifespan::span(0, 10);
+        assert!(manager.get_values_intersecting(span, &range, None).is_empty());
         manager.clear();
     }
 }

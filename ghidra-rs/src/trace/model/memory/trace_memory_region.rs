@@ -103,7 +103,7 @@ pub trait TraceMemoryRegion: TraceUniqueObject + TraceObjectInterface {
     /// Set the "short name" of this region across the given span of time.
     ///
     /// The given name should be suitable for display on the screen.
-    fn set_name(&mut self, lifespan: &dyn Lifespan, name: &str);
+    fn set_name(&mut self, lifespan: Lifespan, name: &str);
 
     /// Set the "short name" of this region from the given snap on.
     ///
@@ -120,7 +120,7 @@ pub trait TraceMemoryRegion: TraceUniqueObject + TraceObjectInterface {
     /// The addresses in the range should be those the target's CPU would use to access the
     /// region, i.e., the virtual memory address if an MMU is involved, or the physical address
     /// if no MMU is involved.
-    fn set_range(&mut self, lifespan: &dyn Lifespan, range: AddressRange);
+    fn set_range(&mut self, lifespan: Lifespan, range: AddressRange);
 
     /// Set the virtual memory address range of this region from the given snap on.
     ///
@@ -186,20 +186,20 @@ pub trait TraceMemoryRegion: TraceUniqueObject + TraceObjectInterface {
     fn get_length(&self, snap: i64) -> u64;
 
     /// Set the flags, e.g., permissions, of this region across the given span of time.
-    fn set_flags(&mut self, lifespan: &dyn Lifespan, flags: &[TraceMemoryFlag]);
+    fn set_flags(&mut self, lifespan: Lifespan, flags: &[TraceMemoryFlag]);
 
     /// Set the flags, e.g., permissions, of this region from the given snap on.
     fn set_flags_at(&mut self, snap: i64, flags: &[TraceMemoryFlag]);
 
     /// Add the given flags, e.g., permissions, to this region across the given span of time.
-    fn add_flags(&mut self, lifespan: &dyn Lifespan, flags: &[TraceMemoryFlag]);
+    fn add_flags(&mut self, lifespan: Lifespan, flags: &[TraceMemoryFlag]);
 
     /// Add the given flags, e.g., permissions, to this region from the given snap on.
     fn add_flags_at(&mut self, snap: i64, flags: &[TraceMemoryFlag]);
 
     /// Remove the given flags, e.g., permissions, from this region across the given span of
     /// time.
-    fn clear_flags(&mut self, lifespan: &dyn Lifespan, flags: &[TraceMemoryFlag]);
+    fn clear_flags(&mut self, lifespan: Lifespan, flags: &[TraceMemoryFlag]);
 
     /// Remove the given flags, e.g., permissions, from this region from the given snap on.
     fn clear_flags_at(&mut self, snap: i64, flags: &[TraceMemoryFlag]);
@@ -301,36 +301,7 @@ mod tests {
         }
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockOverlapError {
         conflicts: Vec<()>,
@@ -389,7 +360,7 @@ mod tests {
             self.name.clone()
         }
 
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, name: &str) {
+        fn set_name(&mut self, _lifespan: Lifespan, name: &str) {
             self.name = name.to_string();
         }
 
@@ -401,7 +372,7 @@ mod tests {
             self.name.clone()
         }
 
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, range: AddressRange) {
+        fn set_range(&mut self, _lifespan: Lifespan, range: AddressRange) {
             *self.range.lock().unwrap() = range;
         }
 
@@ -457,7 +428,7 @@ mod tests {
             self.get_range(snap).length()
         }
 
-        fn set_flags(&mut self, _lifespan: &dyn Lifespan, flags: &[TraceMemoryFlag]) {
+        fn set_flags(&mut self, _lifespan: Lifespan, flags: &[TraceMemoryFlag]) {
             *self.flags.lock().unwrap() = flags.iter().copied().collect();
         }
 
@@ -465,7 +436,7 @@ mod tests {
             *self.flags.lock().unwrap() = flags.iter().copied().collect();
         }
 
-        fn add_flags(&mut self, _lifespan: &dyn Lifespan, flags: &[TraceMemoryFlag]) {
+        fn add_flags(&mut self, _lifespan: Lifespan, flags: &[TraceMemoryFlag]) {
             self.flags.lock().unwrap().extend(flags.iter().copied());
         }
 
@@ -473,7 +444,7 @@ mod tests {
             self.flags.lock().unwrap().extend(flags.iter().copied());
         }
 
-        fn clear_flags(&mut self, _lifespan: &dyn Lifespan, flags: &[TraceMemoryFlag]) {
+        fn clear_flags(&mut self, _lifespan: Lifespan, flags: &[TraceMemoryFlag]) {
             let mut guard = self.flags.lock().unwrap();
             for f in flags {
                 guard.remove(f);

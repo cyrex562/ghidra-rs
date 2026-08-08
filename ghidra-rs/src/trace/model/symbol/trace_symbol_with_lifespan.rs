@@ -8,7 +8,7 @@ use crate::trace::model::symbol::trace_symbol::TraceSymbol;
 /// It was selected as a dependency-cycle cut-point.
 pub trait TraceSymbolWithLifespan: TraceSymbol {
     /// Get the lifespan of the symbol.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Get the minimum snapshot key in the lifespan.
     fn get_start_snap(&self) -> i64;
@@ -33,36 +33,7 @@ mod tests {
     use std::sync::atomic::{AtomicI64, Ordering};
     use std::sync::Arc;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockSymbolWithLifespan {
         id: i64,
@@ -132,11 +103,8 @@ mod tests {
     }
 
     impl TraceSymbolWithLifespan for MockSymbolWithLifespan {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.start,
-                max: self.end.load(Ordering::SeqCst),
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.start, self.end.load(Ordering::SeqCst))
         }
 
         fn get_start_snap(&self) -> i64 {

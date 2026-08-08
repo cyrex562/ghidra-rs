@@ -42,7 +42,7 @@ pub trait DBTraceObjectValueMap: Send + Sync {
     /// Mirrors `DBTraceObjectValueMap.getAddressSetView(Lifespan, Predicate)`.
     fn get_address_set_view(
         &self,
-        at: Box<dyn Lifespan>,
+        at: Lifespan,
         predicate: Box<dyn Fn(&dyn DBTraceObjectValueData) -> bool + Send + Sync>,
     ) -> Box<dyn AddressSetView>;
 }
@@ -78,9 +78,9 @@ mod tests {
         fn get_entry_key(&self) -> String {
             "key".to_string()
         }
-        fn do_set_lifespan(&mut self, _lifespan: &dyn Lifespan) {}
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: 0, max: 0 })
+        fn do_set_lifespan(&mut self, _lifespan: Lifespan) {}
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, 0)
         }
         fn get_child_or_null(&self) -> Option<Box<dyn DBTraceObject>> {
             None
@@ -119,7 +119,7 @@ mod tests {
             _parent: Box<dyn DBTraceObject>,
             _child: Option<Box<dyn DBTraceObject>>,
             _entry_key: String,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
         ) {
         }
     }
@@ -129,32 +129,7 @@ mod tests {
     struct MockQuery;
     impl TraceObjectValueQuery for MockQuery {}
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     /// A tiny in-memory stand-in for `DBTraceObjectValueMap`, holding a fixed set of
     /// `(key, snap)` entries and applying `reduce`/`get_address_set_view` against them, enough to
@@ -177,7 +152,7 @@ mod tests {
 
         fn get_address_set_view(
             &self,
-            at: Box<dyn Lifespan>,
+            at: Lifespan,
             predicate: Box<dyn Fn(&dyn DBTraceObjectValueData) -> bool + Send + Sync>,
         ) -> Box<dyn AddressSetView> {
             let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
@@ -200,14 +175,14 @@ mod tests {
     fn reduce_returns_a_strictly_narrower_map() {
         let map = make_map();
         let full = map.get_address_set_view(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             Box::new(|_| true),
         );
         assert_eq!(full.num_addresses(), 3);
 
         let reduced = map.reduce(Box::new(MockQuery));
         let narrowed = reduced.get_address_set_view(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             Box::new(|_| true),
         );
         assert_eq!(narrowed.num_addresses(), 2);
@@ -216,7 +191,7 @@ mod tests {
     #[test]
     fn get_address_set_view_filters_by_lifespan() {
         let map = make_map();
-        let at = Box::new(MockLifespan { min: 0, max: 5 });
+        let at = Lifespan::span(0, 5);
         let view = map.get_address_set_view(at, Box::new(|_| true));
         // Entries at snaps 0 and 5 fall within [0, 5]; the one at snap 10 does not.
         assert_eq!(view.num_addresses(), 2);
@@ -225,7 +200,7 @@ mod tests {
     #[test]
     fn get_address_set_view_applies_predicate() {
         let map = make_map();
-        let at = Box::new(MockLifespan { min: 0, max: 10 });
+        let at = Lifespan::span(0, 10);
         let view = map.get_address_set_view(at, Box::new(|_| false));
         assert!(view.is_empty());
     }
@@ -241,7 +216,7 @@ mod tests {
         let tree: Box<dyn DBTraceObjectValueRStarTree> = Box::new(Tree(vec![(1, 0), (2, 1)]));
         let map = tree.as_spatial_map();
         let view = map.get_address_set_view(
-            Box::new(MockLifespan { min: 0, max: 1 }),
+            Lifespan::span(0, 1),
             Box::new(|_| true),
         );
         assert_eq!(view.num_addresses(), 2);

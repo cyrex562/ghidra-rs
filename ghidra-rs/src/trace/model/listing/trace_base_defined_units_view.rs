@@ -27,7 +27,7 @@ pub trait TraceBaseDefinedUnitsView: TraceBaseCodeUnitsView {
     /// Mirrors the Java overload `clear(Lifespan, AddressRange, boolean, TaskMonitor)`.
     fn clear(
         &mut self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
         clear_context: bool,
         monitor: &dyn TaskMonitor,
@@ -39,7 +39,7 @@ pub trait TraceBaseDefinedUnitsView: TraceBaseCodeUnitsView {
     /// overload `clear(Lifespan, Register, TaskMonitor)`.
     fn clear_register(
         &mut self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         register: &Register,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException>;
@@ -51,7 +51,7 @@ pub trait TraceBaseDefinedUnitsView: TraceBaseCodeUnitsView {
     fn clear_platform_register(
         &mut self,
         platform: &dyn TracePlatform,
-        span: &dyn Lifespan,
+        span: Lifespan,
         register: &Register,
         monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException>;
@@ -163,7 +163,7 @@ mod tests {
             false
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -171,7 +171,7 @@ mod tests {
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -211,7 +211,7 @@ mod tests {
     impl TraceBaseDefinedUnitsView for MockView {
         fn clear(
             &mut self,
-            span: &dyn Lifespan,
+            span: Lifespan,
             range: &AddressRange,
             _clear_context: bool,
             monitor: &dyn TaskMonitor,
@@ -233,7 +233,7 @@ mod tests {
 
         fn clear_register(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -245,7 +245,7 @@ mod tests {
         fn clear_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            span: &dyn Lifespan,
+            span: Lifespan,
             register: &Register,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -341,7 +341,7 @@ mod tests {
         assert_eq!(view.size(), 2);
 
         let full_range = AddressRange::new(addr(0x0), addr(0x1000));
-        view.clear(&lifespan_dummy(), &full_range, false, &NeverCancelled)
+        view.clear(lifespan_dummy(), &full_range, false, &NeverCancelled)
             .expect("clear should succeed when not cancelled");
         assert_eq!(view.size(), 0);
     }
@@ -352,38 +352,15 @@ mod tests {
             Box::new(MockView { units: vec![(addr(0x400), 0, 10)] });
 
         let full_range = AddressRange::new(addr(0x0), addr(0x1000));
-        let result = view.clear(&lifespan_dummy(), &full_range, false, &AlwaysCancelled);
+        let result = view.clear(lifespan_dummy(), &full_range, false, &AlwaysCancelled);
         assert!(result.is_err(), "clear should propagate a cancelled monitor as an error");
         assert_eq!(view.size(), 1, "cancelled clear must not have mutated the view");
     }
 
     /// A minimal `Lifespan` stand-in; `MockView::clear` never actually inspects the span, so
     /// only the required methods are implemented, with arbitrary bounds.
-    struct DummyLifespan;
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            10
-        }
-        fn contains(&self, n: i64) -> bool {
-            (0..=10).contains(&n)
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            let _ = min;
-            Box::new(DummyLifespan)
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            let _ = max;
-            Box::new(DummyLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=10)
-        }
-    }
 
-    fn lifespan_dummy() -> DummyLifespan {
-        DummyLifespan
+    fn lifespan_dummy() -> Lifespan {
+        Lifespan::span(0, 10)
     }
 }

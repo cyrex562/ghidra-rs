@@ -20,7 +20,7 @@ use crate::trace::model::lifespan::Lifespan;
 /// A rectangle over `(Address, snap)` space: an address range paired with a lifespan.
 pub trait TraceAddressSnapRange: Send + Sync {
     /// Returns the lifespan (snap range) of this rectangle's Y extent.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Returns the address range of this rectangle's X extent.
     fn get_range(&self) -> AddressRange;
@@ -86,42 +86,17 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockRange {
         range: AddressRange,
-        lifespan: MockLifespan,
+        lifespan: Lifespan,
     }
 
     impl TraceAddressSnapRange for MockRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(self.lifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            self.lifespan
         }
 
         fn get_range(&self) -> AddressRange {
@@ -141,7 +116,7 @@ mod tests {
         ) -> Box<dyn TraceAddressSnapRange> {
             Box::new(MockRange {
                 range: AddressRange::new(x1, x2),
-                lifespan: MockLifespan { min: y1, max: y2 },
+                lifespan: Lifespan::span(y1, y2),
             })
         }
     }
@@ -157,7 +132,7 @@ mod tests {
                 Address::new(space.clone(), min),
                 Address::new(space, max),
             ),
-            lifespan: MockLifespan { min: lo, max: hi },
+            lifespan: Lifespan::span(lo, hi),
         }
     }
 

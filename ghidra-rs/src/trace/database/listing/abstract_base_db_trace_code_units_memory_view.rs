@@ -332,7 +332,7 @@ where
     }
 
     /// Mirrors `TraceBaseCodeUnitsView#coversRange(Lifespan, AddressRange)`.
-    fn covers_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool {
+    fn covers_range(&self, span: Lifespan, range: &AddressRange) -> bool {
         let _hold = LockHold::lock(self.read_lock());
         match self.get_for_space(range.space(), false) {
             None => self.false_or_true_undefined(),
@@ -352,7 +352,7 @@ where
     }
 
     /// Mirrors `TraceBaseCodeUnitsView#intersectsRange(Lifespan, AddressRange)`.
-    fn intersects_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool {
+    fn intersects_range(&self, span: Lifespan, range: &AddressRange) -> bool {
         let _hold = LockHold::lock(self.read_lock());
         match self.get_for_space(range.space(), false) {
             None => self.false_or_true_undefined(),
@@ -453,22 +453,22 @@ mod tests {
             self.units.lock().unwrap().contains(&address.offset())
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, range: &AddressRange) -> bool {
             let lo = range.min_address().offset();
             let hi = range.max_address().offset();
             (lo..=hi).all(|offset| self.units.lock().unwrap().contains(&offset))
         }
 
         fn covers_snap_range(&self, range: &dyn TraceAddressSnapRange) -> bool {
-            self.covers_range(range.get_lifespan().as_ref(), &range.get_range())
+            self.covers_range(range.get_lifespan(), &range.get_range())
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, range: &AddressRange) -> bool {
             !self.get_in_range(0, range, true).is_empty()
         }
 
         fn intersects_snap_range(&self, range: &dyn TraceAddressSnapRange) -> bool {
-            self.intersects_range(range.get_lifespan().as_ref(), &range.get_range())
+            self.intersects_range(range.get_lifespan(), &range.get_range())
         }
     }
 

@@ -38,7 +38,7 @@ where
     ///
     /// Port of the `set(Lifespan, Address, T)` overload; see
     /// [`set_range`](Self::set_range) for the `AddressRange`-keyed overload.
-    fn set(&mut self, lifespan: Box<dyn Lifespan>, address: Address, value: T);
+    fn set(&mut self, lifespan: Lifespan, address: Address, value: T);
 
     /// Sets a value over the given range and lifespan.
     ///
@@ -52,7 +52,7 @@ where
     /// of the existing entry precedes the span of the new entry, the existing entry is
     /// truncated -- its ending snap is set to one less than the new entry's starting snap.
     /// Address ranges are never truncated.
-    fn set_range(&mut self, lifespan: Box<dyn Lifespan>, range: AddressRange, value: T);
+    fn set_range(&mut self, lifespan: Lifespan, range: AddressRange, value: T);
 
     /// Gets the value at the given address-snap pair.
     ///
@@ -70,21 +70,21 @@ where
     /// Port of `getEntries(Lifespan, AddressRange)`.
     fn get_entries(
         &self,
-        lifespan: Box<dyn Lifespan>,
+        lifespan: Lifespan,
         range: AddressRange,
     ) -> Vec<(Box<dyn TraceAddressSnapRange>, T)>;
 
     /// Gets the union of address ranges for entries which intersect the given span.
     ///
     /// Port of `getAddressSetView(Lifespan)`.
-    fn get_address_set_view(&self, span: Box<dyn Lifespan>) -> Box<dyn AddressSetView>;
+    fn get_address_set_view(&self, span: Lifespan) -> Box<dyn AddressSetView>;
 
     /// Removes or truncates entries so that the given box contains no entries.
     ///
     /// Port of `clear(Lifespan, AddressRange)`. Applies the same truncation rule as
     /// [`set_range`](Self::set_range), except that no replacement entry is created. Returns
     /// `true` if any entry was affected.
-    fn clear(&mut self, span: Box<dyn Lifespan>, range: AddressRange) -> bool;
+    fn clear(&mut self, span: Lifespan, range: AddressRange) -> bool;
 }
 
 #[cfg(test)]
@@ -93,32 +93,7 @@ mod tests {
     use crate::program::model::address::{AddressSet, AddressSetView, AddressSpace, AddressSpaceType};
     use std::sync::Arc;
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     #[derive(Clone)]
     struct MockRange {
@@ -128,11 +103,8 @@ mod tests {
     }
 
     impl TraceAddressSnapRange for MockRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.y1,
-                max: self.y2,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.y1, self.y2)
         }
 
         fn get_range(&self) -> AddressRange {
@@ -169,11 +141,11 @@ mod tests {
             TypeId::of::<i32>()
         }
 
-        fn set(&mut self, lifespan: Box<dyn Lifespan>, address: Address, value: i32) {
+        fn set(&mut self, lifespan: Lifespan, address: Address, value: i32) {
             self.set_range(lifespan, AddressRange::new(address.clone(), address), value)
         }
 
-        fn set_range(&mut self, lifespan: Box<dyn Lifespan>, range: AddressRange, value: i32) {
+        fn set_range(&mut self, lifespan: Lifespan, range: AddressRange, value: i32) {
             let (lmin, lmax) = (lifespan.lmin(), lifespan.lmax());
             self.entries.retain_mut(|(shape, _)| {
                 if !shape.range.intersects(&range) || shape.y2 < lmin || lmax < shape.y1 {
@@ -213,7 +185,7 @@ mod tests {
 
         fn get_entries(
             &self,
-            lifespan: Box<dyn Lifespan>,
+            lifespan: Lifespan,
             range: AddressRange,
         ) -> Vec<(Box<dyn TraceAddressSnapRange>, i32)> {
             self.entries
@@ -225,7 +197,7 @@ mod tests {
                 .collect()
         }
 
-        fn get_address_set_view(&self, span: Box<dyn Lifespan>) -> Box<dyn AddressSetView> {
+        fn get_address_set_view(&self, span: Lifespan) -> Box<dyn AddressSetView> {
             let mut set = AddressSet::new();
             for (shape, _) in &self.entries {
                 if shape.y1 <= span.lmax() && span.lmin() <= shape.y2 {
@@ -235,7 +207,7 @@ mod tests {
             Box::new(set)
         }
 
-        fn clear(&mut self, span: Box<dyn Lifespan>, range: AddressRange) -> bool {
+        fn clear(&mut self, span: Lifespan, range: AddressRange) -> bool {
             let (lmin, lmax) = (span.lmin(), span.lmax());
             let before = self.entries.len();
             let mut truncated = false;
@@ -266,7 +238,7 @@ mod tests {
     #[test]
     fn set_then_get_round_trips_value() {
         let mut map = MockMap { entries: vec![] };
-        map.set(Box::new(MockLifespan { min: 0, max: 10 }), addr(0x1000), 42);
+        map.set(Lifespan::span(0, 10), addr(0x1000), 42);
         assert_eq!(map.get(5, &addr(0x1000)), Some(42));
         assert_eq!(map.get(5, &addr(0x2000)), None);
         assert_eq!(map.get(20, &addr(0x1000)), None);
@@ -276,12 +248,12 @@ mod tests {
     fn set_range_truncates_overlapping_earlier_entry() {
         let mut map = MockMap { entries: vec![] };
         map.set_range(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x2000)),
             1,
         );
         map.set_range(
-            Box::new(MockLifespan { min: 5, max: 15 }),
+            Lifespan::span(5, 15),
             AddressRange::new(addr(0x1000), addr(0x2000)),
             2,
         );
@@ -294,12 +266,12 @@ mod tests {
     fn set_range_deletes_entry_starting_within_new_span() {
         let mut map = MockMap { entries: vec![] };
         map.set_range(
-            Box::new(MockLifespan { min: 5, max: 8 }),
+            Lifespan::span(5, 8),
             AddressRange::new(addr(0x1000), addr(0x2000)),
             1,
         );
         map.set_range(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x2000)),
             2,
         );
@@ -311,17 +283,17 @@ mod tests {
     fn get_entries_returns_only_intersecting_entries() {
         let mut map = MockMap { entries: vec![] };
         map.set_range(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x1010)),
             1,
         );
         map.set_range(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x2000), addr(0x2010)),
             2,
         );
         let found = map.get_entries(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x1010)),
         );
         assert_eq!(found.len(), 1);
@@ -332,16 +304,16 @@ mod tests {
     fn get_address_set_view_unions_intersecting_ranges() {
         let mut map = MockMap { entries: vec![] };
         map.set_range(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x1010)),
             1,
         );
         map.set_range(
-            Box::new(MockLifespan { min: 100, max: 200 }),
+            Lifespan::span(100, 200),
             AddressRange::new(addr(0x2000), addr(0x2010)),
             2,
         );
-        let set = map.get_address_set_view(Box::new(MockLifespan { min: 0, max: 10 }));
+        let set = map.get_address_set_view(Lifespan::span(0, 10));
         assert!(set.contains(&addr(0x1000)));
         assert!(!set.contains(&addr(0x2000)));
     }
@@ -350,19 +322,19 @@ mod tests {
     fn clear_removes_entries_in_box_and_reports_change() {
         let mut map = MockMap { entries: vec![] };
         map.set_range(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x1010)),
             1,
         );
         let cleared = map.clear(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x1010)),
         );
         assert!(cleared);
         assert_eq!(map.get(5, &addr(0x1000)), None);
 
         let cleared_again = map.clear(
-            Box::new(MockLifespan { min: 0, max: 10 }),
+            Lifespan::span(0, 10),
             AddressRange::new(addr(0x1000), addr(0x1010)),
         );
         assert!(!cleared_again);
@@ -371,7 +343,7 @@ mod tests {
     #[test]
     fn dyn_trait_object_is_usable() {
         let mut map = MockMap { entries: vec![] };
-        map.set(Box::new(MockLifespan { min: 0, max: 0 }), addr(0x1000), 7);
+        map.set(Lifespan::span(0, 0), addr(0x1000), 7);
         let boxed: Box<dyn TracePropertyMapOperations<i32>> = Box::new(map);
         assert_eq!(boxed.get_value_class(), TypeId::of::<i32>());
         assert_eq!(boxed.get(0, &addr(0x1000)), Some(7));

@@ -141,7 +141,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 

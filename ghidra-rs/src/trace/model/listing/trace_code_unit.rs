@@ -63,7 +63,7 @@ pub trait TraceCodeUnit: CodeUnit {
     fn get_range(&self) -> AddressRange;
 
     /// Get the lifespan of this code unit.
-    fn get_lifespan(&self) -> Box<dyn Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Get the start snap of this code unit: the first snap of this unit's lifespan.
     fn get_start_snap(&self) -> i64;
@@ -321,7 +321,7 @@ use crate::program::model::listing::CommentType;
             )
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 

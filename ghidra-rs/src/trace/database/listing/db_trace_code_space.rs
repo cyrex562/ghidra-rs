@@ -148,7 +148,7 @@ pub trait DBTraceCodeSpace: Send + Sync {
     /// algorithm isn't reproduced here.
     fn clear_platform(
         &self,
-        _span: &dyn Lifespan,
+        _span: Lifespan,
         _range: &AddressRange,
         _guest: &dyn DBTraceGuestPlatform,
         _monitor: &dyn TaskMonitor,

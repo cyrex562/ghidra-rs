@@ -54,13 +54,13 @@ pub trait DBTraceDefinedUnitsView: TraceDefinedUnitsView + InternalTraceBaseDefi
 
     /// Checks whether every address in `range`, throughout `span`, is covered by some part.
     /// Mirrors `DBTraceDefinedUnitsView.coversRange(Lifespan, AddressRange)`.
-    fn covers_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool {
+    fn covers_range(&self, span: Lifespan, range: &AddressRange) -> bool {
         self.parts().iter().any(|part| part.covers_range(span, range))
     }
 
     /// Checks whether any address in `range`, at some snap in `span`, is covered by some part.
     /// Mirrors `DBTraceDefinedUnitsView.intersectsRange(Lifespan, AddressRange)`.
-    fn intersects_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool {
+    fn intersects_range(&self, span: Lifespan, range: &AddressRange) -> bool {
         self.parts().iter().any(|part| part.intersects_range(span, range))
     }
 
@@ -68,7 +68,7 @@ pub trait DBTraceDefinedUnitsView: TraceDefinedUnitsView + InternalTraceBaseDefi
     /// `DBTraceDefinedUnitsView.clear(Lifespan, AddressRange, boolean, TaskMonitor)`.
     fn clear(
         &mut self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
         clear_context: bool,
         monitor: &dyn TaskMonitor,
@@ -103,18 +103,18 @@ mod tests {
     }
 
     impl AbstractBaseDBTraceDefinedUnitsView for PartView {
-        fn covers_range(&self, _span: &dyn Lifespan, range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, range: &AddressRange) -> bool {
             let addresses = self.addresses.lock().unwrap();
             range.addresses().all(|a| addresses.contains(&a))
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, range: &AddressRange) -> bool {
             self.addresses.lock().unwrap().iter().any(|a| range.contains(a))
         }
 
         fn clear(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             range: &AddressRange,
             _clear_context: bool,
             monitor: &dyn TaskMonitor,
@@ -205,13 +205,13 @@ mod tests {
         fn contains_address(&self, _snap: i64, _address: &Address) -> bool {
             false
         }
-        fn covers_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool {
+        fn covers_range(&self, span: Lifespan, range: &AddressRange) -> bool {
             DBTraceDefinedUnitsView::covers_range(self, span, range)
         }
         fn covers_snap_range(&self, _range: &dyn TraceAddressSnapRange) -> bool {
             false
         }
-        fn intersects_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool {
+        fn intersects_range(&self, span: Lifespan, range: &AddressRange) -> bool {
             DBTraceDefinedUnitsView::intersects_range(self, span, range)
         }
         fn intersects_snap_range(&self, _range: &dyn TraceAddressSnapRange) -> bool {
@@ -247,7 +247,7 @@ mod tests {
     impl TraceBaseDefinedUnitsView for ComposedView {
         fn clear(
             &mut self,
-            span: &dyn Lifespan,
+            span: Lifespan,
             range: &AddressRange,
             clear_context: bool,
             monitor: &dyn TaskMonitor,
@@ -256,7 +256,7 @@ mod tests {
         }
         fn clear_register(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -265,7 +265,7 @@ mod tests {
         fn clear_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -331,27 +331,6 @@ mod tests {
         fn clear_cancelled(&self) {}
     }
 
-    struct DummyLifespan;
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            10
-        }
-        fn contains(&self, n: i64) -> bool {
-            (0..=10).contains(&n)
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=10)
-        }
-    }
 
     fn make_view() -> ComposedView {
         ComposedView {
@@ -364,10 +343,10 @@ mod tests {
     fn intersects_range_is_true_when_any_part_intersects() {
         let view = make_view();
         let range = AddressRange::new(addr(0x500), addr(0x500));
-        assert!(DBTraceDefinedUnitsView::intersects_range(&view, &DummyLifespan, &range));
+        assert!(DBTraceDefinedUnitsView::intersects_range(&view, Lifespan::span(0, 10), &range));
 
         let miss = AddressRange::new(addr(0x600), addr(0x600));
-        assert!(!DBTraceDefinedUnitsView::intersects_range(&view, &DummyLifespan, &miss));
+        assert!(!DBTraceDefinedUnitsView::intersects_range(&view, Lifespan::span(0, 10), &miss));
     }
 
     #[test]
@@ -376,11 +355,11 @@ mod tests {
 
         // The instructions part alone covers this singleton range.
         let single = AddressRange::new(addr(0x400), addr(0x400));
-        assert!(DBTraceDefinedUnitsView::covers_range(&view, &DummyLifespan, &single));
+        assert!(DBTraceDefinedUnitsView::covers_range(&view, Lifespan::span(0, 10), &single));
 
         // Neither part alone covers a range spanning both.
         let both = AddressRange::new(addr(0x400), addr(0x500));
-        assert!(!DBTraceDefinedUnitsView::covers_range(&view, &DummyLifespan, &both));
+        assert!(!DBTraceDefinedUnitsView::covers_range(&view, Lifespan::span(0, 10), &both));
     }
 
     #[test]
@@ -389,7 +368,7 @@ mod tests {
         assert_eq!(view.size(), 2);
 
         let range = AddressRange::new(addr(0x0), addr(0x1000));
-        DBTraceDefinedUnitsView::clear(&mut view, &DummyLifespan, &range, false, &NeverCancelled)
+        DBTraceDefinedUnitsView::clear(&mut view, Lifespan::span(0, 10), &range, false, &NeverCancelled)
             .expect("clear should succeed when not cancelled");
 
         assert_eq!(view.size(), 0);
@@ -407,7 +386,7 @@ mod tests {
         let mut boxed: Box<dyn TraceBaseDefinedUnitsView> = Box::new(make_view());
         let range = AddressRange::new(addr(0x0), addr(0x1000));
         boxed
-            .clear(&DummyLifespan, &range, false, &NeverCancelled)
+            .clear(Lifespan::span(0, 10), &range, false, &NeverCancelled)
             .expect("clear should succeed when not cancelled");
         assert_eq!(boxed.size(), 0);
     }

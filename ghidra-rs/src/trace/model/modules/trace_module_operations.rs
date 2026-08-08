@@ -25,7 +25,7 @@ pub trait TraceModuleOperations {
     /// Get the modules loaded at the given snap intersecting the given address range.
     fn get_modules_intersecting(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: &AddressRange,
     ) -> Vec<Box<dyn TraceModule>>;
 
@@ -38,7 +38,7 @@ pub trait TraceModuleOperations {
     /// Get the sections loaded at the given snap intersecting the given address range.
     fn get_sections_intersecting(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: &AddressRange,
     ) -> Vec<Box<dyn TraceSection>>;
 }
@@ -111,7 +111,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {}
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {}
 
         fn set_name_at(&mut self, _snap: i64, _name: &str) {}
 
@@ -119,7 +119,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, range: AddressRange) {
+        fn set_range(&mut self, _lifespan: Lifespan, range: AddressRange) {
             self.range = range;
         }
 
@@ -171,7 +171,7 @@ mod tests {
             true
         }
 
-        fn is_alive(&self, _span: &dyn Lifespan) -> bool {
+        fn is_alive(&self, _span: Lifespan) -> bool {
             true
         }
     }
@@ -205,7 +205,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {}
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {}
 
         fn set_name_at(&mut self, _snap: i64, _name: &str) -> Result<(), DuplicateNameException> {
             Ok(())
@@ -215,7 +215,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, _range: AddressRange) {}
+        fn set_range(&mut self, _lifespan: Lifespan, _range: AddressRange) {}
 
         fn get_range(&self, _snap: i64) -> Option<AddressRange> {
             None
@@ -260,7 +260,7 @@ mod tests {
 
         fn get_modules_intersecting(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             range: &AddressRange,
         ) -> Vec<Box<dyn TraceModule>> {
             if self.module_range.intersects(range) {
@@ -284,7 +284,7 @@ mod tests {
 
         fn get_sections_intersecting(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             range: &AddressRange,
         ) -> Vec<Box<dyn TraceSection>> {
             if self.section_range.intersects(range) {
@@ -295,36 +295,7 @@ mod tests {
         }
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     fn make_trace() -> MockTrace {
         MockTrace {
@@ -343,16 +314,16 @@ mod tests {
     #[test]
     fn sections_intersecting_filters_by_range() {
         let trace = make_trace();
-        let span = MockLifespan { min: 0, max: 10 };
+        let span = Lifespan::span(0, 10);
 
         let overlapping = AddressRange::new(addr(0x1080), addr(0x2000));
         assert_eq!(
-            trace.get_sections_intersecting(&span, &overlapping).len(),
+            trace.get_sections_intersecting(span, &overlapping).len(),
             1
         );
 
         let disjoint = AddressRange::new(addr(0x5000), addr(0x5fff));
-        assert!(trace.get_sections_intersecting(&span, &disjoint).is_empty());
+        assert!(trace.get_sections_intersecting(span, &disjoint).is_empty());
     }
 
     #[test]

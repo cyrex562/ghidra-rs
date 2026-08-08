@@ -59,7 +59,7 @@ pub trait TraceSection: TraceUniqueObject + TraceObjectInterface {
     ///
     /// The given name should be the section's name from its module's image, which is considered
     /// suitable for display on the screen.
-    fn set_name(&mut self, lifespan: &dyn Lifespan, name: &str);
+    fn set_name(&mut self, lifespan: Lifespan, name: &str);
 
     /// Set the short name of this section from the given snap on.
     ///
@@ -77,7 +77,7 @@ pub trait TraceSection: TraceUniqueObject + TraceObjectInterface {
     fn get_name(&self, snap: i64) -> String;
 
     /// Set the virtual memory address range of this section across the given span of time.
-    fn set_range(&mut self, lifespan: &dyn Lifespan, range: AddressRange);
+    fn set_range(&mut self, lifespan: Lifespan, range: AddressRange);
 
     /// Get the virtual memory address range of this section.
     fn get_range(&self, snap: i64) -> Option<AddressRange>;
@@ -126,36 +126,7 @@ mod tests {
         }
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
@@ -195,7 +166,7 @@ mod tests {
             self.name.lock().unwrap().clone()
         }
 
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, name: &str) {
+        fn set_name(&mut self, _lifespan: Lifespan, name: &str) {
             *self.name.lock().unwrap() = name.to_string();
         }
 
@@ -211,7 +182,7 @@ mod tests {
             self.name.lock().unwrap().clone()
         }
 
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, range: AddressRange) {
+        fn set_range(&mut self, _lifespan: Lifespan, range: AddressRange) {
             *self.range.lock().unwrap() = Some(range);
         }
 
@@ -252,9 +223,9 @@ mod tests {
         assert_eq!(section.get_start(0), None);
         assert_eq!(section.get_end(0), None);
 
-        let lifespan = MockLifespan { min: 0, max: 10 };
+        let lifespan = Lifespan::span(0, 10);
         let range = AddressRange::new(addr(0x1000), addr(0x1fff));
-        section.set_range(&lifespan, range);
+        section.set_range(lifespan, range);
 
         assert_eq!(section.get_start(0), Some(addr(0x1000)));
         assert_eq!(section.get_end(0), Some(addr(0x1fff)));

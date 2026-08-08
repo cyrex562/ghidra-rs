@@ -575,7 +575,7 @@ pub trait DBTraceObjectManager: Send + Sync {
     fn add_memory_region(
         &self,
         _path: &str,
-        _lifespan: &dyn Lifespan,
+        _lifespan: Lifespan,
         _range: AddressRange,
         _flags: &[TraceMemoryFlag],
     ) -> Result<Box<dyn TraceMemoryRegion>, Box<dyn TraceOverlappedRegionException>> {
@@ -602,7 +602,7 @@ pub trait DBTraceObjectManager: Send + Sync {
     /// TraceMemoryRegion.class)`.
     fn get_regions_intersecting(
         &self,
-        _lifespan: &dyn Lifespan,
+        _lifespan: Lifespan,
         _range: &AddressRange,
     ) -> Vec<Box<dyn TraceMemoryRegion>> {
         unimplemented!("DBTraceObjectManager::get_regions_intersecting placeholder not overridden")
@@ -781,7 +781,7 @@ pub trait DBTraceGuestLanguage: Send + Sync {}
 pub trait DBTraceSettingsEntry: Send + Sync {
     /// Mirrors the record's `getLifespan()` (inherited from
     /// `AbstractDBTraceAddressSnapRangePropertyMapData`).
-    fn get_lifespan(&self) -> Box<dyn crate::trace::model::lifespan::Lifespan>;
+    fn get_lifespan(&self) -> Lifespan;
 
     /// Mirrors the `name` field's getter.
     fn name(&self) -> Option<String>;
@@ -929,14 +929,14 @@ pub trait AbstractBaseDBTraceCodeUnitsView<T> {
     fn contains_address(&self, snap: i64, address: &Address) -> bool;
 
     /// Mirrors `AbstractBaseDBTraceCodeUnitsView.coversRange(Lifespan, AddressRange)`.
-    fn covers_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool;
+    fn covers_range(&self, span: Lifespan, range: &AddressRange) -> bool;
 
     /// Mirrors `AbstractBaseDBTraceCodeUnitsView.coversRange(TraceAddressSnapRange)`. Named to
     /// match [`TraceBaseCodeUnitsView::covers_snap_range`].
     fn covers_snap_range(&self, range: &dyn TraceAddressSnapRange) -> bool;
 
     /// Mirrors `AbstractBaseDBTraceCodeUnitsView.intersectsRange(Lifespan, AddressRange)`.
-    fn intersects_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool;
+    fn intersects_range(&self, span: Lifespan, range: &AddressRange) -> bool;
 
     /// Mirrors `AbstractBaseDBTraceCodeUnitsView.intersectsRange(TraceAddressSnapRange)`. Named
     /// to match [`TraceBaseCodeUnitsView::intersects_snap_range`].
@@ -1106,16 +1106,16 @@ pub trait InternalBaseCodeUnitsView: TraceBaseCodeUnitsView {
 /// methods they implement.
 pub trait AbstractBaseDBTraceDefinedUnitsView: Send + Sync {
     /// Mirrors `AbstractBaseDBTraceDefinedUnitsView.coversRange(Lifespan, AddressRange)`.
-    fn covers_range(&self, span: &dyn crate::trace::model::lifespan::Lifespan, range: &AddressRange) -> bool;
+    fn covers_range(&self, span: Lifespan, range: &AddressRange) -> bool;
 
     /// Mirrors `AbstractBaseDBTraceDefinedUnitsView.intersectsRange(Lifespan, AddressRange)`.
-    fn intersects_range(&self, span: &dyn crate::trace::model::lifespan::Lifespan, range: &AddressRange) -> bool;
+    fn intersects_range(&self, span: Lifespan, range: &AddressRange) -> bool;
 
     /// Mirrors the abstract `clear(Lifespan, AddressRange, boolean, TaskMonitor)` this part
     /// implements (declared on `TraceBaseDefinedUnitsView`).
     fn clear(
         &mut self,
-        span: &dyn crate::trace::model::lifespan::Lifespan,
+        span: Lifespan,
         range: &AddressRange,
         clear_context: bool,
         monitor: &dyn crate::util::task::TaskMonitor,
@@ -1353,7 +1353,7 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
         &self,
         language: &dyn Language,
         value: &dyn ProgramRegisterValue,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: &AddressRange,
     );
 
@@ -1362,7 +1362,7 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
         &self,
         language: &dyn Language,
         register: &Register,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
     );
 
@@ -1428,6 +1428,6 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
     fn has_register_value(&self, language: &dyn Language, register: &Register, snap: i64) -> bool;
 
     /// Mirrors `clear(Lifespan, AddressRange)`.
-    fn clear(&self, span: &dyn Lifespan, range: &AddressRange);
+    fn clear(&self, span: Lifespan, range: &AddressRange);
 }
 

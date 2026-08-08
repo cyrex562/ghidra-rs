@@ -41,7 +41,7 @@ pub trait TraceBreakpointManager {
     fn add_breakpoint(
         &mut self,
         path: &str,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         range: AddressRange,
         threads: &[Box<dyn TraceThread>],
         kinds: &[TraceBreakpointKind],
@@ -59,7 +59,7 @@ pub trait TraceBreakpointManager {
     fn add_breakpoint_at_address(
         &mut self,
         path: &str,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: Address,
         threads: &[Box<dyn TraceThread>],
         kinds: &[TraceBreakpointKind],
@@ -138,7 +138,7 @@ pub trait TraceBreakpointManager {
     /// Collect breakpoints intersecting the given span and address range.
     fn get_breakpoints_intersecting(
         &self,
-        span: &dyn Lifespan,
+        span: Lifespan,
         range: &AddressRange,
     ) -> Vec<Box<dyn TraceBreakpointLocation>>;
 }
@@ -149,36 +149,7 @@ mod tests {
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use std::cell::RefCell;
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     struct MockLocation;
     impl TraceBreakpointLocation for MockLocation {}
@@ -213,7 +184,7 @@ mod tests {
         fn add_breakpoint(
             &mut self,
             path: &str,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             range: AddressRange,
             _threads: &[Box<dyn TraceThread>],
             _kinds: &[TraceBreakpointKind],
@@ -252,10 +223,7 @@ mod tests {
         ) -> Result<Box<dyn TraceBreakpointLocation>, DuplicateNameException> {
             self.add_breakpoint(
                 path,
-                &MockLifespan {
-                    min: snap,
-                    max: i64::MAX,
-                },
+                Lifespan::span(snap, i64::MAX),
                 range,
                 threads,
                 kinds,
@@ -329,7 +297,7 @@ mod tests {
 
         fn get_breakpoints_intersecting(
             &self,
-            span: &dyn Lifespan,
+            span: Lifespan,
             range: &AddressRange,
         ) -> Vec<Box<dyn TraceBreakpointLocation>> {
             self.records
@@ -341,11 +309,8 @@ mod tests {
         }
     }
 
-    fn full_lifespan() -> MockLifespan {
-        MockLifespan {
-            min: i64::MIN,
-            max: i64::MAX,
-        }
+    fn full_lifespan() -> Lifespan {
+        Lifespan::span(i64::MIN, i64::MAX)
     }
 
     #[test]
@@ -361,7 +326,7 @@ mod tests {
         let range = AddressRange::new(addr(0x1000), addr(0x1000));
         mgr.add_breakpoint(
             "Breakpoints[0]",
-            &full_lifespan(),
+            full_lifespan(),
             range,
             &[],
             &[TraceBreakpointKind::SwExecute],
@@ -384,7 +349,7 @@ mod tests {
         let range = AddressRange::new(addr(0x1000), addr(0x1000));
         mgr.add_breakpoint(
             "Breakpoints[0]",
-            &full_lifespan(),
+            full_lifespan(),
             range.clone(),
             &[],
             &[TraceBreakpointKind::SwExecute],
@@ -395,7 +360,7 @@ mod tests {
 
         let result = mgr.add_breakpoint(
             "Breakpoints[0]",
-            &full_lifespan(),
+            full_lifespan(),
             range,
             &[],
             &[TraceBreakpointKind::SwExecute],
@@ -413,7 +378,7 @@ mod tests {
         let mut mgr = RecordingManager::new();
         mgr.add_breakpoint_at_address(
             "Breakpoints[1]",
-            &full_lifespan(),
+            full_lifespan(),
             addr(0x2000),
             &[],
             &[TraceBreakpointKind::HwExecute],
@@ -469,7 +434,7 @@ mod tests {
         let range = AddressRange::new(addr(0x5000), addr(0x5010));
         mgr.add_breakpoint(
             "Breakpoints[4]",
-            &MockLifespan { min: 0, max: 10 },
+            Lifespan::span(0, 10),
             range,
             &[],
             &[TraceBreakpointKind::SwExecute],
@@ -478,11 +443,11 @@ mod tests {
         )
         .expect("add should succeed");
 
-        let hit_span = MockLifespan { min: 5, max: 20 };
+        let hit_span = Lifespan::span(5, 20);
         let hit_range = AddressRange::new(addr(0x5005), addr(0x5020));
-        assert_eq!(mgr.get_breakpoints_intersecting(&hit_span, &hit_range).len(), 1);
+        assert_eq!(mgr.get_breakpoints_intersecting(hit_span, &hit_range).len(), 1);
 
-        let miss_span = MockLifespan { min: 100, max: 200 };
-        assert!(mgr.get_breakpoints_intersecting(&miss_span, &hit_range).is_empty());
+        let miss_span = Lifespan::span(100, 200);
+        assert!(mgr.get_breakpoints_intersecting(miss_span, &hit_range).is_empty());
     }
 }

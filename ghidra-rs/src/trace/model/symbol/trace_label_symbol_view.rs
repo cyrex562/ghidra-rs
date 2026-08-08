@@ -39,7 +39,7 @@ pub trait TraceLabelSymbolView: TraceSymbolWithLocationView {
     /// Returns an error if `name` is not a valid symbol name.
     fn add(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: &Address,
         name: &str,
         parent: &dyn TraceNamespaceSymbol,
@@ -79,7 +79,7 @@ pub trait TraceLabelSymbolView: TraceSymbolWithLocationView {
     fn add_register(
         &self,
         platform: &dyn TracePlatform,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         thread: &dyn TraceThread,
         register: &Register,
         name: &str,
@@ -105,7 +105,7 @@ pub trait TraceLabelSymbolView: TraceSymbolWithLocationView {
     /// Returns an error if `name` is not a valid symbol name.
     fn add_thread(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         thread: &dyn TraceThread,
         register: &Register,
         name: &str,
@@ -183,34 +183,10 @@ mod tests {
         AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0)
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
-    fn now_on(snap: i64) -> MockLifespan {
-        MockLifespan { min: snap, max: i64::MAX }
+    fn now_on(snap: i64) -> Lifespan {
+        Lifespan::span(snap, i64::MAX)
     }
 
     struct MockNamespaceSymbol {
@@ -432,7 +408,7 @@ mod tests {
         fn get_range(&self) -> AddressRange {
             AddressRange::new(self.min_address.clone(), self.min_address.clone())
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_start_snap(&self) -> i64 {
@@ -497,7 +473,7 @@ mod tests {
     }
 
     impl TraceSymbolWithLifespan for MockLabelSymbol {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_start_snap(&self) -> i64 {
@@ -650,7 +626,7 @@ mod tests {
         }
         fn get_intersecting(
             &self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             _include_dynamic_symbols: bool,
             _forward: bool,
@@ -665,7 +641,7 @@ mod tests {
     impl TraceLabelSymbolView for MockView {
         fn add(
             &self,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             address: &Address,
             name: &str,
             _parent: &dyn TraceNamespaceSymbol,
@@ -686,7 +662,7 @@ mod tests {
             parent: &dyn TraceNamespaceSymbol,
             source: SourceType,
         ) -> Result<Arc<dyn TraceLabelSymbol>, InvalidInputException> {
-            self.add(&now_on(snap), address, name, parent, source)
+            self.add(now_on(snap), address, name, parent, source)
         }
 
         fn create_thread(
@@ -698,7 +674,7 @@ mod tests {
             parent: &dyn TraceNamespaceSymbol,
             source: SourceType,
         ) -> Result<Arc<dyn TraceLabelSymbol>, InvalidInputException> {
-            self.add_thread(&now_on(snap), thread, register, name, parent, source)
+            self.add_thread(now_on(snap), thread, register, name, parent, source)
         }
 
         fn create_platform_thread(
@@ -711,7 +687,7 @@ mod tests {
             parent: &dyn TraceNamespaceSymbol,
             source: SourceType,
         ) -> Result<Arc<dyn TraceLabelSymbol>, InvalidInputException> {
-            self.add_register(platform, &now_on(snap), thread, register, name, parent, source)
+            self.add_register(platform, now_on(snap), thread, register, name, parent, source)
         }
     }
 
@@ -734,7 +710,7 @@ mod tests {
         let view = make_view();
         let addr = view.space.address(0x1000);
         let sym = view
-            .add(&MockLifespan { min: 5, max: 20 }, &addr, "LAB_1000", view.manager.global.as_ref(), SourceType::UserDefined)
+            .add(Lifespan::span(5, 20), &addr, "LAB_1000", view.manager.global.as_ref(), SourceType::UserDefined)
             .expect("add should succeed");
         assert_eq!(sym.get_name(), "LAB_1000");
         assert_eq!(view.added.borrow().len(), 1);
@@ -745,7 +721,7 @@ mod tests {
     fn add_rejects_invalid_name() {
         let view = make_view();
         let addr = view.space.address(0x1000);
-        let result = view.add(&MockLifespan { min: 0, max: 10 }, &addr, "", view.manager.global.as_ref(), SourceType::UserDefined);
+        let result = view.add(Lifespan::span(0, 10), &addr, "", view.manager.global.as_ref(), SourceType::UserDefined);
         match result {
             Ok(_) => panic!("empty name should be rejected"),
             Err(e) => assert!(e.0.contains("empty")),
@@ -771,7 +747,7 @@ mod tests {
         let sym = view
             .add_register(
                 &MockPlatform,
-                &MockLifespan { min: 0, max: 10 },
+                Lifespan::span(0, 10),
                 &MockThread,
                 &register,
                 "LAB_r0",
@@ -791,7 +767,7 @@ mod tests {
         let register = register_ref.borrow();
         let _ = view.add_register(
             &MockPlatform,
-            &MockLifespan { min: 0, max: 10 },
+            Lifespan::span(0, 10),
             &MockThread,
             &register,
             "LAB_bad",

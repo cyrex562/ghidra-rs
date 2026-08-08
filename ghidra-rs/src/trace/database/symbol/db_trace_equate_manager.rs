@@ -95,7 +95,7 @@ mod tests {
         }
         fn add_reference(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn TraceThread>>,
             _address: Address,
             _operand_index: i32,
@@ -104,7 +104,7 @@ mod tests {
         }
         fn add_reference_varnode(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn TraceThread>>,
             _address: Address,
             _varnode: crate::program::model::pcode::Varnode,
@@ -191,12 +191,12 @@ mod tests {
     }
 
     impl TraceEquateOperations for MockManager {
-        fn get_referring_addresses(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_referring_addresses(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             Box::new(AddressSet::new())
         }
         fn clear_references(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _asv: &dyn AddressSetView,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -204,7 +204,7 @@ mod tests {
         }
         fn clear_references_range(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {

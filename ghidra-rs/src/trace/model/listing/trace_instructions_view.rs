@@ -23,7 +23,7 @@ pub trait TraceInstructionsView: TraceBaseDefinedUnitsView {
     /// InstructionPrototype, ProcessorContextView, int)`.
     fn create(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: &Address,
         platform: &dyn TracePlatform,
         prototype: &dyn InstructionPrototype,
@@ -35,7 +35,7 @@ pub trait TraceInstructionsView: TraceBaseDefinedUnitsView {
     /// `create(Lifespan, Address, InstructionPrototype, ProcessorContextView, int)`.
     fn create_on_host(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: &Address,
         prototype: &dyn InstructionPrototype,
         context: &dyn ProcessorContextView,
@@ -60,7 +60,7 @@ pub trait TraceInstructionsView: TraceBaseDefinedUnitsView {
     /// boolean)`.
     fn add_instruction_set(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         platform: &dyn TracePlatform,
         instruction_set: &dyn InstructionSet,
         overwrite: bool,
@@ -70,7 +70,7 @@ pub trait TraceInstructionsView: TraceBaseDefinedUnitsView {
     /// `addInstructionSet(Lifespan, InstructionSet, boolean)`.
     fn add_instruction_set_on_host(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         instruction_set: &dyn InstructionSet,
         overwrite: bool,
     ) -> Box<dyn AddressSetView> {
@@ -726,7 +726,7 @@ use crate::program::model::listing::CommentType;
         fn get_range(&self) -> AddressRange {
             AddressRange::new(self.address.clone(), self.address.add_wrap(self.length as i64 - 1))
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_start_snap(&self) -> i64 {
@@ -823,13 +823,13 @@ use crate::program::model::listing::CommentType;
         fn contains_address(&self, _snap: i64, address: &Address) -> bool {
             self.units.iter().any(|(a, _)| a == address)
         }
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
         fn covers_snap_range(&self, _range: &dyn TraceAddressSnapRange) -> bool {
             false
         }
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
         fn intersects_snap_range(&self, _range: &dyn TraceAddressSnapRange) -> bool {
@@ -865,7 +865,7 @@ use crate::program::model::listing::CommentType;
     impl TraceBaseDefinedUnitsView for MockView {
         fn clear(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             _clear_context: bool,
             _monitor: &dyn TaskMonitor,
@@ -874,7 +874,7 @@ use crate::program::model::listing::CommentType;
         }
         fn clear_register(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -883,7 +883,7 @@ use crate::program::model::listing::CommentType;
         fn clear_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -894,7 +894,7 @@ use crate::program::model::listing::CommentType;
     impl TraceInstructionsView for MockView {
         fn create(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             address: &Address,
             _platform: &dyn TracePlatform,
             prototype: &dyn InstructionPrototype,
@@ -911,7 +911,7 @@ use crate::program::model::listing::CommentType;
 
         fn add_instruction_set(
             &mut self,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             platform: &dyn TracePlatform,
             _instruction_set: &dyn InstructionSet,
             _overwrite: bool,
@@ -931,27 +931,6 @@ use crate::program::model::listing::CommentType;
         Address::new(space, offset)
     }
 
-    struct DummyLifespan;
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            10
-        }
-        fn contains(&self, n: i64) -> bool {
-            (0..=10).contains(&n)
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=10)
-        }
-    }
 
     fn make_view() -> MockView {
         MockView { units: Vec::new(), host_platform_calls: Rc::new(Cell::new(0)) }
@@ -962,14 +941,14 @@ use crate::program::model::listing::CommentType;
         let mut view: Box<dyn TraceInstructionsView> = Box::new(make_view());
 
         let created = view
-            .create(&DummyLifespan, &addr(0x400), &MockPlatform, &MockPrototype { length: 4 }, &MockContext, 0)
+            .create(Lifespan::span(0, 10), &addr(0x400), &MockPlatform, &MockPrototype { length: 4 }, &MockContext, 0)
             .expect("create should succeed for a fresh address");
         assert_eq!(created.get_min_address(), addr(0x400));
         assert_eq!(created.get_length(), 4);
         assert_eq!(view.size(), 1);
 
         let conflict =
-            view.create(&DummyLifespan, &addr(0x400), &MockPlatform, &MockPrototype { length: 4 }, &MockContext, 0);
+            view.create(Lifespan::span(0, 10), &addr(0x400), &MockPlatform, &MockPrototype { length: 4 }, &MockContext, 0);
         assert!(conflict.is_err(), "creating at an already-occupied address must fail");
     }
 
@@ -979,7 +958,7 @@ use crate::program::model::listing::CommentType;
         assert_eq!(view.host_platform_calls.get(), 0);
 
         let created = view
-            .create_on_host(&DummyLifespan, &addr(0x400), &MockPrototype { length: 4 }, &MockContext, 0)
+            .create_on_host(Lifespan::span(0, 10), &addr(0x400), &MockPrototype { length: 4 }, &MockContext, 0)
             .expect("create_on_host should succeed");
         assert_eq!(created.get_min_address(), addr(0x400));
         assert_eq!(view.host_platform_calls.get(), 1, "create_on_host must resolve the host platform exactly once");
@@ -990,7 +969,7 @@ use crate::program::model::listing::CommentType;
         let mut view = make_view();
         assert_eq!(view.host_platform_calls.get(), 0);
 
-        let added = view.add_instruction_set_on_host(&DummyLifespan, &MockInstructionSet, false);
+        let added = view.add_instruction_set_on_host(Lifespan::span(0, 10), &MockInstructionSet, false);
         assert!(added.contains(&addr(0x800)));
         assert_eq!(
             view.host_platform_calls.get(),

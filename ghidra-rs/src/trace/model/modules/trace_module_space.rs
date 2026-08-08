@@ -38,7 +38,7 @@ mod tests {
 
         fn get_modules_intersecting(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _range: &AddressRange,
         ) -> Vec<Box<dyn TraceModule>> {
             Vec::new()
@@ -54,7 +54,7 @@ mod tests {
 
         fn get_sections_intersecting(
             &self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             _range: &AddressRange,
         ) -> Vec<Box<dyn TraceSection>> {
             Vec::new()

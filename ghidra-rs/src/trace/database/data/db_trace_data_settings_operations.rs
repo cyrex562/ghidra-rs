@@ -70,13 +70,13 @@ pub enum SettingsValue {
 /// `Lifespan` (already ported, reused verbatim) has no `clone_box`-style method; `with_min` gives
 /// us one for free, since "a new span with the given lower endpoint and this span's upper
 /// endpoint", called with the span's own lower endpoint, reconstructs an equivalent span.
-fn dup_lifespan(lifespan: &dyn Lifespan) -> Box<dyn Lifespan> {
+fn dup_lifespan(lifespan: Lifespan) -> Lifespan {
     lifespan.with_min(lifespan.lmin())
 }
 
 /// Two spans are equal here iff they have the same bounds, mirroring `Lifespan`'s record-style
 /// `equals`.
-fn lifespans_equal(a: &dyn Lifespan, b: &dyn Lifespan) -> bool {
+fn lifespans_equal(a: Lifespan, b: Lifespan) -> bool {
     a.lmin() == b.lmin() && a.lmax() == b.lmax()
 }
 
@@ -101,7 +101,7 @@ pub trait DBTraceDataSettingsOperations:
     fn query_intersecting(
         &self,
         range: AddressRange,
-        span: &dyn Lifespan,
+        span: Lifespan,
     ) -> Box<dyn TraceAddressSnapRangeQuery>;
 
     /// Allocates a new, blank entry, not yet associated with any shape.
@@ -114,7 +114,7 @@ pub trait DBTraceDataSettingsOperations:
     /// lifespan or deleting it outright.
     ///
     /// Required (no Java default). Mirrors `makeWay(DBTraceSettingsEntry, Lifespan)`.
-    fn make_way(&mut self, entry: Box<dyn DBTraceSettingsEntry>, span: &dyn Lifespan);
+    fn make_way(&mut self, entry: Box<dyn DBTraceSettingsEntry>, span: Lifespan);
 
     /// The lock guarding reads of the underlying entries.
     ///
@@ -132,13 +132,13 @@ pub trait DBTraceDataSettingsOperations:
     /// Mirrors the default `doGetExactEntry(Lifespan, Address, String)`.
     fn do_get_exact_entry(
         &self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: Address,
         name: &str,
     ) -> Option<Box<dyn DBTraceSettingsEntry>> {
         let query = self.query_at(address, lifespan.lmin());
         self.reduce(query).values().into_iter().find(|entry| {
-            lifespans_equal(entry.get_lifespan().as_ref(), lifespan)
+            lifespans_equal(entry.get_lifespan(), lifespan)
                 && entry.name().as_deref() == Some(name)
         })
     }
@@ -147,7 +147,7 @@ pub trait DBTraceDataSettingsOperations:
     /// `name` is `None`).
     ///
     /// Mirrors the default `doMakeWay(Lifespan, Address, String)`.
-    fn do_make_way(&mut self, span: &dyn Lifespan, address: Address, name: Option<&str>) {
+    fn do_make_way(&mut self, span: Lifespan, address: Address, name: Option<&str>) {
         let range = AddressRange::new(address.clone(), address);
         let query = self.query_intersecting(range, span);
         let entries = self.reduce(query).values();
@@ -168,7 +168,7 @@ pub trait DBTraceDataSettingsOperations:
     /// Mirrors the default `doExactOrNew(Lifespan, Address, String)`.
     fn do_exact_or_new(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: Address,
         name: &str,
     ) -> Box<dyn DBTraceSettingsEntry> {
@@ -202,7 +202,7 @@ pub trait DBTraceDataSettingsOperations:
     /// Sets the named long-valued setting over `lifespan` at `address`.
     ///
     /// Mirrors the default `setLong(Lifespan, Address, String, long)`.
-    fn set_long(&mut self, lifespan: &dyn Lifespan, address: Address, name: &str, value: i64) {
+    fn set_long(&mut self, lifespan: Lifespan, address: Address, name: &str, value: i64) {
         let lock = self.write_lock();
         let _hold = LockHold::lock(lock.as_ref());
         self.do_exact_or_new(lifespan, address, name)
@@ -224,7 +224,7 @@ pub trait DBTraceDataSettingsOperations:
     /// Mirrors the default `setString(Lifespan, Address, String, String)`.
     fn set_string(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: Address,
         name: &str,
         value: String,
@@ -252,7 +252,7 @@ pub trait DBTraceDataSettingsOperations:
     /// restricts it to a known variant.
     fn set_value(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: Address,
         name: &str,
         value: SettingsValue,
@@ -277,7 +277,7 @@ pub trait DBTraceDataSettingsOperations:
     ///
     /// Mirrors the default `clear(Lifespan, Address, String)`. Renamed to avoid colliding with
     /// the zero-argument `clear` declared by the `SpatialMap` supertrait.
-    fn clear_setting(&mut self, span: &dyn Lifespan, address: Address, name: Option<&str>) {
+    fn clear_setting(&mut self, span: Lifespan, address: Address, name: Option<&str>) {
         let lock = self.write_lock();
         let _hold = LockHold::lock(lock.as_ref());
         self.do_make_way(span, address, name);
@@ -286,7 +286,7 @@ pub trait DBTraceDataSettingsOperations:
     /// Returns the names of every setting defined over `lifespan` at `address`.
     ///
     /// Mirrors the default `getSettingNames(Lifespan, Address)`.
-    fn get_setting_names(&self, lifespan: &dyn Lifespan, address: Address) -> Vec<String> {
+    fn get_setting_names(&self, lifespan: Lifespan, address: Address) -> Vec<String> {
         let lock = self.read_lock();
         let _hold = LockHold::lock(lock.as_ref());
         let range = AddressRange::new(address.clone(), address);
@@ -302,7 +302,7 @@ pub trait DBTraceDataSettingsOperations:
     ///
     /// Mirrors the default `isEmpty(Lifespan, Address)`. Renamed to avoid colliding with the
     /// zero-argument `is_empty` declared by the `SpatialMap` supertrait.
-    fn is_empty_at(&self, lifespan: &dyn Lifespan, address: Address) -> bool {
+    fn is_empty_at(&self, lifespan: Lifespan, address: Address) -> bool {
         let lock = self.read_lock();
         let _hold = LockHold::lock(lock.as_ref());
         let range = AddressRange::new(address.clone(), address);
@@ -319,38 +319,10 @@ mod tests {
     use crate::util::database::spatial::spatial_map::SpatialMap;
     use std::sync::Mutex;
 
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
-    fn full_lifespan() -> MockLifespan {
-        MockLifespan {
-            min: i64::MIN,
-            max: i64::MAX,
-        }
+    fn full_lifespan() -> Lifespan {
+        Lifespan::span(i64::MIN, i64::MAX)
     }
 
     #[derive(Clone)]
@@ -361,11 +333,8 @@ mod tests {
     }
 
     impl TraceAddressSnapRange for MockRange {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.y1,
-                max: self.y2,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.y1, self.y2)
         }
 
         fn get_range(&self) -> AddressRange {
@@ -417,11 +386,8 @@ mod tests {
     /// value [`MockMap::new_entry`] hands to `put`, which reads it and discards it -- mirroring
     /// how the Java `null` this stands in for is never itself mutated.
     impl DBTraceSettingsEntry for MockEntry {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan {
-                min: self.lifespan.0,
-                max: self.lifespan.1,
-            })
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(self.lifespan.0, self.lifespan.1)
         }
 
         fn name(&self) -> Option<String> {
@@ -472,9 +438,9 @@ mod tests {
     }
 
     impl DBTraceSettingsEntry for EntryHandle {
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             let (min, max) = self.store.lock().unwrap()[self.index].1.lifespan;
-            Box::new(MockLifespan { min, max })
+            Lifespan::span(min, max)
         }
 
         fn name(&self) -> Option<String> {
@@ -695,7 +661,7 @@ mod tests {
 
         fn get_address_set_view_filtered(
             &self,
-            span: Box<dyn Lifespan>,
+            span: Lifespan,
             predicate: Box<dyn Fn(&Box<dyn DBTraceSettingsEntry>) -> bool + Send + Sync>,
         ) -> Box<dyn AddressSetView> {
             let mut set = crate::program::model::address::AddressSet::new();
@@ -710,7 +676,7 @@ mod tests {
             Box::new(set)
         }
 
-        fn get_address_set_view(&self, span: Box<dyn Lifespan>) -> Box<dyn AddressSetView> {
+        fn get_address_set_view(&self, span: Lifespan) -> Box<dyn AddressSetView> {
             self.get_address_set_view_filtered(span, Box::new(|_| true))
         }
 
@@ -731,7 +697,7 @@ mod tests {
         fn query_intersecting(
             &self,
             _range: AddressRange,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
         ) -> Box<dyn TraceAddressSnapRangeQuery> {
             Box::new(MockQuery)
         }
@@ -740,7 +706,7 @@ mod tests {
             Box::new(MockEntry::default())
         }
 
-        fn make_way(&mut self, entry: Box<dyn DBTraceSettingsEntry>, _span: &dyn Lifespan) {
+        fn make_way(&mut self, entry: Box<dyn DBTraceSettingsEntry>, _span: Lifespan) {
             let name = entry.name();
             let lifespan = entry.get_lifespan();
             let bounds = (lifespan.lmin(), lifespan.lmax());
@@ -770,14 +736,14 @@ mod tests {
     #[test]
     fn set_long_then_get_long_round_trips() {
         let mut map = MockMap::new();
-        map.set_long(&full_lifespan(), addr(0x1000), "alignment", 4);
+        map.set_long(full_lifespan(), addr(0x1000), "alignment", 4);
         assert_eq!(map.get_long(0, addr(0x1000), "alignment"), Some(4));
     }
 
     #[test]
     fn set_string_then_get_string_round_trips() {
         let mut map = MockMap::new();
-        map.set_string(&full_lifespan(), addr(0x1000), "format", "hex".to_string());
+        map.set_string(full_lifespan(), addr(0x1000), "format", "hex".to_string());
         assert_eq!(
             map.get_string(0, addr(0x1000), "format"),
             Some("hex".to_string())
@@ -790,7 +756,7 @@ mod tests {
     fn set_value_then_get_value_round_trips() {
         let mut map = MockMap::new();
         map.set_value(
-            &full_lifespan(),
+            full_lifespan(),
             addr(0x2000),
             "endian",
             SettingsValue::Str("big".to_string()),
@@ -810,8 +776,8 @@ mod tests {
     #[test]
     fn setting_a_second_name_at_the_same_address_does_not_clobber_the_first() {
         let mut map = MockMap::new();
-        map.set_long(&full_lifespan(), addr(0x1000), "a", 1);
-        map.set_long(&full_lifespan(), addr(0x1000), "b", 2);
+        map.set_long(full_lifespan(), addr(0x1000), "a", 1);
+        map.set_long(full_lifespan(), addr(0x1000), "b", 2);
         assert_eq!(map.get_long(0, addr(0x1000), "a"), Some(1));
         assert_eq!(map.get_long(0, addr(0x1000), "b"), Some(2));
     }
@@ -819,19 +785,19 @@ mod tests {
     #[test]
     fn clear_setting_removes_it() {
         let mut map = MockMap::new();
-        map.set_long(&full_lifespan(), addr(0x1000), "a", 1);
-        assert!(!map.is_empty_at(&full_lifespan(), addr(0x1000)));
-        map.clear_setting(&full_lifespan(), addr(0x1000), Some("a"));
-        assert!(map.is_empty_at(&full_lifespan(), addr(0x1000)));
+        map.set_long(full_lifespan(), addr(0x1000), "a", 1);
+        assert!(!map.is_empty_at(full_lifespan(), addr(0x1000)));
+        map.clear_setting(full_lifespan(), addr(0x1000), Some("a"));
+        assert!(map.is_empty_at(full_lifespan(), addr(0x1000)));
         assert_eq!(map.get_long(0, addr(0x1000), "a"), None);
     }
 
     #[test]
     fn get_setting_names_lists_every_name_at_the_address() {
         let mut map = MockMap::new();
-        map.set_long(&full_lifespan(), addr(0x1000), "a", 1);
-        map.set_string(&full_lifespan(), addr(0x1000), "b", "x".to_string());
-        let mut names = map.get_setting_names(&full_lifespan(), addr(0x1000));
+        map.set_long(full_lifespan(), addr(0x1000), "a", 1);
+        map.set_string(full_lifespan(), addr(0x1000), "b", "x".to_string());
+        let mut names = map.get_setting_names(full_lifespan(), addr(0x1000));
         names.sort();
         assert_eq!(names, vec!["a".to_string(), "b".to_string()]);
     }
@@ -839,7 +805,7 @@ mod tests {
     #[test]
     fn dyn_trait_object_is_usable() {
         let mut map = MockMap::new();
-        map.set_long(&full_lifespan(), addr(0x1000), "a", 7);
+        map.set_long(full_lifespan(), addr(0x1000), "a", 7);
         let boxed: Box<dyn DBTraceDataSettingsOperations> = Box::new(map);
         assert_eq!(boxed.get_long(0, addr(0x1000), "a"), Some(7));
     }

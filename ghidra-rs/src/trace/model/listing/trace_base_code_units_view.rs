@@ -106,7 +106,7 @@ pub trait TraceBaseCodeUnitsView {
     ///
     /// This checks if every (snap, address) point within the given box is contained within some
     /// code unit in this view. Mirrors the Java overload `coversRange(Lifespan, AddressRange)`.
-    fn covers_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool;
+    fn covers_range(&self, span: Lifespan, range: &AddressRange) -> bool;
 
     /// Check if the given address-snap range is covered by the units. Mirrors the Java overload
     /// `coversRange(TraceAddressSnapRange)`.
@@ -117,7 +117,7 @@ pub trait TraceBaseCodeUnitsView {
     /// This checks if any (snap, address) point within the given box is contained within some
     /// code unit in this view. Mirrors the Java overload `intersectsRange(Lifespan,
     /// AddressRange)`.
-    fn intersects_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool;
+    fn intersects_range(&self, span: Lifespan, range: &AddressRange) -> bool;
 
     /// Check if the given span of snaps and range of addresses intersects any unit. Mirrors the
     /// Java overload `intersectsRange(TraceAddressSnapRange)`.
@@ -402,7 +402,7 @@ use crate::program::model::listing::CommentType;
             AddressRange::new(self.address.clone(), self.address.add_wrap(self.length as i64 - 1))
         }
 
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -595,7 +595,7 @@ use crate::program::model::listing::CommentType;
             self.alive_at(snap).any(|u| u.contains(address))
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -603,7 +603,7 @@ use crate::program::model::listing::CommentType;
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             unimplemented!("not exercised by this smoke test")
         }
 

@@ -21,13 +21,9 @@ pub trait TraceSpan: Ord {
 
 #[cfg(test)]
 mod tests {
+    use crate::trace::model::lifespan::Lifespan;
     use super::TraceSpan;
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     struct MockTrace {
@@ -37,7 +33,7 @@ mod tests {
     #[derive(Debug, PartialEq, Eq)]
     struct MockSpan {
         trace: MockTrace,
-        span: MockLifespan,
+        span: Lifespan,
     }
 
     impl PartialOrd for MockSpan {
@@ -54,7 +50,7 @@ mod tests {
 
     impl TraceSpan for MockSpan {
         type Trace = MockTrace;
-        type Lifespan = MockLifespan;
+        type Lifespan = Lifespan;
 
         fn get_trace(&self) -> &Self::Trace {
             &self.trace
@@ -68,7 +64,7 @@ mod tests {
     fn make_span(trace_id: u64, min: i64, max: i64) -> MockSpan {
         MockSpan {
             trace: MockTrace { id: trace_id },
-            span: MockLifespan { min, max },
+            span: Lifespan::span(min, max),
         }
     }
 
@@ -81,8 +77,8 @@ mod tests {
     #[test]
     fn get_span_returns_lifespan() {
         let s = make_span(1, 10, 20);
-        assert_eq!(s.get_span().min, 10);
-        assert_eq!(s.get_span().max, 20);
+        assert_eq!(s.get_span().lmin(), 10);
+        assert_eq!(s.get_span().lmax(), 20);
     }
 
     #[test]

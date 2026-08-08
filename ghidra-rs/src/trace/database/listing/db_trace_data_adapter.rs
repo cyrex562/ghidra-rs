@@ -152,7 +152,7 @@ pub trait DBTraceDataAdapter:
         let _hold = trace.lock_write();
         let mut reference_manager = trace.get_reference_manager();
         reference_manager.add_memory_reference_to_address(
-            lifespan.as_ref(),
+            lifespan,
             &address,
             &ref_addr,
             ref_type,
@@ -204,7 +204,7 @@ pub trait DBTraceDataAdapter:
             let trace = TraceCodeUnit::get_trace(self);
             let _hold = trace.lock_write();
             if let Some(mut space) = self.get_settings_space(true) {
-                space.set_long(lifespan.as_ref(), address, name, value);
+                space.set_long(lifespan, address, name, value);
             }
         }
         self.notify_settings_changed();
@@ -232,7 +232,7 @@ pub trait DBTraceDataAdapter:
             let trace = TraceCodeUnit::get_trace(self);
             let _hold = trace.lock_write();
             if let Some(mut space) = self.get_settings_space(true) {
-                space.set_string(lifespan.as_ref(), address, name, value.to_string());
+                space.set_string(lifespan, address, name, value.to_string());
             }
         }
         self.notify_settings_changed();
@@ -266,7 +266,7 @@ pub trait DBTraceDataAdapter:
             let trace = TraceCodeUnit::get_trace(self);
             let _hold = trace.lock_write();
             if let Some(mut space) = self.get_settings_space(true) {
-                space.set_value(lifespan.as_ref(), address, name, settings_value);
+                space.set_value(lifespan, address, name, settings_value);
             }
         }
         self.notify_settings_changed();
@@ -295,7 +295,7 @@ pub trait DBTraceDataAdapter:
             let _hold = trace.lock_write();
             match self.get_settings_space(false) {
                 Some(mut space) => {
-                    space.clear_setting(lifespan.as_ref(), address, Some(name));
+                    space.clear_setting(lifespan, address, Some(name));
                     true
                 }
                 None => false,
@@ -316,7 +316,7 @@ pub trait DBTraceDataAdapter:
             let _hold = trace.lock_write();
             match self.get_settings_space(false) {
                 Some(mut space) => {
-                    space.clear_setting(lifespan.as_ref(), address, None);
+                    space.clear_setting(lifespan, address, None);
                     true
                 }
                 None => false,
@@ -332,7 +332,7 @@ pub trait DBTraceDataAdapter:
         let trace = TraceCodeUnit::get_trace(self);
         let _hold = trace.lock_read();
         match self.get_settings_space(false) {
-            Some(space) => space.get_setting_names(TraceCodeUnit::get_lifespan(self).as_ref(), MemBuffer::get_address(self)),
+            Some(space) => space.get_setting_names(TraceCodeUnit::get_lifespan(self), MemBuffer::get_address(self)),
             None => Vec::new(),
         }
     }
@@ -343,7 +343,7 @@ pub trait DBTraceDataAdapter:
         let trace = TraceCodeUnit::get_trace(self);
         let _hold = trace.lock_read();
         match self.get_settings_space(false) {
-            Some(space) => space.is_empty_at(TraceCodeUnit::get_lifespan(self).as_ref(), MemBuffer::get_address(self)),
+            Some(space) => space.is_empty_at(TraceCodeUnit::get_lifespan(self), MemBuffer::get_address(self)),
             None => true,
         }
     }
@@ -883,8 +883,8 @@ mod tests {
         fn get_range(&self) -> AddressRange {
             AddressRange::new(self.address.clone(), addr(self.address.offset() + self.length as i64 - 1))
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, 10)
         }
         fn get_start_snap(&self) -> i64 {
             self.start_snap
@@ -916,27 +916,6 @@ mod tests {
         }
     }
 
-    struct DummyLifespan;
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            10
-        }
-        fn contains(&self, n: i64) -> bool {
-            (0..=10).contains(&n)
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=10)
-        }
-    }
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);

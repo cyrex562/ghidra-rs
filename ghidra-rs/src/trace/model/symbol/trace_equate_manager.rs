@@ -120,7 +120,7 @@ mod tests {
         }
         fn add_reference(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn TraceThread>>,
             _address: Address,
             _operand_index: i32,
@@ -129,7 +129,7 @@ mod tests {
         }
         fn add_reference_varnode(
             &mut self,
-            _lifespan: Box<dyn Lifespan>,
+            _lifespan: Lifespan,
             _thread: Option<Box<dyn TraceThread>>,
             _address: Address,
             _varnode: crate::program::model::pcode::Varnode,
@@ -183,12 +183,12 @@ mod tests {
     }
 
     impl TraceEquateOperations for MockManager {
-        fn get_referring_addresses(&self, _span: &dyn Lifespan) -> Box<dyn AddressSetView> {
+        fn get_referring_addresses(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
             Box::new(AddressSet::new())
         }
         fn clear_references(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _asv: &dyn AddressSetView,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -196,7 +196,7 @@ mod tests {
         }
         fn clear_references_range(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -301,27 +301,6 @@ mod tests {
         assert_eq!(mgr.get_all().len(), 1);
     }
 
-    struct DummySpan;
-    impl Lifespan for DummySpan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            0
-        }
-        fn contains(&self, n: i64) -> bool {
-            n == 0
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummySpan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummySpan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(std::iter::once(0))
-        }
-    }
 
     #[test]
     fn is_object_safe_and_supertrait_reachable() {
@@ -332,7 +311,7 @@ mod tests {
         assert_eq!(boxed.get_by_key(0).unwrap().get_name(), "BAR");
 
         // Supertrait (TraceEquateOperations) methods remain reachable.
-        let dummy_span = DummySpan;
-        let _ = boxed.get_referring_addresses(&dummy_span);
+        let dummy_span = Lifespan::span(0, 10);
+        let _ = boxed.get_referring_addresses(dummy_span);
     }
 }

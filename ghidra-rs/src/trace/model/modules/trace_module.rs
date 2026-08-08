@@ -94,7 +94,7 @@ pub trait TraceModule: TraceUniqueObject + TraceObjectInterface {
     ///
     /// The given name is typically the file system path of the module's image, which is
     /// considered suitable for display on the screen.
-    fn set_name(&mut self, lifespan: &dyn Lifespan, name: &str);
+    fn set_name(&mut self, lifespan: Lifespan, name: &str);
 
     /// Set the "short name" of this module from the given snap on.
     ///
@@ -110,7 +110,7 @@ pub trait TraceModule: TraceUniqueObject + TraceObjectInterface {
     ///
     /// Typically, the minimum address in this range is the module's base address. If sections are
     /// given, this range should enclose all sections mapped into memory.
-    fn set_range(&mut self, lifespan: &dyn Lifespan, range: AddressRange);
+    fn set_range(&mut self, lifespan: Lifespan, range: AddressRange);
 
     /// Set the address range of the module from the given snap on.
     ///
@@ -184,7 +184,7 @@ pub trait TraceModule: TraceUniqueObject + TraceObjectInterface {
     fn is_valid(&self, snap: i64) -> bool;
 
     /// Check if the module is alive for any of the given span.
-    fn is_alive(&self, span: &dyn Lifespan) -> bool;
+    fn is_alive(&self, span: Lifespan) -> bool;
 }
 
 #[cfg(test)]
@@ -211,36 +211,7 @@ mod tests {
         }
     }
 
-    struct MockLifespan {
-        min: i64,
-        max: i64,
-    }
 
-    impl Lifespan for MockLifespan {
-        fn lmin(&self) -> i64 {
-            self.min
-        }
-
-        fn lmax(&self) -> i64 {
-            self.max
-        }
-
-        fn contains(&self, n: i64) -> bool {
-            self.min <= n && n <= self.max
-        }
-
-        fn with_min(&self, min: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min, max: self.max })
-        }
-
-        fn with_max(&self, max: i64) -> Box<dyn Lifespan> {
-            Box::new(MockLifespan { min: self.min, max })
-        }
-
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(self.min..=self.max)
-        }
-    }
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
@@ -278,7 +249,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, _name: &str) {}
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {}
 
         fn set_name_at(&mut self, _snap: i64, _name: &str) -> Result<(), DuplicateNameException> {
             Ok(())
@@ -288,7 +259,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, _range: AddressRange) {}
+        fn set_range(&mut self, _lifespan: Lifespan, _range: AddressRange) {}
 
         fn get_range(&self, _snap: i64) -> Option<AddressRange> {
             None
@@ -350,7 +321,7 @@ mod tests {
             self.path.clone()
         }
 
-        fn set_name(&mut self, _lifespan: &dyn Lifespan, name: &str) {
+        fn set_name(&mut self, _lifespan: Lifespan, name: &str) {
             *self.name.lock().unwrap() = name.to_string();
         }
 
@@ -362,7 +333,7 @@ mod tests {
             self.name.lock().unwrap().clone()
         }
 
-        fn set_range(&mut self, _lifespan: &dyn Lifespan, range: AddressRange) {
+        fn set_range(&mut self, _lifespan: Lifespan, range: AddressRange) {
             *self.range.lock().unwrap() = range;
         }
 
@@ -425,7 +396,7 @@ mod tests {
             !self.deleted
         }
 
-        fn is_alive(&self, span: &dyn Lifespan) -> bool {
+        fn is_alive(&self, span: Lifespan) -> bool {
             !self.deleted && span.contains(0)
         }
     }

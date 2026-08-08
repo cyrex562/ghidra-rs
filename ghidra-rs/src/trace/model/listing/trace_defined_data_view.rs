@@ -24,7 +24,7 @@ pub trait TraceDefinedDataView: TraceBaseDefinedUnitsView {
     /// `create(Lifespan, Address, DataType, int)`.
     fn create_sized(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: &Address,
         data_type: &dyn DataType,
         length: i32,
@@ -37,7 +37,7 @@ pub trait TraceDefinedDataView: TraceBaseDefinedUnitsView {
     /// TracePlatform, DataType, int)`.
     fn create_sized_on_platform(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: &Address,
         platform: &dyn TracePlatform,
         data_type: &dyn DataType,
@@ -52,7 +52,7 @@ pub trait TraceDefinedDataView: TraceBaseDefinedUnitsView {
     /// Java overload `create(Lifespan, Address, DataType)`.
     fn create_unsized(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: &Address,
         data_type: &dyn DataType,
     ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException>;
@@ -65,7 +65,7 @@ pub trait TraceDefinedDataView: TraceBaseDefinedUnitsView {
     /// `create(Lifespan, Address, TracePlatform, DataType)`.
     fn create_unsized_on_platform(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         address: &Address,
         platform: &dyn TracePlatform,
         data_type: &dyn DataType,
@@ -79,7 +79,7 @@ pub trait TraceDefinedDataView: TraceBaseDefinedUnitsView {
     /// method `create(Lifespan, Register, DataType)`.
     fn create_on_register(
         &mut self,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         register: &Register,
         data_type: &dyn DataType,
     ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException> {
@@ -96,7 +96,7 @@ pub trait TraceDefinedDataView: TraceBaseDefinedUnitsView {
     fn create_on_platform_register(
         &mut self,
         platform: &dyn TracePlatform,
-        lifespan: &dyn Lifespan,
+        lifespan: Lifespan,
         register: &Register,
         data_type: &dyn DataType,
     ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException>;
@@ -343,7 +343,7 @@ mod tests {
             self.units.iter().any(|(a, _)| a == address)
         }
 
-        fn covers_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn covers_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -351,7 +351,7 @@ mod tests {
             false
         }
 
-        fn intersects_range(&self, _span: &dyn Lifespan, _range: &AddressRange) -> bool {
+        fn intersects_range(&self, _span: Lifespan, _range: &AddressRange) -> bool {
             false
         }
 
@@ -391,7 +391,7 @@ mod tests {
     impl TraceBaseDefinedUnitsView for MockView {
         fn clear(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _range: &AddressRange,
             _clear_context: bool,
             _monitor: &dyn TaskMonitor,
@@ -401,7 +401,7 @@ mod tests {
 
         fn clear_register(
             &mut self,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -411,7 +411,7 @@ mod tests {
         fn clear_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            _span: &dyn Lifespan,
+            _span: Lifespan,
             _register: &Register,
             _monitor: &dyn TaskMonitor,
         ) -> Result<(), CancelledException> {
@@ -422,7 +422,7 @@ mod tests {
     impl TraceDefinedDataView for MockView {
         fn create_sized(
             &mut self,
-            _lifespan: &dyn Lifespan,
+            _lifespan: Lifespan,
             address: &Address,
             _data_type: &dyn DataType,
             length: i32,
@@ -436,7 +436,7 @@ mod tests {
 
         fn create_sized_on_platform(
             &mut self,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             address: &Address,
             _platform: &dyn TracePlatform,
             data_type: &dyn DataType,
@@ -447,7 +447,7 @@ mod tests {
 
         fn create_unsized(
             &mut self,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             address: &Address,
             data_type: &dyn DataType,
         ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException> {
@@ -456,7 +456,7 @@ mod tests {
 
         fn create_unsized_on_platform(
             &mut self,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             address: &Address,
             _platform: &dyn TracePlatform,
             data_type: &dyn DataType,
@@ -467,7 +467,7 @@ mod tests {
         fn create_on_platform_register(
             &mut self,
             _platform: &dyn TracePlatform,
-            lifespan: &dyn Lifespan,
+            lifespan: Lifespan,
             register: &Register,
             data_type: &dyn DataType,
         ) -> Result<Box<dyn TraceData>, CodeUnitInsertionException> {
@@ -777,7 +777,7 @@ mod tests {
         fn get_range(&self) -> AddressRange {
             AddressRange::new(self.address.clone(), self.address.add_wrap(self.length as i64 - 1))
         }
-        fn get_lifespan(&self) -> Box<dyn Lifespan> {
+        fn get_lifespan(&self) -> Lifespan {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_start_snap(&self) -> i64 {
@@ -796,27 +796,6 @@ mod tests {
         Address::new(space, offset)
     }
 
-    struct DummyLifespan;
-    impl Lifespan for DummyLifespan {
-        fn lmin(&self) -> i64 {
-            0
-        }
-        fn lmax(&self) -> i64 {
-            10
-        }
-        fn contains(&self, n: i64) -> bool {
-            (0..=10).contains(&n)
-        }
-        fn with_min(&self, _min: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn with_max(&self, _max: i64) -> Box<dyn Lifespan> {
-            Box::new(DummyLifespan)
-        }
-        fn iter(&self) -> Box<dyn Iterator<Item = i64> + '_> {
-            Box::new(0..=10)
-        }
-    }
 
     struct MockDataType;
     impl DataType for MockDataType {}
@@ -827,13 +806,13 @@ mod tests {
             Box::new(MockView { units: Vec::new() });
 
         let created = view
-            .create_sized(&DummyLifespan, &addr(0x400), &MockDataType, 4)
+            .create_sized(Lifespan::span(0, 10), &addr(0x400), &MockDataType, 4)
             .expect("create should succeed for a fresh address");
         assert_eq!(created.get_min_address(), addr(0x400));
         assert_eq!(created.get_length(), 4);
         assert_eq!(view.size(), 1);
 
-        let conflict = view.create_sized(&DummyLifespan, &addr(0x400), &MockDataType, 4);
+        let conflict = view.create_sized(Lifespan::span(0, 10), &addr(0x400), &MockDataType, 4);
         assert!(conflict.is_err(), "creating at an already-occupied address must fail");
     }
 
@@ -845,7 +824,7 @@ mod tests {
         let register = Register::no_context();
         let reg = register.borrow();
         let created = view
-            .create_on_register(&DummyLifespan, &reg, &MockDataType)
+            .create_on_register(Lifespan::span(0, 10), &reg, &MockDataType)
             .expect("create_on_register should succeed");
         assert_eq!(created.get_min_address(), *reg.address());
     }
