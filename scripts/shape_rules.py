@@ -68,9 +68,17 @@ MODS = r"(?:public|protected|private|abstract|final|static|sealed|non-sealed|str
 
 THROWABLE_SUFFIXES = ("Exception", "Error", "Throwable")
 
-# Java iterator-shaped supertypes. Porting these literally is what produced the
-# `while it.has_next() { push(it.next()) }` double-consume bug in AGENTS.md.
-ITERATOR_SUPERS = {"Iterator", "Iterable", "ListIterator", "Enumeration"}
+# Java cursor supertypes: the type IS a position in a sequence. Porting these literally is
+# what produced the `while it.has_next() { push(it.next()) }` double-consume bug in AGENTS.md.
+CURSOR_SUPERS = {"Iterator", "ListIterator", "Enumeration"}
+
+# `Iterable` is NOT a cursor -- it means "you can iterate me", which any collection says. A
+# rich interface that happens to be Iterable is still that interface: `AddressSetView` extends
+# `Iterable<AddressRange>` and declares 28 other abstract methods, and 833 `dyn AddressSetView`
+# uses hang off it. Treating it as a cursor would have been a far worse instruction than the
+# one it replaced. Only an Iterable with essentially no other API is really a sequence.
+ITERABLE_SUPERS = {"Iterable", "Collection"}
+ITERABLE_API_CUTOFF = 1
 
 
 def strip_java(src: str) -> str:
@@ -361,9 +369,25 @@ Do not guess. Port nothing and end with: PORT_RESULT: PARKED shape undecided -- 
 def classify(facts: dict, subtype_count: int, permits_resolved=None) -> dict:
     """Apply the shape rules. Returns {shape, rule, why, confidence}."""
     name, kind = facts["name"], facts["kind"]
+    all_supers = facts["extends"] + facts["implements"]
+
+    # A rich interface that also happens to be Iterable keeps its own shape, but the porter
+    # still needs telling how to carry the iteration across -- otherwise `iterator()` comes
+    # over as a has_next/next pair, which is the double-consume bug all over again.
+    iterable_note = ""
+    if any(s in ITERABLE_SUPERS for s in all_supers) and not any(
+        s in CURSOR_SUPERS for s in all_supers
+    ):
+        iterable_note = (
+            "\nALSO: the Java type is `Iterable`. Implement `IntoIterator` (and/or an `iter()` "
+            "returning a concrete iterator) for it. Do NOT port `iterator()`/`hasNext()`/`next()` "
+            "as a pair of Rust methods -- `while it.has_next() { v.push(it.next()) }` advanced "
+            "the cursor twice per turn and silently dropped every other element."
+        )
 
     def r(rule, shape, why, conf="hard"):
-        return dict(shape=shape, rule=rule, why=why, confidence=conf, name=name)
+        return dict(shape=shape, rule=rule, why=why, confidence=conf, name=name,
+                    extra=iterable_note)
 
     # R1 -- Java enum. Always a Rust enum, constant bodies or not.
     if kind == "enum":
@@ -397,13 +421,24 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None) -> dict:
         )
 
     # R5 -- exception. Decided by supertype/name before any structural rule.
-    supers = facts["extends"] + facts["implements"]
+    supers = all_supers
     if any(s.endswith(THROWABLE_SUFFIXES) for s in supers) or name.endswith(THROWABLE_SUFFIXES):
         return r("R5-exception", "error", f"extends/names a Java throwable ({', '.join(supers) or name})")
 
-    # R6 -- iterator-shaped. Must become a real Iterator, never has_next/next.
-    if any(s in ITERATOR_SUPERS for s in supers):
-        return r("R6-iterator", "iterator", f"extends {', '.join(s for s in supers if s in ITERATOR_SUPERS)}")
+    # R6a -- a cursor. Must become a real Iterator, never a has_next/next pair.
+    cursors = [s for s in supers if s in CURSOR_SUPERS]
+    if cursors:
+        return r("R6a-cursor", "iterator", f"extends {', '.join(cursors)}")
+
+    # R6b -- iterable with essentially no other API: also a sequence.
+    iterables = [s for s in supers if s in ITERABLE_SUPERS]
+    if iterables and facts["abstract_methods"] <= ITERABLE_API_CUTOFF:
+        return r(
+            "R6b-bare-iterable",
+            "iterator",
+            f"extends {', '.join(iterables)} and declares no other API "
+            f"({facts['abstract_methods']} abstract method(s))",
+        )
 
     # R7 -- statics holder: a class that exists only because Java has nowhere else to put
     # constants and free functions. No instance state, no instance methods.
@@ -492,7 +527,7 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None) -> dict:
 
 
 def directive_for(res: dict) -> str:
-    return DIRECTIVES[res["shape"]].format(name=res["name"], why=res["why"])
+    return DIRECTIVES[res["shape"]].format(name=res["name"], why=res["why"]) + res.get("extra", "")
 
 
 # ---------------------------------------------------------------------------

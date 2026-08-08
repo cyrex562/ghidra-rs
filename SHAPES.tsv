@@ -606,7 +606,7 @@ Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/FrameStru
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/ListingUnwoundFrame.java	ListingUnwoundFrame	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SavedRegisterMap.java	SavedRegisterMap	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarning.java	StackUnwindWarning	interface	trait	R9-open-interface	hard	0	Java `interface` with 1 abstract method(s), 0 in-repo implementor(s)
-Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarningSet.java	StackUnwindWarningSet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
+Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarningSet.java	StackUnwindWarningSet	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwinder.java	StackUnwinder	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/Sym.java	Sym	interface/sealed	enum	R2-sealed	hard	0	Java `sealed interface` -- the permitted set is closed: its nested implementors
 Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SymPcodeArithmetic.java	SymPcodeArithmetic	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -769,7 +769,7 @@ Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/InternalTraceBaseDefinedUnitsView.java	InternalTraceBaseDefinedUnitsView	interface	trait	R9-open-interface	hard	5	Java `interface` with 0 abstract method(s), 5 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/InternalTraceDefinedDataView.java	InternalTraceDefinedDataView	interface	trait	R9-open-interface	hard	2	Java `interface` with 2 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/UndefinedDBTraceData.java	UndefinedDBTraceData	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/map/AbstractDBTraceAddressSnapRangePropertyMapOcclusionIterable.java	AbstractDBTraceAddressSnapRangePropertyMapOcclusionIterable	class/abstract	iterator	R6-iterator	hard	2	extends Iterable
+Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/map/AbstractDBTraceAddressSnapRangePropertyMapOcclusionIterable.java	AbstractDBTraceAddressSnapRangePropertyMapOcclusionIterable	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 2 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/map/AbstractDBTracePropertyMap.java	AbstractDBTracePropertyMap	class/abstract	struct	R10-abstract-orphan	hard	0	abstract class with no in-repo subclasses
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/map/DBTraceAddressSnapRangePropertyMap.java	DBTraceAddressSnapRangePropertyMap	class	struct	R14-concrete-class	hard	2	concrete Java `class` (2 in-repo subclass(es))
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/map/DBTraceAddressSnapRangePropertyMapAddressSetView.java	DBTraceAddressSnapRangePropertyMapAddressSetView	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -1023,7 +1023,7 @@ Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/inf
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInfo.java	TraceObjectInfo	interface	trait	R9-open-interface	hard	0	Java `interface` with 4 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceFactory.java	TraceObjectInterfaceFactory	interface	trait	R9-open-interface	hard	1	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/info/TraceObjectInterfaceUtils.java	TraceObjectInterfaceUtils	enum	enum	R1-java-enum	hard	0	Java `enum` with 0 constants
-Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/KeyPath.java	KeyPath	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/KeyPath.java	KeyPath	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathFilter.java	PathFilter	interface	trait	R9-open-interface	hard	2	Java `interface` with 15 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathMatcher.java	PathMatcher	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/path/PathPattern.java	PathPattern	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -1057,7 +1057,7 @@ Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/DataAdapter
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/DataAdapterFromSettings.java	DataAdapterFromSettings	interface	trait	R9-open-interface	hard	1	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/DataAdapterMinimal.java	DataAdapterMinimal	interface	trait	R9-open-interface	hard	1	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/EmptyFunctionIterator.java	EmptyFunctionIterator	enum	enum	R1-java-enum	hard	0	Java `enum` with 1 constants
-Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/EnumeratingIterator.java	EnumeratingIterator	interface	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/EnumeratingIterator.java	EnumeratingIterator	interface	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/InstructionAdapterFromPrototype.java	InstructionAdapterFromPrototype	interface	trait	R9-open-interface	hard	1	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/MemoryAdapter.java	MemoryAdapter	interface	trait	R9-open-interface	hard	1	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/MethodProtector.java	MethodProtector	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -1179,10 +1179,10 @@ Ghidra/Debug/ProposedUtils/src/main/java/ghidra/program/model/address/CachedAddr
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/ByteBufferUtils.java	ByteBufferUtils	interface	park	R8b-marker	ambiguous	0	marker interface -- no methods, no constants; Rust has no equivalent and the right seam depends on what tests the marker
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/DistinctIterator.java	DistinctIterator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LanguageUtilities.java	LanguageUtilities	interface	park	R8b-marker	ambiguous	0	marker interface -- no methods, no constants; Rust has no equivalent and the right seam depends on what tests the marker
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.java	LazyCollection	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LazyCollection.java	LazyCollection	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/LockHold.java	LockHold	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/MergeSortingSpliterator.java	MergeSortingSpliterator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/PairingIteratorMerger.java	PairingIteratorMerger	class/abstract	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/PairingIteratorMerger.java	PairingIteratorMerger	class/abstract	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/StreamUtils.java	StreamUtils	class	module	R7-statics-holder	hard	0	4 static method(s), no instance state and no instance methods
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/TimedMsg.java	TimedMsg	class	module	R7-statics-holder	hard	0	1 static field(s) and 2 static method(s), no instance state and no instance methods
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/AbstractDirectedLongKeyIterator.java	AbstractDirectedLongKeyIterator	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 1 instance field(s) and 2 in-repo subclass(es)
@@ -1199,16 +1199,16 @@ Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStor
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreEntrySet.java	DBCachedObjectStoreEntrySet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreEntrySubSet.java	DBCachedObjectStoreEntrySubSet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreFactory.java	DBCachedObjectStoreFactory	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreFoundKeysValueCollection.java	DBCachedObjectStoreFoundKeysValueCollection	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreFoundKeysValueCollection.java	DBCachedObjectStoreFoundKeysValueCollection	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreKeySet.java	DBCachedObjectStoreKeySet	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreKeySubSet.java	DBCachedObjectStoreKeySubSet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreMap.java	DBCachedObjectStoreMap	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreSubMap.java	DBCachedObjectStoreSubMap	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueCollection.java	DBCachedObjectStoreValueCollection	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueCollection.java	DBCachedObjectStoreValueCollection	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBCachedObjectStoreValueSubCollection.java	DBCachedObjectStoreValueSubCollection	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBObjectColumn.java	DBObjectColumn	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedCollection.java	DBSynchronizedCollection	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedIterator.java	DBSynchronizedIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedCollection.java	DBSynchronizedCollection	class	iterator	R6b-bare-iterable	hard	0	extends Collection and declares no other API (0 abstract method(s))
+Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedIterator.java	DBSynchronizedIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DBSynchronizedSpliterator.java	DBSynchronizedSpliterator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DebuggerFactoryAdapter.java	DebuggerFactoryAdapter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Debug/ProposedUtils/src/main/java/ghidra/util/database/DirectedIterator.java	DirectedIterator	interface	trait	R9-open-interface	hard	2	Java `interface` with 3 abstract method(s), 2 in-repo implementor(s)
@@ -1360,7 +1360,7 @@ Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeCodeMemberVisitor.ja
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFeatures.java	PcodeFeatures	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/PcodeFrontend.java	PcodeFrontend	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/WorkItem.java	WorkItem	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/LongInterval.java	LongInterval	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/LongInterval.java	LongInterval	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeByteBasedConstantPropagation.java	PcodeByteBasedConstantPropagation	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeDataflowConstantPropagation.java	PcodeDataflowConstantPropagation	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeInterval.java	PcodeInterval	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
@@ -1374,7 +1374,7 @@ Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeSign.java	P
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeStability.java	PcodeStability	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeTaint.java	PcodeTaint	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeThreeLevelTaint.java	PcodeThreeLevelTaint	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeUpperBounds.java	PcodeUpperBounds	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/analyses/PcodeUpperBounds.java	PcodeUpperBounds	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/BinaryExprContext.java	BinaryExprContext	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/CallContext.java	CallContext	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Extensions/Lisa/src/main/java/ghidra/lisa/pcode/contexts/ConditionContext.java	ConditionContext	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -1706,7 +1706,7 @@ Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/IDElasticR
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/elastic/RowKeyElastic.java	RowKeyElastic	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/DatabaseInfo.java	DatabaseInfo	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/DefaultSFQueryServiceFactory.java	DefaultSFQueryServiceFactory	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/FunctionSymbolIterator.java	FunctionSymbolIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/FunctionSymbolIterator.java	FunctionSymbolIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/QueryDatabaseException.java	QueryDatabaseException	class	error	R5-exception	hard	0	extends/names a Java throwable (Exception)
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFOverviewInfo.java	SFOverviewInfo	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryInfo.java	SFQueryInfo	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -1718,7 +1718,7 @@ Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimH2FileDBC
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimVectorStoreManager.java	BSimVectorStoreManager	class	module	R7-statics-holder	hard	0	1 static field(s) and 2 static method(s), no instance state and no instance methods
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/H2FileFunctionDatabase.java	H2FileFunctionDatabase	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/H2VectorTable.java	H2VectorTable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/VectorStore.java	VectorStore	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/VectorStore.java	VectorStore	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/VectorStoreEntry.java	VectorStoreEntry	record	struct	R3-record	hard	0	Java `record` -- an immutable value type
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ingest/BSimLaunchable.java	BSimLaunchable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ingest/BulkSignatures.java	BulkSignatures	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -1785,7 +1785,7 @@ Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseU
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseVectorId.java	ResponseVectorId	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseVectorMatch.java	ResponseVectorMatch	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityNote.java	SimilarityNote	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityResult.java	SimilarityResult	class	iterator	R6-iterator	hard	1	extends Iterable
+Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityResult.java	SimilarityResult	class	iterator	R6b-bare-iterable	hard	1	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/SimilarityVectorResult.java	SimilarityVectorResult	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
 Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/StagingManager.java	StagingManager	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 3 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Features/BSim/src/screen/java/help/screenshot/BSimSearchPluginScreenShots.java	BSimSearchPluginScreenShots	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -3251,7 +3251,7 @@ Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEdito
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackEditorProvider.java	StackEditorProvider	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/stackeditor/StackFrameDataType.java	StackFrameDataType	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/CombinedStringSearcher.java	CombinedStringSearcher	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/FoundDefinedStringIterator.java	FoundDefinedStringIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/FoundDefinedStringIterator.java	FoundDefinedStringIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/FoundStringToAddressTableRowMapper.java	FoundStringToAddressTableRowMapper	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/FoundStringToProgramLocationTableRowMapper.java	FoundStringToProgramLocationTableRowMapper	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/string/FoundStringWithWordStatus.java	FoundStringWithWordStatus	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -3296,10 +3296,10 @@ Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/IsNotAsciiColu
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringDataInstanceColumnConstraint.java	StringDataInstanceColumnConstraint	class/abstract	trait	R12-abstract-pure	hard	3	abstract class with no instance state and 3 in-repo subclass(es)
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringInfo.java	StringInfo	record	struct	R3-record	hard	0	Java `record` -- an immutable value type
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringInfoFeature.java	StringInfoFeature	enum	enum	R1-java-enum	hard	0	Java `enum` with 2 constants
-Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringTrigramIterator.java	StringTrigramIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/StringTrigramIterator.java	StringTrigramIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/Trigram.java	Trigram	record	struct	R3-record	hard	0	Java `record` -- an immutable value type
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/TrigramStringValidator.java	TrigramStringValidator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/UndefinedStringIterator.java	UndefinedStringIterator	class	iterator	R6-iterator	hard	0	extends Iterator, Iterable
+Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/UndefinedStringIterator.java	UndefinedStringIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/strings/ViewStringsColumnConstraintProvider.java	ViewStringsColumnConstraintProvider	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/DisconnectedSymbolTreeProvider.java	DisconnectedSymbolTreeProvider	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/symboltree/EditExternalLocationDialog.java	EditExternalLocationDialog	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -3710,7 +3710,7 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/Co
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandler.java	CoffRelocationHandler	interface	trait	R9-open-interface	hard	5	Java `interface` with 2 abstract method(s), 5 in-repo implementor(s)
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandlerFactory.java	CoffRelocationHandlerFactory	class	module	R7-statics-holder	hard	0	1 static method(s), no instance state and no instance methods
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEAggregate.java	DIEAggregate	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEContainer.java	DIEContainer	class	iterator	R6-iterator	hard	1	extends Iterable
+Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEContainer.java	DIEContainer	class	iterator	R6b-bare-iterable	hard	1	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAbbreviation.java	DWARFAbbreviation	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAccessibility.java	DWARFAccessibility	enum	enum	R1-java-enum	hard	0	Java `enum` with 3 constants
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAddressListHeader.java	DWARFAddressListHeader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -4509,10 +4509,10 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ubi/UbiException.j
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutHeader.java	UnixAoutHeader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutMachineType.java	UnixAoutMachineType	class	module	R7-statics-holder	hard	0	39 static field(s), no instance state and no instance methods
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocation.java	UnixAoutRelocation	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocationTable.java	UnixAoutRelocationTable	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutRelocationTable.java	UnixAoutRelocationTable	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutStringTable.java	UnixAoutStringTable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbol.java	UnixAoutSymbol	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbolTable.java	UnixAoutSymbolTable	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/unixaout/UnixAoutSymbolTable.java	UnixAoutSymbolTable	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveConstants.java	XCoffArchiveConstants	class	module	R7-statics-holder	hard	0	2 static field(s), no instance state and no instance methods
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveHeader.java	XCoffArchiveHeader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/xcoff/XCoffArchiveMemberHeader.java	XCoffArchiveMemberHeader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -4668,7 +4668,7 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractOrdinalSuppor
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractPeDebugLoader.java	AbstractPeDebugLoader	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 4 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProgramLoader.java	AbstractProgramLoader	class/abstract	trait	R12-abstract-pure	hard	8	abstract class with no instance state and 8 in-repo subclass(es)
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractProgramWrapperLoader.java	AbstractProgramWrapperLoader	class/abstract	trait	R12-abstract-pure	hard	12	abstract class with no instance state and 12 in-repo subclass(es)
-Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AddressSetPartitioner.java	AddressSetPartitioner	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AddressSetPartitioner.java	AddressSetPartitioner	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BinaryLoader.java	BinaryLoader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/BoundedBufferedReader.java	BoundedBufferedReader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/CoffLoader.java	CoffLoader	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
@@ -4702,7 +4702,7 @@ Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryLookupTable.ja
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryPathsDialog.java	LibraryPathsDialog	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibrarySymbolTable.java	LibrarySymbolTable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadException.java	LoadException	class	error	R5-exception	hard	0	extends/names a Java throwable (IOException)
-Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadResults.java	LoadResults	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadResults.java	LoadResults	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadSpec.java	LoadSpec	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/Loaded.java	Loaded	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LoadedOpen.java	LoadedOpen	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -5096,9 +5096,9 @@ Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/FileSystemService.
 Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFile.java	GFile	interface	trait	R9-open-interface	hard	1	Java `interface` with 7 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileHashProvider.java	GFileHashProvider	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileImpl.java	GFileImpl	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystem.java	GFileSystem	interface	iterator	R6-iterator	hard	7	extends Iterable
+Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystem.java	GFileSystem	interface	trait	R9-open-interface	hard	7	Java `interface` with 7 abstract method(s), 7 in-repo implementor(s)
 Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemBase.java	GFileSystemBase	class/abstract	struct_trait	R11-abstract-stateful	hard	23	abstract class with 6 instance field(s) and 23 in-repo subclass(es)
-Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemIterator.java	GFileSystemIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemIterator.java	GFileSystemIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GFileSystemProgramProvider.java	GFileSystemProgramProvider	interface	trait	R9-open-interface	hard	1	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/GIconProvider.java	GIconProvider	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Features/Base/src/main/java/ghidra/formats/gfilesystem/LocalFileSystem.java	LocalFileSystem	class	struct	R14-concrete-class	hard	2	concrete Java `class` (2 in-repo subclass(es))
@@ -6378,7 +6378,7 @@ Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanaly
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/DataNGram.java	DataNGram	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/DataVertex.java	DataVertex	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/Pinning.java	Pinning	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/TokenBin.java	TokenBin	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/graphanalysis/TokenBin.java	TokenBin	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/plugin/FunctionComparisonPlugin.java	FunctionComparisonPlugin	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/plugin/FunctionComparisonProvider.java	FunctionComparisonProvider	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/CodeCompare/src/main/java/ghidra/features/codecompare/plugin/FunctionComparisonProviderListener.java	FunctionComparisonProviderListener	interface	trait	R9-open-interface	hard	0	Java `interface` with 2 abstract method(s), 0 in-repo implementor(s)
@@ -6480,7 +6480,7 @@ Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangReturnType.j
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangStatement.java	ClangStatement	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangSyntaxToken.java	ClangSyntaxToken	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangToken.java	ClangToken	class	struct	R14-concrete-class	hard	11	concrete Java `class` (11 in-repo subclass(es))
-Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java	ClangTokenGroup	class	iterator	R6-iterator	hard	5	extends Iterable
+Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java	ClangTokenGroup	class	iterator	R6b-bare-iterable	hard	5	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTypeToken.java	ClangTypeToken	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangVariableDecl.java	ClangVariableDecl	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangVariableToken.java	ClangVariableToken	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -6500,7 +6500,7 @@ Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerLocatio
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerLocationInfo.java	DecompilerLocationInfo	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerMarginService.java	DecompilerMarginService	interface	trait	R9-open-interface	hard	1	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/PrettyPrinter.java	PrettyPrinter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/TokenIterator.java	TokenIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/TokenIterator.java	TokenIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangDecompilerHighlighter.java	ClangDecompilerHighlighter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangFieldElement.java	ClangFieldElement	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/ClangHighlightController.java	ClangHighlightController	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 8 instance field(s) and 2 in-repo subclass(es)
@@ -6528,7 +6528,7 @@ Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/Locatio
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/NameTokenMatcher.java	NameTokenMatcher	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/NullClangHighlightController.java	NullClangHighlightController	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenHighlightColors.java	TokenHighlightColors	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenHighlights.java	TokenHighlights	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenHighlights.java	TokenHighlights	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/TokenKey.java	TokenKey	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/UserHighlights.java	UserHighlights	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DataTypeDecompilerHover.java	DataTypeDecompilerHover	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -7939,7 +7939,7 @@ Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDFragmentName.ja
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNameModifier.java	MDNameModifier	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNestedName.java	MDNestedName	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDNumberedNamespace.java	MDNumberedNamespace	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualification.java	MDQualification	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualification.java	MDQualification	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedBasicName.java	MDQualifiedBasicName	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifiedName.java	MDQualifiedName	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/MicrosoftDmang/src/main/java/mdemangler/naming/MDQualifier.java	MDQualifier	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -8143,7 +8143,7 @@ Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/Modu
 Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/ModuleInformation.java	ModuleInformation	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 20 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/ModuleInformation500.java	ModuleInformation500	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/ModuleInformation600.java	ModuleInformation600	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/MsSymbolIterator.java	MsSymbolIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/MsSymbolIterator.java	MsSymbolIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/NameTable.java	NameTable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/Numeric.java	Numeric	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Features/PDB/src/main/java/ghidra/app/util/bin/format/pdb2/pdbreader/ParsingIterator.java	ParsingIterator	interface	trait	R9-open-interface	hard	3	Java `interface` with 3 abstract method(s), 3 in-repo implementor(s)
@@ -10278,8 +10278,8 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/FieldPanelOver
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/FieldPanelOverLayoutManager.java	FieldPanelOverLayoutManager	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/HoverHandler.java	HoverHandler	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/Layout.java	Layout	interface	trait	R9-open-interface	hard	3	Java `interface` with 25 abstract method(s), 3 in-repo implementor(s)
-Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/LayoutModel.java	LayoutModel	interface	iterator	R6-iterator	hard	7	extends Iterable
-Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/LayoutModelIterator.java	LayoutModelIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/LayoutModel.java	LayoutModel	interface	trait	R9-open-interface	hard	7	Java `interface` with 9 abstract method(s), 7 in-repo implementor(s)
+Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/LayoutModelIterator.java	LayoutModelIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/field/AbstractTextFieldElement.java	AbstractTextFieldElement	class/abstract	struct_trait	R11-abstract-stateful	hard	3	abstract class with 3 instance field(s) and 3 in-repo subclass(es)
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/field/AttributedString.java	AttributedString	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/field/ClippingTextField.java	ClippingTextField	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -10333,7 +10333,7 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/Defaul
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldHighlightFactory.java	FieldHighlightFactory	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldLocation.java	FieldLocation	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldRange.java	FieldRange	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldSelection.java	FieldSelection	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldSelection.java	FieldSelection	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldSelectionHelper.java	FieldSelectionHelper	class	module	R7-statics-holder	hard	0	6 static method(s), no instance state and no instance methods
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/FieldUtils.java	FieldUtils	class	module	R7-statics-holder	hard	0	2 static field(s) and 5 static method(s), no instance state and no instance methods
 Ghidra/Framework/Docking/src/main/java/docking/widgets/fieldpanel/support/Highlight.java	Highlight	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -10511,7 +10511,7 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableFilter.java	Ta
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableItemPickedListener.java	TableItemPickedListener	interface	trait	R9-open-interface	hard	0	Java `interface` with 1 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableModelWrapper.java	TableModelWrapper	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableRowMapper.java	TableRowMapper	class/abstract	trait	R12-abstract-pure	hard	5	abstract class with no instance state and 5 in-repo subclass(es)
-Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortState.java	TableSortState	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortState.java	TableSortState	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortStateEditor.java	TableSortStateEditor	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableSortingContext.java	TableSortingContext	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/TableTextFilter.java	TableTextFilter	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
@@ -10616,7 +10616,7 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/LoadSpecif
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/NullTableFilter.java	NullTableFilter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/SortJob.java	SortJob	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableAddRemoveStrategy.java	TableAddRemoveStrategy	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
-Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableData.java	TableData	class	iterator	R6-iterator	hard	1	extends Iterable
+Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableData.java	TableData	class	iterator	R6b-bare-iterable	hard	1	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/TableUpdateJob.java	TableUpdateJob	class	struct	R14-concrete-class	hard	5	concrete Java `class` (5 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/ThreadedBackupRowComparator.java	ThreadedBackupRowComparator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/table/threaded/ThreadedTableColumnComparator.java	ThreadedTableColumnComparator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -10679,9 +10679,9 @@ Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/internal/GTreeNodeLi
 Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/internal/GTreeSelectionModel.java	GTreeSelectionModel	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/internal/InProgressGTreeNode.java	InProgressGTreeNode	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/internal/InProgressGTreeRootNode.java	InProgressGTreeRootNode	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/BreadthFirstIterator.java	BreadthFirstIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/BreadthFirstIterator.java	BreadthFirstIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/CombinedGTreeFilter.java	CombinedGTreeFilter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/DepthFirstIterator.java	DepthFirstIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/DepthFirstIterator.java	DepthFirstIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/GTreeCellEditor.java	GTreeCellEditor	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/GTreeDragNDropHandler.java	GTreeDragNDropHandler	interface	trait	R9-open-interface	hard	3	Java `interface` with 4 abstract method(s), 3 in-repo implementor(s)
 Ghidra/Framework/Docking/src/main/java/docking/widgets/tree/support/GTreeFilter.java	GTreeFilter	interface	trait	R9-open-interface	hard	6	Java `interface` with 2 abstract method(s), 6 in-repo implementor(s)
@@ -11464,7 +11464,7 @@ Ghidra/Framework/FileSystem/src/test/java/ghidra/framework/store/db/VersionFailu
 Ghidra/Framework/FileSystem/src/test/java/ghidra/framework/store/local/ItemPropertyFileTest.java	ItemPropertyFileTest	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/FileSystem/src/test/java/ghidra/util/PropertyFileTest.java	PropertyFileTest	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/DominantPair.java	DominantPair	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/FilteredIterator.java	FilteredIterator	class	iterator	R6-iterator	hard	0	extends Iterator, Iterable
+Ghidra/Framework/Generic/src/main/java/generic/FilteredIterator.java	FilteredIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Framework/Generic/src/main/java/generic/algorithms/CRC64.java	CRC64	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/algorithms/Lcs.java	Lcs	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 2 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/Generic/src/main/java/generic/algorithms/ReducingLcs.java	ReducingLcs	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 6 instance field(s) and 2 in-repo subclass(es)
@@ -11480,7 +11480,7 @@ Ghidra/Framework/Generic/src/main/java/generic/cache/FixedSizeMRUCachingFactory.
 Ghidra/Framework/Generic/src/main/java/generic/cache/WeakReferenceCache.java	WeakReferenceCache	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/complex/Complex.java	Complex	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentGraphQ.java	ConcurrentGraphQ	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentListenerSet.java	ConcurrentListenerSet	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentListenerSet.java	ConcurrentListenerSet	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentQ.java	ConcurrentQ	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/ConcurrentQBuilder.java	ConcurrentQBuilder	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/concurrent/FutureTaskMonitor.java	FutureTaskMonitor	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -11559,16 +11559,16 @@ Ghidra/Framework/Generic/src/main/java/generic/stl/Pair.java	Pair	class	struct	R
 Ghidra/Framework/Generic/src/main/java/generic/stl/Quad.java	Quad	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackNode.java	RedBlackNode	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/stl/RedBlackTree.java	RedBlackTree	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseListIterator.java	ReverseListIterator	class	iterator	R6-iterator	hard	0	extends ListIterator
+Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseListIterator.java	ReverseListIterator	class	iterator	R6a-cursor	hard	0	extends ListIterator
 Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseMapIteratorSTL.java	ReverseMapIteratorSTL	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseSetIterator.java	ReverseSetIterator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/stl/ReverseVectorIterator.java	ReverseVectorIterator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/stl/SelfComparator.java	SelfComparator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/stl/SetIterator.java	SetIterator	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/stl/SetSTL.java	SetSTL	class	struct	R14-concrete-class	hard	2	concrete Java `class` (2 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/stl/UnmodifiableListIteratorSTL.java	UnmodifiableListIteratorSTL	class	iterator	R6-iterator	hard	0	extends ListIterator
+Ghidra/Framework/Generic/src/main/java/generic/stl/UnmodifiableListIteratorSTL.java	UnmodifiableListIteratorSTL	class	iterator	R6a-cursor	hard	0	extends ListIterator
 Ghidra/Framework/Generic/src/main/java/generic/stl/VectorIterator.java	VectorIterator	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/stl/VectorSTL.java	VectorSTL	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Generic/src/main/java/generic/stl/VectorSTL.java	VectorSTL	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGTest.java	AbstractGTest	class/abstract	struct_trait	R11-abstract-stateful	hard	34	abstract class with 3 instance field(s) and 34 in-repo subclass(es)
 Ghidra/Framework/Generic/src/main/java/generic/test/AbstractGenericTest.java	AbstractGenericTest	class/abstract	struct_trait	R11-abstract-stateful	hard	281	abstract class with 5 instance field(s) and 281 in-repo subclass(es)
 Ghidra/Framework/Generic/src/main/java/generic/test/ConcurrentTestExceptionHandler.java	ConcurrentTestExceptionHandler	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -11599,13 +11599,13 @@ Ghidra/Framework/Generic/src/main/java/generic/util/ChannelLocker.java	ChannelLo
 Ghidra/Framework/Generic/src/main/java/generic/util/DequePush.java	DequePush	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/util/FileChannelLock.java	FileChannelLock	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/util/FileLocker.java	FileLocker	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/util/FlattenedIterator.java	FlattenedIterator	class	iterator	R6-iterator	hard	1	extends Iterator
+Ghidra/Framework/Generic/src/main/java/generic/util/FlattenedIterator.java	FlattenedIterator	class	iterator	R6a-cursor	hard	1	extends Iterator
 Ghidra/Framework/Generic/src/main/java/generic/util/JarArchiveBuilder.java	JarArchiveBuilder	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/generic/util/LockFactory.java	LockFactory	class	module	R7-statics-holder	hard	0	1 static field(s) and 3 static method(s), no instance state and no instance methods
 Ghidra/Framework/Generic/src/main/java/generic/util/MergeSortingIterator.java	MergeSortingIterator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/util/MultiIterator.java	MultiIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Framework/Generic/src/main/java/generic/util/MultiIterator.java	MultiIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Framework/Generic/src/main/java/generic/util/Path.java	Path	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterator.java	PeekableIterator	interface	iterator	R6-iterator	hard	2	extends Iterator
+Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterator.java	PeekableIterator	interface	iterator	R6a-cursor	hard	2	extends Iterator
 Ghidra/Framework/Generic/src/main/java/generic/util/PeekableIterators.java	PeekableIterators	enum	enum	R1-java-enum	hard	0	Java `enum` with 0 constants
 Ghidra/Framework/Generic/src/main/java/generic/util/WindowUtilities.java	WindowUtilities	class	module	R7-statics-holder	hard	0	1 static field(s) and 28 static method(s), no instance state and no instance methods
 Ghidra/Framework/Generic/src/main/java/generic/util/WrappingPeekableIterator.java	WrappingPeekableIterator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -11687,7 +11687,7 @@ Ghidra/Framework/Generic/src/main/java/ghidra/util/ObjectStorage.java	ObjectStor
 Ghidra/Framework/Generic/src/main/java/ghidra/util/ObjectStorageStreamAdapter.java	ObjectStorageStreamAdapter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/PrivateSaveable.java	PrivateSaveable	class/abstract	trait	R12-abstract-pure	hard	3	abstract class with no instance state and 3 in-repo subclass(es)
 Ghidra/Framework/Generic/src/main/java/ghidra/util/ReadOnlyException.java	ReadOnlyException	class	error	R5-exception	hard	0	extends/names a Java throwable (IOException)
-Ghidra/Framework/Generic/src/main/java/ghidra/util/ReversedListIterator.java	ReversedListIterator	class	iterator	R6-iterator	hard	0	extends ListIterator
+Ghidra/Framework/Generic/src/main/java/ghidra/util/ReversedListIterator.java	ReversedListIterator	class	iterator	R6a-cursor	hard	0	extends ListIterator
 Ghidra/Framework/Generic/src/main/java/ghidra/util/Saveable.java	Saveable	interface	trait	R9-open-interface	hard	5	Java `interface` with 7 abstract method(s), 5 in-repo implementor(s)
 Ghidra/Framework/Generic/src/main/java/ghidra/util/SaveableColor.java	SaveableColor	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/SaveablePoint.java	SaveablePoint	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -11747,8 +11747,8 @@ Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntListIndexer.jav
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntObjectHashtable.java	IntObjectHashtable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/IntSet.java	IntSet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LRUMap.java	LRUMap	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LRUSet.java	LRUSet	class	iterator	R6-iterator	hard	0	extends Iterable
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListAccumulator.java	ListAccumulator	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/LRUSet.java	LRUSet	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListAccumulator.java	ListAccumulator	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerErrorHandler.java	ListenerErrorHandler	interface	trait	R9-open-interface	hard	0	Java `interface` with 1 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerErrorHandlerFactory.java	ListenerErrorHandlerFactory	interface	trait	R9-open-interface	hard	0	Java `interface` with 1 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ListenerSet.java	ListenerSet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -11778,8 +11778,8 @@ Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RangeMap.java	Rang
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackEntry.java	RedBlackEntry	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackKeySet.java	RedBlackKeySet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackLongKeySet.java	RedBlackLongKeySet	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackTree.java	RedBlackTree	class	iterator	R6-iterator	hard	0	extends Iterable
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulator.java	SetAccumulator	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/RedBlackTree.java	RedBlackTree	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulator.java	SetAccumulator	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SetAccumulatorWrapper.java	SetAccumulatorWrapper	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArray.java	ShortArray	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortArrayArray.java	ShortArrayArray	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -11791,8 +11791,8 @@ Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortObjectHashtab
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/ShortStringHashtable.java	ShortStringHashtable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SizeRestrictedAccumulatorWrapper.java	SizeRestrictedAccumulatorWrapper	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SoftCacheMap.java	SoftCacheMap	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SortedRangeList.java	SortedRangeList	class	iterator	R6-iterator	hard	0	extends Iterable
-Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Stack.java	Stack	class	iterator	R6-iterator	hard	1	extends Iterable
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/SortedRangeList.java	SortedRangeList	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/Stack.java	Stack	class	iterator	R6b-bare-iterable	hard	1	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringArray.java	StringArray	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringArrayArray.java	StringArrayArray	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/main/java/ghidra/util/datastruct/StringIntHashtable.java	StringIntHashtable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -11924,8 +11924,8 @@ Ghidra/Framework/Generic/src/test/java/ghidra/net/http/HttpUtilTest.java	HttpUti
 Ghidra/Framework/Generic/src/test/java/ghidra/util/CountLatchTest.java	CountLatchTest	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/test/java/ghidra/util/DateUtilsTest.java	DateUtilsTest	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/test/java/ghidra/util/NumericUtilitiesTest.java	NumericUtilitiesTest	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Generic/src/test/java/ghidra/util/SpyErrorDisplay.java	SpyErrorDisplay	class	iterator	R6-iterator	hard	0	extends Iterable
-Ghidra/Framework/Generic/src/test/java/ghidra/util/SpyErrorLogger.java	SpyErrorLogger	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Generic/src/test/java/ghidra/util/SpyErrorDisplay.java	SpyErrorDisplay	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
+Ghidra/Framework/Generic/src/test/java/ghidra/util/SpyErrorLogger.java	SpyErrorLogger	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Generic/src/test/java/ghidra/util/StringUtilitiesTest.java	StringUtilitiesTest	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/test/java/ghidra/util/UserSearchUtilsTest.java	UserSearchUtilsTest	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Generic/src/test/java/ghidra/util/classfinder/ClassSearcherTest.java	ClassSearcherTest	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -12631,7 +12631,7 @@ Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/Pag
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/PageUpAction.java	PageUpAction	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/PageUpSelectionAction.java	PageUpSelectionAction	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/Chunk.java	Chunk	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkModel.java	ChunkModel	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkModel.java	ChunkModel	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ChunkReader.java	ChunkReader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/Pair.java	Pair	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
 Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/model/ReverseLineReader.java	ReverseLineReader	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -12701,7 +12701,7 @@ Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderFilter
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainFolderListenerAdapter.java	DomainFolderListenerAdapter	class/abstract	struct	R10-abstract-orphan	hard	0	abstract class with no in-repo subclasses
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObject.java	DomainObject	interface	trait	R9-open-interface	hard	4	Java `interface` with 58 abstract method(s), 4 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangeRecord.java	DomainObjectChangeRecord	class	struct	R14-concrete-class	hard	6	concrete Java `class` (6 in-repo subclass(es))
-Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangedEvent.java	DomainObjectChangedEvent	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectChangedEvent.java	DomainObjectChangedEvent	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectClosedListener.java	DomainObjectClosedListener	interface	trait	R9-open-interface	hard	2	Java `interface` with 1 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectDisplayUtils.java	DomainObjectDisplayUtils	class	module	R7-statics-holder	hard	0	6 static field(s) and 4 static method(s), no instance state and no instance methods
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/DomainObjectEvent.java	DomainObjectEvent	enum	enum	R1-java-enum	hard	0	Java `enum` with 7 constants
@@ -12715,8 +12715,8 @@ Ghidra/Framework/Project/src/main/java/ghidra/framework/model/EventType.java	Eve
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/LinkFileInfo.java	LinkFileInfo	interface	trait	R9-open-interface	hard	2	Java `interface` with 4 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/LinkedDomainFile.java	LinkedDomainFile	interface	trait	R9-open-interface	hard	1	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/LinkedDomainFolder.java	LinkedDomainFolder	interface	trait	R9-open-interface	hard	1	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
-Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Project.java	Project	interface	iterator	R6-iterator	hard	1	extends Iterable
-Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectData.java	ProjectData	interface	iterator	R6-iterator	hard	2	extends Iterable
+Ghidra/Framework/Project/src/main/java/ghidra/framework/model/Project.java	Project	interface	trait	R9-open-interface	hard	1	Java `interface` with 28 abstract method(s), 1 in-repo implementor(s)
+Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectData.java	ProjectData	interface	trait	R9-open-interface	hard	2	Java `interface` with 25 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectDataUtils.java	ProjectDataUtils	class	module	R7-statics-holder	hard	0	8 static method(s), no instance state and no instance methods
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectListener.java	ProjectListener	interface	trait	R9-open-interface	hard	7	Java `interface` with 2 abstract method(s), 7 in-repo implementor(s)
 Ghidra/Framework/Project/src/main/java/ghidra/framework/model/ProjectLocator.java	ProjectLocator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -12982,14 +12982,14 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/slei
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/FieldSizeMatcher.java	FieldSizeMatcher	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/OperandValueMatcher.java	OperandValueMatcher	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/expr/match/UnaryExpressionMatcher.java	UnaryExpressionMatcher	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyGrammar.java	AbstractAssemblyGrammar	class/abstract	iterator	R6-iterator	hard	2	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyGrammar.java	AbstractAssemblyGrammar	class/abstract	iterator	R6b-bare-iterable	hard	2	extends Iterable and declares no other API (1 abstract method(s))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AbstractAssemblyProduction.java	AbstractAssemblyProduction	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 3 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyExtendedGrammar.java	AssemblyExtendedGrammar	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyExtendedProduction.java	AssemblyExtendedProduction	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyGrammar.java	AssemblyGrammar	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyGrammarException.java	AssemblyGrammarException	class	error	R5-exception	hard	0	extends/names a Java throwable (AssemblyException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblyProduction.java	AssemblyProduction	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblySentential.java	AssemblySentential	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/grammars/AssemblySentential.java	AssemblySentential	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyFirstFollow.java	AssemblyFirstFollow	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseAcceptResult.java	AssemblyParseAcceptResult	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/parse/AssemblyParseActionGotoTable.java	AssemblyParseActionGotoTable	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -13039,7 +13039,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/slei
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyStringTerminal.java	AssemblyStringTerminal	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblySymbol.java	AssemblySymbol	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 1 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/symbol/AssemblyTerminal.java	AssemblyTerminal	class/abstract	trait	R12-abstract-pure	hard	5	abstract class with no instance state and 5 in-repo subclass(es)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseBranch.java	AssemblyParseBranch	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseBranch.java	AssemblyParseBranch	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseHiddenNode.java	AssemblyParseHiddenNode	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseNumericToken.java	AssemblyParseNumericToken	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/plugin/assembler/sleigh/tree/AssemblyParseToken.java	AssemblyParseToken	class	struct	R14-concrete-class	hard	2	concrete Java `class` (2 in-repo subclass(es))
@@ -13222,7 +13222,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/sleighbase/Nam
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/sleighbase/SleighBase.java	SleighBase	class/abstract	struct_trait	R11-abstract-stateful	hard	1	abstract class with 8 instance field(s) and 1 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/sleighbase/address_set.java	address_set	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ConsistencyChecker.java	ConsistencyChecker	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/DirectoryVisitor.java	DirectoryVisitor	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/DirectoryVisitor.java	DirectoryVisitor	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ErrorWarningReporter.java	ErrorWarningReporter	interface	trait	R9-open-interface	hard	0	Java `interface` with 2 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/ExprTree.java	ExprTree	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/pcodeCPort/slgh_compile/FieldContext.java	FieldContext	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -13720,22 +13720,22 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/Add
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressCollectors.java	AddressCollectors	class	module	R7-statics-holder	hard	0	1 static method(s), no instance state and no instance methods
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressFactory.java	AddressFactory	interface	trait	R9-open-interface	hard	1	Java `interface` with 24 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressFormatException.java	AddressFormatException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressIterator.java	AddressIterator	interface	iterator	R6-iterator	hard	12	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressIterator.java	AddressIterator	interface	iterator	R6a-cursor	hard	12	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressIteratorAdapter.java	AddressIteratorAdapter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressMapImpl.java	AddressMapImpl	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressObjectMap.java	AddressObjectMap	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressOutOfBoundsException.java	AddressOutOfBoundsException	class	error	R5-exception	hard	0	extends/names a Java throwable (RuntimeException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressOverflowException.java	AddressOverflowException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRange.java	AddressRange	interface	iterator	R6-iterator	hard	1	extends Iterable
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeChunker.java	AddressRangeChunker	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRange.java	AddressRange	interface	trait	R9-open-interface	hard	1	Java `interface` with 11 abstract method(s), 1 in-repo implementor(s)
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeChunker.java	AddressRangeChunker	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeImpl.java	AddressRangeImpl	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeIterator.java	AddressRangeIterator	interface	iterator	R6-iterator	hard	7	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeIterator.java	AddressRangeIterator	interface	iterator	R6a-cursor	hard	7	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeSplitter.java	AddressRangeSplitter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressRangeToAddressComparator.java	AddressRangeToAddressComparator	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSet.java	AddressSet	class	struct	R14-concrete-class	hard	4	concrete Java `class` (4 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetCollection.java	AddressSetCollection	interface	trait	R9-open-interface	hard	3	Java `interface` with 9 abstract method(s), 3 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetMapping.java	AddressSetMapping	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetView.java	AddressSetView	interface	iterator	R6-iterator	hard	10	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetView.java	AddressSetView	interface	trait	R9-open-interface	hard	10	Java `interface` with 28 abstract method(s), 10 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSetViewAdapter.java	AddressSetViewAdapter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/AddressSpace.java	AddressSpace	interface	trait	R9-open-interface	hard	1	Java `interface` with 48 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/address/DefaultAddressFactory.java	DefaultAddressFactory	class	struct	R14-concrete-class	hard	1	concrete Java `class` (1 in-repo subclass(es))
@@ -13759,7 +13759,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/Basic
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlock.java	CodeBlock	interface	trait	R9-open-interface	hard	2	Java `interface` with 9 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockCache.java	CodeBlockCache	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockImpl.java	CodeBlockImpl	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockIterator.java	CodeBlockIterator	interface	iterator	R6-iterator	hard	4	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockIterator.java	CodeBlockIterator	interface	trait	R9-open-interface	hard	4	Java `interface` with 2 abstract method(s), 4 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockModel.java	CodeBlockModel	interface	trait	R9-open-interface	hard	2	Java `interface` with 16 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockReference.java	CodeBlockReference	interface	trait	R9-open-interface	hard	1	Java `interface` with 7 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/block/CodeBlockReferenceImpl.java	CodeBlockReferenceImpl	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -14083,12 +14083,12 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Inject
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadSegment.java	InjectPayloadSegment	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InjectPayloadSleigh.java	InjectPayloadSleigh	class	struct	R14-concrete-class	hard	4	concrete Java `class` (4 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InputListType.java	InputListType	enum	enum	R1-java-enum	hard	0	Java `enum` with 2 constants
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java	InstructionBlock	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlock.java	InstructionBlock	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionBlockFlow.java	InstructionBlockFlow	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionContext.java	InstructionContext	interface	trait	R9-open-interface	hard	4	Java `interface` with 5 abstract method(s), 4 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionError.java	InstructionError	class	error	R5-exception	hard	0	extends/names a Java throwable (InstructionError)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionPrototype.java	InstructionPrototype	interface	trait	R9-open-interface	hard	2	Java `interface` with 32 abstract method(s), 2 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionSet.java	InstructionSet	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InstructionSet.java	InstructionSet	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InsufficientBytesException.java	InsufficientBytesException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/InvalidPrototype.java	InvalidPrototype	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/lang/Language.java	Language	interface	trait	R9-open-interface	hard	2	Java `interface` with 47 abstract method(s), 2 in-repo implementor(s)
@@ -14174,13 +14174,13 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Boo
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CircularDependencyException.java	CircularDependencyException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CodeUnit.java	CodeUnit	interface	trait	R9-open-interface	hard	5	Java `interface` with 34 abstract method(s), 5 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CodeUnitComments.java	CodeUnitComments	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CodeUnitIterator.java	CodeUnitIterator	interface	iterator	R6-iterator	hard	5	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CodeUnitIterator.java	CodeUnitIterator	interface	iterator	R6a-cursor	hard	5	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CommentHistory.java	CommentHistory	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/CommentType.java	CommentType	enum	enum	R1-java-enum	hard	0	Java `enum` with 5 constants
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/ContextChangeException.java	ContextChangeException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Data.java	Data	interface	trait	R9-open-interface	hard	7	Java `interface` with 36 abstract method(s), 7 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DataBuffer.java	DataBuffer	interface	trait	R9-open-interface	hard	1	Java `interface` with 7 abstract method(s), 1 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DataIterator.java	DataIterator	interface	iterator	R6-iterator	hard	6	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DataIterator.java	DataIterator	interface	iterator	R6a-cursor	hard	6	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DataStub.java	DataStub	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DataTypeArchive.java	DataTypeArchive	interface	trait	R9-open-interface	hard	1	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DataTypeArchiveChangeSet.java	DataTypeArchiveChangeSet	interface	park	R8b-marker	ambiguous	1	marker interface -- no methods, no constants; Rust has no equivalent and the right seam depends on what tests the marker
@@ -14190,7 +14190,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Dom
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/DuplicateGroupException.java	DuplicateGroupException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FlowOverride.java	FlowOverride	enum	enum	R1-java-enum	hard	0	Java `enum` with 5 constants
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Function.java	Function	interface	trait	R9-open-interface	hard	12	Java `interface` with 69 abstract method(s), 12 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionIterator.java	FunctionIterator	interface	iterator	R6-iterator	hard	2	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionIterator.java	FunctionIterator	interface	iterator	R6a-cursor	hard	2	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionManager.java	FunctionManager	interface	trait	R9-open-interface	hard	3	Java `interface` with 26 abstract method(s), 3 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionOverlapException.java	FunctionOverlapException	class	error	R5-exception	hard	0	extends/names a Java throwable (UsrException)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/FunctionSignature.java	FunctionSignature	interface	trait	R9-open-interface	hard	2	Java `interface` with 11 abstract method(s), 2 in-repo implementor(s)
@@ -14202,7 +14202,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Ghi
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Group.java	Group	interface	trait	R9-open-interface	hard	2	Java `interface` with 12 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/IncompatibleLanguageException.java	IncompatibleLanguageException	class	error	R5-exception	hard	0	extends/names a Java throwable (Exception)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/Instruction.java	Instruction	interface	trait	R9-open-interface	hard	4	Java `interface` with 36 abstract method(s), 4 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/InstructionIterator.java	InstructionIterator	interface	iterator	R6-iterator	hard	2	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/InstructionIterator.java	InstructionIterator	interface	iterator	R6a-cursor	hard	2	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/InstructionPcodeOverride.java	InstructionPcodeOverride	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/InstructionStub.java	InstructionStub	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/listing/LabelString.java	LabelString	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -14342,7 +14342,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/scalar/Scal
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/DummySourceFileManager.java	DummySourceFileManager	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceFileManager.java	SourceFileManager	interface	trait	R9-open-interface	hard	2	Java `interface` with 12 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntry.java	SourceMapEntry	interface	trait	R9-open-interface	hard	1	Java `interface` with 5 abstract method(s), 1 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntryIterator.java	SourceMapEntryIterator	interface	iterator	R6-iterator	hard	1	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourceMapEntryIterator.java	SourceMapEntryIterator	interface	iterator	R6a-cursor	hard	1	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourcePathTransformRecord.java	SourcePathTransformRecord	record	struct	R3-record	hard	0	Java `record` -- an immutable value type
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/sourcemap/SourcePathTransformer.java	SourcePathTransformer	interface	trait	R9-open-interface	hard	1	Java `interface` with 6 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/AddressLabelPair.java	AddressLabelPair	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
@@ -14354,7 +14354,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Equa
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/EquateTable.java	EquateTable	interface	trait	R9-open-interface	hard	2	Java `interface` with 12 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalLocation.java	ExternalLocation	interface	trait	R9-open-interface	hard	1	Java `interface` with 20 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalLocationAdapter.java	ExternalLocationAdapter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalLocationIterator.java	ExternalLocationIterator	interface	iterator	R6-iterator	hard	1	extends Iterator
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalLocationIterator.java	ExternalLocationIterator	interface	iterator	R6a-cursor	hard	1	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalManager.java	ExternalManager	interface	trait	R9-open-interface	hard	1	Java `interface` with 24 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalPath.java	ExternalPath	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ExternalReference.java	ExternalReference	interface	trait	R9-open-interface	hard	1	Java `interface` with 3 abstract method(s), 1 in-repo implementor(s)
@@ -14369,7 +14369,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Offs
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefType.java	RefType	class/abstract	struct_trait	R11-abstract-stateful	hard	2	abstract class with 2 instance field(s) and 2 in-repo subclass(es)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/RefTypeFactory.java	RefTypeFactory	class	module	R7-statics-holder	hard	0	7 static field(s) and 14 static method(s), no instance state and no instance methods
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Reference.java	Reference	interface	trait	R9-open-interface	hard	9	Java `interface` with 16 abstract method(s), 9 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceIterator.java	ReferenceIterator	interface	iterator	R6-iterator	hard	3	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceIterator.java	ReferenceIterator	interface	iterator	R6a-cursor	hard	3	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceIteratorAdapter.java	ReferenceIteratorAdapter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceListener.java	ReferenceListener	interface	trait	R9-open-interface	hard	0	Java `interface` with 10 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/ReferenceManager.java	ReferenceManager	interface	trait	R9-open-interface	hard	3	Java `interface` with 40 abstract method(s), 3 in-repo implementor(s)
@@ -14377,7 +14377,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Shif
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SourceType.java	SourceType	enum	enum	R1-java-enum	hard	0	Java `enum` with 5 constants
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/StackReference.java	StackReference	interface	trait	R9-open-interface	hard	2	Java `interface` with 1 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/Symbol.java	Symbol	interface	trait	R9-open-interface	hard	6	Java `interface` with 24 abstract method(s), 6 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIterator.java	SymbolIterator	interface	iterator	R6-iterator	hard	3	extends Iterator, Iterable
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIterator.java	SymbolIterator	interface	iterator	R6a-cursor	hard	3	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolIteratorAdapter.java	SymbolIteratorAdapter	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTable.java	SymbolTable	interface	trait	R9-open-interface	hard	3	Java `interface` with 56 abstract method(s), 3 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/symbol/SymbolTableListener.java	SymbolTableListener	interface	trait	R9-open-interface	hard	0	Java `interface` with 9 abstract method(s), 0 in-repo implementor(s)
@@ -14394,7 +14394,7 @@ Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/Defaul
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/DeletedException.java	DeletedException	class	error	R5-exception	hard	0	extends/names a Java throwable (Exception)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/IntPropertyMap.java	IntPropertyMap	interface	trait	R9-open-interface	hard	2	Java `interface` with 2 abstract method(s), 2 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/LongPropertyMap.java	LongPropertyMap	interface	trait	R9-open-interface	hard	1	Java `interface` with 2 abstract method(s), 1 in-repo implementor(s)
-Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/MemoryByteIterator.java	MemoryByteIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/MemoryByteIterator.java	MemoryByteIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/ObjectPropertyMap.java	ObjectPropertyMap	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/ProcessorSymbolType.java	ProcessorSymbolType	enum	enum	R1-java-enum	hard	0	Java `enum` with 2 constants
 Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/program/model/util/PropertyMap.java	PropertyMap	interface	trait	R9-open-interface	hard	7	Java `interface` with 22 abstract method(s), 7 in-repo implementor(s)
@@ -14746,14 +14746,14 @@ Ghidra/Framework/Utility/src/main/java/ghidra/util/Swing.java	Swing	class	module
 Ghidra/Framework/Utility/src/main/java/ghidra/util/SystemUtilities.java	SystemUtilities	class	module	R7-statics-holder	hard	0	10 static field(s) and 27 static method(s), no instance state and no instance methods
 Ghidra/Framework/Utility/src/main/java/ghidra/util/UserSearchUtils.java	UserSearchUtils	class	module	R7-statics-holder	hard	0	6 static field(s) and 15 static method(s), no instance state and no instance methods
 Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Duo.java	Duo	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))
-Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Range.java	Range	class	iterator	R6-iterator	hard	0	extends Iterable
+Ghidra/Framework/Utility/src/main/java/ghidra/util/datastruct/Range.java	Range	class	iterator	R6b-bare-iterable	hard	0	extends Iterable and declares no other API (0 abstract method(s))
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/AssertException.java	AssertException	class	error	R5-exception	hard	0	extends/names a Java throwable (RuntimeException)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/CancelledException.java	CancelledException	class	error	R5-exception	hard	1	extends/names a Java throwable (UsrException)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/IOCancelledException.java	IOCancelledException	class	error	R5-exception	hard	0	extends/names a Java throwable (IOException)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/TimeoutException.java	TimeoutException	class	error	R5-exception	hard	0	extends/names a Java throwable (CancelledException)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/UnableToSwingException.java	UnableToSwingException	class	error	R5-exception	hard	0	extends/names a Java throwable (Exception)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/exception/UsrException.java	UsrException	class	error	R5-exception	hard	41	extends/names a Java throwable (Exception)
-Ghidra/Framework/Utility/src/main/java/ghidra/util/task/CancellableIterator.java	CancellableIterator	class	iterator	R6-iterator	hard	0	extends Iterator
+Ghidra/Framework/Utility/src/main/java/ghidra/util/task/CancellableIterator.java	CancellableIterator	class	iterator	R6a-cursor	hard	0	extends Iterator
 Ghidra/Framework/Utility/src/main/java/ghidra/util/task/CancelledListener.java	CancelledListener	interface	trait	R9-open-interface	hard	1	Java `interface` with 1 abstract method(s), 1 in-repo implementor(s)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/task/IssueListener.java	IssueListener	interface	trait	R9-open-interface	hard	0	Java `interface` with 1 abstract method(s), 0 in-repo implementor(s)
 Ghidra/Framework/Utility/src/main/java/ghidra/util/task/StubTaskMonitor.java	StubTaskMonitor	class	struct	R14-concrete-class	hard	0	concrete Java `class` (0 in-repo subclass(es))

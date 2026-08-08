@@ -186,7 +186,8 @@ python3 scripts/shape_rules.py classify  <path/under/orig_src>   # the same, as 
 | R2 | `sealed interface` / `sealed class` | `enum` — `permits` **is** the variant list |
 | R3 | `record` | `struct`, accessors are field reads |
 | R5 | extends/names a `Throwable` | error type: `Display` + `std::error::Error` |
-| R6 | extends `Iterator`/`Iterable`/`Enumeration` | implement `std::iter::Iterator` |
+| R6a | extends `Iterator`/`ListIterator`/`Enumeration` (a cursor) | implement `std::iter::Iterator` |
+| R6b | extends `Iterable`/`Collection` and declares no other API | implement `std::iter::Iterator` |
 | R7 | only statics, no instance state | plain module — **no type of that name** |
 | R9 | open `interface` with methods | `trait` |
 | R10 | `abstract class`, no in-repo subclasses | `struct` |
@@ -196,7 +197,13 @@ python3 scripts/shape_rules.py classify  <path/under/orig_src>   # the same, as 
 | R14 | concrete `class` | `struct` |
 | R4, R8a, R8b | annotation type; marker interface; constants-only interface | **park** — ask a human |
 
-Two things this table is deliberate about:
+Three things this table is deliberate about:
+
+- **`Iterable` is not a cursor.** It means "you can iterate me", which any collection says.
+  `AddressSetView extends Iterable<AddressRange>` and declares 28 other abstract methods with
+  833 `dyn AddressSetView` uses behind it; so do `Project` and `ProjectData`. Those keep their
+  own shape and additionally implement `IntoIterator`. Only `Iterator`/`Enumeration` (R6a), or
+  an `Iterable` with essentially no other API (R6b), *is* a sequence.
 
 - **A cycle cut-point is not a shape.** `PORT_ORDER.tsv`'s `mode` column says whether a file sits
   on a dependency cycle — a fact about the graph, which decides *when* it is ported, not *what*

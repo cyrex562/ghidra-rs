@@ -248,6 +248,53 @@ class TestSpecialSupertypes(unittest.TestCase):
         self.assertEqual(res["shape"], "iterator")
         self.assertIn("dropped every other element", sr.directive_for(res))
 
+    def test_rich_iterable_keeps_its_own_shape(self):
+        """`Iterable` means "you can iterate me", which any collection says.
+
+        `AddressSetView extends Iterable<AddressRange>` and declares 28 other abstract
+        methods, with 833 `dyn AddressSetView` uses behind it. An earlier draft of R6 fired
+        on any `Iterable` supertype and would have told the porter to make it -- and
+        `Project`, and `ProjectData` -- a cursor type.
+        """
+        res, _ = shape(
+            """
+            public interface AddressSetView extends Iterable<AddressRange> {
+                boolean contains(Address addr);
+                Address getMinAddress();
+                Address getMaxAddress();
+                int getNumAddressRanges();
+                boolean isEmpty();
+            }
+            """,
+            "AddressSetView",
+            subtypes=30,
+        )
+        self.assertEqual(res["shape"], "trait")
+        self.assertEqual(res["rule"], "R9-open-interface")
+        # ...but the iteration still has to cross over correctly.
+        d = sr.directive_for(res)
+        self.assertIn("IntoIterator", d)
+        self.assertIn("dropped every other element", d)
+
+    def test_bare_iterable_with_no_other_api_is_a_sequence(self):
+        res, _ = shape(
+            "public interface AddressRangeIterable extends Iterable<AddressRange> {}",
+            "AddressRangeIterable",
+            subtypes=2,
+        )
+        self.assertEqual(res["shape"], "iterator")
+        self.assertEqual(res["rule"], "R6b-bare-iterable")
+
+    def test_cursor_supertype_still_wins_over_iterable(self):
+        res, _ = shape(
+            "public interface CodeUnitIterator extends Iterator<CodeUnit>, Iterable<CodeUnit> {}",
+            "CodeUnitIterator",
+            subtypes=3,
+        )
+        self.assertEqual(res["rule"], "R6a-cursor")
+        # The Iterable note would be redundant noise on something that is already a cursor.
+        self.assertNotIn("IntoIterator", sr.directive_for(res))
+
     def test_exception_becomes_an_error_type(self):
         res, _ = shape(
             "public class InvalidInputException extends UsrException { public InvalidInputException(String m) { super(m); } }",
