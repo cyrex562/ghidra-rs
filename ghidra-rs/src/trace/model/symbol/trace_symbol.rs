@@ -107,10 +107,11 @@ mod tests {
     use crate::trace::model::symbol::trace_equate_manager::TraceEquateManager;
     use crate::trace::model::symbol::trace_reference_manager::TraceReferenceManager;
     use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
+    use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceMemoryManager,
-        TracePlatformManager, TraceRegisterContextManager,
+        TraceRegisterContextManager,
         TraceStackManager, TraceVariableSnapProgramView,
     };
     use crate::util::lock_hold::{Lock, LockHold};

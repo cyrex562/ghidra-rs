@@ -135,7 +135,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_platform_manager(&self) -> Box<dyn crate::trace::seam_stubs::TracePlatformManager> {
+        fn get_platform_manager(&self) -> Box<dyn crate::trace::model::guest::trace_platform_manager::TracePlatformManager> {
             unimplemented!()
         }
 

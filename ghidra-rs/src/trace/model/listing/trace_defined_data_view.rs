@@ -115,7 +115,7 @@ mod tests {
     use crate::trace::model::listing::trace_code_unit::TraceCodeUnit;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::TracePlatformManager;
+    use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
     use crate::util::exception::CancelledException;
     use crate::util::task::TaskMonitor;
 

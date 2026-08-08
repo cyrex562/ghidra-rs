@@ -11,11 +11,11 @@
 //! distinct Rust names, since Rust traits cannot overload on parameter type alone: the
 //! `TracePlatform` overload stays `emulate`, while the `Trace` overload becomes `emulate_trace`.
 //! Java's default `emulate(Trace, TraceSchedule, TaskMonitor)` delegates via
-//! `trace.getPlatformManager().getHostPlatform()`, but
-//! [`crate::trace::seam_stubs::TracePlatformManager`] does not yet expose `getHostPlatform`
-//! (it is still an empty placeholder), so `emulate_trace` is declared as a required method here
-//! rather than a default one; implementors should replicate that delegation once
-//! `TracePlatformManager` grows the real method.
+//! `trace.getPlatformManager().getHostPlatform()`. Rather than reproduce that delegation here (it
+//! would require this trait to depend on
+//! [`TracePlatformManager`](crate::trace::model::guest::trace_platform_manager::TracePlatformManager)
+//! purely to call through it), `emulate_trace` is declared as a required method here rather than a
+//! default one; implementors should replicate that delegation directly.
 
 use std::future::Future;
 use std::io;
