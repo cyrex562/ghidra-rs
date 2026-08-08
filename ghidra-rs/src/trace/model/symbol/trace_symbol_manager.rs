@@ -14,15 +14,15 @@
 //! terms of the symbol type; each returns a view, the methods of which operate on that type
 //! specifically.
 //!
-//! [`Self::classes`], [`Self::all_namespaces`], [`Self::not_labels`], and [`Self::all_symbols`]
-//! are generic in Java (`TraceSymbolView<? extends TraceNamespaceSymbol>`,
+//! [`Self::all_namespaces`], [`Self::not_labels`], and [`Self::all_symbols`] are generic in Java
+//! (`TraceSymbolView<? extends TraceNamespaceSymbol>`,
 //! `TraceSymbolNoDuplicatesView<? extends TraceSymbol>`, `TraceSymbolView<? extends TraceSymbol>`).
 //! Following the convention set by
 //! [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView),
 //! the element type is erased to the view traits' own upper bound rather than represented as a
-//! Rust generic; [`Self::classes`] returns the not-yet-ported
-//! [`TraceClassSymbolView`](crate::trace::seam_stubs::TraceClassSymbolView) placeholder directly,
-//! since (unlike the other three) it is not itself generic in Java.
+//! Rust generic. [`Self::classes`] returns
+//! [`TraceClassSymbolView`](crate::trace::model::symbol::trace_class_symbol_view::TraceClassSymbolView)
+//! directly, since (unlike the other three) it is not itself generic in Java.
 //!
 //! [`Self::get_symbol_by_id`] is covariantly typed `TraceSymbol` in Java; it is kept at the wider
 //! [`Symbol`] here, matching the placeholder this port replaces (see
@@ -40,7 +40,7 @@ use crate::trace::model::symbol::trace_symbol::TraceSymbol;
 use crate::trace::model::symbol::trace_symbol_view::TraceSymbolView;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::symbol::trace_symbol_no_duplicates_view::TraceSymbolNoDuplicatesView;
-use crate::trace::seam_stubs::TraceClassSymbolView;
+use crate::trace::model::symbol::trace_class_symbol_view::TraceClassSymbolView;
 
 /// Orders symbols so that primary symbols sort first.
 ///

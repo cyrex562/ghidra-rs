@@ -185,7 +185,7 @@ mod tests {
         fn namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_namespace_symbol_view::TraceNamespaceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn classes(&self) -> Box<dyn crate::trace::seam_stubs::TraceClassSymbolView> {
+        fn classes(&self) -> Box<dyn crate::trace::model::symbol::trace_class_symbol_view::TraceClassSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn all_namespaces(&self) -> Box<dyn TraceSymbolView> {
