@@ -1,6 +1,6 @@
 use crate::program::model::listing::CircularDependencyException;
+use crate::trace::database::symbol::abstract_db_trace_symbol::AbstractDBTraceSymbol;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
-use crate::trace::seam_stubs::AbstractDBTraceSymbol;
 
 /// A trace namespace symbol backed by the database.
 ///
@@ -9,8 +9,7 @@ use crate::trace::seam_stubs::AbstractDBTraceSymbol;
 /// It was selected as a dependency-cycle cut-point.
 ///
 /// The Java class `extends AbstractDBTraceSymbol implements TraceNamespaceSymbol`; both are
-/// modeled as supertraits here (the former as the [`AbstractDBTraceSymbol`] placeholder, since it
-/// is not yet ported).
+/// modeled as supertraits here.
 ///
 /// Most of the class's overrides restate behavior already declared on one of those supertraits
 /// (or on the [`Symbol`](crate::program::model::symbol::Symbol)/
@@ -249,7 +248,19 @@ mod tests {
         }
     }
 
+    struct MockOverlaySpaceAdapter;
+    impl crate::trace::seam_stubs::DBTraceOverlaySpaceAdapter for MockOverlaySpaceAdapter {}
+
+    struct MockProgramView;
+    impl crate::trace::seam_stubs::DBTraceProgramView for MockProgramView {}
+
     impl AbstractDBTraceSymbol for MockNamespaceSymbol {
+        fn get_overlay_space_adapter(
+            &self,
+        ) -> Box<dyn crate::trace::seam_stubs::DBTraceOverlaySpaceAdapter> {
+            Box::new(MockOverlaySpaceAdapter)
+        }
+
         fn get_lifespan(&self) -> Box<dyn Lifespan> {
             Box::new(MockLifespan { min: 0, max: 0 })
         }
@@ -258,9 +269,62 @@ mod tests {
             AddressSet::new()
         }
 
+        fn get_path(&self) -> Vec<String> {
+            let mut list = Vec::new();
+            DBTraceNamespaceSymbol::do_get_path(self, &mut list);
+            list
+        }
+
+        fn get_program(&self) -> Box<dyn crate::trace::seam_stubs::DBTraceProgramView> {
+            Box::new(MockProgramView)
+        }
+
+        fn get_program_location(&self) -> Box<dyn crate::program::util::program_location::ProgramLocation> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn is_descendant(&self, namespace: &dyn Namespace) -> bool {
+            let mut cur = Some(self.id);
+            while let Some(id) = cur {
+                if id == namespace.get_id() {
+                    return true;
+                }
+                cur = if id == self.id {
+                    self.parent.as_ref().map(|p| p.id)
+                } else {
+                    None
+                };
+            }
+            false
+        }
+
+        fn is_valid_parent(&self, _ns: &dyn Namespace) -> bool {
+            true
+        }
+
+        fn set_name(
+            &mut self,
+            _new_name: &str,
+            _new_source: SourceType,
+        ) -> Result<(), crate::trace::database::symbol::abstract_db_trace_symbol::SetSymbolNameError>
+        {
+            Ok(())
+        }
+
         fn set_namespace(&self, _new_namespace: &dyn Namespace) -> std::io::Result<()> {
             Ok(())
         }
+
+        fn set_name_and_namespace(
+            &mut self,
+            _new_name: &str,
+            _new_namespace: &dyn Namespace,
+            _new_source: SourceType,
+        ) -> Result<(), SetParentNamespaceError> {
+            Ok(())
+        }
+
+        fn set_source(&mut self, _new_source: SourceType) {}
 
         fn delete(&self) -> bool {
             true
