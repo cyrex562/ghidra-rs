@@ -76,11 +76,6 @@ pub trait TraceRegisterContextManager {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceStackManager {}
 
-/// Placeholder for `ghidra.trace.model.symbol.TraceClassSymbolView`, referenced by
-/// [`TraceSymbolManager`](crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager)
-/// before the real interface is ported. No members are parsed from the Java source yet.
-pub trait TraceClassSymbolView: Send + Sync {}
-
 /// Placeholder for `ghidra.trace.model.time.TraceSnapshot`, referenced by
 /// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
 /// the real port is available. Mirrors the one member referenced in that interface's javadoc:
