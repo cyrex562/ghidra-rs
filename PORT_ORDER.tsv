@@ -30,7 +30,7 @@ DONE	trait	43	9	9	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidr
 DONE	trait	50	10	28	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/property/TracePropertyMapOperations.java
 PARK	trait	50	12	7	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/property/TracePropertyMapSpace.java
 DONE	trait	49	15	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/property/TracePropertyMap.java
-TODO	trait	46	6	54	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceEquateManager.java
+DONE	trait	46	6	54	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceEquateManager.java
 TODO	trait	45	7	24	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/symbol/DBTraceEquate.java
 TODO	trait	51	4	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/data/DBTraceDataSettingsOperations.java
 TODO	trait	51	11	12	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceDataAdapter.java
