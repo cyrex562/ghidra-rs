@@ -544,12 +544,6 @@ pub trait TraceStackFrame: Send + Sync {}
 /// before the real port is available. No members are parsed from the Java source yet.
 pub trait TraceStack: Send + Sync {}
 
-/// Placeholder for `ghidra.trace.model.property.TracePropertyMapSpace`, referenced by
-/// [`TracePropertyMap`](crate::trace::model::property::trace_property_map::TracePropertyMap)
-/// before the real port is available. `TracePropertyMap` only ever passes this type around
-/// opaquely (as the return of its map-space lookups); no members are needed yet.
-pub trait TracePropertyMapSpace<T>: Send + Sync {}
-
 /// Placeholder for `ghidra.trace.database.target.DBTraceObject`, referenced by
 /// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
 /// before the real port is available. `TraceObjectValueStorage` is a bare abstract interface (no

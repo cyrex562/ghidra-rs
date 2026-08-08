@@ -20,7 +20,7 @@ use crate::trace::seam_stubs::{TraceStackFrame, TraceThread};
 use std::sync::Arc;
 
 use super::trace_property_map_operations::TracePropertyMapOperations;
-use crate::trace::seam_stubs::TracePropertyMapSpace;
+use super::trace_property_map_space::TracePropertyMapSpace;
 
 /// A range map for storing properties in a trace.
 ///
@@ -193,8 +193,65 @@ mod tests {
         }
     }
 
+    /// Only ever returned opaquely by [`TracePropertyMap::get_property_map_space`] in this
+    /// module's tests (never actually exercised), so every method is unimplemented.
     struct MockSpace;
-    impl TracePropertyMapSpace<i32> for MockSpace {}
+
+    impl TracePropertyMapOperations<i32> for MockSpace {
+        fn get_value_class(&self) -> TypeId {
+            TypeId::of::<i32>()
+        }
+
+        fn set(&mut self, _lifespan: Lifespan, _address: Address, _value: i32) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_range(&mut self, _lifespan: Lifespan, _range: AddressRange, _value: i32) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get(&self, _snap: i64, _address: &Address) -> Option<i32> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_entry(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, i32)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_entries(
+            &self,
+            _lifespan: Lifespan,
+            _range: AddressRange,
+        ) -> Vec<(Box<dyn TraceAddressSnapRange>, i32)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_address_set_view(&self, _span: Lifespan) -> Box<dyn AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn clear(&mut self, _span: Lifespan, _range: AddressRange) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TracePropertyMapSpace<i32> for MockSpace {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_address_space(&self) -> Arc<AddressSpace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn trace_register_utils(&self) -> &dyn crate::trace::seam_stubs::TraceRegisterUtils {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockThread;
     impl TraceThread for MockThread {}
