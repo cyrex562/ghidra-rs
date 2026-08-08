@@ -449,3 +449,12 @@ pub trait DBTreeNodeRecord: Send + Sync {}
 /// only ever returns this type opaquely to callers; no members are needed yet.
 pub trait DBTreeRecord: Send + Sync {}
 
+/// Placeholder for `ghidra.util.database.spatial.rect.Rectangle2DDirection`, referenced by
+/// [`TraceReferenceOperations`](crate::trace::model::symbol::trace_reference_operations::TraceReferenceOperations)
+/// before the real port is available. The Java type is an enum (`LEFTMOST`, `RIGHTMOST`,
+/// `BOTTOMMOST`, `TOPMOST`) whose only public member is `isReversed()`; only that member is
+/// stubbed here.
+pub trait Rectangle2DDirection: Send + Sync {
+    fn is_reversed(&self) -> bool;
+}
+
