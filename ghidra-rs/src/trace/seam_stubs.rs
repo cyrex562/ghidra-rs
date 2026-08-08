@@ -20,7 +20,6 @@ use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnits
 use crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag;
 use crate::trace::model::memory::trace_memory_region::TraceMemoryRegion;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
-use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::trace::Trace;
@@ -140,12 +139,6 @@ pub trait TimeRadix: Send + Sync {
     /// Mirrors `TimeRadix.getRadix()`.
     fn radix(&self) -> i32;
 }
-
-/// Placeholder for `ghidra.trace.model.program.TraceVariableSnapProgramView`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Mirrors the
-/// Java interface's `extends TraceProgramView`, now that
-/// [`TraceProgramView`](crate::trace::model::program::TraceProgramView) has a real port.
-pub trait TraceVariableSnapProgramView: TraceProgramView {}
 
 /// Placeholder for `ghidra.trace.model.TraceAddressSnapSpace`, referenced by
 /// [`ImmutableTraceAddressSnapRange`](crate::trace::model::immutable_trace_address_snap_range::ImmutableTraceAddressSnapRange)

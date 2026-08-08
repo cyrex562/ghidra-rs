@@ -48,10 +48,11 @@ mod tests {
     use crate::trace::model::trace::{Trace, TraceProgramViewListener};
     use crate::trace::model::trace_time_viewport::TraceTimeViewport;
     use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
+    use crate::trace::model::program::TraceVariableSnapProgramView;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceMemoryManager, TraceRegisterContextManager, TraceStackManager,
-        TraceThread, TraceVariableSnapProgramView,
+        TraceThread,
     };
     use crate::util::lock_hold::{Lock, LockHold};
     use crate::util::task::TaskMonitor;

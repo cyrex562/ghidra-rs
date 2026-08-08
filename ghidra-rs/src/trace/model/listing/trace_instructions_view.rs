@@ -220,13 +220,13 @@ use crate::program::model::listing::CommentType;
         fn create_program_view(
             &self,
             _snap: i64,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceVariableSnapProgramView> {
+        ) -> Box<dyn crate::trace::model::program::TraceVariableSnapProgramView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_all_program_views(&self) -> Vec<Box<dyn crate::trace::model::program::TraceProgramView>> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_program_view(&self) -> Box<dyn crate::trace::seam_stubs::TraceVariableSnapProgramView> {
+        fn get_program_view(&self) -> Box<dyn crate::trace::model::program::TraceVariableSnapProgramView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn create_time_viewport(&self) -> Box<dyn crate::trace::model::trace_time_viewport::TraceTimeViewport> {

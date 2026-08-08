@@ -1,48 +1,38 @@
-//! View of a trace at a particular time, as a program.
+//! A trace program view whose displayed snap can be changed after creation.
 //!
-//! Java source: `ghidra.trace.model.program.TraceProgramView`.
-use crate::program::model::listing::program::Program;
-use crate::trace::model::trace::Trace;
-use crate::trace::model::trace_time_viewport::TraceTimeViewport;
-use crate::trace::model::program::trace_program_view_memory::TraceProgramViewMemory;
+//! Java source: `ghidra.trace.model.program.TraceVariableSnapProgramView`.
+use crate::trace::model::program::trace_program_view::TraceProgramView;
+use crate::trace::seam_stubs::TracePlatform;
 
-/// A view of a trace at a particular time, as a program.
+/// A [`TraceProgramView`] whose snap (and current platform) can be changed after creation.
 ///
-/// Port of `ghidra.trace.model.program.TraceProgramView`.
-///
-/// The Java interface overrides `Program::getMemory()` to covariantly narrow its return type to
-/// `TraceProgramViewMemory`. Rust does not support covariant trait-method overrides, so that
-/// override is exposed here under a distinct name,
-/// [`TraceProgramView::get_trace_program_view_memory`], rather than redeclaring
-/// [`Program::get_memory`]. Implementors should still implement `Program::get_memory`
-/// (delegating to `get_trace_program_view_memory`), mirroring the Java override.
-pub trait TraceProgramView: Program {
-    /// Returns the memory of this view.
-    ///
-    /// This is the covariant override of `Program::getMemory()` in the Java source; see the
-    /// trait-level documentation for why it is exposed under a distinct name here.
-    fn get_trace_program_view_memory(&self) -> Box<dyn TraceProgramViewMemory>;
+/// Port of `ghidra.trace.model.program.TraceVariableSnapProgramView`.
+pub trait TraceVariableSnapProgramView: TraceProgramView {
+    /// Seek to a particular snap.
+    fn set_snap(&mut self, snap: i64);
 
-    /// Get the trace this view presents.
-    fn get_trace(&self) -> Box<dyn Trace>;
+    /// Seek to the latest snap.
+    fn seek_latest(&mut self) {
+        if let Some(max_snap) = self.get_max_snap() {
+            self.set_snap(max_snap);
+        }
+    }
 
-    /// Get the current snap.
-    fn get_snap(&self) -> i64;
-
-    /// Get the viewport this view is using for forked queries.
-    fn get_viewport(&self) -> Box<dyn TraceTimeViewport>;
-
-    /// Get the trace's latest snap.
-    fn get_max_snap(&self) -> Option<i64>;
+    /// Set the current platform, so that actions have context.
+    fn set_platform(&mut self, platform: Box<dyn TracePlatform>);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::merge::DataTypeManagerOwner;
     use crate::framework::model::DomainObject;
     use crate::program::model::data::data_type_manager::DataTypeManager;
     use crate::program::model::data::data_type_manager_domain_object::DataTypeManagerDomainObject;
-    use crate::app::merge::DataTypeManagerOwner;
+    use crate::program::model::listing::program::Program;
+    use crate::trace::model::program::trace_program_view_memory::TraceProgramViewMemory;
+    use crate::trace::model::trace::Trace;
+    use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
@@ -161,7 +151,7 @@ mod tests {
         fn create_program_view(
             &self,
             _snap: i64,
-        ) -> Box<dyn crate::trace::model::program::TraceVariableSnapProgramView> {
+        ) -> Box<dyn TraceVariableSnapProgramView> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -169,7 +159,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_program_view(&self) -> Box<dyn crate::trace::model::program::TraceVariableSnapProgramView> {
+        fn get_program_view(&self) -> Box<dyn TraceVariableSnapProgramView> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -318,16 +308,20 @@ mod tests {
         }
     }
 
-    struct MockProgramView {
+    struct MockPlatform;
+    impl TracePlatform for MockPlatform {}
+
+    struct MockVariableSnapProgramView {
         snap: i64,
         max_snap: Option<i64>,
+        platform_set: bool,
     }
 
-    impl DomainObject for MockProgramView {}
+    impl DomainObject for MockVariableSnapProgramView {}
 
-    impl Program for MockProgramView {
+    impl Program for MockVariableSnapProgramView {
         fn get_name(&self) -> String {
-            "mock-view".to_string()
+            "mock-variable-snap-view".to_string()
         }
 
         fn get_language_id(&self) -> String {
@@ -335,7 +329,7 @@ mod tests {
         }
     }
 
-    impl TraceProgramView for MockProgramView {
+    impl TraceProgramView for MockVariableSnapProgramView {
         fn get_trace_program_view_memory(&self) -> Box<dyn TraceProgramViewMemory> {
             Box::new(MockMemory)
         }
@@ -357,34 +351,70 @@ mod tests {
         }
     }
 
-    #[test]
-    fn reports_snap_and_max_snap() {
-        let view = MockProgramView {
-            snap: 3,
-            max_snap: Some(10),
-        };
-        assert_eq!(view.get_snap(), 3);
-        assert_eq!(view.get_max_snap(), Some(10));
+    impl TraceVariableSnapProgramView for MockVariableSnapProgramView {
+        fn set_snap(&mut self, snap: i64) {
+            self.snap = snap;
+        }
+
+        fn set_platform(&mut self, _platform: Box<dyn TracePlatform>) {
+            self.platform_set = true;
+        }
     }
 
     #[test]
-    fn max_snap_can_be_absent() {
-        let view = MockProgramView {
+    fn set_snap_updates_the_current_snap() {
+        let mut view = MockVariableSnapProgramView {
+            snap: 0,
+            max_snap: Some(10),
+            platform_set: false,
+        };
+        view.set_snap(7);
+        assert_eq!(view.get_snap(), 7);
+    }
+
+    #[test]
+    fn seek_latest_moves_to_the_max_snap() {
+        let mut view = MockVariableSnapProgramView {
+            snap: 0,
+            max_snap: Some(42),
+            platform_set: false,
+        };
+        view.seek_latest();
+        assert_eq!(view.get_snap(), 42);
+    }
+
+    #[test]
+    fn seek_latest_is_a_no_op_without_a_max_snap() {
+        let mut view = MockVariableSnapProgramView {
+            snap: 3,
+            max_snap: None,
+            platform_set: false,
+        };
+        view.seek_latest();
+        assert_eq!(view.get_snap(), 3);
+    }
+
+    #[test]
+    fn set_platform_is_observed_before_boxing() {
+        let mut view = MockVariableSnapProgramView {
             snap: 0,
             max_snap: None,
+            platform_set: false,
         };
-        assert_eq!(view.get_max_snap(), None);
+        view.set_platform(Box::new(MockPlatform));
+        assert!(view.platform_set);
     }
 
     #[test]
     fn trait_object_usage_is_object_safe() {
-        let view: Box<dyn TraceProgramView> = Box::new(MockProgramView {
+        let mut view: Box<dyn TraceVariableSnapProgramView> = Box::new(MockVariableSnapProgramView {
             snap: 1,
-            max_snap: Some(1),
+            max_snap: Some(5),
+            platform_set: false,
         });
-        assert_eq!(Program::get_name(&*view), "mock-view");
-        let _ = view.get_trace();
-        let _ = view.get_viewport();
-        let _ = view.get_trace_program_view_memory();
+        view.set_platform(Box::new(MockPlatform));
+        view.set_snap(5);
+        assert_eq!(Program::get_name(&*view), "mock-variable-snap-view");
+        assert_eq!(view.get_snap(), 5);
     }
 }

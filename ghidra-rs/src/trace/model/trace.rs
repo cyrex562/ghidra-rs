@@ -13,11 +13,11 @@ use crate::trace::model::symbol::trace_reference_manager::TraceReferenceManager;
 use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
+use crate::trace::model::program::TraceVariableSnapProgramView;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceMemoryManager,
     TraceRegisterContextManager, TraceStackManager,
-    TraceVariableSnapProgramView,
 };
 use crate::util::lock_hold::{Lock, LockHold};
 
@@ -1230,7 +1230,11 @@ mod tests {
         }
     }
 
-    impl TraceVariableSnapProgramView for MockVariableSnapProgramView {}
+    impl TraceVariableSnapProgramView for MockVariableSnapProgramView {
+        fn set_snap(&mut self, _snap: i64) {}
+
+        fn set_platform(&mut self, _platform: Box<dyn crate::trace::seam_stubs::TracePlatform>) {}
+    }
     struct MockTimeViewport;
     impl TraceTimeViewport for MockTimeViewport {
         fn set_snap(&mut self, _snap: i64) {}
