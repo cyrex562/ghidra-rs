@@ -54,7 +54,6 @@ ClassSymbol	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database
 CodeManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/code/code_manager.rs:69	concrete Java `class` (0 in-repo subclass(es))
 CodeSymbol	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/symbol/code_symbol.rs:40	concrete Java `class` (0 in-repo subclass(es))
 CodeUnitFormat	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/listing/code_unit_format.rs:80	concrete Java `class` (1 in-repo subclass(es))
-CodeUnitIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/listing/code_unit_iterator.rs:8	extends Iterator
 CodeUnitLocation	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/util/code_unit_location.rs:34	concrete Java `class` (19 in-repo subclass(es))
 ComparisonItem	trait	struct	R10-abstract-orphan	class/abstract	ghidra-rs/src/app/merge/structures/comparison_item.rs:22	abstract class with no in-repo subclasses
 CompositeDataTypeElementInfo	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/util/composite_data_type_element_info.rs:10	concrete Java `class` (0 in-repo subclass(es))
@@ -252,7 +251,6 @@ RecursiveDescentSolver	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/p
 RefListFlagsV0	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/references/ref_list_flags_v0.rs:113	concrete Java `class` (0 in-repo subclass(es))
 RefListV0	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/references/ref_list_v0.rs:42	concrete Java `class` (0 in-repo subclass(es))
 RefType	enum	struct_trait	R11-abstract-stateful	class/abstract	ghidra-rs/src/program/model/symbol/ref_type.rs:6	abstract class with 2 instance field(s) and 2 in-repo subclass(es)
-ReferenceIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/symbol/reference_iterator.rs:8	extends Iterator
 RelocationManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/reloc/relocation_manager.rs:36	concrete Java `class` (0 in-repo subclass(es))
 RepositoryAdapter	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/client/repository_adapter.rs:56	concrete Java `class` (0 in-repo subclass(es))
 RepositoryFile	trait	struct	R14-concrete-class	class	ghidra-rs/src/server/store/repository_file.rs:65	concrete Java `class` (0 in-repo subclass(es))

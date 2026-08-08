@@ -91,14 +91,16 @@ mod tests {
     }
 
     struct MockReferenceIterator;
-    impl ReferenceIterator for MockReferenceIterator {
-        fn has_next(&self) -> bool {
-            false
-        }
-        fn next_reference(&mut self) -> Option<Arc<dyn crate::program::model::symbol::Reference>> {
+    impl Iterator for MockReferenceIterator {
+        // The real trait, not the `seam_stubs::Reference` placeholder this module imports.
+        type Item = Arc<dyn crate::program::model::symbol::Reference>;
+
+        fn next(&mut self) -> Option<Self::Item> {
             None
         }
     }
+
+    impl ReferenceIterator for MockReferenceIterator {}
 
     struct MockChangeManager;
     impl TraceChangeManager for MockChangeManager {

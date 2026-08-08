@@ -161,14 +161,15 @@ use crate::program::model::listing::CommentType;
 
         fn get_reference_iterator_to(&self) -> Box<dyn ReferenceIterator> {
             struct EmptyRefIter;
-            impl ReferenceIterator for EmptyRefIter {
-                fn has_next(&self) -> bool {
-                    false
-                }
-                fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+            impl Iterator for EmptyRefIter {
+                type Item = Arc<dyn Reference>;
+
+                fn next(&mut self) -> Option<Self::Item> {
                     None
                 }
             }
+
+            impl ReferenceIterator for EmptyRefIter {}
             Box::new(EmptyRefIter)
         }
 

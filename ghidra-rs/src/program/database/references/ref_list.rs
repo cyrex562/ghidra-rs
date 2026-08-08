@@ -431,10 +431,9 @@ mod tests {
         assert!(list.has_reference(0));
 
         let mut iter = list.get_refs();
-        assert!(iter.has_next());
-        let r = iter.next_reference().unwrap();
+                let r = iter.next().unwrap();
         assert_eq!(r.symbol_id(), 42);
-        assert!(!iter.has_next());
+        assert!(iter.next().is_none());
 
         assert!(list.remove_ref(&to, 0).unwrap());
         assert!(list.is_empty());

@@ -327,7 +327,7 @@ mod tests {
 
     impl BigRefListV0 for MockBigRefListV0 {
         fn add_refs_from_iter(&mut self, ref_iter: &mut dyn ReferenceIterator) -> io::Result<()> {
-            while let Some(r) = ref_iter.next_reference() {
+            while let Some(r) = ref_iter.next() {
                 self.refs.push(r);
             }
             Ok(())
@@ -461,10 +461,9 @@ mod tests {
         assert_eq!(list.get_num_refs(), 1);
 
         let mut iter = list.get_refs();
-        assert!(iter.has_next());
-        let r = iter.next_reference().unwrap();
+                let r = iter.next().unwrap();
         assert_eq!(r.symbol_id(), 42);
-        assert!(!iter.has_next());
+        assert!(iter.next().is_none());
 
         list.remove_all().unwrap();
         assert!(list.is_empty());

@@ -393,14 +393,15 @@ mod tests {
     }
 
     struct MockReferenceIterator;
-    impl ReferenceIterator for MockReferenceIterator {
-        fn has_next(&self) -> bool {
-            false
-        }
-        fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    impl Iterator for MockReferenceIterator {
+        type Item = Arc<dyn Reference>;
+
+        fn next(&mut self) -> Option<Self::Item> {
             None
         }
     }
+
+    impl ReferenceIterator for MockReferenceIterator {}
 
     /// A reference standing in for a `TraceReference` boxed as the base `Reference` type, since
     /// (per this trait's module docs) trace-specific reference types cannot be recovered from a

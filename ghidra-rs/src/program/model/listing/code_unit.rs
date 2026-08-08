@@ -459,11 +459,10 @@ mod tests {
         references: Vec<Arc<dyn Reference>>,
         index: usize,
     }
-    impl ReferenceIterator for MockReferenceIterator {
-        fn has_next(&self) -> bool {
-            self.index < self.references.len()
-        }
-        fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    impl Iterator for MockReferenceIterator {
+        type Item = Arc<dyn Reference>;
+
+        fn next(&mut self) -> Option<Self::Item> {
             let next = self.references.get(self.index).cloned();
             if next.is_some() {
                 self.index += 1;
@@ -471,6 +470,8 @@ mod tests {
             next
         }
     }
+
+    impl ReferenceIterator for MockReferenceIterator {}
 
     struct MockCodeUnit {
         min_address: Address,

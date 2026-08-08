@@ -406,14 +406,15 @@ use crate::program::model::listing::CommentType;
     }
 
     struct MockReferenceIterator;
-    impl ReferenceIterator for MockReferenceIterator {
-        fn has_next(&self) -> bool {
-            false
-        }
-        fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    impl Iterator for MockReferenceIterator {
+        type Item = Arc<dyn Reference>;
+
+        fn next(&mut self) -> Option<Self::Item> {
             None
         }
     }
+
+    impl ReferenceIterator for MockReferenceIterator {}
 
     struct MockProgram;
     impl crate::framework::model::DomainObject for MockProgram {}

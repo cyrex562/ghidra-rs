@@ -274,14 +274,15 @@ use crate::program::model::listing::CommentType;
     }
 
     struct FakeReferenceIterator;
-    impl ReferenceIterator for FakeReferenceIterator {
-        fn has_next(&self) -> bool {
-            false
-        }
-        fn next_reference(&mut self) -> Option<Arc<dyn Reference>> {
+    impl Iterator for FakeReferenceIterator {
+        type Item = Arc<dyn Reference>;
+
+        fn next(&mut self) -> Option<Self::Item> {
             None
         }
     }
+
+    impl ReferenceIterator for FakeReferenceIterator {}
 
     struct FakeCodeUnit {
         min_address: Address,
