@@ -539,7 +539,7 @@ mod tests {
         fn all_namespaces(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn not_labels(&self) -> Box<dyn crate::trace::seam_stubs::TraceSymbolNoDuplicatesView> {
+        fn not_labels(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_no_duplicates_view::TraceSymbolNoDuplicatesView> {
             unimplemented!("not exercised by this smoke test")
         }
         fn all_symbols(&self) -> Box<dyn crate::trace::model::symbol::trace_symbol_view::TraceSymbolView> {

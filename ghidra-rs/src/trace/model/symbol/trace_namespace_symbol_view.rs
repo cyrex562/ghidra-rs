@@ -4,9 +4,8 @@
 //!
 //! It was selected as a dependency-cycle cut-point.
 //!
-//! The Java interface extends `TraceSymbolNoDuplicatesView<TraceNamespaceSymbol>`, itself
-//! unported; see [`TraceSymbolNoDuplicatesView`](crate::trace::seam_stubs::TraceSymbolNoDuplicatesView)
-//! for why that supertrait is a marker here.
+//! The Java interface extends `TraceSymbolNoDuplicatesView<TraceNamespaceSymbol>`; see
+//! [`TraceSymbolNoDuplicatesView`](crate::trace::model::symbol::trace_symbol_no_duplicates_view::TraceSymbolNoDuplicatesView).
 
 use std::sync::Arc;
 
@@ -14,7 +13,7 @@ use thiserror::Error;
 
 use crate::program::model::symbol::SourceType;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
-use crate::trace::seam_stubs::TraceSymbolNoDuplicatesView;
+use crate::trace::model::symbol::trace_symbol_no_duplicates_view::TraceSymbolNoDuplicatesView;
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 
 /// Error produced by [`TraceNamespaceSymbolView::add`].
@@ -51,6 +50,8 @@ mod tests {
     use crate::program::model::address::Address;
     use crate::trace::model::symbol::trace_reference::TraceReference;
     use crate::trace::model::symbol::trace_symbol::TraceSymbol;
+    use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
+    use crate::trace::model::symbol::trace_symbol_view::TraceSymbolView;
     use crate::trace::model::trace::Trace;
     use crate::trace::seam_stubs::TraceThread;
     use crate::util::task::TaskMonitor;
@@ -146,6 +147,30 @@ mod tests {
     struct MockView {
         next_id: Mutex<i64>,
         taken: Mutex<HashSet<(i64, String)>>,
+    }
+
+    impl TraceSymbolView for MockView {
+        fn get_manager(&self) -> Box<dyn TraceSymbolManager> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_all(&self, _include_dynamic_symbols: bool) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_children_named(&self, _name: &str, _parent: &dyn TraceNamespaceSymbol) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_children(&self, _parent: &dyn TraceNamespaceSymbol) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_named(&self, _name: &str) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_with_matching_name(&self, _glob: &str, _case_sensitive: bool) -> Vec<Arc<dyn TraceSymbol>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn scan_by_name(&self, _start_name: &str) -> Box<dyn Iterator<Item = Arc<dyn TraceSymbol>> + '_> {
+            unimplemented!("not exercised by this smoke test")
+        }
     }
 
     impl TraceSymbolNoDuplicatesView for MockView {}
