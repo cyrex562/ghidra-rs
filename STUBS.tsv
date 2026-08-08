@@ -482,3 +482,7 @@ ts	stub_class	referenced_by
 2026-08-08T10:00:00+00:00	TraceMemoryOperations	InternalTraceMemoryOperations
 2026-08-08T10:00:00+00:00	TraceRegisterUtils	InternalTraceMemoryOperations
 2026-08-08T10:00:00+00:00	RegisterValue	InternalTraceMemoryOperations
+2026-08-08T11:00:00+00:00	DBTraceMemorySpace	DBTraceMemoryManager
+2026-08-08T11:00:00+00:00	DBTrace	DBTraceMemoryManager
+2026-08-08T11:00:00+00:00	DBTraceObjectManager	DBTraceMemoryManager
+2026-08-08T11:00:00+00:00	DBTraceOverlaySpaceAdapter	DBTraceMemoryManager

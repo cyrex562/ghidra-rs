@@ -12,10 +12,13 @@ use crate::program::model::address::{
 };
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::{Language, Register};
+use crate::program::model::mem::MemBuffer;
 use crate::program::seam_stubs::RegisterValue as ProgramRegisterValue;
 use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView;
+use crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag;
+use crate::trace::model::memory::trace_memory_region::TraceMemoryRegion;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
@@ -23,7 +26,9 @@ use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::util::trace_change_manager::TraceChangeManager;
+use crate::util::exception::DuplicateNameException;
 use crate::util::lock_hold::Lock;
+use crate::util::task::TaskMonitor;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -439,7 +444,68 @@ pub trait DBTraceObject: Send + Sync {}
 /// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
 /// before the real port is available. `TraceObjectValueStorage` only ever passes this type around
 /// opaquely (as `getManager`'s return); no members are needed yet.
-pub trait DBTraceObjectManager: Send + Sync {}
+///
+/// Grown to add the region-storage methods
+/// [`DBTraceMemoryManager`](crate::trace::database::memory::db_trace_memory_manager::DBTraceMemoryManager)'s
+/// region-management defaults need. The real Java methods are generic in a `Class<I extends
+/// TraceObjectInterface>` reflection token (`getAllObjects(Class<I>)`, etc); every call site this
+/// placeholder's consumer makes passes `TraceMemoryRegion.class`, so each is specialized directly
+/// to [`TraceMemoryRegion`] rather than reproducing the generic/reflective shape. All default to
+/// panicking, like [`DBTrace`]'s grown `get_object_manager`, so the existing marker
+/// (`impl DBTraceObjectManager for T {}`) implementors keep compiling unchanged.
+pub trait DBTraceObjectManager: Send + Sync {
+    /// Mirrors `addMemoryRegion(String, Lifespan, AddressRange, Collection<TraceMemoryFlag>)`.
+    fn add_memory_region(
+        &self,
+        _path: &str,
+        _lifespan: &dyn Lifespan,
+        _range: AddressRange,
+        _flags: &[TraceMemoryFlag],
+    ) -> Result<Box<dyn TraceMemoryRegion>, Box<dyn TraceOverlappedRegionException>> {
+        unimplemented!("DBTraceObjectManager::add_memory_region placeholder not overridden")
+    }
+
+    /// Mirrors `getAllObjects(TraceMemoryRegion.class)`.
+    fn get_all_regions(&self) -> Vec<Box<dyn TraceMemoryRegion>> {
+        unimplemented!("DBTraceObjectManager::get_all_regions placeholder not overridden")
+    }
+
+    /// Mirrors `getObjectByPath(long, String, TraceMemoryRegion.class)`.
+    fn get_region_by_path(&self, _snap: i64, _path: &str) -> Option<Box<dyn TraceMemoryRegion>> {
+        unimplemented!("DBTraceObjectManager::get_region_by_path placeholder not overridden")
+    }
+
+    /// Mirrors `getObjectContaining(long, Address, TraceMemoryRegion.KEY_RANGE,
+    /// TraceMemoryRegion.class)`.
+    fn get_region_containing(&self, _snap: i64, _address: &Address) -> Option<Box<dyn TraceMemoryRegion>> {
+        unimplemented!("DBTraceObjectManager::get_region_containing placeholder not overridden")
+    }
+
+    /// Mirrors `getObjectsIntersecting(Lifespan, AddressRange, TraceMemoryRegion.KEY_RANGE,
+    /// TraceMemoryRegion.class)`.
+    fn get_regions_intersecting(
+        &self,
+        _lifespan: &dyn Lifespan,
+        _range: &AddressRange,
+    ) -> Vec<Box<dyn TraceMemoryRegion>> {
+        unimplemented!("DBTraceObjectManager::get_regions_intersecting placeholder not overridden")
+    }
+
+    /// Mirrors `getObjectsAtSnap(long, TraceMemoryRegion.class)`.
+    fn get_regions_at_snap(&self, _snap: i64) -> Vec<Box<dyn TraceMemoryRegion>> {
+        unimplemented!("DBTraceObjectManager::get_regions_at_snap placeholder not overridden")
+    }
+
+    /// Mirrors `getObjectsAddressSet(long, TraceMemoryRegion.KEY_RANGE, TraceMemoryRegion.class,
+    /// Predicate<TraceMemoryRegion>)`.
+    fn get_regions_address_set(
+        &self,
+        _snap: i64,
+        _predicate: &dyn Fn(&dyn TraceMemoryRegion) -> bool,
+    ) -> Box<dyn AddressSetView> {
+        unimplemented!("DBTraceObjectManager::get_regions_address_set placeholder not overridden")
+    }
+}
 
 /// Placeholder for `ghidra.trace.database.target.DBTraceObjectValue`, referenced by
 /// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
@@ -802,7 +868,19 @@ pub trait DBTraceCodeManager: Send + Sync {
 /// them would force every implementor (including this module's own tests) to stub out that whole
 /// surface for no benefit; the real port should implement both `Trace` and this trait, matching
 /// Java's `DBTrace implements Trace`.
-pub trait DBTrace: Send + Sync {}
+///
+/// Grown to add the one member
+/// [`DBTraceMemoryManager`](crate::trace::database::memory::db_trace_memory_manager::DBTraceMemoryManager)'s
+/// region-management defaults need: reaching the trace's object manager, where regions are
+/// actually stored (`trace.getObjectManager().addMemoryRegion(...)`, etc). Defaults to
+/// panicking, like [`DBTraceOverlaySpaceAdapter`]'s grown members, so the existing marker
+/// (`impl DBTrace for T {}`) implementors keep compiling unchanged.
+pub trait DBTrace: Send + Sync {
+    /// Mirrors `DBTrace.getObjectManager()`.
+    fn get_object_manager(&self) -> Box<dyn DBTraceObjectManager> {
+        unimplemented!("DBTrace::get_object_manager placeholder not overridden")
+    }
+}
 
 /// Placeholder for `ghidra.trace.database.listing.DBTraceCodeUnitsView`, referenced by
 /// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
@@ -965,7 +1043,41 @@ pub trait DBTraceDefinedDataAdapter:
 /// before the real port is available. That trait's `getOverlaySpaceAdapter()` (mirroring the
 /// single-method `DecodesAddresses` interface it implements) only ever passes this type around
 /// opaquely; no members are needed yet.
-pub trait DBTraceOverlaySpaceAdapter: Send + Sync {}
+///
+/// Grown to add the three overlay-address-space management methods
+/// [`DBTraceMemoryManager`](crate::trace::database::memory::db_trace_memory_manager::DBTraceMemoryManager)'s
+/// `create_overlay_address_space`/`get_or_create_overlay_address_space`/
+/// `delete_overlay_address_space` defaults delegate straight through to (the `overlayAdapter`
+/// field DBTraceMemoryManager's Java constructor is handed). All three default to panicking,
+/// matching this module's other grown-but-not-yet-implemented placeholders (see
+/// [`TracePlatform::get_trace`]'s docs for the same reasoning), so the existing marker
+/// (`impl DBTraceOverlaySpaceAdapter for T {}`) implementor keeps compiling unchanged.
+pub trait DBTraceOverlaySpaceAdapter: Send + Sync {
+    /// Create a new address space with the given name based on `base`. Mirrors
+    /// `createOverlayAddressSpace(String, AddressSpace)`.
+    fn create_overlay_address_space(
+        &self,
+        _name: &str,
+        _base: &Arc<AddressSpace>,
+    ) -> Result<Arc<AddressSpace>, DuplicateNameException> {
+        unimplemented!("DBTraceOverlaySpaceAdapter::create_overlay_address_space placeholder not overridden")
+    }
+
+    /// Get or create an overlay address space over `base`. Mirrors
+    /// `getOrCreateOverlayAddressSpace(String, AddressSpace)`.
+    fn get_or_create_overlay_address_space(
+        &self,
+        _name: &str,
+        _base: &Arc<AddressSpace>,
+    ) -> Option<Arc<AddressSpace>> {
+        unimplemented!("DBTraceOverlaySpaceAdapter::get_or_create_overlay_address_space placeholder not overridden")
+    }
+
+    /// Delete the named overlay address space. Mirrors `deleteOverlayAddressSpace(String)`.
+    fn delete_overlay_address_space(&self, _name: &str) {
+        unimplemented!("DBTraceOverlaySpaceAdapter::delete_overlay_address_space placeholder not overridden")
+    }
+}
 
 /// Placeholder for `ghidra.trace.database.program.DBTraceProgramView`, referenced by
 /// [`AbstractDBTraceSymbol`](crate::trace::database::symbol::abstract_db_trace_symbol::AbstractDBTraceSymbol)
@@ -985,5 +1097,113 @@ pub trait DBTraceSymbolManager: Send + Sync {
     ) -> std::sync::Arc<
         dyn crate::trace::database::symbol::db_trace_namespace_symbol::DBTraceNamespaceSymbol,
     >;
+}
+
+/// Placeholder for `ghidra.trace.database.memory.DBTraceMemorySpace`, referenced (as the
+/// per-address-space delegate `M` of its
+/// [`DBTraceDelegatingManager`](crate::trace::database::space::db_trace_delegating_manager::DBTraceDelegatingManager))
+/// by
+/// [`DBTraceMemoryManager`](crate::trace::database::memory::db_trace_memory_manager::DBTraceMemoryManager)
+/// before the real port is available.
+///
+/// The real Java class implements the full `InternalTraceMemoryOperations` surface (register
+/// overloads and all) plus DB-tree bookkeeping (`checkStateMapIntegrity`, `paint`, `getDepth`,
+/// ...). `DBTraceMemoryManager` only ever calls this trimmed set of members on it -- the
+/// non-register `TraceMemoryOperations` primitives it delegates each per-space, plain-address
+/// call to -- so only those are stubbed here, `&self`-receiver throughout since the manager's
+/// `delegateXxx` helpers hand out this type by value (`Arc<dyn DBTraceMemorySpace>`), not by
+/// exclusive reference.
+pub trait DBTraceMemorySpace: Send + Sync {
+    /// Mirrors `setState(long, AddressRange, TraceMemoryState)`.
+    fn set_state(&self, snap: i64, range: &AddressRange, state: TraceMemoryState);
+
+    /// Mirrors `getState(long, Address)`.
+    fn get_state(&self, snap: i64, address: &Address) -> TraceMemoryState;
+
+    /// Mirrors `getViewState(long, Address)`.
+    fn get_view_state(&self, snap: i64, address: &Address) -> (i64, TraceMemoryState);
+
+    /// Mirrors `getMostRecentStateEntry(long, Address)`.
+    fn get_most_recent_state_entry(
+        &self,
+        snap: i64,
+        address: &Address,
+    ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)>;
+
+    /// Mirrors `getViewMostRecentStateEntry(long, Address)`.
+    fn get_view_most_recent_state_entry(
+        &self,
+        snap: i64,
+        address: &Address,
+    ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)>;
+
+    /// Mirrors `getViewMostRecentStateEntry(long, AddressRange, Predicate<TraceMemoryState>)`.
+    fn get_view_most_recent_state_entry_where(
+        &self,
+        snap: i64,
+        range: &AddressRange,
+        predicate: &dyn Fn(TraceMemoryState) -> bool,
+    ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)>;
+
+    /// Mirrors the two-argument `getAddressesWithState(long, Predicate<TraceMemoryState>)`.
+    /// (The three-argument `getAddressesWithState(Lifespan, AddressSetView,
+    /// Predicate<TraceMemoryState>)` and the lifespan-only two-argument overload are not modeled
+    /// here; see
+    /// [`DBTraceMemoryManager::get_addresses_with_state_in`](crate::trace::database::memory::db_trace_memory_manager::DBTraceMemoryManager::get_addresses_with_state_in)'s
+    /// docs.)
+    fn get_addresses_with_state(
+        &self,
+        snap: i64,
+        predicate: &dyn Fn(TraceMemoryState) -> bool,
+    ) -> Box<dyn AddressSetView>;
+
+    /// Mirrors `getStates(long, AddressRange)`.
+    fn get_states(
+        &self,
+        snap: i64,
+        range: &AddressRange,
+    ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)>;
+
+    /// Mirrors `getMostRecentStates(TraceAddressSnapRange)`.
+    fn get_most_recent_states(
+        &self,
+        within: &dyn TraceAddressSnapRange,
+    ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)>;
+
+    /// Mirrors `putBytes(long, Address, ByteBuffer)`.
+    fn put_bytes(&self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
+
+    /// Mirrors `getBytes(long, Address, ByteBuffer)`.
+    fn get_bytes(&self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
+
+    /// Mirrors `getViewBytes(long, Address, ByteBuffer)`.
+    fn get_view_bytes(&self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
+
+    /// Mirrors `removeBytes(long, Address, int)`.
+    fn remove_bytes(&self, snap: i64, start: &Address, len: i32);
+
+    /// Mirrors `findBytes(long, AddressRange, ByteBuffer, ByteBuffer, boolean, TaskMonitor)`.
+    /// `mask` is `None` for Java's `null` ("match all bytes exactly").
+    fn find_bytes(
+        &self,
+        snap: i64,
+        range: &AddressRange,
+        data: &[u8],
+        mask: Option<&[u8]>,
+        forward: bool,
+        monitor: &dyn TaskMonitor,
+    ) -> Option<Address>;
+
+    /// Mirrors `getBufferAt(long, Address, ByteOrder)`. `big_endian` stands in for the Java
+    /// `ByteOrder`, the same simplification
+    /// [`MemBuffer::is_big_endian`](crate::program::model::mem::MemBuffer::is_big_endian) already
+    /// established for byte-order parameters.
+    fn get_buffer_at(&self, snap: i64, start: &Address, big_endian: bool) -> Box<dyn MemBuffer>;
+
+    /// Mirrors `getSnapOfMostRecentChangeToBlock(long, Address)`.
+    fn get_snap_of_most_recent_change_to_block(&self, snap: i64, address: &Address) -> Option<i64>;
+
+    /// Mirrors `pack()`.
+    fn pack(&self);
 }
 
