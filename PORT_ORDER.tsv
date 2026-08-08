@@ -46,7 +46,7 @@ PARK	trait	40	8	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidr
 PARK	trait	39	12	48	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceCodeUnitAdapter.java
 DONE	trait	38	11	6	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/AbstractDBTraceCodeUnit.java
 DONE	trait	37	29	46	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceCodeSpace.java
-TODO	trait	37	3	5	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/memory/InternalTraceMemoryOperations.java
+DONE	trait	37	3	5	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/memory/InternalTraceMemoryOperations.java
 TODO	trait	35	25	44	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/memory/DBTraceMemoryManager.java
 TODO	trait	33	4	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/guest/TracePlatformManager.java
 TODO	trait	32	8	80	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/guest/DBTracePlatformManager.java
