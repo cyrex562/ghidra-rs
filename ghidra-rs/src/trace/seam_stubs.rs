@@ -411,6 +411,10 @@ pub trait TraceChangeRecord: Send + Sync {}
 /// static-class-to-`&self`-trait convention) as an object-safe trait, restricted to the two
 /// static methods `TraceSpaceMixin`'s defaults call: `getThread(Trace, AddressSpace)` and
 /// `getFrameLevel(Trace, AddressSpace)`.
+///
+/// Grown to add
+/// [`TraceLabelSymbolView`](crate::trace::model::symbol::trace_label_symbol_view::TraceLabelSymbolView)'s
+/// `requireByteBound(Register)` static check, used by its register-taking `add` default.
 pub trait TraceRegisterUtils: Send + Sync {
     /// Mirrors `TraceRegisterUtils.getThread(Trace, AddressSpace)`.
     fn get_thread(&self, trace: &dyn Trace, space: &Arc<AddressSpace>) -> Box<dyn TraceThread>;
@@ -429,6 +433,20 @@ pub trait TraceRegisterUtils: Send + Sync {
         frame_level: i32,
         create_if_absent: bool,
     ) -> Option<Arc<AddressSpace>>;
+
+    /// Mirrors `TraceRegisterUtils.requireByteBound(Register)`, which rejects a register that
+    /// does not start and end on a byte boundary. Implemented directly against the ported
+    /// [`Register`], since the check depends only on the register itself, not on any manager
+    /// state.
+    ///
+    /// # Panics
+    /// Panics if `register` is not byte-bound, mirroring the Java method's
+    /// `IllegalArgumentException`.
+    fn require_byte_bound(&self, register: &Register) {
+        if register.least_significant_bit() % 8 != 0 || register.bit_length() % 8 != 0 {
+            panic!("register {} is not byte-bound", register.name());
+        }
+    }
 }
 
 /// Placeholder for the nested `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.TraceAddressSnapRangeQuery`,
