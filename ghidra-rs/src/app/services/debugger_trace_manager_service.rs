@@ -363,12 +363,13 @@ mod tests {
     use crate::trace::model::target::trace_object_manager::TraceObjectManager;
     use crate::trace::model::thread::TraceThreadManager;
     use crate::trace::model::symbol::trace_equate_manager::TraceEquateManager;
+    use crate::trace::model::symbol::trace_reference_manager::TraceReferenceManager;
     use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
     use crate::trace::seam_stubs::{
         TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceMemoryManager,
         TracePlatformManager,
-        TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
+        TraceRegisterContextManager, TraceStackManager,
         TraceVariableSnapProgramView,
     };
     use crate::util::lock_hold::{Lock, LockHold};

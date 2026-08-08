@@ -9,13 +9,14 @@ use crate::trace::model::time::trace_time_manager::TraceTimeManager;
 use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::thread::TraceThreadManager;
 use crate::trace::model::symbol::trace_equate_manager::TraceEquateManager;
+use crate::trace::model::symbol::trace_reference_manager::TraceReferenceManager;
 use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceMemoryManager,
     TracePlatformManager,
-    TraceReferenceManager, TraceRegisterContextManager, TraceStackManager,
+    TraceRegisterContextManager, TraceStackManager,
     TraceVariableSnapProgramView,
 };
 use crate::util::lock_hold::{Lock, LockHold};
@@ -665,7 +666,248 @@ mod tests {
         }
     }
     struct MockReferenceManager;
-    impl TraceReferenceManager for MockReferenceManager {}
+    impl crate::trace::model::symbol::trace_reference_operations::TraceReferenceOperations for MockReferenceManager {
+        fn add_reference(
+            &mut self,
+            _reference: &dyn crate::trace::model::symbol::trace_reference::TraceReference,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_reference_for_lifespan(
+            &mut self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _reference: &dyn crate::program::model::symbol::Reference,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_memory_reference(
+            &mut self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_range: crate::program::model::address::AddressRange,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_offset_reference(
+            &mut self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_address: &crate::program::model::address::Address,
+            _to_addr_is_base: bool,
+            _offset: i64,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_offset_reference::TraceOffsetReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_shifted_reference(
+            &mut self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_address: &crate::program::model::address::Address,
+            _shift: i32,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_shifted_reference::TraceShiftedReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_register_reference(
+            &mut self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_register: &crate::program::model::lang::Register,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn add_stack_reference(
+            &mut self,
+            _lifespan: &dyn crate::trace::model::lifespan::Lifespan,
+            _from_address: &crate::program::model::address::Address,
+            _to_stack_offset: i32,
+            _ref_type: crate::program::model::symbol::RefType,
+            _source: crate::program::model::symbol::SourceType,
+            _operand_index: i32,
+        ) -> Box<dyn crate::trace::model::symbol::trace_reference::TraceReference> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _to_range: crate::program::model::address::AddressRange,
+            _operand_index: i32,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_to_address(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _to_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_from_operand(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_from_range(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_primary_reference_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_flow_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references_from(
+            &mut self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_to(
+            &self,
+            _snap: i64,
+            _to_address: &crate::program::model::address::Address,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn clear_references_to(
+            &mut self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_to_range(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+            _order: Option<&dyn crate::trace::seam_stubs::Rectangle2DDirection>,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_references_to_range_unordered(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+            _range: &crate::program::model::address::AddressRange,
+        ) -> Vec<Box<dyn crate::trace::model::symbol::trace_reference::TraceReference>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_references_from_operand(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+            _operand_index: i32,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_flow_references_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn has_references_to(
+            &self,
+            _snap: i64,
+            _to_address: &crate::program::model::address::Address,
+        ) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_sources(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_destinations(
+            &self,
+            _span: &dyn crate::trace::model::lifespan::Lifespan,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_count_from(
+            &self,
+            _snap: i64,
+            _from_address: &crate::program::model::address::Address,
+        ) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_count_to(
+            &self,
+            _snap: i64,
+            _to_address: &crate::program::model::address::Address,
+        ) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl TraceReferenceManager for MockReferenceManager {
+        fn get_reference_space(
+            &mut self,
+            _space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_register_space_for_thread(
+            &mut self,
+            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_reference_register_space_for_frame(
+            &mut self,
+            _frame: &dyn crate::trace::seam_stubs::TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockRegisterContextManager;
     impl TraceRegisterContextManager for MockRegisterContextManager {}
     struct MockStackManager;

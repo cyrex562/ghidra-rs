@@ -60,10 +60,6 @@ pub trait TraceMemoryManager {}
 /// members are ported here yet.
 pub trait TraceMemoryOperations: Send + Sync {}
 
-/// Placeholder for `ghidra.trace.model.symbol.TraceReferenceManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceReferenceManager {}
-
 /// Placeholder for `ghidra.trace.model.context.TraceRegisterContextManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceRegisterContextManager {}

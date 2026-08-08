@@ -59,7 +59,6 @@ ts	stub_class	referenced_by
 2026-07-07T05:00:00Z	TraceBasedDataTypeManager	Trace
 2026-07-07T05:00:00Z	TracePlatformManager	Trace
 2026-07-07T05:00:00Z	TraceMemoryManager	Trace
-2026-07-07T05:00:00Z	TraceReferenceManager	Trace
 2026-07-07T05:00:00Z	TraceRegisterContextManager	Trace
 2026-07-07T05:00:00Z	TraceStackManager	Trace
 2026-07-07T05:00:00Z	TraceVariableSnapProgramView	Trace
