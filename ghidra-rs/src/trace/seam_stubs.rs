@@ -38,10 +38,6 @@ pub trait TraceBreakpointLocation: Send + Sync {}
 /// the placeholder stays substitutable for [`DataTypeManager`].
 pub trait TraceBasedDataTypeManager: DataTypeManager {}
 
-/// Placeholder for `ghidra.trace.model.symbol.TraceEquateManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceEquateManager {}
-
 /// Placeholder for `ghidra.trace.model.guest.TracePlatformManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Grown to add
 /// the lookup
