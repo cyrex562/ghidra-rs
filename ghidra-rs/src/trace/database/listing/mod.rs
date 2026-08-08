@@ -1,9 +1,11 @@
 pub mod abstract_single_db_trace_code_units_view;
+pub mod db_trace_data;
 pub mod db_trace_data_adapter;
 pub mod db_trace_defined_units_view;
 pub mod internal_trace_base_defined_units_view;
 
 pub use abstract_single_db_trace_code_units_view::AbstractSingleDBTraceCodeUnitsView;
+pub use db_trace_data::DBTraceData;
 pub use db_trace_data_adapter::DBTraceDataAdapter;
 pub use db_trace_defined_units_view::DBTraceDefinedUnitsView;
 pub use internal_trace_base_defined_units_view::InternalTraceBaseDefinedUnitsView;

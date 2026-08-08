@@ -464,3 +464,5 @@ ts	stub_class	referenced_by
 2026-08-08T04:44:35.792999+00:00	DBTraceSettingsEntry	DBTraceDataSettingsOperations
 2026-08-08T04:49:08.204185+00:00	DBTraceCodeUnitAdapter	DBTraceDataAdapter
 2026-08-08T04:49:08.205010+00:00	DataAdapterFromDataType	DBTraceDataAdapter
+2026-08-08T05:48:42.684975+00:00	DBTraceDefinedDataAdapter	DBTraceData
+2026-08-08T05:48:42.684975+00:00	AbstractDBTraceDataComponent	DBTraceData
