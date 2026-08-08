@@ -527,3 +527,17 @@ pub trait Rectangle2DDirection: Send + Sync {
     fn is_reversed(&self) -> bool;
 }
 
+/// Placeholder for `ghidra.trace.database.listing.AbstractBaseDBTraceCodeUnitsView`, referenced
+/// (as a supertrait) by
+/// [`AbstractSingleDBTraceCodeUnitsView`](crate::trace::database::listing::abstract_single_db_trace_code_units_view::AbstractSingleDBTraceCodeUnitsView)
+/// before the real port is available. The real Java class's other members are all generic in its
+/// `T extends DBTraceCodeUnitAdapter` type parameter (mirrored elsewhere, e.g.
+/// [`TraceBaseCodeUnitsView`](crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView),
+/// as `Box<dyn TraceCodeUnit>`); only the one non-generic public accessor is stubbed here, since
+/// it's the only member any current subtrait needs.
+pub trait AbstractBaseDBTraceCodeUnitsView: Send + Sync {
+    /// The address space this view is bound to. Mirrors
+    /// `AbstractBaseDBTraceCodeUnitsView.getSpace()` (equivalently, `getAddressSpace()`).
+    fn get_space(&self) -> Arc<AddressSpace>;
+}
+

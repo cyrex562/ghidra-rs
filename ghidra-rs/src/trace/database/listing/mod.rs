@@ -1,0 +1,3 @@
+pub mod abstract_single_db_trace_code_units_view;
+
+pub use abstract_single_db_trace_code_units_view::AbstractSingleDBTraceCodeUnitsView;

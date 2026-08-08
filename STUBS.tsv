@@ -457,3 +457,4 @@ ts	stub_class	referenced_by
 2026-08-08T02:29:17.000000+00:00	TraceThread	TraceEquate
 2026-08-08T02:45:56.342199+00:00	Rectangle2DDirection	TraceReferenceOperations
 2026-08-08T03:11:47.088490+00:00	DBTraceGuestLanguage	InternalTracePlatform
+2026-08-08T04:00:00.000000+00:00	AbstractBaseDBTraceCodeUnitsView	AbstractSingleDBTraceCodeUnitsView
