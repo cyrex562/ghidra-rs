@@ -6,12 +6,11 @@ use crate::program::model::address::{
     Address, AddressFactory, AddressRange, AddressRangeIterator, AddressSet, AddressSetView,
     AddressSpace,
 };
+use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-use crate::trace::seam_stubs::{
-    AbstractBaseDBTraceCodeUnitsView, DBTraceCodeManager, DBTraceCodeSpace, DBTraceUtils,
-};
+use crate::trace::seam_stubs::{AbstractBaseDBTraceCodeUnitsView, DBTraceCodeManager, DBTraceUtils};
 use crate::util::lock_hold::{Lock, LockHold};
 
 /// An abstract implementation of [`TraceBaseCodeUnitsView`] for composing views of many address

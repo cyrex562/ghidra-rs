@@ -46,9 +46,10 @@
 //! API, so none are reproduced here.
 
 use crate::program::model::address::Address;
+use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-use crate::trace::seam_stubs::{DBTrace, DBTraceCodeSpace, TraceThread};
+use crate::trace::seam_stubs::{DBTrace, TraceThread};
 
 /// An abstract implementation of a table-backed code unit.
 ///

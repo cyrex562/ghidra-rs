@@ -12,6 +12,7 @@ use crate::program::model::address::{
 };
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::{Language, Register};
+use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView;
 use crate::trace::model::program::TraceProgramView;
@@ -674,7 +675,7 @@ pub trait AbstractBaseDBTraceCodeUnitsView<T> {
 /// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
 /// before the real port is available. That trait's `manager` field accessor only ever reaches
 /// these members (all inherited, in the real Java class, from
-/// `AbstractDBTraceSpaceBasedManager<DBTraceCodeSpace>`): the owning trace, the base language
+/// `AbstractDBTraceSpaceBasedManager<`[`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)`>`): the owning trace, the base language
 /// (used to walk address spaces when stepping past a space boundary), the read/write locks, the
 /// per-space lookup, and the active-space listing `size()` sums over.
 pub trait DBTraceCodeManager: Send + Sync {
@@ -701,53 +702,69 @@ pub trait DBTraceCodeManager: Send + Sync {
     fn get_active_spaces(&self) -> Vec<Arc<dyn DBTraceCodeSpace>>;
 }
 
-/// Placeholder for `ghidra.trace.database.listing.DBTraceCodeSpace`, referenced by
-/// [`DBTraceCodeManager`] and
-/// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
-/// before the real port is available. The memory view mostly passes this type opaquely (received
-/// from [`DBTraceCodeManager::get_for_space`]/[`DBTraceCodeManager::get_active_spaces`] and handed
-/// to its own abstract `getView(DBTraceCodeSpace)`); the one accessor stubbed here mirrors the
-/// real class's package-visible `space` field (read via `AbstractBaseDBTraceCodeUnitsView`'s
-/// `getAddressSpace() { return space.space; }`), which any real `getView` implementation needs to
-/// pick the right per-space storage.
-pub trait DBTraceCodeSpace: Send + Sync {
-    /// Mirrors the `DBTraceCodeSpace.space` field.
-    fn get_address_space(&self) -> Arc<AddressSpace>;
-
-    /// Mirrors the covariantly-narrowed `DBTraceCodeSpace.getTrace()` (the `trace` field's
-    /// getter), which narrows the inherited `TraceSpaceMixin.getTrace()`'s `Trace` return type to
-    /// `DBTrace`. Grown for
-    /// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit),
-    /// whose `getTrace()` reads `space.trace` directly.
-    ///
-    /// Defaults to panicking, matching this file's established growth convention for members not
-    /// yet needed by any existing implementor (see [`TracePlatform::get_trace`]'s default for the
-    /// same reasoning), so existing marker implementors of this trait keep compiling unchanged.
-    fn get_trace(&self) -> Box<dyn DBTrace> {
-        unimplemented!("DBTraceCodeSpace::get_trace placeholder not overridden")
-    }
-
-    /// Mirrors `DBTraceCodeSpace.getThread()` (inherited from `TraceSpaceMixin`). Grown for
-    /// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit),
-    /// whose `getThread()` delegates to `space.getThread()`.
-    ///
-    /// Defaults to panicking; see [`Self::get_trace`]'s docs for why.
-    fn get_thread(&self) -> Box<dyn TraceThread> {
-        unimplemented!("DBTraceCodeSpace::get_thread placeholder not overridden")
-    }
-}
-
 /// Placeholder for `ghidra.trace.database.DBTrace`, referenced by
 /// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit)
 /// before the real port is available. `AbstractDBTraceCodeUnit.getTrace()` only ever passes this
 /// type around opaquely (returning `space.trace`, covariantly narrowed from the base `Trace`
-/// interface -- see [`DBTraceCodeSpace::get_trace`]'s docs for that same narrowing); no members
-/// are needed yet. Not declared `: Trace`, since nothing currently reachable through this
-/// placeholder needs any of `Trace`'s ~20 members, and requiring them would force every
-/// implementor (including this module's own tests) to stub out that whole surface for no benefit;
-/// the real port should implement both `Trace` and this trait, matching Java's `DBTrace implements
-/// Trace`.
+/// interface -- see
+/// [`DBTraceCodeSpace::get_trace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace::get_trace)'s
+/// docs for that same narrowing); no members are needed yet. Not declared `: Trace`, since nothing
+/// currently reachable through this placeholder needs any of `Trace`'s ~20 members, and requiring
+/// them would force every implementor (including this module's own tests) to stub out that whole
+/// surface for no benefit; the real port should implement both `Trace` and this trait, matching
+/// Java's `DBTrace implements Trace`.
 pub trait DBTrace: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceCodeUnitsView`, referenced by
+/// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
+/// before the real port is available. `DBTraceCodeSpace` only ever stores and returns this type
+/// opaquely (via its own `codeUnits()` accessor); no members are called on it, so this is a bare
+/// marker.
+pub trait DBTraceCodeUnitsView: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceDataView`, referenced by
+/// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
+/// before the real port is available. Same reasoning as [`DBTraceCodeUnitsView`]: only ever
+/// stored and returned opaquely (via `data()`), so this is a bare marker.
+pub trait DBTraceDataView: Send + Sync {}
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceInstructionsView`, referenced by
+/// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
+/// before the real port is available. `DBTraceCodeSpace.invalidateCache()` is the only place that
+/// calls a member on this field (`instructions.invalidateCache()`), so only that member is
+/// stubbed.
+pub trait DBTraceInstructionsView: Send + Sync {
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.invalidateCache()`, called from
+    /// `DBTraceCodeSpace.invalidateCache()`.
+    fn invalidate_cache(&self);
+}
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceDefinedDataView`, referenced by
+/// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
+/// before the real port is available. Same reasoning as [`DBTraceInstructionsView`]: only
+/// `definedData.invalidateCache()` is called from `DBTraceCodeSpace.invalidateCache()`.
+pub trait DBTraceDefinedDataView: Send + Sync {
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.invalidateCache()`, called from
+    /// `DBTraceCodeSpace.invalidateCache()`.
+    fn invalidate_cache(&self);
+}
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceUndefinedDataView`, referenced by
+/// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
+/// before the real port is available. Same reasoning as [`DBTraceInstructionsView`]: only
+/// `undefinedData.invalidateCache()` is called from `DBTraceCodeSpace.invalidateCache()`.
+pub trait DBTraceUndefinedDataView: Send + Sync {
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.invalidateCache()`, called from
+    /// `DBTraceCodeSpace.invalidateCache()`.
+    fn invalidate_cache(&self);
+}
+
+/// Placeholder for `ghidra.trace.database.guest.DBTraceGuestPlatform`, referenced by
+/// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
+/// before the real port is available. `DBTraceCodeSpace.clearPlatform(...)` only ever compares
+/// this type for reference equality (`instruction.platform != guest`) and passes it through
+/// opaquely; no members are needed yet.
+pub trait DBTraceGuestPlatform: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.database.DBTraceUtils`, referenced by
 /// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
