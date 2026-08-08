@@ -630,7 +630,7 @@ def cmd_audit(args):
             if len(c) > 1:
                 status[c[0]] = c[1].strip()
 
-    decl = re.compile(r"^\s*pub (trait|struct|enum) ([A-Za-z0-9_]+)")
+    decl = re.compile(r"^\s*pub (trait|struct|enum) ([A-Za-z0-9_]+)(.*)$")
     rust: dict[str, list] = {}
     for root, _d, files in os.walk(os.path.join(REPO, "ghidra-rs", "src")):
         for f in files:
@@ -639,10 +639,20 @@ def cmd_audit(args):
             p = os.path.join(root, f)
             for i, line in enumerate(open(p, encoding="utf-8", errors="replace"), 1):
                 m = decl.match(line)
-                if m:
-                    rust.setdefault(m.group(2), []).append((m.group(1), os.path.relpath(p, REPO), i))
+                if not m:
+                    continue
+                kind = m.group(1)
+                # `pub trait FunctionIterator: Iterator<Item = Arc<dyn Function>> {}` is the
+                # established way this crate names an iterator without giving up the domain
+                # vocabulary: a marker supertrait plus a blanket impl. It IS an iterator, so
+                # counting it as a trait/iterator mismatch is a false positive -- and it flagged
+                # four already-correct types before this check existed.
+                if kind == "trait" and re.search(r":\s*[^{]*\bIterator\b", m.group(3)):
+                    kind = "iterator_trait"
+                rust.setdefault(m.group(2), []).append((kind, os.path.relpath(p, REPO), i))
 
-    want = {"enum": "enum", "struct": "struct", "trait": "trait", "iterator": "struct",
+    want = {"enum": "enum", "struct": "struct", "trait": ("trait", "iterator_trait"),
+            "iterator": ("struct", "enum", "iterator_trait"),
             "error": ("struct", "enum"), "struct_trait": ("struct", "trait")}
     rows = []
     for name, decls in sorted(rust.items()):

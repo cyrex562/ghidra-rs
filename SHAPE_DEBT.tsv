@@ -3,7 +3,7 @@ AIFFDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/d
 AbstractAssemblyGrammar	trait	iterator	R6b-bare-iterable	class/abstract	ghidra-rs/src/app/plugin/assembler/sleigh/grammars/abstract_assembly_grammar.rs:67	extends Iterable and declares no other API (1 abstract method(s))
 AddrSpace	trait	struct	R14-concrete-class	class	ghidra-rs/src/decompiler/space/addr_space.rs:51	concrete Java `class` (3 in-repo subclass(es))
 AddressFieldLocation	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/util/address_field_location.rs:24	concrete Java `class` (0 in-repo subclass(es))
-AddressIteratorConverter	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/util/address_iterator_converter.rs:29	concrete Java `class` (0 in-repo subclass(es))
+AddressIteratorConverter	iterator_trait	struct	R14-concrete-class	class	ghidra-rs/src/program/util/address_iterator_converter.rs:29	concrete Java `class` (0 in-repo subclass(es))
 AddressRangeIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/address/iterator.rs:69	extends Iterator
 AddressSourceInfo	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/mem/address_source_info.rs:29	concrete Java `class` (0 in-repo subclass(es))
 AddressSpace	struct	trait	R9-open-interface	interface	ghidra-rs/src/program/model/address/mod.rs:83	Java `interface` with 48 abstract method(s), 1 in-repo implementor(s)
@@ -92,7 +92,6 @@ DBTraceReference	trait	struct	R14-concrete-class	class	ghidra-rs/src/trace/datab
 DBTraceRegisterContextManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/trace/database/context/db_trace_register_context_manager.rs:49	concrete Java `class` (0 in-repo subclass(es))
 DBTraceStaticMappingManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/trace/database/module/db_trace_static_mapping_manager.rs:34	concrete Java `class` (0 in-repo subclass(es))
 DWordDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/dword_data_type.rs:27	concrete Java `class` (0 in-repo subclass(es))
-DataIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/listing/data_iterator.rs:8	extends Iterator
 DataOrganizationImpl	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/data_organization_impl.rs:104	concrete Java `class` (0 in-repo subclass(es))
 DataRefType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/symbol/data_ref_type.rs:14	concrete Java `class` (0 in-repo subclass(es))
 DataTable	trait	struct	R14-concrete-class	class	ghidra-rs/src/util/datastruct/data_table.rs:14	concrete Java `class` (1 in-repo subclass(es))
@@ -122,7 +121,6 @@ Edge	trait	struct	R14-concrete-class	class	ghidra-rs/src/util/graph/edge.rs:17	c
 EdgeSet	trait	struct	R14-concrete-class	class	ghidra-rs/src/util/graph/edge_set.rs:18	concrete Java `class` (0 in-repo subclass(es))
 EmptyFunctionIterator	struct	enum	R1-java-enum	enum	ghidra-rs/src/program/model/listing/function_iterator.rs:13	Java `enum` with 1 constants
 EmptyFunctionIterator	struct	enum	R1-java-enum	enum	ghidra-rs/src/trace/util/empty_function_iterator.rs:11	Java `enum` with 1 constants
-EnumeratingIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/trace/util/enumerating_iterator.rs:6	extends Iterator
 EqualEquation	trait	struct	R14-concrete-class	class	ghidra-rs/src/decompiler/slghpatexpress/equal_equation.rs:19	concrete Java `class` (0 in-repo subclass(es))
 EquateManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/symbol/equate_manager.rs:144	concrete Java `class` (0 in-repo subclass(es))
 ExprTree	trait	struct	R14-concrete-class	class	ghidra-rs/src/decompiler/slgh_compile/expr_tree.rs:20	concrete Java `class` (0 in-repo subclass(es))
@@ -144,7 +142,6 @@ FixedKeyInteriorNode	trait	struct	R14-concrete-class	class	ghidra-rs/src/framewo
 FixedKeyVarRecNode	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/db/fixed_key_var_rec_node.rs:16	concrete Java `class` (0 in-repo subclass(es))
 FixedSizeHashMap	trait	struct	R14-concrete-class	class	ghidra-rs/src/util/datastruct/fixed_size_hash_map.rs:12	concrete Java `class` (1 in-repo subclass(es))
 FunctionDefinitionDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/function_definition_data_type.rs:128	concrete Java `class` (1 in-repo subclass(es))
-FunctionIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/listing/function_iterator.rs:9	extends Iterator
 FunctionMerge	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/util/function_merge.rs:53	concrete Java `class` (0 in-repo subclass(es))
 FunctionPrototype	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/pcode/function_prototype.rs:46	concrete Java `class` (0 in-repo subclass(es))
 FunctionSignatureImpl	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/listing/function_signature_impl.rs:29	concrete Java `class` (0 in-repo subclass(es))
@@ -173,7 +170,6 @@ IndexedLocalFileSystem	trait	struct	R14-concrete-class	class	ghidra-rs/src/frame
 InjectPayloadCallfixup	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/lang/inject_payload_callfixup.rs:23	concrete Java `class` (1 in-repo subclass(es))
 InjectPayloadSleigh	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/lang/inject_payload_sleigh.rs:28	concrete Java `class` (4 in-repo subclass(es))
 InstructionBlock	trait	iterator	R6b-bare-iterable	class	ghidra-rs/src/program/model/lang/instruction_block.rs:16	extends Iterable and declares no other API (0 abstract method(s))
-InstructionIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/listing/instruction_iterator.rs:9	extends Iterator
 InstructionPcodeOverride	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/listing/instruction_pcode_override.rs:27	concrete Java `class` (0 in-repo subclass(es))
 InstructionStub	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/listing/instruction_stub.rs:52	concrete Java `class` (0 in-repo subclass(es))
 Int16TDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/int16_t_data_type.rs:38	concrete Java `class` (0 in-repo subclass(es))
@@ -228,8 +224,7 @@ PcodeBlockBasic	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/mode
 PcodeDataTypeManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/pcode/pcode_data_type_manager.rs:133	concrete Java `class` (0 in-repo subclass(es))
 PcodeEmitObjects	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugin/processors/sleigh/pcode_emit_objects.rs:24	concrete Java `class` (0 in-repo subclass(es))
 PcodeEmitPacked	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugin/processors/sleigh/pcode_emit_packed.rs:51	concrete Java `class` (0 in-repo subclass(es))
-PeekableIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/generic/util/peekable_iterator.rs:10	extends Iterator
-PeekableIterators	trait	enum	R1-java-enum	enum	ghidra-rs/src/generic/util/peekable_iterators.rs:15	Java `enum` with 0 constants
+PeekableIterators	iterator_trait	enum	R1-java-enum	enum	ghidra-rs/src/generic/util/peekable_iterators.rs:15	Java `enum` with 0 constants
 Platform	trait	enum	R1-java-enum	enum	ghidra-rs/src/framework/platform.rs:15	Java `enum` with 14 constants
 PluginDescription	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/plugintool/util/plugin_description.rs:33	concrete Java `class` (1 in-repo subclass(es))
 PluginManagerTest	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/plugintool/plugin_manager_test.rs:21	concrete Java `class` (0 in-repo subclass(es))
@@ -277,7 +272,6 @@ SleighLanguageFile	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugi
 SleighLanguageProvider	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugin/processors/sleigh/sleigh_language_provider.rs:61	concrete Java `class` (0 in-repo subclass(es))
 SleighParserContext	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugin/processors/sleigh/sleigh_parser_context.rs:29	concrete Java `class` (0 in-repo subclass(es))
 SourceFileManagerDB	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/sourcemap/source_file_manager_db.rs:72	concrete Java `class` (0 in-repo subclass(es))
-SourceMapEntryIterator	trait	iterator	R6a-cursor	interface	ghidra-rs/src/program/model/sourcemap/source_map_entry_iterator.rs:10	extends Iterator
 StackFrameImpl	trait	struct	R14-concrete-class	class	ghidra-rs/src/util/stack_frame_impl.rs:84	concrete Java `class` (0 in-repo subclass(es))
 StandAloneDataTypeManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/stand_alone_data_type_manager.rs:169	concrete Java `class` (3 in-repo subclass(es))
 StringDataInstance	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/string_data_instance.rs:78	concrete Java `class` (0 in-repo subclass(es))
