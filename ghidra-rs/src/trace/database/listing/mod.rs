@@ -1,4 +1,5 @@
 pub mod abstract_base_db_trace_code_units_memory_view;
+pub mod abstract_db_trace_code_unit;
 pub mod abstract_single_db_trace_code_units_view;
 pub mod db_trace_data;
 pub mod db_trace_data_adapter;
@@ -6,6 +7,7 @@ pub mod db_trace_defined_units_view;
 pub mod internal_trace_base_defined_units_view;
 
 pub use abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView;
+pub use abstract_db_trace_code_unit::AbstractDBTraceCodeUnit;
 pub use abstract_single_db_trace_code_units_view::AbstractSingleDBTraceCodeUnitsView;
 pub use db_trace_data::DBTraceData;
 pub use db_trace_data_adapter::DBTraceDataAdapter;
