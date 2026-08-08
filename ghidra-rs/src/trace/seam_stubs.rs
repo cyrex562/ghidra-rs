@@ -820,3 +820,45 @@ pub trait DBTraceDefinedDataAdapter:
     fn append_path_name(&self, builder: &mut String, include_root_symbol: bool);
 }
 
+/// Placeholder for `ghidra.trace.database.symbol.AbstractDBTraceSymbol`, referenced (as a
+/// supertrait) by
+/// [`DBTraceNamespaceSymbol`](crate::trace::database::symbol::db_trace_namespace_symbol::DBTraceNamespaceSymbol)
+/// before the real port is available. The Java class has ~30 members covering identity,
+/// DB-record access, references, and program-location lookups; only the five members
+/// `DBTraceNamespaceSymbol` actually calls through `super.*()` are modeled here
+/// (`getLifespan`, `getAddressSet`, `setNamespace`, `delete`, `isGlobal`); the rest are omitted
+/// until a consumer needs them.
+pub trait AbstractDBTraceSymbol: Send + Sync {
+    /// Mirrors `getLifespan()`.
+    fn get_lifespan(&self) -> Box<dyn crate::trace::model::lifespan::Lifespan>;
+
+    /// Mirrors `getAddressSet()`.
+    fn get_address_set(&self) -> crate::program::model::address::AddressSet;
+
+    /// Mirrors `setNamespace(Namespace)`.
+    fn set_namespace(
+        &self,
+        new_namespace: &dyn crate::program::model::symbol::Namespace,
+    ) -> std::io::Result<()>;
+
+    /// Mirrors `delete()`.
+    fn delete(&self) -> bool;
+
+    /// Mirrors `isGlobal()`.
+    fn is_global(&self) -> bool;
+}
+
+/// Placeholder for `ghidra.trace.database.symbol.DBTraceSymbolManager`, referenced by
+/// [`DBTraceNamespaceSymbol`](crate::trace::database::symbol::db_trace_namespace_symbol::DBTraceNamespaceSymbol)
+/// before the real port is available. The Java class has ~20 members; only
+/// `getGlobalNamespace()`, the one method `DBTraceNamespaceSymbol::checkCircular` needs, is
+/// modeled here.
+pub trait DBTraceSymbolManager: Send + Sync {
+    /// Mirrors `getGlobalNamespace()`.
+    fn get_global_namespace(
+        &self,
+    ) -> std::sync::Arc<
+        dyn crate::trace::database::symbol::db_trace_namespace_symbol::DBTraceNamespaceSymbol,
+    >;
+}
+
