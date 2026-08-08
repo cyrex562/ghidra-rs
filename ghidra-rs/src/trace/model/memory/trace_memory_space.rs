@@ -375,7 +375,43 @@ mod tests {
         space: Arc<AddressSpace>,
     }
 
-    impl TraceMemoryOperations for MockMemorySpace {}
+    impl TraceMemoryOperations for MockMemorySpace {
+        fn set_state(
+            &mut self,
+            _snap: i64,
+            _range: &AddressRange,
+            _state: crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_states(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+        ) -> Vec<(
+            Box<dyn TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn put_bytes(&mut self, _snap: i64, _start: &Address, _buf: &mut [u8]) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_bytes(&self, _snap: i64, _start: &Address, _buf: &mut [u8]) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_view_bytes(&self, _snap: i64, _start: &Address, _buf: &mut [u8]) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn remove_bytes(&mut self, _snap: i64, _start: &Address, _len: i32) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     impl TraceMemorySpace for MockMemorySpace {
         fn address_space(&self) -> Arc<AddressSpace> {

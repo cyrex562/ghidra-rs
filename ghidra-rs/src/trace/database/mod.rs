@@ -4,6 +4,7 @@ pub mod db_trace_manager;
 pub mod guest;
 pub mod listing;
 pub mod map;
+pub mod memory;
 pub mod program;
 pub mod space;
 pub mod symbol;
