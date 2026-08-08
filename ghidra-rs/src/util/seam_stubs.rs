@@ -629,15 +629,106 @@ pub trait DBCachedObjectStoreSubMap: Send + Sync {}
 pub trait DBCachedObjectStoreValueCollection: Send + Sync {}
 
 /// Placeholder for `ghidra.util.database.DBCachedObjectStore`, needed by
-/// [`crate::util::database::db_annotated_object_factory::DBAnnotatedObjectFactory`].
+/// [`crate::util::database::db_annotated_object_factory::DBAnnotatedObjectFactory`] and
+/// [`crate::util::database::db_cached_object_index::DBCachedObjectIndex`].
 ///
 /// `DBAnnotatedObjectFactory.create` only ever receives the store to hand it along to the
-/// object being constructed; the factory interface itself never calls a method on it, so this
-/// is a marker trait until the real cached-object store (with `create`, index lookups, locking,
-/// etc.) is ported.
+/// object being constructed, so that caller needs nothing beyond the marker bound. The
+/// index-facing methods below cover the rest of the surface `DBCachedObjectIndex` reaches
+/// through its `store` field: `findObjects`/`findOneObject`/the index `iterator` overload
+/// (`Table.indexIterator`-backed, represented as an eagerly-collected `Vec` rather than a lazy
+/// iterator, matching the convention `DBCachedObjectStoreEntrySet::to_vec` established for the
+/// sibling cut-point traits in this same file), `contains`, and the backing `table` field's
+/// `hasRecord`/`getMatchingRecordCount` (accessed directly as `store.table.hasRecord(...)` in
+/// Java, folded into the store trait here since no separate `table` accessor exists on this
+/// placeholder). Each new method defaults to panicking so the existing marker-only
+/// implementations (e.g. `DBAnnotatedObjectFactory`'s test `MockStore`) keep compiling
+/// unchanged; the real port replaces every default. `get_index`, `create`, locking, etc. remain
+/// undeclared until a caller actually needs them.
 pub trait DBCachedObjectStore<T: crate::util::database::db_annotated_object::DBAnnotatedObject>:
     Send + Sync
 {
+    /// Mirrors `findObjects(int, Field)`.
+    fn find_objects(
+        &self,
+        column_index: i32,
+        field: &crate::framework::db::field::Field,
+    ) -> std::io::Result<Vec<std::sync::Arc<T>>> {
+        let _ = (column_index, field);
+        panic!("DBCachedObjectStore::find_objects is not implemented for this store")
+    }
+
+    /// Mirrors `findOneObject(int, Field)`.
+    fn find_one_object(
+        &self,
+        column_index: i32,
+        field: &crate::framework::db::field::Field,
+    ) -> std::io::Result<Option<std::sync::Arc<T>>> {
+        let _ = (column_index, field);
+        panic!("DBCachedObjectStore::find_one_object is not implemented for this store")
+    }
+
+    /// Mirrors `iterator(int, FieldSpan, Direction)`.
+    fn iterate(
+        &self,
+        column_index: i32,
+        field_span: &dyn crate::util::database::FieldSpan,
+        direction: crate::util::database::Direction,
+    ) -> std::io::Result<Vec<std::sync::Arc<T>>> {
+        let _ = (column_index, field_span, direction);
+        panic!("DBCachedObjectStore::iterate is not implemented for this store")
+    }
+
+    /// Mirrors `contains(Object)`.
+    fn contains(&self, value: &std::sync::Arc<T>) -> bool {
+        let _ = value;
+        panic!("DBCachedObjectStore::contains is not implemented for this store")
+    }
+
+    /// Mirrors the backing `table` field's `hasRecord(Field, int)`.
+    fn has_record(
+        &self,
+        field: &crate::framework::db::field::Field,
+        column_index: i32,
+    ) -> std::io::Result<bool> {
+        let _ = (field, column_index);
+        panic!("DBCachedObjectStore::has_record is not implemented for this store")
+    }
+
+    /// Mirrors the backing `table` field's `getMatchingRecordCount(Field, int)`.
+    fn get_matching_record_count(
+        &self,
+        field: &crate::framework::db::field::Field,
+        column_index: i32,
+    ) -> std::io::Result<i32> {
+        let _ = (field, column_index);
+        panic!("DBCachedObjectStore::get_matching_record_count is not implemented for this store")
+    }
+}
+
+/// Placeholder for the K<->Field conversion half of
+/// `ghidra.util.database.DBCachedObjectStoreFactory.DBFieldCodec<K, T, F extends Field>`,
+/// needed by [`crate::util::database::db_cached_object_index::DBCachedObjectIndex`].
+///
+/// The nested `DBFieldCodec` interface also declares `store`/`load` (`OT`-to-`DBRecord`
+/// persistence), already covered narrowly for
+/// [`DBAnnotatedObject::codecs`](crate::util::database::db_annotated_object::DBAnnotatedObject::codecs)
+/// by the non-generic [`DBFieldCodec`] placeholder above (which must stay non-generic to remain
+/// usable as `Box<dyn DBFieldCodec>` in that trait's heterogeneous per-column list).
+/// `DBCachedObjectIndex` instead only ever calls the `K`-facing conversion half
+/// (`encodeField`/`getValue`), so that surface is declared as its own placeholder here rather
+/// than widening the store/load-only one. The `F extends Field` type parameter collapses into
+/// the existing [`Field`](crate::framework::db::field::Field) enum, which already covers every
+/// Java `Field` subtype.
+pub trait DBIndexFieldCodec<K, T: crate::util::database::db_annotated_object::DBAnnotatedObject>:
+    Send + Sync
+{
+    /// Encodes a key value into its indexed-column field representation, mirroring
+    /// `encodeField(K)`.
+    fn encode_field(&self, key: &K) -> crate::framework::db::field::Field;
+
+    /// Extracts the key value from an object's indexed field, mirroring `getValue(T)`.
+    fn get_value(&self, obj: &T) -> K;
 }
 
 /// Placeholder for `ghidra.util.database.spatial.hyper.Dimension`, needed by
