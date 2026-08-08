@@ -449,6 +449,14 @@ pub trait TraceRegisterUtils: Send + Sync {
     }
 }
 
+/// Placeholder for `ghidra.trace.model.symbol.TraceSymbolNoDuplicatesView`, referenced by
+/// [`TraceNamespaceSymbolView`](crate::trace::model::symbol::trace_namespace_symbol_view::TraceNamespaceSymbolView)
+/// before the real interface is ported. The Java interface is generic over `T extends
+/// TraceSymbol` and declares no members of its own beyond defaults inherited from
+/// `TraceSymbolView<T>` (itself unported); `TraceNamespaceSymbolView` calls none of them, so this
+/// is a marker trait, following the convention set by [`TraceThread`].
+pub trait TraceSymbolNoDuplicatesView: Send + Sync {}
+
 /// Placeholder for the nested `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.TraceAddressSnapRangeQuery`,
 /// referenced by
 /// [`TraceAddressSnapRangePropertyMapOperations`](crate::trace::model::map::trace_address_snap_range_property_map_operations::TraceAddressSnapRangePropertyMapOperations)
