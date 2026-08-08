@@ -7,10 +7,12 @@
 use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
-use crate::program::model::address::{Address, AddressSpace};
+use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::data::data_type_manager::DataTypeManager;
+use crate::program::model::lang::Register;
 use crate::program::model::symbol::Symbol;
 use crate::trace::model::program::TraceProgramView;
+use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::trace::Trace;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
@@ -82,11 +84,35 @@ pub trait TraceStackManager {}
 /// `get_associated_symbol()` needs. The real Java default resolves this via the manager's full
 /// symbol table (`SymbolTable.getSymbolByID(long)`), not yet ported, so this placeholder always
 /// reports no symbol found until that machinery exists.
+///
+/// Grown again to add the two members
+/// [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView)'s
+/// defaults need: the owning trace (mirrors `TraceSymbolManager.getTrace()`) and the global
+/// namespace symbol (mirrors `TraceSymbolManager.getGlobalNamespace()`).
 pub trait TraceSymbolManager {
     /// Looks up a symbol by its ID. Mirrors `SymbolTable.getSymbolByID(long)`.
     fn get_symbol_by_id(&self, _id: i64) -> Option<Arc<dyn Symbol>> {
         None
     }
+
+    /// Get the trace for this manager. Mirrors `TraceSymbolManager.getTrace()`.
+    fn get_trace(&self) -> Box<dyn Trace>;
+
+    /// Get the global (root) namespace symbol. Mirrors `TraceSymbolManager.getGlobalNamespace()`.
+    fn get_global_namespace(&self) -> Arc<dyn TraceNamespaceSymbol>;
+}
+
+/// Placeholder for `ghidra.trace.model.symbol.TraceSymbolView`, referenced by
+/// [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView)
+/// before the real interface is ported. The Java interface is generic over `T extends
+/// TraceSymbol`; following the convention set by
+/// [`TraceBaseCodeUnitsView`](crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView),
+/// this is not represented as a Rust generic. Restricted to the one member
+/// `TraceSymbolWithLocationView`'s defaults need: the owning symbol manager (used to reach the
+/// trace and the global namespace).
+pub trait TraceSymbolView {
+    /// Get the symbol manager for the trace. Mirrors `TraceSymbolView.getManager()`.
+    fn get_manager(&self) -> Box<dyn TraceSymbolManager>;
 }
 
 /// Placeholder for `ghidra.trace.model.time.TraceSnapshot`, referenced by
@@ -311,6 +337,27 @@ pub trait TracePlatform: Send + Sync {
     fn map_guest_to_host(&self, address: Address) -> Option<Address> {
         Some(address)
     }
+
+    /// Get the conventional (register-space-overlay) address range for the given platform
+    /// register, within the given overlay address space. Mirrors
+    /// `TracePlatform.getConventionalRegisterRange(AddressSpace, Register)`, used by
+    /// [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView)'s
+    /// register-taking defaults.
+    ///
+    /// The Java method is abstract with no default (its mapping depends on platform-specific
+    /// guest/host register layout, not yet ported). This placeholder defaults to re-basing the
+    /// register's own offset and byte length into the given overlay space, matching a host
+    /// platform's identity mapping (see [`Self::map_guest_to_host`]'s default for the same
+    /// convention).
+    fn get_conventional_register_range(
+        &self,
+        overlay: &Arc<AddressSpace>,
+        register: &Register,
+    ) -> AddressRange {
+        let start = overlay.address(register.address().offset());
+        AddressRange::from_start_len(start.clone(), register.num_bytes() as u64)
+            .unwrap_or_else(|_| AddressRange::new(start.clone(), start))
+    }
 }
 
 /// Placeholder for `ghidra.trace.model.thread.TraceThread`, referenced by
@@ -370,6 +417,18 @@ pub trait TraceRegisterUtils: Send + Sync {
 
     /// Mirrors `TraceRegisterUtils.getFrameLevel(Trace, AddressSpace)`.
     fn get_frame_level(&self, trace: &dyn Trace, space: &Arc<AddressSpace>) -> i32;
+
+    /// Get the register address space for the given thread and frame level, or `None` if it
+    /// does not exist (and `create_if_absent` is false). Mirrors
+    /// `TraceRegisterUtils.getRegisterAddressSpace(TraceThread, int, boolean)`, used by
+    /// [`TraceSymbolWithLocationView`](crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView)'s
+    /// register-taking defaults.
+    fn get_register_address_space(
+        &self,
+        thread: &dyn TraceThread,
+        frame_level: i32,
+        create_if_absent: bool,
+    ) -> Option<Arc<AddressSpace>>;
 }
 
 /// Placeholder for the nested `ghidra.trace.database.map.DBTraceAddressSnapRangePropertyMapTree.TraceAddressSnapRangeQuery`,

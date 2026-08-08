@@ -633,7 +633,19 @@ mod tests {
         }
     }
     struct MockSymbolManager;
-    impl TraceSymbolManager for MockSymbolManager {}
+    impl TraceSymbolManager for MockSymbolManager {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_global_namespace(
+            &self,
+        ) -> std::sync::Arc<
+            dyn crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol,
+        > {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockThreadManager;
     impl TraceThreadManager for MockThreadManager {
         fn add_thread(
