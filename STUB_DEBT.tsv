@@ -1,8 +1,5 @@
 status	pairing	importers	stubs	class	manifest	java_classes	real_path	stub_paths
 TODO	unique	30	1	VariableFilter	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/VariableFilter.java	src/program/model/listing/variable_filter.rs	src/program/seam_stubs.rs
-TODO	unique	18	1	CodeUnitIterator	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/CodeUnitIterator.java	src/program/model/listing/code_unit_iterator.rs	src/program/seam_stubs.rs
-TODO	unique	18	1	DataIterator	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/DataIterator.java	src/program/model/listing/data_iterator.rs	src/program/seam_stubs.rs
-TODO	unique	18	1	InstructionIterator	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/InstructionIterator.java	src/program/model/listing/instruction_iterator.rs	src/program/seam_stubs.rs
 TODO	unique	17	1	CodeUnitComments	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/CodeUnitComments.java	src/program/model/listing/code_unit_comments.rs	src/program/seam_stubs.rs
 TODO	unique	17	1	CommentHistory	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/CommentHistory.java	src/program/model/listing/comment_history.rs	src/program/seam_stubs.rs
 TODO	unique	16	1	RefType	DONE	Framework/SoftwareModeling:ghidra/program/model/symbol/RefType.java	src/program/model/symbol/ref_type.rs	src/program/seam_stubs.rs

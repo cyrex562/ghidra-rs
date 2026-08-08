@@ -87,7 +87,7 @@ pub trait StructureFactory {
 
         if let Some(listing) = program.get_listing() {
             let range = AddressSet::from_start_end(address.clone(), end_address);
-            if listing.get_instructions_in(&range, true).has_next() {
+            if listing.get_instructions_in(&range, true).next().is_some() {
                 return Err(
                     "IllegalArgumentException: Can't create structure because the current selection contains instructions"
                         .to_string(),
@@ -292,6 +292,7 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_component::DataTypeComponent;
     use crate::program::model::listing::code_unit::CodeUnit;
+    use crate::program::model::listing::instruction::Instruction;
     use crate::program::model::listing::data::Data;
     use crate::program::model::listing::listing::Listing;
     use crate::program::model::mem::MemoryAccessException;
@@ -453,6 +454,12 @@ use crate::program::model::listing::CommentType;
     // --- Program / Listing / Data mocks --------------------------------------------------------
 
     struct NoInstructions;
+    impl Iterator for NoInstructions {
+        type Item = Arc<dyn Instruction>;
+        fn next(&mut self) -> Option<Self::Item> {
+            None
+        }
+    }
     impl InstructionIterator for NoInstructions {}
 
     struct MockListing {

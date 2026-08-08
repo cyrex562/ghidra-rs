@@ -3,61 +3,67 @@ use std::sync::Arc;
 
 /// Iterator that returns code units.
 ///
-/// This mirrors Ghidra's `CodeUnitIterator`, using `Option` in place of
-/// Java's null return when no code unit is available.
-pub trait CodeUnitIterator {
-    /// Returns true when another code unit is available.
-    fn has_next(&self) -> bool;
-
-    /// Returns the next code unit, or `None` when no code unit is available.
-    /// NOTE: This deviates from the standard Rust Iterator trait by returning None
-    /// instead of panicking when exhausted, matching Java's behavior.
-    fn next_code_unit(&mut self) -> Option<Arc<dyn CodeUnit>>;
-}
+/// Mirrors Ghidra's `CodeUnitIterator`, which extends `java.util.Iterator<CodeUnit>`.
+///
+/// This is a marker supertrait over [`Iterator`] rather than a hand-rolled
+/// `has_next`/`next_code_unit` pair, matching [`FunctionIterator`] and
+/// [`InstructionIterator`]. The pair form is what produced the double-consume bug recorded in
+/// AGENTS.md: `while it.has_next() { v.push(it.next()) }` advances the cursor twice per turn
+/// and silently drops every other element. With `Iterator` there is one cursor-advancing
+/// operation and `for`/`while let` cannot express that mistake.
+///
+/// [`FunctionIterator`]: crate::program::model::listing::function_iterator::FunctionIterator
+/// [`InstructionIterator`]: crate::program::model::listing::instruction_iterator::InstructionIterator
+pub trait CodeUnitIterator: Iterator<Item = Arc<dyn CodeUnit>> {}
 
 /// Empty code unit iterator.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct EmptyCodeUnitIterator;
 
-impl CodeUnitIterator for EmptyCodeUnitIterator {
-    fn has_next(&self) -> bool {
-        false
-    }
+impl Iterator for EmptyCodeUnitIterator {
+    type Item = Arc<dyn CodeUnit>;
 
-    fn next_code_unit(&mut self) -> Option<Arc<dyn CodeUnit>> {
+    fn next(&mut self) -> Option<Self::Item> {
         None
     }
 }
 
-/// Adapter from a vector of code units to a `CodeUnitIterator`.
+impl CodeUnitIterator for EmptyCodeUnitIterator {}
+
+/// List-based code unit iterator.
+///
+/// Wraps a vector of code units and iterates over them by consuming ownership.
 pub struct CodeUnitIteratorAdapter {
-    code_units: Vec<Arc<dyn CodeUnit>>,
-    index: usize,
+    iter: std::vec::IntoIter<Arc<dyn CodeUnit>>,
 }
 
 impl CodeUnitIteratorAdapter {
     /// Creates an adapter over the supplied code units.
     pub fn new(code_units: Vec<Arc<dyn CodeUnit>>) -> Self {
         Self {
-            code_units,
-            index: 0,
+            iter: code_units.into_iter(),
         }
     }
 }
 
-impl CodeUnitIterator for CodeUnitIteratorAdapter {
-    fn has_next(&self) -> bool {
-        self.index < self.code_units.len()
-    }
+impl Iterator for CodeUnitIteratorAdapter {
+    type Item = Arc<dyn CodeUnit>;
 
-    fn next_code_unit(&mut self) -> Option<Arc<dyn CodeUnit>> {
-        if !self.has_next() {
-            return None;
-        }
-        let code_unit = self.code_units[self.index].clone();
-        self.index += 1;
-        Some(code_unit)
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
+}
+
+impl CodeUnitIterator for CodeUnitIteratorAdapter {}
+
+/// Creates an empty code unit iterator.
+pub fn empty() -> Box<dyn CodeUnitIterator> {
+    Box::new(EmptyCodeUnitIterator)
+}
+
+/// Creates a code unit iterator from a vector of code units.
+pub fn of(code_units: Vec<Arc<dyn CodeUnit>>) -> Box<dyn CodeUnitIterator> {
+    Box::new(CodeUnitIteratorAdapter::new(code_units))
 }
 
 #[cfg(test)]
@@ -259,8 +265,8 @@ use crate::program::model::listing::CommentType;
     fn empty_iterator_has_no_code_units() {
         let mut iterator = EmptyCodeUnitIterator;
 
-        assert!(!iterator.has_next());
-        assert!(iterator.next_code_unit().is_none());
+        assert!(iterator.next().is_none());
+        assert_eq!(iterator.count(), 0);
     }
 
     #[test]
@@ -271,18 +277,24 @@ use crate::program::model::listing::CommentType;
         ];
         let mut iterator = CodeUnitIteratorAdapter::new(code_units);
 
-        assert!(iterator.has_next());
-        assert_eq!(
-            iterator.next_code_unit().unwrap().get_min_address().offset(),
-            0x1000
-        );
-        assert!(iterator.has_next());
-        assert_eq!(
-            iterator.next_code_unit().unwrap().get_min_address().offset(),
-            0x1002
-        );
-        assert!(!iterator.has_next());
-        assert!(iterator.next_code_unit().is_none());
+        assert_eq!(iterator.next().unwrap().get_min_address().offset(), 0x1000);
+        assert_eq!(iterator.next().unwrap().get_min_address().offset(), 0x1002);
+        assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn adapter_yields_every_element_when_driven_by_a_for_loop() {
+        // The regression this shape exists to prevent: a has_next/next pair let a caller
+        // advance the cursor twice per turn and drop every other element, and it compiled.
+        let code_units: Vec<Arc<dyn CodeUnit>> = (0..6)
+            .map(|i| Arc::new(TestCodeUnit::new(0x1000 + i * 2)) as Arc<dyn CodeUnit>)
+            .collect();
+
+        let seen: Vec<i64> = CodeUnitIteratorAdapter::new(code_units)
+            .map(|cu| cu.get_min_address().offset())
+            .collect();
+
+        assert_eq!(seen, vec![0x1000, 0x1002, 0x1004, 0x1006, 0x1008, 0x100A]);
     }
 
     #[test]
@@ -290,8 +302,7 @@ use crate::program::model::listing::CommentType;
         let mut iterator = EmptyCodeUnitIterator;
 
         for _ in 0..5 {
-            assert!(!iterator.has_next());
-            assert!(iterator.next_code_unit().is_none());
+            assert!(iterator.next().is_none());
         }
     }
 
@@ -300,12 +311,7 @@ use crate::program::model::listing::CommentType;
         let code_units: Vec<Arc<dyn CodeUnit>> = vec![Arc::new(TestCodeUnit::new(0x5000))];
         let mut iterator = CodeUnitIteratorAdapter::new(code_units);
 
-        assert!(iterator.has_next());
-        assert_eq!(
-            iterator.next_code_unit().unwrap().get_min_address().offset(),
-            0x5000
-        );
-        assert!(!iterator.has_next());
-        assert!(iterator.next_code_unit().is_none());
+        assert_eq!(iterator.next().unwrap().get_min_address().offset(), 0x5000);
+        assert!(iterator.next().is_none());
     }
 }

@@ -911,35 +911,17 @@ pub enum FlowOverride {
     Return,
 }
 
-/// Placeholder for `ghidra.program.model.listing.CodeUnitIterator`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported. `Listing` only ever returns this type (never calls
-/// `hasNext`/`next` on it itself), so no members are needed yet.
-pub trait CodeUnitIterator {}
-
-/// Placeholder for `ghidra.program.model.listing.InstructionIterator`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported.
-///
-/// [`has_next`](Self::has_next) was added for
-/// [`StructureFactory`](crate::program::model::data::structure_factory::StructureFactory), which
-/// needs to check whether a candidate address range already contains instructions (mirrors
-/// `InstructionIterator.hasNext()`, inherited from `java.util.Iterator`). Defaults to `false` so
-/// existing bare `impl InstructionIterator for Foo {}` blocks keep compiling unmodified.
-pub trait InstructionIterator {
-    /// Stands in for `InstructionIterator.hasNext()`.
-    fn has_next(&self) -> bool {
-        false
-    }
-}
-
-/// Placeholder for `ghidra.program.model.listing.DataIterator`, referenced by
-/// [`Listing`](crate::program::model::listing::listing::Listing)
-/// before the real interface is ported. `Listing` only ever returns this type, so no members are
-/// needed yet.
-pub trait DataIterator {}
-
+// The listing iterators are ported. These were placeholders declared here while they were
+// not, and they outlived their purpose: `Listing` and `CodeManager` kept importing the empty
+// local traits, so `Box<dyn CodeUnitIterator>` in those files and `Box<dyn CodeUnitIterator>`
+// in `module_manager.rs` were two unrelated types with the same name. That compiles and
+// silently cannot interoperate -- 54 importers across these three were wired to placeholders
+// with no members (see STUB_DEBT.tsv / scripts/stub_audit.py). Re-export the real traits, as
+// `FunctionIterator` already did, so every importer converges on one type.
+pub use crate::program::model::listing::code_unit_iterator::CodeUnitIterator;
+pub use crate::program::model::listing::data_iterator::DataIterator;
 pub use crate::program::model::listing::function_iterator::FunctionIterator;
+pub use crate::program::model::listing::instruction_iterator::InstructionIterator;
 
 /// Placeholder for `ghidra.program.model.listing.InstructionSet`, referenced by
 /// [`Listing::add_instructions`](crate::program::model::listing::listing::Listing::add_instructions)

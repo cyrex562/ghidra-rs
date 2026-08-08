@@ -214,7 +214,7 @@ mod tests {
 
         assert_eq!(fragment.get_name(), "frag");
         assert!(fragment.is_empty());
-        assert!(fragment.get_code_units().next_code_unit().is_none());
+        assert!(fragment.get_code_units().next().is_none());
         assert!(fragment.move_code_units(&fragment_addr(0), &fragment_addr(0)).is_ok());
     }
 
