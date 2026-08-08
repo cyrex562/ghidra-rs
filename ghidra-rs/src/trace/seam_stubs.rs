@@ -7,15 +7,20 @@
 use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
-use crate::program::model::address::{Address, AddressRange, AddressSpace};
+use crate::program::model::address::{
+    Address, AddressFactory, AddressRange, AddressSet, AddressSetView, AddressSpace,
+};
 use crate::program::model::data::data_type_manager::DataTypeManager;
-use crate::program::model::lang::Register;
+use crate::program::model::lang::{Language, Register};
+use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView;
 use crate::trace::model::program::TraceProgramView;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::trace::Trace;
+use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::util::trace_change_manager::TraceChangeManager;
+use crate::util::lock_hold::Lock;
 
 /// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
@@ -599,18 +604,145 @@ pub trait Rectangle2DDirection: Send + Sync {
     fn is_reversed(&self) -> bool;
 }
 
-/// Placeholder for `ghidra.trace.database.listing.AbstractBaseDBTraceCodeUnitsView`, referenced
-/// (as a supertrait) by
+/// Placeholder for `ghidra.trace.database.listing.AbstractBaseDBTraceCodeUnitsView<T>`,
+/// referenced (as a supertrait) by
 /// [`AbstractSingleDBTraceCodeUnitsView`](crate::trace::database::listing::abstract_single_db_trace_code_units_view::AbstractSingleDBTraceCodeUnitsView)
-/// before the real port is available. The real Java class's other members are all generic in its
-/// `T extends DBTraceCodeUnitAdapter` type parameter (mirrored elsewhere, e.g.
-/// [`TraceBaseCodeUnitsView`](crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView),
-/// as `Box<dyn TraceCodeUnit>`); only the one non-generic public accessor is stubbed here, since
-/// it's the only member any current subtrait needs.
-pub trait AbstractBaseDBTraceCodeUnitsView: Send + Sync {
+/// and (as the composed-view bound `M`) by
+/// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
+/// before the real port is available. Grown from a non-generic marker (just `getSpace()`) to
+/// carry the Java class's `T extends DBTraceCodeUnitAdapter` type parameter, since
+/// `AbstractBaseDBTraceCodeUnitsMemoryView`'s defaults call straight through to this view's own
+/// per-space query methods (`getFloor`, `getAt`, the `get(...)` overloads, etc.) -- named here
+/// to match the sibling overload-disambiguated names already established on
+/// [`TraceBaseCodeUnitsView`](crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView)
+/// (`get_in_range`, `get_address_set_view_within`, `covers_snap_range`, ...). Methods this stub's
+/// original (narrower) consumer, [`AbstractSingleDBTraceCodeUnitsView`], doesn't need are still
+/// included, since the real Java interface declares them regardless of which subtrait uses them.
+pub trait AbstractBaseDBTraceCodeUnitsView<T> {
     /// The address space this view is bound to. Mirrors
     /// `AbstractBaseDBTraceCodeUnitsView.getSpace()` (equivalently, `getAddressSpace()`).
     fn get_space(&self) -> Arc<AddressSpace>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.size()`.
+    fn size(&self) -> i32;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.getFloor(long, Address)`.
+    fn get_floor(&self, snap: i64, address: &Address) -> Option<T>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.getContaining(long, Address)`.
+    fn get_containing(&self, snap: i64, address: &Address) -> Option<T>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.getAt(long, Address)`.
+    fn get_at(&self, snap: i64, address: &Address) -> Option<T>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.getCeiling(long, Address)`.
+    fn get_ceiling(&self, snap: i64, address: &Address) -> Option<T>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.get(long, AddressRange, boolean)`. Named to
+    /// match [`TraceBaseCodeUnitsView::get_in_range`].
+    fn get_in_range(&self, snap: i64, range: &AddressRange, forward: bool) -> Vec<T>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.getIntersecting(TraceAddressSnapRange)`.
+    fn get_intersecting(&self, tasr: &dyn TraceAddressSnapRange) -> Vec<T>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.getAddressSetView(long, AddressRange)`. Named to
+    /// match [`TraceBaseCodeUnitsView::get_address_set_view_within`].
+    fn get_address_set_view_within(&self, snap: i64, within: &AddressRange) -> Box<dyn AddressSetView>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.getAddressSetView(long)`.
+    fn get_address_set_view(&self, snap: i64) -> Box<dyn AddressSetView>;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.containsAddress(long, Address)`.
+    fn contains_address(&self, snap: i64, address: &Address) -> bool;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.coversRange(Lifespan, AddressRange)`.
+    fn covers_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.coversRange(TraceAddressSnapRange)`. Named to
+    /// match [`TraceBaseCodeUnitsView::covers_snap_range`].
+    fn covers_snap_range(&self, range: &dyn TraceAddressSnapRange) -> bool;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.intersectsRange(Lifespan, AddressRange)`.
+    fn intersects_range(&self, span: &dyn Lifespan, range: &AddressRange) -> bool;
+
+    /// Mirrors `AbstractBaseDBTraceCodeUnitsView.intersectsRange(TraceAddressSnapRange)`. Named
+    /// to match [`TraceBaseCodeUnitsView::intersects_snap_range`].
+    fn intersects_snap_range(&self, range: &dyn TraceAddressSnapRange) -> bool;
+}
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceCodeManager`, referenced by
+/// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
+/// before the real port is available. That trait's `manager` field accessor only ever reaches
+/// these members (all inherited, in the real Java class, from
+/// `AbstractDBTraceSpaceBasedManager<DBTraceCodeSpace>`): the owning trace, the base language
+/// (used to walk address spaces when stepping past a space boundary), the read/write locks, the
+/// per-space lookup, and the active-space listing `size()` sums over.
+pub trait DBTraceCodeManager: Send + Sync {
+    /// Mirrors `AbstractDBTraceSpaceBasedManager.getTrace()`.
+    fn get_trace(&self) -> Box<dyn Trace>;
+
+    /// Mirrors `AbstractDBTraceSpaceBasedManager.getBaseLanguage()`.
+    fn get_base_language(&self) -> Box<dyn Language>;
+
+    /// Mirrors `AbstractDBTraceSpaceBasedManager.lock.readLock()`.
+    fn read_lock(&self) -> &dyn Lock;
+
+    /// Mirrors `AbstractDBTraceSpaceBasedManager.lock.writeLock()`.
+    fn write_lock(&self) -> &dyn Lock;
+
+    /// Mirrors `AbstractDBTraceSpaceBasedManager.getForSpace(AddressSpace, boolean)`.
+    fn get_for_space(
+        &self,
+        space: &Arc<AddressSpace>,
+        create_if_absent: bool,
+    ) -> Option<Arc<dyn DBTraceCodeSpace>>;
+
+    /// Mirrors `AbstractDBTraceSpaceBasedManager.getActiveSpaces()`.
+    fn get_active_spaces(&self) -> Vec<Arc<dyn DBTraceCodeSpace>>;
+}
+
+/// Placeholder for `ghidra.trace.database.listing.DBTraceCodeSpace`, referenced by
+/// [`DBTraceCodeManager`] and
+/// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
+/// before the real port is available. The memory view mostly passes this type opaquely (received
+/// from [`DBTraceCodeManager::get_for_space`]/[`DBTraceCodeManager::get_active_spaces`] and handed
+/// to its own abstract `getView(DBTraceCodeSpace)`); the one accessor stubbed here mirrors the
+/// real class's package-visible `space` field (read via `AbstractBaseDBTraceCodeUnitsView`'s
+/// `getAddressSpace() { return space.space; }`), which any real `getView` implementation needs to
+/// pick the right per-space storage.
+pub trait DBTraceCodeSpace: Send + Sync {
+    /// Mirrors the `DBTraceCodeSpace.space` field.
+    fn get_address_space(&self) -> Arc<AddressSpace>;
+}
+
+/// Placeholder for `ghidra.trace.database.DBTraceUtils`, referenced by
+/// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
+/// before the real port is available. That (large, static-method-only) utility class is mirrored
+/// here, like [`AddressCollectors`](crate::program::model::address::address_collectors::AddressCollectors),
+/// as a unit struct with associated functions rather than a `&self`-taking trait, since none of
+/// its methods are instance methods in the original. Only the one static method the memory view
+/// needs is ported, with a real (not stubbed-out) body: both `AddressFactory::get_address_set`
+/// and `AddressFactory::get_address_set_range` it composes are already-ported real APIs.
+pub struct DBTraceUtils;
+
+impl DBTraceUtils {
+    /// Mirrors `DBTraceUtils.getAddressSet(AddressFactory, Address, boolean)`: the sub-range of
+    /// `factory`'s full address set from `start` to the end of its space (`forward`) or from the
+    /// beginning of its space to `start` (`!forward`).
+    pub fn get_address_set(factory: &dyn AddressFactory, start: &Address, forward: bool) -> AddressSet {
+        let all = factory.get_address_set();
+        if forward {
+            match all.max_address() {
+                Some(max) => factory.get_address_set_range(start, &max),
+                None => AddressSet::new(),
+            }
+        } else {
+            match all.min_address() {
+                Some(min) => factory.get_address_set_range(&min, start),
+                None => AddressSet::new(),
+            }
+        }
+    }
 }
 
 /// Placeholder for `ghidra.trace.database.listing.InternalBaseCodeUnitsView`, referenced (as a
