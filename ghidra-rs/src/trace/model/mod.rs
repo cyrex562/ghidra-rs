@@ -13,6 +13,7 @@ pub mod memory;
 pub mod modules;
 pub mod program;
 pub mod property;
+pub mod stack;
 pub mod symbol;
 pub mod target;
 pub mod thread;

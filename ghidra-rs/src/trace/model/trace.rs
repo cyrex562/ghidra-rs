@@ -14,10 +14,11 @@ use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
 use crate::trace::model::program::TraceVariableSnapProgramView;
+use crate::trace::model::stack::trace_stack_manager::TraceStackManager;
 use crate::trace::seam_stubs::{
     TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
     TraceMemoryManager,
-    TraceRegisterContextManager, TraceStackManager,
+    TraceRegisterContextManager,
 };
 use crate::util::lock_hold::{Lock, LockHold};
 
@@ -911,7 +912,31 @@ mod tests {
     struct MockRegisterContextManager;
     impl TraceRegisterContextManager for MockRegisterContextManager {}
     struct MockStackManager;
-    impl TraceStackManager for MockStackManager {}
+    impl TraceStackManager for MockStackManager {
+        fn get_stack(
+            &self,
+            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _snap: i64,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStack>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_latest_stack(
+            &self,
+            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _snap: i64,
+        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStack>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_frames_in(
+            &self,
+            _set: &dyn crate::program::model::address::AddressSetView,
+        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceStackFrame>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
     struct MockStaticMappingManager;
     impl TraceStaticMappingManager for MockStaticMappingManager {
         fn add(
