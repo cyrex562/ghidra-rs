@@ -53,7 +53,7 @@ DONE	trait	32	8	80	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 PARK	trait	32	2	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/context/TraceRegisterContextManager.java
 DONE	trait	31	7	76	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/context/DBTraceRegisterContextManager.java
 DONE	trait	31	3	25	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/module/DBTraceStaticMappingManager.java
-TODO	trait	32	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/program/TraceVariableSnapProgramView.java
+DONE	trait	32	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/program/TraceVariableSnapProgramView.java
 TODO	trait	31	2	74	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/property/DBTraceAddressPropertyManager.java
 TODO	trait	32	2	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/stack/TraceStackManager.java
 TODO	trait	33	10	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEventScope.java
