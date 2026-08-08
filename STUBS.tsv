@@ -485,3 +485,5 @@ ts	stub_class	referenced_by
 2026-08-08T11:00:00+00:00	DBTraceObjectManager	DBTraceMemoryManager
 2026-08-08T11:00:00+00:00	DBTraceOverlaySpaceAdapter	DBTraceMemoryManager
 2026-08-08T08:53:37.732517+00:00	TraceGuestPlatform	TracePlatformManager
+2026-08-08T12:00:00+00:00	DBTraceRegisterContextSpace	DBTraceRegisterContextManager
+2026-08-08T12:00:00+00:00	TracePlatform	DBTraceRegisterContextManager
