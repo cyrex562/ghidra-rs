@@ -284,18 +284,54 @@ mod tests {
         }
     }
 
-    struct TestPiece {
-        address_arithmetic: I64Arithmetic,
-        arithmetic: I64Arithmetic,
-    }
+    /// A minimal arithmetic-only piece. Only `get_address_arithmetic`/`get_arithmetic` are
+    /// exercised by these tests (through `PcodeStateCallbacks`'s default delegation methods); the
+    /// rest of [`PcodeExecutorStatePiece`]'s surface is irrelevant here.
+    struct TestPiece;
 
     impl PcodeExecutorStatePiece<i64, i64> for TestPiece {
-        fn get_address_arithmetic(&self) -> &dyn PcodeArithmetic<i64> {
-            &self.address_arithmetic
+        fn get_language(&self) -> Box<dyn crate::program::model::lang::language::Language> {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
         }
 
-        fn get_arithmetic(&self) -> &dyn PcodeArithmetic<i64> {
-            &self.arithmetic
+        fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<i64>> {
+            Arc::new(I64Arithmetic)
+        }
+
+        fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<i64>> {
+            Arc::new(I64Arithmetic)
+        }
+
+        fn stream_pieces(&self) -> Vec<&dyn crate::pcode::seam_stubs::ErasedPcodeExecutorStatePiece> {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
+        }
+
+        fn set_var_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &i64, _size: i32, _quantize: bool, _val: &i64) {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
+        }
+
+        fn set_var_internal_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &i64, _size: i32, _val: &i64) {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
+        }
+
+        fn get_var_abstract(&self, _space: &Arc<AddressSpace>, _offset: &i64, _size: i32, _quantize: bool, _reason: Reason) -> i64 {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
+        }
+
+        fn get_var_internal_abstract(&self, _space: &Arc<AddressSpace>, _offset: &i64, _size: i32, _reason: Reason) -> i64 {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
+        }
+
+        fn get_register_values(&self) -> Vec<(crate::program::model::lang::register::RegisterRef, i64)> {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
+        }
+
+        fn get_concrete_buffer(&self, _address: &Address, _purpose: Purpose) -> Box<dyn crate::program::model::mem::mem_buffer::MemBuffer> {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
+        }
+
+        fn clear(&mut self) {
+            unimplemented!("not exercised by PcodeStateCallbacks tests")
         }
     }
 
@@ -317,7 +353,7 @@ mod tests {
 
     #[test]
     fn none_callbacks_are_all_no_ops() {
-        let piece = TestPiece { address_arithmetic: I64Arithmetic, arithmetic: I64Arithmetic };
+        let piece = TestPiece;
         let ram = ram_space();
         let addr = ram.address(0x2000);
 
@@ -367,7 +403,7 @@ mod tests {
 
     #[test]
     fn delegate_data_written_abstract_forwards_to_concrete_address() {
-        let piece = TestPiece { address_arithmetic: I64Arithmetic, arithmetic: I64Arithmetic };
+        let piece = TestPiece;
         let ram = ram_space();
         let cb = RecordingCallbacks::default();
 
@@ -380,7 +416,7 @@ mod tests {
 
     #[test]
     fn delegate_data_written_forwards_to_abstract_space() {
-        let piece = TestPiece { address_arithmetic: I64Arithmetic, arithmetic: I64Arithmetic };
+        let piece = TestPiece;
         let ram = ram_space();
         let addr = ram.address(0x3000);
         let cb = RecordingCallbacks::default();
@@ -415,7 +451,7 @@ mod tests {
 
     #[test]
     fn delegate_read_uninitialized_abstract_reports_partial_initialization() {
-        let piece = TestPiece { address_arithmetic: I64Arithmetic, arithmetic: I64Arithmetic };
+        let piece = TestPiece;
         let ram = ram_space();
         let cb = PartialInitCallbacks;
 
@@ -443,7 +479,7 @@ mod tests {
 
     #[test]
     fn delegate_read_uninitialized_forwards_and_consumes_fully_initialized_range() {
-        let piece = TestPiece { address_arithmetic: I64Arithmetic, arithmetic: I64Arithmetic };
+        let piece = TestPiece;
         let ram = ram_space();
         let cb = FullInitCallbacks;
         let set = rng_set(&ram, 0x5000, 8);
@@ -454,7 +490,7 @@ mod tests {
 
     #[test]
     fn check_value_domain_matches_by_domain_name() {
-        let piece = TestPiece { address_arithmetic: I64Arithmetic, arithmetic: I64Arithmetic };
+        let piece = TestPiece;
         let domain = piece.get_arithmetic().get_domain();
 
         assert!(check_value_domain(&piece, domain).is_some());
