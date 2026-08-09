@@ -13189,7 +13189,7 @@ orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/RepeatI
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/SymbolPath.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/SymbolPathParser.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractAppender.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode 
-orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractPcodeFormatter.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode 
+orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractPcodeFormatter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/Appender.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/PcodeFormatter.java	DONE	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util pcode 
 orig_src/Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/DataArchiveUtils.java	TODO	orig_src Ghidra Framework SoftwareModeling src main java ghidra app util sourcelanguage 
