@@ -497,3 +497,5 @@ ts	stub_class	referenced_by
 2026-08-09T05:30:00.000000+00:00	PcodeExecutor	AnnotatedPcodeUseropLibrary
 2026-08-09T06:00:00.000000+00:00	Emulate	EmulateInstructionStateModifier
 2026-08-09T06:00:00.000000+00:00	RegisterValue	EmulateInstructionStateModifier
+2026-08-09T05:55:29.611198+00:00	BytesPcodeArithmetic	AbstractBytesPcodeExecutorStatePiece
+2026-08-09T05:55:29.611579+00:00	BytesPcodeExecutorStateSpace	AbstractBytesPcodeExecutorStatePiece
