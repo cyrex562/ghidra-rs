@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::program::model::address::{
     Address, AddressFactory, AddressRange, AddressSet, AddressSetView, AddressSpace,
 };
@@ -1425,5 +1426,13 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
 
     /// Mirrors `clear(Lifespan, AddressRange)`.
     fn clear(&self, span: Lifespan, range: &AddressRange);
+}
+
+/// Placeholder for the unported Java type `StepKind`, referenced by `Stepper`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait StepKind: Send + Sync {
+    fn tick(&self, thread: &dyn ErasedPcodeThread);
+    fn skip(&self, thread: &dyn ErasedPcodeThread);
 }
 
