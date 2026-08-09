@@ -26,6 +26,7 @@ use crate::trace::model::memory::trace_memory_region::TraceMemoryRegion;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::target::path::key_path::KeyPath;
+use crate::trace::model::time::schedule::compare_result::CompareResult;
 use crate::trace::model::time::schedule::step::Step;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
@@ -233,7 +234,132 @@ pub trait TraceSnapshot: Send + Sync {
 /// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
 /// the real port is available. `TraceTimeManager` only ever passes these around opaquely (as a
 /// lookup/creation key), never inspecting them, so this is a marker trait.
-pub trait TraceSchedule: Send + Sync {}
+///
+/// Grown to add the members
+/// [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)'s
+/// `doFindNearest` prefix search actually inspects. Every one defaults to panicking, like
+/// [`DBTrace`]'s grown members, so the existing marker (`impl TraceSchedule for MockSchedule {}`)
+/// implementors keep compiling unchanged; the real port replaces every default.
+pub trait TraceSchedule: Send + Sync {
+    /// Mirrors `TraceSchedule.toString()`, i.e. `toString(TimeRadix.DEC)` -- the exact form
+    /// `DBTraceSnapshot` stores in its indexed `Schedule` column, and therefore the key
+    /// `DBTraceTimeManager`'s `snapshotsBySchedule` index is ordered by.
+    fn schedule_string(&self) -> String {
+        unimplemented!("TraceSchedule::schedule_string placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.isSnapOnly()`.
+    fn is_snap_only(&self) -> bool {
+        unimplemented!("TraceSchedule::is_snap_only placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.getSnap()`.
+    fn get_snap(&self) -> i64 {
+        unimplemented!("TraceSchedule::get_snap placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.stepCount()`.
+    fn step_count(&self) -> i32 {
+        unimplemented!("TraceSchedule::step_count placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.dropPSteps()`.
+    fn drop_p_steps(&self) -> Arc<dyn TraceSchedule> {
+        unimplemented!("TraceSchedule::drop_p_steps placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.dropLastStep()`.
+    fn drop_last_step(&self) -> Arc<dyn TraceSchedule> {
+        unimplemented!("TraceSchedule::drop_last_step placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.truncateToSteps(int)`.
+    fn truncate_to_steps(&self, count: i32) -> Arc<dyn TraceSchedule> {
+        let _ = count;
+        unimplemented!("TraceSchedule::truncate_to_steps placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.lastStep().step()`. The Java method returns a `StepAndKind` record
+    /// pairing the step with which of the two sequences it came from; every caller ported so far
+    /// immediately takes `.step()`, so only that half is stubbed.
+    fn last_step(&self) -> Box<dyn Step> {
+        unimplemented!("TraceSchedule::last_step placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.compareSchedule(TraceSchedule)`.
+    fn compare_schedule(&self, that: &dyn TraceSchedule) -> CompareResult {
+        let _ = that;
+        unimplemented!("TraceSchedule::compare_schedule placeholder not overridden")
+    }
+
+    /// Mirrors `TraceSchedule.compareTo(TraceSchedule)`, which Java derives from
+    /// [`Self::compare_schedule`].
+    fn compare_to(&self, that: &dyn TraceSchedule) -> i32 {
+        self.compare_schedule(that).compare_to()
+    }
+}
+
+/// Placeholder for the static factory `TraceSchedule.snap(long)`, which builds the snap-only
+/// schedule for a given snapshot key (`new TraceSchedule(snap, Sequence.of(), Sequence.of())`).
+///
+/// Unlike [`patch_step_parse`] and friends this one is *implemented* rather than left panicking:
+/// `DBTraceTimeManager.createSnapshot` stamps `TraceSchedule.snap(0)` onto the trace's first
+/// snapshot, so a panicking stub would make the manager's most basic operation unusable. A
+/// snap-only schedule has empty step sequences, which pins down every member
+/// [`TraceSchedule`] declares without needing the unported `Sequence`/`Step` machinery: its
+/// `toString` is just the snap rendered in the radix (`TimeRadix.DEC` here), its step count is
+/// zero, and `compareSchedule` reduces to comparing snaps and then recognizing the empty
+/// sequence as a prefix of any other.
+pub fn trace_schedule_snap(snap: i64) -> Arc<dyn TraceSchedule> {
+    Arc::new(SnapOnlySchedule { snap })
+}
+
+/// The concrete schedule [`trace_schedule_snap`] returns. Private: callers only ever see it as
+/// `Arc<dyn TraceSchedule>`, and it disappears entirely once the real `TraceSchedule` is ported.
+struct SnapOnlySchedule {
+    snap: i64,
+}
+
+impl TraceSchedule for SnapOnlySchedule {
+    fn schedule_string(&self) -> String {
+        // `TraceSchedule.toString(radix)` with both sequences nop is just `radix.format(snap)`.
+        self.snap.to_string()
+    }
+
+    fn is_snap_only(&self) -> bool {
+        true
+    }
+
+    fn get_snap(&self) -> i64 {
+        self.snap
+    }
+
+    fn step_count(&self) -> i32 {
+        0
+    }
+
+    fn drop_p_steps(&self) -> Arc<dyn TraceSchedule> {
+        Arc::new(SnapOnlySchedule { snap: self.snap })
+    }
+
+    fn compare_schedule(&self, that: &dyn TraceSchedule) -> CompareResult {
+        // Schedules starting at different snaps are never related.
+        let by_snap = CompareResult::from_unrelated(match self.snap.cmp(&that.get_snap()) {
+            std::cmp::Ordering::Less => -1,
+            std::cmp::Ordering::Equal => 0,
+            std::cmp::Ordering::Greater => 1,
+        });
+        if by_snap != CompareResult::Equals {
+            return by_snap;
+        }
+        // The empty sequence is a (related) prefix of every sequence.
+        if that.step_count() > 0 {
+            CompareResult::RelLt
+        } else {
+            CompareResult::Equals
+        }
+    }
+}
 
 /// Placeholder for the nested enum `ghidra.trace.model.time.schedule.TraceSchedule.TimeRadix`,
 /// referenced by
@@ -241,9 +367,244 @@ pub trait TraceSchedule: Send + Sync {}
 /// the real port is available. Mirrors the one member needed to make a round-trip
 /// `set_time_radix`/`get_time_radix` observable: the radix's numeric value (Java's
 /// `TimeRadix.getRadix()`).
+///
+/// Grown with [`Self::radix_name`], the enum's other public field, which
+/// [`DBTraceTimeManager::set_time_radix`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager::set_time_radix)
+/// writes into the root object's `_time_radix` attribute.
 pub trait TimeRadix: Send + Sync {
     /// Mirrors `TimeRadix.getRadix()`.
     fn radix(&self) -> i32;
+
+    /// Mirrors the enum's `public final String name` field -- `"dec"`, `"HEX"`, or `"hex"` --
+    /// the token `TimeRadix.fromStr` round-trips. Defaults to deriving the name from
+    /// [`Self::radix`], which cannot tell `HEX_UPPER` from `HEX_LOWER`; upper-case implementors
+    /// override it.
+    fn radix_name(&self) -> &'static str {
+        if self.radix() == 10 {
+            "dec"
+        } else {
+            "hex"
+        }
+    }
+}
+
+/// The three constants of the Java enum `TraceSchedule.TimeRadix`, as a concrete stand-in usable
+/// wherever a [`TimeRadix`] value (rather than an arbitrary implementor) is needed.
+///
+/// The enum's own name is already taken by the [`TimeRadix`] trait -- the shape earlier ports
+/// picked, and the one `Step::to_string_radix` and friends take as `&dyn TimeRadix` -- so the
+/// constants live under this separate name until the real port collapses the two.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TimeRadixKind {
+    /// Mirrors `TimeRadix.DEC` (`"dec"`, 10).
+    Dec,
+    /// Mirrors `TimeRadix.HEX_UPPER` (`"HEX"`, 16).
+    HexUpper,
+    /// Mirrors `TimeRadix.HEX_LOWER` (`"hex"`, 16).
+    HexLower,
+}
+
+impl TimeRadix for TimeRadixKind {
+    fn radix(&self) -> i32 {
+        match self {
+            TimeRadixKind::Dec => 10,
+            TimeRadixKind::HexUpper | TimeRadixKind::HexLower => 16,
+        }
+    }
+
+    fn radix_name(&self) -> &'static str {
+        match self {
+            TimeRadixKind::Dec => "dec",
+            TimeRadixKind::HexUpper => "HEX",
+            TimeRadixKind::HexLower => "hex",
+        }
+    }
+}
+
+/// Mirrors `TimeRadix.DEFAULT`, which is `DEC`.
+pub fn time_radix_default() -> TimeRadixKind {
+    TimeRadixKind::Dec
+}
+
+/// Mirrors `TimeRadix.fromStr(String)`, which falls back to [`time_radix_default`] on any
+/// unrecognized token.
+pub fn time_radix_from_str(s: &str) -> TimeRadixKind {
+    match s {
+        "dec" => TimeRadixKind::Dec,
+        "HEX" => TimeRadixKind::HexUpper,
+        "hex" => TimeRadixKind::HexLower,
+        _ => time_radix_default(),
+    }
+}
+
+/// Placeholder for `ghidra.trace.database.time.DBTraceSnapshot`, referenced by
+/// [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)
+/// before the real port is available.
+///
+/// A *struct* rather than the usual placeholder trait: the manager does not merely pass snapshots
+/// around, it creates them (`snapshotStore.create()`), so there has to be something concrete to
+/// create. What it needs is exactly the record `DBTraceSnapshot` persists -- key, real time,
+/// description, schedule, version -- plus the derived `isFork` flag, so those fields are the
+/// placeholder.
+///
+/// Two deliberate departures from the Java class, both because the parts left out belong to
+/// types that are not ported:
+///
+/// - There is no back-reference to the owning manager. In Java every accessor takes
+///   `manager.lock`, and `setSchedule` reaches into `manager.forkStore`; here the manager owns
+///   both its lock and its fork table, so the fork bookkeeping lives in
+///   [`DBTraceTimeManager::set_snapshot_schedule`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager::set_snapshot_schedule)
+///   and this type carries only per-snapshot state behind its own `Mutex`.
+/// - `getEventThread`/`setEventThread` are omitted: they resolve a thread key through
+///   `DBTraceThreadManager` and the root object's `TraceEventScope` schema, none of which is
+///   ported. The stored `threadKey` column is likewise omitted, since nothing can read it yet.
+pub struct DBTraceSnapshot {
+    key: i64,
+    data: std::sync::Mutex<DBTraceSnapshotData>,
+}
+
+struct DBTraceSnapshotData {
+    real_time: i64,
+    description: String,
+    schedule: Option<Arc<dyn TraceSchedule>>,
+    schedule_str: String,
+    version: i64,
+    is_fork: bool,
+}
+
+impl DBTraceSnapshot {
+    /// A freshly created snapshot record, mirroring `fresh(true)`: no schedule, empty schedule
+    /// string, not a fork.
+    pub fn new(key: i64) -> Self {
+        Self {
+            key,
+            data: std::sync::Mutex::new(DBTraceSnapshotData {
+                real_time: 0,
+                description: String::new(),
+                schedule: None,
+                schedule_str: String::new(),
+                version: 0,
+                is_fork: false,
+            }),
+        }
+    }
+
+    /// Mirrors `DBAnnotatedObject.getKey()`, the snapshot's snap.
+    pub fn get_key(&self) -> i64 {
+        self.key
+    }
+
+    /// Mirrors `DBTraceSnapshot.set(long, String)`.
+    pub fn set(&self, real_time: i64, description: &str) {
+        let mut data = self.data.lock().unwrap();
+        data.real_time = real_time;
+        data.description = description.to_string();
+    }
+
+    /// Mirrors `DBTraceSnapshot.getRealTime()`.
+    pub fn get_real_time(&self) -> i64 {
+        self.data.lock().unwrap().real_time
+    }
+
+    /// Mirrors `DBTraceSnapshot.getDescription()`.
+    pub fn get_description(&self) -> String {
+        self.data.lock().unwrap().description.clone()
+    }
+
+    /// Mirrors `DBTraceSnapshot.getSchedule()`.
+    pub fn get_schedule(&self) -> Option<Arc<dyn TraceSchedule>> {
+        self.data.lock().unwrap().schedule.clone()
+    }
+
+    /// Mirrors `DBTraceSnapshot.getScheduleString()`, the indexed `Schedule` column.
+    pub fn get_schedule_string(&self) -> String {
+        self.data.lock().unwrap().schedule_str.clone()
+    }
+
+    /// Mirrors `DBTraceSnapshot.getVersion()`.
+    pub fn get_version(&self) -> i64 {
+        self.data.lock().unwrap().version
+    }
+
+    /// Mirrors `DBTraceSnapshot.setVersion(long)`. The manager's change notification is *not*
+    /// fired from here (see the type docs); callers that need it go through the manager.
+    pub fn set_version(&self, version: i64) {
+        self.data.lock().unwrap().version = version;
+    }
+
+    /// Mirrors `DBTraceSnapshot.isSnapOnly(boolean)`.
+    pub fn is_snap_only(&self, when_inconsistent: bool) -> bool {
+        let data = self.data.lock().unwrap();
+        match &data.schedule {
+            None if self.key < 0 => when_inconsistent,
+            None => true,
+            Some(schedule) => schedule.is_snap_only(),
+        }
+    }
+
+    /// The schedule-column half of `DBTraceSnapshot.setSchedule(TraceSchedule)`: store the
+    /// schedule and its string form, recompute `isFork`, and report the new flag so the manager
+    /// can add or drop the matching fork record.
+    ///
+    /// Mirrors `computeIsFork()`: the snapshot at `Long.MIN_VALUE` is never a fork, nor is one
+    /// without a schedule; otherwise it is a fork exactly when its schedule does not simply
+    /// continue from the preceding snap.
+    pub fn store_schedule(&self, schedule: Option<Arc<dyn TraceSchedule>>) -> bool {
+        let mut data = self.data.lock().unwrap();
+        data.schedule_str = match &schedule {
+            None => String::new(),
+            Some(s) => s.schedule_string(),
+        };
+        data.is_fork = match (&schedule, self.key) {
+            (_, i64::MIN) => false,
+            (None, _) => false,
+            (Some(s), key) => s.get_snap() != key - 1,
+        };
+        data.schedule = schedule;
+        data.is_fork
+    }
+}
+
+impl TraceSnapshot for DBTraceSnapshot {
+    fn is_fork(&self) -> bool {
+        self.data.lock().unwrap().is_fork
+    }
+}
+
+impl TraceSnapshot for Arc<DBTraceSnapshot> {
+    fn is_fork(&self) -> bool {
+        (**self).is_fork()
+    }
+}
+
+impl std::fmt::Debug for DBTraceSnapshot {
+    /// Mirrors `DBTraceSnapshot.toString()`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let data = self.data.lock().unwrap();
+        write!(
+            f,
+            "<DBTraceSnapshot key={}, realTime={}, schedule='{}', description='{}'>",
+            self.key, data.real_time, data.schedule_str, data.description
+        )
+    }
+}
+
+/// Placeholder for `ghidra.trace.database.thread.DBTraceThreadManager`, referenced by
+/// [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)
+/// before the real port is available. `DBTraceTimeManager` only stores its thread manager (for
+/// `DBTraceSnapshot`'s event-thread resolution, which is not ported -- see [`DBTraceSnapshot`]),
+/// so only the two `DBTraceManager` members are stubbed.
+pub trait DBTraceThreadManager: Send + Sync {
+    /// Mirrors `DBTraceThreadManager.dbError(IOException)`.
+    fn db_error(&self, e: std::io::Error) {
+        panic!("database error: {e}")
+    }
+
+    /// Mirrors `DBTraceThreadManager.invalidateCache(boolean)`.
+    fn invalidate_cache(&self, all: bool) {
+        let _ = all;
+        unimplemented!("DBTraceThreadManager::invalidate_cache placeholder not overridden")
+    }
 }
 
 /// Placeholder for `ghidra.trace.model.TraceAddressSnapSpace`, referenced by
@@ -564,7 +925,36 @@ pub trait TraceStack: Send + Sync {}
 /// before the real port is available. `TraceObjectValueStorage` is a bare abstract interface (no
 /// default methods), so it only ever passes this type around opaquely (as `getParent`'s return
 /// and `getChildOrNull`'s return); no members are needed yet.
-pub trait DBTraceObject: Send + Sync {}
+///
+/// Grown to add the two attribute accessors
+/// [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)'s
+/// time-radix members use against the trace's root object. Both default to panicking, like
+/// [`DBTrace`]'s grown members, so the existing marker implementors keep compiling unchanged.
+pub trait DBTraceObject: Send + Sync {
+    /// Mirrors `setAttribute(Lifespan, String, Object)`. The Java `Object` value maps to the same
+    /// boxed-`Any` shape
+    /// [`TraceObjectValue::get_value`](crate::trace::model::target::trace_object_value::TraceObjectValue::get_value)
+    /// already uses for an unconstrained value type.
+    fn set_attribute(
+        &self,
+        lifespan: Lifespan,
+        name: &str,
+        value: Box<dyn std::any::Any + Send + Sync>,
+    ) -> Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue> {
+        let _ = (lifespan, name, value);
+        unimplemented!("DBTraceObject::set_attribute placeholder not overridden")
+    }
+
+    /// Mirrors `getAttribute(long, String)`, whose `null` return becomes `None`.
+    fn get_attribute(
+        &self,
+        snap: i64,
+        name: &str,
+    ) -> Option<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
+        let _ = (snap, name);
+        unimplemented!("DBTraceObject::get_attribute placeholder not overridden")
+    }
+}
 
 /// Placeholder for `ghidra.trace.database.target.DBTraceObjectManager`, referenced by
 /// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
@@ -630,6 +1020,13 @@ pub trait DBTraceObjectManager: Send + Sync {
         _predicate: &dyn Fn(&dyn TraceMemoryRegion) -> bool,
     ) -> Box<dyn AddressSetView> {
         unimplemented!("DBTraceObjectManager::get_regions_address_set placeholder not overridden")
+    }
+
+    /// Mirrors `getRootObject()`, whose `null` return becomes `None`. Needed by
+    /// [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)'s
+    /// time-radix members, which store the radix as a root-object attribute.
+    fn get_root_object(&self) -> Option<Box<dyn DBTraceObject>> {
+        unimplemented!("DBTraceObjectManager::get_root_object placeholder not overridden")
     }
 }
 
@@ -1005,6 +1402,42 @@ pub trait DBTrace: Send + Sync {
     /// Mirrors `DBTrace.getObjectManager()`.
     fn get_object_manager(&self) -> Box<dyn DBTraceObjectManager> {
         unimplemented!("DBTrace::get_object_manager placeholder not overridden")
+    }
+
+    /// Mirrors `DBTrace.dbError(IOException)`, which wraps and rethrows. Panicking is the
+    /// convention [`ErrorHandler`](crate::framework::db::util::error_handler::ErrorHandler)
+    /// documents for that.
+    fn db_error(&self, e: std::io::Error) {
+        panic!("database error: {e}")
+    }
+
+    /// Mirrors `DBTrace.setChanged(TraceChangeRecord)`.
+    fn set_changed(&self, event: &dyn TraceChangeRecord) {
+        let _ = event;
+        unimplemented!("DBTrace::set_changed placeholder not overridden")
+    }
+
+    /// Mirrors `DBTrace.getEmulatorCacheVersion()`.
+    fn get_emulator_cache_version(&self) -> i64 {
+        unimplemented!("DBTrace::get_emulator_cache_version placeholder not overridden")
+    }
+
+    /// Mirrors `DBTrace.updateViewportsSnapshotAdded(TraceSnapshot)`.
+    fn update_viewports_snapshot_added(&self, snapshot: &dyn TraceSnapshot) {
+        let _ = snapshot;
+        unimplemented!("DBTrace::update_viewports_snapshot_added placeholder not overridden")
+    }
+
+    /// Mirrors `DBTrace.updateViewportsSnapshotChanged(TraceSnapshot)`.
+    fn update_viewports_snapshot_changed(&self, snapshot: &dyn TraceSnapshot) {
+        let _ = snapshot;
+        unimplemented!("DBTrace::update_viewports_snapshot_changed placeholder not overridden")
+    }
+
+    /// Mirrors `DBTrace.updateViewportsSnapshotDeleted(TraceSnapshot)`.
+    fn update_viewports_snapshot_deleted(&self, snapshot: &dyn TraceSnapshot) {
+        let _ = snapshot;
+        unimplemented!("DBTrace::update_viewports_snapshot_deleted placeholder not overridden")
     }
 }
 
