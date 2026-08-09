@@ -32,6 +32,10 @@ mod tests {
     struct TestEmulate;
     impl Emulate for TestEmulate {
         fn dispose(&self) {}
+
+        fn get_language(&self) -> Box<dyn crate::program::model::lang::Language> {
+            unimplemented!("test should not call this")
+        }
     }
 
     struct DummyBehavior;

@@ -203,12 +203,17 @@ pub trait FloatFormat {
 pub trait PcodeOpRaw: Send + Sync {}
 
 /// Placeholder for `ghidra.pcode.emulate.Emulate`, referenced by
-/// [`OpBehaviorOther`](crate::pcode::opbehavior::OpBehaviorOther) and
-/// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable) before the real class is ported.
-/// This is a minimal interface stub exposing only the methods needed by existing references.
+/// [`OpBehaviorOther`](crate::pcode::opbehavior::OpBehaviorOther),
+/// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable), and
+/// [`EmulateInstructionStateModifierBase`](crate::pcode::emulate::emulate_instruction_state_modifier::EmulateInstructionStateModifierBase)
+/// before the real class is ported. This is a minimal interface stub exposing only the methods
+/// needed by existing references.
 pub trait Emulate: Send + Sync {
     /// Placeholder for `Emulate.dispose()`.
     fn dispose(&self);
+
+    /// Placeholder for `Emulate.getLanguage()`.
+    fn get_language(&self) -> Box<dyn Language>;
 }
 
 /// Placeholder for `ghidra.pcode.exec.PcodeProgram`, referenced by
