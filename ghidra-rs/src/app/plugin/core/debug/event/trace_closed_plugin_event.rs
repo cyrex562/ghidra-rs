@@ -107,7 +107,7 @@ mod tests {
 
         fn get_address_property_manager(
             &self,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceAddressPropertyManager> {
+        ) -> Box<dyn crate::trace::model::property::TraceAddressPropertyManager> {
             unimplemented!()
         }
 

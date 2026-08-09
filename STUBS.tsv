@@ -54,7 +54,6 @@ ts	stub_class	referenced_by
 2026-07-07T03:00:00Z	LinkHandler	DomainFolder
 2026-07-07T04:00:00Z	Processor	Language
 2026-07-07T04:00:00Z	AddressLabelInfo	Language
-2026-07-07T05:00:00Z	TraceAddressPropertyManager	Trace
 2026-07-07T05:00:00Z	TraceBookmarkManager	Trace
 2026-07-07T05:00:00Z	TraceBasedDataTypeManager	Trace
 2026-07-07T05:00:00Z	TraceMemoryManager	Trace

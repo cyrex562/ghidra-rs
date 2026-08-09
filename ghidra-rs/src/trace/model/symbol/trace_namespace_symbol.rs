@@ -94,7 +94,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_address_property_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceAddressPropertyManager> {
+        fn get_address_property_manager(&self) -> Box<dyn crate::trace::model::property::TraceAddressPropertyManager> {
             unimplemented!("not exercised by this smoke test")
         }
 

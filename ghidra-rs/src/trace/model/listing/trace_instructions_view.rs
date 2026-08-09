@@ -159,7 +159,7 @@ use crate::program::model::listing::CommentType;
         }
         fn get_address_property_manager(
             &self,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceAddressPropertyManager> {
+        ) -> Box<dyn crate::trace::model::property::TraceAddressPropertyManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_bookmark_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceBookmarkManager> {

@@ -368,9 +368,9 @@ mod tests {
     use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
     use crate::trace::model::program::TraceVariableSnapProgramView;
     use crate::trace::model::stack::trace_stack_manager::TraceStackManager;
+    use crate::trace::model::property::TraceAddressPropertyManager;
     use crate::trace::seam_stubs::{
-        TraceAddressPropertyManager, TraceBasedDataTypeManager, TraceBookmarkManager,
-        TraceMemoryManager,
+        TraceBasedDataTypeManager, TraceBookmarkManager, TraceMemoryManager,
         TraceRegisterContextManager,
     };
     use crate::util::lock_hold::{Lock, LockHold};

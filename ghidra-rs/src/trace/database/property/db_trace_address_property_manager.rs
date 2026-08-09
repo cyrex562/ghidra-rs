@@ -4,7 +4,7 @@
 //!
 //! The Java class is `DBTraceAddressPropertyManager implements TraceAddressPropertyManager,
 //! DBTraceManager` -- both of which are already-ported, object-safe traits (respectively
-//! [`TraceAddressPropertyManager`](crate::trace::seam_stubs::TraceAddressPropertyManager) and
+//! [`TraceAddressPropertyManager`](crate::trace::model::property::TraceAddressPropertyManager) and
 //! [`DBTraceManager`]). It was selected as a dependency-cycle cut-point, so this trait is kept
 //! minimal: it re-declares those two interfaces as supertraits (mirroring Java's `implements`
 //! list) and adds the one further public member the concrete class exposes beyond them,
@@ -25,13 +25,13 @@
 //! `get_api_property_manager` mirrors the class's own `getApiPropertyManager()`, which hands out
 //! the `_API_`-name-prefixed `DBTraceAddressPropertyManagerApiView` wrapper (a package-private,
 //! not-yet-ported class) as a plain
-//! [`TraceAddressPropertyManager`](crate::trace::seam_stubs::TraceAddressPropertyManager); since
+//! [`TraceAddressPropertyManager`](crate::trace::model::property::TraceAddressPropertyManager); since
 //! that trait already declares the interface's full method surface, the wrapper's own
 //! implementation detail (prefixing names with `_API_` and filtering `getAllProperties()`) is not
 //! reproduced here.
 
 use crate::trace::database::db_trace_manager::DBTraceManager;
-use crate::trace::seam_stubs::TraceAddressPropertyManager;
+use crate::trace::model::property::TraceAddressPropertyManager;
 
 /// The trace database's manager of user-defined address properties.
 ///
