@@ -43,7 +43,7 @@ DONE	trait	37	69	54	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 DONE	trait	35	12	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Stepper.java
 DONE	trait	33	11	8	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Step.java
 DONE	trait	32	7	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/AbstractStep.java
-TODO	trait	32	12	55	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Scheduler.java
+DONE	trait	32	12	55	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Scheduler.java
 TODO	trait	31	8	39	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/time/DBTraceTimeManager.java
 TODO	trait	31	8	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/property/TraceAddressPropertyManager.java
 TODO	trait	28	10	6	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectValue.java
