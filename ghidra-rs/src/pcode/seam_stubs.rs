@@ -532,6 +532,31 @@ impl SleighProgramCompiler {
     }
 }
 
+/// Placeholder for `ghidra.pcode.emu.auxiliary.AuxPcodeEmulator`, referenced by
+/// [`AuxEmulatorPartsFactory`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory)
+/// before the real class is ported. `AuxEmulatorPartsFactory` never calls a method on it -- every
+/// reference is just an opaque handle threaded through to the parts a factory manufactures -- so,
+/// following the erasure convention already used for [`PcodeThread`], this is a bare marker with no
+/// members and no `U` (Java's `AuxPcodeEmulator<U>`) type parameter.
+pub trait AuxPcodeEmulator: Send + Sync {}
+
+/// Placeholder for `ghidra.pcode.emu.DefaultPcodeThread`, referenced by
+/// [`AuxEmulatorPartsFactory::create_executor`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_executor)
+/// before the real class is ported. That method only forwards the thread to the also-unported
+/// `DefaultPcodeThread.PcodeThreadExecutor`, so no member is exposed here beyond the supertrait
+/// relationship Java's class declares (`DefaultPcodeThread<T> implements PcodeThread<T>`).
+pub trait DefaultPcodeThread: PcodeThread {}
+
+/// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorStatePiece`, referenced by
+/// [`AuxEmulatorPartsFactory::create_shared_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_shared_state)
+/// and
+/// [`AuxEmulatorPartsFactory::create_local_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_local_state)
+/// before the real class is ported. Both methods only receive the concrete piece and incorporate
+/// it into a composed state (typically via the already-ported
+/// [`PairedPcodeExecutorStatePiece`](crate::pcode::exec::paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece)),
+/// so no member is exposed here.
+pub trait BytesPcodeExecutorStatePiece: Send + Sync {}
+
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeArithmetic`, referenced by
 /// [`AbstractBytesPcodeExecutorStatePiece`](crate::pcode::exec::abstract_bytes_pcode_executor_state_piece::AbstractBytesPcodeExecutorStatePiece)'s
 /// two-argument constructor solely for its static factory `forLanguage`, used to build a default
