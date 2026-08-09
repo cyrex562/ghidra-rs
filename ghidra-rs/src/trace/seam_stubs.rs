@@ -26,6 +26,7 @@ use crate::trace::model::memory::trace_memory_region::TraceMemoryRegion;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::target::path::key_path::KeyPath;
+use crate::trace::model::time::schedule::step::Step;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::util::trace_change_manager::TraceChangeManager;
@@ -1434,5 +1435,34 @@ pub trait DBTraceRegisterContextSpace: Send + Sync {
 pub trait StepKind: Send + Sync {
     fn tick(&self, thread: &dyn ErasedPcodeThread);
     fn skip(&self, thread: &dyn ErasedPcodeThread);
+}
+
+/// Placeholder constructors for the unported Java types `PatchStep`, `SkipStep`, and `TickStep`,
+/// referenced only by [`Step`]'s static factory methods (`Step::parse`, `Step::nop`).
+///
+/// Those Java methods are `static` (no receiver), so the usual "stub trait with instance
+/// methods" shape doesn't fit: there is no instance to call `parse` on until one of these three
+/// concrete types exists. Free functions mirroring the Java statics are the minimal placeholder
+/// instead. Each panics until the real port lands; nothing in this crate calls them yet except
+/// `Step::nop`/`Step::parse`, which are themselves not called by any ported code.
+pub fn patch_step_parse(thread_key: i64, step_spec: &str) -> Box<dyn Step> {
+    unimplemented!("PatchStep is not yet ported: parse({thread_key}, {step_spec:?})")
+}
+
+/// See [`patch_step_parse`]. Mirrors `SkipStep.parse(long, String, TimeRadix)`.
+pub fn skip_step_parse(thread_key: i64, step_spec: &str, radix: &dyn TimeRadix) -> Box<dyn Step> {
+    let _ = radix;
+    unimplemented!("SkipStep is not yet ported: parse({thread_key}, {step_spec:?})")
+}
+
+/// See [`patch_step_parse`]. Mirrors `TickStep.parse(long, String, TimeRadix)`.
+pub fn tick_step_parse(thread_key: i64, step_spec: &str, radix: &dyn TimeRadix) -> Box<dyn Step> {
+    let _ = radix;
+    unimplemented!("TickStep is not yet ported: parse({thread_key}, {step_spec:?})")
+}
+
+/// See [`patch_step_parse`]. Mirrors `new TickStep(long, long)`, used by `Step::nop`.
+pub fn tick_step_new(thread_key: i64, tick_count: i64) -> Box<dyn Step> {
+    unimplemented!("TickStep is not yet ported: new({thread_key}, {tick_count})")
 }
 
