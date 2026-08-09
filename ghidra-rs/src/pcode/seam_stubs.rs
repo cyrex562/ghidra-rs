@@ -211,9 +211,36 @@ pub trait PcodeProgram: Send + Sync {}
 
 /// Placeholder for `ghidra.pcode.exec.PcodeUseropLibrary`, referenced by
 /// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
-/// before the real class is ported. Used there only as an opaque parameter type, so no members
-/// are exposed yet.
-pub trait PcodeUseropLibrary: Send + Sync {}
+/// and by
+/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory::PcodeUseropLibraryFactory)
+/// before the real class is ported. `compose` is the one method
+/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory) needs; it takes
+/// `self`/`other` by `Box` (rather than `&self`) since there is no `get_userops`/`Clone` here yet
+/// to build a merged map from borrowed halves.
+pub trait PcodeUseropLibrary: Send + Sync {
+    /// Placeholder for `PcodeUseropLibrary.compose(PcodeUseropLibrary)`. Combines `self` and
+    /// `other` into a single library, `self`'s userops taking precedence.
+    fn compose(self: Box<Self>, other: Box<dyn PcodeUseropLibrary>) -> Box<dyn PcodeUseropLibrary>;
+}
+
+/// Placeholder for the empty library returned by `PcodeUseropLibrary.nil()`, referenced by
+/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory) before the real
+/// class is ported. Composing it with another library is a no-op that just yields the other
+/// library, matching the identity behavior of Java's `NIL` singleton.
+pub struct NilPcodeUseropLibrary;
+
+impl PcodeUseropLibrary for NilPcodeUseropLibrary {
+    fn compose(self: Box<Self>, other: Box<dyn PcodeUseropLibrary>) -> Box<dyn PcodeUseropLibrary> {
+        other
+    }
+}
+
+/// Placeholder for `PcodeUseropLibrary.nil()`, referenced by
+/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory) before the real
+/// class is ported.
+pub fn nil_pcode_userop_library() -> Box<dyn PcodeUseropLibrary> {
+    Box::new(NilPcodeUseropLibrary)
+}
 
 /// Placeholder for `ghidra.pcode.exec.PcodeExecutor`, referenced by
 /// [`AbstractSleighPcodeUseropDefinitionBase::execute`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase::execute)
