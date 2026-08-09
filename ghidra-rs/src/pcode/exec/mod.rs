@@ -1,5 +1,6 @@
 pub mod abstract_sleigh_pcode_userop_definition;
 pub mod location_pcode_arithmetic;
+pub mod paired_pcode_arithmetic;
 pub mod paired_pcode_executor_state_piece;
 pub mod pcode_arithmetic;
 pub mod pcode_state_callbacks;
@@ -10,6 +11,7 @@ pub use abstract_sleigh_pcode_userop_definition::{
     AbstractSleighPcodeUseropDefinition, AbstractSleighPcodeUseropDefinitionBase, Builder,
 };
 pub use location_pcode_arithmetic::LocationPcodeArithmetic;
+pub use paired_pcode_arithmetic::PairedPcodeArithmetic;
 pub use paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece;
 pub use pcode_arithmetic::{PcodeArithmetic, Purpose, SIZEOF_SIZEOF};
 pub use pcode_state_callbacks::{
