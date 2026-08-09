@@ -254,6 +254,30 @@ Three counting rules matter, and getting any of them wrong flips types between b
   when it has one real implementation. This is the same trap "Diagnosing the Port" describes
   from the Rust side, and `*Adapter` is *not* a double in this codebase.
 
+### Small closed sets are several questions (decided 2026-08-09)
+
+"2–3 implementers → enum" is not one answer. Classifying the 214 undecided P3 types by *what*
+their implementers are, rather than how many, splits them into families with different
+answers. `scripts/debt_clusters.py` applies these automatically (`suggest_by_family`).
+
+| implementers look like | e.g. | answer |
+|---|---|---|
+| same concept, different **storage backing** (`*DB`, `DB*`, `InMemory*`, `Pseudo*`) | `Instruction` = InstructionDB + DBTraceInstruction + PseudoInstruction; `FunctionTag` = FunctionTagDB + InMemoryFunctionTag | **one type** — the backing is *where it was read from*, not what it is. Copy ID resolved against a snapshot, per convention 3. |
+| a **null object** plus the real one (`Invalid*`, `Empty*`, `Null*`, `*Error`) | `InstructionPrototype` = InvalidPrototype + SleighInstructionPrototype | **`Option<T>`** — port the real one as the concrete type and delete the placeholder. Rust already has a way to say "no value". |
+| one **wraps** another (`*Wrapper`, `*Adapter`, `*Proxy`) | `GDirectedGraph` = JungDirectedGraph + JungToGDirectedGraphAdapter | **`dyn` (or a generic)** — the wrapper genuinely has to hold something polymorphic. |
+| a **base + subclass** chain | `ProgramCompilerSpec extends BasicCompilerSpec` | **composition** — the derived struct embeds the base. Java inheritance-for-reuse has no Rust translation. |
+| genuinely unrelated **siblings** | `Language` = OldLanguage + SleighLanguage | **enum dispatch**, per convention 2. |
+
+**Count implementers transitively, concrete-only, doubles excluded** — `IMPLEMENTERS.tsv`, via
+`shape_rules.concrete_implementers`. Counting *direct* subtypes instead put 23 proposals in the
+wrong family, including `CodeUnit` (proposed as a closed set; it has 20 concrete implementers),
+`MemBuffer` (27), `AssemblySymbol` (17) and `DomainObject` (14). That is the same wrong answer
+"Diagnosing the Port" records being reached from the Rust side, arrived at from a different
+direction — direct subtypes stop at sub-interfaces.
+
+A `SUGGEST-*` row is a proposal and stays re-derivable: when the evidence changes, re-run with
+`--resuggest`, which resets proposals but never a promoted verdict.
+
 ## Coding Standards
 
 - Write idiomatic Rust using standard naming, ownership, error handling, and safety conventions.

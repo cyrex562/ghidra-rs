@@ -269,5 +269,54 @@ class TestJavaSubtypeScan(unittest.TestCase):
         self.assertEqual(counts["Nothing"], 0)
 
 
+class TestSmallClosedSetFamilies(unittest.TestCase):
+    """"Small closed set" is several questions with different answers (decided 2026-08-09).
+
+    Classifying the 214 undecided 2-3-implementer types by what their implementers ARE, rather
+    than how many there are, splits them into families the generic ENUM suggestion got wrong.
+    """
+
+    def test_storage_split_is_one_type_not_an_enum(self):
+        v, note = dc.suggest_by_family("FunctionTag", ["FunctionTagDB", "InMemoryFunctionTag"])
+        self.assertEqual(v, "SUGGEST-ARENA")
+        self.assertIn("where the object was read from", note)
+
+    def test_db_and_trace_backings_are_still_one_type(self):
+        v, _ = dc.suggest_by_family("Instruction",
+                                    ["DBTraceInstruction", "InstructionDB", "PseudoInstruction"])
+        self.assertEqual(v, "SUGGEST-ARENA")
+
+    def test_null_object_becomes_option_not_a_variant(self):
+        v, note = dc.suggest_by_family("InstructionPrototype",
+                                       ["InvalidPrototype", "SleighInstructionPrototype"])
+        self.assertEqual(v, "SUGGEST-STRUCT")
+        self.assertIn("Option<InstructionPrototype>", note)
+        self.assertIn("SleighInstructionPrototype", note)
+
+    def test_wrapper_needs_real_polymorphism(self):
+        v, note = dc.suggest_by_family(
+            "GDirectedGraph",
+            ["JungDirectedGraph", "JungToGDirectedGraphAdapter", "MutableGDirectedGraphWrapper"])
+        self.assertEqual(v, "SUGGEST-ACCEPT")
+        self.assertIn("hold something polymorphic", note)
+
+    def test_plain_siblings_fall_through_to_enum(self):
+        """Language = OldLanguage + SleighLanguage has no storage/null/wrapper marker."""
+        self.assertIsNone(dc.suggest_by_family("Language", ["OldLanguage", "SleighLanguage"]))
+
+    def test_single_implementer_is_not_a_family_question(self):
+        self.assertIsNone(dc.suggest_by_family("Trace", ["DBTrace"]))
+
+    def test_all_backings_storage_still_counts_as_a_storage_split(self):
+        """ProgramModule = ModuleDB + DBTraceProgramViewRootModule: both are DB-backed.
+
+        An earlier draft required at least one NON-storage implementer, which dropped exactly
+        the pairs where both sides are persistent.
+        """
+        v, _ = dc.suggest_by_family("ProgramModule",
+                                    ["DBTraceProgramViewRootModule", "ModuleDB"])
+        self.assertEqual(v, "SUGGEST-ARENA")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

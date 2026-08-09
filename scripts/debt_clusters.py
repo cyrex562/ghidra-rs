@@ -183,6 +183,33 @@ def java_declarations(orig_src="orig_src"):
     return decls
 
 
+_IMPL_TABLE = None
+
+
+def _load_implementer_table():
+    """shape_rules' precomputed transitive/concrete implementer closure, or None."""
+    global _IMPL_TABLE
+    if _IMPL_TABLE is None:
+        try:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import shape_rules
+            _IMPL_TABLE = shape_rules.load_implementers() or {}
+        except Exception:
+            _IMPL_TABLE = {}
+    return _IMPL_TABLE
+
+
+def java_implementer_names(orig_src="orig_src"):
+    """{name: [concrete implementer class names]} -- what the family rules dispatch on.
+
+    Empty unless reading the real tree, for the same reason as java_subtype_counts: the
+    precomputed table describes orig_src and nothing else.
+    """
+    if orig_src != "orig_src":
+        return {}
+    return {n: e["concrete_implementers"] for n, e in (_load_implementer_table() or {}).items()}
+
+
 def java_subtype_counts(orig_src="orig_src"):
     """Java class/interface name -> how many Java types extend or implement it.
 
@@ -197,7 +224,19 @@ def java_subtype_counts(orig_src="orig_src"):
         no hierarchy to dispatch over at all, so a trait in Rust is simply wrong (`Lock` and
         `TokenPattern` are both this);
       * a large count means an enum was never viable, whatever the port currently shows.
+
+    Superseded by IMPLEMENTERS.tsv where that exists. This function counts DIRECT subtypes of
+    any kind, which is wrong three ways and moved 23 proposals when corrected: it stops at
+    sub-interfaces (`CodeUnit`'s direct subtypes are the interfaces `Instruction`/`Data`, so
+    it read 2-3 where the truth is 20 concrete classes), it counts abstract bases as
+    implementations, and it counts test doubles. `MemBuffer` read as a closed set and has 27.
     """
+    # Only when reading the real tree: IMPLEMENTERS.tsv describes THAT tree, so honouring it
+    # for a caller-supplied orig_src (tests, worktrees) would answer about the wrong sources.
+    if orig_src == "orig_src":
+        tbl = _load_implementer_table()
+        if tbl:
+            return defaultdict(int, {n: e["n_concrete"] for n, e in tbl.items()})
     counts = defaultdict(int)
     if not os.path.isdir(orig_src):
         return counts
@@ -272,8 +311,48 @@ def collect_declarations(root):
     return traits, types_, impls, mock_impls, stub_decl, jdk_modeled
 
 
+# A "small closed set" is not one question but several, and they have different answers.
+# Decided 2026-08-09 after classifying the 214 undecided 2-3-implementer types by the
+# structural relationship between their implementers. See AGENTS.md, "Small closed sets".
+_FAM_STORAGE = re.compile(r"(DB$|^DB|InMemory|^Stored|^Pseudo)")
+_FAM_NULLOBJ = re.compile(r"^(Invalid|Empty|Null|No[A-Z])|Error$")
+_FAM_WRAPPER = re.compile(r"(Wrapper|Adapter|Proxy|Delegating)")
+
+
+def suggest_by_family(name, impl_names):
+    """Refine "small closed set" by what the implementers actually are.
+
+    Returns (verdict, note) or None to fall through to the generic ENUM suggestion.
+    """
+    impls = list(impl_names or ())
+    if len(impls) < 2:
+        return None
+    storage = [i for i in impls if _FAM_STORAGE.search(i)]
+    nullobj = [i for i in impls if _FAM_NULLOBJ.search(i)]
+    wrapper = [i for i in impls if _FAM_WRAPPER.search(i)]
+
+    if nullobj and len(nullobj) < len(impls):
+        real = [i for i in impls if i not in nullobj]
+        return "SUGGEST-STRUCT", (
+            f"null-object pattern: {', '.join(nullobj)} exist(s) only to stand in for 'no "
+            f"{name}'. Rust spells that `Option<{name}>` -- port {', '.join(real)} as the "
+            f"concrete type and delete the placeholder variant")
+    if storage and len(storage) >= len(impls) - 1:
+        return "SUGGEST-ARENA", (
+            f"same domain concept with different storage backings ({', '.join(impls)}). Per "
+            f"OWNERSHIP_MIGRATION.md convention 3, the backing is where the object was read "
+            f"from, not what it is: one type, resolved as a Copy ID against a snapshot")
+    if wrapper:
+        return "SUGGEST-ACCEPT", (
+            f"{', '.join(wrapper)} wrap another implementation, so the wrapper genuinely has "
+            f"to hold something polymorphic -- `dyn` (or a generic parameter) is the right "
+            f"tool here, not an enum")
+    return None
+
+
 def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl,
-                    java_subtypes=None, java_decls=None, jdk_modeled=frozenset()):
+                    java_subtypes=None, java_decls=None, jdk_modeled=frozenset(),
+                    java_impl_names=None):
     """Propose a verdict from structural evidence. Deliberately conservative: anything the
     evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
     is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
@@ -327,6 +406,9 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         if open_name:
             return "SUGGEST-ACCEPT", f"{j} Java subtypes and an extension-point name -- open set"
         if j <= ENUM_MAX_VARIANTS:
+            fam = suggest_by_family(name, (java_impl_names or {}).get(name, ()))
+            if fam:
+                return fam
             return "SUGGEST-ENUM", f"small closed set: {j} Java subtypes"
         if name.endswith(AST_NODE_SUFFIXES):
             return "SUGGEST-GRAPH", (f"{j} Java subtypes with an AST/IR node name -- too many for "
@@ -446,7 +528,8 @@ def load_seam_fanin(seam_path):
     return fanin
 
 
-def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, families):
+def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, families,
+                resuggest=False):
     blocked = load_blocked_rows(debt, max_fanin, dyn_threshold)
     fanin = load_seam_fanin(seam)
     prior = load_prior_verdicts(out_path)
@@ -465,6 +548,13 @@ def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, famili
     rows = []
     for name, files in files_by_type.items():
         prev = prior.get(name)
+        # A SUGGEST-* row is a proposal, not a decision, so it must stay re-derivable: the
+        # generator's own evidence changed on 2026-08-09 (direct subtype counts -> transitive
+        # concrete closure) and 23 stale SUGGEST-ENUM proposals would otherwise have survived
+        # as frozen answers -- CodeUnit among them, proposed as a closed set when it has 20
+        # concrete implementers. --resuggest resets them; a promoted verdict is never touched.
+        if prev and resuggest and str(prev[0]).startswith("SUGGEST-"):
+            prev = ("TODO", "", "")
         if prev and prev[1] != "family" and prev[0] != "TODO":
             verdict, source, note = prev            # hand-made decision: never recompute
         else:
@@ -512,6 +602,12 @@ def main():
     ap.add_argument("--suggest", action="store_true",
                     help="Fill undecided rows with SUGGEST-<VERDICT> proposals from structural "
                          "evidence. Proposals are inert until --promote.")
+    ap.add_argument("--resuggest", action="store_true",
+                    help="Reset existing SUGGEST-* rows to TODO before suggesting, so proposals "
+                         "are re-derived from current evidence. Promoted verdicts are never "
+                         "touched. Needed whenever the generator's evidence changes -- it did on "
+                         "2026-08-09, when subtype counting moved from direct to the transitive "
+                         "concrete closure, and 23 stale SUGGEST-ENUM proposals were frozen.")
     ap.add_argument("--promote", metavar="VERDICT",
                     help="Promote SUGGEST-<VERDICT> rows to <VERDICT> (e.g. --promote ACCEPT), "
                          "or ALL for every suggestion. This is the review gate.")
@@ -519,7 +615,7 @@ def main():
 
     rows, blocked = build_queue(
         args.debt, args.seam, args.root, args.out, args.max_fanin, args.dyn_threshold,
-        args.families,
+        args.families, resuggest=args.resuggest,
     )
     if not rows:
         print("no convention-blocked rows -- nothing to queue", file=sys.stderr)
@@ -529,16 +625,18 @@ def main():
         traits, types_, impls, mock_impls, stub_decl, jdk_modeled = collect_declarations(args.root)
         unported = load_unported_classes(args.manifest)
         java_subtypes = java_subtype_counts(args.orig_src)
+        java_impl_names = java_implementer_names(args.orig_src)
         java_decls = java_declarations(args.orig_src)
-        print(f"read {len(java_subtypes)} Java supertypes and {len(java_decls)} declarations "
-              f"from {args.orig_src}", file=sys.stderr)
+        src = "IMPLEMENTERS.tsv (transitive, concrete-only)" if java_impl_names else args.orig_src
+        print(f"read {len(java_subtypes)} Java supertypes from {src} and "
+              f"{len(java_decls)} declarations from {args.orig_src}", file=sys.stderr)
         n = 0
         for r in rows:
             if r["verdict"] != "TODO":
                 continue
             v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
                                      mock_impls, stub_decl, java_subtypes, java_decls,
-                                     jdk_modeled)
+                                     jdk_modeled, java_impl_names)
             if v:
                 r["verdict"], r["source"], r["note"] = v, "suggest", why
                 n += 1
