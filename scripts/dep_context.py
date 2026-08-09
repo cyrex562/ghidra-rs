@@ -620,20 +620,24 @@ def render_dyn_guidance(ctx):
     names = [e["dep_class"] for e in ctx["reuse"]] + [s["dep_class"] for s in ctx["stubs"]]
     if not names:
         return []
-    try:
-        facts, subtypes = shape_rules.build_index()
-    except Exception:
+    # Precomputed table, so this costs milliseconds inside the nightly loop rather than the
+    # ~14s a full index walk takes. Absent table = stay silent rather than pay it per port.
+    table = shape_rules.load_implementers()
+    if not table:
         return []
-    cache = {}
     avoid, fine = [], []
     for name in dict.fromkeys(names):
-        pat, n, kind = dyn_rules.classify(name, facts, subtypes, cache)
-        if pat == "P1":
+        pat, n, kind = dyn_rules.classify_from_table(name, table)
+        if pat == "PA":
+            avoid.append(f"- `{name}`: a Java annotation type. It is metadata, not a runtime "
+                         f"type -- do not model it as a Rust type at all.")
+        elif pat == "P1":
             avoid.append(f"- `{name}`: Java is a {kind}, not an interface. Use the concrete type.")
         elif pat == "P2":
-            impls = sorted(shape_rules.concrete_implementers(name, facts, subtypes, cache))
+            impls = table[name]["concrete_implementers"]
+            who = f"`{impls[0]}`" if impls else "its single implementation"
             avoid.append(f"- `{name}`: interface whose only concrete implementation is "
-                         f"`{impls[0]}`. Use that type.")
+                         f"{who}. Use that type.")
         elif pat in ("P4", "P5"):
             fine.append(f"- `{name}`: {n} concrete implementations")
     if not avoid and not fine:

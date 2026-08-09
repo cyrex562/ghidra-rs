@@ -605,8 +605,64 @@ def directive_for(res: dict) -> str:
 COLS = ["path", "class", "kind", "shape", "rule", "confidence", "subtypes", "why"]
 
 
+IMPLEMENTERS = os.path.join(REPO, "IMPLEMENTERS.tsv")
+IMPL_COLS = ["class", "kind", "n_concrete", "extension_point", "concrete_implementers"]
+
+
+def write_implementers(facts, subtypes, out=IMPLEMENTERS, cap=40):
+    """Materialise the concrete-implementer closure so callers need not rebuild the index.
+
+    `build_index` walks 15,601 Java files and costs ~14s. `dep_context.py` runs once per
+    port inside the nightly loop, so recomputing there would burn a quarter-hour a night to
+    re-derive something `orig_src` fixes for good. Written alongside SHAPES.tsv and tracked
+    for the same reason: the harnesses run `git reset --hard`, and untracked state would be
+    thrown away mid-run.
+    """
+    cache = {}
+    rows = []
+    for name in facts:
+        if len(facts[name]) > 1:
+            continue  # ambiguous basename -- callers must not resolve it
+        impls = sorted(concrete_implementers(name, facts, subtypes, cache))
+        rows.append([
+            name,
+            facts[name][0]["kind"],
+            str(len(impls)),
+            "1" if is_extension_point(name, facts) else "0",
+            ",".join(impls[:cap]),
+        ])
+    rows.sort()
+    with open(out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(IMPL_COLS) + "\n")
+        for r in rows:
+            fh.write("\t".join(c.replace("\t", " ") for c in r) + "\n")
+    return len(rows)
+
+
+def load_implementers(path=IMPLEMENTERS):
+    """{class: {kind, n_concrete, extension_point, concrete_implementers}} or None."""
+    if not os.path.exists(path):
+        return None
+    out = {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            next(fh, None)
+            for line in fh:
+                c = line.rstrip("\n").split("\t")
+                if len(c) != len(IMPL_COLS):
+                    continue
+                out[c[0]] = dict(kind=c[1], n_concrete=int(c[2]),
+                                 extension_point=c[3] == "1",
+                                 concrete_implementers=[x for x in c[4].split(",") if x])
+    except Exception:
+        return None
+    return out or None
+
+
 def cmd_index(args):
     facts, subtypes = build_index(verbose=True)
+    n = write_implementers(facts, subtypes)
+    print(f"wrote {n} rows to {IMPLEMENTERS}")
     rows = []
     for name, entries in facts.items():
         for fa in entries:

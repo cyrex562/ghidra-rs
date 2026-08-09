@@ -69,6 +69,7 @@ STD_TRAITS = {
 
 PATTERNS = {
     "P0": "interface with no concrete implementer in orig_src -- anonymous/lambda/external, unknown",
+    "PA": "Java annotation type -- not a runtime type; it should not appear as a Rust type at all",
     "P1": "Java is a {kind}, not an interface -- use the concrete type",
     "P2": "interface with exactly one concrete implementer -- Java's header-file idiom, use the struct",
     "P3": "interface with {n} concrete implementers -- closed set, enum or trait (investigate)",
@@ -77,8 +78,30 @@ PATTERNS = {
     "??": "ambiguous basename or no Java match -- do not guess",
 }
 
-VERDICT = {"P0": "unknown", "P1": "fix", "P2": "fix", "P3": "investigate",
+VERDICT = {"P0": "unknown", "PA": "unknown", "P1": "fix", "P2": "fix", "P3": "investigate",
            "P4": "ok", "P5": "ok", "??": "skip"}
+
+
+def classify_from_table(name, table):
+    """Same verdict as `classify`, from the precomputed IMPLEMENTERS.tsv table.
+
+    Lets callers in the nightly loop (dep_context.py) answer without rebuilding the Java
+    index, which costs ~14s a port.
+    """
+    if name in STD_TRAITS:
+        return "??", -1, "std"
+    e = table.get(name)
+    if e is None:
+        return "??", -1, "unmatched"      # absent = no Java match, or an ambiguous basename
+    kind = e["kind"]
+    if kind == "@interface":
+        return "PA", -1, kind
+    if kind != "interface":
+        return "P1", 0, kind
+    n = e["n_concrete"]
+    if e["extension_point"]:
+        return "P4", n, kind
+    return ("P0" if n == 0 else "P2" if n == 1 else "P3" if n <= 3 else "P5"), n, kind
 
 
 def classify(name, facts, subtypes, cache):
@@ -89,6 +112,8 @@ def classify(name, facts, subtypes, cache):
     if not e or len(e) > 1:
         return "??", -1, "ambiguous" if e else "unmatched"
     kind = e[0]["kind"]
+    if kind == "@interface":
+        return "PA", -1, kind
     if kind != "interface" and not e[0]["abstract"]:
         return "P1", 0, kind
     if sr.is_extension_point(name, facts):
@@ -139,7 +164,7 @@ def cmd_audit(args):
             fh.write("\t".join(str(c).replace("\t", " ") for c in r) + "\n")
     total = sum(counts.values())
     print(f"wrote {len(rows)} rows to {args.out}  (of {total} total `dyn` mentions)")
-    for p in ("P0", "P1", "P2", "P3", "P4", "P5", "??"):
+    for p in ("P0", "PA", "P1", "P2", "P3", "P4", "P5", "??"):
         if tally[p]:
             print(f"  {tally[p]:6d}  {100 * tally[p] / total:4.1f}%  {p}  {VERDICT[p]}")
     fixable = tally["P1"] + tally["P2"]
