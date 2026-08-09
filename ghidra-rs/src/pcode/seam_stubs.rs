@@ -11,7 +11,9 @@ use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighP
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_execution_exception::PcodeExecutionException;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
-use crate::pcode::exec::pcode_executor_state_piece::Reason;
+use crate::pcode::exec::pcode_executor_state_piece::{
+    ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
+};
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::{
@@ -423,6 +425,17 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     fn thread_created(&self, _thread: &Arc<dyn PcodeThread>) {}
 }
 
+/// Placeholder for the nested singleton `PcodeEmulationCallbacks.NoPcodeEmulationCallbacks`: an
+/// implementation that does nothing, i.e. every method left at its default.
+pub struct NoPcodeEmulationCallbacks;
+
+impl<T: 'static> PcodeEmulationCallbacks<T> for NoPcodeEmulationCallbacks {}
+
+/// Placeholder for the static factory `PcodeEmulationCallbacks.none()`.
+pub fn no_pcode_emulation_callbacks<T: 'static>() -> Arc<dyn PcodeEmulationCallbacks<T>> {
+    Arc::new(NoPcodeEmulationCallbacks)
+}
+
 /// Placeholder for `ghidra.pcode.emu.SparseAddressRangeMap`, referenced by
 /// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
 /// as its store of access breakpoints. Exposes the four members that class needs, with the same
@@ -560,4 +573,129 @@ impl BytesPcodeArithmetic {
     pub fn for_language(_language: &Arc<dyn Language>) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
         unimplemented!("BytesPcodeArithmetic not yet ported")
     }
+
+    /// As [`for_language`](Self::for_language), for a caller that already holds the concrete
+    /// `SleighLanguage` Java upcasts to `Language` at the call site (e.g. `PcodeEmulator`'s
+    /// `language` field, typed `SleighLanguage` per `AbstractPcodeMachine`). See
+    /// `AbstractPcodeMachine`'s module docs on why `SleighLanguage` doesn't implement `Language`
+    /// here, so the two entry points can't be unified yet.
+    pub fn for_sleigh_language(_language: &Arc<SleighLanguage>) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+        unimplemented!("BytesPcodeArithmetic not yet ported")
+    }
 }
+
+/// Placeholder for `ghidra.pcode.emu.BytesPcodeThread`, referenced by
+/// `PcodeEmulator::create_thread` before the real class (a `DefaultPcodeThread<byte[]>`
+/// specialization with a decoder, executor, frame, local state, library, and injects of its own)
+/// is ported. [`PcodeThread`] is a bare marker here, so nothing downstream reads anything back off
+/// a thread; only the name is kept, so a test can confirm `PcodeEmulator::create_thread` produced
+/// this type with the requested name.
+pub struct BytesPcodeThread {
+    name: String,
+}
+
+impl BytesPcodeThread {
+    /// Placeholder for `new BytesPcodeThread(String, AbstractPcodeMachine<byte[]>)`. The owning
+    /// machine isn't retained -- see the struct docs.
+    pub fn new(name: &str) -> Self {
+        Self { name: name.to_string() }
+    }
+
+    /// Port of the inherited `PcodeThread.getName()`.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl PcodeThread for BytesPcodeThread {}
+
+/// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorState`, referenced by
+/// `PcodeEmulator::create_shared_state`/`create_local_state` before the real class (composed of
+/// per-address-space `BytesPcodeExecutorStateSpace`s, also not yet ported) is ported. Only the
+/// language is retained, enough to answer `get_arithmetic`/`get_address_arithmetic` faithfully
+/// once [`BytesPcodeArithmetic`] itself is ported; every operation that would need real storage
+/// panics.
+pub struct BytesPcodeExecutorState {
+    language: Arc<SleighLanguage>,
+}
+
+impl BytesPcodeExecutorState {
+    /// Placeholder for `new BytesPcodeExecutorState(SleighLanguage, PcodeStateCallbacks)`. The
+    /// callbacks aren't retained: without real per-address-space storage to read or write, there
+    /// is nothing to forward them to.
+    pub fn new<C: PcodeStateCallbacks>(language: Arc<SleighLanguage>, _cb: C) -> Self {
+        Self { language }
+    }
+}
+
+impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for BytesPcodeExecutorState {
+    fn get_language(&self) -> Box<dyn Language> {
+        unimplemented!("BytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+    }
+
+    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+    }
+
+    fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
+        vec![]
+    }
+
+    fn set_var_abstract(
+        &mut self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _quantize: bool,
+        _val: &Vec<u8>,
+    ) {
+        unimplemented!("BytesPcodeExecutorState not yet ported")
+    }
+
+    fn set_var_internal_abstract(
+        &mut self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _val: &Vec<u8>,
+    ) {
+        unimplemented!("BytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_var_abstract(
+        &self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _quantize: bool,
+        _reason: Reason,
+    ) -> Vec<u8> {
+        unimplemented!("BytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_var_internal_abstract(
+        &self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _reason: Reason,
+    ) -> Vec<u8> {
+        unimplemented!("BytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_register_values(&self) -> Vec<(RegisterRef, Vec<u8>)> {
+        vec![]
+    }
+
+    fn get_concrete_buffer(&self, _address: &Address, _purpose: Purpose) -> Box<dyn MemBuffer> {
+        unimplemented!("BytesPcodeExecutorState not yet ported")
+    }
+
+    fn clear(&mut self) {}
+}
+
+impl PcodeExecutorState<Vec<u8>> for BytesPcodeExecutorState {}
