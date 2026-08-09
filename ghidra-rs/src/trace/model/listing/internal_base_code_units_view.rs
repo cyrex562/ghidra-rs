@@ -185,7 +185,7 @@ mod tests {
     fn internal_view_has_address_space() {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         let view = MockView {
-            space: Arc::new(space.clone()),
+            space: space.clone(),
         };
 
         assert_eq!(view.get_space().name(), "ram");
@@ -195,7 +195,7 @@ mod tests {
     fn internal_view_implements_base_view_trait() {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
         let view = MockView {
-            space: Arc::new(space),
+            space,
         };
 
         let base_view: &dyn TraceBaseCodeUnitsView = &view;
