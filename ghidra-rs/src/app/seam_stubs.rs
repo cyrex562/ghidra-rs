@@ -194,12 +194,6 @@ pub trait EmulatorFactory {}
 // as required by the `+ Send` `RunFuture` (ports Java's `CompletableFuture<EmulationResult>`).
 pub trait TraceSchedule: Send {}
 
-/// Placeholder for `ghidra.trace.model.time.schedule.Scheduler`, referenced by
-/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
-/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
-/// parameter, so no members are needed yet.
-pub trait Scheduler {}
-
 /// Placeholder for `ghidra.trace.model.guest.TracePlatform`, referenced by
 /// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) and
 /// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
@@ -220,10 +214,12 @@ pub trait TraceThread {}
 pub trait Writer {}
 
 /// Placeholder for `ghidra.trace.model.time.schedule.Scheduler.RunResult`, the base interface
-/// extended by `DebuggerEmulationService.EmulationResult` before the real `Scheduler` class is
-/// ported. Models the two accessors that `EmulationResult` and `RecordEmulationResult`
-/// (both in [`debugger_emulation_service`](crate::app::services::debugger_emulation_service))
-/// build on.
+/// extended by `DebuggerEmulationService.EmulationResult` before that nested interface (and the
+/// `RecordRunResult` record, and the `Scheduler.run` default method that constructs it) is
+/// ported -- see [`Scheduler`](crate::trace::model::time::schedule::scheduler::Scheduler)'s
+/// module docs for why that trio isn't portable yet. Models the two accessors that
+/// `EmulationResult` and `RecordEmulationResult` (both in
+/// [`debugger_emulation_service`](crate::app::services::debugger_emulation_service)) build on.
 // `Send` so `dyn EmulationResult` (its subtrait) is `Send`, letting the `+ Send` `RunFuture`
 // carry a `Box<dyn EmulationResult>` across threads.
 pub trait RunResult: Send {

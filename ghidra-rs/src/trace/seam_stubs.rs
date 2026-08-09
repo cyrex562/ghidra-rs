@@ -533,8 +533,20 @@ pub trait TracePlatform: Send + Sync {
 
 /// Placeholder for `ghidra.trace.model.thread.TraceThread`, referenced by
 /// [`TraceCodeUnit`](crate::trace::model::listing::trace_code_unit::TraceCodeUnit) before the real
-/// port is available. No members are parsed from the Java source yet.
-pub trait TraceThread: Send + Sync {}
+/// port is available.
+///
+/// Grown to add the one member
+/// [`Scheduler::one_thread`](crate::trace::model::time::schedule::scheduler::one_thread) needs:
+/// the thread's database key. Defaults to panicking, matching this module's other
+/// grown-but-not-yet-implemented placeholders (see [`TracePlatform::get_trace`]'s docs for the
+/// same reasoning), so the existing marker (`impl TraceThread for T {}`) implementors keep
+/// compiling unchanged.
+pub trait TraceThread: Send + Sync {
+    /// Mirrors `TraceThread.getKey()`.
+    fn get_key(&self) -> i64 {
+        unimplemented!("TraceThread::get_key placeholder not overridden")
+    }
+}
 
 /// Placeholder for `ghidra.trace.model.stack.TraceStackFrame`, referenced by
 /// [`TraceCodeManager`](crate::trace::model::listing::trace_code_manager::TraceCodeManager) and
