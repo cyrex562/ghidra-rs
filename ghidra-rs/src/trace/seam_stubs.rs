@@ -5,7 +5,6 @@
 //! provenance.
 
 use std::any::TypeId;
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
@@ -36,7 +35,8 @@ use crate::util::lock_hold::Lock;
 use crate::util::task::TaskMonitor;
 
 /// Placeholder for `ghidra.trace.database.map.AbstractDBTracePropertyMap`, referenced by
-/// [`TraceAddressPropertyManager`] (grown below) and
+/// [`TraceAddressPropertyManager`](crate::trace::model::property::trace_address_property_manager::TraceAddressPropertyManager)
+/// and
 /// [`DBTraceAddressPropertyManager`](crate::trace::database::property::db_trace_address_property_manager::DBTraceAddressPropertyManager)
 /// before the real (generic, DB-record-backed) type is ported. Java's `Class<T> valueClass` /
 /// `AbstractDBTracePropertyMap<T, ?>` erasure is represented the same way
@@ -45,103 +45,11 @@ use crate::util::task::TaskMonitor;
 /// type is carried at runtime as a [`TypeId`] rather than at the Rust type level, so a single
 /// manager can hold differently-typed property maps simultaneously (mirroring
 /// `propertyMapsByName: Map<String, AbstractDBTracePropertyMap<?, ?>>`). Only the one accessor
-/// [`TraceAddressPropertyManager`]'s type-checking members need is stubbed here.
+/// [`TraceAddressPropertyManager`](crate::trace::model::property::trace_address_property_manager::TraceAddressPropertyManager)'s
+/// type-checking members need is stubbed here.
 pub trait AbstractDBTracePropertyMap: Send + Sync {
     /// Mirrors `AbstractDBTracePropertyMap.getValueClass()`.
     fn get_value_class(&self) -> TypeId;
-}
-
-/// Placeholder for `ghidra.trace.model.property.TraceAddressPropertyManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-///
-/// Grown to add the manager's full method surface, needed by
-/// [`DBTraceAddressPropertyManager`](crate::trace::database::property::db_trace_address_property_manager::DBTraceAddressPropertyManager)
-/// (a cycle cut-point ported directly against this interface, mirroring Java's
-/// `DBTraceAddressPropertyManager implements TraceAddressPropertyManager, DBTraceManager`). Java's
-/// `<T> ... Class<T> valueClass` generic methods are not object-safe as written (a `dyn Trait`
-/// cannot dispatch a generic method); `Class<T>` becomes [`TypeId`] and the returned
-/// `TracePropertyMap<T>` becomes the type-erased [`AbstractDBTracePropertyMap`], matching this
-/// crate's established convention for an unconstrained type parameter on an object-safe trait
-/// (see
-/// [`TraceObjectValue::get_value`](crate::trace::model::target::trace_object_value::TraceObjectValue::get_value)'s
-/// docs). Java's unchecked `TypeMismatchException` (no `throws` clause) is mirrored as a possible
-/// panic, matching this crate's existing convention for that exception (see
-/// [`PropertyMapManager`](crate::program::model::util::property_map_manager::PropertyMapManager)'s
-/// "May panic" docs); only the checked `DuplicateNameException` on `createPropertyMap` becomes a
-/// `Result`. All new members default to panicking, matching this module's other
-/// grown-but-not-yet-implemented placeholders (see [`TracePlatform::get_trace`]'s docs for the
-/// same reasoning), so the existing marker (`impl TraceAddressPropertyManager for T {}`)
-/// implementor keeps compiling unchanged.
-pub trait TraceAddressPropertyManager: Send + Sync {
-    /// Create a property map with the given name and value type. Mirrors
-    /// `createPropertyMap(String, Class<T>)`.
-    fn create_property_map(
-        &mut self,
-        _name: &str,
-        _value_class: TypeId,
-    ) -> Result<Box<dyn AbstractDBTracePropertyMap>, DuplicateNameException> {
-        unimplemented!("TraceAddressPropertyManager::create_property_map placeholder not overridden")
-    }
-
-    /// Get the property map with the given name, if it has the given type. Mirrors
-    /// `getPropertyMap(String, Class<T>)`. Returns `None` if no such map exists (Java's `null`).
-    fn get_property_map(
-        &self,
-        _name: &str,
-        _value_class: TypeId,
-    ) -> Option<Box<dyn AbstractDBTracePropertyMap>> {
-        unimplemented!("TraceAddressPropertyManager::get_property_map placeholder not overridden")
-    }
-
-    /// Get the property map with the given name, if its values extend the given type. Mirrors
-    /// `getPropertyMapExtends(String, Class<T>)`.
-    fn get_property_map_extends(
-        &self,
-        _name: &str,
-        _value_class: TypeId,
-    ) -> Option<Box<dyn AbstractDBTracePropertyMap>> {
-        unimplemented!(
-            "TraceAddressPropertyManager::get_property_map_extends placeholder not overridden"
-        )
-    }
-
-    /// Get the property map with the given name, creating it if necessary. Mirrors
-    /// `getOrCreatePropertyMap(String, Class<T>)`.
-    fn get_or_create_property_map(
-        &mut self,
-        _name: &str,
-        _value_class: TypeId,
-    ) -> Box<dyn AbstractDBTracePropertyMap> {
-        unimplemented!(
-            "TraceAddressPropertyManager::get_or_create_property_map placeholder not overridden"
-        )
-    }
-
-    /// Get the property map with the given name, creating it if necessary; if it already exists,
-    /// its values' type must be a supertype of the given type. Mirrors
-    /// `getOrCreatePropertyMapSuper(String, Class<T>)`.
-    fn get_or_create_property_map_super(
-        &mut self,
-        _name: &str,
-        _value_class: TypeId,
-    ) -> Box<dyn AbstractDBTracePropertyMap> {
-        unimplemented!(
-            "TraceAddressPropertyManager::get_or_create_property_map_super placeholder not overridden"
-        )
-    }
-
-    /// Get the property map with the given name, without type-checking. Mirrors the overload
-    /// `getPropertyMap(String)`.
-    fn get_property_map_untyped(&self, _name: &str) -> Option<Box<dyn AbstractDBTracePropertyMap>> {
-        unimplemented!(
-            "TraceAddressPropertyManager::get_property_map_untyped placeholder not overridden"
-        )
-    }
-
-    /// Get a copy of all the defined properties. Mirrors `getAllProperties()`.
-    fn get_all_properties(&self) -> HashMap<String, Box<dyn AbstractDBTracePropertyMap>> {
-        unimplemented!("TraceAddressPropertyManager::get_all_properties placeholder not overridden")
-    }
 }
 
 /// Placeholder for `ghidra.trace.model.bookmark.TraceBookmarkManager`, referenced by

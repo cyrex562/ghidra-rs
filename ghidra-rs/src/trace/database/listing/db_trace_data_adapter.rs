@@ -525,7 +525,7 @@ mod tests {
         fn get_base_address_factory(&self) -> Box<dyn crate::program::model::address::AddressFactory> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_address_property_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceAddressPropertyManager> {
+        fn get_address_property_manager(&self) -> Box<dyn crate::trace::model::property::TraceAddressPropertyManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_bookmark_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceBookmarkManager> {
