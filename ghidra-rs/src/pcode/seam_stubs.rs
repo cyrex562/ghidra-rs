@@ -4,10 +4,11 @@
 //! replaced (or grown into a supertrait/struct of) the real port once that Java class is ported.
 //! See `STUBS.tsv` for provenance.
 
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
+use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::{
     ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
@@ -281,13 +282,32 @@ impl<T: 'static> PcodeUseropLibrary<T> for ComposedPcodeUseropLibrary<T> {
 }
 
 /// Placeholder for `ghidra.pcode.exec.PcodeExecutor`, referenced by
-/// [`AbstractSleighPcodeUseropDefinitionBase::execute`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase::execute)
-/// and by [`PcodeUseropDefinition`](crate::pcode::exec::pcode_userop_library::PcodeUseropDefinition)
-/// before the real class is ported. Exposes only `execute`, the one method those call sites need.
+/// [`AbstractSleighPcodeUseropDefinitionBase::execute`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase::execute),
+/// by [`PcodeUseropDefinition`](crate::pcode::exec::pcode_userop_library::PcodeUseropDefinition),
+/// and by
+/// [`AnnotatedPcodeUseropDefinition`](crate::pcode::exec::annotated_pcode_userop_library::AnnotatedPcodeUseropDefinition)
+/// before the real class is ported. Exposes only the members those call sites need.
 /// `T` is Java's `PcodeExecutor<T>` type parameter: the type of values in the executor's state.
 pub trait PcodeExecutor<T: 'static>: Send + Sync {
     /// Placeholder for `PcodeExecutor.execute(PcodeProgram, PcodeUseropLibrary)`.
     fn execute(&self, program: &dyn PcodeProgram, library: &dyn PcodeUseropLibrary<T>);
+
+    /// Placeholder for `PcodeExecutor.getArithmetic()`.
+    ///
+    /// Returns an owned `Arc` rather than a borrow, matching
+    /// [`PcodeExecutorStatePiece::get_arithmetic`].
+    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>>;
+
+    /// Placeholder for `PcodeExecutor.getState()`.
+    ///
+    /// Java hands back the state and lets callers both read and write it (a userop, for example,
+    /// reads its inputs and writes its output through it). Writing needs `&mut`, which a
+    /// `&dyn PcodeExecutor` cannot produce, so the state is shared behind a `Mutex`: the executor
+    /// and the userops it runs genuinely share mutable access to it.
+    fn get_state(&self) -> &Mutex<dyn PcodeExecutorState<T>>;
+
+    /// Placeholder for `PcodeExecutor.getReason()`.
+    fn get_reason(&self) -> Reason;
 }
 
 /// Placeholder for `ghidra.pcode.exec.FixedSleighPcodeUseropDefinition`, referenced by
@@ -473,6 +493,18 @@ pub trait PcodeExecutorStatePiece<A, T> {
     fn get_var_internal(&self, space: &Arc<AddressSpace>, offset: i64, size: i32, reason: Reason) -> T {
         let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
         self.get_var_internal_abstract(space, &a_offset, size, reason)
+    }
+    /// Placeholder for `PcodeExecutorStatePiece.setVar(Varnode, T)`.
+    ///
+    /// Java overloads `setVar` on the variable's description; Rust has no overloading, so the
+    /// [`Varnode`]-keyed form carries the `_varnode` suffix. Like Java's default, it quantizes.
+    fn set_var_varnode(&mut self, var: &Varnode, val: &T) {
+        self.set_var(var.get_address().space(), var.get_offset(), var.get_size(), true, val);
+    }
+    /// Placeholder for `PcodeExecutorStatePiece.getVar(Varnode, Reason)`. See
+    /// [`set_var_varnode`](Self::set_var_varnode) for the naming.
+    fn get_var_varnode(&self, var: &Varnode, reason: Reason) -> T {
+        self.get_var(var.get_address().space(), var.get_offset(), var.get_size(), true, reason)
     }
     /// Placeholder for `PcodeExecutorStatePiece.getRegisterValues()`.
     ///

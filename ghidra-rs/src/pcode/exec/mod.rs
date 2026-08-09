@@ -1,4 +1,5 @@
 pub mod abstract_sleigh_pcode_userop_definition;
+pub mod annotated_pcode_userop_library;
 pub mod default_pcode_userop_library;
 pub mod location_pcode_arithmetic;
 pub mod paired_pcode_arithmetic;
@@ -13,6 +14,10 @@ pub mod sleigh_pcode_userop_definition;
 
 pub use abstract_sleigh_pcode_userop_definition::{
     AbstractSleighPcodeUseropDefinition, AbstractSleighPcodeUseropDefinitionBase, Builder,
+};
+pub use annotated_pcode_userop_library::{
+    AnnotatedPcodeUseropDefinition, AnnotatedPcodeUseropLibrary, AnnotatedPcodeUseropLibraryBase,
+    PcodeUserop, UseropCallback, UseropContext, UseropInputs, UseropValue, UseropValueKind,
 };
 pub use default_pcode_userop_library::DefaultPcodeUseropLibrary;
 pub use location_pcode_arithmetic::LocationPcodeArithmetic;
