@@ -442,3 +442,13 @@ pub trait PcodeExecutorStatePiece<A, T> {
     fn clear(&mut self);
 }
 
+/// Placeholder for `ghidra.pcode.exec.PcodeExecutorState`, referenced by
+/// [`PairedPcodeExecutorState`](crate::pcode::exec::paired_pcode_executor_state::PairedPcodeExecutorState)
+/// before the real class is ported. In Java, `PcodeExecutorState<T> extends
+/// PcodeExecutorStatePiece<T, T>` (offset and value domains agree), defaults
+/// `getAddressArithmetic()` to `getArithmetic()`, and narrows `fork`'s return type from `Self` to
+/// `PcodeExecutorState<T>`. Rust cannot express that return-type narrowing through a supertrait
+/// relationship, so this is a plain marker requiring the offset and value domains to agree;
+/// implementors still satisfy `getAddressArithmetic` by giving it the same body as `getArithmetic`.
+pub trait PcodeExecutorState<T>: PcodeExecutorStatePiece<T, T> {}
+
