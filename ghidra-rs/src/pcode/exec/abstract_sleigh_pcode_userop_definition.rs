@@ -281,7 +281,11 @@ mod tests {
         impl PcodeProgram for RecordingProgram {}
 
         struct RecordingLibrary;
-        impl PcodeUseropLibrary for RecordingLibrary {}
+        impl PcodeUseropLibrary for RecordingLibrary {
+            fn compose(self: Box<Self>, _other: Box<dyn PcodeUseropLibrary>) -> Box<dyn PcodeUseropLibrary> {
+                self
+            }
+        }
 
         struct RecordingDefinition;
         impl SleighPcodeUseropDefinition for RecordingDefinition {
