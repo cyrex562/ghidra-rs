@@ -7,9 +7,10 @@ The cases here are the ones that made the first three drafts of this classifier 
     subtypes are the sub-interfaces `TraceData` and `TraceInstruction`;
   * counting sub-interfaces and abstract bases as implementations says `DataType` has 12
     when it has 192, and inflates single-implementation interfaces into "closed sets";
-  * counting test doubles says `Program` has 3 implementations (ProgramDB, StubProgram,
-    and the sub-interface TraceProgramView) when it has one real one -- the same mistake
-    AGENTS.md records being made from the Rust side.
+  * counting test doubles and sub-interfaces says `Program` is implemented by StubProgram
+    and by TraceProgramView, which is an interface -- the same mistake AGENTS.md records
+    being made from the Rust side. Its real implementations are ProgramDB and the two
+    concrete trace views reached through TraceProgramView.
 
     python3 scripts/test_dyn_rules.py
 """
@@ -165,11 +166,17 @@ class TestRealTree(unittest.TestCase):
     def test_trace_has_a_single_implementation(self):
         self.assertEqual(self.c("Trace")[:2], ("P2", 1))
 
-    def test_program_is_not_a_closed_set_of_three(self):
-        """ProgramDB is real; StubProgram is a double and TraceProgramView is an interface."""
-        pat, n, _ = self.c("Program")
-        self.assertGreaterEqual(n, 1)
-        self.assertNotEqual(pat, "P3", "Program must not be read as a 2-3 member closed set")
+    def test_program_counts_only_real_implementations(self):
+        """StubProgram is a test double and TraceProgramView is a sub-interface.
+
+        Asserts WHAT is counted rather than which bucket that lands in: the bucket moved
+        legitimately when test sourcesets were excluded from the index (StubProgram dropped
+        out), and an assertion on the bucket would have failed for the right change.
+        """
+        impls = sr.concrete_implementers("Program", self.facts, self.subtypes, {})
+        self.assertIn("ProgramDB", impls)
+        self.assertNotIn("StubProgram", impls, "test double must not count")
+        self.assertNotIn("TraceProgramView", impls, "a sub-interface is not an implementation")
 
     def test_token_pattern_is_a_class(self):
         self.assertEqual(self.c("TokenPattern")[0], "P1")
