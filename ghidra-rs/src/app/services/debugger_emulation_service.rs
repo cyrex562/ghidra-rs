@@ -22,8 +22,9 @@ use std::io;
 use std::pin::Pin;
 
 use crate::app::seam_stubs::{
-    EmulatorFactory, PcodeMachine, RunResult, Scheduler, TracePlatform, TraceSchedule, Writer,
+    EmulatorFactory, RunResult, Scheduler, TracePlatform, TraceSchedule, Writer,
 };
+use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
 use crate::trace::model::trace::Trace;
@@ -93,7 +94,7 @@ impl EmulationResult for RecordEmulationResult {
 /// Port of `DebuggerEmulationService.CachedEmulator`.
 pub struct CachedEmulator {
     trace: Box<dyn Trace>,
-    emulator: Box<dyn PcodeMachine>,
+    emulator: Box<dyn ErasedPcodeMachine>,
     writer: Box<dyn Writer>,
     version: i64,
 }
@@ -102,7 +103,7 @@ impl CachedEmulator {
     /// Creates a cached emulator, capturing the trace's current emulator cache version.
     ///
     /// Port of `CachedEmulator(Trace, PcodeMachine<?>, Writer)`.
-    pub fn new(trace: Box<dyn Trace>, emulator: Box<dyn PcodeMachine>, writer: Box<dyn Writer>) -> Self {
+    pub fn new(trace: Box<dyn Trace>, emulator: Box<dyn ErasedPcodeMachine>, writer: Box<dyn Writer>) -> Self {
         let version = trace.get_emulator_cache_version();
         Self { trace, emulator, writer, version }
     }
@@ -112,7 +113,7 @@ impl CachedEmulator {
     /// Port of the canonical `CachedEmulator(Trace, PcodeMachine<?>, Writer, long)` constructor.
     pub fn with_version(
         trace: Box<dyn Trace>,
-        emulator: Box<dyn PcodeMachine>,
+        emulator: Box<dyn ErasedPcodeMachine>,
         writer: Box<dyn Writer>,
         version: i64,
     ) -> Self {
@@ -129,7 +130,7 @@ impl CachedEmulator {
     /// **WARNING:** This emulator belongs to this service. You may interrupt it, but stepping
     /// it, or otherwise manipulating it without the service's knowledge can lead to unintended
     /// consequences.
-    pub fn emulator(&self) -> &dyn PcodeMachine {
+    pub fn emulator(&self) -> &dyn ErasedPcodeMachine {
         self.emulator.as_ref()
     }
 
@@ -256,7 +257,7 @@ pub trait DebuggerEmulationService {
     ///
     /// **WARNING:** This emulator belongs to this service. Stepping it, or otherwise
     /// manipulating it without the service's knowledge can lead to unintended consequences.
-    fn get_cached_emulator(&self, trace: &dyn Trace, time: &dyn TraceSchedule) -> Box<dyn PcodeMachine>;
+    fn get_cached_emulator(&self, trace: &dyn Trace, time: &dyn TraceSchedule) -> Box<dyn ErasedPcodeMachine>;
 
     /// Get the emulators which are currently executing.
     fn get_busy_emulators(&self) -> Vec<CachedEmulator>;
@@ -280,7 +281,7 @@ mod tests {
     impl EmulatorFactory for MockEmulatorFactory {}
 
     struct MockPcodeMachine;
-    impl PcodeMachine for MockPcodeMachine {}
+    impl ErasedPcodeMachine for MockPcodeMachine {}
 
     struct MockTraceSchedule;
     impl TraceSchedule for MockTraceSchedule {}
@@ -362,7 +363,7 @@ mod tests {
             )))
         }
 
-        fn get_cached_emulator(&self, _trace: &dyn Trace, _time: &dyn TraceSchedule) -> Box<dyn PcodeMachine> {
+        fn get_cached_emulator(&self, _trace: &dyn Trace, _time: &dyn TraceSchedule) -> Box<dyn ErasedPcodeMachine> {
             Box::new(MockPcodeMachine)
         }
 
