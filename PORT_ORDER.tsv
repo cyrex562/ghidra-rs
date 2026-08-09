@@ -40,7 +40,7 @@ DONE	trait	45	29	78	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 DONE	trait	42	2	14	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/AdaptedMemoryState.java
 DONE	trait	39	6	14	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/Emulator.java
 DONE	trait	37	69	54	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeThread.java
-TODO	trait	35	12	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Stepper.java
+DONE	trait	35	12	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Stepper.java
 TODO	trait	33	11	8	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Step.java
 TODO	trait	32	7	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/AbstractStep.java
 TODO	trait	32	12	55	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/time/schedule/Scheduler.java
