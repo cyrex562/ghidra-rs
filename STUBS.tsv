@@ -459,7 +459,6 @@ ts	stub_class	referenced_by
 2026-08-08T04:49:08.204185+00:00	DBTraceCodeUnitAdapter	DBTraceDataAdapter
 2026-08-08T04:49:08.205010+00:00	DataAdapterFromDataType	DBTraceDataAdapter
 2026-08-08T05:48:42.684975+00:00	DBTraceDefinedDataAdapter	DBTraceData
-2026-08-08T05:48:42.684975+00:00	AbstractDBTraceDataComponent	DBTraceData
 2026-08-08T06:00:00.000000+00:00	AbstractBaseDBTraceCodeUnitsView	AbstractBaseDBTraceCodeUnitsMemoryView
 2026-08-08T06:00:00.000000+00:00	DBTraceCodeManager	AbstractBaseDBTraceCodeUnitsMemoryView
 2026-08-08T06:00:00.000000+00:00	DBTraceUtils	AbstractBaseDBTraceCodeUnitsMemoryView
