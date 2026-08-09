@@ -80,6 +80,27 @@ OPEN_EXTENSION_SUFFIXES = (
     "Supplier", "Predicate", "Analyzer", "Exporter", "Importer", "Formatter",
 )
 
+# Rust built-ins and std containers. `Rc<RefCell<Vec<Foo>>>` and `Arc<Mutex<bool>>` make the
+# cell regex capture the INNER container, not a domain type, so the queue was carrying rows for
+# Vec (leverage 31), bool, usize, HashMap, Box, String, Option and Self. None of those is a
+# convention decision; they were all being proposed PARK, which reads as "undecidable" when the
+# truth is "not a question".
+RUST_BUILTIN = {
+    "Vec", "Box", "Rc", "Arc", "HashMap", "HashSet", "BTreeMap", "BTreeSet", "VecDeque",
+    "Option", "Result", "Cow", "RefCell", "Mutex", "RwLock", "Cell", "String", "Self",
+    "Ordering", "PathBuf", "Path", "OsString", "OsStr", "Range", "RangeInclusive",
+}
+
+
+def is_domain_type(name):
+    """A Rust domain type name: UpperCamel and not a built-in or std container.
+
+    Lower-case names are primitives or captured fragments (`bool`, `usize`, and one row that
+    was literally `r`), never types this port decides a convention for.
+    """
+    return bool(name) and name[0].isupper() and name not in RUST_BUILTIN
+
+
 RE_DYN = re.compile(
     r"\bdyn\s+(?:(?:crate|std|core|alloc|self|super)::)?"
     r"(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Za-z_][A-Za-z0-9_]*)"
@@ -561,6 +582,25 @@ def load_blocked_rows(debt_path, max_fanin, dyn_threshold):
     return blocked
 
 
+# `use crate::program::seam_stubs::{RefType as StubRefType, Reference as StubReference};`
+# means `dyn StubRefType` IS `RefType`. Without resolving these the queue grows a phantom row
+# per alias -- StubRefType, StubReference, SchemaTrait, LangInstructionContext and friends,
+# none of them declared anywhere, all proposed PARK as "not declared in the crate" -- while the
+# real type is under-counted by exactly those occurrences.
+RE_USE_ALIAS = re.compile(r"\b([A-Za-z_]\w*)\s+as\s+([A-Za-z_]\w*)")
+RE_USE_STMT = re.compile(r"^\s*(?:pub\s+)?use\s+[^;]+;", re.M)
+
+
+def alias_map(text):
+    """{alias: real_name} from this file's `use` statements, grouped braces included."""
+    out = {}
+    for stmt in RE_USE_STMT.findall(text):
+        for real, alias in RE_USE_ALIAS.findall(stmt):
+            if real != alias:
+                out[alias] = real
+    return out
+
+
 def types_in_file(path):
     """Types reached via dyn / Rc<RefCell<>> / Arc<Mutex<>>, comments stripped, idiomatic
     trait objects excluded. Returns {name: occurrence_count}."""
@@ -570,10 +610,12 @@ def types_in_file(path):
     except OSError:
         return {}
     text = RE_LINE_COMMENT.sub("", text)
+    aliases = alias_map(text)
     counts = defaultdict(int)
     for rx in (RE_DYN, RE_CELL):
         for name in rx.findall(text):
-            if name not in IDIOMATIC:
+            name = aliases.get(name, name)
+            if name not in IDIOMATIC and is_domain_type(name):
                 counts[name] += 1
     return counts
 

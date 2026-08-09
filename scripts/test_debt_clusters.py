@@ -269,6 +269,64 @@ class TestJavaSubtypeScan(unittest.TestCase):
         self.assertEqual(counts["Nothing"], 0)
 
 
+class TestQueueContents(unittest.TestCase):
+    def test_rust_builtins_are_not_convention_decisions(self):
+        """`Rc<RefCell<Vec<Foo>>>` makes the cell regex capture Vec, not Foo.
+
+        The queue was carrying rows for Vec (leverage 31), bool, usize, HashMap, Box, String,
+        Option and Self, all proposed PARK -- which reads as "undecidable" when the truth is
+        "not a question".
+        """
+        for n in ("Vec", "Box", "HashMap", "Option", "String", "Self", "bool", "usize", "i32", "r"):
+            self.assertFalse(dc.is_domain_type(n), n)
+
+    def test_real_types_are_kept(self):
+        for n in ("Trace", "DataType", "AddressSetView", "DBTraceCodeUnitAdapter"):
+            self.assertTrue(dc.is_domain_type(n), n)
+
+    def test_import_aliases_resolve_to_the_real_type(self):
+        """`dyn StubRefType` is `RefType` under an alias, not a type of its own.
+
+        Each unresolved alias grew a phantom queue row -- undeclared anywhere, proposed PARK
+        as "not declared in the crate" -- while the real type lost those occurrences.
+        """
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.rs")
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write("use crate::program::seam_stubs::{RefType as StubRefType, "
+                         "Reference as StubReference};\n"
+                         "use crate::a::b::InstructionContext as LangInstructionContext;\n"
+                         "fn f(a: &dyn StubRefType, b: Box<dyn StubReference>, "
+                         "c: &dyn LangInstructionContext) {}\n")
+            got = dc.types_in_file(p)
+            self.assertIn("RefType", got)
+            self.assertIn("Reference", got)
+            self.assertIn("InstructionContext", got)
+            for phantom in ("StubRefType", "StubReference", "LangInstructionContext"):
+                self.assertNotIn(phantom, got)
+
+    def test_unaliased_imports_are_untouched(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "y.rs")
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write("use crate::a::Trace;\nfn f(t: &dyn Trace) {}\n")
+            self.assertIn("Trace", dc.types_in_file(p))
+
+    def test_types_in_file_drops_the_container(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.rs")
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write("struct S { a: Rc<RefCell<Vec<Foo>>>, b: Arc<Mutex<bool>>, "
+                         "c: Box<dyn Bar> }\n")
+            got = dc.types_in_file(p)
+            self.assertNotIn("Vec", got)
+            self.assertNotIn("bool", got)
+            self.assertIn("Bar", got)
+
+
 class TestSmallClosedSetFamilies(unittest.TestCase):
     """"Small closed set" is several questions with different answers (decided 2026-08-09).
 
