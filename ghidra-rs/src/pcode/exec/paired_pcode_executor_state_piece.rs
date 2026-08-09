@@ -16,7 +16,9 @@ use std::sync::Arc;
 use crate::pcode::exec::paired_pcode_arithmetic::PairedPcodeArithmetic;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
-use crate::pcode::seam_stubs::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason};
+use crate::pcode::exec::pcode_executor_state_piece::{
+    ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
+};
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;

@@ -133,7 +133,6 @@ ts	stub_class	referenced_by
 2026-07-11T14:00:00Z	SectionMapProposal	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	RegionMapProposal	DebuggerStaticMappingService
 2026-08-06T02:12:23.848915+00:00	TraceOverlappedRegionException	TraceMemoryRegion
-2026-07-11T15:00:00Z	Reason	PcodeArithmetic
 2026-07-11T15:30:00Z	TreePath	DataTypeManagerService
 2026-07-17T00:00:00Z	ValueSymbol	ContextSymbol
 2026-07-17T20:30:00Z	BasicSpaceProvider	Translate
@@ -494,10 +493,7 @@ ts	stub_class	referenced_by
 2026-08-08T23:28:25.000000+00:00	PseudoInstruction	InstructionDecoder
 2026-08-08T23:28:25.000000+00:00	RegisterValue	InstructionDecoder
 2026-08-09T03:29:57.650124+00:00	PcodeThread	PcodeStateInitializer
-2026-08-09T04:00:00.000000+00:00	PcodeExecutorStatePiece	PcodeStateCallbacks
-2026-08-09T05:00:00.000000+00:00	PcodeExecutorStatePiece	PairedPcodeExecutorStatePiece
 2026-08-09T05:10:00.000000+00:00	ComposedPcodeUseropLibrary	PcodeUseropLibrary
 2026-08-09T05:30:00.000000+00:00	PcodeExecutor	AnnotatedPcodeUseropLibrary
-2026-08-09T05:30:00.000000+00:00	PcodeExecutorStatePiece	AnnotatedPcodeUseropLibrary
 2026-08-09T06:00:00.000000+00:00	Emulate	EmulateInstructionStateModifier
 2026-08-09T06:00:00.000000+00:00	RegisterValue	EmulateInstructionStateModifier

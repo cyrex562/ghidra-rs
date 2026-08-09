@@ -34,7 +34,7 @@ pub type UseropMap<T> = HashMap<String, Arc<dyn PcodeUseropDefinition<T>>>;
 ///
 /// Java's wildcard existential type (a library over *some* unknown value domain) has no
 /// generic-preserving Rust shape, so, following the convention already used for
-/// [`ErasedPcodeExecutorStatePiece`](crate::pcode::seam_stubs::ErasedPcodeExecutorStatePiece),
+/// [`ErasedPcodeExecutorStatePiece`](crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece),
 /// this is a bare, object-safe marker that every library also implements. It is a supertrait of
 /// [`PcodeUseropLibrary`], so a generic `impl PcodeUseropLibrary<T>` (or a
 /// `&dyn PcodeUseropLibrary<T>`) satisfies it without an explicit conversion.
