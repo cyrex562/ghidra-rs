@@ -1,5 +1,6 @@
 pub mod abstract_sleigh_pcode_userop_definition;
 pub mod annotated_pcode_userop_library;
+pub mod concretion_error;
 pub mod default_pcode_userop_library;
 pub mod location_pcode_arithmetic;
 pub mod paired_pcode_arithmetic;
@@ -21,6 +22,7 @@ pub use annotated_pcode_userop_library::{
     AnnotatedPcodeUseropDefinition, AnnotatedPcodeUseropLibrary, AnnotatedPcodeUseropLibraryBase,
     PcodeUserop, UseropCallback, UseropContext, UseropInputs, UseropValue, UseropValueKind,
 };
+pub use concretion_error::ConcretionError;
 pub use default_pcode_userop_library::DefaultPcodeUseropLibrary;
 pub use location_pcode_arithmetic::LocationPcodeArithmetic;
 pub use paired_pcode_arithmetic::PairedPcodeArithmetic;

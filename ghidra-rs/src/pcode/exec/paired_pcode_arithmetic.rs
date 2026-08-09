@@ -21,8 +21,8 @@
 
 use std::sync::Arc;
 
+use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
-use crate::pcode::seam_stubs::ConcretionError;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::pcode::OpCode;

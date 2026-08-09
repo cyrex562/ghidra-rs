@@ -191,8 +191,8 @@ mod tests {
     use std::cell::RefCell;
     use std::collections::HashMap;
 
+    use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_state_callbacks::NoPcodeStateCallbacks;
-    use crate::pcode::seam_stubs::ConcretionError;
     use crate::pcode::utils::{bytes_to_long, long_to_bytes};
     use crate::program::model::address::AddressSpaceType;
     use crate::program::model::lang::endian::Endian;

@@ -12,8 +12,9 @@
 //! `Option<ValueLocation>` for `T` to carry that nullability through the generic
 //! [`PcodeArithmetic`] trait.
 
+use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
-use crate::pcode::seam_stubs::{ConcretionError, ValueLocation};
+use crate::pcode::seam_stubs::ValueLocation;
 use crate::pcode::utils::bytes_to_long;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::endian::Endian;
