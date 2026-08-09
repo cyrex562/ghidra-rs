@@ -487,3 +487,6 @@ ts	stub_class	referenced_by
 2026-08-08T13:45:28.282602+00:00	Emulate	OpBehaviorOther
 2026-08-09T01:50:16.581223+00:00	Emulate	BreakTable
 2026-08-09T01:50:16.581343+00:00	PcodeOpRaw	BreakTable
+2026-08-09T02:49:54.701710+00:00	AbstractSleighPcodeUseropDefinition	SleighPcodeUseropDefinition
+2026-08-09T02:49:54.701710+00:00	PcodeProgram	SleighPcodeUseropDefinition
+2026-08-09T02:49:54.701710+00:00	PcodeUseropLibrary	SleighPcodeUseropDefinition

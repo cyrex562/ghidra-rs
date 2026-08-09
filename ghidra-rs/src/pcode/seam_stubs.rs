@@ -4,8 +4,12 @@
 //! replaced (or grown into a supertrait/struct of) the real port once that Java class is ported.
 //! See `STUBS.tsv` for provenance.
 
+use std::sync::Arc;
+
 use crate::pcode::exec::pcode_arithmetic::Purpose;
+use crate::pcode::exec::sleigh_pcode_userop_definition::BuilderStage1;
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
+use crate::program::model::lang::sleigh::SleighLanguage;
 
 /// Placeholder for `ghidra.pcode.exec.PcodeExecutorStatePiece.Reason`, referenced by
 /// [`Purpose`](crate::pcode::exec::pcode_arithmetic::Purpose) before the real class is ported.
@@ -85,3 +89,31 @@ pub trait Emulate: Send + Sync {
     /// Placeholder for `Emulate.dispose()`.
     fn dispose(&self);
 }
+
+/// Placeholder for `ghidra.pcode.exec.AbstractSleighPcodeUseropDefinition` (and its nested
+/// `Builder`), referenced by
+/// [`SleighPcodeUseropDefinition::Factory::define`](crate::pcode::exec::sleigh_pcode_userop_definition::Factory::define)
+/// before the real class is ported. `Builder::build()` ultimately delegates to the also-unported
+/// `FixedSleighPcodeUseropDefinition`/`OverloadedSleighPcodeUseropDefinition`, so this stub's
+/// `builder()` panics if actually invoked; it exists only so `Factory::define`'s signature can
+/// stay faithful to the Java original ahead of those types being ported.
+pub struct AbstractSleighPcodeUseropDefinition;
+
+impl AbstractSleighPcodeUseropDefinition {
+    /// Placeholder for `new AbstractSleighPcodeUseropDefinition.Builder(factory, name)`.
+    pub fn builder(_language: Arc<SleighLanguage>, _name: String) -> Box<dyn BuilderStage1> {
+        unimplemented!("AbstractSleighPcodeUseropDefinition is not yet ported")
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.PcodeProgram`, referenced by
+/// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
+/// before the real class is ported. Used there only as an opaque return type, so no members are
+/// exposed yet.
+pub trait PcodeProgram: Send + Sync {}
+
+/// Placeholder for `ghidra.pcode.exec.PcodeUseropLibrary`, referenced by
+/// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
+/// before the real class is ported. Used there only as an opaque parameter type, so no members
+/// are exposed yet.
+pub trait PcodeUseropLibrary: Send + Sync {}

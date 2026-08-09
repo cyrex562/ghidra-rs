@@ -11246,7 +11246,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeStateCa
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeUseropLibrary.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeUseropLibraryFactory.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighLinkException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighPcodeUseropDefinition.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighPcodeUseropDefinition.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighProgramCompiler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighUtils.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SuspendedPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
