@@ -6,6 +6,7 @@
 
 use std::sync::{Arc, Mutex, OnceLock};
 
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_execution_exception::PcodeExecutionException;
@@ -371,11 +372,20 @@ pub trait PseudoInstruction: Send + Sync {}
 /// existing references.
 pub trait RegisterValue: Send + Sync {}
 
-/// Placeholder for `ghidra.pcode.emu.PcodeThread`, referenced by
-/// [`PcodeStateInitializer`](crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer)
-/// before the real class is ported. This is a minimal interface stub exposing only the methods
-/// needed by existing references.
-pub trait PcodeThread: Send + Sync {}
+/// Placeholder for `ghidra.pcode.emu.ThreadPcodeExecutorState`, referenced by
+/// [`PcodeThread::get_state`](crate::pcode::emu::pcode_thread::PcodeThread::get_state) before the
+/// real class is ported. Java's class is a `PcodeExecutorState<T>` that routes register accesses
+/// to a thread-local piece and memory accesses to the machine's shared piece; only that split,
+/// which is all `PcodeThread` exposes, is declared here.
+pub trait ThreadPcodeExecutorState<T>: PcodeExecutorState<T> {
+    /// Port of `ThreadPcodeExecutorState.getSharedState()`: the memory state, shared among all
+    /// threads of the machine.
+    fn get_shared_state(&self) -> &dyn PcodeExecutorState<T>;
+
+    /// Port of `ThreadPcodeExecutorState.getLocalState()`: the register state, private to this
+    /// thread.
+    fn get_local_state(&self) -> &dyn PcodeExecutorState<T>;
+}
 
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorStateSpace`, referenced by
 /// [`AbstractBytesPcodeExecutorStatePiece`](crate::pcode::exec::abstract_bytes_pcode_executor_state_piece::AbstractBytesPcodeExecutorStatePiece)
@@ -521,8 +531,9 @@ impl SleighProgramCompiler {
 /// [`AuxEmulatorPartsFactory::create_executor`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_executor)
 /// before the real class is ported. That method only forwards the thread to the also-unported
 /// `DefaultPcodeThread.PcodeThreadExecutor`, so no member is exposed here beyond the supertrait
-/// relationship Java's class declares (`DefaultPcodeThread<T> implements PcodeThread<T>`).
-pub trait DefaultPcodeThread: PcodeThread {}
+/// relationship Java's class declares (`DefaultPcodeThread<T> implements PcodeThread<T>`, rendered
+/// here against the value-erased [`ErasedPcodeThread`], since that call site does not know `T`).
+pub trait DefaultPcodeThread: ErasedPcodeThread {}
 
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorStatePiece`, referenced by
 /// [`AuxEmulatorPartsFactory::create_shared_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_shared_state)
@@ -559,9 +570,9 @@ impl BytesPcodeArithmetic {
 /// Placeholder for `ghidra.pcode.emu.BytesPcodeThread`, referenced by
 /// `PcodeEmulator::create_thread` before the real class (a `DefaultPcodeThread<byte[]>`
 /// specialization with a decoder, executor, frame, local state, library, and injects of its own)
-/// is ported. [`PcodeThread`] is a bare marker here, so nothing downstream reads anything back off
-/// a thread; only the name is kept, so a test can confirm `PcodeEmulator::create_thread` produced
-/// this type with the requested name.
+/// is ported. It is held as an [`ErasedPcodeThread`], which is a bare marker, so nothing
+/// downstream reads anything back off a thread; only the name is kept, so a test can confirm
+/// `PcodeEmulator::create_thread` produced this type with the requested name.
 pub struct BytesPcodeThread {
     name: String,
 }
@@ -579,7 +590,7 @@ impl BytesPcodeThread {
     }
 }
 
-impl PcodeThread for BytesPcodeThread {}
+impl ErasedPcodeThread for BytesPcodeThread {}
 
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorState`, referenced by
 /// `PcodeEmulator::create_shared_state`/`create_local_state` before the real class (composed of

@@ -10891,7 +10891,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeEmulatio
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeEmulator.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeMachine.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeStateInitializer.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeThread.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeThread.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/SleighInstructionDecoder.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/SparseAddressRangeMap.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/ThreadPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 

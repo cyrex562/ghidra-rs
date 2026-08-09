@@ -62,9 +62,9 @@ use crate::pcode::exec::pcode_userop_library_factory::{
     create_userop_library_for_language, PcodeUseropLibraryFactory,
 };
 use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::seam_stubs::{
-    InterruptPcodeExecutionException, PcodeProgram, PcodeThread, SleighProgramCompiler,
-    SparseAddressRangeMap,
+    InterruptPcodeExecutionException, PcodeProgram, SleighProgramCompiler, SparseAddressRangeMap,
 };
 use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::lang::language::Language;
@@ -109,7 +109,7 @@ pub struct AbstractPcodeMachineBase<T: 'static> {
     /// Java uses a `LinkedHashMap`, i.e. keyed by name but iterated in insertion order. Machines
     /// hold a handful of threads, so a vector of pairs gives the same two behaviors without a
     /// second collection.
-    threads: Vec<(String, Arc<dyn PcodeThread>)>,
+    threads: Vec<(String, Arc<dyn ErasedPcodeThread>)>,
     /// Java declares this `volatile`, for a thread suspending a machine another thread is
     /// stepping. [`PcodeMachine::set_suspended`] takes `&mut self`, so exclusive access is already
     /// required to write it and a plain `bool` suffices.
@@ -217,13 +217,13 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     }
 
     /// Collect all threads present in the machine, in creation order. Port of `getAllThreads()`.
-    pub fn get_all_threads(&self) -> Vec<Arc<dyn PcodeThread>> {
+    pub fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
         self.threads.iter().map(|(_, t)| Arc::clone(t)).collect()
     }
 
     /// Get the thread with the given name, if it is present. This is Java's `threads.get(name)`,
     /// i.e. `getThread(name, false)`.
-    pub fn get_thread_by_name(&self, name: &str) -> Option<Arc<dyn PcodeThread>> {
+    pub fn get_thread_by_name(&self, name: &str) -> Option<Arc<dyn ErasedPcodeThread>> {
         self.threads
             .iter()
             .find(|(n, _)| n == name)
@@ -419,7 +419,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     }
 
     /// Create a new thread with a default name in this machine. Port of `newThread()`.
-    pub fn new_thread<M: AbstractPcodeMachine<T>>(machine: &mut M) -> Arc<dyn PcodeThread> {
+    pub fn new_thread<M: AbstractPcodeMachine<T>>(machine: &mut M) -> Arc<dyn ErasedPcodeThread> {
         let name = format!("Thread {}", machine.base().threads.len());
         Self::new_thread_named(machine, &name)
     }
@@ -432,7 +432,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     pub fn new_thread_named<M: AbstractPcodeMachine<T>>(
         machine: &mut M,
         name: &str,
-    ) -> Arc<dyn PcodeThread> {
+    ) -> Arc<dyn ErasedPcodeThread> {
         if machine.base().get_thread_by_name(name).is_some() {
             panic!("Thread with name '{name}' already exists");
         }
@@ -452,7 +452,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
         machine: &mut M,
         name: &str,
         create_if_absent: bool,
-    ) -> Option<Arc<dyn PcodeThread>> {
+    ) -> Option<Arc<dyn ErasedPcodeThread>> {
         match machine.base().get_thread_by_name(name) {
             Some(thread) => Some(thread),
             None if create_if_absent => Some(Self::new_thread_named(machine, name)),
@@ -501,13 +501,13 @@ pub trait AbstractPcodeMachine<T: 'static>: PcodeMachine<T> {
     /// A factory method to create the (register) state local to the given thread.
     ///
     /// Port of the abstract `createLocalState(PcodeThread<T>)`.
-    fn create_local_state(&self, thread: &dyn PcodeThread) -> Box<dyn PcodeExecutorState<T>>;
+    fn create_local_state(&self, thread: &dyn ErasedPcodeThread) -> Box<dyn PcodeExecutorState<T>>;
 
     /// A factory method to create a new thread in this machine.
     ///
     /// Port of `createThread(String)`. Java defaults it to `new DefaultPcodeThread<>(name, this)`;
     /// that class is not ported yet, so every machine must supply its own for now.
-    fn create_thread(&self, name: &str) -> Arc<dyn PcodeThread>;
+    fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread>;
 }
 
 #[cfg(test)]
@@ -643,7 +643,7 @@ mod tests {
     /// A thread that carries only its name, which is all the machine itself observes.
     struct NamedThread(String);
 
-    impl PcodeThread for NamedThread {}
+    impl ErasedPcodeThread for NamedThread {}
 
     /// The product of the machine's stand-in compiler; opaque, as `PcodeProgram` is here.
     struct CompiledProgram;
@@ -665,7 +665,7 @@ mod tests {
             self.events.lock().unwrap().push("sharedStateCreated".into());
         }
 
-        fn thread_created(&self, _thread: &Arc<dyn PcodeThread>) {
+        fn thread_created(&self, _thread: &Arc<dyn ErasedPcodeThread>) {
             self.events.lock().unwrap().push("threadCreated".into());
         }
     }
@@ -795,12 +795,12 @@ mod tests {
 
         fn create_local_state(
             &self,
-            _thread: &dyn PcodeThread,
+            _thread: &dyn ErasedPcodeThread,
         ) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
             Box::new(EmptyState)
         }
 
-        fn create_thread(&self, name: &str) -> Arc<dyn PcodeThread> {
+        fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
             Arc::new(NamedThread(name.to_string()))
         }
     }
@@ -824,20 +824,20 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<Vec<u8>> {
             self.base.get_stub_userop_library()
         }
-        fn new_thread(&mut self) -> Arc<dyn PcodeThread> {
+        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
             AbstractPcodeMachineBase::new_thread(self)
         }
-        fn new_thread_named(&mut self, name: &str) -> Arc<dyn PcodeThread> {
+        fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
             AbstractPcodeMachineBase::new_thread_named(self, name)
         }
         fn get_thread(
             &mut self,
             name: &str,
             create_if_absent: bool,
-        ) -> Option<Arc<dyn PcodeThread>> {
+        ) -> Option<Arc<dyn ErasedPcodeThread>> {
             AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
         }
-        fn get_all_threads(&self) -> Vec<Arc<dyn PcodeThread>> {
+        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
             self.base.get_all_threads()
         }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<Vec<u8>> {

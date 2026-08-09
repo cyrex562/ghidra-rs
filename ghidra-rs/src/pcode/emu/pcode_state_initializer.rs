@@ -1,6 +1,6 @@
 use crate::program::model::lang::Language;
 use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
-use crate::pcode::seam_stubs::PcodeThread;
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::util::classfinder::ExtensionPoint;
 use std::sync::Arc;
 
@@ -44,14 +44,14 @@ pub trait PcodeStateInitializer: ExtensionPoint + Send + Sync {
     ///
     /// # Arguments
     /// * `thread` - the newly-initialized thread
-    fn initialize_thread(&self, thread: &dyn PcodeThread) {}
+    fn initialize_thread(&self, thread: &dyn ErasedPcodeThread) {}
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::pcode::emu::pcode_machine::{AccessKind, ErasedPcodeMachine};
-    use crate::pcode::seam_stubs::PcodeThread;
+    use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 
     struct MockLanguage;
 
@@ -289,7 +289,7 @@ mod tests {
 
     struct MockPcodeThread;
 
-    impl PcodeThread for MockPcodeThread {}
+    impl ErasedPcodeThread for MockPcodeThread {}
 
     struct TestInitializer;
 
@@ -304,7 +304,7 @@ mod tests {
             // Test implementation
         }
 
-        fn initialize_thread(&self, _thread: &dyn PcodeThread) {
+        fn initialize_thread(&self, _thread: &dyn ErasedPcodeThread) {
             // Test implementation
         }
     }
