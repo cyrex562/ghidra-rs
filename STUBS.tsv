@@ -492,3 +492,4 @@ ts	stub_class	referenced_by
 2026-08-09T02:51:08.910114+00:00	FixedSleighPcodeUseropDefinition	AbstractSleighPcodeUseropDefinition
 2026-08-09T02:51:08.910349+00:00	OverloadedSleighPcodeUseropDefinition	AbstractSleighPcodeUseropDefinition
 2026-08-09T02:51:08.911183+00:00	PcodeExecutor	AbstractSleighPcodeUseropDefinition
+2026-08-09T03:02:53.728677+00:00	ValueLocation	LocationPcodeArithmetic
