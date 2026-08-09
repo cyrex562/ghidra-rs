@@ -505,3 +505,6 @@ ts	stub_class	referenced_by
 2026-08-09T06:40:05.119557+00:00	BytesPcodeExecutorStatePiece	AuxEmulatorPartsFactory
 2026-08-09T07:08:33+00:00	BytesPcodeThread	PcodeEmulator
 2026-08-09T07:08:33+00:00	BytesPcodeExecutorState	PcodeEmulator
+2026-08-09T07:36:04.698689870+00:00	BreakTableCallBack	Emulator
+2026-08-09T07:36:04.698689870+00:00	FilteredMemoryState	Emulator
+2026-08-09T07:36:04.698689870+00:00	MemoryAccessFilter	Emulator

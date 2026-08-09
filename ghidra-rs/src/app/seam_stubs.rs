@@ -927,6 +927,19 @@ pub enum LitIdMode {
     IdHex,
 }
 
+/// Placeholder for `ghidra.app.emulator.FilteredMemoryState`, referenced by
+/// [`Emulator::get_filtered_mem_state`](crate::app::emulator::Emulator::get_filtered_mem_state)
+/// before the real class is ported. Mirrors `FilteredMemoryState extends DefaultMemoryState`
+/// (itself `implements MemoryState` via the already-ported `AbstractMemoryState`); `Emulator` only
+/// ever returns this type opaquely, so no members beyond the supertrait are needed yet.
+pub trait FilteredMemoryState: crate::pcode::memstate::memory_state::MemoryState {}
+
+/// Placeholder for `ghidra.app.emulator.MemoryAccessFilter`, referenced by
+/// [`Emulator::add_memory_access_filter`](crate::app::emulator::Emulator::add_memory_access_filter)
+/// before the real class is ported. `Emulator` only ever passes this type through as a parameter,
+/// so no members are needed yet.
+pub trait MemoryAccessFilter {}
+
 /// Placeholder for `ghidra.app.services.ClipboardContentProviderService`, referenced by
 /// [`ClipboardService`](crate::app::services::ClipboardService) before the real class is ported.
 /// `ClipboardService` only ever passes this type through as a parameter, so no members are needed
