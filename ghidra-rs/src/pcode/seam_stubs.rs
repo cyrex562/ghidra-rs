@@ -174,6 +174,12 @@ pub trait Emulate: Send + Sync {
     fn get_language(&self) -> Box<dyn Language>;
 }
 
+/// Placeholder for `ghidra.pcode.emulate.BreakTableCallBack`, referenced by
+/// [`Emulator::get_break_table`](crate::app::emulator::Emulator::get_break_table) before the real
+/// class is ported. Mirrors `BreakTableCallBack implements BreakTable`; `Emulator` only ever
+/// returns this type opaquely, so no members beyond the supertrait are needed yet.
+pub trait BreakTableCallBack: crate::pcode::emulate::break_table::BreakTable {}
+
 /// Placeholder for `ghidra.pcode.exec.PcodeProgram`, referenced by
 /// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
 /// before the real class is ported. Used there only as an opaque return type, so no members are
