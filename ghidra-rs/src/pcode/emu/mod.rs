@@ -10,7 +10,7 @@ pub mod taint;
 pub mod unix;
 
 pub use abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase};
-pub use auxiliary::AuxEmulatorPartsFactory;
+pub use auxiliary::{AuxEmulatorPartsFactory, AuxPcodeEmulator};
 pub use instruction_decoder::InstructionDecoder;
 pub use pcode_machine::{AccessKind, ErasedPcodeMachine, PcodeMachine, SwiMode};
 pub use pcode_state_initializer::PcodeStateInitializer;

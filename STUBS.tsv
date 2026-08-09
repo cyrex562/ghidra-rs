@@ -502,6 +502,5 @@ ts	stub_class	referenced_by
 2026-08-09T06:31:24.372319+00:00	SparseAddressRangeMap	AbstractPcodeMachine
 2026-08-09T06:31:24.372319+00:00	InterruptPcodeExecutionException	AbstractPcodeMachine
 2026-08-09T06:31:24.372319+00:00	SleighProgramCompiler	AbstractPcodeMachine
-2026-08-09T06:40:05.119557+00:00	AuxPcodeEmulator	AuxEmulatorPartsFactory
 2026-08-09T06:40:05.119557+00:00	DefaultPcodeThread	AuxEmulatorPartsFactory
 2026-08-09T06:40:05.119557+00:00	BytesPcodeExecutorStatePiece	AuxEmulatorPartsFactory

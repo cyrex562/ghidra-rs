@@ -532,14 +532,6 @@ impl SleighProgramCompiler {
     }
 }
 
-/// Placeholder for `ghidra.pcode.emu.auxiliary.AuxPcodeEmulator`, referenced by
-/// [`AuxEmulatorPartsFactory`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory)
-/// before the real class is ported. `AuxEmulatorPartsFactory` never calls a method on it -- every
-/// reference is just an opaque handle threaded through to the parts a factory manufactures -- so,
-/// following the erasure convention already used for [`PcodeThread`], this is a bare marker with no
-/// members and no `U` (Java's `AuxPcodeEmulator<U>`) type parameter.
-pub trait AuxPcodeEmulator: Send + Sync {}
-
 /// Placeholder for `ghidra.pcode.emu.DefaultPcodeThread`, referenced by
 /// [`AuxEmulatorPartsFactory::create_executor`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_executor)
 /// before the real class is ported. That method only forwards the thread to the also-unported
