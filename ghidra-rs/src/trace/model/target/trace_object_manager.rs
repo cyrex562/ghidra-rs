@@ -9,9 +9,10 @@ use crate::program::model::address::range::AddressRange;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::target::path::PathFilter;
+use crate::trace::model::target::trace_object_val_path::TraceObjectValPath;
 use crate::trace::model::target::trace_object_value::TraceObjectValue;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{TraceObject, TraceObjectInterface, TraceObjectSchema, TraceObjectValPath};
+use crate::trace::seam_stubs::{TraceObject, TraceObjectInterface, TraceObjectSchema};
 
 /// A handle to automatically re-enable the write cache.
 ///

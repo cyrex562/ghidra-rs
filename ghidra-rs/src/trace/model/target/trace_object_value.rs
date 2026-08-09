@@ -36,7 +36,13 @@ pub enum TruncateOrDelete {
 /// Rust for an unconstrained type parameter on an object-safe trait. Callers should downcast the
 /// `Box<dyn Any + Send + Sync>` returned by [`Self::get_value`] directly (e.g. via
 /// `Any::downcast_ref`).
-pub trait TraceObjectValue: Send + Sync {
+///
+/// `Any` is a supertrait (satisfied automatically by every `'static` implementor; no extra
+/// methods to write) so that
+/// [`TraceObjectValPath::append`/`prepend`](crate::trace::model::target::trace_object_val_path::TraceObjectValPath::append)
+/// can downcast an `Arc<dyn TraceObjectValue>` back to a concrete type, mirroring the
+/// `instanceof DBTraceObjectValue` check in `DBTraceObjectValPath.append`/`prepend`.
+pub trait TraceObjectValue: Send + Sync + std::any::Any {
     /// Get the trace containing this value entry.
     fn get_trace(&self) -> Box<dyn Trace>;
 
