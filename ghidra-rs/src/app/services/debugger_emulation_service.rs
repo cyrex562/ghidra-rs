@@ -21,12 +21,11 @@ use std::future::Future;
 use std::io;
 use std::pin::Pin;
 
-use crate::app::seam_stubs::{
-    EmulatorFactory, RunResult, Scheduler, TracePlatform, TraceSchedule, Writer,
-};
+use crate::app::seam_stubs::{EmulatorFactory, RunResult, TracePlatform, TraceSchedule, Writer};
 use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
+use crate::trace::model::time::schedule::scheduler::Scheduler;
 use crate::trace::model::trace::Trace;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
@@ -290,7 +289,14 @@ mod tests {
     impl TracePlatform for MockTracePlatform {}
 
     struct MockScheduler;
-    impl Scheduler for MockScheduler {}
+    impl Scheduler for MockScheduler {
+        fn next_slice(
+            &self,
+            _trace: &dyn Trace,
+        ) -> Box<dyn crate::trace::model::time::schedule::step::Step> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockService {
         listener_count: usize,
