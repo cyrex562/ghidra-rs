@@ -597,7 +597,61 @@ def render_text(ctx):
         out.append("```")
         out.append(f"STUBS.tsv: `{s['stubs_tsv']}`")
         out.append("")
+    out.extend(render_dyn_guidance(ctx))
     return "\n".join(out)
+
+
+def render_dyn_guidance(ctx):
+    """Per-dependency: is a trait object warranted for this type, or not?
+
+    Ownership guidance in the prompt has been generic ("don't reach for dyn by default"),
+    which is advice without evidence and loses to the concrete pressure of writing a
+    signature. This answers the question per referenced type, from that type's own Java
+    hierarchy: `dyn DataType` is right (192 concrete implementers), `dyn Trace` is not
+    (one, DBTrace). Measured across the crate, 30.6% of non-std `dyn` mentions are on
+    types with at most one concrete implementation or on Java classes that never had an
+    interface at all.
+    """
+    try:
+        import dyn_rules
+        import shape_rules
+    except ImportError:
+        return []
+    names = [e["dep_class"] for e in ctx["reuse"]] + [s["dep_class"] for s in ctx["stubs"]]
+    if not names:
+        return []
+    try:
+        facts, subtypes = shape_rules.build_index()
+    except Exception:
+        return []
+    cache = {}
+    avoid, fine = [], []
+    for name in dict.fromkeys(names):
+        pat, n, kind = dyn_rules.classify(name, facts, subtypes, cache)
+        if pat == "P1":
+            avoid.append(f"- `{name}`: Java is a {kind}, not an interface. Use the concrete type.")
+        elif pat == "P2":
+            impls = sorted(shape_rules.concrete_implementers(name, facts, subtypes, cache))
+            avoid.append(f"- `{name}`: interface whose only concrete implementation is "
+                         f"`{impls[0]}`. Use that type.")
+        elif pat in ("P4", "P5"):
+            fine.append(f"- `{name}`: {n} concrete implementations")
+    if not avoid and not fine:
+        return []
+    out = ["## Trait objects: where `dyn` is and is not warranted",
+           "Decided from each type's Java hierarchy (concrete implementers, transitively, "
+           "excluding abstract bases and test doubles) -- NOT from the Rust tree.", ""]
+    if avoid:
+        out.append("**Do NOT write `Box<dyn T>` / `Arc<dyn T>` / `&dyn T` for these.** There is "
+                   "nothing to dispatch over; a trait object here costs a vtable and an "
+                   "allocation to model a choice that does not exist:")
+        out.extend(avoid)
+        out.append("")
+    if fine:
+        out.append("These are genuinely polymorphic -- `dyn` is the right tool:")
+        out.extend(fine)
+        out.append("")
+    return out
 
 
 def main(argv=None):

@@ -218,12 +218,13 @@ class TestAcceptedVerdicts(unittest.TestCase):
             root = self._root(d)
             plain = os.path.join(d, "plain.tsv")
             run_audit("--root", root, "--seam", "/nonexistent", "--accepted", "/nonexistent",
-                      "--out", plain)
+                      "--no-justified-dyn", "--out", plain)
             self.assertTrue(read_tsv(plain), "expected the file to score as debt without a verdict")
 
             q = self._queue(d, "ACCEPT", "TaskMonitor")
             after = os.path.join(d, "after.tsv")
-            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q, "--out", after)
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q,
+                      "--no-justified-dyn", "--out", after)
             self.assertEqual(read_tsv(after), [], "ACCEPT should retire the file from the frontier")
 
     def test_suggestion_is_inert_until_promoted(self):
@@ -231,8 +232,27 @@ class TestAcceptedVerdicts(unittest.TestCase):
             root = self._root(d)
             q = self._queue(d, "SUGGEST-ACCEPT", "TaskMonitor")
             out = os.path.join(d, "out.tsv")
-            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q, "--out", out)
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q,
+                      "--no-justified-dyn", "--out", out)
             self.assertTrue(read_tsv(out), "SUGGEST-ACCEPT must not take effect before review")
+
+    def test_justified_dyn_is_exempt_by_default(self):
+        """A type with many concrete Java implementers is not ownership debt.
+
+        `TaskMonitor` has 21 concrete implementers in orig_src. Before this exemption it
+        scored identically to a single-implementation interface, which is what made the
+        nightly drift number impossible to act on.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            strict, lenient = os.path.join(d, "s.tsv"), os.path.join(d, "l.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", "/nonexistent",
+                      "--no-justified-dyn", "--out", strict)
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", "/nonexistent",
+                      "--out", lenient)
+            self.assertTrue(read_tsv(strict), "should score as debt when the exemption is off")
+            self.assertEqual(read_tsv(lenient), [],
+                             "dyn TaskMonitor (21 implementers) must not count as debt")
 
 
 if __name__ == "__main__":

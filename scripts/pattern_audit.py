@@ -163,9 +163,54 @@ def load_accepted_types(queue_path):
     return accepted
 
 
+def load_justified_dyn_types():
+    """Types whose Java hierarchy makes a trait object the right answer (dyn_rules P4/P5).
+
+    The ACCEPT list above is hand-curated and has 131 entries; the crate references far more
+    types than that, so most genuinely-polymorphic ones have been scoring as debt. `dyn
+    DataType` has 192 concrete implementers in orig_src, `dyn TaskMonitor` 21, `dyn
+    AddressSetView` 21 -- counting those the same as `dyn Trace` (one implementer, DBTrace)
+    is what makes the nightly drift number impossible to act on. Measured over the whole
+    crate, 40.9% of non-std `dyn` mentions are in this justified group.
+
+    Reads the committed DYN_DEBT.tsv when it is present -- that file already holds the
+    verdicts and costs milliseconds, where recomputing walks 15,601 Java files. Falls back
+    to computing, and to the manual list alone if orig_src is unavailable, rather than
+    failing the audit.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    debt = os.path.join(os.path.dirname(here), "DYN_DEBT.tsv")
+    if os.path.exists(debt):
+        try:
+            with open(debt, newline="", encoding="utf-8") as f:
+                out = {r["class"] for r in csv.DictReader(f, delimiter="\t")
+                       if (r.get("verdict") or "").strip() == "ok"}
+            if out:
+                return out
+        except Exception:
+            pass
+    try:
+        sys.path.insert(0, here)
+        import dyn_rules
+        import shape_rules
+        facts, subtypes = shape_rules.build_index()
+    except Exception:
+        return set()
+    cache, out = {}, set()
+    for name in facts:
+        try:
+            pat, _n, _kind = dyn_rules.classify(name, facts, subtypes, cache)
+        except Exception:
+            continue
+        if pat in ("P4", "P5"):
+            out.add(name)
+    return out
+
+
 def count_dyn(text, accepted):
     """`dyn T` occurrences that represent Java-interface-as-trait-object debt: excludes
-    idiomatic Rust trait objects and any type with an ACCEPT verdict."""
+    idiomatic Rust trait objects, any type with an ACCEPT verdict, and any type whose Java
+    hierarchy shows genuine polymorphism."""
     skip = IDIOMATIC_DYN | (accepted or set())
     return sum(1 for name in RE_DYN.findall(text) if name not in skip)
 
@@ -243,6 +288,15 @@ def main():
         help="Type-level verdict file (scripts/debt_clusters.py). Types marked ACCEPT there "
         "stop counting as dyn debt. Missing file = no accepted types.",
     )
+    ap.add_argument(
+        "--no-justified-dyn",
+        action="store_true",
+        help="Score every `dyn T` as debt, instead of exempting types whose Java hierarchy "
+        "shows genuine polymorphism (scripts/dyn_rules.py P4/P5: an extension-point "
+        "supertype, or 4+ concrete implementers in orig_src). Use to reproduce pre-2026-08-09 "
+        "scores; the exemption is on by default because counting `dyn DataType` (192 "
+        "implementers) the same as `dyn Trace` (one) makes the drift number unactionable.",
+    )
     ap.add_argument("--baseline", help="Previous audit TSV, for --diff-new / --preserve-status")
     ap.add_argument(
         "--diff-new",
@@ -268,6 +322,12 @@ def main():
     accepted = load_accepted_types(args.accepted)
     if accepted:
         print(f"honouring {len(accepted)} ACCEPT verdict(s) from {args.accepted}", file=sys.stderr)
+    if not args.no_justified_dyn:
+        justified = load_justified_dyn_types()
+        if justified:
+            print(f"treating {len(justified)} type(s) with 4+ concrete Java implementers (or an "
+                  f"extension-point supertype) as justified `dyn`", file=sys.stderr)
+            accepted = accepted | justified
 
     rows = []
     for dirpath, _dirs, files in os.walk(args.root):

@@ -92,8 +92,14 @@ def strip_java(src: str) -> str:
 
 def find_primary(src: str, name: str):
     """Locate the top-level declaration named `name`. Returns (kind, mods, header_end)."""
+    # `@interface` must be tried before `interface`, and `interface` must be forbidden from
+    # matching the tail of `@interface`. There is a word boundary between `@` and `i`, so a
+    # bare `\b(interface)` happily matches inside `@interface Foo` with empty modifiers --
+    # which classified all 39 annotation types in the tree as plain interfaces and meant
+    # rule R4 never once fired.
     pat = re.compile(
-        r"(?P<mods>" + MODS + r")\b(?P<kind>class|interface|enum|record|@interface)\s+"
+        r"(?P<mods>" + MODS + r")"
+        r"(?P<kind>@interface\b|(?<!@)\b(?:class|interface|enum|record)\b)\s+"
         + re.escape(name)
         + r"\b"
     )
@@ -303,6 +309,68 @@ def parse_file(path: str, name: str):
 # orig_src. Counting implementers in the Rust tree is the mistake AGENTS.md
 # documents four times over; orig_src is the authority.
 # ---------------------------------------------------------------------------
+
+
+# Ghidra is a plugin architecture and says so in the type system: an extension point reaches
+# one of these in its supertype closure. Those are the interfaces where runtime polymorphism
+# over unknown implementers is the actual requirement.
+EXTENSION_POINT_ROOTS = {
+    "ExtensionPoint", "Service", "Plugin", "Analyzer", "Loader", "Exporter", "FileSystem",
+}
+
+# Names that mark a test double rather than a real alternative representation. Counting
+# `StubProgram` as an implementation of `Program` is what makes a single-implementation
+# interface look like a closed set of two -- AGENTS.md records the same mistake being made
+# from the Rust side ("Are the only implementers test doubles? Then you are looking at an
+# unfinished port"). Deliberately does NOT include `*Adapter`: in this codebase that suffix
+# usually marks a real implementation (`BufferFileAdapter`), not a double.
+_DOUBLE_RE = re.compile(r"^(Stub|Mock|Dummy|Fake|TestDouble|TestDummy)|(Stub|Mock|Dummy|Fake)$")
+
+
+def is_extension_point(name, facts):
+    """True if `name` reaches an extension-point root through its supertypes."""
+    seen, stack = set(), [name]
+    while stack:
+        n = stack.pop()
+        if n in seen:
+            continue
+        seen.add(n)
+        if n in EXTENSION_POINT_ROOTS:
+            return True
+        for e in facts.get(n, []):
+            stack.extend(e["extends"] + e["implements"])
+    return False
+
+
+def concrete_implementers(name, facts, subtypes, _cache=None):
+    """Transitive CONCRETE class implementers of `name`, excluding test doubles.
+
+    Transitive because Java hierarchies interpose sub-interfaces: `TraceCodeUnit`'s direct
+    subtypes are `TraceData` and `TraceInstruction`, both interfaces, so a direct count says
+    zero implementations when the truth is "whatever implements those". Concrete because an
+    abstract base is not an alternative representation either. Both corrections move types
+    between "collapse this" and "leave it alone", so neither is optional.
+    """
+    if _cache is None:
+        _cache = {}
+    if name in _cache:
+        return _cache[name]
+    _cache[name] = set()  # cycle guard
+    out, seen, stack = set(), set(), [name]
+    while stack:
+        x = stack.pop()
+        if x in seen:
+            continue
+        seen.add(x)
+        for sub in subtypes.get(x, ()):
+            e = facts.get(sub)
+            if not e:
+                continue
+            if e[0]["kind"] == "class" and not e[0]["abstract"] and not _DOUBLE_RE.search(sub):
+                out.add(sub)
+            stack.append(sub)
+    _cache[name] = out
+    return out
 
 
 def build_index(verbose=False):

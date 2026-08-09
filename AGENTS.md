@@ -216,6 +216,44 @@ Three things this table is deliberate about:
 rules and writes `SHAPE_DEBT.tsv`. It excludes traits standing in for still-TODO Java classes
 (those are deliberate seams) and ambiguous basenames.
 
+## When a trait object is warranted (automated: `scripts/dyn_rules.py`)
+
+"Don't reach for `dyn` by default" is advice without evidence, and it loses to the concrete
+pressure of writing a signature. The question is answerable per type, from that type's Java
+hierarchy:
+
+```
+python3 scripts/dyn_rules.py explain <TypeName>     # why this type is or is not polymorphic
+python3 scripts/dyn_rules.py audit                  # rank every `dyn T` in the crate
+```
+
+`dep_context.py` already emits this per dependency into the file the porter reads, so a port
+is told which of its dependencies warrant `dyn` before it writes a signature.
+
+| | Java `T` is | verdict |
+|---|---|---|
+| **P1** | a class or enum — there was never an interface | **fix** — use the concrete type |
+| **P2** | an interface with exactly one concrete implementer | **fix** — Java's header-file idiom, use that type |
+| **P3** | an interface with 2–3 concrete implementers | **investigate** — enum if they are alternative representations, trait if independently extensible |
+| **P4** | an extension point (`ExtensionPoint`/`Service`/`Plugin`/…) | **ok** |
+| **P5** | an interface with 4+ concrete implementers | **ok** |
+| **P0** | an interface with no implementer anywhere in `orig_src` | **unknown** — anonymous/lambda/external; there is no concrete type to collapse to, so don't guess |
+
+Measured over the crate: **40.9% of non-std `dyn` is genuine (P5)** and 26.6% is P1+P2. The raw
+count badly overstates the problem, which is why `pattern_audit.py` now exempts P4/P5 by
+default (`--no-justified-dyn` restores the old behaviour). That exemption removed 37% of the
+total debt score and took 158 files off the frontier that were never debt.
+
+Three counting rules matter, and getting any of them wrong flips types between buckets:
+
+- **Transitively.** `TraceCodeUnit`'s direct subtypes are the *interfaces* `TraceData` and
+  `TraceInstruction`; a direct count says it has no implementations.
+- **Concrete only.** An abstract base is not an alternative representation. Counting
+  `AbstractDataType` and 11 sub-interfaces gives `DataType` 12 implementers; it has 192.
+- **Excluding test doubles.** `StubProgram` makes `Program` look like a closed set of three
+  when it has one real implementation. This is the same trap "Diagnosing the Port" describes
+  from the Rust side, and `*Adapter` is *not* a double in this codebase.
+
 ## Coding Standards
 
 - Write idiomatic Rust using standard naming, ownership, error handling, and safety conventions.
