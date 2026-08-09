@@ -12,6 +12,7 @@ pub mod property;
 pub mod space;
 pub mod symbol;
 pub mod target;
+pub mod time;
 
 pub use db_trace_direct_change_listener::DbTraceDirectChangeListener;
 pub use db_trace_manager::DBTraceManager;
@@ -20,3 +21,4 @@ pub use map::DBTraceAddressSnapRangePropertyMap;
 pub use module::DBTraceStaticMappingManager;
 pub use property::DBTraceAddressPropertyManager;
 pub use space::DBTraceSpaceBased;
+pub use time::DBTraceTimeManager;

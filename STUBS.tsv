@@ -511,3 +511,11 @@ ts	stub_class	referenced_by
 2026-08-09T09:00:00.000000+00:00	PatchStep	Step
 2026-08-09T09:00:00.000000+00:00	SkipStep	Step
 2026-08-09T09:00:00.000000+00:00	TickStep	Step
+2026-08-09T09:30:00+00:00	DBTraceSnapshot	DBTraceTimeManager
+2026-08-09T09:30:00+00:00	DBTraceThreadManager	DBTraceTimeManager
+2026-08-09T09:30:00+00:00	TimeRadixKind	DBTraceTimeManager
+2026-08-09T09:30:00+00:00	TraceSchedule	DBTraceTimeManager
+2026-08-09T09:30:00+00:00	TimeRadix	DBTraceTimeManager
+2026-08-09T09:30:00+00:00	DBTrace	DBTraceTimeManager
+2026-08-09T09:30:00+00:00	DBTraceObject	DBTraceTimeManager
+2026-08-09T09:30:00+00:00	DBTraceObjectManager	DBTraceTimeManager
