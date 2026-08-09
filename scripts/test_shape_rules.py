@@ -387,6 +387,31 @@ class TestDirectiveCoverage(unittest.TestCase):
                 self.fail(f"unfilled placeholder {{{leftover}}} in the {s} directive")
 
 
+class TestNonProductionSources(unittest.TestCase):
+    """Test sourcesets and bundled examples are not evidence about a type's shape.
+
+    1,944 of the tree's 15,613 Java files are under src/test. desc_order.py already keeps the
+    porting frontier off them; the shape index was reading them, so test doubles counted as
+    implementers -- and the implementer count is what every CONVENTION_QUEUE verdict turns on.
+    `Util`, from Extensions/bundle_examples/scripts_lib, was an implementer of `Library`.
+    """
+
+    def test_test_sourcesets_are_excluded(self):
+        for rel in ("Ghidra/Framework/DB/src/test/java/db/FooTest.java",
+                    "Ghidra/Framework/DB/src/test.slow/java/db/BarTest.java"):
+            self.assertTrue(sr.is_non_production(rel), rel)
+
+    def test_bundled_examples_are_excluded(self):
+        self.assertTrue(sr.is_non_production(
+            "Ghidra/Extensions/bundle_examples/scripts_lib/org/other/lib/Util.java"))
+
+    def test_production_paths_are_kept(self):
+        for rel in ("Ghidra/Framework/DB/src/main/java/db/DBHandle.java",
+                    "Ghidra/Features/Base/src/main/java/ghidra/app/nav/Navigatable.java",
+                    "Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/test/TestUtils.java"):
+            self.assertFalse(sr.is_non_production(rel), rel)
+
+
 class TestRealSources(unittest.TestCase):
     """Guard the two live cases the rules were written for, if orig_src is present."""
 

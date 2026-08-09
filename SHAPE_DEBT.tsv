@@ -45,7 +45,6 @@ CachedPasswordProvider	trait	struct	R14-concrete-class	class	ghidra-rs/src/files
 CallingConvention	trait	enum	R1-java-enum	enum	ghidra-rs/src/format/pdb2/pdbreader/type/calling_convention.rs:14	Java `enum` with 27 constants
 ChangeMapFile	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/db/buffers/change_map_file.rs:11	concrete Java `class` (0 in-repo subclass(es))
 CharDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/char_data_type.rs:41	concrete Java `class` (2 in-repo subclass(es))
-CircularPluginA	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/plugintool/testplugins/circular_plugin_a.rs:22	concrete Java `class` (0 in-repo subclass(es))
 ClassDir	trait	struct	R14-concrete-class	class	ghidra-rs/src/util/classfinder/class_dir.rs:15	concrete Java `class` (0 in-repo subclass(es))
 ClassSymbol	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/symbol/class_symbol.rs:11	concrete Java `class` (0 in-repo subclass(es))
 CodeManager	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/code/code_manager.rs:69	concrete Java `class` (0 in-repo subclass(es))
@@ -178,7 +177,6 @@ Integer5DataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/mod
 Integer6DataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/integer6_data_type.rs:37	concrete Java `class` (0 in-repo subclass(es))
 Integer7DataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/integer7_data_type.rs:37	concrete Java `class` (0 in-repo subclass(es))
 IntegerDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/integer_data_type.rs:28	concrete Java `class` (0 in-repo subclass(es))
-IntegerDataTypeTest	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/integer_data_type_test.rs:23	concrete Java `class` (0 in-repo subclass(es))
 InvalidPrototype	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/lang/invalid_prototype.rs:44	concrete Java `class` (0 in-repo subclass(es))
 ItemPropertyFile	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/store/local/item_property_file.rs:26	concrete Java `class` (2 in-repo subclass(es))
 JdiEventsListenerAdapter	struct	trait	R9-open-interface	interface	ghidra-rs/src/debug/dbg/jdi/manager/jdi_events_listener_adapter.rs:16	Java `interface` with 0 abstract method(s), 1 in-repo implementor(s)
@@ -222,8 +220,7 @@ PcodeEmitObjects	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugin/
 PcodeEmitPacked	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugin/processors/sleigh/pcode_emit_packed.rs:51	concrete Java `class` (0 in-repo subclass(es))
 PeekableIterators	iterator_trait	enum	R1-java-enum	enum	ghidra-rs/src/generic/util/peekable_iterators.rs:15	Java `enum` with 0 constants
 Platform	trait	enum	R1-java-enum	enum	ghidra-rs/src/framework/platform.rs:15	Java `enum` with 14 constants
-PluginDescription	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/plugintool/util/plugin_description.rs:33	concrete Java `class` (1 in-repo subclass(es))
-PluginManagerTest	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/plugintool/plugin_manager_test.rs:21	concrete Java `class` (0 in-repo subclass(es))
+PluginDescription	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/plugintool/util/plugin_description.rs:33	concrete Java `class` (0 in-repo subclass(es))
 PointerDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/pointer_data_type.rs:164	concrete Java `class` (8 in-repo subclass(es))
 PointerSizedIntegerDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/pointer_sized_integer_data_type.rs:39	concrete Java `class` (0 in-repo subclass(es))
 PointerType	trait	enum	R1-java-enum	enum	ghidra-rs/src/program/model/data/pointer_type.rs:20	Java `enum` with 4 constants
@@ -243,7 +240,6 @@ PseudoData	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/util/pseudo_d
 PseudoDisassembler	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/util/pseudo_disassembler.rs:85	concrete Java `class` (0 in-repo subclass(es))
 QWordDataType	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/model/data/qword_data_type.rs:27	concrete Java `class` (0 in-repo subclass(es))
 RangeMapSetter	trait	struct	R10-abstract-orphan	class/abstract	ghidra-rs/src/generic/range_map_setter.rs:10	abstract class with no in-repo subclasses
-RecoveryFileTest	trait	struct	R14-concrete-class	class	ghidra-rs/src/framework/db/buffers/recovery_file_test.rs:18	concrete Java `class` (0 in-repo subclass(es))
 RecursiveDescentSolver	trait	struct	R14-concrete-class	class	ghidra-rs/src/app/plugin/assembler/sleigh/expr/recursive_descent_solver.rs:46	concrete Java `class` (0 in-repo subclass(es))
 RefListFlagsV0	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/references/ref_list_flags_v0.rs:113	concrete Java `class` (0 in-repo subclass(es))
 RefListV0	trait	struct	R14-concrete-class	class	ghidra-rs/src/program/database/references/ref_list_v0.rs:42	concrete Java `class` (0 in-repo subclass(es))

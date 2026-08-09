@@ -400,12 +400,32 @@ def concrete_implementers(name, facts, subtypes, _cache=None):
     return out
 
 
+# Java sourcesets that are not production code. `desc_order.py` already keeps the porting
+# frontier off these ("test-fixture classes exercise Java internals; production Rust never
+# depends on them"), but the shape index was reading all 15,613 files, so 1,944 test-sourceset
+# classes and 10 bundled example scripts counted as implementers. That is how `Util`, from
+# Extensions/bundle_examples/scripts_lib, became an implementer of `Library` -- and every test
+# double implementing a production interface inflated that interface's implementer count,
+# which is the number every verdict in CONVENTION_QUEUE.tsv turns on.
+def is_non_production(rel: str) -> bool:
+    return (
+        "/src/test/" in rel
+        or "/src/test." in rel
+        or "/bundle_examples/" in rel
+        or "/GhidraDocs/" in rel
+    )
+
+
 def build_index(verbose=False):
     files, facts = [], {}
     for root, _dirs, names in os.walk(ORIG):
         for f in names:
-            if f.endswith(".java"):
-                files.append(os.path.join(root, f))
+            if not f.endswith(".java"):
+                continue
+            p = os.path.join(root, f)
+            if is_non_production(os.path.relpath(p, ORIG)):
+                continue
+            files.append(p)
     subtypes: dict[str, set] = {}
     for i, p in enumerate(sorted(files)):
         name = os.path.basename(p)[:-5]
