@@ -1,3 +1,4 @@
+pub mod abstract_long_offset_pcode_executor_state_piece;
 pub mod abstract_sleigh_pcode_userop_definition;
 pub mod annotated_pcode_userop_library;
 pub mod concretion_error;
@@ -16,6 +17,10 @@ pub mod pcode_userop_library;
 pub mod pcode_userop_library_factory;
 pub mod sleigh_pcode_userop_definition;
 
+pub use abstract_long_offset_pcode_executor_state_piece::{
+    fork_map, AbstractLongOffsetPcodeExecutorStatePiece,
+    AbstractLongOffsetPcodeExecutorStatePieceBase,
+};
 pub use abstract_sleigh_pcode_userop_definition::{
     AbstractSleighPcodeUseropDefinition, AbstractSleighPcodeUseropDefinitionBase, Builder,
 };
