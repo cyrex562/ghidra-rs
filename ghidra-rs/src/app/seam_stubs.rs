@@ -185,14 +185,6 @@ pub trait Task {
 /// parameter/return value, so no members are needed yet.
 pub trait EmulatorFactory {}
 
-/// Placeholder for `ghidra.pcode.emu.PcodeMachine`, referenced by
-/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) and its nested
-/// `CachedEmulator` before the real class is ported. Java's `PcodeMachine<?>` wildcard is
-/// dropped, since this crate has no generic parameter to substitute yet.
-/// `DebuggerEmulationService` only ever passes this type through as a parameter/return value, so
-/// no members are needed yet.
-pub trait PcodeMachine {}
-
 /// Placeholder for `ghidra.trace.model.time.schedule.TraceSchedule`, referenced by
 /// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) and
 /// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the

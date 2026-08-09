@@ -106,7 +106,6 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	TraceRmiAcceptor	TraceRmiService
 2026-07-11T00:00:00Z	TraceRmiServiceListener	TraceRmiService
 2026-07-10T13:00:00Z	EmulatorFactory	DebuggerEmulationService
-2026-07-10T13:00:00Z	PcodeMachine	DebuggerEmulationService
 2026-07-10T13:00:00Z	TraceSchedule	DebuggerEmulationService
 2026-07-10T13:00:00Z	Scheduler	DebuggerEmulationService
 2026-07-10T13:00:00Z	TracePlatform	DebuggerEmulationService

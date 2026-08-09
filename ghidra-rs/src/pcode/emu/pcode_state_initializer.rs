@@ -1,5 +1,6 @@
 use crate::program::model::lang::Language;
-use crate::pcode::seam_stubs::{PcodeMachine, PcodeThread};
+use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
+use crate::pcode::seam_stubs::PcodeThread;
 use crate::util::classfinder::ExtensionPoint;
 use std::sync::Arc;
 
@@ -26,7 +27,12 @@ pub trait PcodeStateInitializer: ExtensionPoint + Send + Sync {
     ///
     /// # Arguments
     /// * `machine` - the newly-initialized machine
-    fn initialize_machine(&self, machine: &dyn PcodeMachine) {}
+    ///
+    /// Java declares this as a *generic* method, `<T> void initializeMachine(PcodeMachine<T>)`.
+    /// A generic method would cost this trait its object safety, which an extension point cannot
+    /// afford, so the machine arrives type-erased. See
+    /// [`ErasedPcodeMachine`](crate::pcode::emu::pcode_machine::ErasedPcodeMachine).
+    fn initialize_machine(&self, machine: &dyn ErasedPcodeMachine) {}
 
     /// The thread's register state has just been initialized, and additional initialization is
     /// needed for Sleigh execution.
@@ -44,7 +50,8 @@ pub trait PcodeStateInitializer: ExtensionPoint + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{PcodeMachine, PcodeThread};
+    use crate::pcode::emu::pcode_machine::{AccessKind, ErasedPcodeMachine};
+    use crate::pcode::seam_stubs::PcodeThread;
 
     struct MockLanguage;
 
@@ -278,15 +285,7 @@ mod tests {
 
     struct MockPcodeMachine;
 
-    impl PcodeMachine for MockPcodeMachine {
-        fn traps_read(&self) -> bool {
-            true
-        }
-
-        fn traps_write(&self) -> bool {
-            false
-        }
-    }
+    impl ErasedPcodeMachine for MockPcodeMachine {}
 
     struct MockPcodeThread;
 
@@ -301,7 +300,7 @@ mod tests {
             true
         }
 
-        fn initialize_machine(&self, _machine: &dyn PcodeMachine) {
+        fn initialize_machine(&self, _machine: &dyn ErasedPcodeMachine) {
             // Test implementation
         }
 
@@ -335,8 +334,9 @@ mod tests {
 
     #[test]
     fn pcode_state_initializer_machine_traps() {
-        let machine = MockPcodeMachine;
-        assert!(machine.traps_read());
-        assert!(!machine.traps_write());
+        // The `traps_read`/`traps_write` predicates the placeholder machine carried belong, in
+        // Java, to `PcodeMachine.AccessKind`, not to the machine itself.
+        assert!(AccessKind::R.traps_read());
+        assert!(!AccessKind::R.traps_write());
     }
 }
