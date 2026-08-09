@@ -704,6 +704,32 @@ pub trait DBCachedObjectStore<T: crate::util::database::db_annotated_object::DBA
         let _ = (field, column_index);
         panic!("DBCachedObjectStore::get_matching_record_count is not implemented for this store")
     }
+
+    /// Mirrors `getObjectAt(long)`, needed by
+    /// [`AbstractDBTraceSymbolSingleTypeViewBase::get_by_key`](crate::trace::database::symbol::abstract_db_trace_symbol_single_type_view::AbstractDBTraceSymbolSingleTypeViewBase::get_by_key).
+    fn get_object_at(&self, key: i64) -> std::sync::Arc<T> {
+        let _ = key;
+        panic!("DBCachedObjectStore::get_object_at is not implemented for this store")
+    }
+
+    /// Mirrors `asMap().values()`, needed by
+    /// [`AbstractDBTraceSymbolSingleTypeViewBase::construct_view`](crate::trace::database::symbol::abstract_db_trace_symbol_single_type_view::AbstractDBTraceSymbolSingleTypeViewBase::construct_view).
+    ///
+    /// A direct, `T`-typed method rather than routing through `asMap()`:
+    /// [`DBCachedObjectStoreMap`](crate::util::database::db_cached_object_store_map::DBCachedObjectStoreMap)
+    /// (the port of `asMap()`'s return type) has its own `values()` return the opaque
+    /// [`DBCachedObjectStoreValueCollection`] marker, since no caller before this one has needed a
+    /// real `T`-typed values view through that path; going through it here would give
+    /// `construct_view` nothing to actually iterate.
+    fn values(&self) -> Vec<std::sync::Arc<T>> {
+        panic!("DBCachedObjectStore::values is not implemented for this store")
+    }
+
+    /// Mirrors `invalidateCache()`, needed by
+    /// [`AbstractDBTraceSymbolSingleTypeViewBase::invalidate_cache`](crate::trace::database::symbol::abstract_db_trace_symbol_single_type_view::AbstractDBTraceSymbolSingleTypeViewBase::invalidate_cache).
+    fn invalidate_cache(&self) {
+        panic!("DBCachedObjectStore::invalidate_cache is not implemented for this store")
+    }
 }
 
 /// Placeholder for the K<->Field conversion half of
