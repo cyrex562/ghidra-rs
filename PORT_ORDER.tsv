@@ -54,7 +54,7 @@ PARK	trait	26	8	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidr
 PARK	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceFocusScope.java
 PARK	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceMethod.java
 DONE	trait	25	155	20	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObject.java
-TODO	trait	24	43	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceObjectInterface.java
+DONE	trait	24	43	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceObjectInterface.java
 TODO	trait	23	47	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/stack/TraceStackFrame.java
 TODO	trait	22	32	5	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/stack/TraceStack.java
 TODO	trait	29	7	1	pcode	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/PcodeTraceMemoryAccess.java
