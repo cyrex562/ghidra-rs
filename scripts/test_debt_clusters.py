@@ -335,6 +335,24 @@ class TestSmallClosedSetFamilies(unittest.TestCase):
         self.assertIn("extend(s) DefaultAddressFactory", note)
         self.assertIn("embed it", note)
 
+    def test_versioned_db_adapters_are_not_wrappers(self):
+        """ModuleDBAdapterV0 extends ModuleDBAdapter -- a schema version, not a wrapper.
+
+        The implementer inherits "Adapter" from the family name, so testing the raw name
+        ACCEPTed ten versioned DB adapter families and exempted them from debt scoring.
+        """
+        impls = ["ModuleDBAdapterV0", "ModuleDBAdapterV1"]
+        v = dc.suggest_by_family("ModuleDBAdapter", impls,
+                                 impl_table={i: {"concrete_implementers": []} for i in impls})
+        self.assertIsNone(v, "a version suffix is not a wrapper")
+
+    def test_wrapper_named_for_what_it_does_still_counts(self):
+        v, note = dc.suggest_by_family("DomainFile", ["DomainFileProxy", "GhidraFile"],
+                                       impl_table={"DomainFileProxy": {"concrete_implementers": []},
+                                                   "GhidraFile": {"concrete_implementers": []}})
+        self.assertEqual(v, "SUGGEST-ACCEPT")
+        self.assertIn("DomainFileProxy", note)
+
     def test_plain_siblings_fall_through_to_enum(self):
         """Language = OldLanguage + SleighLanguage has no storage/null/wrapper marker."""
         self.assertIsNone(dc.suggest_by_family(

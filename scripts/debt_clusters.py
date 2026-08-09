@@ -371,7 +371,12 @@ def suggest_by_family(name, impl_names, impl_table=None):
                     f"port {base} as a concrete type and let the others embed it")
     storage = [i for i in impls if _FAM_STORAGE.search(i)]
     nullobj = [i for i in impls if _FAM_NULLOBJ.search(i)]
-    wrapper = [i for i in impls if _FAM_WRAPPER.search(i)]
+    # A wrapper is named for what it DOES to the parent, so test the part of the implementer
+    # name that is not just the parent's own name. `ModuleDBAdapterV0` inherits "Adapter" from
+    # `ModuleDBAdapter` and is a schema-version subclass, not a wrapper -- it and nine other
+    # versioned DB adapter families were being ACCEPTed, which exempts them from debt scoring.
+    # `DomainFileProxy` minus `DomainFile` leaves "Proxy", which is real evidence.
+    wrapper = [i for i in impls if _FAM_WRAPPER.search(i.replace(name, ""))]
 
     # The null-object pattern is "the real implementation, plus a stand-in for its absence".
     # Requiring exactly ONE real implementer after removing the null objects is what makes it
