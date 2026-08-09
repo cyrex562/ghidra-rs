@@ -20,7 +20,8 @@
 //!   trait's static-like associated function without already knowing a concrete implementing
 //!   type, so there is no object-safe way to call through to it from here.
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{ObjectKey, TraceChangeRecord, TraceObject, TraceObjectInterface};
+use crate::trace::seam_stubs::{ObjectKey, TraceChangeRecord, TraceObjectInterface};
+use crate::trace::model::target::trace_object::TraceObject;
 
 /// A [`TraceObject`]-backed implementation of another trace-manager interface.
 ///
@@ -112,20 +113,33 @@ mod tests {
         life_empty: bool,
     }
 
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            Box::new(MockObjectKey(self.key))
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
             Box::new(MockSchema)
         }
 
-        fn get_object_key(&self) -> Box<dyn ObjectKey> {
-            Box::new(MockObjectKey(self.key))
-        }
 
         fn get_life(&self) -> Box<dyn LifeSet> {
             Box::new(MockLifeSet {
                 empty: self.life_empty,
             })
         }
+
+        fn get_canonical_path(&self) -> crate::trace::model::target::path::key_path::KeyPath {
+            crate::trace::model::target::path::key_path::KeyPath::root()
+        }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     /// A minimal implementor proving the trait is object-safe and that its defaults delegate

@@ -25,7 +25,10 @@ use crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag;
 use crate::trace::model::memory::trace_memory_region::TraceMemoryRegion;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
+use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
 use crate::trace::model::target::path::key_path::KeyPath;
+use crate::trace::model::target::path::path_pattern::PathPattern;
+use crate::trace::model::target::trace_object::TraceObject;
 use crate::trace::model::time::schedule::compare_result::CompareResult;
 use crate::trace::model::time::schedule::step::Step;
 use crate::trace::model::trace::Trace;
@@ -630,6 +633,74 @@ pub trait TraceObjectSchema: Send + Sync {
     fn get_successor_schema(&self, _path: &KeyPath) -> Option<Box<dyn TraceObjectSchema>> {
         None
     }
+
+    /// The trace interfaces this schema declares its objects provide. Mirrors
+    /// `TraceObjectSchema.getInterfaces()`, used by
+    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
+    /// `isMethod()`.
+    ///
+    /// Java returns the interfaces' class tokens; this crate reifies the `@TraceObjectInfo`
+    /// annotation those tokens are read through as [`TraceObjectInfo`], so that is the element
+    /// type here. Defaults to "declares nothing" until the real schema port lands.
+    fn get_interfaces(&self) -> Vec<TraceObjectInfo> {
+        Vec::new()
+    }
+
+    /// Search this (root) schema for the unique path of an object suitable to provide the
+    /// interface named `iface` in the context of the object at `seed`. Mirrors
+    /// `TraceObjectSchema.searchForSuitable(Class, KeyPath)`, used by
+    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
+    /// `findSuitableInterface()`/`getExecutionState()`.
+    ///
+    /// The interface is named by its schema name rather than a class token, following the
+    /// convention
+    /// [`PrimitiveTraceObjectSchema`](crate::trace::model::target::schema::primitive_trace_object_schema)
+    /// already uses for the `Class<?>` arguments of this same family of `searchFor*` methods.
+    ///
+    /// The real Java method walks the schema's ancestry and aggregate attributes (not yet
+    /// ported), so this placeholder defaults to "not found".
+    fn search_for_suitable(&self, _iface: &str, _seed: &KeyPath) -> Option<KeyPath> {
+        None
+    }
+
+    /// As [`Self::search_for_suitable`], but searching for an object with the given schema rather
+    /// than a given interface. Mirrors the
+    /// `searchForSuitable(TraceObjectSchema, KeyPath)` overload, used by
+    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
+    /// `findSuitableSchema()`.
+    fn search_for_suitable_schema(
+        &self,
+        _schema: &dyn TraceObjectSchema,
+        _seed: &KeyPath,
+    ) -> Option<KeyPath> {
+        None
+    }
+
+    /// As [`Self::search_for_suitable`], but searching for the canonical *container* of `iface`.
+    /// Mirrors `TraceObjectSchema.searchForSuitableContainer(Class, KeyPath)`, used by
+    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
+    /// `findSuitableContainerInterface()`.
+    fn search_for_suitable_container(&self, _iface: &str, _seed: &KeyPath) -> Option<KeyPath> {
+        None
+    }
+
+    /// Search this (root) schema for the register container(s) applicable to the object at
+    /// `seed` at the given frame level. Mirrors
+    /// `TraceObjectSchema.searchForRegisterContainer(int, KeyPath)`, used by
+    /// [`TraceObject`](crate::trace::model::target::trace_object::TraceObject)'s default
+    /// `findRegisterContainer()`.
+    ///
+    /// Java returns a `PathFilter` (in practice a `PathMatcher`) whose only use at that call site
+    /// is enumerating its patterns. `PathMatcher` is not ported and this crate's
+    /// [`PathFilter`](crate::trace::model::target::path::PathFilter) has no `getPatterns()`, so
+    /// the patterns are returned directly. Defaults to "no candidates".
+    fn search_for_register_container(
+        &self,
+        _frame_level: i32,
+        _seed: &KeyPath,
+    ) -> Vec<PathPattern> {
+        Vec::new()
+    }
 }
 
 /// Placeholder for the nested `ghidra.trace.model.Lifespan.LifeSet`, referenced by
@@ -638,52 +709,6 @@ pub trait TraceObjectSchema: Send + Sync {
 pub trait LifeSet: Send + Sync {
     /// Mirrors `Span.SpanSet.isEmpty()`, as inherited by `LifeSet`.
     fn is_empty(&self) -> bool;
-}
-
-/// Placeholder for `ghidra.trace.model.target.TraceObject`, referenced by
-/// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue) and
-/// [`DBTraceObjectInterface`](crate::trace::database::target::db_trace_object_interface::DBTraceObjectInterface)
-/// before the real port is available. Grown beyond the schema lookup `TraceObjectValue`'s
-/// defaults need to add the two members `DBTraceObjectInterface`'s defaults need: the object's
-/// key and life. In the real Java hierarchy both are inherited from `TraceUniqueObject` (which
-/// `TraceObject` extends); they're declared directly here instead of via that supertrait to avoid
-/// requiring every existing placeholder implementor of this trait to also implement
-/// `TraceUniqueObject`.
-pub trait TraceObject: Send + Sync {
-    /// Mirrors `TraceObject.getSchema()`.
-    fn get_schema(&self) -> Box<dyn TraceObjectSchema>;
-
-    /// Mirrors `TraceUniqueObject.getObjectKey()`, as inherited by `TraceObject`.
-    fn get_object_key(&self) -> Box<dyn ObjectKey>;
-
-    /// Mirrors `TraceObject.getLife()`.
-    fn get_life(&self) -> Box<dyn LifeSet>;
-
-    /// The path from the trace's root object to this object. Mirrors
-    /// `TraceObject.getCanonicalPath()`, used by
-    /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)'s
-    /// `getConventionalRegisterPath(TraceObject, Register)` default.
-    ///
-    /// Defaults to the root path so existing implementors are unaffected; concrete
-    /// implementations should override once this placeholder is replaced by the real port.
-    fn get_canonical_path(&self) -> KeyPath {
-        KeyPath::root()
-    }
-}
-
-/// Placeholder for the nested enum `ghidra.trace.model.target.TraceObject.ConflictResolution`,
-/// referenced by
-/// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue) before
-/// the real `TraceObject` port is available.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ConflictResolution {
-    /// Truncate, split, or delete conflicting entries to make way for the specified lifespan.
-    Truncate,
-    /// Fail with [`crate::trace::model::target::duplicate_key_exception::DuplicateKeyException`]
-    /// if the specified lifespan would result in conflicting entries.
-    Deny,
-    /// Adjust the new entry to fit into the span available, possibly ignoring it altogether.
-    Adjust,
 }
 
 /// Placeholder for `ghidra.trace.model.target.schema.TraceObjectSchema.AttributeSchema`,
@@ -830,11 +855,6 @@ pub trait TraceStack: Send + Sync {}
 /// default methods), so it only ever passes this type around opaquely (as `getParent`'s return
 /// and `getChildOrNull`'s return); no members are needed yet.
 ///
-/// Grown to add the two attribute accessors
-/// [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)'s
-/// time-radix members use against the trace's root object. Both default to panicking, like
-/// [`DBTrace`]'s grown members, so the existing marker implementors keep compiling unchanged.
-///
 /// Grown again for
 /// [`DBTraceObjectValue`](crate::trace::database::target::db_trace_object_value::DBTraceObjectValue),
 /// which is the real port of the *other* half of the object/value cycle. Two changes:
@@ -845,35 +865,14 @@ pub trait TraceStack: Send + Sync {}
 ///   [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
 ///   `Box<dyn TraceObject>`, which is only possible if the placeholder actually sits under
 ///   `TraceObject`. It also brings in `getCanonicalPath()`, which `DBTraceObjectValue`'s own
-///   canonical-path computation is defined in terms of.
+///   canonical-path computation is defined in terms of. It also supplies the `getAttribute` /
+///   `setAttribute` pair
+///   [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)'s
+///   time-radix members use, which this placeholder previously declared itself.
 /// - The package-private members `DBTraceObjectValue` calls on its parent and child are added
-///   below. Like the attribute accessors, each defaults to panicking rather than being required,
-///   so existing marker implementors need only gain a `TraceObject` impl.
+///   below. Each defaults to panicking rather than being required, so existing marker
+///   implementors need only gain a `TraceObject` impl.
 pub trait DBTraceObject: TraceObject {
-    /// Mirrors `setAttribute(Lifespan, String, Object)`. The Java `Object` value maps to the same
-    /// boxed-`Any` shape
-    /// [`TraceObjectValue::get_value`](crate::trace::model::target::trace_object_value::TraceObjectValue::get_value)
-    /// already uses for an unconstrained value type.
-    fn set_attribute(
-        &self,
-        lifespan: Lifespan,
-        name: &str,
-        value: Box<dyn std::any::Any + Send + Sync>,
-    ) -> Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue> {
-        let _ = (lifespan, name, value);
-        unimplemented!("DBTraceObject::set_attribute placeholder not overridden")
-    }
-
-    /// Mirrors `getAttribute(long, String)`, whose `null` return becomes `None`.
-    fn get_attribute(
-        &self,
-        snap: i64,
-        name: &str,
-    ) -> Option<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
-        let _ = (snap, name);
-        unimplemented!("DBTraceObject::get_attribute placeholder not overridden")
-    }
-
     /// Mirrors `emitEvents(TraceChangeRecord<?, ?>)`, which forwards a change record to the
     /// object's trace (and to any interfaces the object implements, which may translate it).
     fn emit_events(&self, record: &dyn TraceChangeRecord) {

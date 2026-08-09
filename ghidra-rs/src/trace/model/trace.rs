@@ -581,7 +581,7 @@ mod tests {
         fn create_object(
             &mut self,
             _path: &crate::trace::model::target::path::key_path::KeyPath,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceObject> {
+        ) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -589,18 +589,18 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_root_object(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+        fn get_root_object(&self) -> Option<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_object_by_id(&self, _key: i64) -> Option<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+        fn get_object_by_id(&self, _key: i64) -> Option<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
             unimplemented!("not exercised by this smoke test")
         }
 
         fn get_object_by_canonical_path(
             &self,
             _path: &crate::trace::model::target::path::key_path::KeyPath,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+        ) -> Option<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -608,7 +608,7 @@ mod tests {
             &self,
             _span: Lifespan,
             _path: &crate::trace::model::target::path::key_path::KeyPath,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -620,7 +620,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_all_objects(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+        fn get_all_objects(&self) -> Vec<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
             unimplemented!("not exercised by this smoke test")
         }
 

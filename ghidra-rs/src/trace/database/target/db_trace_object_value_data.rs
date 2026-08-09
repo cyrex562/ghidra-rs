@@ -128,7 +128,8 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType, DefaultAddressFactory};
     use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
-    use crate::trace::seam_stubs::{DBTraceObjectManager, LifeSet, ObjectKey, TraceObject, TraceObjectSchema};
+    use crate::trace::seam_stubs::{DBTraceObjectManager, LifeSet, ObjectKey, TraceObjectSchema};
+    use crate::trace::model::target::trace_object::TraceObject;
     use std::sync::Arc;
 
     struct MockManager;
@@ -138,16 +139,29 @@ mod tests {
 
     /// `DBTraceObject` is a `TraceObject`; none of its members are exercised here -- the object
     /// is only ever passed around opaquely as a parent or child.
-    impl TraceObject for MockObject {
-        fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl TraceObject for MockObject {
+        fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_life(&self) -> Box<dyn LifeSet> {
             unimplemented!("not exercised by this smoke test")
         }
+
+        fn get_canonical_path(&self) -> crate::trace::model::target::path::key_path::KeyPath {
+            crate::trace::model::target::path::key_path::KeyPath::root()
+        }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     impl DBTraceObject for MockObject {}

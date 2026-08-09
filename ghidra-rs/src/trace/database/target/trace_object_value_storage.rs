@@ -68,12 +68,23 @@ mod tests {
 
     use crate::debug::api::tracermi::SchemaName;
     use crate::trace::model::target::path::key_path::KeyPath;
-    use crate::trace::seam_stubs::{LifeSet, ObjectKey, TraceObject, TraceObjectSchema};
+    use crate::trace::seam_stubs::{LifeSet, ObjectKey, TraceObjectSchema};
+    use crate::trace::model::target::trace_object::TraceObject;
 
     struct MockManager;
     impl DBTraceObjectManager for MockManager {}
 
     struct MockObject;
+
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
 
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
@@ -89,9 +100,6 @@ mod tests {
             Box::new(S)
         }
 
-        fn get_object_key(&self) -> Box<dyn ObjectKey> {
-            unimplemented!("not exercised by this smoke test")
-        }
 
         fn get_life(&self) -> Box<dyn LifeSet> {
             unimplemented!("not exercised by this smoke test")
@@ -100,6 +108,8 @@ mod tests {
         fn get_canonical_path(&self) -> KeyPath {
             KeyPath::root()
         }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     impl DBTraceObject for MockObject {}

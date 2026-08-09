@@ -65,9 +65,8 @@ use crate::trace::model::target::duplicate_key_exception::DuplicateKeyException;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::target::trace_object_value::{TraceObjectValue, TruncateOrDelete};
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{
-    ConflictResolution, DBTraceObject, DBTraceObjectManager, TraceChangeRecord, TraceObject,
-};
+use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager, TraceChangeRecord};
+use crate::trace::model::target::trace_object::{ConflictResolution, TraceObject};
 
 /// Which value event a [`ValueChangeRecord`] carries.
 ///
@@ -588,12 +587,19 @@ mod tests {
         path: KeyPath,
     }
 
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            Box::new(MockKey(0))
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
             Box::new(MockSchema)
-        }
-        fn get_object_key(&self) -> Box<dyn ObjectKey> {
-            Box::new(MockKey(0))
         }
         fn get_life(&self) -> Box<dyn LifeSet> {
             Box::new(MockLife)
@@ -601,6 +607,8 @@ mod tests {
         fn get_canonical_path(&self) -> KeyPath {
             self.path.clone()
         }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     impl DBTraceObject for MockObject {

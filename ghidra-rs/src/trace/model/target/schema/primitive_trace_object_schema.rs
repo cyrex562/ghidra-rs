@@ -133,12 +133,9 @@ pub trait PrimitiveTraceObjectSchema: TraceObjectSchema {
         None
     }
 
-    /// Searches for a suitable successor satisfying `type`, relative to `path`.
-    ///
-    /// Mirrors `searchForSuitable(Class, KeyPath)`, which every primitive returns as `null`.
-    fn search_for_suitable(&self, _type: &str, _path: &KeyPath) -> Option<KeyPath> {
-        None
-    }
+    // `searchForSuitable(Class, KeyPath)` is declared on `TraceObjectSchema` itself (see
+    // `seam_stubs::TraceObjectSchema::search_for_suitable`), whose default of "not found" is
+    // already what every primitive returns, so it is inherited rather than re-declared here.
 }
 
 /// Marker [`AttributeSchema`] backing [`PrimitiveTraceObjectSchema::get_default_attribute_schema`]'s

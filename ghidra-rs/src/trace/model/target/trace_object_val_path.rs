@@ -21,7 +21,7 @@ use std::sync::Arc;
 
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::target::trace_object_value::TraceObjectValue;
-use crate::trace::seam_stubs::TraceObject;
+use crate::trace::model::target::trace_object::TraceObject;
 
 /// A path of values leading from one object to another, ordered from source to destination.
 ///
@@ -128,7 +128,8 @@ mod tests {
     use crate::trace::model::target::duplicate_key_exception::DuplicateKeyException;
     use crate::trace::model::target::trace_object_value::TruncateOrDelete;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::{ConflictResolution, LifeSet, ObjectKey, TraceObjectSchema};
+    use crate::trace::seam_stubs::{LifeSet, ObjectKey, TraceObjectSchema};
+    use crate::trace::model::target::trace_object::ConflictResolution;
 
     struct MockObjectKey;
     impl ObjectKey for MockObjectKey {
@@ -164,12 +165,19 @@ mod tests {
         path: KeyPath,
     }
 
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            Box::new(MockObjectKey)
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
             Box::new(MockSchema)
-        }
-        fn get_object_key(&self) -> Box<dyn ObjectKey> {
-            Box::new(MockObjectKey)
         }
         fn get_life(&self) -> Box<dyn LifeSet> {
             Box::new(MockLifeSet)
@@ -177,6 +185,8 @@ mod tests {
         fn get_canonical_path(&self) -> KeyPath {
             self.path.clone()
         }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     /// A value entry `key`, whose parent's canonical path is `parent_path` and whose child's

@@ -12,7 +12,8 @@ use crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWit
 use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
 use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{DBTraceGuestLanguage, TraceObject, TraceObjectSchema, TracePlatform, TraceRegisterUtils};
+use crate::trace::seam_stubs::{DBTraceGuestLanguage, TraceObjectSchema, TracePlatform, TraceRegisterUtils};
+use crate::trace::model::target::trace_object::TraceObject;
 
 /// Namespace key used to look up (or register) the conventional register-object mapping for
 /// big-endian registers. Mirrors `InternalTracePlatform.REG_MAP_BE`.
