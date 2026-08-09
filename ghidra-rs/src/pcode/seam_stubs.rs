@@ -6,7 +6,6 @@
 
 use std::sync::{Arc, Mutex, OnceLock};
 
-use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_execution_exception::PcodeExecutionException;
@@ -401,39 +400,6 @@ pub trait BytesPcodeExecutorStateSpace: Clone + Send + Sync {
 
     /// Port of `BytesPcodeExecutorStateSpace.clear()`.
     fn clear(&self);
-}
-
-/// Placeholder for `ghidra.pcode.emu.PcodeEmulationCallbacks`, referenced by
-/// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
-/// before the real interface is ported. Only the three notifications that class emits are
-/// declared, each defaulted to do nothing, as in Java.
-///
-/// Java passes the machine as `PcodeMachine<T>`. Taking it generically would cost this trait its
-/// object safety -- a machine has to store its callbacks as `dyn` -- so the machine arrives
-/// type-erased, following
-/// [`PcodeStateInitializer`](crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer).
-/// `T`, the type of values in the machine's state, is retained (unused for now) because the real
-/// interface's remaining callbacks are all typed in it.
-pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
-    /// Placeholder for `PcodeEmulationCallbacks.emulatorCreated(PcodeMachine)`.
-    fn emulator_created(&self, _machine: &dyn ErasedPcodeMachine) {}
-
-    /// Placeholder for `PcodeEmulationCallbacks.sharedStateCreated(PcodeMachine)`.
-    fn shared_state_created(&self, _machine: &dyn ErasedPcodeMachine) {}
-
-    /// Placeholder for `PcodeEmulationCallbacks.threadCreated(PcodeThread)`.
-    fn thread_created(&self, _thread: &Arc<dyn PcodeThread>) {}
-}
-
-/// Placeholder for the nested singleton `PcodeEmulationCallbacks.NoPcodeEmulationCallbacks`: an
-/// implementation that does nothing, i.e. every method left at its default.
-pub struct NoPcodeEmulationCallbacks;
-
-impl<T: 'static> PcodeEmulationCallbacks<T> for NoPcodeEmulationCallbacks {}
-
-/// Placeholder for the static factory `PcodeEmulationCallbacks.none()`.
-pub fn no_pcode_emulation_callbacks<T: 'static>() -> Arc<dyn PcodeEmulationCallbacks<T>> {
-    Arc::new(NoPcodeEmulationCallbacks)
 }
 
 /// Placeholder for `ghidra.pcode.emu.SparseAddressRangeMap`, referenced by

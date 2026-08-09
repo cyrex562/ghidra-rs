@@ -61,9 +61,10 @@ use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::exec::pcode_userop_library_factory::{
     create_userop_library_for_language, PcodeUseropLibraryFactory,
 };
+use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
 use crate::pcode::seam_stubs::{
-    InterruptPcodeExecutionException, PcodeEmulationCallbacks, PcodeProgram, PcodeThread,
-    SleighProgramCompiler, SparseAddressRangeMap,
+    InterruptPcodeExecutionException, PcodeProgram, PcodeThread, SleighProgramCompiler,
+    SparseAddressRangeMap,
 };
 use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::lang::language::Language;

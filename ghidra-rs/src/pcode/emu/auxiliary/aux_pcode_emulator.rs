@@ -150,7 +150,7 @@ mod tests {
     };
     use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
     use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropDefinition, UseropMap};
-    use crate::pcode::seam_stubs::PcodeEmulationCallbacks;
+    use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType, DefaultAddressFactory};
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::register::RegisterRef;
