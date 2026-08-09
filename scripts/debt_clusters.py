@@ -160,8 +160,17 @@ def java_declarations(orig_src="orig_src"):
 
     Checking this split the 112 "zero-subtype" candidates into a solid batch and two that would
     have been wrong to sweep.
+
+    Names declared by MORE THAN ONE Java file are recorded in `java_declarations.ambiguous`
+    and must not be answered from the name alone. `PatternExpression` is two unrelated classes
+    -- the sleigh runtime expression and the pcodeCPort compiler's AST node -- and so are
+    `Constructor` and `Processor`. This function used to keep whichever file the walk reached
+    first and silently drop the other, which is the bare-name pairing failure AGENTS.md records
+    ("Pairing by basename reported a design conflict that does not exist").
     """
     decls = {}
+    seen = set()
+    java_declarations.ambiguous = ambiguous = set()
     if not os.path.isdir(orig_src):
         return decls
     for dirpath, _dirs, files in os.walk(orig_src):
@@ -169,8 +178,10 @@ def java_declarations(orig_src="orig_src"):
             if not fn.endswith(".java"):
                 continue
             name = fn[: -len(".java")]
-            if name in decls:
+            if name in seen:
+                ambiguous.add(name)
                 continue
+            seen.add(name)
             try:
                 with open(os.path.join(dirpath, fn), encoding="utf-8", errors="ignore") as fh:
                     text = fh.read()
@@ -362,8 +373,14 @@ def suggest_by_family(name, impl_names, impl_table=None):
     nullobj = [i for i in impls if _FAM_NULLOBJ.search(i)]
     wrapper = [i for i in impls if _FAM_WRAPPER.search(i)]
 
-    if nullobj and len(nullobj) < len(impls):
-        real = [i for i in impls if i not in nullobj]
+    # The null-object pattern is "the real implementation, plus a stand-in for its absence".
+    # Requiring exactly ONE real implementer after removing the null objects is what makes it
+    # that pattern rather than "a hierarchy in which something happens to be called Invalid*":
+    # Archive has BuiltInArchive, FileArchive and three more alongside InvalidFileArchive, and
+    # an earlier draft told it to delete the placeholder and port "the concrete type", of which
+    # there were four.
+    real = [i for i in impls if i not in nullobj]
+    if nullobj and len(real) == 1:
         return "SUGGEST-STRUCT", (
             f"null-object pattern: {', '.join(nullobj)} exist(s) only to stand in for 'no "
             f"{name}'. Rust spells that `Option<{name}>` -- port {', '.join(real)} as the "
@@ -383,7 +400,8 @@ def suggest_by_family(name, impl_names, impl_table=None):
 
 def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl,
                     java_subtypes=None, java_decls=None, jdk_modeled=frozenset(),
-                    java_impl_names=None, java_ext_points=None, java_impl_table=None):
+                    java_impl_names=None, java_ext_points=None, java_impl_table=None,
+                    java_ambiguous=None):
     """Propose a verdict from structural evidence. Deliberately conservative: anything the
     evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
     is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
@@ -403,6 +421,12 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         return None, (
             f"this port models the JDK's {name}; the {name} in orig_src is an unrelated Ghidra "
             f"class of the same simple name, so Java's shape here says nothing")
+
+    if name in (java_ambiguous or ()):
+        return None, (
+            f"{name} is declared by more than one Java file -- unrelated types sharing a "
+            f"basename (PatternExpression is the sleigh runtime expression AND the pcodeCPort "
+            f"AST node). Resolve which one this port models before deciding")
 
     if java_subtypes is not None:
         j = java_subtypes.get(name, 0)
@@ -689,6 +713,7 @@ def main():
         java_impl_names = java_implementer_names(args.orig_src)
         java_ext_points = java_extension_points(args.orig_src)
         java_decls = java_declarations(args.orig_src)
+        java_ambiguous = getattr(java_declarations, "ambiguous", set())
         src = "IMPLEMENTERS.tsv (transitive, concrete-only)" if java_impl_names else args.orig_src
         print(f"read {len(java_subtypes)} Java supertypes from {src} and "
               f"{len(java_decls)} declarations from {args.orig_src}", file=sys.stderr)
@@ -699,7 +724,7 @@ def main():
             v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
                                      mock_impls, stub_decl, java_subtypes, java_decls,
                                      jdk_modeled, java_impl_names, java_ext_points,
-                                     _load_implementer_table())
+                                     _load_implementer_table(), java_ambiguous)
             if v:
                 r["verdict"], r["source"], r["note"] = v, "suggest", why
                 n += 1

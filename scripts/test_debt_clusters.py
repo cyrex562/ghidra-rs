@@ -293,6 +293,21 @@ class TestSmallClosedSetFamilies(unittest.TestCase):
         self.assertIn("Option<InstructionPrototype>", note)
         self.assertIn("SleighInstructionPrototype", note)
 
+    def test_null_object_needs_exactly_one_real_implementation(self):
+        """Archive has four real implementers alongside InvalidFileArchive.
+
+        "Delete the placeholder and port the concrete type" only makes sense when there IS a
+        single concrete type; here it would have named four.
+        """
+        v = dc.suggest_by_family(
+            "Archive",
+            ["BuiltInArchive", "FileArchive", "InvalidFileArchive", "ProjectArchive",
+             "LibraryArchive"],
+            impl_table={n: {"concrete_implementers": []} for n in
+                        ["BuiltInArchive", "FileArchive", "InvalidFileArchive",
+                         "ProjectArchive", "LibraryArchive"]})
+        self.assertIsNone(v, "a 5-member hierarchy is not a null-object pairing")
+
     def test_wrapper_needs_real_polymorphism(self):
         v, note = dc.suggest_by_family(
             "GDirectedGraph",
@@ -353,13 +368,14 @@ class TestEvidenceOrdering(unittest.TestCase):
     def _call(self, name, **kw):
         base = dict(traits={name: 1}, types_={}, impls={}, unported=set(),
                     mock_impls={}, stub_decl=set(), java_subtypes={}, java_decls={},
-                    jdk_modeled=frozenset(), java_impl_names={}, java_ext_points=set())
+                    jdk_modeled=frozenset(), java_impl_names={}, java_ext_points=set(),
+                    java_ambiguous=set())
         base.update(kw)
         return dc.suggest_verdict(name, base["traits"], base["types_"], base["impls"],
                                   base["unported"], base["mock_impls"], base["stub_decl"],
                                   base["java_subtypes"], base["java_decls"],
                                   base["jdk_modeled"], base["java_impl_names"],
-                                  base["java_ext_points"])
+                                  base["java_ext_points"], None, base["java_ambiguous"])
 
     def test_java_answer_beats_only_mock_implementers(self):
         """19 Java implementers is still a human call -- but the REASON must be Java's.
@@ -394,6 +410,33 @@ class TestEvidenceOrdering(unittest.TestCase):
                              java_subtypes={}, java_decls={})
         self.assertIsNone(v)
         self.assertIn("no Java type named", note)
+
+    def test_ambiguous_basename_is_not_answered_from_the_name(self):
+        """PatternExpression is two unrelated Java classes.
+
+        java_declarations used to keep whichever file the walk reached first and drop the
+        other, so a "nothing extends it" reading was really "we looked at one of two types".
+        AGENTS.md records this exact failure under "Names are not identities".
+        """
+        v, note = self._call("PatternExpression",
+                             java_subtypes={"PatternExpression": 0},
+                             java_decls={"PatternExpression": "class"},
+                             java_ambiguous={"PatternExpression"})
+        self.assertIsNone(v)
+        self.assertIn("more than one Java file", note)
+
+    def test_java_declarations_reports_duplicate_basenames(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            for sub, body in (("a", "public class Dup {}"), ("b", "public interface Dup {}"),
+                              ("a", "public class Uniq {}")):
+                os.makedirs(os.path.join(d, sub), exist_ok=True)
+                nm = "Dup" if "Dup" in body else "Uniq"
+                with open(os.path.join(d, sub, nm + ".java"), "w", encoding="utf-8") as fh:
+                    fh.write(body)
+            dc.java_declarations(d)
+            self.assertIn("Dup", dc.java_declarations.ambiguous)
+            self.assertNotIn("Uniq", dc.java_declarations.ambiguous)
 
     def test_jdk_collision_still_wins_over_java(self):
         """The orig_src type of that name is a different type entirely."""
