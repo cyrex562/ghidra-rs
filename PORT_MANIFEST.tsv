@@ -11235,7 +11235,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PairedPcodeA
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PairedPcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PairedPcodeExecutorStatePiece.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeArithmetic.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutionException.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutor.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutorState.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutorStatePiece.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 

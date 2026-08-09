@@ -6,6 +6,7 @@ pub mod paired_pcode_arithmetic;
 pub mod paired_pcode_executor_state;
 pub mod paired_pcode_executor_state_piece;
 pub mod pcode_arithmetic;
+pub mod pcode_execution_exception;
 pub mod pcode_executor_state;
 pub mod pcode_frame;
 pub mod pcode_state_callbacks;
@@ -26,6 +27,7 @@ pub use paired_pcode_arithmetic::PairedPcodeArithmetic;
 pub use paired_pcode_executor_state::PairedPcodeExecutorState;
 pub use paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece;
 pub use pcode_arithmetic::{PcodeArithmetic, Purpose, SIZEOF_SIZEOF};
+pub use pcode_execution_exception::PcodeExecutionException;
 pub use pcode_executor_state::PcodeExecutorState;
 pub use pcode_frame::PcodeFrame;
 pub use pcode_state_callbacks::{
