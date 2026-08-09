@@ -36,7 +36,7 @@ DONE	trait	47	27	82	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 DONE	trait	48	7	70	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxEmulatorPartsFactory.java
 DONE	trait	47	9	69	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxPcodeEmulator.java
 DONE	trait	46	49	57	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeEmulator.java
-TODO	trait	45	29	78	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeEmulationCallbacks.java
+DONE	trait	45	29	78	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeEmulationCallbacks.java
 TODO	trait	42	2	14	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/AdaptedMemoryState.java
 TODO	trait	39	6	14	app	Ghidra/Framework/Emulation/src/main/java/ghidra/app/emulator/Emulator.java
 TODO	trait	37	69	54	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeThread.java
