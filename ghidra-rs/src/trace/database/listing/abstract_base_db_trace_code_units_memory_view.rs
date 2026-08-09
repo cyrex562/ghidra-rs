@@ -31,7 +31,7 @@ use crate::util::lock_hold::{Lock, LockHold};
 /// The Java class's constructor-injected `protected final DBTraceCodeManager manager` field is
 /// exposed as the required [`Self::manager`] accessor (the same translation used elsewhere in this
 /// crate for constructor-injected fields, e.g.
-/// [`InternalBaseCodeUnitsView::get_space`](crate::trace::seam_stubs::InternalBaseCodeUnitsView::get_space)).
+/// [`InternalBaseCodeUnitsView::get_space`](crate::trace::model::listing::internal_base_code_units_view::InternalBaseCodeUnitsView::get_space)).
 ///
 /// The Java class formally `implements DBTraceDelegatingManager<M>`
 /// ([already ported](crate::trace::database::space::db_trace_delegating_manager::DBTraceDelegatingManager)

@@ -1074,19 +1074,6 @@ impl DBTraceUtils {
     }
 }
 
-/// Placeholder for `ghidra.trace.database.listing.InternalBaseCodeUnitsView`, referenced (as a
-/// supertrait) by
-/// [`InternalTraceBaseDefinedUnitsView`](crate::trace::database::listing::internal_trace_base_defined_units_view::InternalTraceBaseDefinedUnitsView)
-/// before the real port is available. The real Java interface's other members (the
-/// `getForRegister`/`getContaining`/`get` overloads taking a `TracePlatform`) are generic in its
-/// `T extends TraceCodeUnit` type parameter and are not needed by any currently-ported subtrait;
-/// only its abstract `getSpace()` accessor is stubbed here, since that's the one member
-/// `InternalTraceBaseDefinedUnitsView`'s `clear(TracePlatform, ...)` default needs.
-pub trait InternalBaseCodeUnitsView: TraceBaseCodeUnitsView {
-    /// The address space this view is bound to. Mirrors
-    /// `InternalBaseCodeUnitsView.getSpace()`.
-    fn get_space(&self) -> Arc<AddressSpace>;
-}
 
 /// Placeholder for `ghidra.trace.database.listing.AbstractBaseDBTraceDefinedUnitsView`,
 /// referenced by
