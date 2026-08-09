@@ -1,4 +1,5 @@
 pub mod db_trace_object_interface;
+pub mod db_trace_object_val_path;
 pub mod db_trace_object_value;
 pub mod db_trace_object_value_data;
 pub mod db_trace_object_value_r_star_tree;
@@ -10,6 +11,7 @@ pub mod value_shape;
 pub mod value_triple;
 
 pub use db_trace_object_interface::DBTraceObjectInterface;
+pub use db_trace_object_val_path::DBTraceObjectValPath;
 pub use db_trace_object_value::{DBTraceObjectValue, ValueChangeRecord, ValueEvent};
 pub use db_trace_object_value_data::DBTraceObjectValueData;
 pub use db_trace_object_value_r_star_tree::{DBTraceObjectValueMap, DBTraceObjectValueRStarTree};
