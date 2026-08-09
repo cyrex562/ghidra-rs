@@ -4,9 +4,8 @@
 
 use std::sync::Arc;
 
-use crate::pcode::seam_stubs::{
-    AbstractSleighPcodeUseropDefinition as UnportedAbstractSleighPcodeUseropDefinition, PcodeProgram, PcodeUseropLibrary,
-};
+use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder as AbstractSleighPcodeUseropDefinitionBuilder;
+use crate::pcode::seam_stubs::{PcodeProgram, PcodeUseropLibrary};
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::Varnode;
 
@@ -69,8 +68,8 @@ impl SignatureDef {
 /// Stage two of the builder, where parameters can no longer be added.
 ///
 /// To remain object-safe (so [`Factory::define`] can hand back "some builder" without exposing
-/// the concrete, not-yet-ported implementation), chaining methods consume `self: Box<Self>` and
-/// return `Box<dyn ...>` rather than `Self`, mirroring Java's covariant `Builder`-returns-`Builder`
+/// the concrete implementation type), chaining methods consume `self: Box<Self>` and return
+/// `Box<dyn ...>` rather than `Self`, mirroring Java's covariant `Builder`-returns-`Builder`
 /// pattern seen only through these interface types.
 pub trait BuilderStage2 {
     /// Add Sleigh source to the body.
@@ -105,13 +104,9 @@ impl Factory {
 
     /// Begin building the definition for a userop with the given name.
     ///
-    /// CYCLE NOTE: Java constructs `new AbstractSleighPcodeUseropDefinition.Builder(this, name)`
-    /// here. `AbstractSleighPcodeUseropDefinition` (and the `FixedSleighPcodeUseropDefinition` /
-    /// `OverloadedSleighPcodeUseropDefinition` its builder ultimately delegates to) are not yet
-    /// ported, so this currently delegates to a stub that panics if actually invoked; see
-    /// `AbstractSleighPcodeUseropDefinition` in `seam_stubs`.
+    /// Port of `new AbstractSleighPcodeUseropDefinition.Builder(this, name)`.
     pub fn define(&self, name: impl Into<String>) -> Box<dyn BuilderStage1> {
-        UnportedAbstractSleighPcodeUseropDefinition::builder(Arc::clone(&self.language), name.into())
+        AbstractSleighPcodeUseropDefinitionBuilder::new(Arc::clone(&self.language), name.into())
     }
 }
 
