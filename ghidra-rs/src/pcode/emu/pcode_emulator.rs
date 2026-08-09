@@ -39,9 +39,11 @@ use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::NONE;
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
+use crate::pcode::emu::pcode_emulation_callbacks::{
+    no_pcode_emulation_callbacks, PcodeEmulationCallbacks,
+};
 use crate::pcode::seam_stubs::{
-    no_pcode_emulation_callbacks, BytesPcodeArithmetic, BytesPcodeExecutorState, BytesPcodeThread,
-    PcodeEmulationCallbacks, PcodeProgram, PcodeThread,
+    BytesPcodeArithmetic, BytesPcodeExecutorState, BytesPcodeThread, PcodeProgram, PcodeThread,
 };
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;

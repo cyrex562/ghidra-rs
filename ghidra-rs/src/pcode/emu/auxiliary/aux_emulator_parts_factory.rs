@@ -136,7 +136,7 @@ mod tests {
     use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_arithmetic::Purpose;
     use crate::pcode::exec::pcode_userop_library::{nil, ErasedPcodeUseropLibrary, UseropMap};
-    use crate::pcode::seam_stubs::PcodeEmulationCallbacks;
+    use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
     use crate::pcode::seam_stubs::PcodeExecutor as StubPcodeExecutor;
     use crate::pcode::seam_stubs::PcodeProgram;
     use crate::program::model::address::{AddressSpace, DefaultAddressFactory};
