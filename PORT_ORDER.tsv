@@ -13,7 +13,7 @@ DONE	trait	72	102	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 DONE	trait	69	100	6	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractSleighPcodeUseropDefinition.java
 DONE	trait	69	99	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/LocationPcodeArithmetic.java
 DONE	trait	69	97	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeUseropLibraryFactory.java
-TODO	trait	67	25	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/InstructionDecoder.java
+DONE	trait	67	25	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/InstructionDecoder.java
 TODO	trait	67	23	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeStateInitializer.java
 TODO	trait	66	121	45	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeStateCallbacks.java
 TODO	trait	65	102	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PairedPcodeExecutorStatePiece.java
