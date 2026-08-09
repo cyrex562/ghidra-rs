@@ -96,9 +96,15 @@ impl MemoryBankState {
 /// # Deprecation
 ///
 /// Deprecated since Ghidra 12.1 and scheduled for removal.
+///
+/// Not `Self: Sized` -- [`MemoryState::set_memory_bank`](crate::pcode::memstate::memory_state::MemoryState::set_memory_bank)
+/// and [`get_memory_bank`](crate::pcode::memstate::memory_state::MemoryState::get_memory_bank) need
+/// to store and hand back heterogeneous bank implementations (e.g. a page-backed bank for RAM and a
+/// map-backed bank for the unique space) behind `dyn MemoryBankImpl`, mirroring how Java's
+/// `MemoryState` holds plain `MemoryBank` references polymorphically.
 #[deprecated(since = "12.1", note = "scheduled for removal in a future release")]
 #[allow(deprecated)]
-pub trait MemoryBankImpl: Sized {
+pub trait MemoryBankImpl {
     /// Returns the shared bank state (address space, page size, endianness, fault handler).
     fn state(&self) -> &MemoryBankState;
 
