@@ -2,13 +2,15 @@
 //!
 //! Java source: `ghidra.trace.database.target.DBTraceObjectValPath`, a concrete
 //! `class DBTraceObjectValPath implements TraceObjectValPath`, so this is a `struct` implementing
-//! the already-stubbed [`TraceObjectValPath`] marker trait.
+//! the real [`TraceObjectValPath`] trait
+//! (`crate::trace::model::target::trace_object_val_path`).
 //!
 //! # Cycle
 //!
-//! `TraceObjectValPath` (the Java interface) references this class back (its static `of()`
-//! delegates to `DBTraceObjectValPath.of()`), so the interface is still only the empty marker
-//! [`TraceObjectValPath`] placeholder in `seam_stubs.rs`; there is nothing further to cut here.
+//! `TraceObjectValPath` (the Java interface) references this class back: its static `of()`
+//! delegates to `DBTraceObjectValPath.of()`. That factory has no natural home on the trait (see
+//! that module's docs), so it stays only as the inherent [`DBTraceObjectValPath::empty`]
+//! constructor here; there is nothing further to cut.
 //!
 //! # Sharing
 //!
@@ -25,14 +27,17 @@
 //!   reproduced without a trace-identity accessor that does not exist yet.
 //! - The `instanceof DBTraceObjectValue` cast (and its `IllegalArgumentException` on failure) in
 //!   `prepend` and `append`. [`Self::prepend`]/[`Self::append`] take `Arc<DBTraceObjectValue>`
-//!   directly, so the check is enforced at compile time instead.
+//!   directly, so the check is enforced at compile time instead. The
+//!   [`TraceObjectValPath`]-trait `append`/`prepend` impls below, which take the wider
+//!   `Arc<dyn TraceObjectValue>`, do reproduce this check (as a downcast that panics on mismatch).
 
+use std::any::Any;
 use std::sync::{Arc, OnceLock};
 
 use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
 use crate::trace::model::target::path::key_path::KeyPath;
+use crate::trace::model::target::trace_object_val_path::TraceObjectValPath;
 use crate::trace::model::target::trace_object_value::TraceObjectValue;
-use crate::trace::seam_stubs::TraceObjectValPath;
 
 /// A path of values leading from one object to another, ordered from source to destination.
 ///
@@ -160,7 +165,60 @@ impl DBTraceObjectValPath {
     }
 }
 
-impl TraceObjectValPath for DBTraceObjectValPath {}
+impl TraceObjectValPath for DBTraceObjectValPath {
+    fn get_entry_list(&self) -> Vec<Arc<dyn TraceObjectValue>> {
+        self.entry_list.iter().map(|e| Arc::clone(e) as Arc<dyn TraceObjectValue>).collect()
+    }
+
+    fn get_path(&self) -> KeyPath {
+        DBTraceObjectValPath::get_path(self)
+    }
+
+    /// Mirrors `entryList.contains(entry)`, i.e. Java reference equality, via pointer identity.
+    ///
+    /// Compares the data address only (`as *const ()` strips the vtable pointer): two `&dyn
+    /// TraceObjectValue` fat pointers to the same object can otherwise carry different vtable
+    /// instances when the coercion happens at different call sites, which would make
+    /// `std::ptr::eq` on the fat pointers themselves unreliable.
+    fn contains(&self, entry: &dyn TraceObjectValue) -> bool {
+        let entry_ptr = entry as *const dyn TraceObjectValue as *const ();
+        self.entry_list.iter().any(|e| Arc::as_ptr(e) as *const () == entry_ptr)
+    }
+
+    fn get_first_entry(&self) -> Option<Arc<dyn TraceObjectValue>> {
+        DBTraceObjectValPath::get_first_entry(self).map(|e| e as Arc<dyn TraceObjectValue>)
+    }
+
+    fn get_last_entry(&self) -> Option<Arc<dyn TraceObjectValue>> {
+        DBTraceObjectValPath::get_last_entry(self).map(|e| e as Arc<dyn TraceObjectValue>)
+    }
+
+    /// Mirrors the `instanceof DBTraceObjectValue val` check in `DBTraceObjectValPath.append`.
+    ///
+    /// # Panics
+    /// Panics if `entry` is not a [`DBTraceObjectValue`], mirroring the Java
+    /// `IllegalArgumentException("Value must be in the database")`.
+    fn append(&self, entry: Arc<dyn TraceObjectValue>) -> Box<dyn TraceObjectValPath> {
+        let any_entry: Arc<dyn Any + Send + Sync> = entry;
+        let db_entry = any_entry
+            .downcast::<DBTraceObjectValue>()
+            .unwrap_or_else(|_| panic!("Value must be in the database"));
+        Box::new(DBTraceObjectValPath::append(self, db_entry))
+    }
+
+    /// Mirrors the `instanceof DBTraceObjectValue val` check in `DBTraceObjectValPath.prepend`.
+    ///
+    /// # Panics
+    /// Panics if `entry` is not a [`DBTraceObjectValue`], mirroring the Java
+    /// `IllegalArgumentException("Value must be in the database")`.
+    fn prepend(&self, entry: Arc<dyn TraceObjectValue>) -> Box<dyn TraceObjectValPath> {
+        let any_entry: Arc<dyn Any + Send + Sync> = entry;
+        let db_entry = any_entry
+            .downcast::<DBTraceObjectValue>()
+            .unwrap_or_else(|_| panic!("Value must be in the database"));
+        Box::new(DBTraceObjectValPath::prepend(self, db_entry))
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -318,5 +376,106 @@ mod tests {
         let fallback = MockObject { path: KeyPath::root() };
         let source = path.get_source(Box::new(fallback));
         assert_eq!(source.get_canonical_path(), KeyPath::parse("Process[1]").unwrap());
+    }
+
+    // ---- exercised through the real `TraceObjectValPath` trait, via `dyn` dispatch ----
+
+    #[test]
+    fn trait_object_get_entry_list_and_contains_via_dyn_dispatch() {
+        let a = make_entry("Process[1]", "Threads");
+        let b = make_entry("Process[1].Threads", "[0]");
+        let other = make_entry("Process[1]", "Other");
+        let path: Box<dyn TraceObjectValPath> =
+            Box::new(DBTraceObjectValPath::of(vec![Arc::clone(&a), Arc::clone(&b)]));
+
+        let entries = path.get_entry_list();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].get_entry_key(), "Threads");
+        assert_eq!(entries[1].get_entry_key(), "[0]");
+
+        assert!(path.contains(a.as_ref()));
+        assert!(!path.contains(other.as_ref()));
+    }
+
+    #[test]
+    fn trait_object_append_downcasts_to_the_concrete_db_value() {
+        let a = make_entry("Process[1]", "Threads");
+        let base: Box<dyn TraceObjectValPath> =
+            Box::new(DBTraceObjectValPath::of(vec![Arc::clone(&a)]));
+
+        let b = make_entry("Process[1].Threads", "[0]");
+        let appended = base.append(b as Arc<dyn TraceObjectValue>);
+        assert_eq!(appended.get_path(), KeyPath::parse("Threads[0]").unwrap());
+        // The original path is untouched.
+        assert_eq!(base.get_path(), KeyPath::parse("Threads").unwrap());
+    }
+
+    /// A [`TraceObjectValue`] implementor that is not a [`DBTraceObjectValue`], for exercising the
+    /// `IllegalArgumentException("Value must be in the database")` case of Java's
+    /// `DBTraceObjectValPath.append`/`prepend`.
+    struct NonDbValue;
+
+    impl TraceObjectValue for NonDbValue {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_parent(&self) -> Option<Box<dyn TraceObject>> {
+            None
+        }
+        fn get_entry_key(&self) -> String {
+            "nondb".to_string()
+        }
+        fn get_canonical_path(&self) -> KeyPath {
+            KeyPath::root()
+        }
+        fn get_value(&self) -> Box<dyn std::any::Any + Send + Sync> {
+            Box::new(0i64)
+        }
+        fn get_child(&self) -> Box<dyn TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_object(&self) -> bool {
+            false
+        }
+        fn is_canonical(&self) -> bool {
+            false
+        }
+        fn set_lifespan(&mut self, _lifespan: Lifespan) {}
+        fn set_lifespan_with_resolution(
+            &mut self,
+            _span: Lifespan,
+            _resolution: crate::trace::seam_stubs::ConflictResolution,
+        ) -> Result<(), crate::trace::model::target::duplicate_key_exception::DuplicateKeyException>
+        {
+            Ok(())
+        }
+        fn get_lifespan(&self) -> Lifespan {
+            Lifespan::span(0, 10)
+        }
+        fn set_min_snap(&mut self, _min_snap: i64) {}
+        fn get_min_snap(&self) -> i64 {
+            0
+        }
+        fn set_max_snap(&mut self, _max_snap: i64) {}
+        fn get_max_snap(&self) -> i64 {
+            10
+        }
+        fn delete(&mut self) {}
+        fn is_deleted(&self) -> bool {
+            false
+        }
+        fn truncate_or_delete(
+            &mut self,
+            _span: Lifespan,
+        ) -> crate::trace::model::target::trace_object_value::TruncateOrDelete {
+            crate::trace::model::target::trace_object_value::TruncateOrDelete::Unchanged
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Value must be in the database")]
+    fn trait_object_append_panics_for_a_non_db_value() {
+        let path: Box<dyn TraceObjectValPath> = Box::new(DBTraceObjectValPath::empty());
+        path.append(Arc::new(NonDbValue) as Arc<dyn TraceObjectValue>);
     }
 }

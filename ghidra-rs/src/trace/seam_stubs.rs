@@ -671,11 +671,6 @@ pub trait TraceObject: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.trace.model.target.TraceObjectValPath`, referenced by
-/// [`TraceObjectManager`](crate::trace::model::target::trace_object_manager::TraceObjectManager)
-/// before the real port is available. No members are parsed from the Java source yet.
-pub trait TraceObjectValPath: Send + Sync {}
-
 /// Placeholder for the nested enum `ghidra.trace.model.target.TraceObject.ConflictResolution`,
 /// referenced by
 /// [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue) before

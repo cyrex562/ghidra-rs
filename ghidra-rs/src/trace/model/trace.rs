@@ -616,7 +616,7 @@ mod tests {
             &self,
             _span: Lifespan,
             _predicates: &dyn crate::trace::model::target::path::PathFilter,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceObjectValPath>> {
+        ) -> Vec<Box<dyn crate::trace::model::target::trace_object_val_path::TraceObjectValPath>> {
             unimplemented!("not exercised by this smoke test")
         }
 
