@@ -31,7 +31,7 @@ DONE	trait	52	108	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 DONE	trait	51	120	71	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutorStatePiece.java
 DONE	trait	50	98	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractLongOffsetPcodeExecutorStatePiece.java
 DONE	trait	49	99	35	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractBytesPcodeExecutorStatePiece.java
-TODO	trait	48	62	77	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeMachine.java
+DONE	trait	48	62	77	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeMachine.java
 TODO	trait	47	27	82	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/AbstractPcodeMachine.java
 TODO	trait	48	7	70	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxEmulatorPartsFactory.java
 TODO	trait	47	9	69	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/auxiliary/AuxPcodeEmulator.java
