@@ -18,6 +18,7 @@ use crate::program::model::mem::MemBuffer;
 use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::RegisterValue as ProgramRegisterValue;
 use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
+use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView;
 use crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag;
@@ -838,7 +839,22 @@ pub trait TraceStack: Send + Sync {}
 /// [`DBTraceTimeManager`](crate::trace::database::time::db_trace_time_manager::DBTraceTimeManager)'s
 /// time-radix members use against the trace's root object. Both default to panicking, like
 /// [`DBTrace`]'s grown members, so the existing marker implementors keep compiling unchanged.
-pub trait DBTraceObject: Send + Sync {
+///
+/// Grown again for
+/// [`DBTraceObjectValue`](crate::trace::database::target::db_trace_object_value::DBTraceObjectValue),
+/// which is the real port of the *other* half of the object/value cycle. Two changes:
+///
+/// - This is now declared `DBTraceObject: TraceObject`, which the Java class is
+///   (`class DBTraceObject extends DBAnnotatedObject implements TraceObject,
+///   DBTraceObjectInterface`). A value entry has to widen its parent and child to
+///   [`TraceObjectValue`](crate::trace::model::target::trace_object_value::TraceObjectValue)'s
+///   `Box<dyn TraceObject>`, which is only possible if the placeholder actually sits under
+///   `TraceObject`. It also brings in `getCanonicalPath()`, which `DBTraceObjectValue`'s own
+///   canonical-path computation is defined in terms of.
+/// - The package-private members `DBTraceObjectValue` calls on its parent and child are added
+///   below. Like the attribute accessors, each defaults to panicking rather than being required,
+///   so existing marker implementors need only gain a `TraceObject` impl.
+pub trait DBTraceObject: TraceObject {
     /// Mirrors `setAttribute(Lifespan, String, Object)`. The Java `Object` value maps to the same
     /// boxed-`Any` shape
     /// [`TraceObjectValue::get_value`](crate::trace::model::target::trace_object_value::TraceObjectValue::get_value)
@@ -861,6 +877,79 @@ pub trait DBTraceObject: Send + Sync {
     ) -> Option<Box<dyn crate::trace::model::target::trace_object_value::TraceObjectValue>> {
         let _ = (snap, name);
         unimplemented!("DBTraceObject::get_attribute placeholder not overridden")
+    }
+
+    /// Mirrors `emitEvents(TraceChangeRecord<?, ?>)`, which forwards a change record to the
+    /// object's trace (and to any interfaces the object implements, which may translate it).
+    fn emit_events(&self, record: &dyn TraceChangeRecord) {
+        let _ = record;
+        unimplemented!("DBTraceObject::emit_events placeholder not overridden")
+    }
+
+    /// Mirrors `notifyValueCreated(DBTraceObjectValue)`: a value entry whose *parent* is this
+    /// object has just been added to the object's value cache.
+    fn notify_value_created(&self, value: &DBTraceObjectValue) {
+        let _ = value;
+        unimplemented!("DBTraceObject::notify_value_created placeholder not overridden")
+    }
+
+    /// Mirrors `notifyValueDeleted(DBTraceObjectValue)`: the counterpart of
+    /// [`Self::notify_value_created`].
+    fn notify_value_deleted(&self, value: &DBTraceObjectValue) {
+        let _ = value;
+        unimplemented!("DBTraceObject::notify_value_deleted placeholder not overridden")
+    }
+
+    /// Mirrors `notifyParentValueCreated(DBTraceObjectValue)`: a value entry whose *child* is
+    /// this object has just been added.
+    fn notify_parent_value_created(&self, value: &DBTraceObjectValue) {
+        let _ = value;
+        unimplemented!("DBTraceObject::notify_parent_value_created placeholder not overridden")
+    }
+
+    /// Mirrors `notifyParentValueDeleted(DBTraceObjectValue)`: the counterpart of
+    /// [`Self::notify_parent_value_created`].
+    fn notify_parent_value_deleted(&self, value: &DBTraceObjectValue) {
+        let _ = value;
+        unimplemented!("DBTraceObject::notify_parent_value_deleted placeholder not overridden")
+    }
+
+    /// Mirrors `doCheckConflicts(Lifespan, String, Object)`, which throws `DuplicateKeyException`
+    /// if setting `key` to `value` over `lifespan` would collide with an existing entry. The
+    /// checked Java exception becomes an `Err`.
+    fn do_check_conflicts(
+        &self,
+        lifespan: Lifespan,
+        key: &str,
+        value: &(dyn std::any::Any + Send + Sync),
+    ) -> Result<(), crate::trace::model::target::duplicate_key_exception::DuplicateKeyException>
+    {
+        let _ = (lifespan, key, value);
+        unimplemented!("DBTraceObject::do_check_conflicts placeholder not overridden")
+    }
+
+    /// Mirrors `doAdjust(Lifespan, String, Object)`, which shrinks `lifespan` to whatever part of
+    /// it is free of conflicting entries (possibly to [`Lifespan::EMPTY`]).
+    fn do_adjust(
+        &self,
+        lifespan: Lifespan,
+        key: &str,
+        value: &(dyn std::any::Any + Send + Sync),
+    ) -> Lifespan {
+        let _ = (lifespan, key, value);
+        unimplemented!("DBTraceObject::do_adjust placeholder not overridden")
+    }
+
+    /// Mirrors `doCreateValue(Lifespan, String, Object)`, which creates and caches a new value
+    /// entry under this object without any conflict resolution.
+    fn do_create_value(
+        &self,
+        lifespan: Lifespan,
+        key: &str,
+        value: Box<dyn std::any::Any + Send + Sync>,
+    ) -> Box<DBTraceObjectValue> {
+        let _ = (lifespan, key, value);
+        unimplemented!("DBTraceObject::do_create_value placeholder not overridden")
     }
 }
 
@@ -936,13 +1025,14 @@ pub trait DBTraceObjectManager: Send + Sync {
     fn get_root_object(&self) -> Option<Box<dyn DBTraceObject>> {
         unimplemented!("DBTraceObjectManager::get_root_object placeholder not overridden")
     }
-}
 
-/// Placeholder for `ghidra.trace.database.target.DBTraceObjectValue`, referenced by
-/// [`TraceObjectValueStorage`](crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage)
-/// before the real port is available. `TraceObjectValueStorage` only ever passes this type around
-/// opaquely (as `getWrapper`'s return); no members are needed yet.
-pub trait DBTraceObjectValue: Send + Sync {}
+    /// Mirrors the package-private `trace` field, which
+    /// [`DBTraceObjectValue`](crate::trace::database::target::db_trace_object_value::DBTraceObjectValue)
+    /// reads as `manager.trace` to implement `getTrace()`.
+    fn get_trace(&self) -> Box<dyn Trace> {
+        unimplemented!("DBTraceObjectManager::get_trace placeholder not overridden")
+    }
+}
 
 /// Placeholder for `ghidra.trace.database.target.TraceObjectValueQuery`, referenced by
 /// [`DBTraceObjectValueRStarTree`](crate::trace::database::target::db_trace_object_value_r_star_tree::DBTraceObjectValueRStarTree)

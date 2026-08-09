@@ -52,16 +52,32 @@ mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage;
-    use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager, DBTraceObjectValue};
+    use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
+    use crate::trace::seam_stubs::{
+        DBTraceObject, DBTraceObjectManager, LifeSet, ObjectKey, TraceObject, TraceObjectSchema,
+    };
+    use std::sync::Arc;
 
     struct MockObject;
+
+    /// `DBTraceObject` is a `TraceObject`; none of its members are exercised here -- the object
+    /// is only ever passed around opaquely as a parent or child.
+    impl TraceObject for MockObject {
+        fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_life(&self) -> Box<dyn LifeSet> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
     impl DBTraceObject for MockObject {}
 
     struct MockManager;
     impl DBTraceObjectManager for MockManager {}
-
-    struct MockWrapper;
-    impl DBTraceObjectValue for MockWrapper {}
 
     struct MockValueData(i64);
 
@@ -69,11 +85,11 @@ mod tests {
         fn get_manager(&self) -> Box<dyn DBTraceObjectManager> {
             Box::new(MockManager)
         }
-        fn get_wrapper(&self) -> Box<dyn DBTraceObjectValue> {
-            Box::new(MockWrapper)
+        fn get_wrapper(&self) -> Option<Arc<DBTraceObjectValue>> {
+            None
         }
-        fn get_parent(&self) -> Box<dyn DBTraceObject> {
-            Box::new(MockObject)
+        fn get_parent(&self) -> Option<Box<dyn DBTraceObject>> {
+            Some(Box::new(MockObject))
         }
         fn get_entry_key(&self) -> String {
             "key".to_string()
