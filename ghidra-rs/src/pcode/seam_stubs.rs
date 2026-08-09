@@ -73,8 +73,13 @@ pub trait FloatFormat {
     fn get_big_float(&self, value: f64) -> Box<dyn BigFloat>;
 }
 
+/// Placeholder for `ghidra.pcode.pcoderaw.PcodeOpRaw`, referenced by
+/// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable) before the real class is ported.
+pub trait PcodeOpRaw: Send + Sync {}
+
 /// Placeholder for `ghidra.pcode.emulate.Emulate`, referenced by
-/// [`OpBehaviorOther`](crate::pcode::opbehavior::OpBehaviorOther) before the real class is ported.
+/// [`OpBehaviorOther`](crate::pcode::opbehavior::OpBehaviorOther) and
+/// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable) before the real class is ported.
 /// This is a minimal interface stub exposing only the methods needed by existing references.
 pub trait Emulate: Send + Sync {
     /// Placeholder for `Emulate.dispose()`.
