@@ -318,5 +318,126 @@ class TestSmallClosedSetFamilies(unittest.TestCase):
         self.assertEqual(v, "SUGGEST-ARENA")
 
 
+
+class TestEvidenceOrdering(unittest.TestCase):
+    """Java's hierarchy outranks the port's progress (fixed 2026-08-09).
+
+    The "only mock implementers" and "seam_stubs placeholder" deferrals used to run first and
+    short-circuit, so 555 of 748 TODO rows were parked as "revisit once the port lands"
+    without Java being asked -- and Java answered 417 of them.
+    """
+
+    def _call(self, name, **kw):
+        base = dict(traits={name: 1}, types_={}, impls={}, unported=set(),
+                    mock_impls={}, stub_decl=set(), java_subtypes={}, java_decls={},
+                    jdk_modeled=frozenset(), java_impl_names={}, java_ext_points=set())
+        base.update(kw)
+        return dc.suggest_verdict(name, base["traits"], base["types_"], base["impls"],
+                                  base["unported"], base["mock_impls"], base["stub_decl"],
+                                  base["java_subtypes"], base["java_decls"],
+                                  base["jdk_modeled"], base["java_impl_names"],
+                                  base["java_ext_points"])
+
+    def test_java_answer_beats_only_mock_implementers(self):
+        """19 Java implementers is still a human call -- but the REASON must be Java's.
+
+        Previously this returned "only 68 mock implementer(s) ... revisit then", which sends
+        the reader to wait for a port that would not have answered the question anyway.
+        """
+        v, note = self._call("Namespace", mock_impls={"Namespace": 68},
+                             java_subtypes={"Namespace": 19}, java_decls={"Namespace": "interface"})
+        self.assertNotIn("mock implementer", note)
+        self.assertIn("19 Java subtypes", note)
+
+    def test_java_answer_beats_mocks_when_java_is_decisive(self):
+        v, note = self._call("ExternalLocation", mock_impls={"ExternalLocation": 12},
+                             java_subtypes={"ExternalLocation": 1},
+                             java_decls={"ExternalLocation": "interface"},
+                             java_impl_names={"ExternalLocation": ["ExternalLocationDB"]})
+        self.assertEqual(v, "SUGGEST-STRUCT")
+        self.assertIn("ExternalLocationDB", note)
+
+    def test_java_answer_beats_seam_stub_placeholder(self):
+        v, note = self._call("TraceThread", stub_decl={"TraceThread"},
+                             java_subtypes={"TraceThread": 1},
+                             java_decls={"TraceThread": "interface"},
+                             java_impl_names={"TraceThread": ["DBTraceThread"]})
+        self.assertEqual(v, "SUGGEST-STRUCT")
+        self.assertIn("DBTraceThread", note)
+
+    def test_rust_deferral_still_applies_when_java_is_silent(self):
+        """No Java entry at all -- the port-side evidence is all there is."""
+        v, note = self._call("PortInvented", mock_impls={"PortInvented": 3},
+                             java_subtypes={}, java_decls={})
+        self.assertIsNone(v)
+        self.assertIn("no Java type named", note)
+
+    def test_jdk_collision_still_wins_over_java(self):
+        """The orig_src type of that name is a different type entirely."""
+        v, note = self._call("Lock", jdk_modeled=frozenset({"Lock"}),
+                             java_subtypes={"Lock": 4}, java_decls={"Lock": "class"})
+        self.assertIsNone(v)
+        self.assertIn("models the JDK", note)
+
+    def test_single_implementer_is_a_struct_not_a_one_variant_enum(self):
+        v, note = self._call("Trace", java_subtypes={"Trace": 1},
+                             java_decls={"Trace": "interface"},
+                             java_impl_names={"Trace": ["DBTrace"]})
+        self.assertEqual(v, "SUGGEST-STRUCT")
+        self.assertIn("DBTrace", note)
+        self.assertNotIn("closed set", note)
+
+    def test_single_subclass_of_a_CLASS_says_composition_not_header_file(self):
+        """BinaryReader is a Java class with one subclass, not an interface with one impl.
+
+        Both answer STRUCT, but the reason differs and the note has to say which -- the first
+        draft called every j==1 case "an interface naming a single implementation", which is
+        simply false for a class.
+        """
+        v, note = self._call("BinaryReader", java_subtypes={"BinaryReader": 1},
+                             java_decls={"BinaryReader": "class"},
+                             java_impl_names={"BinaryReader": ["DumpFileReader"]})
+        self.assertEqual(v, "SUGGEST-STRUCT")
+        self.assertNotIn("an interface naming", note)
+        self.assertIn("inheritance for reuse", note)
+        self.assertIn("embed it", note)
+
+    def test_extension_point_name_alone_does_not_earn_ACCEPT(self):
+        """AddressFactory ends in "Factory" but is not an extension point.
+
+        Its three implementers are DefaultAddressFactory and two subclasses of it. Accepting
+        on the suffix would have exempted it -- and 37 others -- from debt scoring because of
+        how they are spelled. 38 of 42 name-based ACCEPTs were in this state.
+        """
+        v, note = self._call("AddressFactory", java_subtypes={"AddressFactory": 3},
+                             java_decls={"AddressFactory": "interface"},
+                             java_impl_names={"AddressFactory": ["DefaultAddressFactory",
+                                                                "ProgramAddressFactory",
+                                                                "TraceAddressFactory"]},
+                             java_ext_points=set())
+        self.assertNotEqual(v, "SUGGEST-ACCEPT", f"name-only ACCEPT: {note}")
+
+    def test_structural_extension_point_earns_ACCEPT(self):
+        v, note = self._call("Analyzer", java_subtypes={"Analyzer": 2},
+                             java_decls={"Analyzer": "interface"},
+                             java_ext_points={"Analyzer"})
+        self.assertEqual(v, "SUGGEST-ACCEPT")
+        self.assertIn("extension-point supertype", note)
+
+    def test_many_implementers_with_an_open_name_is_still_open(self):
+        """ErrorHandler has 47 implementers -- open by count, whatever the name suggests."""
+        v, note = self._call("ErrorHandler", java_subtypes={"ErrorHandler": 47},
+                             java_decls={"ErrorHandler": "interface"}, java_ext_points=set())
+        self.assertEqual(v, "SUGGEST-ACCEPT")
+
+    def test_unported_concrete_class_is_still_a_seam_not_a_defect(self):
+        """The work is to port the class, not to 'fix' the trait standing in for it."""
+        v, note = self._call("TokenPattern", unported={"TokenPattern"},
+                             java_subtypes={"TokenPattern": 0},
+                             java_decls={"TokenPattern": "class"})
+        self.assertIsNone(v)
+        self.assertIn("seam awaiting that port", note)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

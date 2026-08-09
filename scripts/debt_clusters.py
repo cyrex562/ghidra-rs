@@ -199,6 +199,20 @@ def _load_implementer_table():
     return _IMPL_TABLE
 
 
+def java_extension_points(orig_src="orig_src"):
+    """Names that reach an ExtensionPoint/Service/Plugin/... supertype in orig_src.
+
+    Structural evidence, as opposed to the name-suffix heuristic: 38 of the 42 types proposed
+    ACCEPT off a suffix alone were not extension points at all. `AddressFactory` ends in
+    "Factory" but its three implementers are DefaultAddressFactory and two subclasses of it --
+    a base+subclass chain, not an open set a plugin extends. Accepting it would have exempted
+    it from debt scoring on the strength of its name.
+    """
+    if orig_src != "orig_src":
+        return set()
+    return {n for n, e in (_load_implementer_table() or {}).items() if e["extension_point"]}
+
+
 def java_implementer_names(orig_src="orig_src"):
     """{name: [concrete implementer class names]} -- what the family rules dispatch on.
 
@@ -352,7 +366,7 @@ def suggest_by_family(name, impl_names):
 
 def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl,
                     java_subtypes=None, java_decls=None, jdk_modeled=frozenset(),
-                    java_impl_names=None):
+                    java_impl_names=None, java_ext_points=None):
     """Propose a verdict from structural evidence. Deliberately conservative: anything the
     evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
     is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
@@ -361,16 +375,13 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         return "SUGGEST-PARK", "not declared in the crate (external type or unresolved stub)"
     if not is_trait:
         return None, ""                       # already a concrete type; `dyn` match is suspect
-    if n_impl == 0 and name in stub_decl:
-        # A seam_stubs.rs placeholder: the descent harness created it so a caller could compile
-        # before the real type was ported. Says nothing about the right ownership shape.
-        return None, "seam_stubs.rs placeholder -- revisit after the real port lands"
-    if n_impl == 0 and mock_impls.get(name, 0) > 0:
-        # Only test doubles implement it. That is the port being unfinished, not a design
-        # signal: the real implementers are Java classes still in the queue.
-        return None, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
-                      f"implementations are not ported yet; revisit then")
-    # Prefer Java's hierarchy over the port's: the port's count measures progress, not shape.
+    # ORDER MATTERS. The two Rust-side deferrals below ("only mocks", "seam_stubs placeholder")
+    # used to run FIRST and short-circuit, so 555 of 748 TODO rows were parked as "revisit once
+    # the port lands" without Java ever being asked -- and Java had a clear answer for 417 of
+    # them. Both deferrals reason from how far the port has got; this module's whole premise is
+    # that Java's hierarchy is the authority and the port's count measures progress, not shape.
+    # So: JDK-collision check (it invalidates the Java match itself), then Java, and only then
+    # fall back to Rust-side evidence for the names Java cannot speak to.
     if name in jdk_modeled:
         return None, (
             f"this port models the JDK's {name}; the {name} in orig_src is an unrelated Ghidra "
@@ -403,8 +414,30 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
             return None, (
                 f"no Java type named {name} -- an abstraction the port invented, so Java says "
                 f"nothing about its shape")
-        if open_name:
-            return "SUGGEST-ACCEPT", f"{j} Java subtypes and an extension-point name -- open set"
+        if name in (java_ext_points or ()):
+            return "SUGGEST-ACCEPT", (
+                f"reaches an extension-point supertype in orig_src -- open by design, so `dyn` "
+                f"is the right tool ({j} concrete implementers)")
+        if open_name and j > ENUM_MAX_VARIANTS:
+            return "SUGGEST-ACCEPT", (
+                f"{j} Java subtypes and an extension-point name -- open set")
+        # An extension-point-shaped NAME with few implementers is not evidence of an open set;
+        # fall through to the structural rules below.
+        if j == 1:
+            # An enum with one variant is not a closed set, it is a rename. Either way the
+            # answer is a concrete type, but say WHICH shape the Java source has: an interface
+            # with one implementation is the header-file idiom (dyn_rules P2), whereas a class
+            # with one subclass is inheritance-for-reuse, which Rust spells as composition.
+            only = ", ".join((java_impl_names or {}).get(name, ())) or "its single implementer"
+            kind = (java_decls or {}).get(name)
+            if kind == "interface":
+                return "SUGGEST-STRUCT", (
+                    f"one concrete Java implementer ({only}) -- an interface naming a single "
+                    f"implementation, not a hierarchy; port it as that concrete type")
+            return "SUGGEST-STRUCT", (
+                f"Java declares {name} a {kind or 'type'} with one subclass ({only}) -- "
+                f"inheritance for reuse, not polymorphism; port {name} as a concrete type and "
+                f"let {only} embed it")
         if j <= ENUM_MAX_VARIANTS:
             fam = suggest_by_family(name, (java_impl_names or {}).get(name, ()))
             if fam:
@@ -416,6 +449,16 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         return None, (f"{j} Java subtypes -- too many for an enum; needs a human call "
                       f"(genuine open set -> ACCEPT, or graph type -> ARENA/GRAPH)")
 
+    # Java said nothing usable -- now the Rust-side evidence, for whatever it is worth.
+    if n_impl == 0 and name in stub_decl:
+        # A seam_stubs.rs placeholder: the descent harness created it so a caller could compile
+        # before the real type was ported. Says nothing about the right ownership shape.
+        return None, "seam_stubs.rs placeholder -- revisit after the real port lands"
+    if n_impl == 0 and mock_impls.get(name, 0) > 0:
+        # Only test doubles implement it. That is the port being unfinished, not a design
+        # signal: the real implementers are Java classes still in the queue.
+        return None, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
+                      f"implementations are not ported yet; revisit then")
     if n_impl <= 2 and name in unported:
         # Mid-port state, not a design signal: the Java implementers are still queued.
         return None, (f"only {n_impl} real implementer(s), but {name} is still TODO in "
@@ -626,6 +669,7 @@ def main():
         unported = load_unported_classes(args.manifest)
         java_subtypes = java_subtype_counts(args.orig_src)
         java_impl_names = java_implementer_names(args.orig_src)
+        java_ext_points = java_extension_points(args.orig_src)
         java_decls = java_declarations(args.orig_src)
         src = "IMPLEMENTERS.tsv (transitive, concrete-only)" if java_impl_names else args.orig_src
         print(f"read {len(java_subtypes)} Java supertypes from {src} and "
@@ -636,7 +680,7 @@ def main():
                 continue
             v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
                                      mock_impls, stub_decl, java_subtypes, java_decls,
-                                     jdk_modeled, java_impl_names)
+                                     jdk_modeled, java_impl_names, java_ext_points)
             if v:
                 r["verdict"], r["source"], r["note"] = v, "suggest", why
                 n += 1
