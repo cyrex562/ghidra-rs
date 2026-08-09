@@ -333,3 +333,20 @@ pub trait PseudoInstruction: Send + Sync {}
 /// real class is ported. This is a minimal interface stub exposing only the methods needed by
 /// existing references.
 pub trait RegisterValue: Send + Sync {}
+
+/// Placeholder for `ghidra.pcode.emu.PcodeMachine`, referenced by
+/// [`PcodeStateInitializer`](crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer)
+/// before the real class is ported. This is a minimal interface stub exposing only the methods
+/// needed by existing references.
+pub trait PcodeMachine: Send + Sync {
+    /// Placeholder for `PcodeMachine.trapsRead()`.
+    fn traps_read(&self) -> bool;
+    /// Placeholder for `PcodeMachine.trapsWrite()`.
+    fn traps_write(&self) -> bool;
+}
+
+/// Placeholder for `ghidra.pcode.emu.PcodeThread`, referenced by
+/// [`PcodeStateInitializer`](crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer)
+/// before the real class is ported. This is a minimal interface stub exposing only the methods
+/// needed by existing references.
+pub trait PcodeThread: Send + Sync {}
