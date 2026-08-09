@@ -27,7 +27,7 @@ DONE	trait	57	7	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/em
 DONE	trait	55	16	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/EmulateInstructionStateModifier.java
 DONE	trait	54	108	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeFrame.java
 DONE	trait	53	109	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutionException.java
-TODO	trait	52	108	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ConcretionError.java
+DONE	trait	52	108	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/ConcretionError.java
 TODO	trait	51	120	71	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutorStatePiece.java
 TODO	trait	50	98	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractLongOffsetPcodeExecutorStatePiece.java
 TODO	trait	49	99	35	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractBytesPcodeExecutorStatePiece.java
