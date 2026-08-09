@@ -7,7 +7,7 @@
 use std::sync::{Arc, OnceLock};
 
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
-use crate::pcode::exec::pcode_arithmetic::Purpose;
+use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPcodeUseropDefinition};
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
 use crate::program::model::address::{AddressSpace, AddressSpaceType};
@@ -350,3 +350,14 @@ pub trait PcodeMachine: Send + Sync {
 /// before the real class is ported. This is a minimal interface stub exposing only the methods
 /// needed by existing references.
 pub trait PcodeThread: Send + Sync {}
+
+/// Placeholder for `ghidra.pcode.exec.PcodeExecutorStatePiece`, referenced by
+/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks) before
+/// the real class is ported. Exposes only the two arithmetic accessors that callback delegation
+/// needs: the arithmetic over the piece's address domain `A` and over its value domain `T`.
+pub trait PcodeExecutorStatePiece<A, T> {
+    /// Placeholder for `PcodeExecutorStatePiece.getAddressArithmetic()`.
+    fn get_address_arithmetic(&self) -> &dyn PcodeArithmetic<A>;
+    /// Placeholder for `PcodeExecutorStatePiece.getArithmetic()`.
+    fn get_arithmetic(&self) -> &dyn PcodeArithmetic<T>;
+}
