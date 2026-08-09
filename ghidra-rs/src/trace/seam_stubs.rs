@@ -15,6 +15,7 @@ use crate::program::model::address::{
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::{Language, Register};
 use crate::program::model::mem::MemBuffer;
+use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::RegisterValue as ProgramRegisterValue;
 use crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace;
 use crate::trace::model::lifespan::Lifespan;
@@ -1182,13 +1183,30 @@ pub trait DBTraceProgramView: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.database.symbol.DBTraceSymbolManager`, referenced by
 /// [`DBTraceNamespaceSymbol`](crate::trace::database::symbol::db_trace_namespace_symbol::DBTraceNamespaceSymbol)
-/// before the real port is available. The Java class has ~20 members; only
-/// `getGlobalNamespace()`, the one method `DBTraceNamespaceSymbol::checkCircular` needs, is
-/// modeled here.
+/// and
+/// [`AbstractDBTraceSymbolSingleTypeViewBase`](crate::trace::database::symbol::abstract_db_trace_symbol_single_type_view::AbstractDBTraceSymbolSingleTypeViewBase)
+/// before the real port is available. The Java class has ~20 members; only `getGlobalNamespace()`
+/// (needed by `DBTraceNamespaceSymbol::checkCircular`), the `lock` field's `readLock()` (needed
+/// by `AbstractDBTraceSymbolSingleTypeViewBase::get_children`/`get_children_named`), and
+/// `assertIsMine(Namespace)` (same two callers) are modeled here.
 pub trait DBTraceSymbolManager: Send + Sync {
     /// Mirrors `getGlobalNamespace()`.
     fn get_global_namespace(
         &self,
+    ) -> std::sync::Arc<
+        dyn crate::trace::database::symbol::db_trace_namespace_symbol::DBTraceNamespaceSymbol,
+    >;
+
+    /// Mirrors the `lock` field's `readLock()`, following the same convention as
+    /// [`DBTraceCodeManager::read_lock`].
+    fn read_lock(&self) -> &dyn Lock;
+
+    /// Mirrors `assertIsMine(Namespace)`: confirms `ns` belongs to this manager's trace, or
+    /// panics (`IllegalArgumentException` in Java) otherwise, returning the manager's own
+    /// `DBTraceNamespaceSymbol` view of it.
+    fn assert_is_mine(
+        &self,
+        ns: &dyn Namespace,
     ) -> std::sync::Arc<
         dyn crate::trace::database::symbol::db_trace_namespace_symbol::DBTraceNamespaceSymbol,
     >;
