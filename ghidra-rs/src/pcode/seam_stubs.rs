@@ -6,17 +6,20 @@
 
 use std::sync::{Arc, Mutex, OnceLock};
 
+use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
+use crate::pcode::exec::pcode_execution_exception::PcodeExecutionException;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
+use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::{
     ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
 };
 use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPcodeUseropDefinition};
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
-use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+use crate::program::model::address::{Address, AddressRange, AddressSpace, AddressSpaceType};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
@@ -396,6 +399,137 @@ pub trait BytesPcodeExecutorStateSpace: Clone + Send + Sync {
 
     /// Port of `BytesPcodeExecutorStateSpace.clear()`.
     fn clear(&self);
+}
+
+/// Placeholder for `ghidra.pcode.emu.PcodeEmulationCallbacks`, referenced by
+/// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
+/// before the real interface is ported. Only the three notifications that class emits are
+/// declared, each defaulted to do nothing, as in Java.
+///
+/// Java passes the machine as `PcodeMachine<T>`. Taking it generically would cost this trait its
+/// object safety -- a machine has to store its callbacks as `dyn` -- so the machine arrives
+/// type-erased, following
+/// [`PcodeStateInitializer`](crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer).
+/// `T`, the type of values in the machine's state, is retained (unused for now) because the real
+/// interface's remaining callbacks are all typed in it.
+pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
+    /// Placeholder for `PcodeEmulationCallbacks.emulatorCreated(PcodeMachine)`.
+    fn emulator_created(&self, _machine: &dyn ErasedPcodeMachine) {}
+
+    /// Placeholder for `PcodeEmulationCallbacks.sharedStateCreated(PcodeMachine)`.
+    fn shared_state_created(&self, _machine: &dyn ErasedPcodeMachine) {}
+
+    /// Placeholder for `PcodeEmulationCallbacks.threadCreated(PcodeThread)`.
+    fn thread_created(&self, _thread: &Arc<dyn PcodeThread>) {}
+}
+
+/// Placeholder for `ghidra.pcode.emu.SparseAddressRangeMap`, referenced by
+/// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
+/// as its store of access breakpoints. Exposes the four members that class needs, with the same
+/// observable behavior; Java's page-index optimization (ranges bucketed by
+/// `address >> PAGE_BITS`, which is why a breakpoint may not span more than one page boundary) is
+/// left to the real port, since it changes only lookup cost, not results.
+pub struct SparseAddressRangeMap<V> {
+    spaces: HashMap<Arc<AddressSpace>, Vec<(AddressRange, V)>>,
+    is_empty: bool,
+}
+
+impl<V> Default for SparseAddressRangeMap<V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<V> SparseAddressRangeMap<V> {
+    /// Placeholder for `new SparseAddressRangeMap<>()`.
+    pub fn new() -> Self {
+        Self { spaces: HashMap::new(), is_empty: true }
+    }
+
+    /// Placeholder for `SparseAddressRangeMap.put(AddressRange, V)`. Java returns the created
+    /// entry; no caller uses it, so this returns nothing.
+    pub fn put(&mut self, range: AddressRange, value: V) {
+        self.spaces
+            .entry(Arc::clone(range.space()))
+            .or_default()
+            .push((range, value));
+        self.is_empty = false;
+    }
+
+    /// Placeholder for `SparseAddressRangeMap.hasEntry(Address, Predicate<V>)`: check whether any
+    /// range containing `address` has a value satisfying `predicate`.
+    pub fn has_entry(&self, address: &Address, predicate: impl Fn(&V) -> bool) -> bool {
+        let Some(entries) = self.spaces.get(address.space()) else {
+            return false;
+        };
+        entries
+            .iter()
+            .any(|(range, value)| range.contains(address) && predicate(value))
+    }
+
+    /// Placeholder for `SparseAddressRangeMap.clear()`.
+    pub fn clear(&mut self) {
+        self.spaces.clear();
+        self.is_empty = true;
+    }
+
+    /// Placeholder for `SparseAddressRangeMap.isEmpty()`. As in Java, this reports whether
+    /// anything has been put since construction or the last [`clear`](Self::clear), not whether
+    /// the map currently holds ranges.
+    pub fn is_empty(&self) -> bool {
+        self.is_empty
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.InterruptPcodeExecutionException`, referenced by
+/// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
+/// before the real class is ported. Java's class extends `PcodeExecutionException` with a fixed
+/// message; here it wraps one, since Rust has no exception inheritance.
+#[derive(Debug)]
+pub struct InterruptPcodeExecutionException {
+    inner: PcodeExecutionException,
+}
+
+impl InterruptPcodeExecutionException {
+    /// Placeholder for `new InterruptPcodeExecutionException(PcodeFrame, Throwable)`. Every
+    /// current call site passes `(null, null)`, so only the frame is accepted here.
+    pub fn new(frame: Option<PcodeFrame>) -> Self {
+        const MESSAGE: &str = "Execution hit breakpoint";
+        let inner = match frame {
+            Some(frame) => PcodeExecutionException::with_frame(MESSAGE, frame),
+            None => PcodeExecutionException::with_message(MESSAGE),
+        };
+        Self { inner }
+    }
+
+    /// The wrapped execution exception, Java's `super`.
+    pub fn as_execution_exception(&self) -> &PcodeExecutionException {
+        &self.inner
+    }
+
+    /// Placeholder for the inherited `getMessage()`.
+    pub fn message(&self) -> &str {
+        self.inner.message()
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.SleighProgramCompiler`, referenced by
+/// [`AbstractPcodeMachineBase::compile_sleigh`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase::compile_sleigh)
+/// before the real class is ported. Only the one static that call site uses is declared; it panics
+/// if invoked, since compiling Sleigh source needs the whole (unported) compiler.
+pub struct SleighProgramCompiler;
+
+impl SleighProgramCompiler {
+    /// Placeholder for the static
+    /// `SleighProgramCompiler.compileProgram(SleighLanguage, String, String, PcodeUseropLibrary)`.
+    pub fn compile_program<T: 'static>(
+        _language: &SleighLanguage,
+        _source_name: &str,
+        _source: &str,
+        _library: &dyn PcodeUseropLibrary<T>,
+    ) -> Box<dyn PcodeProgram> {
+        unimplemented!("SleighProgramCompiler not yet ported")
+    }
 }
 
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeArithmetic`, referenced by
