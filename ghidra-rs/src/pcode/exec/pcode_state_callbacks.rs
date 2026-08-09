@@ -16,7 +16,7 @@
 use std::sync::Arc;
 
 use crate::pcode::exec::pcode_arithmetic::Purpose;
-use crate::pcode::seam_stubs::{PcodeExecutorStatePiece, Reason};
+use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
 use crate::program::model::address::{Address, AddressSet, AddressSetView, AddressSpace};
 
 /// A set of callbacks available for state changes during p-code execution.
@@ -302,7 +302,7 @@ mod tests {
             Arc::new(I64Arithmetic)
         }
 
-        fn stream_pieces(&self) -> Vec<&dyn crate::pcode::seam_stubs::ErasedPcodeExecutorStatePiece> {
+        fn stream_pieces(&self) -> Vec<&dyn crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece> {
             unimplemented!("not exercised by PcodeStateCallbacks tests")
         }
 

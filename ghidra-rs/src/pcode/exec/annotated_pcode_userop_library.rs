@@ -39,7 +39,8 @@ use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_userop_library::{
     operand_type, ErasedPcodeUseropLibrary, PcodeUseropDefinition, PcodeUseropLibrary, UseropMap,
 };
-use crate::pcode::seam_stubs::{PcodeExecutor, PcodeExecutorStatePiece};
+use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
+use crate::pcode::seam_stubs::PcodeExecutor;
 use crate::program::model::pcode::{PcodeOp, Varnode};
 
 /// The attributes with which a userop is exported.
@@ -583,9 +584,8 @@ mod tests {
     use std::sync::Mutex;
 
     use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
-    use crate::pcode::seam_stubs::{
-        ErasedPcodeExecutorStatePiece, PcodeProgram, Reason,
-    };
+    use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, Reason};
+    use crate::pcode::seam_stubs::PcodeProgram;
     use crate::pcode::utils::{bytes_to_long, long_to_bytes};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;

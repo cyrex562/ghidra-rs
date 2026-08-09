@@ -7,7 +7,7 @@
 //! stores using indirect addresses. The typical pattern for implementing a state is to compose it
 //! from pieces. See [`PcodeExecutorStatePiece`].
 
-use crate::pcode::seam_stubs::PcodeExecutorStatePiece;
+use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
 
 /// An interface that provides storage for values of type `T`.
 ///
@@ -40,7 +40,7 @@ mod tests {
             fn get_arithmetic(&self) -> std::sync::Arc<dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<i64>> {
                 unimplemented!()
             }
-            fn stream_pieces(&self) -> Vec<&dyn crate::pcode::seam_stubs::ErasedPcodeExecutorStatePiece> {
+            fn stream_pieces(&self) -> Vec<&dyn crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece> {
                 vec![]
             }
             fn set_var_abstract(&mut self, _: &std::sync::Arc<crate::program::model::address::AddressSpace>, _: &i64, _: i32, _: bool, _: &i64) {
@@ -49,10 +49,10 @@ mod tests {
             fn set_var_internal_abstract(&mut self, _: &std::sync::Arc<crate::program::model::address::AddressSpace>, _: &i64, _: i32, _: &i64) {
                 unimplemented!()
             }
-            fn get_var_abstract(&self, _: &std::sync::Arc<crate::program::model::address::AddressSpace>, _: &i64, _: i32, _: bool, _: crate::pcode::seam_stubs::Reason) -> i64 {
+            fn get_var_abstract(&self, _: &std::sync::Arc<crate::program::model::address::AddressSpace>, _: &i64, _: i32, _: bool, _: crate::pcode::exec::pcode_executor_state_piece::Reason) -> i64 {
                 0
             }
-            fn get_var_internal_abstract(&self, _: &std::sync::Arc<crate::program::model::address::AddressSpace>, _: &i64, _: i32, _: crate::pcode::seam_stubs::Reason) -> i64 {
+            fn get_var_internal_abstract(&self, _: &std::sync::Arc<crate::program::model::address::AddressSpace>, _: &i64, _: i32, _: crate::pcode::exec::pcode_executor_state_piece::Reason) -> i64 {
                 0
             }
             fn get_register_values(&self) -> Vec<(crate::program::model::lang::register::RegisterRef, i64)> {

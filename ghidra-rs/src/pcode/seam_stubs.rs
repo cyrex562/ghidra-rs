@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
+use crate::pcode::exec::pcode_executor_state_piece::Reason;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::{
     ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
@@ -22,20 +23,6 @@ use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::mem::mem_buffer::MemBuffer;
 use crate::program::model::pcode::Varnode;
 use std::collections::HashMap;
-
-/// Placeholder for `ghidra.pcode.exec.PcodeExecutorStatePiece.Reason`, referenced by
-/// [`Purpose`](crate::pcode::exec::pcode_arithmetic::Purpose) before the real class is ported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Reason {
-    /// The value is needed as the default program counter or disassembly context.
-    ReInit,
-    /// The value is being read by the emulator as data in the course of execution.
-    ExecuteRead,
-    /// The value is being decoded by the emulator as an instruction for execution.
-    ExecuteDecode,
-    /// The value is being inspected by something other than an emulator.
-    Inspect,
-}
 
 fn value_location_const_space() -> &'static Arc<AddressSpace> {
     static SPACE: OnceLock<Arc<AddressSpace>> = OnceLock::new();
@@ -390,103 +377,3 @@ pub trait PcodeMachine: Send + Sync {
 /// before the real class is ported. This is a minimal interface stub exposing only the methods
 /// needed by existing references.
 pub trait PcodeThread: Send + Sync {}
-
-/// Placeholder for a type-erased `PcodeExecutorStatePiece<?, ?>`, as produced by
-/// `PcodeExecutorStatePiece.streamPieces()`. Java's wildcard existential type (any address/value
-/// domain) has no generic-preserving Rust shape; since nothing downstream inspects an erased
-/// piece's members yet, this is a bare, object-safe marker that concrete leaf pieces implement.
-pub trait ErasedPcodeExecutorStatePiece {}
-
-/// Placeholder for `ghidra.pcode.exec.PcodeExecutorStatePiece`, referenced by
-/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks) and by
-/// [`PairedPcodeExecutorStatePiece`](crate::pcode::exec::paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece)
-/// before the real class is ported. Exposes the members those callers need. Java overloads
-/// `setVar`/`setVarInternal`/`getVar`/`getVarInternal` by offset type (abstract addressing via an
-/// offset of domain `A`, vs. concrete addressing via a `long`); Rust has no overloading, so the
-/// abstract-addressing methods carry an `_abstract` suffix here, matching the convention in
-/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks). The
-/// concrete-addressing methods and `fork` keep Java's default-method fallbacks (deriving from the
-/// abstract-addressing methods, and panicking, respectively); every other method is abstract here
-/// just as it is in Java. `getAddressArithmetic`/`getArithmetic` return an owned
-/// `Arc<dyn PcodeArithmetic<_>>` rather than a borrow, since a composing piece (like
-/// `PairedPcodeExecutorStatePiece`) needs to cache the result in its own fields without borrowing
-/// from its delegates (which would make it self-referential).
-///
-/// `fork` carries a `where Self: Sized` bound and a generic `CB` parameter (rather than
-/// `&dyn PcodeStateCallbacks`) because
-/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks)'s
-/// methods are generic per call (mirroring Java's per-call type parameters), which makes that
-/// trait itself not object-safe -- a `&dyn PcodeStateCallbacks` parameter is simply not
-/// expressible. The `Self: Sized` bound excludes `fork` from this trait's vtable without
-/// otherwise affecting its object safety, so `&dyn PcodeExecutorStatePiece<A, T>` (as used by
-/// `PcodeStateCallbacks`'s own default methods) remains valid; `fork` is only ever called on a
-/// statically-known concrete (or generic-but-`Sized`) piece type.
-pub trait PcodeExecutorStatePiece<A, T> {
-    /// Placeholder for `PcodeExecutorStatePiece.getLanguage()`.
-    fn get_language(&self) -> Box<dyn Language>;
-    /// Placeholder for `PcodeExecutorStatePiece.getAddressArithmetic()`.
-    fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<A>>;
-    /// Placeholder for `PcodeExecutorStatePiece.getArithmetic()`.
-    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>>;
-    /// Placeholder for `PcodeExecutorStatePiece.streamPieces()`.
-    fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece>;
-    /// Placeholder for `PcodeExecutorStatePiece.fork(PcodeStateCallbacks)`. Java's default throws
-    /// `UnsupportedOperationException`.
-    fn fork<CB: PcodeStateCallbacks>(&self, _cb: &CB) -> Self
-    where
-        Self: Sized,
-    {
-        unimplemented!("PcodeExecutorStatePiece.fork has no default implementation")
-    }
-    /// Placeholder for `PcodeExecutorStatePiece.setVar(AddressSpace, A, int, boolean, T)`.
-    fn set_var_abstract(&mut self, space: &Arc<AddressSpace>, offset: &A, size: i32, quantize: bool, val: &T);
-    /// Placeholder for `PcodeExecutorStatePiece.setVarInternal(AddressSpace, A, int, T)`.
-    fn set_var_internal_abstract(&mut self, space: &Arc<AddressSpace>, offset: &A, size: i32, val: &T);
-    /// Placeholder for `PcodeExecutorStatePiece.setVar(AddressSpace, long, int, boolean, T)`.
-    fn set_var(&mut self, space: &Arc<AddressSpace>, offset: i64, size: i32, quantize: bool, val: &T) {
-        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
-        self.set_var_abstract(space, &a_offset, size, quantize, val);
-    }
-    /// Placeholder for `PcodeExecutorStatePiece.setVarInternal(AddressSpace, long, int, T)`.
-    fn set_var_internal(&mut self, space: &Arc<AddressSpace>, offset: i64, size: i32, val: &T) {
-        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
-        self.set_var_internal_abstract(space, &a_offset, size, val);
-    }
-    /// Placeholder for `PcodeExecutorStatePiece.getVar(AddressSpace, A, int, boolean, Reason)`.
-    fn get_var_abstract(&self, space: &Arc<AddressSpace>, offset: &A, size: i32, quantize: bool, reason: Reason) -> T;
-    /// Placeholder for `PcodeExecutorStatePiece.getVarInternal(AddressSpace, A, int, Reason)`.
-    fn get_var_internal_abstract(&self, space: &Arc<AddressSpace>, offset: &A, size: i32, reason: Reason) -> T;
-    /// Placeholder for `PcodeExecutorStatePiece.getVar(AddressSpace, long, int, boolean, Reason)`.
-    fn get_var(&self, space: &Arc<AddressSpace>, offset: i64, size: i32, quantize: bool, reason: Reason) -> T {
-        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
-        self.get_var_abstract(space, &a_offset, size, quantize, reason)
-    }
-    /// Placeholder for `PcodeExecutorStatePiece.getVarInternal(AddressSpace, long, int, Reason)`.
-    fn get_var_internal(&self, space: &Arc<AddressSpace>, offset: i64, size: i32, reason: Reason) -> T {
-        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
-        self.get_var_internal_abstract(space, &a_offset, size, reason)
-    }
-    /// Placeholder for `PcodeExecutorStatePiece.setVar(Varnode, T)`.
-    ///
-    /// Java overloads `setVar` on the variable's description; Rust has no overloading, so the
-    /// [`Varnode`]-keyed form carries the `_varnode` suffix. Like Java's default, it quantizes.
-    fn set_var_varnode(&mut self, var: &Varnode, val: &T) {
-        self.set_var(var.get_address().space(), var.get_offset(), var.get_size(), true, val);
-    }
-    /// Placeholder for `PcodeExecutorStatePiece.getVar(Varnode, Reason)`. See
-    /// [`set_var_varnode`](Self::set_var_varnode) for the naming.
-    fn get_var_varnode(&self, var: &Varnode, reason: Reason) -> T {
-        self.get_var(var.get_address().space(), var.get_offset(), var.get_size(), true, reason)
-    }
-    /// Placeholder for `PcodeExecutorStatePiece.getRegisterValues()`.
-    ///
-    /// Returns a `Vec` of pairs rather than a `HashMap`, since [`Register`](RegisterRef)'s Rust
-    /// port is `Rc<RefCell<Register>>`, and `RefCell` does not implement `Hash` (interior
-    /// mutability would make cached hashes unsound), so `RegisterRef` cannot be a `HashMap` key.
-    fn get_register_values(&self) -> Vec<(RegisterRef, T)>;
-    /// Placeholder for `PcodeExecutorStatePiece.getConcreteBuffer(Address, Purpose)`.
-    fn get_concrete_buffer(&self, address: &Address, purpose: Purpose) -> Box<dyn MemBuffer>;
-    /// Placeholder for `PcodeExecutorStatePiece.clear()`.
-    fn clear(&mut self);
-}
-

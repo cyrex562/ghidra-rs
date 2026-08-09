@@ -323,7 +323,7 @@ mod tests {
             {
                 unimplemented!("not exercised by these tests")
             }
-            fn get_reason(&self) -> crate::pcode::seam_stubs::Reason {
+            fn get_reason(&self) -> crate::pcode::exec::pcode_executor_state_piece::Reason {
                 unimplemented!("not exercised by these tests")
             }
         }
