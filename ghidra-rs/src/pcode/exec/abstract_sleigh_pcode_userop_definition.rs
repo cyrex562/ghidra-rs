@@ -312,6 +312,20 @@ mod tests {
             fn execute(&self, _program: &dyn PcodeProgram, _library: &dyn PcodeUseropLibrary<i64>) {
                 EXECUTED.with(|e| e.set(true));
             }
+            fn get_arithmetic(
+                &self,
+            ) -> Arc<dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<i64>> {
+                unimplemented!("not exercised by these tests")
+            }
+            fn get_state(
+                &self,
+            ) -> &std::sync::Mutex<dyn crate::pcode::exec::pcode_executor_state::PcodeExecutorState<i64>>
+            {
+                unimplemented!("not exercised by these tests")
+            }
+            fn get_reason(&self) -> crate::pcode::seam_stubs::Reason {
+                unimplemented!("not exercised by these tests")
+            }
         }
 
         let definition = RecordingDefinition;
