@@ -4,11 +4,14 @@
 //!
 //! Ported as a trait because it was selected as a cycle cut-point: it references
 //! [`DBTraceObject`], [`DBTraceObjectManager`], and [`DBTraceObjectValue`], each of which (once
-//! ported) will in turn reference storage/value types back. Those three are not yet ported, so
-//! they are represented here by minimal placeholder traits in
-//! [`crate::trace::seam_stubs`].
+//! ported) will in turn reference storage/value types back. The first two are not yet ported, so
+//! they are represented here by minimal placeholder traits in [`crate::trace::seam_stubs`];
+//! [`DBTraceObjectValue`] now *is* ported, so [`Self::get_wrapper`] names the real struct.
+use std::sync::Arc;
+
+use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
 use crate::trace::model::lifespan::Lifespan;
-use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager, DBTraceObjectValue};
+use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager};
 
 /// Storage backing shared by a value entry ([`DBTraceObjectValue`]) and its wrapper.
 ///
@@ -17,11 +20,21 @@ pub trait TraceObjectValueStorage: Send + Sync {
     /// Get the manager that owns this storage's object database.
     fn get_manager(&self) -> Box<dyn DBTraceObjectManager>;
 
-    /// Get the value entry that wraps this storage.
-    fn get_wrapper(&self) -> Box<dyn DBTraceObjectValue>;
+    /// Get the value entry that wraps this storage, or `None` if none has been installed yet.
+    ///
+    /// Java's `getWrapper()` never returns null: `DBTraceObjectValueData` lazily constructs
+    /// `new DBTraceObjectValue(manager, this)` and caches it in a `wrapper` field. That is an
+    /// ownership cycle in Rust -- the wrapper owns the storage and the storage would own the
+    /// wrapper -- so the back-pointer is a shared handle that is `None` until something installs
+    /// it, matching the Java field's own initial state.
+    fn get_wrapper(&self) -> Option<Arc<DBTraceObjectValue>>;
 
-    /// Get the parent object of this entry.
-    fn get_parent(&self) -> Box<dyn DBTraceObject>;
+    /// Get the parent object of this entry, or `None` if this is the root value.
+    ///
+    /// Java declares this `DBTraceObject getParent()`, but it is null for the root value --
+    /// `DBTraceObjectValue.doGetCanonicalPath`, `doIsCanonical`, `delete` and `truncateOrDelete`
+    /// all branch on exactly that -- so it is `Option` here.
+    fn get_parent(&self) -> Option<Box<dyn DBTraceObject>>;
 
     /// Get the key identifying this child to its parent.
     fn get_entry_key(&self) -> String;
@@ -53,13 +66,42 @@ mod tests {
 
 
 
+    use crate::debug::api::tracermi::SchemaName;
+    use crate::trace::model::target::path::key_path::KeyPath;
+    use crate::trace::seam_stubs::{LifeSet, ObjectKey, TraceObject, TraceObjectSchema};
+
     struct MockManager;
     impl DBTraceObjectManager for MockManager {}
 
-    struct MockValue;
-    impl DBTraceObjectValue for MockValue {}
-
     struct MockObject;
+
+    impl TraceObject for MockObject {
+        fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
+            struct S;
+            impl TraceObjectSchema for S {
+                fn get_name(&self) -> SchemaName {
+                    SchemaName::new("Mock")
+                }
+                fn to_string(&self) -> String {
+                    "Mock".to_string()
+                }
+            }
+            Box::new(S)
+        }
+
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_life(&self) -> Box<dyn LifeSet> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_canonical_path(&self) -> KeyPath {
+            KeyPath::root()
+        }
+    }
+
     impl DBTraceObject for MockObject {}
 
     struct MockStorage {
@@ -74,12 +116,12 @@ mod tests {
             Box::new(MockManager)
         }
 
-        fn get_wrapper(&self) -> Box<dyn DBTraceObjectValue> {
-            Box::new(MockValue)
+        fn get_wrapper(&self) -> Option<Arc<DBTraceObjectValue>> {
+            None
         }
 
-        fn get_parent(&self) -> Box<dyn DBTraceObject> {
-            Box::new(MockObject)
+        fn get_parent(&self) -> Option<Box<dyn DBTraceObject>> {
+            Some(Box::new(MockObject))
         }
 
         fn get_entry_key(&self) -> String {
@@ -167,9 +209,10 @@ mod tests {
     fn entry_key_and_parent_are_accessible() {
         let storage = make_storage();
         assert_eq!(storage.get_entry_key(), "key1");
-        let _parent = storage.get_parent();
+        assert!(storage.get_parent().is_some());
         let _manager = storage.get_manager();
-        let _wrapper = storage.get_wrapper();
+        // No wrapper is installed until one is created around this storage.
+        assert!(storage.get_wrapper().is_none());
     }
 
     #[test]

@@ -971,6 +971,20 @@ mod tests {
         }
     }
 
+    /// `DBTraceObject` is a `TraceObject`; only the two attribute accessors below are exercised
+    /// here, so the `TraceObject` half is left unimplemented.
+    impl crate::trace::seam_stubs::TraceObject for SharedRoot {
+        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
     impl DBTraceObject for SharedRoot {
         fn set_attribute(
             &self,

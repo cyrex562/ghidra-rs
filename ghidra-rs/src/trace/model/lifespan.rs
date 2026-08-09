@@ -212,6 +212,37 @@ impl Lifespan {
         Lifespan::span(self.lmin(), max)
     }
 
+    /// The parts of this span not covered by `other`, in ascending order.
+    ///
+    /// Java's `default List<Lifespan> subtract(Lifespan)`, inherited from `Span`. Yields 0, 1, or
+    /// 2 spans: none when `other` covers this one, two when `other` splits it. Mirrors
+    /// [`Domain::subtract`](crate::generic::ulong_span::Domain::subtract), the same `Span`
+    /// operation already ported for the unsigned-long domain.
+    pub fn subtract(&self, other: Lifespan) -> Vec<Lifespan> {
+        let (Lifespan::Span { min, max }, Lifespan::Span { min: omin, max: omax }) =
+            (*self, other)
+        else {
+            // Nothing to subtract from an empty span; nothing removed by an empty one.
+            return match self {
+                Lifespan::Empty => Vec::new(),
+                _ => vec![*self],
+            };
+        };
+        if max < omin || omax < min {
+            return vec![*self];
+        }
+        let mut result = Vec::with_capacity(2);
+        if min < omin {
+            // omin > min >= i64::MIN, so omin - 1 cannot underflow.
+            result.push(Lifespan::Span { min, max: omin - 1 });
+        }
+        if max > omax {
+            // omax < max <= i64::MAX, so omax + 1 cannot overflow.
+            result.push(Lifespan::Span { min: omax + 1, max });
+        }
+        result
+    }
+
     /// Iterates the snapshot keys contained in this span.
     ///
     /// Java's `Iterable<Long>`. An empty span yields an empty (rather than absent) iterator, so
@@ -398,5 +429,30 @@ mod tests {
         assert!(is_scratch(-1));
         assert!(!is_scratch(0));
         assert!(!is_scratch(1));
+    }
+
+    #[test]
+    fn subtract_yields_zero_one_or_two_spans() {
+        let whole = Lifespan::span(0, 10);
+        // Disjoint: nothing removed.
+        assert_eq!(whole.subtract(Lifespan::span(20, 30)), vec![whole]);
+        // Fully covered: nothing left.
+        assert_eq!(whole.subtract(Lifespan::span(-5, 15)), Vec::<Lifespan>::new());
+        assert_eq!(whole.subtract(Lifespan::span(0, 10)), Vec::<Lifespan>::new());
+        // Trimmed at the top.
+        assert_eq!(whole.subtract(Lifespan::span(5, 20)), vec![Lifespan::span(0, 4)]);
+        // Trimmed at the bottom.
+        assert_eq!(whole.subtract(Lifespan::span(-5, 5)), vec![Lifespan::span(6, 10)]);
+        // Split in two, lower part first.
+        assert_eq!(
+            whole.subtract(Lifespan::span(4, 6)),
+            vec![Lifespan::span(0, 3), Lifespan::span(7, 10)]
+        );
+    }
+
+    #[test]
+    fn subtract_handles_the_empty_span_on_either_side() {
+        assert_eq!(Lifespan::EMPTY.subtract(Lifespan::span(0, 10)), Vec::<Lifespan>::new());
+        assert_eq!(Lifespan::span(0, 10).subtract(Lifespan::EMPTY), vec![Lifespan::span(0, 10)]);
     }
 }

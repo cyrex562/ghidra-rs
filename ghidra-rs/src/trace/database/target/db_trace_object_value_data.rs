@@ -127,15 +127,29 @@ pub trait DBTraceObjectValueData: TraceObjectValueStorage {
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType, DefaultAddressFactory};
-    use crate::trace::seam_stubs::{DBTraceObjectManager, DBTraceObjectValue};
+    use crate::trace::database::target::db_trace_object_value::DBTraceObjectValue;
+    use crate::trace::seam_stubs::{DBTraceObjectManager, LifeSet, ObjectKey, TraceObject, TraceObjectSchema};
+    use std::sync::Arc;
 
     struct MockManager;
     impl DBTraceObjectManager for MockManager {}
 
-    struct MockValue;
-    impl DBTraceObjectValue for MockValue {}
-
     struct MockObject(&'static str);
+
+    /// `DBTraceObject` is a `TraceObject`; none of its members are exercised here -- the object
+    /// is only ever passed around opaquely as a parent or child.
+    impl TraceObject for MockObject {
+        fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_life(&self) -> Box<dyn LifeSet> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
     impl DBTraceObject for MockObject {}
 
 
@@ -156,12 +170,12 @@ mod tests {
             Box::new(MockManager)
         }
 
-        fn get_wrapper(&self) -> Box<dyn DBTraceObjectValue> {
-            Box::new(MockValue)
+        fn get_wrapper(&self) -> Option<Arc<DBTraceObjectValue>> {
+            None
         }
 
-        fn get_parent(&self) -> Box<dyn DBTraceObject> {
-            Box::new(MockObject("parent"))
+        fn get_parent(&self) -> Option<Box<dyn DBTraceObject>> {
+            Some(Box::new(MockObject("parent")))
         }
 
         fn get_entry_key(&self) -> String {
