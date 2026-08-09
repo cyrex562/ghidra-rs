@@ -25,3 +25,4 @@ ts	reason	path
 2026-08-08T03:56	timeout	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceCodeUnitAdapter.java
 2026-08-08T08:44	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEventScope.java
 2026-08-09T05:34	shape-undecided (R8b-marker)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceActivatable.java
+2026-08-09T05:34	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEnvironment.java
