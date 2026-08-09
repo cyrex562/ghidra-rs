@@ -4,12 +4,13 @@
 //! replaced (or grown into a supertrait/struct of) the real port once that Java class is ported.
 //! See `STUBS.tsv` for provenance.
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::Purpose;
 use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPcodeUseropDefinition};
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
+use crate::program::model::address::{AddressSpace, AddressSpaceType};
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::Varnode;
 use std::collections::HashMap;
@@ -60,6 +61,115 @@ impl std::fmt::Display for ConcretionError {
 }
 
 impl std::error::Error for ConcretionError {}
+
+fn value_location_const_space() -> &'static Arc<AddressSpace> {
+    static SPACE: OnceLock<Arc<AddressSpace>> = OnceLock::new();
+    SPACE.get_or_init(|| AddressSpace::new("const", 64, 1, AddressSpaceType::Constant, 0))
+}
+
+fn value_location_is_zero(vn: &Varnode) -> bool {
+    vn.is_constant() && vn.get_offset() == 0
+}
+
+/// Placeholder for `ghidra.pcode.exec.ValueLocation`, referenced by
+/// [`LocationPcodeArithmetic`](crate::pcode::exec::location_pcode_arithmetic::LocationPcodeArithmetic)
+/// before the real class is ported. Exposes only the members that call site needs: building a
+/// location for a constant, testing whether a location is itself a constant, shifting a location
+/// left by whole bytes (for `INT_LEFT`), and merging two locations (for `INT_OR`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ValueLocation {
+    nodes: Vec<Varnode>,
+}
+
+impl ValueLocation {
+    fn new(nodes: Vec<Varnode>) -> Self {
+        let start = nodes
+            .iter()
+            .position(|vn| !value_location_is_zero(vn))
+            .unwrap_or(nodes.len());
+        Self { nodes: nodes[start..].to_vec() }
+    }
+
+    /// Port of `ValueLocation.fromConst(long, int)`.
+    pub fn from_const(value: i64, size: i32) -> Self {
+        let address = value_location_const_space().address(value);
+        Self::new(vec![Varnode::new(address, size)])
+    }
+
+    /// Port of `ValueLocation.size()`.
+    pub fn size(&self) -> i32 {
+        self.nodes.iter().map(Varnode::get_size).sum()
+    }
+
+    /// Port of `ValueLocation.isEmpty()`.
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
+
+    /// Port of `ValueLocation.getConst()`. Returns `None` if any varnode is non-constant.
+    pub fn get_const(&self) -> Option<i128> {
+        let mut result: i128 = 0;
+        for vn in &self.nodes {
+            if !vn.is_constant() {
+                return None;
+            }
+            result <<= vn.get_size() as u32 * 8;
+            result |= vn.get_address().unsigned_offset() as i128;
+        }
+        Some(result)
+    }
+
+    /// Port of `ValueLocation.shiftLeft(int)`. Returns `None` if `amount` is not a whole number
+    /// of bytes.
+    pub fn shift_left(&self, amount: i32) -> Option<Self> {
+        if amount % 8 != 0 {
+            return None;
+        }
+        let mut nodes = self.nodes.clone();
+        nodes.push(Varnode::new(value_location_const_space().address(0), amount / 8));
+        Some(Self::new(nodes))
+    }
+
+    /// Port of `ValueLocation.intOr(ValueLocation)`. Returns `None` if any paired varnodes
+    /// mismatch in length or neither of a pair is a constant zero.
+    pub fn int_or(&self, that: &Self) -> Option<Self> {
+        if self.is_empty() {
+            return Some(that.clone());
+        }
+        if that.is_empty() {
+            return Some(self.clone());
+        }
+        let mut result = Vec::with_capacity(self.nodes.len().max(that.nodes.len()));
+        let mut ia = self.nodes.len();
+        let mut ib = that.nodes.len();
+        while ia > 0 && ib > 0 {
+            ia -= 1;
+            ib -= 1;
+            let vn_a = &self.nodes[ia];
+            let vn_b = &that.nodes[ib];
+            if vn_a.get_size() != vn_b.get_size() {
+                return None;
+            }
+            if value_location_is_zero(vn_a) {
+                result.push(vn_b.clone());
+            } else if value_location_is_zero(vn_b) {
+                result.push(vn_a.clone());
+            } else {
+                return None;
+            }
+        }
+        while ia > 0 {
+            ia -= 1;
+            result.push(self.nodes[ia].clone());
+        }
+        while ib > 0 {
+            ib -= 1;
+            result.push(that.nodes[ib].clone());
+        }
+        result.reverse();
+        Some(Self::new(result))
+    }
+}
 
 /// Placeholder for `ghidra.pcode.floatformat.FloatFormat`, referenced by
 /// [`BigFloat::to_display_string_with_format`](crate::pcode::floatformat::big_float::BigFloat::to_display_string_with_format)

@@ -11228,7 +11228,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/FixedSleighP
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/IndependentPairedPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/InjectionErrorPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/InterruptPcodeExecutionException.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/LocationPcodeArithmetic.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/LocationPcodeArithmetic.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode exec
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/LocationPcodeExecutorStatePiece.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/OverloadedSleighPcodeUseropDefinition.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PairedPcodeArithmetic.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode exec 
