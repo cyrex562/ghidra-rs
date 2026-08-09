@@ -214,8 +214,8 @@ pub const NONE: NoPcodeStateCallbacks = NoPcodeStateCallbacks;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
-    use crate::pcode::seam_stubs::ConcretionError;
     use crate::pcode::utils::{bytes_to_long, long_to_bytes};
     use crate::program::model::address::AddressSpaceType;
     use crate::program::model::lang::endian::Endian;

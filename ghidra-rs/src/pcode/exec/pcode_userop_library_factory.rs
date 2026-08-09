@@ -290,7 +290,7 @@ mod tests {
             &self,
             value: &i64,
             _purpose: crate::pcode::exec::pcode_arithmetic::Purpose,
-        ) -> Result<Vec<u8>, crate::pcode::seam_stubs::ConcretionError> {
+        ) -> Result<Vec<u8>, crate::pcode::exec::concretion_error::ConcretionError> {
             Ok(value.to_le_bytes().to_vec())
         }
         fn size_of(&self, _value: &i64) -> i64 {

@@ -35,10 +35,11 @@ use std::sync::Arc;
 
 use crate::pcode::exec::default_pcode_userop_library::DefaultPcodeUseropLibrary;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
+use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_userop_library::{
     operand_type, ErasedPcodeUseropLibrary, PcodeUseropDefinition, PcodeUseropLibrary, UseropMap,
 };
-use crate::pcode::seam_stubs::{ConcretionError, PcodeExecutor, PcodeExecutorStatePiece};
+use crate::pcode::seam_stubs::{PcodeExecutor, PcodeExecutorStatePiece};
 use crate::program::model::pcode::{PcodeOp, Varnode};
 
 /// The attributes with which a userop is exported.

@@ -37,39 +37,6 @@ pub enum Reason {
     Inspect,
 }
 
-/// Placeholder for `ghidra.pcode.exec.ConcretionError`, referenced by
-/// [`PcodeArithmetic`](crate::pcode::exec::pcode_arithmetic::PcodeArithmetic) before the real
-/// exception class (a `PcodeExecutionException`/`RuntimeException` subtype) is ported. Carries
-/// only the message and [`Purpose`] fields the real class exposes.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConcretionError {
-    message: String,
-    purpose: Purpose,
-}
-
-impl ConcretionError {
-    /// Create the error with a client-facing message and the reason a concrete value was needed.
-    pub fn new(message: impl Into<String>, purpose: Purpose) -> Self {
-        Self {
-            message: message.into(),
-            purpose,
-        }
-    }
-
-    /// The reason why the emulator needed a concrete value.
-    pub fn purpose(&self) -> Purpose {
-        self.purpose
-    }
-}
-
-impl std::fmt::Display for ConcretionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.message)
-    }
-}
-
-impl std::error::Error for ConcretionError {}
-
 fn value_location_const_space() -> &'static Arc<AddressSpace> {
     static SPACE: OnceLock<Arc<AddressSpace>> = OnceLock::new();
     SPACE.get_or_init(|| AddressSpace::new("const", 64, 1, AddressSpaceType::Constant, 0))
