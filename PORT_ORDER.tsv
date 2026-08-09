@@ -52,7 +52,7 @@ DONE	trait	26	24	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 PARK	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceActivatable.java
 PARK	trait	26	8	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEnvironment.java
 PARK	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceFocusScope.java
-TODO	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceMethod.java
+PARK	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceMethod.java
 TODO	trait	25	155	20	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObject.java
 TODO	trait	24	43	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceObjectInterface.java
 TODO	trait	23	47	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/stack/TraceStackFrame.java
