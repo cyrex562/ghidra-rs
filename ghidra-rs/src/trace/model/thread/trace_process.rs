@@ -1,5 +1,5 @@
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::TraceObjectInterface;
+use crate::trace::model::target::iface::TraceObjectInterface;
 
 /// The object attribute key holding the process id.
 ///
@@ -33,7 +33,11 @@ mod tests {
 
     struct MockProcess;
 
-    impl TraceObjectInterface for MockProcess {}
+    impl TraceObjectInterface for MockProcess {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     impl TraceProcess for MockProcess {}
 
     fn as_dyn(p: &MockProcess) -> &dyn TraceProcess {
@@ -48,7 +52,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockProcess::trace_object_info();
+        let info = <MockProcess as TraceProcess>::trace_object_info();
         assert_eq!(info.schema_name, "Process");
         assert_eq!(info.short_name, "process");
         assert_eq!(info.attributes, vec![KEY_PID.to_string()]);

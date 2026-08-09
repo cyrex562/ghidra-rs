@@ -1,5 +1,5 @@
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::TraceObjectInterface;
+use crate::trace::model::target::iface::TraceObjectInterface;
 
 /// A container of registers.
 ///
@@ -30,7 +30,11 @@ mod tests {
 
     struct MockRegisterContainer;
 
-    impl TraceObjectInterface for MockRegisterContainer {}
+    impl TraceObjectInterface for MockRegisterContainer {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     impl TraceRegisterContainer for MockRegisterContainer {}
 
     fn as_dyn(c: &MockRegisterContainer) -> &dyn TraceRegisterContainer {
@@ -45,7 +49,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockRegisterContainer::trace_object_info();
+        let info = <MockRegisterContainer as TraceRegisterContainer>::trace_object_info();
         assert_eq!(info.schema_name, "RegisterContainer");
         assert_eq!(info.short_name, "register container");
         assert!(info.attributes.is_empty());

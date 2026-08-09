@@ -1,5 +1,5 @@
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::TraceObjectInterface;
+use super::TraceObjectInterface;
 
 /// The object attribute key holding whether a togglable object is enabled.
 ///
@@ -26,7 +26,11 @@ mod tests {
 
     struct MockTogglable;
 
-    impl TraceObjectInterface for MockTogglable {}
+    impl TraceObjectInterface for MockTogglable {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     impl TraceTogglable for MockTogglable {}
 
     fn as_dyn(t: &MockTogglable) -> &dyn TraceTogglable {
@@ -41,7 +45,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockTogglable::trace_object_info();
+        let info = <MockTogglable as TraceTogglable>::trace_object_info();
         assert_eq!(info.schema_name, "Togglable");
         assert_eq!(info.short_name, "togglable");
         assert_eq!(info.attributes, vec![KEY_ENABLED.to_string()]);

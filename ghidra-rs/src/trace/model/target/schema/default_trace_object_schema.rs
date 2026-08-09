@@ -30,7 +30,8 @@ use std::collections::HashMap;
 
 use crate::debug::api::tracermi::SchemaName;
 use crate::trace::model::target::schema::schema_context::SchemaContext;
-use crate::trace::seam_stubs::{AttributeSchema, TraceObjectInterface, TraceObjectSchema};
+use crate::trace::model::target::iface::TraceObjectInterface;
+use crate::trace::seam_stubs::{AttributeSchema, TraceObjectSchema};
 
 /// The "type descriptor" of a trace object.
 ///

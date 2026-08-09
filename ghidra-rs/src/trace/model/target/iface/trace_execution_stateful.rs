@@ -1,5 +1,5 @@
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::TraceObjectInterface;
+use super::TraceObjectInterface;
 
 /// The object attribute key holding the execution state.
 ///
@@ -26,7 +26,11 @@ mod tests {
 
     struct MockExecutionStateful;
 
-    impl TraceObjectInterface for MockExecutionStateful {}
+    impl TraceObjectInterface for MockExecutionStateful {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     impl TraceExecutionStateful for MockExecutionStateful {}
 
     fn as_dyn(e: &MockExecutionStateful) -> &dyn TraceExecutionStateful {
@@ -41,7 +45,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockExecutionStateful::trace_object_info();
+        let info = <MockExecutionStateful as TraceExecutionStateful>::trace_object_info();
         assert_eq!(info.schema_name, "ExecutionStateful");
         assert_eq!(info.short_name, "exec stateful");
         assert_eq!(info.attributes, vec![KEY_STATE.to_string()]);

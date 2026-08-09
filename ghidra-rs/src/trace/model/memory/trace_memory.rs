@@ -1,5 +1,5 @@
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::TraceObjectInterface;
+use crate::trace::model::target::iface::TraceObjectInterface;
 
 /// The memory model of a target object.
 ///
@@ -27,7 +27,11 @@ mod tests {
 
     struct MockMemory;
 
-    impl TraceObjectInterface for MockMemory {}
+    impl TraceObjectInterface for MockMemory {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     impl TraceMemory for MockMemory {}
 
     fn as_dyn(m: &MockMemory) -> &dyn TraceMemory {
@@ -42,7 +46,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockMemory::trace_object_info();
+        let info = <MockMemory as TraceMemory>::trace_object_info();
         assert_eq!(info.schema_name, "Memory");
         assert_eq!(info.short_name, "memory");
         assert!(info.attributes.is_empty());
