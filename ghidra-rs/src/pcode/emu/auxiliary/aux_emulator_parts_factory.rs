@@ -44,8 +44,9 @@ use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::seam_stubs::{
-    BytesPcodeExecutorStatePiece, DefaultPcodeThread, PcodeExecutor, PcodeThread,
+    BytesPcodeExecutorStatePiece, DefaultPcodeThread, PcodeExecutor,
 };
 use crate::program::model::lang::Language;
 
@@ -73,7 +74,7 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
     fn create_local_userop_library(
         &self,
         emulator: &dyn AuxPcodeEmulator<U>,
-        thread: &dyn PcodeThread,
+        thread: &dyn ErasedPcodeThread,
     ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, U)>>;
 
     /// Create an executor for the given thread.
@@ -98,7 +99,7 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
     /// Java's default body constructs `new AuxPcodeThread<>(name, emulator)`. `AuxPcodeThread` is
     /// not yet ported, so this default panics; implementors that need a working default must
     /// override it until that port lands.
-    fn create_thread(&self, _emulator: &dyn AuxPcodeEmulator<U>, _name: &str) -> Arc<dyn PcodeThread> {
+    fn create_thread(&self, _emulator: &dyn AuxPcodeEmulator<U>, _name: &str) -> Arc<dyn ErasedPcodeThread> {
         unimplemented!("AuxPcodeThread not yet ported")
     }
 
@@ -122,7 +123,7 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
     fn create_local_state<CB: PcodeStateCallbacks>(
         &self,
         emulator: &dyn AuxPcodeEmulator<U>,
-        thread: &dyn PcodeThread,
+        thread: &dyn ErasedPcodeThread,
         concrete: Box<dyn BytesPcodeExecutorStatePiece>,
         cb: &CB,
     ) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>>;
@@ -558,11 +559,11 @@ mod tests {
         }
         fn create_local_state(
             &self,
-            _thread: &dyn PcodeThread,
+            _thread: &dyn ErasedPcodeThread,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             unimplemented!("not exercised by these tests")
         }
-        fn create_thread(&self, _name: &str) -> Arc<dyn PcodeThread> {
+        fn create_thread(&self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
             unimplemented!("not exercised by these tests")
         }
     }
@@ -586,16 +587,16 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<(Vec<u8>, i64)> {
             self.base.get_stub_userop_library()
         }
-        fn new_thread(&mut self) -> Arc<dyn PcodeThread> {
+        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
             AbstractPcodeMachineBase::new_thread(self)
         }
-        fn new_thread_named(&mut self, name: &str) -> Arc<dyn PcodeThread> {
+        fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
             AbstractPcodeMachineBase::new_thread_named(self, name)
         }
-        fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn PcodeThread>> {
+        fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>> {
             AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
         }
-        fn get_all_threads(&self) -> Vec<Arc<dyn PcodeThread>> {
+        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
             self.base.get_all_threads()
         }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<(Vec<u8>, i64)> {
@@ -652,7 +653,7 @@ mod tests {
     impl AuxPcodeEmulator<i64> for MockAuxPcodeEmulator {}
 
     struct MockPcodeThread;
-    impl PcodeThread for MockPcodeThread {}
+    impl ErasedPcodeThread for MockPcodeThread {}
 
     /// A minimal implementor of `AuxEmulatorPartsFactory<i64>`, exercising the trait's shape --
     /// Java's `Pair<byte[], U>` values threaded through as `(Vec<u8>, i64)` -- without needing
@@ -681,7 +682,7 @@ mod tests {
         fn create_local_userop_library(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _thread: &dyn PcodeThread,
+            _thread: &dyn ErasedPcodeThread,
         ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, i64)>> {
             named_userop_library("__local")
         }
@@ -698,7 +699,7 @@ mod tests {
         fn create_local_state<CB: PcodeStateCallbacks>(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _thread: &dyn PcodeThread,
+            _thread: &dyn ErasedPcodeThread,
             _concrete: Box<dyn BytesPcodeExecutorStatePiece>,
             _cb: &CB,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {

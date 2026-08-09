@@ -56,7 +56,8 @@ use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::NONE;
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
-use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorStatePiece, PcodeThread};
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorStatePiece};
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::Language;
 
@@ -122,7 +123,7 @@ pub fn create_shared_state<U: 'static>(
 /// Port of the overridden `createLocalState(PcodeThread<Pair<byte[], U>>)`.
 pub fn create_local_state<U: 'static>(
     emulator: &dyn AuxPcodeEmulator<U>,
-    thread: &dyn PcodeThread,
+    thread: &dyn ErasedPcodeThread,
     parts_factory: &impl AuxEmulatorPartsFactory<U>,
 ) -> Box<dyn PcodeExecutorState<(Vec<u8>, U)>> {
     parts_factory.create_local_state(emulator, thread, Box::new(ConcreteStatePieceStub), &NONE)
@@ -133,7 +134,7 @@ pub fn create_thread<U: 'static>(
     emulator: &dyn AuxPcodeEmulator<U>,
     name: &str,
     parts_factory: &impl AuxEmulatorPartsFactory<U>,
-) -> Arc<dyn PcodeThread> {
+) -> Arc<dyn ErasedPcodeThread> {
     parts_factory.create_thread(emulator, name)
 }
 
@@ -294,7 +295,7 @@ mod tests {
     /// A thread that carries only its name, mirroring `abstract_pcode_machine`'s `NamedThread`.
     struct NamedThread(#[allow(dead_code)] String);
 
-    impl PcodeThread for NamedThread {}
+    impl ErasedPcodeThread for NamedThread {}
 
     /// A named userop that does nothing, just enough to populate a library and be found by name,
     /// mirroring the double `aux_emulator_parts_factory`'s own tests use.
@@ -388,11 +389,11 @@ mod tests {
         fn create_local_userop_library(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _thread: &dyn PcodeThread,
+            _thread: &dyn ErasedPcodeThread,
         ) -> Box<dyn PcodeUseropLibrary<(Vec<u8>, i64)>> {
             unimplemented!("not exercised by these tests")
         }
-        fn create_thread(&self, _emulator: &dyn AuxPcodeEmulator<i64>, name: &str) -> Arc<dyn PcodeThread> {
+        fn create_thread(&self, _emulator: &dyn AuxPcodeEmulator<i64>, name: &str) -> Arc<dyn ErasedPcodeThread> {
             self.calls.lock().unwrap().push(format!("thread:{name}"));
             Arc::new(NamedThread(name.to_string()))
         }
@@ -408,7 +409,7 @@ mod tests {
         fn create_local_state<CB: PcodeStateCallbacks>(
             &self,
             _emulator: &dyn AuxPcodeEmulator<i64>,
-            _thread: &dyn PcodeThread,
+            _thread: &dyn ErasedPcodeThread,
             _concrete: Box<dyn BytesPcodeExecutorStatePiece>,
             _cb: &CB,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
@@ -453,11 +454,11 @@ mod tests {
         }
         fn create_local_state(
             &self,
-            thread: &dyn PcodeThread,
+            thread: &dyn ErasedPcodeThread,
         ) -> Box<dyn PcodeExecutorState<(Vec<u8>, i64)>> {
             create_local_state(self, thread, &self.factory)
         }
-        fn create_thread(&self, name: &str) -> Arc<dyn PcodeThread> {
+        fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
             create_thread(self, name, &self.factory)
         }
     }
@@ -481,16 +482,16 @@ mod tests {
         fn get_stub_userop_library(&self) -> &dyn PcodeUseropLibrary<(Vec<u8>, i64)> {
             self.base.get_stub_userop_library()
         }
-        fn new_thread(&mut self) -> Arc<dyn PcodeThread> {
+        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
             AbstractPcodeMachineBase::new_thread(self)
         }
-        fn new_thread_named(&mut self, name: &str) -> Arc<dyn PcodeThread> {
+        fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
             AbstractPcodeMachineBase::new_thread_named(self, name)
         }
-        fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn PcodeThread>> {
+        fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>> {
             AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
         }
-        fn get_all_threads(&self) -> Vec<Arc<dyn PcodeThread>> {
+        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
             self.base.get_all_threads()
         }
         fn get_shared_state(&self) -> &dyn PcodeExecutorState<(Vec<u8>, i64)> {

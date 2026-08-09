@@ -6,6 +6,7 @@ pub mod pcode_emulation_callbacks;
 pub mod pcode_emulator;
 pub mod pcode_machine;
 pub mod pcode_state_initializer;
+pub mod pcode_thread;
 pub mod symz3;
 pub mod sys;
 pub mod taint;
@@ -20,3 +21,4 @@ pub use pcode_emulation_callbacks::{
 pub use pcode_emulator::PcodeEmulator;
 pub use pcode_machine::{AccessKind, ErasedPcodeMachine, PcodeMachine, SwiMode};
 pub use pcode_state_initializer::PcodeStateInitializer;
+pub use pcode_thread::{ErasedPcodeThread, PcodeThread};

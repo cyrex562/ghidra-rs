@@ -7,7 +7,8 @@ use std::sync::Arc;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
-use crate::pcode::seam_stubs::{PcodeProgram, PcodeThread};
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::seam_stubs::PcodeProgram;
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
 
@@ -115,23 +116,26 @@ pub trait PcodeMachine<T: 'static>: ErasedPcodeMachine {
     /// Create a new thread with a default name in this machine.
     ///
     /// The machine retains the thread as well (see [`get_all_threads`](Self::get_all_threads)),
-    /// hence the shared handle.
-    fn new_thread(&mut self) -> Arc<dyn PcodeThread>;
+    /// hence the shared handle. Java's return type is `PcodeThread<T>`; the handle is
+    /// value-erased here until a concrete
+    /// [`PcodeThread`](crate::pcode::emu::pcode_thread::PcodeThread) implementation exists to
+    /// return (see [`ErasedPcodeThread`]).
+    fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread>;
 
     /// Create a new thread with the given name in this machine.
     ///
     /// Java overloads `newThread`; Rust traits cannot overload on arity, so the named form gets a
     /// distinct name.
-    fn new_thread_named(&mut self, name: &str) -> Arc<dyn PcodeThread>;
+    fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread>;
 
     /// Get the thread, if present, with the given name, creating it if `create_if_absent`.
     ///
     /// Returns `None` (Java's `null`) if absent and not created. Takes `&mut self` because the
     /// creating case adds to the machine.
-    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn PcodeThread>>;
+    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>>;
 
     /// Collect all threads present in the machine.
-    fn get_all_threads(&self) -> Vec<Arc<dyn PcodeThread>>;
+    fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>>;
 
     /// Get the machine's shared (memory) state.
     ///
@@ -264,11 +268,11 @@ mod tests {
             unimplemented!("test should not call this")
         }
 
-        fn new_thread(&mut self) -> Arc<dyn PcodeThread> {
+        fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
             unimplemented!("test should not call this")
         }
 
-        fn new_thread_named(&mut self, _name: &str) -> Arc<dyn PcodeThread> {
+        fn new_thread_named(&mut self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
             unimplemented!("test should not call this")
         }
 
@@ -276,11 +280,11 @@ mod tests {
             &mut self,
             _name: &str,
             _create_if_absent: bool,
-        ) -> Option<Arc<dyn PcodeThread>> {
+        ) -> Option<Arc<dyn ErasedPcodeThread>> {
             None
         }
 
-        fn get_all_threads(&self) -> Vec<Arc<dyn PcodeThread>> {
+        fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
             vec![]
         }
 

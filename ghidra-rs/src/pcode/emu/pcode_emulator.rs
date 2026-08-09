@@ -42,8 +42,9 @@ use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
 use crate::pcode::emu::pcode_emulation_callbacks::{
     no_pcode_emulation_callbacks, PcodeEmulationCallbacks,
 };
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::seam_stubs::{
-    BytesPcodeArithmetic, BytesPcodeExecutorState, BytesPcodeThread, PcodeProgram, PcodeThread,
+    BytesPcodeArithmetic, BytesPcodeExecutorState, BytesPcodeThread, PcodeProgram,
 };
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
@@ -100,12 +101,12 @@ impl AbstractPcodeMachine<Vec<u8>> for PcodeEmulator {
     }
 
     /// Port of the overridden `createLocalState(PcodeThread<byte[]>)`.
-    fn create_local_state(&self, _thread: &dyn PcodeThread) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
+    fn create_local_state(&self, _thread: &dyn ErasedPcodeThread) -> Box<dyn PcodeExecutorState<Vec<u8>>> {
         Box::new(BytesPcodeExecutorState::new(Arc::clone(self.base.language()), NONE))
     }
 
     /// Port of the overridden `createThread(String)`.
-    fn create_thread(&self, name: &str) -> Arc<dyn PcodeThread> {
+    fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
         Arc::new(BytesPcodeThread::new(name))
     }
 }
@@ -135,19 +136,19 @@ impl PcodeMachine<Vec<u8>> for PcodeEmulator {
         self.base.get_stub_userop_library()
     }
 
-    fn new_thread(&mut self) -> Arc<dyn PcodeThread> {
+    fn new_thread(&mut self) -> Arc<dyn ErasedPcodeThread> {
         AbstractPcodeMachineBase::new_thread(self)
     }
 
-    fn new_thread_named(&mut self, name: &str) -> Arc<dyn PcodeThread> {
+    fn new_thread_named(&mut self, name: &str) -> Arc<dyn ErasedPcodeThread> {
         AbstractPcodeMachineBase::new_thread_named(self, name)
     }
 
-    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn PcodeThread>> {
+    fn get_thread(&mut self, name: &str, create_if_absent: bool) -> Option<Arc<dyn ErasedPcodeThread>> {
         AbstractPcodeMachineBase::get_thread(self, name, create_if_absent)
     }
 
-    fn get_all_threads(&self) -> Vec<Arc<dyn PcodeThread>> {
+    fn get_all_threads(&self) -> Vec<Arc<dyn ErasedPcodeThread>> {
         self.base.get_all_threads()
     }
 

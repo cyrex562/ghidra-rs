@@ -491,7 +491,6 @@ ts	stub_class	referenced_by
 2026-08-09T03:02:53.728677+00:00	ValueLocation	LocationPcodeArithmetic
 2026-08-08T23:28:25.000000+00:00	PseudoInstruction	InstructionDecoder
 2026-08-08T23:28:25.000000+00:00	RegisterValue	InstructionDecoder
-2026-08-09T03:29:57.650124+00:00	PcodeThread	PcodeStateInitializer
 2026-08-09T05:10:00.000000+00:00	ComposedPcodeUseropLibrary	PcodeUseropLibrary
 2026-08-09T05:30:00.000000+00:00	PcodeExecutor	AnnotatedPcodeUseropLibrary
 2026-08-09T06:00:00.000000+00:00	Emulate	EmulateInstructionStateModifier
@@ -508,3 +507,4 @@ ts	stub_class	referenced_by
 2026-08-09T07:36:04.698689870+00:00	BreakTableCallBack	Emulator
 2026-08-09T07:36:04.698689870+00:00	FilteredMemoryState	Emulator
 2026-08-09T07:36:04.698689870+00:00	MemoryAccessFilter	Emulator
+2026-08-09T08:15:00.000000+00:00	ThreadPcodeExecutorState	PcodeThread

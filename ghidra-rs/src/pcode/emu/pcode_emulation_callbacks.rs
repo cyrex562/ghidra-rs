@@ -25,8 +25,8 @@
 //!   implementor (and hence [`Wrapper`], which is generic over one) can call and override them,
 //!   while the notification callbacks, which are the whole of what a machine invokes, remain
 //!   dispatchable through a trait object.
-//! * Java's `PcodeThread<T>` arrives here as the unparameterized
-//!   [`PcodeThread`](crate::pcode::seam_stubs::PcodeThread) placeholder, and Java's `null` thread
+//! * Java's `PcodeThread<T>` arrives here value-erased, as
+//!   [`ErasedPcodeThread`](crate::pcode::emu::pcode_thread::ErasedPcodeThread), and Java's `null` thread
 //!   (documented for the state-piece callbacks, where the piece may belong to the machine's
 //!   *shared* state rather than to a thread) is an `Option`.
 //! * `readUninitialized` returns an owned [`AddressSet`] rather than an `AddressSetView`, and its
@@ -43,7 +43,8 @@ use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Re
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_state_callbacks::{rng_set, PcodeStateCallbacks};
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
-use crate::pcode::seam_stubs::{PcodeProgram, PcodeThread, RegisterValue};
+use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::seam_stubs::{PcodeProgram, RegisterValue};
 use crate::program::model::address::{Address, AddressSet, AddressSetView, AddressSpace};
 use crate::program::model::listing::Instruction;
 use crate::program::model::pcode::PcodeOp;
@@ -77,7 +78,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// A new thread has just been created.
     ///
     /// The thread is fully constructed. This callback may access it.
-    fn thread_created(&self, _thread: &Arc<dyn PcodeThread>) {}
+    fn thread_created(&self, _thread: &Arc<dyn ErasedPcodeThread>) {}
 
     /// The emulator is preparing to decode an instruction, but is checking for injected overrides
     /// first.
@@ -88,7 +89,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// See [`PcodeMachine::inject`](crate::pcode::emu::pcode_machine::PcodeMachine::inject).
     fn get_inject(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _address: &Address,
     ) -> Option<Arc<dyn PcodeProgram>> {
         None
@@ -97,7 +98,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// The emulator is preparing to execute an injected program.
     fn before_execute_inject(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _address: &Address,
         _program: &dyn PcodeProgram,
     ) {
@@ -108,14 +109,14 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// If the program executed a branch, then `address` will be the target address. Note that any
     /// sane inject ought to execute a branch, even to effect fall-through, otherwise the program
     /// counter cannot advance.
-    fn after_execute_inject(&self, _thread: &dyn PcodeThread, _address: &Address) {}
+    fn after_execute_inject(&self, _thread: &dyn ErasedPcodeThread, _address: &Address) {}
 
     /// The emulator, having found no injects, is preparing to decode an instruction.
     ///
     /// `context` is the decode contextreg value.
     fn before_decode_instruction(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _counter: &Address,
         _context: &dyn RegisterValue,
     ) {
@@ -124,20 +125,20 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// The emulator is preparing to execute a decoded instruction.
     fn before_execute_instruction(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _instruction: &dyn Instruction,
         _program: &dyn PcodeProgram,
     ) {
     }
 
     /// The emulator has finished executing an instruction.
-    fn after_execute_instruction(&self, _thread: &dyn PcodeThread, _instruction: &dyn Instruction) {}
+    fn after_execute_instruction(&self, _thread: &dyn ErasedPcodeThread, _instruction: &dyn Instruction) {}
 
     /// The emulator is preparing to execute a p-code op.
-    fn before_step_op(&self, _thread: &dyn PcodeThread, _op: &PcodeOp, _frame: &PcodeFrame) {}
+    fn before_step_op(&self, _thread: &dyn ErasedPcodeThread, _op: &PcodeOp, _frame: &PcodeFrame) {}
 
     /// The emulator has just executed a p-code op.
-    fn after_step_op(&self, _thread: &dyn PcodeThread, _op: &PcodeOp, _frame: &PcodeFrame) {}
+    fn after_step_op(&self, _thread: &dyn ErasedPcodeThread, _op: &PcodeOp, _frame: &PcodeFrame) {}
 
     /// The emulator is preparing to load a value from its execution state.
     ///
@@ -145,7 +146,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// `offset`, and `size` describe the operand.
     fn before_load(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _op: &PcodeOp,
         _space: &Arc<AddressSpace>,
         _offset: &T,
@@ -156,7 +157,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// The emulator has just loaded a value from its execution state.
     fn after_load(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _op: &PcodeOp,
         _space: &Arc<AddressSpace>,
         _offset: &T,
@@ -168,7 +169,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// The emulator is preparing to store a value into its execution state.
     fn before_store(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _op: &PcodeOp,
         _space: &Arc<AddressSpace>,
         _offset: &T,
@@ -180,7 +181,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// The emulator has just stored a value into its execution state.
     fn after_store(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _op: &PcodeOp,
         _space: &Arc<AddressSpace>,
         _offset: &T,
@@ -190,7 +191,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     }
 
     /// The emulator has just branched to an address.
-    fn after_branch(&self, _thread: &dyn PcodeThread, _op: &PcodeOp, _target: &Address) {}
+    fn after_branch(&self, _thread: &dyn ErasedPcodeThread, _op: &PcodeOp, _target: &Address) {}
 
     /// The emulator has encountered a userop for which it has no definition.
     ///
@@ -199,7 +200,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// emulation for this thread will be interrupted.
     fn handle_missing_userop(
         &self,
-        _thread: &dyn PcodeThread,
+        _thread: &dyn ErasedPcodeThread,
         _op: &PcodeOp,
         _frame: &PcodeFrame,
         _op_name: &str,
@@ -217,7 +218,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// *local* state, `thread` will be the thread of execution.
     fn data_written_abstract<A, U>(
         &self,
-        _thread: Option<&dyn PcodeThread>,
+        _thread: Option<&dyn ErasedPcodeThread>,
         _piece: &dyn PcodeExecutorStatePiece<A, U>,
         _space: &Arc<AddressSpace>,
         _offset: &A,
@@ -233,7 +234,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// [`data_written`](Self::data_written).
     fn delegate_data_written_abstract<A, U>(
         &self,
-        thread: Option<&dyn PcodeThread>,
+        thread: Option<&dyn ErasedPcodeThread>,
         piece: &dyn PcodeExecutorStatePiece<A, U>,
         space: &Arc<AddressSpace>,
         offset: &A,
@@ -254,7 +255,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// `thread` may be `None`; see [`data_written_abstract`](Self::data_written_abstract).
     fn data_written<A, U>(
         &self,
-        _thread: Option<&dyn PcodeThread>,
+        _thread: Option<&dyn ErasedPcodeThread>,
         _piece: &dyn PcodeExecutorStatePiece<A, U>,
         _address: &Address,
         _length: i32,
@@ -269,7 +270,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// [`data_written_abstract`](Self::data_written_abstract).
     fn delegate_data_written<A, U>(
         &self,
-        thread: Option<&dyn PcodeThread>,
+        thread: Option<&dyn ErasedPcodeThread>,
         piece: &dyn PcodeExecutorStatePiece<A, U>,
         address: &Address,
         length: i32,
@@ -293,7 +294,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// for communicating that result to the emulator.
     fn read_uninitialized_abstract<A, U>(
         &self,
-        _thread: Option<&dyn PcodeThread>,
+        _thread: Option<&dyn ErasedPcodeThread>,
         _piece: &dyn PcodeExecutorStatePiece<A, U>,
         _space: &Arc<AddressSpace>,
         _offset: &A,
@@ -311,7 +312,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// callback for concrete addressing, [`read_uninitialized`](Self::read_uninitialized).
     fn delegate_read_uninitialized_abstract<A, U>(
         &self,
-        thread: Option<&dyn PcodeThread>,
+        thread: Option<&dyn ErasedPcodeThread>,
         piece: &dyn PcodeExecutorStatePiece<A, U>,
         space: &Arc<AddressSpace>,
         offset: &A,
@@ -347,7 +348,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// copy `set`, remove those parts it was able to initialize, and return the copy.
     fn read_uninitialized<A, U>(
         &self,
-        _thread: Option<&dyn PcodeThread>,
+        _thread: Option<&dyn ErasedPcodeThread>,
         _piece: &dyn PcodeExecutorStatePiece<A, U>,
         set: &dyn AddressSetView,
         _reason: Reason,
@@ -363,7 +364,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// [`read_uninitialized_abstract`](Self::read_uninitialized_abstract).
     fn delegate_read_uninitialized<A, U>(
         &self,
-        thread: Option<&dyn PcodeThread>,
+        thread: Option<&dyn ErasedPcodeThread>,
         piece: &dyn PcodeExecutorStatePiece<A, U>,
         set: &dyn AddressSetView,
         reason: Reason,
@@ -404,7 +405,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
     /// This will forward the calls from the state's pieces to this set of emulator callbacks,
     /// passing the given thread. Port of `wrapFor(PcodeThread)`; `thread` is `None` for the
     /// machine's shared state, which is Java's `null`.
-    fn wrap_for<'a>(&'a self, thread: Option<&'a dyn PcodeThread>) -> Wrapper<'a, T, Self>
+    fn wrap_for<'a>(&'a self, thread: Option<&'a dyn ErasedPcodeThread>) -> Wrapper<'a, T, Self>
     where
         Self: Sized,
     {
@@ -419,7 +420,7 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
 /// references; this holds two borrows, since a wrapper only ever lives as long as the call that
 /// hands it to a state.
 pub struct Wrapper<'a, T: 'static, CB: PcodeEmulationCallbacks<T>> {
-    thread: Option<&'a dyn PcodeThread>,
+    thread: Option<&'a dyn ErasedPcodeThread>,
     cb: &'a CB,
     /// `T` appears only in `CB`'s bound, which does not constrain it on its own.
     domain: PhantomData<fn() -> T>,
@@ -427,12 +428,12 @@ pub struct Wrapper<'a, T: 'static, CB: PcodeEmulationCallbacks<T>> {
 
 impl<'a, T: 'static, CB: PcodeEmulationCallbacks<T>> Wrapper<'a, T, CB> {
     /// Construct a wrapper forwarding to `cb` on behalf of `thread`.
-    pub fn new(thread: Option<&'a dyn PcodeThread>, cb: &'a CB) -> Self {
+    pub fn new(thread: Option<&'a dyn ErasedPcodeThread>, cb: &'a CB) -> Self {
         Self { thread, cb, domain: PhantomData }
     }
 
     /// The thread included in forwarded callbacks. Port of the record component `thread()`.
-    pub fn thread(&self) -> Option<&'a dyn PcodeThread> {
+    pub fn thread(&self) -> Option<&'a dyn ErasedPcodeThread> {
         self.thread
     }
 
@@ -661,7 +662,7 @@ mod tests {
     /// A thread carrying only its name, which is all these tests observe of one.
     struct NamedThread(&'static str);
 
-    impl PcodeThread for NamedThread {}
+    impl ErasedPcodeThread for NamedThread {}
 
     fn ram() -> Arc<AddressSpace> {
         AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0)
@@ -714,7 +715,7 @@ mod tests {
         abstract_writes: Mutex<Vec<(String, Arc<AddressSpace>, i32)>>,
     }
 
-    fn thread_name(thread: Option<&dyn PcodeThread>) -> String {
+    fn thread_name(thread: Option<&dyn ErasedPcodeThread>) -> String {
         match thread {
             Some(_) => "thread".to_string(),
             None => String::new(),
@@ -724,7 +725,7 @@ mod tests {
     impl PcodeEmulationCallbacks<i64> for RecordingCallbacks {
         fn data_written<A, U>(
             &self,
-            thread: Option<&dyn PcodeThread>,
+            thread: Option<&dyn ErasedPcodeThread>,
             _piece: &dyn PcodeExecutorStatePiece<A, U>,
             address: &Address,
             length: i32,
@@ -738,7 +739,7 @@ mod tests {
 
         fn data_written_abstract<A, U>(
             &self,
-            thread: Option<&dyn PcodeThread>,
+            thread: Option<&dyn ErasedPcodeThread>,
             _piece: &dyn PcodeExecutorStatePiece<A, U>,
             space: &Arc<AddressSpace>,
             _offset: &A,
@@ -781,7 +782,7 @@ mod tests {
     impl PcodeEmulationCallbacks<i64> for PartialInitCallbacks {
         fn read_uninitialized<A, U>(
             &self,
-            _thread: Option<&dyn PcodeThread>,
+            _thread: Option<&dyn ErasedPcodeThread>,
             _piece: &dyn PcodeExecutorStatePiece<A, U>,
             set: &dyn AddressSetView,
             _reason: Reason,
@@ -822,7 +823,7 @@ mod tests {
     impl PcodeEmulationCallbacks<i64> for FullInitCallbacks {
         fn read_uninitialized_abstract<A, U>(
             &self,
-            _thread: Option<&dyn PcodeThread>,
+            _thread: Option<&dyn ErasedPcodeThread>,
             _piece: &dyn PcodeExecutorStatePiece<A, U>,
             _space: &Arc<AddressSpace>,
             _offset: &A,
