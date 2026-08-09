@@ -55,6 +55,10 @@ mod tests {
 	struct MockEmulate;
 	impl Emulate for MockEmulate {
 		fn dispose(&self) {}
+
+		fn get_language(&self) -> Box<dyn crate::program::model::lang::Language> {
+			unimplemented!("test should not call this")
+		}
 	}
 
 	struct MockPcodeOpRaw;

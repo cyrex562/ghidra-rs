@@ -500,3 +500,5 @@ ts	stub_class	referenced_by
 2026-08-09T05:10:00.000000+00:00	ComposedPcodeUseropLibrary	PcodeUseropLibrary
 2026-08-09T05:30:00.000000+00:00	PcodeExecutor	AnnotatedPcodeUseropLibrary
 2026-08-09T05:30:00.000000+00:00	PcodeExecutorStatePiece	AnnotatedPcodeUseropLibrary
+2026-08-09T06:00:00.000000+00:00	Emulate	EmulateInstructionStateModifier
+2026-08-09T06:00:00.000000+00:00	RegisterValue	EmulateInstructionStateModifier
