@@ -10885,7 +10885,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/BytesPcodeThr
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/ComposedPcodeEmulationCallbacks.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/DefaultPcodeThread.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/EmulatorUtilities.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/InstructionDecoder.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/InstructionDecoder.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/ModifiedPcodeThread.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeEmulationCallbacks.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/PcodeEmulator.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu 
