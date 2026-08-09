@@ -20,20 +20,14 @@
 //!   trait's static-like associated function without already knowing a concrete implementing
 //!   type, so there is no object-safe way to call through to it from here.
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{ObjectKey, TraceChangeRecord, TraceObjectInterface};
+use crate::trace::seam_stubs::{ObjectKey, TraceChangeRecord};
+use crate::trace::model::target::iface::TraceObjectInterface;
 use crate::trace::model::target::trace_object::TraceObject;
 
 /// A [`TraceObject`]-backed implementation of another trace-manager interface.
 ///
 /// Port of `ghidra.trace.database.target.DBTraceObjectInterface`.
 pub trait DBTraceObjectInterface: TraceObjectInterface + TraceUniqueObject {
-    /// Get the object backing this implementation.
-    ///
-    /// Mirrors `TraceObjectInterface.getObject()`. Declared directly on this trait (rather than
-    /// on the shared [`TraceObjectInterface`] marker trait, which many other ported interfaces
-    /// use as a marker without needing this member) because it's the member this trait's
-    /// defaults actually depend on.
-    fn get_object(&self) -> Box<dyn TraceObject>;
 
     /// Translate an object event into the interface-specific event.
     ///
@@ -148,16 +142,16 @@ mod tests {
         object: MockObject,
     }
 
-    impl TraceObjectInterface for MockThread {}
-
-    impl DBTraceObjectInterface for MockThread {
+    impl TraceObjectInterface for MockThread {
         fn get_object(&self) -> Box<dyn TraceObject> {
             Box::new(MockObject {
                 key: self.object.key,
                 life_empty: self.object.life_empty,
             })
         }
+    }
 
+    impl DBTraceObjectInterface for MockThread {
         fn translate_event(&self, _rec: &dyn TraceChangeRecord) -> Option<Box<dyn TraceChangeRecord>> {
             None
         }

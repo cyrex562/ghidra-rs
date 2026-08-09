@@ -1,5 +1,5 @@
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::TraceObjectInterface;
+use super::TraceObjectInterface;
 
 /// A marker interface which indicates its attributes represent the object as a whole.
 ///
@@ -26,7 +26,11 @@ mod tests {
 
     struct MockAggregate;
 
-    impl TraceObjectInterface for MockAggregate {}
+    impl TraceObjectInterface for MockAggregate {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     impl TraceAggregate for MockAggregate {}
 
     fn as_dyn(a: &MockAggregate) -> &dyn TraceAggregate {
@@ -41,7 +45,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockAggregate::trace_object_info();
+        let info = <MockAggregate as TraceAggregate>::trace_object_info();
         assert_eq!(info.schema_name, "Aggregate");
         assert_eq!(info.short_name, "aggregate");
         assert!(info.attributes.is_empty());

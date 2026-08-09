@@ -50,7 +50,8 @@ mod tests {
     use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_unique_object::TraceUniqueObject;
-    use crate::trace::seam_stubs::{ObjectKey, TraceObjectInterface};
+    use crate::trace::model::target::iface::TraceObjectInterface;
+    use crate::trace::seam_stubs::ObjectKey;
     use crate::util::exception::DuplicateNameException;
 
     struct MockObjectKey(i32);
@@ -90,7 +91,11 @@ mod tests {
         }
     }
 
-    impl TraceObjectInterface for MockModule {}
+    impl TraceObjectInterface for MockModule {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
 
     impl TraceModule for MockModule {
         fn get_trace(&self) -> Box<dyn Trace> {
@@ -190,7 +195,11 @@ mod tests {
         }
     }
 
-    impl TraceObjectInterface for MockSection {}
+    impl TraceObjectInterface for MockSection {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
 
     impl TraceSection for MockSection {
         fn get_trace(&self) -> Box<dyn Trace> {

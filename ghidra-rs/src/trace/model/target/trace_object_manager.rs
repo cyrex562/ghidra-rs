@@ -12,7 +12,8 @@ use crate::trace::model::target::path::PathFilter;
 use crate::trace::model::target::trace_object_val_path::TraceObjectValPath;
 use crate::trace::model::target::trace_object_value::TraceObjectValue;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{TraceObjectInterface, TraceObjectSchema};
+use crate::trace::model::target::iface::TraceObjectInterface;
+use crate::trace::seam_stubs::TraceObjectSchema;
 use crate::trace::model::target::trace_object::TraceObject;
 
 /// A handle to automatically re-enable the write cache.

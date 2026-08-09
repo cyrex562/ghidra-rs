@@ -643,7 +643,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn query_all_interface<I: crate::trace::seam_stubs::TraceObjectInterface>(
+        fn query_all_interface<I: crate::trace::model::target::iface::TraceObjectInterface>(
             &self,
             _span: Lifespan,
         ) -> Vec<I>

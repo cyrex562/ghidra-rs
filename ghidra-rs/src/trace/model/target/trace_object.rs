@@ -33,7 +33,8 @@ use crate::trace::model::target::trace_object_value::TraceObjectValue;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_execution_state::TraceExecutionState;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{LifeSet, TraceObjectInterface, TraceObjectSchema};
+use crate::trace::seam_stubs::{LifeSet, TraceObjectSchema};
+use crate::trace::model::target::iface::TraceObjectInterface;
 
 /// The attribute holding a comma-separated list of extra schema interfaces an object provides
 /// beyond those named by its schema.
@@ -653,7 +654,7 @@ macro_rules! unimplemented_trace_object_members {
             Vec::new()
         }
 
-        fn query_interface<I: $crate::trace::seam_stubs::TraceObjectInterface>(&self) -> Option<I>
+        fn query_interface<I: $crate::trace::model::target::iface::TraceObjectInterface>(&self) -> Option<I>
         where
             Self: Sized,
         {
@@ -781,7 +782,7 @@ macro_rules! unimplemented_trace_object_members {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn query_ancestors_interface<I: $crate::trace::seam_stubs::TraceObjectInterface>(
+        fn query_ancestors_interface<I: $crate::trace::model::target::iface::TraceObjectInterface>(
             &self,
             _span: $crate::trace::model::lifespan::Lifespan,
         ) -> Vec<I>
@@ -799,7 +800,7 @@ macro_rules! unimplemented_trace_object_members {
         }
 
         fn query_canonical_ancestors_interface<
-            I: $crate::trace::seam_stubs::TraceObjectInterface,
+            I: $crate::trace::model::target::iface::TraceObjectInterface,
         >(
             &self,
         ) -> Vec<I>
@@ -819,7 +820,7 @@ macro_rules! unimplemented_trace_object_members {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn query_successors_interface<I: $crate::trace::seam_stubs::TraceObjectInterface>(
+        fn query_successors_interface<I: $crate::trace::model::target::iface::TraceObjectInterface>(
             &self,
             _span: $crate::trace::model::lifespan::Lifespan,
             _require_canonical: bool,

@@ -7,7 +7,8 @@ use crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag;
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{TraceObjectInterface, TraceOverlappedRegionException};
+use crate::trace::model::target::iface::TraceObjectInterface;
+use crate::trace::seam_stubs::TraceOverlappedRegionException;
 
 /// Key for the region's address-range attribute.
 pub const KEY_RANGE: &str = "_range";
@@ -349,7 +350,11 @@ mod tests {
         }
     }
 
-    impl TraceObjectInterface for MockRegion {}
+    impl TraceObjectInterface for MockRegion {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
 
     impl TraceMemoryRegion for MockRegion {
         fn get_trace(&self) -> Box<dyn Trace> {
@@ -493,7 +498,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockRegion::trace_object_info();
+        let info = <MockRegion as TraceMemoryRegion>::trace_object_info();
         assert_eq!(info.schema_name, "MemoryRegion");
         assert_eq!(info.short_name, "region");
         assert_eq!(

@@ -450,7 +450,11 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
     }
-    impl crate::trace::seam_stubs::TraceObjectInterface for MockTraceModule {}
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockTraceModule {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     // `MockTraceModule` is only ever passed through as an opaque `&dyn TraceModule` /
     // `Box<dyn TraceModule>` by this smoke test, so every method below is unexercised.
     impl TraceModule for MockTraceModule {
@@ -545,7 +549,11 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
     }
-    impl crate::trace::seam_stubs::TraceObjectInterface for MockTraceSection {}
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockTraceSection {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     impl TraceSection for MockTraceSection {
         fn get_trace(&self) -> Box<dyn Trace> {
             unimplemented!("not exercised by this smoke test")
@@ -599,7 +607,11 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
     }
-    impl crate::trace::seam_stubs::TraceObjectInterface for MockTraceMemoryRegion {}
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockTraceMemoryRegion {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
     // `TraceMemoryRegion` declares no default methods beyond the read/write/execute/volatile
     // flag helpers, so every other method needs a body even though none of them are exercised by
     // this smoke test (MockTraceMemoryRegion is only ever passed through as an opaque

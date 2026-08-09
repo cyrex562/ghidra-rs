@@ -19,7 +19,7 @@ use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::TraceObjectInterface;
+use crate::trace::model::target::iface::TraceObjectInterface;
 use crate::util::exception::DuplicateNameException;
 
 /// Key for the section's module-owner attribute.
@@ -151,7 +151,11 @@ mod tests {
         }
     }
 
-    impl TraceObjectInterface for MockSection {}
+    impl TraceObjectInterface for MockSection {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
 
     impl TraceSection for MockSection {
         fn get_trace(&self) -> Box<dyn Trace> {

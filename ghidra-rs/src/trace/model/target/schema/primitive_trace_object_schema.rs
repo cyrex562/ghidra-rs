@@ -14,7 +14,7 @@
 //! no Rust reflection analog, so it is represented as a stable type-name string.
 //!
 //! `TraceObjectInterface` and `AttributeSchema` are not yet ported (see
-//! [`seam_stubs::TraceObjectInterface`](crate::trace::seam_stubs::TraceObjectInterface) and
+//! [`seam_stubs::TraceObjectInterface`](crate::trace::model::target::iface::TraceObjectInterface) and
 //! [`seam_stubs::AttributeSchema`](crate::trace::seam_stubs::AttributeSchema)), and the static
 //! `PrimitiveTraceObjectSchema.values()` registry has no Rust equivalent without a concrete enum,
 //! so [`schema_for_primitive`] and [`name_for_primitive`] take the candidate set as a parameter
@@ -24,7 +24,8 @@ use std::collections::HashMap;
 use crate::debug::api::tracermi::SchemaName;
 use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
 use crate::trace::model::target::schema::schema_context::SchemaContext;
-use crate::trace::seam_stubs::{AttributeSchema, TraceObjectInterface, TraceObjectSchema};
+use crate::trace::model::target::iface::TraceObjectInterface;
+use crate::trace::seam_stubs::{AttributeSchema, TraceObjectSchema};
 
 /// A built-in schema describing a primitive or built-in type (as opposed to a user-defined
 /// object schema).
