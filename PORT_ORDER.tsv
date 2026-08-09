@@ -8,7 +8,7 @@ DONE	trait	70	19	0	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/m
 DONE	trait	73	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/Appender.java
 DONE	trait	72	8	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractAppender.java
 DONE	trait	73	2	3	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/PcodeFormatter.java
-TODO	trait	72	6	7	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractPcodeFormatter.java
+DONE	trait	72	6	7	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/pcode/AbstractPcodeFormatter.java
 TODO	trait	72	102	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/SleighPcodeUseropDefinition.java
 TODO	trait	69	100	6	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AbstractSleighPcodeUseropDefinition.java
 TODO	trait	69	99	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/LocationPcodeArithmetic.java
