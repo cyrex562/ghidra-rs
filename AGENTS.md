@@ -278,6 +278,29 @@ direction — direct subtypes stop at sub-interfaces.
 A `SUGGEST-*` row is a proposal and stays re-derivable: when the evidence changes, re-run with
 `--resuggest`, which resets proposals but never a promoted verdict.
 
+### Sets too large for an enum (decided 2026-08-09)
+
+When a Java type has more concrete implementers than an enum can carry, "too many for an enum"
+is not the answer — it is the start of a three-way question. The 42 highest-leverage cases were
+decided as follows, and the reasoning generalises.
+
+| the type is | e.g. | verdict |
+|---|---|---|
+| a **read-only abstraction over a source**, with lazy combinators that compose at runtime | `AddressSetView` (union/intersection/difference/cached), `MemBuffer`, `ProcessorContextView` | **ACCEPT** — Rust's `io::Read`/`Index` shape; the implementations exist to be substituted |
+| a **domain object with identity**, mutated over its lifetime, referenced from everywhere | `Namespace`, `Reference`, `Variable`, `CodeUnit`, `DomainObject` | **ARENA** — convention 1. `CodeUnit` is `Data`'s parent, and `Data` was already an arena type |
+| a hierarchy a parser or lowering pass **builds dynamically** | `PcodeBlock`, `BlockGraph`, `AbstractMsType` (137), `IsfObject` (67) | **GRAPH** — convention 4. Not ENUM: the question is how values are *constructed*, not whether the set is closed |
+| a seam where a **plugin or caller supplies** the implementation | `PcodeUseropLibrary`, `InjectPayload`, `SettingsDefinition`, `Task`, `ProgramLocation` | **ACCEPT** — implementers spread across 2–4 top-level areas |
+| a **`docking.*` / Swing UI** type | `ActionContext`, `DockingActionIf`, `Navigatable` | **PARK** — the UI rule; its Rust shape depends on the undecided egui design |
+
+Two shortcuts worth trying before deciding by hand:
+
+- **Inherit from a decided ancestor.** `Enum`, `Composite` and `Pointer` are `DataType` kinds, so
+  they are variants of the `DataType` enum rather than types with their own convention. Check the
+  supertype closure against `CONVENTION_QUEUE.tsv` first.
+- **Package beats name.** `SettingsDefinition` lives under `ghidra.docking.settings` and is a
+  data-type settings registry, not a widget; `ActionContext` under `docking` is. The path
+  discriminates where the suffix does not.
+
 ## Coding Standards
 
 - Write idiomatic Rust using standard naming, ownership, error handling, and safety conventions.
