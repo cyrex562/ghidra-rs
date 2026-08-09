@@ -7,6 +7,7 @@ pub mod paired_pcode_executor_state;
 pub mod paired_pcode_executor_state_piece;
 pub mod pcode_arithmetic;
 pub mod pcode_executor_state;
+pub mod pcode_frame;
 pub mod pcode_state_callbacks;
 pub mod pcode_userop_library;
 pub mod pcode_userop_library_factory;
@@ -26,6 +27,7 @@ pub use paired_pcode_executor_state::PairedPcodeExecutorState;
 pub use paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece;
 pub use pcode_arithmetic::{PcodeArithmetic, Purpose, SIZEOF_SIZEOF};
 pub use pcode_executor_state::PcodeExecutorState;
+pub use pcode_frame::PcodeFrame;
 pub use pcode_state_callbacks::{
     check_value_domain, rng_set, NoPcodeStateCallbacks, PcodeStateCallbacks, NONE,
 };
