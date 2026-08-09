@@ -8,9 +8,9 @@ use std::sync::Arc;
 use crate::pcode::exec::sleigh_pcode_userop_definition::{
     BodyFunc, BuilderStage1, BuilderStage2, SignatureDef, SleighPcodeUseropDefinition, OUT_SYMBOL_NAME,
 };
+use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropLibrary};
 use crate::pcode::seam_stubs::{
     FixedSleighPcodeUseropDefinition, OverloadedSleighPcodeUseropDefinition, PcodeExecutor, PcodeProgram,
-    PcodeUseropLibrary,
 };
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::{PcodeOp, Varnode};
@@ -91,7 +91,7 @@ impl AbstractSleighPcodeUseropDefinitionBase {
     }
 
     /// Port of `getDefiningLibrary()`: a plain Sleigh userop is not defined by a Java library.
-    pub fn get_defining_library(&self) -> Option<Box<dyn PcodeUseropLibrary>> {
+    pub fn get_defining_library(&self) -> Option<&dyn ErasedPcodeUseropLibrary> {
         None
     }
 
@@ -101,10 +101,14 @@ impl AbstractSleighPcodeUseropDefinitionBase {
     /// since it must dispatch to the abstract `program_for` -- which this base does not
     /// implement -- to build the program it hands to the executor. `op` is accepted (matching
     /// the Java signature) but unused, exactly as in the original.
-    pub fn execute<D: SleighPcodeUseropDefinition + ?Sized>(
+    ///
+    /// `T` is the executor's value type (Java's `<T>` on the enclosing class). The library is
+    /// taken by concrete type so it can be handed both to `program_for`, which wants the erased
+    /// wildcard form, and to the executor, which wants the typed form.
+    pub fn execute<T: 'static, D: SleighPcodeUseropDefinition + ?Sized, L: PcodeUseropLibrary<T>>(
         definition: &D,
-        executor: &dyn PcodeExecutor,
-        library: &dyn PcodeUseropLibrary,
+        executor: &dyn PcodeExecutor<T>,
+        library: &L,
         _op: &PcodeOp,
         out_arg: Option<Varnode>,
         in_args: &[Option<Varnode>],
@@ -203,6 +207,7 @@ impl BuilderStage1 for Builder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pcode::exec::pcode_userop_library::nil;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType, DefaultAddressFactory};
     use crate::program::model::pcode::PackedDecode;
 
@@ -280,19 +285,16 @@ mod tests {
         struct RecordingProgram;
         impl PcodeProgram for RecordingProgram {}
 
-        struct RecordingLibrary;
-        impl PcodeUseropLibrary for RecordingLibrary {
-            fn compose(self: Box<Self>, _other: Box<dyn PcodeUseropLibrary>) -> Box<dyn PcodeUseropLibrary> {
-                self
-            }
-        }
-
         struct RecordingDefinition;
         impl SleighPcodeUseropDefinition for RecordingDefinition {
             fn get_body(&self, _args: &[Option<Varnode>]) -> String {
                 String::new()
             }
-            fn program_for(&self, args: &[Option<Varnode>], _library: &dyn PcodeUseropLibrary) -> Box<dyn PcodeProgram> {
+            fn program_for(
+                &self,
+                args: &[Option<Varnode>],
+                _library: &dyn ErasedPcodeUseropLibrary,
+            ) -> Box<dyn PcodeProgram> {
                 // The output goes at index 0, followed by the inputs (empty here), matching
                 // Java's `args.add(outArg); args.addAll(inArgs);`.
                 assert_eq!(args.len(), 1);
@@ -306,15 +308,15 @@ mod tests {
         }
 
         struct RecordingExecutor;
-        impl PcodeExecutor for RecordingExecutor {
-            fn execute(&self, _program: &dyn PcodeProgram, _library: &dyn PcodeUseropLibrary) {
+        impl PcodeExecutor<i64> for RecordingExecutor {
+            fn execute(&self, _program: &dyn PcodeProgram, _library: &dyn PcodeUseropLibrary<i64>) {
                 EXECUTED.with(|e| e.set(true));
             }
         }
 
         let definition = RecordingDefinition;
         let executor = RecordingExecutor;
-        let library = RecordingLibrary;
+        let library = nil::<i64>();
         let op = PcodeOp::new(
             crate::program::model::pcode::OpCode::CallOther,
             crate::program::model::pcode::SequenceNumber::new(test_address(0), 0),

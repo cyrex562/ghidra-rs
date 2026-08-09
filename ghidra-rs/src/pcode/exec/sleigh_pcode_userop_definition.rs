@@ -5,7 +5,8 @@
 use std::sync::Arc;
 
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder as AbstractSleighPcodeUseropDefinitionBuilder;
-use crate::pcode::seam_stubs::{PcodeProgram, PcodeUseropLibrary};
+use crate::pcode::exec::pcode_userop_library::ErasedPcodeUseropLibrary;
+use crate::pcode::seam_stubs::PcodeProgram;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::Varnode;
 
@@ -21,7 +22,11 @@ pub fn empty_args() -> Vec<Option<Varnode>> {
 /// A p-code userop defined using Sleigh source.
 ///
 /// Java's `<T>` type parameter exists only to match whatever executor implements it; none of
-/// this trait's own methods depend on it, so the Rust port drops it.
+/// this trait's own methods depend on it (`program_for` takes a wildcard
+/// `PcodeUseropLibrary<?>`), so the Rust port drops it. Consequently this does not extend
+/// [`PcodeUseropDefinition`](crate::pcode::exec::pcode_userop_library::PcodeUseropDefinition) --
+/// Java's `SleighPcodeUseropDefinition<T> extends PcodeUseropDefinition<T>` -- as that would
+/// reintroduce `T` here; a concrete definition implements both.
 pub trait SleighPcodeUseropDefinition {
     /// Get the Sleigh source that defines this userop.
     ///
@@ -35,8 +40,13 @@ pub trait SleighPcodeUseropDefinition {
     ///
     /// This will compile and cache a program for each new combination of arguments seen. `args`
     /// gives the operands, output at index 0 (or `None` if there is no output), and inputs
-    /// following.
-    fn program_for(&self, args: &[Option<Varnode>], library: &dyn PcodeUseropLibrary) -> Box<dyn PcodeProgram>;
+    /// following. `library` is Java's wildcard `PcodeUseropLibrary<?>`; see
+    /// [`ErasedPcodeUseropLibrary`].
+    fn program_for(
+        &self,
+        args: &[Option<Varnode>],
+        library: &dyn ErasedPcodeUseropLibrary,
+    ) -> Box<dyn PcodeProgram>;
 }
 
 /// A function body, as it depends on the given arguments.
@@ -209,7 +219,11 @@ mod tests {
                 .unwrap_or_default()
         }
 
-        fn program_for(&self, _args: &[Option<Varnode>], _library: &dyn PcodeUseropLibrary) -> Box<dyn PcodeProgram> {
+        fn program_for(
+            &self,
+            _args: &[Option<Varnode>],
+            _library: &dyn ErasedPcodeUseropLibrary,
+        ) -> Box<dyn PcodeProgram> {
             unimplemented!("test double has no PcodeProgram")
         }
     }

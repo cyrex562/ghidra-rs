@@ -19,7 +19,7 @@
 use std::collections::HashMap;
 
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
-use crate::pcode::seam_stubs::{nil_pcode_userop_library, PcodeUseropLibrary};
+use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
 use crate::program::model::lang::ghidra_language_property_keys::GhidraLanguagePropertyKeys;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::util::{ExtensionPoint, Msg};
@@ -45,7 +45,7 @@ pub fn key_userop_libs() -> &'static str {
 /// The Java doc requires "a public default constructor"; that requirement doesn't translate to
 /// Rust (implementors are just registered by whatever holds the `factories` slice passed to
 /// [`create_userop_library_from_id`]/[`create_userop_library_for_language`]).
-pub trait PcodeUseropLibraryFactory<T>: ExtensionPoint {
+pub trait PcodeUseropLibraryFactory<T: 'static>: ExtensionPoint {
     /// Get the id of this factory.
     ///
     /// Port of `getId()`. Java's default implementation reads the id off a `@UseropLibrary`
@@ -61,7 +61,7 @@ pub trait PcodeUseropLibraryFactory<T>: ExtensionPoint {
         &self,
         language: &SleighLanguage,
         arithmetic: &dyn PcodeArithmetic<T>,
-    ) -> Box<dyn PcodeUseropLibrary>;
+    ) -> Box<dyn PcodeUseropLibrary<T>>;
 }
 
 /// Create the userop library as identified for the given language and arithmetic.
@@ -70,15 +70,15 @@ pub trait PcodeUseropLibraryFactory<T>: ExtensionPoint {
 /// stands in for the Java `ClassSearcher.getInstances(PcodeUseropLibraryFactory.class)` scan --
 /// see the module docs.
 ///
-/// If the given id cannot be found, an empty library ([`nil_pcode_userop_library`]) is returned
-/// and a warning logged. If multiple factories have the given id (this is considered a bug), then
-/// a warning is logged and the first match in `factories` order is selected.
-pub fn create_userop_library_from_id<T>(
+/// If the given id cannot be found, an empty library ([`nil`]) is returned and a warning logged.
+/// If multiple factories have the given id (this is considered a bug), then a warning is logged
+/// and the first match in `factories` order is selected.
+pub fn create_userop_library_from_id<T: 'static>(
     id: &str,
     language: &SleighLanguage,
     arithmetic: &dyn PcodeArithmetic<T>,
     factories: &[&dyn PcodeUseropLibraryFactory<T>],
-) -> Box<dyn PcodeUseropLibrary> {
+) -> Box<dyn PcodeUseropLibrary<T>> {
     let matches: Vec<&dyn PcodeUseropLibraryFactory<T>> =
         factories.iter().copied().filter(|f| f.id() == id).collect();
     if matches.is_empty() {
@@ -86,7 +86,7 @@ pub fn create_userop_library_from_id<T>(
             "PcodeUseropLibraryFactory",
             &format!("No userop library with the id: {id}"),
         );
-        return nil_pcode_userop_library();
+        return Box::new(nil::<T>());
     }
     if matches.len() > 1 {
         Msg::warn(
@@ -107,12 +107,12 @@ pub fn create_userop_library_from_id<T>(
 ///
 /// Currently, duplicate userops (by name) are not permitted, so we compose libraries in the order
 /// listed, in case that changes, as it would matter then.
-pub fn create_userop_library_for_language<T>(
+pub fn create_userop_library_for_language<T: 'static>(
     language: &SleighLanguage,
     arithmetic: &dyn PcodeArithmetic<T>,
     useroplib_ids: &str,
     factories: &[&dyn PcodeUseropLibraryFactory<T>],
-) -> Box<dyn PcodeUseropLibrary> {
+) -> Box<dyn PcodeUseropLibrary<T>> {
     let lib_ids: Vec<&str> = useroplib_ids.split(',').collect();
     let mut matches: HashMap<&str, &dyn PcodeUseropLibraryFactory<T>> = HashMap::new();
     for factory in factories.iter().copied() {
@@ -120,10 +120,11 @@ pub fn create_userop_library_for_language<T>(
             matches.insert(factory.id(), factory);
         }
     }
-    let mut result = nil_pcode_userop_library();
+    let mut result: Box<dyn PcodeUseropLibrary<T>> = Box::new(nil::<T>());
     for id in lib_ids {
         if let Some(factory) = matches.get(id) {
-            result = result.compose(factory.create(language, arithmetic));
+            let lib = factory.create(language, arithmetic);
+            result = result.compose(lib.as_ref());
         }
     }
     result
@@ -132,6 +133,9 @@ pub fn create_userop_library_for_language<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pcode::exec::pcode_userop_library::{
+        ErasedPcodeUseropLibrary, PcodeUseropDefinition, UseropMap,
+    };
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType, DefaultAddressFactory};
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::pcode::{OpCode, PackedDecode};
@@ -139,19 +143,77 @@ mod tests {
 
     type Log = Arc<Mutex<Vec<&'static str>>>;
 
-    /// A library that, when composed, records its own name to a shared log and then hands back
-    /// `other` unchanged -- enough to observe both *whether* and *in what order* `compose` was
-    /// invoked, mirroring Java's documented "compose libraries in the order listed" behavior.
-    struct RecordingLibrary {
-        name: &'static str,
-        log: Log,
+    /// A userop definition carrying just the name the library is keyed by; enough to observe
+    /// which libraries' userops made it into a composition.
+    struct NamedUserop(&'static str);
+
+    impl PcodeUseropDefinition<i64> for NamedUserop {
+        fn get_name(&self) -> &str {
+            self.0
+        }
+        fn get_input_count(&self) -> i32 {
+            0
+        }
+        fn execute(
+            &self,
+            _executor: &dyn crate::pcode::seam_stubs::PcodeExecutor<i64>,
+            _library: &dyn PcodeUseropLibrary<i64>,
+            _op: &crate::program::model::pcode::PcodeOp,
+            _out_var: Option<&crate::program::model::pcode::Varnode>,
+            _in_vars: &[crate::program::model::pcode::Varnode],
+        ) {
+            unimplemented!("test double is never invoked")
+        }
+        fn is_functional(&self) -> bool {
+            true
+        }
+        fn has_side_effects(&self) -> bool {
+            false
+        }
+        fn modifies_context(&self) -> bool {
+            false
+        }
+        fn can_inline_pcode(&self) -> bool {
+            false
+        }
+        fn get_output_type(&self) -> Option<std::any::TypeId> {
+            None
+        }
+        fn get_java_method(&self) -> Option<()> {
+            None
+        }
+        fn get_defining_library(&self) -> Option<&dyn ErasedPcodeUseropLibrary> {
+            None
+        }
     }
 
-    impl PcodeUseropLibrary for RecordingLibrary {
-        fn compose(self: Box<Self>, other: Box<dyn PcodeUseropLibrary>) -> Box<dyn PcodeUseropLibrary> {
-            self.log.lock().unwrap().push(self.name);
-            other
+    /// A library defining exactly one userop, named after the factory that created it.
+    struct NamedLibrary {
+        userops: UseropMap<i64>,
+    }
+
+    impl NamedLibrary {
+        fn new(name: &'static str) -> Self {
+            Self {
+                userops: [(name.to_string(), Arc::new(NamedUserop(name)) as Arc<dyn PcodeUseropDefinition<i64>>)]
+                    .into_iter()
+                    .collect(),
+            }
         }
+    }
+
+    impl ErasedPcodeUseropLibrary for NamedLibrary {}
+
+    impl PcodeUseropLibrary<i64> for NamedLibrary {
+        fn get_userops(&self) -> &UseropMap<i64> {
+            &self.userops
+        }
+    }
+
+    fn sorted_names(lib: &dyn PcodeUseropLibrary<i64>) -> Vec<String> {
+        let mut names: Vec<String> = lib.get_userops().keys().cloned().collect();
+        names.sort();
+        names
     }
 
     struct NamedFactory {
@@ -166,8 +228,12 @@ mod tests {
             self.id
         }
 
-        fn create(&self, _language: &SleighLanguage, _arithmetic: &dyn PcodeArithmetic<i64>) -> Box<dyn PcodeUseropLibrary> {
-            Box::new(RecordingLibrary { name: self.id, log: self.log.clone() })
+        /// Records that this factory was asked for a library, so the *order* in which libraries
+        /// are composed is observable -- Java's documented "compose libraries in the order listed"
+        /// behavior.
+        fn create(&self, _language: &SleighLanguage, _arithmetic: &dyn PcodeArithmetic<i64>) -> Box<dyn PcodeUseropLibrary<i64>> {
+            self.log.lock().unwrap().push(self.id);
+            Box::new(NamedLibrary::new(self.id))
         }
     }
 
@@ -282,12 +348,10 @@ mod tests {
         let factories: [&dyn PcodeUseropLibraryFactory<i64>; 1] = [&foo];
 
         let nil = create_userop_library_from_id("missing", &language, &arithmetic, &factories);
-        // Nil composed with anything is a pure pass-through: `nil.compose(marker)` must hand back
-        // `marker` itself (not some other value), which we confirm by composing the result again
-        // and observing that it behaves exactly like `marker` would -- logging its name.
-        let passthrough = nil.compose(Box::new(RecordingLibrary { name: "marker", log: log.clone() }));
-        let _ = passthrough.compose(Box::new(RecordingLibrary { name: "tail", log: log.clone() }));
-        assert_eq!(*log.lock().unwrap(), vec!["marker"]);
+        // Java returns PcodeUseropLibrary.nil(): a library defining no userops. The non-matching
+        // factory is never asked for one.
+        assert!(nil.get_userops().is_empty());
+        assert!(log.lock().unwrap().is_empty());
     }
 
     #[test]
@@ -300,7 +364,7 @@ mod tests {
         let factories: [&dyn PcodeUseropLibraryFactory<i64>; 2] = [&foo, &bar];
 
         let lib = create_userop_library_from_id("bar", &language, &arithmetic, &factories);
-        let _ = lib.compose(Box::new(RecordingLibrary { name: "next", log: log.clone() }));
+        assert_eq!(sorted_names(lib.as_ref()), vec!["bar"]);
         assert_eq!(*log.lock().unwrap(), vec!["bar"]);
     }
 
@@ -322,7 +386,9 @@ mod tests {
             "foo,missing,bar,baz",
             &factories,
         );
-        let _ = result.compose(Box::new(RecordingLibrary { name: "tail", log: log.clone() }));
+        // Every requested library's userops are present in the composition...
+        assert_eq!(sorted_names(result.as_ref()), vec!["bar", "baz", "foo"]);
+        // ... and they were composed in the order the ids were listed.
         assert_eq!(*log.lock().unwrap(), vec!["foo", "bar", "baz"]);
     }
 }
