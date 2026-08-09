@@ -64,9 +64,9 @@ mod tests {
     use crate::trace::model::listing::trace_data::TraceData;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
+    use crate::trace::database::listing::abstract_db_trace_data_component::AbstractDBTraceDataComponent;
     use crate::trace::seam_stubs::{
-        AbstractDBTraceDataComponent, DBTraceCodeUnitAdapter, DataAdapterFromDataType, TraceChangeRecord,
-        TracePlatform, TraceThread,
+        DBTraceCodeUnitAdapter, DataAdapterFromDataType, TraceChangeRecord, TracePlatform, TraceThread,
     };
     use crate::trace::util::data_adapter_minimal::DataAdapterMinimal;
     use crate::trace::util::trace_change_manager::TraceChangeManager;

@@ -1103,22 +1103,17 @@ pub trait AbstractBaseDBTraceDefinedUnitsView: Send + Sync {
     ) -> Result<(), crate::util::exception::CancelledException>;
 }
 
-/// Placeholder for `ghidra.trace.database.listing.AbstractDBTraceDataComponent`, referenced by
-/// [`DBTraceDefinedDataAdapter`] before the real port is available. That trait's
-/// `doGetComponentCache()` only ever passes this type around opaquely (as the element type of the
-/// per-instance component cache it returns); no members are needed yet.
-pub trait AbstractDBTraceDataComponent: Send + Sync {}
-
 /// Placeholder for `ghidra.trace.database.listing.DBTraceDefinedDataAdapter`, referenced (as a
 /// supertrait) by
 /// [`DBTraceData`](crate::trace::database::listing::db_trace_data::DBTraceData) before the real
 /// port is available. Mirrors the Java interface's `extends DBTraceDataAdapter` (already ported)
 /// plus the two members it adds beyond that supertrait's abstract surface: the abstract
 /// `doGetComponentCache()` (a lazily-populated per-instance cache of
-/// [`AbstractDBTraceDataComponent`]s that has no natural default body without access to instance
-/// storage) and the `StringBuilder`-taking `getPathName(StringBuilder, boolean)` overload
-/// (ported as `append_path_name`, taking the builder by mutable reference; distinct from the
-/// no-arg `Data::get_path_name` this interface also inherits). The interface's remaining default
+/// [`AbstractDBTraceDataComponent`](crate::trace::database::listing::abstract_db_trace_data_component::AbstractDBTraceDataComponent)s
+/// that has no natural default body without access to instance storage) and the
+/// `StringBuilder`-taking `getPathName(StringBuilder, boolean)` overload (ported as
+/// `append_path_name`, taking the builder by mutable reference; distinct from the no-arg
+/// `Data::get_path_name` this interface also inherits). The interface's remaining default
 /// methods (`isDefined`, `getNumComponents`, `getComponent`, `getComponentAt`,
 /// `getComponentContaining`, `getComponentsContaining`, `getPrimitiveAt`, `getComponent(int[])`,
 /// and the covariantly-narrowed abstract `getRoot()`/`getParent()`) are either pure covariant
@@ -1129,7 +1124,9 @@ pub trait DBTraceDefinedDataAdapter:
     crate::trace::database::listing::db_trace_data_adapter::DBTraceDataAdapter
 {
     /// Mirrors the abstract `doGetComponentCache()`.
-    fn do_get_component_cache(&self) -> Vec<Box<dyn AbstractDBTraceDataComponent>>;
+    fn do_get_component_cache(
+        &self,
+    ) -> Vec<Box<dyn crate::trace::database::listing::abstract_db_trace_data_component::AbstractDBTraceDataComponent>>;
 
     /// Mirrors the abstract `getPathName(StringBuilder, boolean)`, appending to `builder` in
     /// place of returning a new `StringBuilder`.
