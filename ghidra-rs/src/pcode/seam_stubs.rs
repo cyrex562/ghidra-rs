@@ -9,6 +9,9 @@ use std::sync::{Arc, OnceLock};
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
+use crate::pcode::exec::pcode_userop_library::{
+    ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
+};
 use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPcodeUseropDefinition};
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
@@ -213,45 +216,78 @@ pub trait Emulate: Send + Sync {
 /// exposed yet.
 pub trait PcodeProgram: Send + Sync {}
 
-/// Placeholder for `ghidra.pcode.exec.PcodeUseropLibrary`, referenced by
-/// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
-/// and by
-/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory::PcodeUseropLibraryFactory)
-/// before the real class is ported. `compose` is the one method
-/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory) needs; it takes
-/// `self`/`other` by `Box` (rather than `&self`) since there is no `get_userops`/`Clone` here yet
-/// to build a merged map from borrowed halves.
-pub trait PcodeUseropLibrary: Send + Sync {
-    /// Placeholder for `PcodeUseropLibrary.compose(PcodeUseropLibrary)`. Combines `self` and
-    /// `other` into a single library, `self`'s userops taking precedence.
-    fn compose(self: Box<Self>, other: Box<dyn PcodeUseropLibrary>) -> Box<dyn PcodeUseropLibrary>;
+/// Placeholder for `ghidra.pcode.exec.ComposedPcodeUseropLibrary`, referenced by
+/// [`PcodeUseropLibrary::compose_with_override`](crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary::compose_with_override)
+/// before the real class is ported. Unlike most stubs here this is a struct, not a trait: `compose`
+/// must *construct* the composed library, which a trait cannot express. Its members mirror the Java
+/// class exactly -- it stores only the merged map (Java's sole field), and `compose_userops` keeps
+/// Java's "name collisions are an error unless `override` is set" rule -- so the real port should
+/// be a drop-in replacement.
+pub struct ComposedPcodeUseropLibrary<T: 'static> {
+    userops: UseropMap<T>,
 }
 
-/// Placeholder for the empty library returned by `PcodeUseropLibrary.nil()`, referenced by
-/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory) before the real
-/// class is ported. Composing it with another library is a no-op that just yields the other
-/// library, matching the identity behavior of Java's `NIL` singleton.
-pub struct NilPcodeUseropLibrary;
+impl<T: 'static> ComposedPcodeUseropLibrary<T> {
+    /// Placeholder for `new ComposedPcodeUseropLibrary(Collection, boolean)`.
+    pub fn new(libraries: &[&dyn PcodeUseropLibrary<T>], override_: bool) -> Self {
+        Self { userops: Self::compose_userops(libraries, override_) }
+    }
 
-impl PcodeUseropLibrary for NilPcodeUseropLibrary {
-    fn compose(self: Box<Self>, other: Box<dyn PcodeUseropLibrary>) -> Box<dyn PcodeUseropLibrary> {
-        other
+    /// Construct the composed library over an already-merged map, as produced by
+    /// [`compose_userops`](Self::compose_userops) or
+    /// [`compose_userop_maps`](Self::compose_userop_maps).
+    pub fn from_userops(userops: UseropMap<T>) -> Self {
+        Self { userops }
+    }
+
+    /// Placeholder for the static `composeUserops(Collection, boolean)`: obtain a map representing
+    /// the composition of userops from all the given libraries.
+    ///
+    /// Name collisions are not allowed. If any two libraries export the same symbol, even if the
+    /// definitions happen to do the same thing, it is an error -- unless `override_` is set,
+    /// allowing libraries to the right to override userops from libraries to the left.
+    pub fn compose_userops(libraries: &[&dyn PcodeUseropLibrary<T>], override_: bool) -> UseropMap<T> {
+        Self::compose_userop_maps(libraries.iter().map(|lib| lib.get_userops()), override_)
+    }
+
+    /// As [`compose_userops`](Self::compose_userops), but over the libraries' userop maps
+    /// directly, for callers that hold the maps rather than the libraries.
+    pub fn compose_userop_maps<'a>(
+        maps: impl IntoIterator<Item = &'a UseropMap<T>>,
+        override_: bool,
+    ) -> UseropMap<T> {
+        let mut userops: UseropMap<T> = HashMap::new();
+        for map in maps {
+            for def in map.values() {
+                let existing = userops.insert(def.get_name().to_string(), Arc::clone(def));
+                if existing.is_some() && !override_ {
+                    panic!(
+                        "Cannot compose libraries with conflicting definitions on {}",
+                        def.get_name()
+                    );
+                }
+            }
+        }
+        userops
     }
 }
 
-/// Placeholder for `PcodeUseropLibrary.nil()`, referenced by
-/// [`PcodeUseropLibraryFactory`](crate::pcode::exec::pcode_userop_library_factory) before the real
-/// class is ported.
-pub fn nil_pcode_userop_library() -> Box<dyn PcodeUseropLibrary> {
-    Box::new(NilPcodeUseropLibrary)
+impl<T: 'static> ErasedPcodeUseropLibrary for ComposedPcodeUseropLibrary<T> {}
+
+impl<T: 'static> PcodeUseropLibrary<T> for ComposedPcodeUseropLibrary<T> {
+    fn get_userops(&self) -> &UseropMap<T> {
+        &self.userops
+    }
 }
 
 /// Placeholder for `ghidra.pcode.exec.PcodeExecutor`, referenced by
 /// [`AbstractSleighPcodeUseropDefinitionBase::execute`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase::execute)
-/// before the real class is ported. Exposes only `execute`, the one method that call site needs.
-pub trait PcodeExecutor: Send + Sync {
+/// and by [`PcodeUseropDefinition`](crate::pcode::exec::pcode_userop_library::PcodeUseropDefinition)
+/// before the real class is ported. Exposes only `execute`, the one method those call sites need.
+/// `T` is Java's `PcodeExecutor<T>` type parameter: the type of values in the executor's state.
+pub trait PcodeExecutor<T: 'static>: Send + Sync {
     /// Placeholder for `PcodeExecutor.execute(PcodeProgram, PcodeUseropLibrary)`.
-    fn execute(&self, program: &dyn PcodeProgram, library: &dyn PcodeUseropLibrary);
+    fn execute(&self, program: &dyn PcodeProgram, library: &dyn PcodeUseropLibrary<T>);
 }
 
 /// Placeholder for `ghidra.pcode.exec.FixedSleighPcodeUseropDefinition`, referenced by
@@ -281,7 +317,11 @@ impl SleighPcodeUseropDefinition for FixedSleighPcodeUseropDefinition {
         self.definition.generate_body(args)
     }
 
-    fn program_for(&self, _args: &[Option<Varnode>], _library: &dyn PcodeUseropLibrary) -> Box<dyn PcodeProgram> {
+    fn program_for(
+        &self,
+        _args: &[Option<Varnode>],
+        _library: &dyn ErasedPcodeUseropLibrary,
+    ) -> Box<dyn PcodeProgram> {
         unimplemented!(
             "FixedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
         )
@@ -319,7 +359,11 @@ impl SleighPcodeUseropDefinition for OverloadedSleighPcodeUseropDefinition {
         definition.generate_body(args)
     }
 
-    fn program_for(&self, _args: &[Option<Varnode>], _library: &dyn PcodeUseropLibrary) -> Box<dyn PcodeProgram> {
+    fn program_for(
+        &self,
+        _args: &[Option<Varnode>],
+        _library: &dyn ErasedPcodeUseropLibrary,
+    ) -> Box<dyn PcodeProgram> {
         unimplemented!(
             "OverloadedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
         )

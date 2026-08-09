@@ -488,14 +488,13 @@ ts	stub_class	referenced_by
 2026-08-09T01:50:16.581223+00:00	Emulate	BreakTable
 2026-08-09T01:50:16.581343+00:00	PcodeOpRaw	BreakTable
 2026-08-09T02:49:54.701710+00:00	PcodeProgram	SleighPcodeUseropDefinition
-2026-08-09T02:49:54.701710+00:00	PcodeUseropLibrary	SleighPcodeUseropDefinition
 2026-08-09T02:51:08.910114+00:00	FixedSleighPcodeUseropDefinition	AbstractSleighPcodeUseropDefinition
 2026-08-09T02:51:08.910349+00:00	OverloadedSleighPcodeUseropDefinition	AbstractSleighPcodeUseropDefinition
 2026-08-09T02:51:08.911183+00:00	PcodeExecutor	AbstractSleighPcodeUseropDefinition
 2026-08-09T03:02:53.728677+00:00	ValueLocation	LocationPcodeArithmetic
-2026-08-09T03:20:00.000000+00:00	PcodeUseropLibrary	PcodeUseropLibraryFactory
 2026-08-08T23:28:25.000000+00:00	PseudoInstruction	InstructionDecoder
 2026-08-08T23:28:25.000000+00:00	RegisterValue	InstructionDecoder
 2026-08-09T03:29:57.650124+00:00	PcodeThread	PcodeStateInitializer
 2026-08-09T04:00:00.000000+00:00	PcodeExecutorStatePiece	PcodeStateCallbacks
 2026-08-09T05:00:00.000000+00:00	PcodeExecutorStatePiece	PairedPcodeExecutorStatePiece
+2026-08-09T05:10:00.000000+00:00	ComposedPcodeUseropLibrary	PcodeUseropLibrary
