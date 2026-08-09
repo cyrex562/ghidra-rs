@@ -8,10 +8,14 @@ use std::sync::{Arc, OnceLock};
 
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
+use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPcodeUseropDefinition};
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
-use crate::program::model::address::{AddressSpace, AddressSpaceType};
+use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+use crate::program::model::lang::language::Language;
+use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
+use crate::program::model::mem::mem_buffer::MemBuffer;
 use crate::program::model::pcode::Varnode;
 use std::collections::HashMap;
 
@@ -351,13 +355,205 @@ pub trait PcodeMachine: Send + Sync {
 /// needed by existing references.
 pub trait PcodeThread: Send + Sync {}
 
+/// Placeholder for a type-erased `PcodeExecutorStatePiece<?, ?>`, as produced by
+/// `PcodeExecutorStatePiece.streamPieces()`. Java's wildcard existential type (any address/value
+/// domain) has no generic-preserving Rust shape; since nothing downstream inspects an erased
+/// piece's members yet, this is a bare, object-safe marker that concrete leaf pieces implement.
+pub trait ErasedPcodeExecutorStatePiece {}
+
 /// Placeholder for `ghidra.pcode.exec.PcodeExecutorStatePiece`, referenced by
-/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks) before
-/// the real class is ported. Exposes only the two arithmetic accessors that callback delegation
-/// needs: the arithmetic over the piece's address domain `A` and over its value domain `T`.
+/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks) and by
+/// [`PairedPcodeExecutorStatePiece`](crate::pcode::exec::paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece)
+/// before the real class is ported. Exposes the members those callers need. Java overloads
+/// `setVar`/`setVarInternal`/`getVar`/`getVarInternal` by offset type (abstract addressing via an
+/// offset of domain `A`, vs. concrete addressing via a `long`); Rust has no overloading, so the
+/// abstract-addressing methods carry an `_abstract` suffix here, matching the convention in
+/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks). The
+/// concrete-addressing methods and `fork` keep Java's default-method fallbacks (deriving from the
+/// abstract-addressing methods, and panicking, respectively); every other method is abstract here
+/// just as it is in Java. `getAddressArithmetic`/`getArithmetic` return an owned
+/// `Arc<dyn PcodeArithmetic<_>>` rather than a borrow, since a composing piece (like
+/// `PairedPcodeExecutorStatePiece`) needs to cache the result in its own fields without borrowing
+/// from its delegates (which would make it self-referential).
+///
+/// `fork` carries a `where Self: Sized` bound and a generic `CB` parameter (rather than
+/// `&dyn PcodeStateCallbacks`) because
+/// [`PcodeStateCallbacks`](crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks)'s
+/// methods are generic per call (mirroring Java's per-call type parameters), which makes that
+/// trait itself not object-safe -- a `&dyn PcodeStateCallbacks` parameter is simply not
+/// expressible. The `Self: Sized` bound excludes `fork` from this trait's vtable without
+/// otherwise affecting its object safety, so `&dyn PcodeExecutorStatePiece<A, T>` (as used by
+/// `PcodeStateCallbacks`'s own default methods) remains valid; `fork` is only ever called on a
+/// statically-known concrete (or generic-but-`Sized`) piece type.
 pub trait PcodeExecutorStatePiece<A, T> {
+    /// Placeholder for `PcodeExecutorStatePiece.getLanguage()`.
+    fn get_language(&self) -> Box<dyn Language>;
     /// Placeholder for `PcodeExecutorStatePiece.getAddressArithmetic()`.
-    fn get_address_arithmetic(&self) -> &dyn PcodeArithmetic<A>;
+    fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<A>>;
     /// Placeholder for `PcodeExecutorStatePiece.getArithmetic()`.
-    fn get_arithmetic(&self) -> &dyn PcodeArithmetic<T>;
+    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>>;
+    /// Placeholder for `PcodeExecutorStatePiece.streamPieces()`.
+    fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece>;
+    /// Placeholder for `PcodeExecutorStatePiece.fork(PcodeStateCallbacks)`. Java's default throws
+    /// `UnsupportedOperationException`.
+    fn fork<CB: PcodeStateCallbacks>(&self, _cb: &CB) -> Self
+    where
+        Self: Sized,
+    {
+        unimplemented!("PcodeExecutorStatePiece.fork has no default implementation")
+    }
+    /// Placeholder for `PcodeExecutorStatePiece.setVar(AddressSpace, A, int, boolean, T)`.
+    fn set_var_abstract(&mut self, space: &Arc<AddressSpace>, offset: &A, size: i32, quantize: bool, val: &T);
+    /// Placeholder for `PcodeExecutorStatePiece.setVarInternal(AddressSpace, A, int, T)`.
+    fn set_var_internal_abstract(&mut self, space: &Arc<AddressSpace>, offset: &A, size: i32, val: &T);
+    /// Placeholder for `PcodeExecutorStatePiece.setVar(AddressSpace, long, int, boolean, T)`.
+    fn set_var(&mut self, space: &Arc<AddressSpace>, offset: i64, size: i32, quantize: bool, val: &T) {
+        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
+        self.set_var_abstract(space, &a_offset, size, quantize, val);
+    }
+    /// Placeholder for `PcodeExecutorStatePiece.setVarInternal(AddressSpace, long, int, T)`.
+    fn set_var_internal(&mut self, space: &Arc<AddressSpace>, offset: i64, size: i32, val: &T) {
+        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
+        self.set_var_internal_abstract(space, &a_offset, size, val);
+    }
+    /// Placeholder for `PcodeExecutorStatePiece.getVar(AddressSpace, A, int, boolean, Reason)`.
+    fn get_var_abstract(&self, space: &Arc<AddressSpace>, offset: &A, size: i32, quantize: bool, reason: Reason) -> T;
+    /// Placeholder for `PcodeExecutorStatePiece.getVarInternal(AddressSpace, A, int, Reason)`.
+    fn get_var_internal_abstract(&self, space: &Arc<AddressSpace>, offset: &A, size: i32, reason: Reason) -> T;
+    /// Placeholder for `PcodeExecutorStatePiece.getVar(AddressSpace, long, int, boolean, Reason)`.
+    fn get_var(&self, space: &Arc<AddressSpace>, offset: i64, size: i32, quantize: bool, reason: Reason) -> T {
+        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
+        self.get_var_abstract(space, &a_offset, size, quantize, reason)
+    }
+    /// Placeholder for `PcodeExecutorStatePiece.getVarInternal(AddressSpace, long, int, Reason)`.
+    fn get_var_internal(&self, space: &Arc<AddressSpace>, offset: i64, size: i32, reason: Reason) -> T {
+        let a_offset = self.get_address_arithmetic().from_const_u64(offset as u64, space.pointer_size());
+        self.get_var_internal_abstract(space, &a_offset, size, reason)
+    }
+    /// Placeholder for `PcodeExecutorStatePiece.getRegisterValues()`.
+    ///
+    /// Returns a `Vec` of pairs rather than a `HashMap`, since [`Register`](RegisterRef)'s Rust
+    /// port is `Rc<RefCell<Register>>`, and `RefCell` does not implement `Hash` (interior
+    /// mutability would make cached hashes unsound), so `RegisterRef` cannot be a `HashMap` key.
+    fn get_register_values(&self) -> Vec<(RegisterRef, T)>;
+    /// Placeholder for `PcodeExecutorStatePiece.getConcreteBuffer(Address, Purpose)`.
+    fn get_concrete_buffer(&self, address: &Address, purpose: Purpose) -> Box<dyn MemBuffer>;
+    /// Placeholder for `PcodeExecutorStatePiece.clear()`.
+    fn clear(&mut self);
+}
+
+/// Placeholder for `ghidra.pcode.exec.PairedPcodeArithmetic`, referenced by
+/// [`PairedPcodeExecutorStatePiece`](crate::pcode::exec::paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece)
+/// before the real class is ported. Composes two arithmetics into one operating on `(L, R)`
+/// tuples -- Java's `org.apache.commons.lang3.tuple.Pair<L, R>` maps to a plain Rust tuple
+/// throughout this port, since Rust has no equivalent third-party "pair" convention. Unlike most
+/// stubs in this file, every method [`PcodeArithmetic`] requires (i.e. every method without a
+/// default) is implemented faithfully here, matching the real Java class method-for-method; only
+/// `getDomain` relies on [`PcodeArithmetic`]'s default (Java overrides it to return `Pair.class`,
+/// which has no Rust equivalent).
+pub struct PairedPcodeArithmetic<L, R> {
+    left: Arc<dyn PcodeArithmetic<L>>,
+    right: Arc<dyn PcodeArithmetic<R>>,
+    endian: Option<crate::program::model::lang::endian::Endian>,
+}
+
+impl<L, R> PairedPcodeArithmetic<L, R> {
+    /// Placeholder for `new PairedPcodeArithmetic(PcodeArithmetic<L>, PcodeArithmetic<R>)`.
+    ///
+    /// # Panics
+    /// Panics if both arithmetics report an endianness and they disagree, matching Java's
+    /// `IllegalArgumentException`.
+    pub fn new(left: Arc<dyn PcodeArithmetic<L>>, right: Arc<dyn PcodeArithmetic<R>>) -> Self {
+        let lend = left.get_endian();
+        let rend = right.get_endian();
+        if let (Some(l), Some(r)) = (lend, rend) {
+            assert!(l == r, "Arithmetics must agree in endianness");
+        }
+        let endian = lend.or(rend);
+        Self { left, right, endian }
+    }
+
+    /// Placeholder for `PairedPcodeArithmetic.getLeft()`.
+    pub fn get_left(&self) -> &Arc<dyn PcodeArithmetic<L>> {
+        &self.left
+    }
+
+    /// Placeholder for `PairedPcodeArithmetic.getRight()`.
+    pub fn get_right(&self) -> &Arc<dyn PcodeArithmetic<R>> {
+        &self.right
+    }
+}
+
+impl<L, R> PcodeArithmetic<(L, R)> for PairedPcodeArithmetic<L, R> {
+    fn get_endian(&self) -> Option<crate::program::model::lang::endian::Endian> {
+        self.endian
+    }
+
+    fn unary_op(
+        &self,
+        opcode: crate::program::model::pcode::OpCode,
+        sizeout: i32,
+        sizein1: i32,
+        in1: &(L, R),
+    ) -> (L, R) {
+        (
+            self.left.unary_op(opcode, sizeout, sizein1, &in1.0),
+            self.right.unary_op(opcode, sizeout, sizein1, &in1.1),
+        )
+    }
+
+    fn binary_op(
+        &self,
+        opcode: crate::program::model::pcode::OpCode,
+        sizeout: i32,
+        sizein1: i32,
+        in1: &(L, R),
+        sizein2: i32,
+        in2: &(L, R),
+    ) -> (L, R) {
+        (
+            self.left.binary_op(opcode, sizeout, sizein1, &in1.0, sizein2, &in2.0),
+            self.right.binary_op(opcode, sizeout, sizein1, &in1.1, sizein2, &in2.1),
+        )
+    }
+
+    fn mod_before_store(
+        &self,
+        sizein_offset: i32,
+        space: &AddressSpace,
+        in_offset: &(L, R),
+        sizein_value: i32,
+        in_value: &(L, R),
+    ) -> (L, R) {
+        (
+            self.left.mod_before_store(sizein_offset, space, &in_offset.0, sizein_value, &in_value.0),
+            self.right.mod_before_store(sizein_offset, space, &in_offset.1, sizein_value, &in_value.1),
+        )
+    }
+
+    fn mod_after_load(
+        &self,
+        sizein_offset: i32,
+        space: &AddressSpace,
+        in_offset: &(L, R),
+        sizein_value: i32,
+        in_value: &(L, R),
+    ) -> (L, R) {
+        (
+            self.left.mod_after_load(sizein_offset, space, &in_offset.0, sizein_value, &in_value.0),
+            self.right.mod_after_load(sizein_offset, space, &in_offset.1, sizein_value, &in_value.1),
+        )
+    }
+
+    fn from_const_bytes(&self, value: &[u8]) -> (L, R) {
+        (self.left.from_const_bytes(value), self.right.from_const_bytes(value))
+    }
+
+    fn to_concrete(&self, value: &(L, R), purpose: Purpose) -> Result<Vec<u8>, ConcretionError> {
+        self.left.to_concrete(&value.0, purpose)
+    }
+
+    fn size_of(&self, value: &(L, R)) -> i64 {
+        self.left.size_of(&value.0)
+    }
 }
