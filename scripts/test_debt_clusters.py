@@ -300,9 +300,32 @@ class TestSmallClosedSetFamilies(unittest.TestCase):
         self.assertEqual(v, "SUGGEST-ACCEPT")
         self.assertIn("hold something polymorphic", note)
 
+    def test_inheritance_chain_is_composition_not_an_enum(self):
+        """AddressFactory's three implementers are a chain, not three alternatives.
+
+        Program- and TraceAddressFactory both extend DefaultAddressFactory. An enum would
+        model base/derived as siblings and duplicate the base behaviour across arms.
+        """
+        table = {
+            "DefaultAddressFactory": {"concrete_implementers":
+                                      ["ProgramAddressFactory", "TraceAddressFactory"]},
+            "ProgramAddressFactory": {"concrete_implementers": []},
+            "TraceAddressFactory": {"concrete_implementers": []},
+        }
+        v, note = dc.suggest_by_family(
+            "AddressFactory",
+            ["DefaultAddressFactory", "ProgramAddressFactory", "TraceAddressFactory"],
+            impl_table=table)
+        self.assertEqual(v, "SUGGEST-STRUCT")
+        self.assertIn("extend(s) DefaultAddressFactory", note)
+        self.assertIn("embed it", note)
+
     def test_plain_siblings_fall_through_to_enum(self):
         """Language = OldLanguage + SleighLanguage has no storage/null/wrapper marker."""
-        self.assertIsNone(dc.suggest_by_family("Language", ["OldLanguage", "SleighLanguage"]))
+        self.assertIsNone(dc.suggest_by_family(
+            "Language", ["OldLanguage", "SleighLanguage"],
+            impl_table={"OldLanguage": {"concrete_implementers": []},
+                        "SleighLanguage": {"concrete_implementers": []}}))
 
     def test_single_implementer_is_not_a_family_question(self):
         self.assertIsNone(dc.suggest_by_family("Trace", ["DBTrace"]))

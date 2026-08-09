@@ -333,7 +333,7 @@ _FAM_NULLOBJ = re.compile(r"^(Invalid|Empty|Null|No[A-Z])|Error$")
 _FAM_WRAPPER = re.compile(r"(Wrapper|Adapter|Proxy|Delegating)")
 
 
-def suggest_by_family(name, impl_names):
+def suggest_by_family(name, impl_names, impl_table=None):
     """Refine "small closed set" by what the implementers actually are.
 
     Returns (verdict, note) or None to fall through to the generic ENUM suggestion.
@@ -341,6 +341,23 @@ def suggest_by_family(name, impl_names):
     impls = list(impl_names or ())
     if len(impls) < 2:
         return None
+
+    # Base + subclass chain: one "implementer" is an ancestor of the others, which the
+    # implementer table shows directly -- the base's own concrete-implementer set contains
+    # its siblings. AddressFactory is the case: Program- and TraceAddressFactory both extend
+    # DefaultAddressFactory, so the three are a chain, not three alternatives. An enum would
+    # model a base/derived relationship as if the variants were siblings and duplicate the
+    # base behaviour across arms.
+    tbl = impl_table or _load_implementer_table()
+    if tbl:
+        others = set(impls)
+        for base in impls:
+            kids = set(tbl.get(base, {}).get("concrete_implementers", ())) & (others - {base})
+            if kids:
+                return "SUGGEST-STRUCT", (
+                    f"inheritance chain, not alternatives: {', '.join(sorted(kids))} "
+                    f"extend(s) {base}. Java subclassing for reuse has no Rust translation -- "
+                    f"port {base} as a concrete type and let the others embed it")
     storage = [i for i in impls if _FAM_STORAGE.search(i)]
     nullobj = [i for i in impls if _FAM_NULLOBJ.search(i)]
     wrapper = [i for i in impls if _FAM_WRAPPER.search(i)]
@@ -366,7 +383,7 @@ def suggest_by_family(name, impl_names):
 
 def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl,
                     java_subtypes=None, java_decls=None, jdk_modeled=frozenset(),
-                    java_impl_names=None, java_ext_points=None):
+                    java_impl_names=None, java_ext_points=None, java_impl_table=None):
     """Propose a verdict from structural evidence. Deliberately conservative: anything the
     evidence doesn't speak to stays TODO rather than getting a confident-looking guess."""
     is_trait, is_type, n_impl = traits.get(name, 0), types_.get(name, 0), impls.get(name, 0)
@@ -439,7 +456,8 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
                 f"inheritance for reuse, not polymorphism; port {name} as a concrete type and "
                 f"let {only} embed it")
         if j <= ENUM_MAX_VARIANTS:
-            fam = suggest_by_family(name, (java_impl_names or {}).get(name, ()))
+            fam = suggest_by_family(name, (java_impl_names or {}).get(name, ()),
+                                    impl_table=java_impl_table)
             if fam:
                 return fam
             return "SUGGEST-ENUM", f"small closed set: {j} Java subtypes"
@@ -680,7 +698,8 @@ def main():
                 continue
             v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
                                      mock_impls, stub_decl, java_subtypes, java_decls,
-                                     jdk_modeled, java_impl_names, java_ext_points)
+                                     jdk_modeled, java_impl_names, java_ext_points,
+                                     _load_implementer_table())
             if v:
                 r["verdict"], r["source"], r["note"] = v, "suggest", why
                 n += 1
