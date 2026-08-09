@@ -1,4 +1,5 @@
 pub mod abstract_sleigh_pcode_userop_definition;
+pub mod default_pcode_userop_library;
 pub mod location_pcode_arithmetic;
 pub mod paired_pcode_arithmetic;
 pub mod paired_pcode_executor_state;
@@ -13,6 +14,7 @@ pub mod sleigh_pcode_userop_definition;
 pub use abstract_sleigh_pcode_userop_definition::{
     AbstractSleighPcodeUseropDefinition, AbstractSleighPcodeUseropDefinitionBase, Builder,
 };
+pub use default_pcode_userop_library::DefaultPcodeUseropLibrary;
 pub use location_pcode_arithmetic::LocationPcodeArithmetic;
 pub use paired_pcode_arithmetic::PairedPcodeArithmetic;
 pub use paired_pcode_executor_state::PairedPcodeExecutorState;
