@@ -14,6 +14,7 @@ pub mod importer;
 pub mod navigation;
 pub mod opinion;
 pub mod option_exception;
+pub mod pcode;
 pub mod pcode_inject;
 pub mod pdb;
 pub mod pseudo_data;
