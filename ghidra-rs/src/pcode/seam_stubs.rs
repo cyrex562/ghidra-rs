@@ -6,10 +6,13 @@
 
 use std::sync::Arc;
 
+use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::Purpose;
-use crate::pcode::exec::sleigh_pcode_userop_definition::BuilderStage1;
+use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPcodeUseropDefinition};
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
 use crate::program::model::lang::sleigh::SleighLanguage;
+use crate::program::model::pcode::Varnode;
+use std::collections::HashMap;
 
 /// Placeholder for `ghidra.pcode.exec.PcodeExecutorStatePiece.Reason`, referenced by
 /// [`Purpose`](crate::pcode::exec::pcode_arithmetic::Purpose) before the real class is ported.
@@ -90,22 +93,6 @@ pub trait Emulate: Send + Sync {
     fn dispose(&self);
 }
 
-/// Placeholder for `ghidra.pcode.exec.AbstractSleighPcodeUseropDefinition` (and its nested
-/// `Builder`), referenced by
-/// [`SleighPcodeUseropDefinition::Factory::define`](crate::pcode::exec::sleigh_pcode_userop_definition::Factory::define)
-/// before the real class is ported. `Builder::build()` ultimately delegates to the also-unported
-/// `FixedSleighPcodeUseropDefinition`/`OverloadedSleighPcodeUseropDefinition`, so this stub's
-/// `builder()` panics if actually invoked; it exists only so `Factory::define`'s signature can
-/// stay faithful to the Java original ahead of those types being ported.
-pub struct AbstractSleighPcodeUseropDefinition;
-
-impl AbstractSleighPcodeUseropDefinition {
-    /// Placeholder for `new AbstractSleighPcodeUseropDefinition.Builder(factory, name)`.
-    pub fn builder(_language: Arc<SleighLanguage>, _name: String) -> Box<dyn BuilderStage1> {
-        unimplemented!("AbstractSleighPcodeUseropDefinition is not yet ported")
-    }
-}
-
 /// Placeholder for `ghidra.pcode.exec.PcodeProgram`, referenced by
 /// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
 /// before the real class is ported. Used there only as an opaque return type, so no members are
@@ -117,3 +104,83 @@ pub trait PcodeProgram: Send + Sync {}
 /// before the real class is ported. Used there only as an opaque parameter type, so no members
 /// are exposed yet.
 pub trait PcodeUseropLibrary: Send + Sync {}
+
+/// Placeholder for `ghidra.pcode.exec.PcodeExecutor`, referenced by
+/// [`AbstractSleighPcodeUseropDefinitionBase::execute`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase::execute)
+/// before the real class is ported. Exposes only `execute`, the one method that call site needs.
+pub trait PcodeExecutor: Send + Sync {
+    /// Placeholder for `PcodeExecutor.execute(PcodeProgram, PcodeUseropLibrary)`.
+    fn execute(&self, program: &dyn PcodeProgram, library: &dyn PcodeUseropLibrary);
+}
+
+/// Placeholder for `ghidra.pcode.exec.FixedSleighPcodeUseropDefinition`, referenced by
+/// [`Builder::build`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder::build)
+/// before the real class (a single-signature `AbstractSleighPcodeUseropDefinition` subclass) is
+/// ported. `get_body` is implemented faithfully (it only needs `SignatureDef::generate_body`);
+/// `program_for` panics if actually invoked, since compiling Sleigh source requires the
+/// also-unported `SleighProgramCompiler`.
+pub struct FixedSleighPcodeUseropDefinition {
+    #[allow(dead_code)]
+    base: AbstractSleighPcodeUseropDefinitionBase,
+    definition: SignatureDef,
+}
+
+impl FixedSleighPcodeUseropDefinition {
+    /// Placeholder for `new FixedSleighPcodeUseropDefinition(SleighLanguage, String, SignatureDef)`.
+    pub fn new(language: Arc<SleighLanguage>, name: String, definition: SignatureDef) -> Self {
+        Self {
+            base: AbstractSleighPcodeUseropDefinitionBase::new(language, name),
+            definition,
+        }
+    }
+}
+
+impl SleighPcodeUseropDefinition for FixedSleighPcodeUseropDefinition {
+    fn get_body(&self, args: &[Option<Varnode>]) -> String {
+        self.definition.generate_body(args)
+    }
+
+    fn program_for(&self, _args: &[Option<Varnode>], _library: &dyn PcodeUseropLibrary) -> Box<dyn PcodeProgram> {
+        unimplemented!(
+            "FixedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
+        )
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.OverloadedSleighPcodeUseropDefinition`, referenced by
+/// [`Builder::build`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder::build)
+/// before the real class (a multi-signature `AbstractSleighPcodeUseropDefinition` subclass) is
+/// ported. `get_body` is implemented faithfully (dispatching on argument count, like Java's
+/// `requireSignatureDef`); `program_for` panics if actually invoked, since compiling Sleigh
+/// source requires the also-unported `SleighProgramCompiler`.
+pub struct OverloadedSleighPcodeUseropDefinition {
+    #[allow(dead_code)]
+    base: AbstractSleighPcodeUseropDefinitionBase,
+    definitions: HashMap<i32, SignatureDef>,
+}
+
+impl OverloadedSleighPcodeUseropDefinition {
+    /// Placeholder for `new OverloadedSleighPcodeUseropDefinition(SleighLanguage, String, Map)`.
+    pub fn new(language: Arc<SleighLanguage>, name: String, definitions: HashMap<i32, SignatureDef>) -> Self {
+        Self {
+            base: AbstractSleighPcodeUseropDefinitionBase::new(language, name),
+            definitions,
+        }
+    }
+}
+
+impl SleighPcodeUseropDefinition for OverloadedSleighPcodeUseropDefinition {
+    fn get_body(&self, args: &[Option<Varnode>]) -> String {
+        let definition = self
+            .definitions
+            .get(&(args.len() as i32))
+            .unwrap_or_else(|| panic!("Incorrect number of arguments to userop"));
+        definition.generate_body(args)
+    }
+
+    fn program_for(&self, _args: &[Option<Varnode>], _library: &dyn PcodeUseropLibrary) -> Box<dyn PcodeProgram> {
+        unimplemented!(
+            "OverloadedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
+        )
+    }
+}
