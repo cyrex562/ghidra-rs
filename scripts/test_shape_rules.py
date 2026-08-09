@@ -341,6 +341,27 @@ class TestParsing(unittest.TestCase):
             sr.split_types("Span<Long, Lifespan>, Iterable<Long>"), ["Span", "Iterable"]
         )
 
+    def test_generic_bounds_are_not_supertypes(self):
+        """`class X<T extends Bound>` does not make X a subtype of Bound.
+
+        A regex for the first `extends` in the header read the type-parameter bound as a
+        supertype, inventing an edge saying AssemblyGrammar implements AssemblyNonTerminal.
+        354 Java files in the tree declare a bounded type parameter.
+        """
+        ext, imp, per = sr.parse_header(
+            "<NT extends AssemblyNonTerminal, P extends AbstractAssemblyProduction<NT>> ")
+        self.assertEqual((ext, imp, per), ([], [], []))
+
+    def test_generic_bounds_do_not_hide_a_real_supertype(self):
+        ext, imp, _ = sr.parse_header(
+            "<T extends Comparable<T>> extends AbstractThing<T> implements Serializable ")
+        self.assertEqual(ext, ["AbstractThing"])
+        self.assertEqual(imp, ["Serializable"])
+
+    def test_declaration_without_type_params_is_unchanged(self):
+        ext, imp, _ = sr.parse_header(" extends Base implements Foo ")
+        self.assertEqual((ext, imp), (["Base"], ["Foo"]))
+
     def test_implements_and_permits_are_separated(self):
         ext, imp, per = sr.parse_header(
             " extends Base<T> implements Foo, Bar<Baz> permits A, B "

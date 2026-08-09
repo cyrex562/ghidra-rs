@@ -146,8 +146,35 @@ def split_types(clause: str):
     return [re.sub(r"<.*", "", t).strip().split(".")[-1] for t in out if t.strip()]
 
 
+def strip_type_params(header: str) -> str:
+    """Drop the generic parameter list a declaration header opens with.
+
+    `class AbstractAssemblyGrammar<NT extends AssemblyNonTerminal, P extends ...>` puts an
+    `extends` INSIDE the type parameters, and a regex looking for the first `extends` in the
+    header reads the bound as a supertype. That invented an edge saying AssemblyGrammar
+    implements AssemblyNonTerminal -- a grammar is not a non-terminal -- and 354 Java files
+    declare a bounded type parameter, so it inflated implementer counts across the tree.
+    """
+    i = 0
+    while i < len(header) and header[i].isspace():
+        i += 1
+    if i >= len(header) or header[i] != "<":
+        return header
+    depth = 0
+    while i < len(header):
+        if header[i] == "<":
+            depth += 1
+        elif header[i] == ">":
+            depth -= 1
+            if depth == 0:
+                return header[i + 1:]
+        i += 1
+    return header  # unbalanced -- leave it alone rather than truncate
+
+
 def parse_header(header: str):
     """Pull extends / implements / permits lists out of a declaration header."""
+    header = strip_type_params(header)
     ext = re.search(r"\bextends\b(.*?)(?=\bimplements\b|\bpermits\b|$)", header, re.S)
     imp = re.search(r"\bimplements\b(.*?)(?=\bpermits\b|$)", header, re.S)
     per = re.search(r"\bpermits\b(.*)$", header, re.S)
