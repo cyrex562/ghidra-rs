@@ -508,3 +508,4 @@ ts	stub_class	referenced_by
 2026-08-09T07:36:04.698689870+00:00	FilteredMemoryState	Emulator
 2026-08-09T07:36:04.698689870+00:00	MemoryAccessFilter	Emulator
 2026-08-09T08:15:00.000000+00:00	ThreadPcodeExecutorState	PcodeThread
+2026-08-09T07:49:53.310315+00:00	StepKind	Stepper
