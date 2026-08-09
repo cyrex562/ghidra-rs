@@ -2,7 +2,8 @@
 //!
 //! Port of `ghidra.app.services.DebuggerPlatformService`.
 
-use crate::app::seam_stubs::{DebuggerPlatformMapper, TraceObject};
+use crate::app::seam_stubs::DebuggerPlatformMapper;
+use crate::trace::model::target::trace_object::TraceObject;
 use crate::trace::model::trace::Trace;
 
 /// A service to manage the current mapper for active traces.

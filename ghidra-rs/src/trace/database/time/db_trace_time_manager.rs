@@ -541,7 +541,7 @@ impl DBTraceTimeManager {
     /// Panics if the trace's object manager has no root object, mirroring the Java
     /// `IllegalStateException`.
     pub fn set_time_radix(&self, radix: &dyn TimeRadix) {
-        let root = self
+        let mut root = self
             .trace
             .get_object_manager()
             .get_root_object()
@@ -551,7 +551,7 @@ impl DBTraceTimeManager {
         root.set_attribute(
             Lifespan::ALL,
             KEY_TIME_RADIX,
-            Box::new(radix.radix_name().to_string()),
+            Some(Box::new(radix.radix_name().to_string())),
         );
     }
 
@@ -907,7 +907,7 @@ mod tests {
         fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
             unimplemented!()
         }
-        fn get_parent(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceObject>> {
+        fn get_parent(&self) -> Option<Box<dyn crate::trace::model::target::trace_object::TraceObject>> {
             None
         }
         fn get_entry_key(&self) -> String {
@@ -919,7 +919,7 @@ mod tests {
         fn get_value(&self) -> Box<dyn std::any::Any + Send + Sync> {
             Box::new(self.0.clone())
         }
-        fn get_child(&self) -> Box<dyn crate::trace::seam_stubs::TraceObject> {
+        fn get_child(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
             unimplemented!()
         }
         fn is_object(&self) -> bool {
@@ -937,7 +937,7 @@ mod tests {
         fn set_lifespan_with_resolution(
             &mut self,
             _span: Lifespan,
-            _resolution: crate::trace::seam_stubs::ConflictResolution,
+            _resolution: crate::trace::model::target::trace_object::ConflictResolution,
         ) -> Result<(), crate::trace::model::target::duplicate_key_exception::DuplicateKeyException>
         {
             unimplemented!()
@@ -971,30 +971,40 @@ mod tests {
         }
     }
 
-    /// `DBTraceObject` is a `TraceObject`; only the two attribute accessors below are exercised
-    /// here, so the `TraceObject` half is left unimplemented.
-    impl crate::trace::seam_stubs::TraceObject for SharedRoot {
-        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+    /// `DBTraceObject` is a `TraceObject`; only the two attribute accessors are exercised here,
+    /// so the rest of the `TraceObject` half is left unimplemented.
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for SharedRoot {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::trace_object::TraceObject for SharedRoot {
+        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {
             unimplemented!("not exercised by this smoke test")
         }
-    }
 
-    impl DBTraceObject for SharedRoot {
+        fn get_canonical_path(&self) -> crate::trace::model::target::path::key_path::KeyPath {
+            crate::trace::model::target::path::key_path::KeyPath::root()
+        }
+
         fn set_attribute(
-            &self,
+            &mut self,
             _lifespan: Lifespan,
             name: &str,
-            value: Box<dyn std::any::Any + Send + Sync>,
-        ) -> Box<dyn TraceObjectValue> {
+            value: Option<crate::trace::model::target::trace_object::ObjectValue>,
+        ) -> Option<Box<dyn TraceObjectValue>> {
+            let value = value?;
             let s = *value.downcast::<String>().expect("radix attribute is a String");
             self.0.attributes.lock().unwrap().insert(name.to_string(), s.clone());
-            Box::new(StringValue(s))
+            Some(Box::new(StringValue(s)))
         }
 
         fn get_attribute(&self, _snap: i64, name: &str) -> Option<Box<dyn TraceObjectValue>> {
@@ -1005,7 +1015,11 @@ mod tests {
                 .get(name)
                 .map(|s| Box::new(StringValue(s.clone())) as Box<dyn TraceObjectValue>)
         }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
+
+    impl DBTraceObject for SharedRoot {}
 
     struct MockObjectManager {
         root: Option<Arc<MockRoot>>,

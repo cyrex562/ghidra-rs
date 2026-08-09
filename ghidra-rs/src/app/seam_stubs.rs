@@ -64,13 +64,6 @@ pub trait ListingMarginProvider {}
 /// parameter/return value, so no members are needed yet.
 pub trait DebuggerPlatformMapper {}
 
-/// Placeholder for `ghidra.trace.model.target.TraceObject`, referenced by
-/// [`DebuggerPlatformService`](crate::app::services::DebuggerPlatformService) and
-/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
-/// real class is ported. Both services only ever pass this type through as a parameter/return
-/// value, so no members are needed yet.
-pub trait TraceObject {}
-
 /// Placeholder for `ghidra.debug.api.target.Target`, referenced by
 /// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService) and
 /// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the

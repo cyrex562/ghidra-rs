@@ -126,13 +126,13 @@ impl DBTraceObjectValPath {
     /// Mirrors `getSource(TraceObject)`.
     pub fn get_source(
         &self,
-        if_empty: Box<dyn crate::trace::seam_stubs::TraceObject>,
-    ) -> Box<dyn crate::trace::seam_stubs::TraceObject> {
+        if_empty: Box<dyn crate::trace::model::target::trace_object::TraceObject>,
+    ) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
         match self.get_first_entry() {
             None => if_empty,
             Some(first) => first
                 .get_parent_object()
-                .map(|p| p as Box<dyn crate::trace::seam_stubs::TraceObject>)
+                .map(|p| p as Box<dyn crate::trace::model::target::trace_object::TraceObject>)
                 .expect("the first entry of a non-empty path always has a parent"),
         }
     }
@@ -156,11 +156,11 @@ impl DBTraceObjectValPath {
     /// Panics if the last entry's value is not an object, mirroring the Java `ClassCastException`.
     pub fn get_destination(
         &self,
-        if_empty: Box<dyn crate::trace::seam_stubs::TraceObject>,
-    ) -> Box<dyn crate::trace::seam_stubs::TraceObject> {
+        if_empty: Box<dyn crate::trace::model::target::trace_object::TraceObject>,
+    ) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
         match self.get_last_entry() {
             None => if_empty,
-            Some(last) => last.get_child_object() as Box<dyn crate::trace::seam_stubs::TraceObject>,
+            Some(last) => last.get_child_object() as Box<dyn crate::trace::model::target::trace_object::TraceObject>,
         }
     }
 }
@@ -225,7 +225,8 @@ mod tests {
     use super::*;
     use crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage;
     use crate::trace::model::lifespan::Lifespan;
-    use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager, TraceObject};
+    use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager};
+    use crate::trace::model::target::trace_object::TraceObject;
 
     struct MockManager;
     impl DBTraceObjectManager for MockManager {}
@@ -234,11 +235,18 @@ mod tests {
         path: KeyPath,
     }
 
-    impl TraceObject for MockObject {
-        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl TraceObject for MockObject {
+        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {
@@ -247,6 +255,8 @@ mod tests {
         fn get_canonical_path(&self) -> KeyPath {
             self.path.clone()
         }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     impl DBTraceObject for MockObject {
@@ -444,7 +454,7 @@ mod tests {
         fn set_lifespan_with_resolution(
             &mut self,
             _span: Lifespan,
-            _resolution: crate::trace::seam_stubs::ConflictResolution,
+            _resolution: crate::trace::model::target::trace_object::ConflictResolution,
         ) -> Result<(), crate::trace::model::target::duplicate_key_exception::DuplicateKeyException>
         {
             Ok(())

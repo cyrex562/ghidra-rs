@@ -3,14 +3,15 @@
 //! Java source: `ghidra.trace.model.target.TraceObjectValue`.
 //!
 //! Ported as a trait because it was selected as a cycle cut-point: `TraceObjectValue` and
-//! `TraceObject` (the still-unported `crate::trace::seam_stubs::TraceObject`) reference each
+//! `TraceObject` (the still-unported `crate::trace::model::target::trace_object::TraceObject`) reference each
 //! other directly (`getParent`/`getChild` vs. an object's values), so neither can be a concrete
 //! struct until both sides of the cycle exist.
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::duplicate_key_exception::DuplicateKeyException;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{ConflictResolution, TraceObject, TraceObjectSchema};
+use crate::trace::seam_stubs::TraceObjectSchema;
+use crate::trace::model::target::trace_object::{ConflictResolution, TraceObject};
 
 /// The outcome of [`TraceObjectValue::truncate_or_delete`].
 ///
@@ -391,6 +392,16 @@ mod tests {
         schema: MockSchema,
     }
 
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            Box::new(MockObjectKey(0))
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn TraceObjectSchema> {
             Box::new(MockSchema {
@@ -399,13 +410,16 @@ mod tests {
             })
         }
 
-        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
-            Box::new(MockObjectKey(0))
-        }
 
         fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {
             Box::new(MockLifeSet { empty: false })
         }
+
+        fn get_canonical_path(&self) -> crate::trace::model::target::path::key_path::KeyPath {
+            crate::trace::model::target::path::key_path::KeyPath::root()
+        }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     fn make_address(offset: i64) -> Address {

@@ -12,7 +12,8 @@ use crate::trace::model::target::path::PathFilter;
 use crate::trace::model::target::trace_object_val_path::TraceObjectValPath;
 use crate::trace::model::target::trace_object_value::TraceObjectValue;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{TraceObject, TraceObjectInterface, TraceObjectSchema};
+use crate::trace::seam_stubs::{TraceObjectInterface, TraceObjectSchema};
+use crate::trace::model::target::trace_object::TraceObject;
 
 /// A handle to automatically re-enable the write cache.
 ///
@@ -186,18 +187,31 @@ mod tests {
 
     struct MockObject;
 
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            Box::new(MockObjectKey(0))
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
     impl TraceObject for MockObject {
         fn get_schema(&self) -> Box<dyn SchemaTrait> {
             Box::new(MockSchema)
         }
 
-        fn get_object_key(&self) -> Box<dyn ObjectKey> {
-            Box::new(MockObjectKey(0))
-        }
 
         fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {
             Box::new(MockLifeSet)
         }
+
+        fn get_canonical_path(&self) -> crate::trace::model::target::path::key_path::KeyPath {
+            crate::trace::model::target::path::key_path::KeyPath::root()
+        }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     struct MockManager {

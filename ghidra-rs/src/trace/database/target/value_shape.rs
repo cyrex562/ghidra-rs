@@ -209,16 +209,29 @@ mod tests {
 
     /// `DBTraceObject` is a `TraceObject`; none of its members are exercised here -- the object
     /// is only ever passed around opaquely as a shape's child.
-    impl crate::trace::seam_stubs::TraceObject for MockObject {
-        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockObject {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::trace_object::TraceObject for MockObject {
+        fn get_schema(&self) -> Box<dyn crate::trace::seam_stubs::TraceObjectSchema> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_life(&self) -> Box<dyn crate::trace::seam_stubs::LifeSet> {
             unimplemented!("not exercised by this smoke test")
         }
+
+        fn get_canonical_path(&self) -> crate::trace::model::target::path::key_path::KeyPath {
+            crate::trace::model::target::path::key_path::KeyPath::root()
+        }
+
+        crate::trace::model::target::trace_object::unimplemented_trace_object_members!();
     }
 
     impl DBTraceObject for MockObject {}
