@@ -48,7 +48,7 @@ DONE	trait	31	8	39	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	31	8	0	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/property/TraceAddressPropertyManager.java
 DONE	trait	28	10	6	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectValue.java
 DONE	trait	27	4	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/target/DBTraceObjectValPath.java
-TODO	trait	26	24	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObjectValPath.java
+DONE	trait	26	24	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/TraceObjectValPath.java
 TODO	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceActivatable.java
 TODO	trait	26	8	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceEnvironment.java
 TODO	trait	26	6	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceFocusScope.java
