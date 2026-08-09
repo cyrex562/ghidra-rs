@@ -321,3 +321,15 @@ impl SleighPcodeUseropDefinition for OverloadedSleighPcodeUseropDefinition {
         )
     }
 }
+
+/// Placeholder for `ghidra.app.util.PseudoInstruction`, referenced by
+/// [`InstructionDecoder`](crate::pcode::emu::instruction_decoder::InstructionDecoder) before the
+/// real class is ported. This is a minimal interface stub exposing only the methods needed by
+/// existing references.
+pub trait PseudoInstruction: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.lang.RegisterValue`, referenced by
+/// [`InstructionDecoder`](crate::pcode::emu::instruction_decoder::InstructionDecoder) before the
+/// real class is ported. This is a minimal interface stub exposing only the methods needed by
+/// existing references.
+pub trait RegisterValue: Send + Sync {}
