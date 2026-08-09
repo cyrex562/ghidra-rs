@@ -497,3 +497,4 @@ ts	stub_class	referenced_by
 2026-08-08T23:28:25.000000+00:00	PseudoInstruction	InstructionDecoder
 2026-08-08T23:28:25.000000+00:00	RegisterValue	InstructionDecoder
 2026-08-09T03:29:57.650124+00:00	PcodeThread	PcodeStateInitializer
+2026-08-09T04:00:00.000000+00:00	PcodeExecutorStatePiece	PcodeStateCallbacks
