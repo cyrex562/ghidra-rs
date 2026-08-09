@@ -20,7 +20,7 @@ DONE	trait	65	102	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 DONE	trait	64	101	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PairedPcodeArithmetic.java
 DONE	trait	63	101	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PairedPcodeExecutorState.java
 DONE	trait	62	128	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutorState.java
-TODO	trait	60	125	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeUseropLibrary.java
+DONE	trait	60	125	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeUseropLibrary.java
 TODO	trait	59	98	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/DefaultPcodeUseropLibrary.java
 TODO	trait	58	107	6	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/AnnotatedPcodeUseropLibrary.java
 TODO	trait	57	7	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/BreakCallBack.java
