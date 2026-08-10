@@ -183,8 +183,11 @@ def load_justified_dyn_types():
     if os.path.exists(debt):
         try:
             with open(debt, newline="", encoding="utf-8") as f:
+                # "blocked" is the P2-seam case: the one concrete implementation is not
+                # ported, so `dyn` is the only thing a porter can write. Counting it as debt
+                # charges the port for work it is not yet possible to do.
                 out = {r["class"] for r in csv.DictReader(f, delimiter="\t")
-                       if (r.get("verdict") or "").strip() == "ok"}
+                       if (r.get("verdict") or "").strip() in ("ok", "blocked")}
             if out:
                 return out
         except Exception:
@@ -202,7 +205,7 @@ def load_justified_dyn_types():
             pat, _n, _kind = dyn_rules.classify(name, facts, subtypes, cache)
         except Exception:
             continue
-        if pat in ("P4", "P5"):
+        if pat in ("P4", "P5", "P2s"):
             out.add(name)
     return out
 

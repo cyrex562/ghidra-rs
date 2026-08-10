@@ -105,10 +105,28 @@ class TestClassification(unittest.TestCase):
     def test_java_class_is_p1(self):
         self.assertEqual(self.c("TokenPattern")[0], "P1")
 
-    def test_single_implementation_interface_is_p2(self):
-        pat, n, _ = self.c("Trace")
-        self.assertEqual((pat, n), ("P2", 1))
-        self.assertEqual(dr.VERDICT[pat], "fix")
+    def test_single_implementation_is_p2_when_that_type_is_ported(self):
+        dr._PORTED = {"DBTrace"}
+        try:
+            pat, n, _ = self.c("Trace")
+            self.assertEqual((pat, n), ("P2", 1))
+            self.assertEqual(dr.VERDICT[pat], "fix")
+        finally:
+            dr._PORTED = None
+
+    def test_single_implementation_is_a_SEAM_when_that_type_is_not_ported(self):
+        """"Use DBTrace" is not advice a porter can follow when DBTrace is a seam stub.
+
+        177 of 224 single-implementer types are in this state, and pattern_audit was charging
+        the port for `dyn` it had no way to avoid.
+        """
+        dr._PORTED = set()
+        try:
+            pat, n, _ = self.c("Trace")
+            self.assertEqual((pat, n), ("P2s", 1))
+            self.assertEqual(dr.VERDICT[pat], "blocked")
+        finally:
+            dr._PORTED = None
 
     def test_two_implementations_is_p3_investigate(self):
         pat, n, _ = self.c("Language")
@@ -164,7 +182,10 @@ class TestRealTree(unittest.TestCase):
         self.assertGreater(n, 100)
 
     def test_trace_has_a_single_implementation(self):
-        self.assertEqual(self.c("Trace")[:2], ("P2", 1))
+        """DBTrace is that implementation and is not ported, so Trace is a seam (P2s)."""
+        pat, n, _ = self.c("Trace")
+        self.assertEqual((pat, n), ("P2s", 1))
+        self.assertNotIn("DBTrace", dr.ported_classes())
 
     def test_program_counts_only_real_implementations(self):
         """StubProgram is a test double and TraceProgramView is a sub-interface.

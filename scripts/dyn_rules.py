@@ -25,6 +25,11 @@ The patterns
   P2  T is an interface with exactly ONE concrete implementer, and not an extension point.
       Java's header-file idiom. Use the concrete struct; keep a trait only as a seam for a
       dependency that is genuinely unported.
+  P2s A P2 whose one concrete implementer is NOT ported yet. The end state is the same, but
+      there is no Rust type to use today, so the trait is a seam awaiting that port rather
+      than a defect -- the same distinction AGENTS.md draws for shape debt. 177 of 224 P2
+      types were in this state, and telling a porter to "use DBTrace" when DBTrace is a seam
+      stub is advice it cannot follow.
   P0  T is an interface with NO concrete implementer anywhere in orig_src. Unknown, not
       fixable: it may be implemented by anonymous classes or lambdas, by code outside the
       tree, or it may be an annotation. There is no concrete type to collapse to, so this
@@ -72,14 +77,36 @@ PATTERNS = {
     "PA": "Java annotation type -- not a runtime type; it should not appear as a Rust type at all",
     "P1": "Java is a {kind}, not an interface -- use the concrete type",
     "P2": "interface with exactly one concrete implementer -- Java's header-file idiom, use the struct",
+    "P2s": "interface with one concrete implementer that is NOT ported yet -- a seam until it is",
     "P3": "interface with {n} concrete implementers -- closed set, enum or trait (investigate)",
     "P4": "extension point -- dyn is correct",
     "P5": "interface with {n} concrete implementers -- dyn is correct",
     "??": "ambiguous basename or no Java match -- do not guess",
 }
 
-VERDICT = {"P0": "unknown", "PA": "unknown", "P1": "fix", "P2": "fix", "P3": "investigate",
+VERDICT = {"P0": "unknown", "PA": "unknown", "P1": "fix", "P2": "fix", "P2s": "blocked",
+           "P3": "investigate",
            "P4": "ok", "P5": "ok", "??": "skip"}
+
+
+_PORTED = None
+
+
+def ported_classes():
+    """Java class names marked DONE in PORT_MANIFEST.tsv."""
+    global _PORTED
+    if _PORTED is None:
+        out = set()
+        try:
+            with open(os.path.join(REPO, "PORT_MANIFEST.tsv"), encoding="utf-8") as fh:
+                for line in fh:
+                    c = line.split("\t")
+                    if len(c) > 1 and c[1].strip() == "DONE":
+                        out.add(os.path.basename(c[0])[:-5])
+        except OSError:
+            pass
+        _PORTED = out
+    return _PORTED
 
 
 def classify_from_table(name, table):
@@ -101,7 +128,12 @@ def classify_from_table(name, table):
     n = e["n_concrete"]
     if e["extension_point"]:
         return "P4", n, kind
-    return ("P0" if n == 0 else "P2" if n == 1 else "P3" if n <= 3 else "P5"), n, kind
+    if n == 1:
+        impls = e["concrete_implementers"]
+        if impls and impls[0] not in ported_classes():
+            return "P2s", n, kind
+        return "P2", n, kind
+    return ("P0" if n == 0 else "P3" if n <= 3 else "P5"), n, kind
 
 
 def classify(name, facts, subtypes, cache):
@@ -118,8 +150,11 @@ def classify(name, facts, subtypes, cache):
         return "P1", 0, kind
     if sr.is_extension_point(name, facts):
         return "P4", len(sr.concrete_implementers(name, facts, subtypes, cache)), kind
-    n = len(sr.concrete_implementers(name, facts, subtypes, cache))
-    return ("P0" if n == 0 else "P2" if n == 1 else "P3" if n <= 3 else "P5"), n, kind
+    impls = sr.concrete_implementers(name, facts, subtypes, cache)
+    n = len(impls)
+    if n == 1:
+        return ("P2" if next(iter(impls)) in ported_classes() else "P2s"), n, kind
+    return ("P0" if n == 0 else "P3" if n <= 3 else "P5"), n, kind
 
 
 def scan_rust():
@@ -164,7 +199,7 @@ def cmd_audit(args):
             fh.write("\t".join(str(c).replace("\t", " ") for c in r) + "\n")
     total = sum(counts.values())
     print(f"wrote {len(rows)} rows to {args.out}  (of {total} total `dyn` mentions)")
-    for p in ("P0", "PA", "P1", "P2", "P3", "P4", "P5", "??"):
+    for p in ("P0", "PA", "P1", "P2", "P2s", "P3", "P4", "P5", "??"):
         if tally[p]:
             print(f"  {tally[p]:6d}  {100 * tally[p] / total:4.1f}%  {p}  {VERDICT[p]}")
     fixable = tally["P1"] + tally["P2"]

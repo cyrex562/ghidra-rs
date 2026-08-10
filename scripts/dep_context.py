@@ -625,7 +625,7 @@ def render_dyn_guidance(ctx):
     table = shape_rules.load_implementers()
     if not table:
         return []
-    avoid, fine = [], []
+    avoid, fine, seam = [], [], []
     for name in dict.fromkeys(names):
         pat, n, kind = dyn_rules.classify_from_table(name, table)
         if pat == "PA":
@@ -638,9 +638,19 @@ def render_dyn_guidance(ctx):
             who = f"`{impls[0]}`" if impls else "its single implementation"
             avoid.append(f"- `{name}`: interface whose only concrete implementation is "
                          f"{who}. Use that type.")
+        elif pat == "P2s":
+            # The end state is the concrete type, but it is not ported, so there is nothing to
+            # use today. Saying "use DBTrace" when DBTrace is a seam stub is advice the porter
+            # cannot follow -- 177 of 224 single-implementer types were in this state, and the
+            # violations of this section were almost entirely these.
+            impls = table[name]["concrete_implementers"]
+            who = f"`{impls[0]}`" if impls else "its single implementation"
+            seam.append(f"- `{name}`: eventually {who}, which is NOT ported yet. `dyn {name}` "
+                        f"is the correct seam for now -- use it, but do not build new API "
+                        f"surface on it that {who} would have to keep.")
         elif pat in ("P4", "P5"):
             fine.append(f"- `{name}`: {n} concrete implementations")
-    if not avoid and not fine:
+    if not avoid and not fine and not seam:
         return []
     out = ["## Trait objects: where `dyn` is and is not warranted",
            "Decided from each type's Java hierarchy (concrete implementers, transitively, "
@@ -650,6 +660,11 @@ def render_dyn_guidance(ctx):
                    "nothing to dispatch over; a trait object here costs a vtable and an "
                    "allocation to model a choice that does not exist:")
         out.extend(avoid)
+        out.append("")
+    if seam:
+        out.append("These are seams: the single implementation is not ported yet, so `dyn` is "
+                   "correct for now and is NOT debt:")
+        out.extend(seam)
         out.append("")
     if fine:
         out.append("These are genuinely polymorphic -- `dyn` is the right tool:")
