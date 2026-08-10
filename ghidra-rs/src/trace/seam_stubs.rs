@@ -82,10 +82,6 @@ pub trait TraceBasedDataTypeManager: DataTypeManager {}
 /// before the real port is available. No members are parsed from the Java source yet.
 pub trait TraceGuestPlatform: Send + Sync {}
 
-/// Placeholder for `ghidra.trace.model.memory.TraceMemoryManager`, referenced by
-/// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceMemoryManager {}
-
 /// Placeholder for `ghidra.trace.model.context.TraceRegisterContextManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceRegisterContextManager {}

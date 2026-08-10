@@ -114,8 +114,9 @@ mod tests {
     use crate::trace::model::program::TraceVariableSnapProgramView;
     use crate::trace::model::stack::trace_stack_manager::TraceStackManager;
     use crate::trace::model::property::TraceAddressPropertyManager;
+    use crate::trace::model::memory::trace_memory_manager::TraceMemoryManager;
     use crate::trace::seam_stubs::{
-        TraceBasedDataTypeManager, TraceBookmarkManager, TraceMemoryManager,
+        TraceBasedDataTypeManager, TraceBookmarkManager,
         TraceRegisterContextManager,
     };
     use std::collections::hash_map::DefaultHasher;

@@ -63,11 +63,12 @@ use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::memory::trace_memory_flag::TraceMemoryFlag;
 use crate::trace::model::memory::trace_memory_region::TraceMemoryRegion;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
+use crate::trace::model::memory::trace_memory_manager::TraceMemoryManager;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::seam_stubs::{
-    DBTrace, DBTraceMemorySpace, DBTraceOverlaySpaceAdapter, TraceMemoryManager,
-    TraceOverlappedRegionException, TraceThread,
+    DBTrace, DBTraceMemorySpace, DBTraceOverlaySpaceAdapter, TraceOverlappedRegionException,
+    TraceThread,
 };
 use crate::util::exception::DuplicateNameException;
 use crate::util::task::TaskMonitor;
@@ -825,7 +826,120 @@ mod tests {
         }
     }
 
-    impl TraceMemoryManager for MockManager {}
+    // `TraceMemoryManager` re-declares, one-for-one, the region/overlay-space methods
+    // `DBTraceMemoryManager` already implements as a dependency-cycle cut-point (see this
+    // module's documentation), so each forwards to its `DBTraceMemoryManager` counterpart. The
+    // `TraceMemorySpace`-returning space lookups aren't exercised by this smoke test, since
+    // `DBTraceMemoryManager`'s own space lookups return its concrete `DBTraceMemorySpace` delegate
+    // type instead.
+    impl TraceMemoryManager for MockManager {
+        fn create_overlay_address_space(
+            &self,
+            name: &str,
+            base: &Arc<AddressSpace>,
+        ) -> Result<Arc<AddressSpace>, DuplicateNameException> {
+            DBTraceMemoryManager::create_overlay_address_space(self, name, base)
+        }
+
+        fn get_or_create_overlay_address_space(
+            &self,
+            name: &str,
+            base: &Arc<AddressSpace>,
+        ) -> Option<Arc<AddressSpace>> {
+            DBTraceMemoryManager::get_or_create_overlay_address_space(self, name, base)
+        }
+
+        fn delete_overlay_address_space(&self, name: &str) {
+            DBTraceMemoryManager::delete_overlay_address_space(self, name)
+        }
+
+        fn add_region(
+            &self,
+            path: &str,
+            lifespan: Lifespan,
+            range: AddressRange,
+            flags: &[TraceMemoryFlag],
+        ) -> Result<Box<dyn TraceMemoryRegion>, Box<dyn TraceOverlappedRegionException>> {
+            DBTraceMemoryManager::add_region(self, path, lifespan, range, flags)
+        }
+
+        fn get_all_regions(&self) -> Vec<Box<dyn TraceMemoryRegion>> {
+            DBTraceMemoryManager::get_all_regions(self)
+        }
+
+        fn get_live_region_by_path(&self, snap: i64, path: &str) -> Option<Box<dyn TraceMemoryRegion>> {
+            DBTraceMemoryManager::get_live_region_by_path(self, snap, path)
+        }
+
+        fn get_region_containing(&self, snap: i64, address: &Address) -> Option<Box<dyn TraceMemoryRegion>> {
+            DBTraceMemoryManager::get_region_containing(self, snap, address)
+        }
+
+        fn get_regions_intersecting(
+            &self,
+            lifespan: Lifespan,
+            range: &AddressRange,
+        ) -> Vec<Box<dyn TraceMemoryRegion>> {
+            DBTraceMemoryManager::get_regions_intersecting(self, lifespan, range)
+        }
+
+        fn get_regions_at_snap(&self, snap: i64) -> Vec<Box<dyn TraceMemoryRegion>> {
+            DBTraceMemoryManager::get_regions_at_snap(self, snap)
+        }
+
+        fn get_regions_address_set(&self, snap: i64) -> Box<dyn AddressSetView> {
+            DBTraceMemoryManager::get_regions_address_set(self, snap)
+        }
+
+        fn get_regions_address_set_with(
+            &self,
+            snap: i64,
+            predicate: &dyn Fn(&dyn TraceMemoryRegion) -> bool,
+        ) -> Box<dyn AddressSetView> {
+            DBTraceMemoryManager::get_regions_address_set_with(self, snap, predicate)
+        }
+
+        fn get_memory_space(
+            &self,
+            _space: &Arc<AddressSpace>,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_memory_register_space_at_frame(
+            &self,
+            _thread: &dyn TraceThread,
+            _frame: i32,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_memory_register_space(
+            &self,
+            _thread: &dyn TraceThread,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_memory_register_space_for_frame(
+            &self,
+            _frame: &dyn TraceStackFrame,
+            _create_if_absent: bool,
+        ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_state_changes(
+            &self,
+            from: i64,
+            to: i64,
+        ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            DBTraceMemoryManager::get_state_changes(self, from, to)
+        }
+    }
 
     impl DBTraceMemoryManager for MockManager {
         fn trace(&self) -> Box<dyn DBTrace> {
@@ -920,7 +1034,7 @@ mod tests {
     fn get_memory_space_delegates_through_get_for_space() {
         let mgr = make_manager();
         let space = dummy_space();
-        let got = mgr.get_memory_space(&space, false);
+        let got = DBTraceMemoryManager::get_memory_space(&mgr, &space, false);
         assert!(got.is_some());
     }
 

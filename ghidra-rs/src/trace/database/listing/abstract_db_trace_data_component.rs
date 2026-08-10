@@ -536,7 +536,7 @@ mod tests {
         fn get_platform_manager(&self) -> Box<dyn crate::trace::model::guest::trace_platform_manager::TracePlatformManager> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_memory_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceMemoryManager> {
+        fn get_memory_manager(&self) -> Box<dyn crate::trace::model::memory::trace_memory_manager::TraceMemoryManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_module_manager(&self) -> Box<dyn crate::trace::model::modules::TraceModuleManager> {

@@ -180,7 +180,7 @@ use crate::program::model::listing::CommentType;
         fn get_platform_manager(&self) -> Box<dyn TracePlatformManager> {
             Box::new(MockPlatformManager { host_platform_calls: Rc::clone(&self.host_platform_calls) })
         }
-        fn get_memory_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceMemoryManager> {
+        fn get_memory_manager(&self) -> Box<dyn crate::trace::model::memory::trace_memory_manager::TraceMemoryManager> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_module_manager(&self) -> Box<dyn crate::trace::model::modules::TraceModuleManager> {
