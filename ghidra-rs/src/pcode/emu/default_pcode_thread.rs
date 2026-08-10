@@ -282,6 +282,27 @@ impl Deref for Inject<'_> {
     }
 }
 
+/// Extension seam letting a subclass-equivalent wrapper (e.g.
+/// [`ModifiedPcodeThread`](crate::pcode::emu::modified_pcode_thread::ModifiedPcodeThread)) observe
+/// the end of each executed instruction, mirroring Java's overridable `postExecuteInstruction()`.
+///
+/// Composition cannot intercept [`post_execute_instruction`](DefaultPcodeThread::post_execute_instruction)'s
+/// call site inside [`advance_after_finished`](DefaultPcodeThread::advance_after_finished) directly
+/// -- that call is monomorphized to this type, not virtual -- so a wrapper that needs the hook
+/// installs one via [`DefaultPcodeThread::set_post_execute_hook`] instead. By default none is
+/// installed and behavior is unchanged.
+pub trait PostExecuteHook<T: 'static> {
+    /// Called once a real (non-inject) instruction has finished, mirroring the arguments Java's
+    /// `EmulateInstructionStateModifier.postExecuteCallback` receives.
+    fn post_execute_instruction(
+        &self,
+        last_execute_address: &Address,
+        last_execute_pcode: &[PcodeOp],
+        last_pcode_index: i32,
+        current_address: &Address,
+    );
+}
+
 /// The default implementation of [`PcodeThread`], suitable for most applications.
 ///
 /// `T` is the type of variables in the emulator, `S` the concrete type of the machine's shared
@@ -311,6 +332,9 @@ where
     frame: Option<PcodeFrame>,
     default_context: Option<ProgramContextImpl>,
     injects: HashMap<Address, Arc<PcodeProgram>>,
+    /// See [`PostExecuteHook`]. `None` unless a wrapper installed one via
+    /// [`set_post_execute_hook`](Self::set_post_execute_hook).
+    post_execute_hook: Option<Arc<dyn PostExecuteHook<T>>>,
 }
 
 impl<T: 'static, S, L> DefaultPcodeThread<T, S, L>
@@ -384,9 +408,27 @@ where
             frame: None,
             default_context,
             injects: HashMap::new(),
+            post_execute_hook: None,
         };
         thread.re_initialize();
         thread
+    }
+
+    /// Install a [`PostExecuteHook`] to be called at the end of
+    /// [`advance_after_finished`](Self::advance_after_finished), replacing any previously
+    /// installed hook.
+    pub fn set_post_execute_hook(&mut self, hook: Arc<dyn PostExecuteHook<T>>) {
+        self.post_execute_hook = Some(hook);
+    }
+
+    /// Replace this thread's userop library outright.
+    ///
+    /// A stand-in for overriding Java's `createUseropLibrary()`: since this port builds the
+    /// standard library eagerly in [`new`](Self::new) (see the module docs), a wrapper that needs
+    /// to layer its own userops over (or instead of) it composes the replacement itself and
+    /// installs it here.
+    pub fn replace_library(&mut self, library: Box<dyn PcodeUseropLibrary<T>>) {
+        self.library = library;
     }
 
     /// The language bound to this thread's executor and decoder. See the module docs.
@@ -603,6 +645,11 @@ where
             unimplemented!("advancing the decode context needs the real RegisterValue port");
         }
         self.post_execute_instruction();
+        if let Some(hook) = self.post_execute_hook.clone() {
+            let code = self.frame.as_ref().map(PcodeFrame::copy_code).unwrap_or_default();
+            let branched = self.frame.as_ref().map(PcodeFrame::branched).unwrap_or(-1);
+            hook.post_execute_instruction(&instruction.get_min_address(), &code, branched, &self.counter);
+        }
         cb.after_execute_instruction(self, instruction.as_ref());
         self.frame = None;
         self.instruction = None;

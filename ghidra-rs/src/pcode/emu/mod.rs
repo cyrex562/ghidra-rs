@@ -3,6 +3,7 @@ pub mod auxiliary;
 pub mod default_pcode_thread;
 pub mod instruction_decoder;
 pub mod jit;
+pub mod modified_pcode_thread;
 pub mod pcode_emulation_callbacks;
 pub mod pcode_emulator;
 pub mod pcode_machine;
@@ -18,6 +19,7 @@ pub use abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase}
 pub use auxiliary::{AuxEmulatorPartsFactory, AuxPcodeEmulator};
 pub use default_pcode_thread::{DefaultPcodeThread, PcodeEmulationLibrary, PcodeThreadExecutor};
 pub use instruction_decoder::InstructionDecoder;
+pub use modified_pcode_thread::{ModifiedPcodeThread, PcodeStateModifier};
 pub use pcode_emulation_callbacks::{
     no_pcode_emulation_callbacks, NoPcodeEmulationCallbacks, PcodeEmulationCallbacks, Wrapper,
 };
