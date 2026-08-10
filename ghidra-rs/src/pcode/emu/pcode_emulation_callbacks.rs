@@ -114,12 +114,13 @@ pub trait PcodeEmulationCallbacks<T: 'static>: Send + Sync {
 
     /// The emulator, having found no injects, is preparing to decode an instruction.
     ///
-    /// `context` is the decode contextreg value.
+    /// `context` is the decode contextreg value, or `None` (Java's `null`) for a language with no
+    /// context register.
     fn before_decode_instruction(
         &self,
         _thread: &dyn ErasedPcodeThread,
         _counter: &Address,
-        _context: &dyn RegisterValue,
+        _context: Option<&dyn RegisterValue>,
     ) {
     }
 

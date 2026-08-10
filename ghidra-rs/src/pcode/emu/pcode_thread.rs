@@ -2,7 +2,7 @@
 //!
 //! Corresponds to `ghidra.pcode.emu.PcodeThread`.
 
-use std::sync::Arc;
+use std::sync::{Arc, MutexGuard};
 
 use crate::pcode::emu::pcode_machine::PcodeMachine;
 use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
@@ -87,7 +87,11 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     fn assign_context(&mut self, context: &dyn RegisterValue);
 
     /// Get the thread's decoding context.
-    fn get_context(&self) -> Box<dyn RegisterValue>;
+    ///
+    /// `None` where Java returns `null`, i.e. for a language with no context register.
+    /// `RegisterValue` is not clonable here (it is still a bare seam stub), so this hands back a
+    /// borrow rather than the owned value Java's reference amounts to.
+    fn get_context(&self) -> Option<&dyn RegisterValue>;
 
     /// Adjust the thread's decoding context and write the contextreg of its executor state.
     ///
@@ -268,15 +272,13 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     ///
     /// The memory part of this state is shared among all threads in the same machine. See
     /// [`PcodeMachine::get_shared_state`].
-    fn get_state(&self) -> &ThreadPcodeExecutorState<T, Self::SharedState, Self::LocalState>;
-
-    /// Get the thread's memory and register state for writing.
     ///
-    /// Java has only `getState()`, since a Java reference is unrestricted; writing to the state
-    /// (`setVar` and friends) needs `&mut` in Rust, so the mutable view is a separate accessor
-    /// rather than a getter/setter pair. This follows
-    /// [`PcodeMachine::get_shared_state_mut`].
-    fn get_state_mut(&mut self) -> &mut ThreadPcodeExecutorState<T, Self::SharedState, Self::LocalState>;
+    /// Java hands back the state itself and lets callers both read and write it. A thread shares
+    /// that one state with its [`PcodeExecutor`], which holds it behind a `Mutex` (see
+    /// [`PcodeExecutor::get_state`]) precisely because writing needs `&mut` where a `&self` method
+    /// is all that is available; so this hands back a guard, which serves for both reading and
+    /// writing.
+    fn get_state(&self) -> MutexGuard<'_, ThreadPcodeExecutorState<T, Self::SharedState, Self::LocalState>>;
 
     /// Override the p-code at the given address with the given Sleigh source for only this thread.
     ///
@@ -310,8 +312,8 @@ mod tests {
     use crate::program::model::mem::mem_buffer::MemBuffer;
 
     /// A state that is never actually exercised, only named as
-    /// [`CountingThread`]'s [`PcodeThread::SharedState`]/[`PcodeThread::LocalState`], since its
-    /// `get_state`/`get_state_mut` are themselves unreachable in these tests.
+    /// [`CountingThread`]'s [`PcodeThread::SharedState`]/[`PcodeThread::LocalState`], since
+    /// `get_state` is itself unreachable in these tests.
     struct UnimplementedState;
 
     impl ErasedPcodeExecutorStatePiece for UnimplementedState {}
@@ -431,8 +433,8 @@ mod tests {
 
         fn assign_context(&mut self, _context: &dyn RegisterValue) {}
 
-        fn get_context(&self) -> Box<dyn RegisterValue> {
-            unimplemented!("test should not call this")
+        fn get_context(&self) -> Option<&dyn RegisterValue> {
+            None
         }
 
         fn override_context(&mut self, _context: &dyn RegisterValue) {}
@@ -513,11 +515,10 @@ mod tests {
             unimplemented!("test should not call this")
         }
 
-        fn get_state(&self) -> &ThreadPcodeExecutorState<Vec<u8>, UnimplementedState, UnimplementedState> {
-            unimplemented!("test should not call this")
-        }
-
-        fn get_state_mut(&mut self) -> &mut ThreadPcodeExecutorState<Vec<u8>, UnimplementedState, UnimplementedState> {
+        fn get_state(
+            &self,
+        ) -> MutexGuard<'_, ThreadPcodeExecutorState<Vec<u8>, UnimplementedState, UnimplementedState>>
+        {
             unimplemented!("test should not call this")
         }
 

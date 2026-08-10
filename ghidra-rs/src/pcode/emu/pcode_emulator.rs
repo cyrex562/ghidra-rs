@@ -108,6 +108,11 @@ impl AbstractPcodeMachine<Vec<u8>> for PcodeEmulator {
     fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
         Arc::new(BytesPcodeThread::new(name))
     }
+
+    /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
+    fn as_pcode_machine(&self) -> &dyn PcodeMachine<Vec<u8>> {
+        self
+    }
 }
 
 impl PcodeMachine<Vec<u8>> for PcodeEmulator {
