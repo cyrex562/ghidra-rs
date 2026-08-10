@@ -3,8 +3,8 @@
 //! Port of `ghidra.trace.model.guest.TraceGuestPlatformMappedRange`.
 
 use crate::program::model::address::{Address, AddressRange};
+use crate::trace::model::guest::trace_guest_platform::TraceGuestPlatform;
 use crate::trace::model::guest::trace_platform::TracePlatform;
-use crate::trace::seam_stubs::TraceGuestPlatform;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -61,7 +61,31 @@ mod tests {
     impl TracePlatform for MockPlatform {}
 
     struct MockGuestPlatform;
-    impl TraceGuestPlatform for MockGuestPlatform {}
+    impl TracePlatform for MockGuestPlatform {
+        fn is_guest(&self) -> bool {
+            true
+        }
+    }
+    impl TraceGuestPlatform for MockGuestPlatform {
+        fn add_mapped_range(
+            &self,
+            _host_start: Address,
+            _guest_start: Address,
+            _length: i64,
+        ) -> Result<Box<dyn TraceGuestPlatformMappedRange>, crate::program::model::address::AddressOverflowException> {
+            Err(crate::program::model::address::AddressOverflowException::new("test"))
+        }
+
+        fn add_mapped_register_range(
+            &self,
+        ) -> Result<Box<dyn TraceGuestPlatformMappedRange>, crate::program::model::address::AddressOverflowException> {
+            Err(crate::program::model::address::AddressOverflowException::new("test"))
+        }
+
+        fn delete(&self, _monitor: &dyn crate::util::task::TaskMonitor) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+    }
 
     /// Maps `host_range` to `guest_range` by a constant offset, mirroring
     /// `DBTraceGuestPlatformMappedRange`'s straight-line translation between the two spaces.

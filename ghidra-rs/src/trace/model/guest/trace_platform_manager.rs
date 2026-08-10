@@ -1,5 +1,5 @@
 use crate::program::model::lang::CompilerSpec;
-use crate::trace::seam_stubs::{TraceGuestPlatform};
+use crate::trace::model::guest::trace_guest_platform::TraceGuestPlatform;
 use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// Allows the addition of "guest platforms" for disassembling in multiple languages.
@@ -173,7 +173,31 @@ mod tests {
     impl TracePlatform for MockPlatform {}
 
     struct MockGuestPlatform;
-    impl TraceGuestPlatform for MockGuestPlatform {}
+    impl TracePlatform for MockGuestPlatform {
+        fn is_guest(&self) -> bool {
+            true
+        }
+    }
+    impl TraceGuestPlatform for MockGuestPlatform {
+        fn add_mapped_range(
+            &self,
+            _host_start: crate::program::model::address::Address,
+            _guest_start: crate::program::model::address::Address,
+            _length: i64,
+        ) -> Result<Box<dyn crate::trace::model::guest::trace_guest_platform_mapped_range::TraceGuestPlatformMappedRange>, crate::program::model::address::AddressOverflowException> {
+            Err(crate::program::model::address::AddressOverflowException::new("test"))
+        }
+
+        fn add_mapped_register_range(
+            &self,
+        ) -> Result<Box<dyn crate::trace::model::guest::trace_guest_platform_mapped_range::TraceGuestPlatformMappedRange>, crate::program::model::address::AddressOverflowException> {
+            Err(crate::program::model::address::AddressOverflowException::new("test"))
+        }
+
+        fn delete(&self, _monitor: &dyn crate::util::task::TaskMonitor) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+    }
 
     struct MockPlatformManager {
         guests_added: Cell<u32>,
