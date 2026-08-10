@@ -1007,3 +1007,84 @@ pub trait PluginTool: Send + Sync {
     /// Returns all services of the given type that are currently registered with this tool.
     fn get_services(&self, service_type: &dyn Class) -> Vec<Box<dyn std::any::Any>>;
 }
+
+/// Placeholder for `docking.widgets.fieldpanel.field.Field`, referenced by
+/// [`ListingField`](crate::app::util::viewer::field::listing_field::ListingField) before the real
+/// class is ported. This is a genuine open extension point with multiple implementations.
+pub trait Field: Send + Sync {
+    fn get_width(&self) -> i32;
+    fn get_preferred_width(&self) -> i32;
+    fn get_height(&self) -> i32;
+    fn get_height_above(&self) -> i32;
+    fn get_height_below(&self) -> i32;
+    fn get_start_x(&self) -> i32;
+    fn paint(&self, c: &dyn std::any::Any, g: &dyn std::any::Any, context: &dyn std::any::Any, clip: &dyn std::any::Any, color_manager: &dyn std::any::Any, cursor_loc: &dyn std::any::Any, row_height: i32);
+    fn contains(&self, x: i32, y: i32) -> bool;
+    fn get_num_data_rows(&self) -> i32;
+    fn get_num_rows(&self) -> i32;
+    fn get_num_cols(&self, row: i32) -> i32;
+    fn get_x(&self, row: i32, col: i32) -> i32;
+    fn get_y(&self, row: i32) -> i32;
+    fn get_row(&self, y: i32) -> i32;
+    fn get_col(&self, row: i32, x: i32) -> i32;
+    fn is_valid(&self, row: i32, col: i32) -> bool;
+    fn get_cursor_bounds(&self, row: i32, col: i32) -> Box<dyn std::any::Any>;
+    fn get_scrollable_unit_increment(&self, top_of_screen: i32, direction: i32, max: i32) -> i32;
+    fn is_primary(&self) -> bool;
+    fn row_height_changed(&self, height_above: i32, height_below: i32);
+    fn get_text(&self) -> String;
+    fn get_text_with_line_separators(&self) -> String;
+    fn text_offset_to_screen_location(&self, text_offset: i32) -> Box<dyn std::any::Any>;
+    fn screen_location_to_text_offset(&self, row: i32, col: i32) -> i32;
+}
+
+/// Placeholder for `docking.widgets.fieldpanel.support.FieldLocation`, referenced by
+/// [`ListingField`](crate::app::util::viewer::field::listing_field::ListingField) before the real
+/// class is ported.
+pub trait FieldLocation: Send + Sync {
+    fn get_index(&self) -> Box<dyn std::any::Any>;
+    fn get_field_num(&self) -> i32;
+    fn get_row(&self) -> i32;
+    fn get_col(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn compare_to(&self, o: &dyn FieldLocation) -> i32;
+    fn hash_code(&self) -> i32;
+    fn to_string(&self) -> String;
+    fn get_element(&self, name: &str) -> Box<dyn std::any::Any>;
+    fn set(&self, loc: &dyn FieldLocation);
+    fn set_index(&self, index: &dyn std::any::Any);
+}
+
+/// Placeholder for `ghidra.app.util.viewer.field.FieldFactory`, referenced by
+/// [`ListingField`](crate::app::util::viewer::field::listing_field::ListingField) before the real
+/// class is ported. This is a genuine open extension point with multiple implementations.
+pub trait FieldFactory: Send + Sync {
+    fn services_changed(&self);
+    fn new_instance(&self, format_model: &dyn std::any::Any, highlight_provider: &dyn std::any::Any, options: &dyn std::any::Any, field_options: &dyn std::any::Any) -> Box<dyn FieldFactory>;
+    fn display_options_changed(&self, options: &dyn std::any::Any, option_name: &str, old_value: &dyn std::any::Any, new_value: &dyn std::any::Any);
+    fn field_options_changed(&self, options: &dyn std::any::Any, option_name: &str, old_value: &dyn std::any::Any, new_value: &dyn std::any::Any);
+    fn get_field_name(&self) -> String;
+    fn get_start_x(&self) -> i32;
+    fn set_start_x(&self, x: i32);
+    fn get_width(&self) -> i32;
+    fn set_width(&self, w: i32);
+    fn get_field_model(&self) -> Box<dyn std::any::Any>;
+    fn is_enabled(&self) -> bool;
+    fn set_enabled(&self, state: bool);
+    fn supports_location(&self, listing_field: &dyn std::any::Any, location: &dyn std::any::Any) -> bool;
+    fn get_field(&self, obj: &dyn ProxyObj, var_width: i32) -> Box<dyn std::any::Any>;
+    fn get_field_location(&self, bf: &dyn std::any::Any, index: &dyn std::any::Any, field_num: i32, loc: &dyn std::any::Any) -> Box<dyn FieldLocation>;
+    fn get_program_location(&self, row: i32, col: i32, bf: &dyn std::any::Any) -> Box<dyn std::any::Any>;
+    fn accepts_type(&self, category: i32, proxy_object_class: &dyn Class) -> bool;
+    fn get_field_text(&self) -> String;
+    fn get_metrics(&self) -> Box<dyn std::any::Any>;
+}
+
+/// Placeholder for `ghidra.app.util.viewer.proxy.ProxyObj`, referenced by
+/// [`ListingField`](crate::app::util::viewer::field::listing_field::ListingField) before the real
+/// class is ported.
+pub trait ProxyObj: Send + Sync {
+    fn get_listing_layout_model(&self) -> Box<dyn crate::app::util::viewer::listingpanel::listing_model::ListingModel>;
+    fn get_object(&self) -> Box<dyn std::any::Any>;
+    fn contains(&self, a: &dyn std::any::Any) -> bool;
+}
