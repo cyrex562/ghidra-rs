@@ -65,11 +65,17 @@ pub trait ListingMarginProvider {}
 pub trait DebuggerPlatformMapper {}
 
 /// Placeholder for `ghidra.debug.api.target.Target`, referenced by
-/// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService) and
-/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
-/// real class is ported. Both services only ever pass this type through as a parameter/return
-/// value, so no members are needed yet.
-pub trait Target {}
+/// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService),
+/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService), and
+/// [`InternalPcodeDebuggerDataAccess`](crate::app::plugin::core::debug::service::emulation::InternalPcodeDebuggerDataAccess)
+/// before the real class is ported.
+pub trait Target {
+    /// Check if the target is still valid.
+    fn is_valid(&self) -> bool;
+
+    /// Get the current snapshot key for the target.
+    fn get_snap(&self) -> i64;
+}
 
 /// Placeholder for `ghidra.debug.api.target.TargetPublicationListener`, referenced by
 /// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService) before the real class

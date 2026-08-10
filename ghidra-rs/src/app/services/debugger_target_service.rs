@@ -35,7 +35,15 @@ mod tests {
     use super::*;
 
     struct MockTarget;
-    impl Target for MockTarget {}
+    impl Target for MockTarget {
+        fn is_valid(&self) -> bool {
+            true
+        }
+
+        fn get_snap(&self) -> i64 {
+            0
+        }
+    }
 
     struct MockListener;
     impl TargetPublicationListener for MockListener {}
