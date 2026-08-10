@@ -512,3 +512,4 @@ ts	stub_class	referenced_by
 2026-08-10T01:25:52.545120+00:00	PcodeTraceMemoryAccess	PcodeTraceAccess
 2026-08-10T01:25:52.761166+00:00	TraceThread	PcodeTraceAccess
 2026-08-10T01:48:05.270314+00:00	PcodeTraceMemoryAccess	PcodeDebuggerMemoryAccess
+2026-08-10T02:03:53.009456+00:00	TracePlatform	InternalPcodeTraceDataAccess
