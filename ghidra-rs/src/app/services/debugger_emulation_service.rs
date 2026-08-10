@@ -21,7 +21,8 @@ use std::future::Future;
 use std::io;
 use std::pin::Pin;
 
-use crate::app::seam_stubs::{EmulatorFactory, RunResult, TracePlatform, TraceSchedule, Writer};
+use crate::app::seam_stubs::{RunResult, TracePlatform, TraceSchedule, Writer};
+use crate::debug::api::emulation::EmulatorFactory;
 use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
@@ -277,7 +278,22 @@ mod tests {
     use crate::util::task::DummyMonitor;
 
     struct MockEmulatorFactory;
-    impl EmulatorFactory for MockEmulatorFactory {}
+
+    impl crate::util::classfinder::extension_point::ExtensionPoint for MockEmulatorFactory {}
+
+    impl EmulatorFactory for MockEmulatorFactory {
+        fn get_title(&self) -> String {
+            "Mock Emulator".to_string()
+        }
+
+        fn create(
+            &self,
+            _access: &dyn crate::debug::api::emulation::PcodeDebuggerAccess,
+            _writer: &dyn crate::app::seam_stubs::Writer,
+        ) -> Box<dyn crate::pcode::emu::pcode_machine::ErasedPcodeMachine> {
+            Box::new(MockPcodeMachine)
+        }
+    }
 
     struct MockPcodeMachine;
     impl ErasedPcodeMachine for MockPcodeMachine {}

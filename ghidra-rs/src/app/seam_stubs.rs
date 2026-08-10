@@ -172,12 +172,6 @@ pub trait Task {
     ) -> Result<(), crate::util::exception::CancelledException>;
 }
 
-/// Placeholder for `ghidra.debug.api.emulation.EmulatorFactory`, referenced by
-/// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) before the real
-/// class is ported. `DebuggerEmulationService` only ever passes this type through as a
-/// parameter/return value, so no members are needed yet.
-pub trait EmulatorFactory {}
-
 /// Placeholder for `ghidra.trace.model.time.schedule.TraceSchedule`, referenced by
 /// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService) and
 /// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
