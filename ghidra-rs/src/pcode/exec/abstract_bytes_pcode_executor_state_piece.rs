@@ -25,11 +25,13 @@
 //! by forwarding to whichever base actually implements each method (most to the long-offset
 //! base's associated functions, `get_concrete_buffer` and `clear` to this one's).
 //!
-//! Java's internal space type `S` is `ghidra.pcode.exec.BytesPcodeExecutorStateSpace`, not yet
-//! ported; [`crate::pcode::seam_stubs::BytesPcodeExecutorStateSpace`] stands in for it. Its
-//! `fork` method forward-references this very class, which is why this file was queued behind a
-//! dependency cycle; that method is unused here, so the stub omits it and the cycle does not
-//! need to be broken any other way.
+//! Java's internal space type `S` is fixed here to the real
+//! [`BytesPcodeExecutorStateSpace`] rather than kept generic: Java parameterizes
+//! `AbstractBytesPcodeExecutorStatePiece<S extends BytesPcodeExecutorStateSpace>` because it has
+//! several concrete subclasses of that space (e.g. for the JIT emulator, and for the legacy
+//! `AdaptedEmulator`), but none of those are ported yet, so there is currently only one Rust type
+//! that could ever fill `S`. Re-introducing genericity is deferred until one of those subclasses
+//! is ported.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -37,44 +39,37 @@ use std::sync::Arc;
 use crate::pcode::exec::abstract_long_offset_pcode_executor_state_piece::{
     AbstractLongOffsetPcodeExecutorStatePiece, AbstractLongOffsetPcodeExecutorStatePieceBase,
 };
+use crate::pcode::exec::bytes_pcode_executor_state_space::BytesPcodeExecutorStateSpace;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
-use crate::pcode::exec::pcode_executor_state_piece::Reason;
+use crate::pcode::exec::pcode_executor_state_piece::{PcodeExecutorStatePiece, Reason};
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
-use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorStateSpace};
+use crate::pcode::seam_stubs::BytesPcodeArithmetic;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
-use crate::program::model::mem::{Memory, MemBuffer, MemoryAccessException};
+use crate::program::model::mem::{MemBuffer, MemoryAccessException};
 
 /// The shared state and concrete behavior of a bytes-addressed executor state piece.
-///
-/// `S` is the type of an internal execute state space, associated with an address space; it must
-/// implement [`BytesPcodeExecutorStateSpace`].
-pub struct AbstractBytesPcodeExecutorStatePieceBase<S> {
-    space_map: HashMap<Arc<AddressSpace>, S>,
+pub struct AbstractBytesPcodeExecutorStatePieceBase {
+    space_map: HashMap<Arc<AddressSpace>, BytesPcodeExecutorStateSpace>,
 }
 
-impl<S> Default for AbstractBytesPcodeExecutorStatePieceBase<S> {
+impl Default for AbstractBytesPcodeExecutorStatePieceBase {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<S> AbstractBytesPcodeExecutorStatePieceBase<S> {
+impl AbstractBytesPcodeExecutorStatePieceBase {
     /// Construct an empty piece base, Java's `spaceMap = new HashMap<>()` field initializer.
     pub fn new() -> Self {
         Self { space_map: HashMap::new() }
     }
-}
 
-impl<S> AbstractBytesPcodeExecutorStatePieceBase<S>
-where
-    S: BytesPcodeExecutorStateSpace,
-{
     /// Get the internal space for the given address space, for reading.
     ///
     /// Port of `getForSpace(AddressSpace, false)`.
-    pub fn get_for_space(&self, space: &Arc<AddressSpace>) -> Option<&S> {
+    pub fn get_for_space(&self, space: &Arc<AddressSpace>) -> Option<&BytesPcodeExecutorStateSpace> {
         self.space_map.get(space)
     }
 
@@ -92,7 +87,7 @@ where
         cb: &C,
     ) where
         CB: PcodeStateCallbacks,
-        P: AbstractBytesPcodeExecutorStatePiece<S, CB>,
+        P: AbstractBytesPcodeExecutorStatePiece<CB>,
         C: PcodeStateCallbacks,
     {
         if !piece.bytes_base().space_map.contains_key(space) {
@@ -103,22 +98,25 @@ where
             .bytes_base()
             .space_map
             .get(space)
-            .expect("space was just inserted if it was missing");
-        s.write(offset, val, 0, size, cb);
+            .expect("space was just inserted if it was missing")
+            .clone();
+        s.write(&*piece, offset, val.as_slice(), 0, size, cb);
     }
 
     /// Get a value from the given space, panicking on a short read.
     ///
     /// Port of `getFromSpace(S, long, int, Reason, PcodeStateCallbacks)`. Java throws
-    /// `AccessPcodeExecutionException` on a short read; this panics.
+    /// `AccessPcodeExecutionException` on a short read; this panics. `piece` is passed through to
+    /// [`BytesPcodeExecutorStateSpace::read`], standing in for Java's implicit `this.piece`.
     pub fn get_from_space<C: PcodeStateCallbacks>(
-        space: &S,
+        space: &BytesPcodeExecutorStateSpace,
+        piece: &dyn PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>,
         offset: i64,
         size: i32,
         reason: Reason,
         cb: &C,
     ) -> Vec<u8> {
-        let read = space.read(offset, size, reason, cb);
+        let read = space.read(piece, offset, size, reason, cb);
         if read.len() != size as usize {
             panic!("Incomplete read ({} of {} bytes)", read.len(), size);
         }
@@ -129,7 +127,7 @@ where
     ///
     /// Port of `getRegisterValuesFromSpace(S, List<Register>)`.
     pub fn get_register_values_from_space(
-        space: &S,
+        space: &BytesPcodeExecutorStateSpace,
         registers: &[RegisterRef],
     ) -> Vec<(RegisterRef, Vec<u8>)> {
         space.get_register_values(registers)
@@ -140,29 +138,20 @@ where
     ///
     /// Port of `getConcreteBuffer(Address, PcodeArithmetic.Purpose)`. Java's `StateMemBuffer`
     /// lazily re-resolves a missing space (via `getForSpace`) and consults the state's callbacks
-    /// on first read, since it is an inner class holding a live reference to the outer piece.
-    /// The ported [`PcodeExecutorStatePiece::get_concrete_buffer`](crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece::get_concrete_buffer)
-    /// returns an owned `Box<dyn MemBuffer>` that cannot borrow `piece`, so the space is instead
-    /// resolved once, here, by cloning the (cheaply-cloneable, internally-mutable) space handle;
-    /// a space that does not exist yet at this point reads as all zero rather than possibly
-    /// being created on demand.
-    pub fn get_concrete_buffer<CB, P>(
-        piece: &P,
-        address: &Address,
-        purpose: Purpose,
-    ) -> Box<dyn MemBuffer>
+    /// on first read, since it is an inner class holding a live reference to the outer piece and
+    /// to `this.piece`. The ported [`StateMemBuffer`] instead reads directly off a cloned bytes
+    /// handle (see its docs for why), so a space that does not exist yet at this point reads as
+    /// all zero rather than possibly being created on demand, and no uninitialized-read warning
+    /// or callback is triggered through this path.
+    pub fn get_concrete_buffer<CB, P>(piece: &P, address: &Address, _purpose: Purpose) -> Box<dyn MemBuffer>
     where
         CB: PcodeStateCallbacks,
-        P: AbstractBytesPcodeExecutorStatePiece<S, CB>,
-        S: Send + Sync + 'static,
-        CB: Send + Sync + 'static,
+        P: AbstractBytesPcodeExecutorStatePiece<CB>,
     {
         Box::new(StateMemBuffer {
             address: address.clone(),
-            source: piece.get_for_space(address.space()).cloned(),
-            reason: purpose.reason(),
+            source: piece.get_for_space(address.space()).map(BytesPcodeExecutorStateSpace::shared_bytes),
             big_endian: piece.base().language().is_big_endian(),
-            cb: Arc::clone(piece.base().cb()),
         })
     }
 
@@ -208,22 +197,21 @@ where
 
 /// A memory buffer bound to a given space in this state.
 ///
-/// Port of the inner class `StateMemBuffer`. See
-/// [`AbstractBytesPcodeExecutorStatePieceBase::get_concrete_buffer`] for how this differs from
-/// Java's version, which holds a live reference to the outer piece.
-struct StateMemBuffer<S, CB> {
+/// Port of the inner class `StateMemBuffer`. Unlike Java's version (which holds a live reference
+/// to the outer piece and re-resolves the space on every read), this holds only the space's
+/// shared bytes handle, cloned once at construction (see
+/// [`AbstractBytesPcodeExecutorStatePieceBase::get_concrete_buffer`]). It cannot hold the full
+/// [`BytesPcodeExecutorStateSpace`] (whose `language` field is not `Send + Sync`) because
+/// [`MemBuffer`] requires `Send + Sync`; consequently it reads bytes directly rather than through
+/// [`BytesPcodeExecutorStateSpace::read`], so it triggers no uninitialized-read callback or
+/// warning (uninitialized offsets simply read as zero, as they always do at the storage level).
+struct StateMemBuffer {
     address: Address,
-    source: Option<S>,
-    reason: Reason,
+    source: Option<crate::generic::seam_stubs::SemisparseByteArray>,
     big_endian: bool,
-    cb: Arc<CB>,
 }
 
-impl<S, CB> MemBuffer for StateMemBuffer<S, CB>
-where
-    S: BytesPcodeExecutorStateSpace + Send + Sync,
-    CB: PcodeStateCallbacks + Send + Sync,
-{
+impl MemBuffer for StateMemBuffer {
     fn get_address(&self) -> Address {
         self.address.clone()
     }
@@ -238,53 +226,45 @@ where
     }
 
     fn get_bytes(&self, buf: &mut [u8], offset: i32) -> usize {
-        let Some(source) = &self.source else {
+        let Some(bytes) = &self.source else {
             return 0;
         };
-        let data =
-            source.read(self.address.offset() + offset as i64, buf.len() as i32, self.reason, self.cb.as_ref());
-        let n = data.len().min(buf.len());
-        buf[..n].copy_from_slice(&data[..n]);
-        n
+        bytes.get_data((self.address.offset() + offset as i64) as u64, buf);
+        buf.len()
     }
 
     fn is_big_endian(&self) -> bool {
         self.big_endian
     }
 
-    fn get_memory(&self) -> Option<Arc<dyn Memory>> {
+    fn get_memory(&self) -> Option<Arc<dyn crate::program::model::mem::Memory>> {
         None
     }
 }
 
 /// The one operation a concrete bytes state piece must supply, plus accessors for the embedded
 /// [`AbstractBytesPcodeExecutorStatePieceBase`].
-///
-/// `S` is the type of an internal execute state space, associated with an address space.
-pub trait AbstractBytesPcodeExecutorStatePiece<S, CB>:
-    AbstractLongOffsetPcodeExecutorStatePiece<Vec<u8>, Vec<u8>, S, CB>
+pub trait AbstractBytesPcodeExecutorStatePiece<CB>:
+    AbstractLongOffsetPcodeExecutorStatePiece<Vec<u8>, Vec<u8>, BytesPcodeExecutorStateSpace, CB>
 where
-    S: BytesPcodeExecutorStateSpace,
     CB: PcodeStateCallbacks,
 {
     /// The embedded shared state of this class.
-    fn bytes_base(&self) -> &AbstractBytesPcodeExecutorStatePieceBase<S>;
+    fn bytes_base(&self) -> &AbstractBytesPcodeExecutorStatePieceBase;
 
     /// The embedded shared state of this class, mutably.
-    fn bytes_base_mut(&mut self) -> &mut AbstractBytesPcodeExecutorStatePieceBase<S>;
+    fn bytes_base_mut(&mut self) -> &mut AbstractBytesPcodeExecutorStatePieceBase;
 
     /// Construct a new internal space for the given address space.
     ///
     /// Port of the abstract `protected abstract S newSpace(AddressSpace space)`.
-    fn new_space(&self, space: &Arc<AddressSpace>) -> S;
+    fn new_space(&self, space: &Arc<AddressSpace>) -> BytesPcodeExecutorStateSpace;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::HashSet;
-    use std::rc::Rc;
-    use std::sync::Mutex;
 
     use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece};
@@ -362,77 +342,13 @@ mod tests {
         }
     }
 
-    /// An internal space, in the shape every real subclass takes: a byte-addressed map behind a
-    /// mutex (for `&self` mutation) that is cheap to clone (an `Arc` handle), so
-    /// `get_concrete_buffer` can hand out an independent, still-live view.
-    #[derive(Clone, Default)]
-    struct TestSpace(Arc<Mutex<HashMap<i64, u8>>>);
-
-    impl BytesPcodeExecutorStateSpace for TestSpace {
-        fn write<C: PcodeStateCallbacks>(
-            &self,
-            offset: i64,
-            val: &[u8],
-            _src_offset: i32,
-            _length: i32,
-            _cb: &C,
-        ) {
-            let mut map = self.0.lock().unwrap();
-            for (i, b) in val.iter().enumerate() {
-                map.insert(offset + i as i64, *b);
-            }
-        }
-
-        fn read<C: PcodeStateCallbacks>(&self, offset: i64, size: i32, _reason: Reason, _cb: &C) -> Vec<u8> {
-            let map = self.0.lock().unwrap();
-            (0..size as i64).map(|i| *map.get(&(offset + i)).unwrap_or(&0)).collect()
-        }
-
-        fn get_register_values(&self, registers: &[RegisterRef]) -> Vec<(RegisterRef, Vec<u8>)> {
-            registers
-                .iter()
-                .map(|register| {
-                    let (offset, size) = {
-                        let reg = register.borrow();
-                        (reg.address().offset(), reg.minimum_byte_size())
-                    };
-                    (Rc::clone(register), self.read(offset, size, Reason::Inspect, &NoPcodeStateCallbacks))
-                })
-                .collect()
-        }
-
-        fn clear(&self) {
-            self.0.lock().unwrap().clear();
-        }
-    }
-
-    /// A space whose `read` always returns fewer bytes than requested, to exercise the
-    /// incomplete-read panic.
-    #[derive(Clone, Default)]
-    struct ShortReadSpace;
-
-    impl BytesPcodeExecutorStateSpace for ShortReadSpace {
-        fn write<C: PcodeStateCallbacks>(&self, _offset: i64, _val: &[u8], _src_offset: i32, _length: i32, _cb: &C) {
-        }
-
-        fn read<C: PcodeStateCallbacks>(&self, _offset: i64, size: i32, _reason: Reason, _cb: &C) -> Vec<u8> {
-            vec![0; (size - 1).max(0) as usize]
-        }
-
-        fn get_register_values(&self, _registers: &[RegisterRef]) -> Vec<(RegisterRef, Vec<u8>)> {
-            Vec::new()
-        }
-
-        fn clear(&self) {}
-    }
-
     /// A concrete piece in the shape every real subclass takes.
-    struct BytesPiece<S> {
+    struct BytesPiece {
         long_base: AbstractLongOffsetPcodeExecutorStatePieceBase<Vec<u8>, Vec<u8>, NoPcodeStateCallbacks>,
-        bytes_base: AbstractBytesPcodeExecutorStatePieceBase<S>,
+        bytes_base: AbstractBytesPcodeExecutorStatePieceBase,
     }
 
-    impl<S: BytesPcodeExecutorStateSpace + Default> BytesPiece<S> {
+    impl BytesPiece {
         fn new() -> Self {
             Self {
                 long_base: new_long_offset_base(Arc::new(MockLanguage), Arc::new(BytesArithmetic), Arc::new(NoPcodeStateCallbacks)),
@@ -441,16 +357,16 @@ mod tests {
         }
     }
 
-    impl<S: BytesPcodeExecutorStateSpace> ErasedPcodeExecutorStatePiece for BytesPiece<S> {}
+    impl ErasedPcodeExecutorStatePiece for BytesPiece {}
 
-    impl<S: BytesPcodeExecutorStateSpace + Default + 'static>
-        AbstractLongOffsetPcodeExecutorStatePiece<Vec<u8>, Vec<u8>, S, NoPcodeStateCallbacks> for BytesPiece<S>
+    impl AbstractLongOffsetPcodeExecutorStatePiece<Vec<u8>, Vec<u8>, BytesPcodeExecutorStateSpace, NoPcodeStateCallbacks>
+        for BytesPiece
     {
         fn base(&self) -> &AbstractLongOffsetPcodeExecutorStatePieceBase<Vec<u8>, Vec<u8>, NoPcodeStateCallbacks> {
             &self.long_base
         }
 
-        fn get_for_space(&self, space: &Arc<AddressSpace>) -> Option<&S> {
+        fn get_for_space(&self, space: &Arc<AddressSpace>) -> Option<&BytesPcodeExecutorStateSpace> {
             self.bytes_base.get_for_space(space)
         }
 
@@ -467,39 +383,39 @@ mod tests {
 
         fn get_from_space<C: PcodeStateCallbacks>(
             &self,
-            space: &S,
+            space: &BytesPcodeExecutorStateSpace,
             offset: i64,
             size: i32,
             reason: Reason,
             cb: &C,
         ) -> Vec<u8> {
-            AbstractBytesPcodeExecutorStatePieceBase::get_from_space(space, offset, size, reason, cb)
+            AbstractBytesPcodeExecutorStatePieceBase::get_from_space(space, self, offset, size, reason, cb)
         }
 
-        fn get_register_values_from_space(&self, space: &S, registers: &[RegisterRef]) -> Vec<(RegisterRef, Vec<u8>)> {
+        fn get_register_values_from_space(
+            &self,
+            space: &BytesPcodeExecutorStateSpace,
+            registers: &[RegisterRef],
+        ) -> Vec<(RegisterRef, Vec<u8>)> {
             AbstractBytesPcodeExecutorStatePieceBase::get_register_values_from_space(space, registers)
         }
     }
 
-    impl<S: BytesPcodeExecutorStateSpace + Default + 'static>
-        AbstractBytesPcodeExecutorStatePiece<S, NoPcodeStateCallbacks> for BytesPiece<S>
-    {
-        fn bytes_base(&self) -> &AbstractBytesPcodeExecutorStatePieceBase<S> {
+    impl AbstractBytesPcodeExecutorStatePiece<NoPcodeStateCallbacks> for BytesPiece {
+        fn bytes_base(&self) -> &AbstractBytesPcodeExecutorStatePieceBase {
             &self.bytes_base
         }
 
-        fn bytes_base_mut(&mut self) -> &mut AbstractBytesPcodeExecutorStatePieceBase<S> {
+        fn bytes_base_mut(&mut self) -> &mut AbstractBytesPcodeExecutorStatePieceBase {
             &mut self.bytes_base
         }
 
-        fn new_space(&self, _space: &Arc<AddressSpace>) -> S {
-            S::default()
+        fn new_space(&self, space: &Arc<AddressSpace>) -> BytesPcodeExecutorStateSpace {
+            BytesPcodeExecutorStateSpace::new(Arc::clone(self.long_base.language()), Arc::clone(space))
         }
     }
 
-    impl<S: BytesPcodeExecutorStateSpace + Send + Sync + 'static + Default> PcodeExecutorStatePiece<Vec<u8>, Vec<u8>>
-        for BytesPiece<S>
-    {
+    impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for BytesPiece {
         fn get_language(&self) -> Box<dyn Language> {
             Box::new(MockLanguage)
         }
@@ -565,7 +481,7 @@ mod tests {
     /// `set_var`/`get_var` behavior (this class only overrides the pieces documented above).
     type Base = AbstractLongOffsetPcodeExecutorStatePieceBase<Vec<u8>, Vec<u8>, NoPcodeStateCallbacks>;
 
-    fn piece() -> BytesPiece<TestSpace> {
+    fn piece() -> BytesPiece {
         BytesPiece::new()
     }
 
@@ -620,15 +536,6 @@ mod tests {
         piece.set_var(&unique, 0x10, 2, false, &vec![5, 6]);
         assert!(piece.get_for_space(&unique).is_some());
         assert_eq!(piece.get_var(&unique, 0x10, 2, false, Reason::ExecuteRead), vec![5, 6]);
-    }
-
-    #[test]
-    #[should_panic(expected = "Incomplete read (1 of 2 bytes)")]
-    fn get_from_space_panics_on_a_short_read() {
-        let mut piece = BytesPiece::<ShortReadSpace>::new();
-        let ram = ram_space();
-        piece.set_var(&ram, 0x1000, 2, false, &vec![1, 2]);
-        piece.get_var(&ram, 0x1000, 2, false, Reason::ExecuteRead);
     }
 
     struct MockLanguage;

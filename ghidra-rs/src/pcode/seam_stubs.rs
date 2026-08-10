@@ -363,37 +363,6 @@ pub trait ThreadPcodeExecutorState<T>: PcodeExecutorState<T> {
     fn get_local_state(&self) -> &dyn PcodeExecutorState<T>;
 }
 
-/// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorStateSpace`, referenced by
-/// [`AbstractBytesPcodeExecutorStatePiece`](crate::pcode::exec::abstract_bytes_pcode_executor_state_piece::AbstractBytesPcodeExecutorStatePiece)
-/// as the internal per-address-space byte store. Only the members that class needs are declared
-/// (Java's `fork`, which forward-references the owning piece, is the cycle edge this stub breaks
-/// -- it is unused by `AbstractBytesPcodeExecutorStatePiece` itself, so it is omitted here).
-///
-/// Every real implementation must be internally mutable and cheaply [`Clone`]:
-/// `getConcreteBuffer` hands out a live, shared view of a space that must outlive the owning
-/// piece's borrow (Java shares the same mutable object reference across the state and any
-/// buffers bound to it; Rust needs an owned, thread-safe handle instead).
-pub trait BytesPcodeExecutorStateSpace: Clone + Send + Sync {
-    /// Port of `BytesPcodeExecutorStateSpace.write(long, byte[], int, int, PcodeStateCallbacks)`.
-    fn write<C: PcodeStateCallbacks>(
-        &self,
-        offset: i64,
-        val: &[u8],
-        src_offset: i32,
-        length: i32,
-        cb: &C,
-    );
-
-    /// Port of `BytesPcodeExecutorStateSpace.read(long, int, Reason, PcodeStateCallbacks)`.
-    fn read<C: PcodeStateCallbacks>(&self, offset: i64, size: i32, reason: Reason, cb: &C) -> Vec<u8>;
-
-    /// Port of `BytesPcodeExecutorStateSpace.getRegisterValues(List<Register>)`.
-    fn get_register_values(&self, registers: &[RegisterRef]) -> Vec<(RegisterRef, Vec<u8>)>;
-
-    /// Port of `BytesPcodeExecutorStateSpace.clear()`.
-    fn clear(&self);
-}
-
 /// Placeholder for `ghidra.pcode.emu.SparseAddressRangeMap`, referenced by
 /// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
 /// as its store of access breakpoints. Exposes the four members that class needs, with the same
