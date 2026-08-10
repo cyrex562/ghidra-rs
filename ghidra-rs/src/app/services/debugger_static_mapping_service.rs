@@ -7,8 +7,8 @@
 //!
 //! The Java interface extends `DebuggerAddressTranslator`; that interface is not yet ported, so it
 //! is represented here by the empty [`DebuggerAddressTranslator`](crate::app::seam_stubs::DebuggerAddressTranslator)
-//! placeholder trait, mirroring how [`ViewManagerService`](crate::app::services::ViewManagerService)
-//! extends the unported `ViewService`.
+//! placeholder trait, similar to how [`ViewManagerService`](crate::app::services::ViewManagerService)
+//! extends the ported [`ViewService`](crate::app::services::ViewService).
 //!
 //! Several Java methods are overloaded on parameter type/arity alone, which Rust traits cannot
 //! express; each overload is given a distinct name:
