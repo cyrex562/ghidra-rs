@@ -282,16 +282,32 @@ class TestDecisionsOutliveTheFrontier(unittest.TestCase):
             prior = os.path.join(d, "q.tsv")
             with open(prior, "w", encoding="utf-8") as f:
                 f.write("\t".join(dc.QUEUE_COLS) + "\n")
-                f.write("ACCEPT\t5\t5\t0\tGoneButDecided\tx\tmanual\twhy\n")
-                f.write("TODO\t5\t5\t0\tGoneUndecided\tx\t\t\n")
-                f.write("SUGGEST-ENUM\t5\t5\t0\tGoneProposal\tx\tsuggest\t\n")
+                f.write("ACCEPT\t5\t5\t0\tGoneButDecided\t\tx\tmanual\twhy\n")
+                f.write("TODO\t5\t5\t0\tGoneUndecided\t\tx\t\t\n")
+                f.write("SUGGEST-ENUM\t5\t5\t0\tGoneProposal\t\tx\tsuggest\t\n")
             got = dc.load_prior_verdicts(prior)
-            self.assertIn("GoneButDecided", got)
-            # the carry rule itself
-            keep = [n for n, (v, _s, _no) in got.items()
+            self.assertIn(("GoneButDecided", ""), got)
+            keep = [n for (n, _jc), (v, _s, _no) in got.items()
                     if v != "TODO" and not str(v).startswith("SUGGEST-")]
             self.assertEqual(keep, ["GoneButDecided"],
                              "only decisions are carried -- not TODOs or proposals")
+
+    def test_prior_verdicts_key_on_type_AND_java_class(self):
+        """Two rows for one basename must not collide -- that is the whole point of the split."""
+        with tempfile.TemporaryDirectory() as d:
+            prior = os.path.join(d, "q.tsv")
+            with open(prior, "w", encoding="utf-8") as f:
+                f.write("\t".join(dc.QUEUE_COLS) + "\n")
+                f.write("STRUCT\t5\t5\t0\tPatternExpression\ta/sleigh/PatternExpression.java"
+                        "\tx\tmanual\trt\n")
+                f.write("GRAPH\t5\t5\t0\tPatternExpression\tb/pcodeCPort/PatternExpression.java"
+                        "\tx\tmanual\tc\n")
+            got = dc.load_prior_verdicts(prior)
+            self.assertEqual(len(got), 2, "one row per Java class, not one per name")
+            self.assertEqual(got[("PatternExpression", "a/sleigh/PatternExpression.java")][0],
+                             "STRUCT")
+            self.assertEqual(got[("PatternExpression", "b/pcodeCPort/PatternExpression.java")][0],
+                             "GRAPH")
 
 
 class TestQueueContents(unittest.TestCase):

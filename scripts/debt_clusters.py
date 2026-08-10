@@ -113,7 +113,19 @@ RE_CELL = re.compile(
 )
 RE_LINE_COMMENT = re.compile(r"//.*$", re.MULTILINE)
 
-QUEUE_COLS = ["verdict", "leverage", "occurrences", "fanin", "type", "category", "source", "note"]
+# `java_class` disambiguates a shared basename. Ghidra ships the sleigh runtime
+# (app/plugin/processors/sleigh) and the pcodeCPort compiler (pcodeCPort/slgh*) as parallel
+# hierarchies, so PatternExpression, Pattern, Constructor, TripleSymbol, SymbolTable,
+# VarnodeTpl, ConstructState, OperandSymbol, DisjointPattern, ContextChange, SubtableSymbol and
+# ValueSymbol each name TWO unrelated Java types that the Rust tree already keeps apart. One row
+# per name could not carry two verdicts, so those twelve sat unanswerable. The key is
+# (type, java_class); it is blank for the unambiguous majority.
+QUEUE_COLS = ["verdict", "leverage", "occurrences", "fanin", "type", "java_class", "category",
+              "source", "note"]
+
+
+def _qkey(name, java_class):
+    return (name, java_class or "")
 
 
 def load_family_rules(path):
@@ -426,6 +438,21 @@ def suggest_by_family(name, impl_names, impl_table=None):
 
 
 _RESOLVE_CACHE = {}
+_FACTS = None
+
+
+def _java_facts():
+    """shape_rules' parsed Java index, built once.
+
+    build_index() walks 13,000 Java files and costs ~14s. Calling it per ambiguous name --
+    196 of them -- turned `--promote` into a 45-minute job.
+    """
+    global _FACTS
+    if _FACTS is None:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        _FACTS = shape_rules.build_index()[0]
+    return _FACTS
 
 
 def _resolve_ambiguous(name):
@@ -434,13 +461,12 @@ def _resolve_ambiguous(name):
         return _RESOLVE_CACHE[name]
     out = None
     try:
-        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        import shape_rules
-        facts, _sub = shape_rules.build_index()
+        facts = _java_facts()
         paths = subprocess.run(
             ["bash", "-c", f"grep -rlE --include='*.rs' "
                            f"'^\\s*pub (trait|struct|enum) {name}\\b' ghidra-rs/src"],
             capture_output=True, text=True).stdout.split()
+        import shape_rules
         got = {}
         for pth in paths:
             e = shape_rules.resolve_by_path(name, pth, facts)
@@ -667,6 +693,72 @@ def types_in_file(path):
     return counts
 
 
+_AMBIG = None
+
+
+def ambiguous_basenames(orig_src="orig_src"):
+    """Basenames declared by more than one Java file."""
+    global _AMBIG
+    if _AMBIG is None:
+        seen, dup = set(), set()
+        for dirpath, _d, files in os.walk(orig_src):
+            for fn in files:
+                if not fn.endswith(".java"):
+                    continue
+                n = fn[:-5]
+                (dup if n in seen else seen).add(n)
+        _AMBIG = dup
+    return _AMBIG
+
+
+_SHAPES = None
+
+# scripts/shape_rules.py decides the Rust construct from ONE Java declaration, and SHAPES.tsv
+# is keyed by path -- exactly what a split row carries. So a shared basename that could not be
+# answered as one row becomes answerable per Java class.
+SHAPE_TO_VERDICT = {"struct": "STRUCT", "enum": "ENUM", "iterator": "ITER", "module": "STRUCT"}
+
+
+def shape_of_java(rel_path):
+    """(shape, rule) for a Java file from SHAPES.tsv, or None."""
+    global _SHAPES
+    if _SHAPES is None:
+        _SHAPES = {}
+        try:
+            with open("SHAPES.tsv", newline="", encoding="utf-8") as f:
+                for r in csv.DictReader(f, delimiter="\t"):
+                    _SHAPES[r["path"]] = (r["shape"], r["rule"])
+        except OSError:
+            pass
+    return _SHAPES.get(rel_path)
+
+
+def _emit_row(rows, name, java_class, leverage, occurrences, fanin, prior, rules, resuggest):
+    """Append one queue row for (name, java_class)."""
+    prev = prior.get(_qkey(name, java_class))
+    # A SUGGEST-* row is a proposal, not a decision, so it must stay re-derivable: the
+    # generator's own evidence changed on 2026-08-09 (direct subtype counts -> transitive
+    # concrete closure) and 23 stale SUGGEST-ENUM proposals would otherwise have survived as
+    # frozen answers -- CodeUnit among them. --resuggest resets them; a promotion is untouched.
+    if prev and resuggest and str(prev[0]).startswith("SUGGEST-"):
+        prev = ("TODO", "", "")
+    if prev and prev[1] != "family" and prev[0] != "TODO":
+        verdict, source, note = prev                # hand-made decision: never recompute
+    else:
+        fam = apply_family(name, rules)
+        if fam:
+            verdict, note, source = fam[0], fam[1], "family"
+        elif prev:
+            verdict, source, note = prev
+        else:
+            verdict, source, note = "TODO", "", ""
+    rows.append({
+        "verdict": verdict, "leverage": leverage, "occurrences": occurrences,
+        "fanin": fanin, "type": name, "java_class": java_class,
+        "category": categorize(name), "source": source, "note": note,
+    })
+
+
 def load_prior_verdicts(path):
     """type -> (verdict, source, note) from an existing queue, so regenerating never discards
     decisions already made. Same lesson as pattern_audit.py's --preserve-status. Rows whose
@@ -679,7 +771,7 @@ def load_prior_verdicts(path):
         for r in csv.DictReader(f, delimiter="\t"):
             name = (r.get("type") or "").strip()
             if name:
-                prior[name] = (
+                prior[_qkey(name, (r.get("java_class") or "").strip())] = (
                     (r.get("verdict") or "TODO").strip(),
                     (r.get("source") or "manual").strip(),
                     r.get("note") or "",
@@ -725,54 +817,41 @@ def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, famili
 
     rules = load_family_rules(families)
     rows = []
+    # Compute this here rather than reading java_declarations.ambiguous: that attribute is only
+    # populated once java_declarations() has been called, which happens later under --suggest,
+    # so relying on it silently produced zero splits.
+    ambiguous_names = ambiguous_basenames()
     for name, files in files_by_type.items():
-        prev = prior.get(name)
-        # A SUGGEST-* row is a proposal, not a decision, so it must stay re-derivable: the
-        # generator's own evidence changed on 2026-08-09 (direct subtype counts -> transitive
-        # concrete closure) and 23 stale SUGGEST-ENUM proposals would otherwise have survived
-        # as frozen answers -- CodeUnit among them, proposed as a closed set when it has 20
-        # concrete implementers. --resuggest resets them; a promoted verdict is never touched.
-        if prev and resuggest and str(prev[0]).startswith("SUGGEST-"):
-            prev = ("TODO", "", "")
-        if prev and prev[1] != "family" and prev[0] != "TODO":
-            verdict, source, note = prev            # hand-made decision: never recompute
-        else:
-            fam = apply_family(name, rules)
-            if fam:
-                verdict, note, source = fam[0], fam[1], "family"
-            elif prev:
-                verdict, source, note = prev
-            else:
-                verdict, source, note = "TODO", "", ""
-        rows.append(
-            {
-                "verdict": verdict,
-                "leverage": len(files),
-                "occurrences": occ_by_type[name],
-                "fanin": fanin.get(name, 0),
-                "type": name,
-                "category": categorize(name),
-                "source": source,
-                "note": note,
-            }
-        )
+        # An ambiguous basename the Rust tree separates becomes one row per Java class, each
+        # answerable on its own. One row could not carry two verdicts, which is why twelve
+        # sleigh types sat unanswerable.
+        jclasses = [""]
+        if name in ambiguous_names:
+            variants = _resolve_ambiguous(name)
+            if variants and len(set(variants.values())) > 1:
+                jclasses = sorted(set(variants.values()))
+        for jc in jclasses:
+            _emit_row(rows, name, jc, len(files), occ_by_type[name], fanin.get(name, 0),
+                      prior, rules, resuggest)
     # A DECISION outlives the frontier. Rows are built from types currently reached through a
     # convention-blocked file, so a type stops being emitted the moment its files leave the
     # frontier -- and its verdict goes with it. That silently dropped 96 decided rows (35
     # STRUCT, 26 ACCEPT, 17 ENUM, 15 ARENA, ...) when pattern_audit's exemption shrank the
     # frontier on 2026-08-10, and they would have been re-derived from scratch, possibly
     # differently, if the type ever came back. Carry them, marked, with zeroed counts.
-    emitted = {r["type"] for r in rows}
+    emitted = {_qkey(r["type"], r.get("java_class")) for r in rows}
     carried = 0
-    for name, prev in sorted(prior.items()):
-        if name in emitted:
+    for key, prev in sorted(prior.items()):
+        if key in emitted:
             continue
+        name, jc = key
         verdict, source, note = prev
         if verdict == "TODO" or str(verdict).startswith("SUGGEST-"):
             continue                      # only decisions are worth preserving
         rows.append({
             "verdict": verdict, "leverage": 0, "occurrences": 0,
-            "fanin": fanin.get(name, 0), "type": name, "category": categorize(name),
+            "fanin": fanin.get(name, 0), "type": name, "java_class": jc,
+            "category": categorize(name),
             "source": source or "decided",
             "note": (note or "") + "  [no longer on the frontier; decision retained]",
         })
@@ -839,6 +918,22 @@ def main():
         n = 0
         for r in rows:
             if r["verdict"] != "TODO":
+                continue
+            jc = (r.get("java_class") or "").strip()
+            if jc:
+                # A split row names its Java class, so the shared basename that blocked
+                # suggest_verdict no longer applies -- ask shape_rules about that one file.
+                sh = shape_of_java(jc)
+                if sh and sh[0] in SHAPE_TO_VERDICT:
+                    r["verdict"] = "SUGGEST-" + SHAPE_TO_VERDICT[sh[0]]
+                    r["source"] = "suggest"
+                    r["note"] = (f"resolved to {jc}: shape_rules {sh[1]} says {sh[0]}")
+                    n += 1
+                elif sh:
+                    r["source"], r["note"] = "evidence", (
+                        f"resolved to {jc}: shape_rules {sh[1]} says {sh[0]} -- needs a human "
+                        f"(a trait's verdict depends on its implementer set, and a struct_trait "
+                        f"split is a port task rather than a convention)")
                 continue
             v, why = suggest_verdict(r["type"], traits, types_, impls, unported,
                                      mock_impls, stub_decl, java_subtypes, java_decls,

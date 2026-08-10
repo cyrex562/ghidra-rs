@@ -279,6 +279,7 @@ TODO	42.8	34.0	26	PatternValue	decompiler	src/decompiler/slghpatexpress/pattern_
 TODO	42.7	42.7	0	TraceMemoryOperations	trace	src/trace/model/memory/trace_memory_operations.rs	dyn=20,clone/100L=1.7,getset_pairs=1
 TODO	42.6	42.6	0	FunctionSupplierContext	app	src/app/context/function_supplier_context.rs	dyn=16,getset_pairs=10
 TODO	42.4	42.4	0	TraceCodeManager	trace	src/trace/model/listing/trace_code_manager.rs	dyn=19,getset_pairs=4
+TODO	42.3	42.3	0	PcodeTraceAccess	pcode	src/pcode/exec/trace/data/pcode_trace_access.rs	dyn=20,getset_pairs=2
 TODO	41.7	41.7	0	PcodeProgram	pcode	src/pcode/exec/pcode_program.rs	dyn=20,clone/100L=1.2
 TODO	41.6	41.6	0	ExternalManagerDb	program	src/program/database/external/external_manager_db.rs	dyn=20,getset_pairs=1
 TODO	41.0	41.0	0	SeamStubs		src/demangler/seam_stubs.rs	dyn=20,getset_pairs=1
@@ -371,7 +372,6 @@ TODO	32.5	32.5	0	GFileImpl	filesystem	src/filesystem/gfilesystem/g_file_impl.rs	
 TODO	32.5	32.5	0	CodeBlock	program	src/program/model/block/code_block.rs	dyn=14,clone/100L=3.8
 TODO	32.5	32.5	0	DbCachedObjectStoreKeySet	util	src/util/database/db_cached_object_store_key_set.rs	dyn=16
 TODO	32.4	32.4	0	AssemblyTerminal	app	src/app/plugin/assembler/sleigh/symbol/assembly_terminal.rs	dyn=16
-TODO	32.3	32.3	0	PcodeTraceAccess	pcode	src/pcode/exec/trace/data/pcode_trace_access.rs	dyn=15,getset_pairs=2
 TODO	32.3	32.3	0	ExtModule	sarif	src/sarif/export/trees/ext_module.rs	dyn=15,getset_pairs=2
 TODO	32.2	32.2	0	AutoConfigState	framework	src/framework/plugintool/auto_config_state.rs	dyn=16
 TODO	32.2	8.0	302	Issue		src/util/issue.rs	dyn=4
@@ -825,7 +825,6 @@ TODO	10.4	10.4	0	JarEntryNode	generic	src/generic/jar/jar_entry_node.rs	dyn=3,rc
 TODO	10.4	10.4	0	DbObject	program	src/program/database/db_object.rs	dyn=4,clone/100L=1.7
 TODO	10.4	10.4	0	UnsupportedMapDb	program	src/program/database/properties/unsupported_map_db.rs	dyn=5
 TODO	10.3	10.3	0	ScalarRowObject	app	src/app/plugin/core/scalartable/scalar_row_object.rs	dyn=3,clone/100L=2.3,getset_pairs=2
-TODO	10.3	10.3	0	ListingModel	app	src/app/util/viewer/listingpanel/listing_model.rs	dyn=5
 TODO	10.3	10.3	0	MemoryBlockDb	program	src/program/database/mem/memory_block_db.rs	arc_mutex=2,clone/100L=1.6,getset_pairs=1,unwrap/100L=1.6
 TODO	10.3	10.3	0	RangeSplitter	program	src/program/model/address/range_splitter.rs	clone/100L=4.0,unwrap/100L=6.3
 TODO	10.2	10.2	0	AssemblySentential	app	src/app/plugin/assembler/sleigh/grammars/assembly_sentential.rs	dyn=4,clone/100L=1.0,unwrap/100L=1.2
@@ -952,7 +951,6 @@ TODO	8.0	8.0	0	ProgramSpecificAddressTranslator	app	src/app/merge/program_specif
 TODO	8.0	8.0	0	ReferenceAddressPair	app	src/app/plugin/core/analysis/reference_address_pair.rs	clone/100L=8.0
 TODO	8.0	8.0	0	InstructionPanelListener	app	src/app/plugin/core/references/instruction_panel_listener.rs	dyn=3,getset_pairs=2
 TODO	8.0	8.0	0	SymbolFilter	app	src/app/plugin/core/symtable/symbol_filter.rs	dyn=4
-TODO	8.0	4.0	99	CodeFormatService	app	src/app/services/code_format_service.rs	dyn=2
 TODO	8.0	4.0	101	EclipseIntegrationService	app	src/app/services/eclipse_integration_service.rs	dyn=2
 TODO	8.0	8.0	0	PlaceHolderLine	app	src/app/util/html/place_holder_line.rs	dyn=4
 TODO	8.0	8.0	0	PseudoFlowProcessor	app	src/app/util/pseudo_flow_processor.rs	dyn=4
@@ -1048,6 +1046,7 @@ TODO	6.5	6.5	0	AddressMatch	util	src/util/bytesearch/address_match.rs	clone/100L
 TODO	6.4	6.4	0	ShutdownHookRegistry		src/framework/shutdown_hook_registry.rs	unwrap/100L=2.9,lazy_static_mut=1
 TODO	6.4	6.4	0	ArrayDbAdapter	program	src/program/database/data/array_db_adapter.rs	dyn=2,clone/100L=2.4
 TODO	6.4	6.4	0	BlockStreamServer	server	src/server/stream/block_stream_server.rs	dyn=3
+TODO	6.3	6.3	0	ListingModel	app	src/app/util/viewer/listingpanel/listing_model.rs	dyn=3
 TODO	6.3	6.3	0	DumpData	file	src/file/formats/dump/dump_data.rs	clone/100L=1.3,getset_pairs=5
 TODO	6.3	6.3	0	Mod	generic	src/generic/cache/mod.rs	arc_mutex=2
 TODO	6.3	6.3	0	MemoryBlockStub	program	src/program/model/mem/memory_block_stub.rs	clone/100L=5.3,getset_pairs=1
