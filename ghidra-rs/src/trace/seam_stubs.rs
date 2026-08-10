@@ -73,11 +73,6 @@ pub trait AbstractDBTracePropertyMap: Send + Sync {
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceBookmarkManager {}
 
-/// Placeholder for `ghidra.trace.model.breakpoint.TraceBreakpointCommon`, referenced by
-/// [`TraceBreakpointSpec`](crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec)
-/// before the real port is available. No members are parsed from the Java source yet.
-pub trait TraceBreakpointCommon: Send + Sync {}
-
 /// Placeholder for `ghidra.trace.model.breakpoint.TraceBreakpointLocation`, referenced by
 /// [`TraceBreakpointSpec`](crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec)
 /// before the real port is available. No members are parsed from the Java source yet.
