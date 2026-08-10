@@ -2,9 +2,9 @@ use std::collections::HashSet;
 
 use crate::trace::model::breakpoint::trace_breakpoint_common::TraceBreakpointCommon;
 use crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind;
+use crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::TraceBreakpointLocation;
 
 /// Key for the breakpoint's expression attribute.
 pub const KEY_EXPRESSION: &str = "_expression";

@@ -204,7 +204,7 @@ mod tests {
             _enabled: bool,
             _comment: &str,
         ) -> Result<
-            Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>,
+            Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>,
             crate::util::exception::DuplicateNameException,
         > {
             unimplemented!("not exercised by this smoke test")
@@ -220,7 +220,7 @@ mod tests {
             _enabled: bool,
             _comment: &str,
         ) -> Result<
-            Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>,
+            Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>,
             crate::util::exception::DuplicateNameException,
         > {
             unimplemented!("not exercised by this smoke test")
@@ -236,7 +236,7 @@ mod tests {
             _enabled: bool,
             _comment: &str,
         ) -> Result<
-            Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>,
+            Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>,
             crate::util::exception::DuplicateNameException,
         > {
             unimplemented!("not exercised by this smoke test")
@@ -248,7 +248,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_all_breakpoint_locations(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+        fn get_all_breakpoint_locations(&self) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -262,7 +262,7 @@ mod tests {
         fn get_breakpoint_locations_by_path(
             &self,
             _path: &str,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -270,7 +270,7 @@ mod tests {
             &self,
             _snap: i64,
             _path: &str,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+        ) -> Option<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -278,7 +278,7 @@ mod tests {
             &self,
             _snap: i64,
             _address: &crate::program::model::address::Address,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -286,7 +286,7 @@ mod tests {
             &self,
             _span: Lifespan,
             _range: &crate::program::model::address::AddressRange,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceBreakpointLocation>> {
+        ) -> Vec<Box<dyn crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation>> {
             unimplemented!("not exercised by this smoke test")
         }
     }

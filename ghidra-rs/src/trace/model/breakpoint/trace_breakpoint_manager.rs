@@ -16,9 +16,9 @@
 
 use crate::program::model::address::{Address, AddressRange};
 use crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind;
+use crate::trace::model::breakpoint::trace_breakpoint_location::TraceBreakpointLocation;
 use crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec;
 use crate::trace::model::lifespan::Lifespan;
-use crate::trace::seam_stubs::TraceBreakpointLocation;
 use crate::trace::model::thread::TraceThread;
 use crate::util::exception::DuplicateNameException;
 
@@ -148,12 +148,131 @@ pub trait TraceBreakpointManager {
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
+    use crate::trace::model::breakpoint::trace_breakpoint_common::TraceBreakpointCommon;
+    use crate::trace::model::target::iface::TraceObjectInterface;
+    use crate::trace::model::trace::Trace;
+    use crate::trace::model::trace_unique_object::TraceUniqueObject;
+    use crate::trace::seam_stubs::ObjectKey;
     use std::cell::RefCell;
 
+    struct MockObjectKey(i32);
 
+    impl ObjectKey for MockObjectKey {
+        fn equals(&self, obj: &dyn std::any::Any) -> bool {
+            obj.downcast_ref::<MockObjectKey>()
+                .is_some_and(|other| other.0 == self.0)
+        }
+
+        fn hash_code(&self) -> i32 {
+            self.0
+        }
+
+        fn compare_to(&self, that: &dyn ObjectKey) -> i32 {
+            self.hash_code() - that.hash_code()
+        }
+    }
 
     struct MockLocation;
-    impl TraceBreakpointLocation for MockLocation {}
+
+    impl TraceUniqueObject for MockLocation {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            Box::new(MockObjectKey(1))
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl TraceObjectInterface for MockLocation {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
+
+    impl TraceBreakpointCommon for MockLocation {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_path(&self) -> String {
+            "Breakpoints[0][0]".to_string()
+        }
+
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {}
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+
+        fn get_name(&self, _snap: i64) -> String {
+            "Breakpoints[0][0]".to_string()
+        }
+
+        fn set_enabled(&mut self, _lifespan: Lifespan, _enabled: bool) {}
+        fn set_enabled_at(&mut self, _snap: i64, _enabled: bool) {}
+
+        fn is_enabled(&self, _snap: i64) -> bool {
+            true
+        }
+
+        fn set_comment(&mut self, _lifespan: Lifespan, _comment: Option<&str>) {}
+        fn set_comment_at(&mut self, _snap: i64, _comment: Option<&str>) {}
+
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+
+        fn remove(&mut self, _snap: i64) {}
+        fn delete(&mut self) {}
+
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+
+        fn is_alive(&self, _span: Lifespan) -> bool {
+            true
+        }
+    }
+
+    impl TraceBreakpointLocation for MockLocation {
+        fn get_specification(&self) -> Box<dyn TraceBreakpointSpec> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_threads(&self, _snap: i64) -> Vec<Box<dyn TraceThread>> {
+            Vec::new()
+        }
+
+        fn set_range(&mut self, _lifespan: Lifespan, _range: AddressRange) {}
+
+        fn get_range(&self, _snap: i64) -> AddressRange {
+            AddressRange::new(addr(0x1000), addr(0x1000))
+        }
+
+        fn get_min_address(&self, snap: i64) -> Address {
+            self.get_range(snap).min_address().clone()
+        }
+
+        fn get_max_address(&self, snap: i64) -> Address {
+            self.get_range(snap).max_address().clone()
+        }
+
+        fn get_length(&self, snap: i64) -> u64 {
+            self.get_range(snap).length()
+        }
+
+        fn set_emu_enabled(&mut self, _lifespan: Lifespan, _enabled: bool) {}
+        fn set_emu_enabled_at(&mut self, _snap: i64, _enabled: bool) {}
+
+        fn is_emu_enabled(&self, _snap: i64) -> bool {
+            true
+        }
+
+        fn set_emu_sleigh(&mut self, _lifespan: Lifespan, _sleigh: &str) {}
+        fn set_emu_sleigh_at(&mut self, _snap: i64, _sleigh: &str) {}
+
+        fn get_emu_sleigh(&self, _snap: i64) -> String {
+            String::new()
+        }
+    }
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
