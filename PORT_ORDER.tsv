@@ -53,7 +53,7 @@ DONE	trait	2	184	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/Li
 DONE	trait	2	185	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorService.java
 DONE	trait	4	185	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewService.java
 DONE	trait	2	185	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/TerminalService.java
-TODO	trait	3	79	2	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedOption.java
+DONE	trait	3	79	2	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/options/WrappedOption.java
 TODO	trait	0	186	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/NavigationHistoryService.java
 TODO	trait	5	46	27	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingModel.java
 TODO	trait	3	110	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/ListingField.java
