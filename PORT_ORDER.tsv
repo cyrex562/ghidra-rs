@@ -38,7 +38,7 @@ DONE	trait	5	104	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	4	106	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/DefaultTraceLocation.java
 DONE	trait	3	16	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointCommon.java
 DONE	trait	2	52	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointLocation.java
-TODO	trait	1	6	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpointsChangeListener.java
+DONE	trait	1	6	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpointsChangeListener.java
 TODO	trait	0	186	3	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerLogicalBreakpointService.java
 TODO	trait	3	7	24	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/watch/WatchRow.java
 TODO	trait	2	185	1	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerWatchesService.java
