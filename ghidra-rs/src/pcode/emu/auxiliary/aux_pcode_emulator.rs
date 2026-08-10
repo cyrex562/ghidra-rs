@@ -461,7 +461,12 @@ mod tests {
         fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
             create_thread(self, name, &self.factory)
         }
-    }
+    
+        /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
+        fn as_pcode_machine(&self) -> &dyn PcodeMachine<(Vec<u8>, i64)> {
+            self
+        }
+}
 
     impl PcodeMachine<(Vec<u8>, i64)> for TestEmulator {
         fn get_language(&self) -> &SleighLanguage {

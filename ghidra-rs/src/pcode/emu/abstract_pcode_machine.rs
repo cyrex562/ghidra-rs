@@ -35,9 +35,9 @@
 //!   such call, so those three products are parameters of [`AbstractPcodeMachineBase::new`]; the
 //!   concrete machine computes them before constructing its base. The default
 //!   `createUseropLibrary` is available as
-//!   [`AbstractPcodeMachineBase::create_userop_library`]. There is no default
-//!   `createThreadStubLibrary`, because Java's is
-//!   `DefaultPcodeThread.PcodeEmulationLibrary`, which is not ported yet.
+//!   [`AbstractPcodeMachineBase::create_userop_library`]. Java's default
+//!   `createThreadStubLibrary` is `new DefaultPcodeThread.PcodeEmulationLibrary<>(null)`, i.e.
+//!   [`PcodeEmulationLibrary::new(None)`](crate::pcode::emu::default_pcode_thread::PcodeEmulationLibrary::new).
 //! * Likewise, `cb.emulatorCreated(this)` cannot run inside the constructor, since `this` does not
 //!   exist yet; the machine calls [`AbstractPcodeMachineBase::notify_emulator_created`] once it is
 //!   whole.
@@ -51,7 +51,7 @@
 //!   as an `Err`.
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::pcode::emu::pcode_machine::{AccessKind, PcodeMachine, SwiMode};
 use crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer;
@@ -101,7 +101,12 @@ pub struct AbstractPcodeMachineBase<T: 'static> {
     arithmetic: Arc<dyn PcodeArithmetic<T>>,
     library: Box<dyn PcodeUseropLibrary<T>>,
     stub_library: Box<dyn PcodeUseropLibrary<T>>,
-    swi_mode: SwiMode,
+    /// Java mutates this from `stepped()`, which a thread calls on the machine it is stepping
+    /// within. A thread reaches its machine only through a shared handle (see
+    /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread)'s module
+    /// docs), i.e. through `&`, so the mode is interior-mutable and
+    /// [`stepped`](Self::stepped) takes `&self`.
+    swi_mode: Mutex<SwiMode>,
     /// The pluggable initializer, if any, found for this machine's language. Java gives this
     /// package-private visibility "for abstract thread access"; threads live in the same module
     /// tree here, so it is public.
@@ -150,7 +155,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
             arithmetic,
             library,
             stub_library,
-            swi_mode: SwiMode::Active,
+            swi_mode: Mutex::new(SwiMode::Active),
             initializer,
             shared_state: None,
             threads: Vec::new(),
@@ -204,12 +209,12 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
 
     /// Change the efficacy of p-code breakpoints. Port of `setSoftwareInterruptMode(SwiMode)`.
     pub fn set_software_interrupt_mode(&mut self, mode: SwiMode) {
-        self.swi_mode = mode;
+        *self.swi_mode.lock().expect("swi mode lock poisoned") = mode;
     }
 
     /// Get the current software interrupt mode. Port of `getSoftwareInterruptMode()`.
     pub fn get_software_interrupt_mode(&self) -> SwiMode {
-        self.swi_mode
+        *self.swi_mode.lock().expect("swi mode lock poisoned")
     }
 
     /// Get the callbacks receiving this machine's emulation events.
@@ -366,7 +371,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
 
     /// Return a software interrupt if those interrupts are active. Port of `swi()`.
     pub fn swi(&self) -> Result<(), InterruptPcodeExecutionException> {
-        if self.swi_mode == SwiMode::Active {
+        if self.get_software_interrupt_mode() == SwiMode::Active {
             return Err(InterruptPcodeExecutionException::new(None));
         }
         Ok(())
@@ -374,9 +379,10 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
 
     /// Notify the machine a thread has been stepped a p-code op, so that it may re-enable software
     /// interrupts, if applicable. Port of `stepped()`.
-    pub fn stepped(&mut self) {
-        if self.swi_mode == SwiMode::IgnoreStep {
-            self.swi_mode = SwiMode::Active;
+    pub fn stepped(&self) {
+        let mut swi_mode = self.swi_mode.lock().expect("swi mode lock poisoned");
+        if *swi_mode == SwiMode::IgnoreStep {
+            *swi_mode = SwiMode::Active;
         }
     }
 
@@ -506,9 +512,20 @@ pub trait AbstractPcodeMachine<T: 'static>: PcodeMachine<T> {
 
     /// A factory method to create a new thread in this machine.
     ///
-    /// Port of `createThread(String)`. Java defaults it to `new DefaultPcodeThread<>(name, this)`;
-    /// that class is not ported yet, so every machine must supply its own for now.
+    /// Port of `createThread(String)`. Java defaults it to `new DefaultPcodeThread<>(name, this)`.
+    /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) needs a
+    /// shared handle to its machine, which `&self` cannot produce, so every machine supplies its
+    /// own.
     fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread>;
+
+    /// This machine as a plain [`PcodeMachine`].
+    ///
+    /// Java gets this for free by subtyping; a
+    /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) holds
+    /// its machine as an `Arc<dyn AbstractPcodeMachine<T>>` but must answer
+    /// [`PcodeThread::get_machine`](crate::pcode::emu::pcode_thread::PcodeThread::get_machine) with
+    /// the supertrait object. Every implementor's body is `self`.
+    fn as_pcode_machine(&self) -> &dyn PcodeMachine<T>;
 }
 
 #[cfg(test)]
@@ -799,7 +816,12 @@ mod tests {
         fn create_thread(&self, name: &str) -> Arc<dyn ErasedPcodeThread> {
             Arc::new(NamedThread(name.to_string()))
         }
-    }
+    
+        /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
+        fn as_pcode_machine(&self) -> &dyn PcodeMachine<Vec<u8>> {
+            self
+        }
+}
 
     impl PcodeMachine<Vec<u8>> for TestMachine {
         fn get_language(&self) -> &SleighLanguage {

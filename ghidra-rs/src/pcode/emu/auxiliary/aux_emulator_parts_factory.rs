@@ -25,8 +25,9 @@
 //! following the convention already used for
 //! [`PcodeStateInitializer`](crate::pcode::emu::pcode_state_initializer::PcodeStateInitializer):
 //! Java declares `PcodeThread<Pair<byte[], U>>`, but this trait never inspects it beyond passing
-//! it along, so no generic-preserving Rust shape is needed. See [`crate::pcode::seam_stubs`] for
-//! its placeholder definition. `AuxPcodeEmulator<U>`, by contrast, is the real port -- see
+//! it along, so no generic-preserving Rust shape is needed. The one exception is
+//! [`create_executor`](AuxEmulatorPartsFactory::create_executor), whose Java parameter is the
+//! concrete `DefaultPcodeThread`. `AuxPcodeEmulator<U>`, by contrast, is the real port -- see
 //! [`AuxPcodeEmulator`](crate::pcode::emu::auxiliary::aux_pcode_emulator::AuxPcodeEmulator) --
 //! and is threaded through with its `U` intact, matching Java's `AuxPcodeEmulator<U>` parameter
 //! type exactly.
@@ -41,12 +42,12 @@ use std::sync::Arc;
 
 use crate::pcode::emu::auxiliary::aux_pcode_emulator::AuxPcodeEmulator;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
-use crate::pcode::exec::pcode_executor::PcodeExecutor;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
-use crate::pcode::seam_stubs::{BytesPcodeExecutorStatePiece, DefaultPcodeThread};
+use crate::pcode::emu::default_pcode_thread::{DefaultPcodeThread, PcodeThreadExecutor};
+use crate::pcode::seam_stubs::BytesPcodeExecutorStatePiece;
 use crate::program::model::lang::Language;
 
 /// An auxiliary emulator parts factory.
@@ -82,15 +83,25 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
     /// operations that would not otherwise be possible in the arithmetic, e.g., to print
     /// diagnostics on a conditional branch.
     ///
-    /// Java's default body constructs `new PcodeThreadExecutor<>(thread)`. `PcodeThreadExecutor`
-    /// (`DefaultPcodeThread`'s executor) is not yet ported, so this default panics; implementors
-    /// that need a working default must override it until that port lands.
-    fn create_executor(
+    /// Java's default body constructs `new PcodeThreadExecutor<>(thread)`, which is
+    /// [`PcodeThreadExecutor::for_thread`].
+    ///
+    /// Java's parameter is a `DefaultPcodeThread<Pair<byte[], U>>`; this port's
+    /// [`DefaultPcodeThread`] also names the concrete types of its two state delegates (see
+    /// [`ThreadPcodeExecutorState`](crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState)),
+    /// which this call site does not care about, so they are free parameters of the method. That
+    /// costs nothing here: this trait already has generic methods, so it is not object-safe either
+    /// way.
+    fn create_executor<S, L>(
         &self,
         _emulator: &dyn AuxPcodeEmulator<U>,
-        _thread: &dyn DefaultPcodeThread,
-    ) -> PcodeExecutor<(Vec<u8>, U)> {
-        unimplemented!("DefaultPcodeThread.PcodeThreadExecutor not yet ported")
+        thread: &DefaultPcodeThread<(Vec<u8>, U), S, L>,
+    ) -> PcodeThreadExecutor<(Vec<u8>, U)>
+    where
+        S: PcodeExecutorState<(Vec<u8>, U)> + 'static,
+        L: PcodeExecutorState<(Vec<u8>, U)> + 'static,
+    {
+        PcodeThreadExecutor::for_thread(thread)
     }
 
     /// Create a thread with the given name.
@@ -135,6 +146,7 @@ mod tests {
     use crate::pcode::emu::pcode_machine::{AccessKind, ErasedPcodeMachine, PcodeMachine, SwiMode};
     use crate::pcode::exec::concretion_error::ConcretionError;
     use crate::pcode::exec::pcode_arithmetic::Purpose;
+    use crate::pcode::exec::pcode_executor::PcodeExecutor;
     use crate::pcode::exec::pcode_userop_library::{nil, ErasedPcodeUseropLibrary, UseropMap};
     use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
     use crate::pcode::exec::pcode_program::PcodeProgram;
@@ -564,7 +576,12 @@ mod tests {
         fn create_thread(&self, _name: &str) -> Arc<dyn ErasedPcodeThread> {
             unimplemented!("not exercised by these tests")
         }
-    }
+    
+        /// This machine as a plain [`PcodeMachine`]. Java gets this by subtyping.
+        fn as_pcode_machine(&self) -> &dyn PcodeMachine<(Vec<u8>, i64)> {
+            self
+        }
+}
 
     impl PcodeMachine<(Vec<u8>, i64)> for MockAuxPcodeEmulator {
         fn get_language(&self) -> &SleighLanguage {

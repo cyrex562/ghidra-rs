@@ -29,6 +29,7 @@ use crate::program::model::address::{
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
+use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::mem::mem_buffer::MemBuffer;
 use crate::program::model::pcode::Varnode;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
@@ -346,7 +347,37 @@ pub trait PseudoInstruction: Send + Sync {}
 /// [`InstructionDecoder`](crate::pcode::emu::instruction_decoder::InstructionDecoder) before the
 /// real class is ported. This is a minimal interface stub exposing only the methods needed by
 /// existing references.
-pub trait RegisterValue: Send + Sync {}
+///
+/// Grown (see `STUBS.tsv`) with the four members
+/// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread)'s context
+/// handling needs. All four are defaulted so pre-existing bare `impl RegisterValue for Foo {}`
+/// blocks keep compiling; the defaults panic, since the real class carries the value and mask this
+/// stub does not.
+pub trait RegisterValue: Send + Sync {
+    /// Stands in for `RegisterValue.getRegister()`: the register this value is associated with.
+    fn get_register(&self) -> RegisterRef {
+        unimplemented!("RegisterValue not yet ported")
+    }
+
+    /// Stands in for `RegisterValue.assign(Register, RegisterValue)`: apply only those bits having
+    /// a value in `value` to this value, yielding the combined value.
+    fn assign(&self, register: &RegisterRef, value: &dyn RegisterValue) -> Box<dyn RegisterValue> {
+        let _ = (register, value);
+        unimplemented!("RegisterValue not yet ported")
+    }
+
+    /// Stands in for `RegisterValue.getUnsignedValueIgnoreMask()`.
+    fn get_unsigned_value_ignore_mask(&self) -> u128 {
+        unimplemented!("RegisterValue not yet ported")
+    }
+
+    /// Stands in for `RegisterValue.combineValues(RegisterValue)`: combine `other`'s masked bits
+    /// onto this value, preferring `other` wherever both specify a bit.
+    fn combine_values(&self, other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
+        let _ = other;
+        unimplemented!("RegisterValue not yet ported")
+    }
+}
 
 /// Placeholder for `ghidra.pcode.emu.SparseAddressRangeMap`, referenced by
 /// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
@@ -457,13 +488,144 @@ impl SleighProgramCompiler {
     }
 }
 
-/// Placeholder for `ghidra.pcode.emu.DefaultPcodeThread`, referenced by
-/// [`AuxEmulatorPartsFactory::create_executor`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_executor)
-/// before the real class is ported. That method only forwards the thread to the also-unported
-/// `DefaultPcodeThread.PcodeThreadExecutor`, so no member is exposed here beyond the supertrait
-/// relationship Java's class declares (`DefaultPcodeThread<T> implements PcodeThread<T>`, rendered
-/// here against the value-erased [`ErasedPcodeThread`], since that call site does not know `T`).
-pub trait DefaultPcodeThread: ErasedPcodeThread {}
+/// Placeholder for `ghidra.pcode.exec.SuspendedPcodeExecutionException`, thrown by
+/// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread)'s executor
+/// when a p-code op is stepped while the thread or its machine is suspended. As with
+/// [`InterruptPcodeExecutionException`], Java's class extends `PcodeExecutionException` with a
+/// fixed message; here it wraps one.
+#[derive(Debug)]
+pub struct SuspendedPcodeExecutionException {
+    inner: PcodeExecutionException,
+}
+
+impl SuspendedPcodeExecutionException {
+    /// Placeholder for `new SuspendedPcodeExecutionException(PcodeFrame, Throwable)`. Every current
+    /// call site passes a `null` cause, so only the frame is accepted here.
+    pub fn new(frame: Option<PcodeFrame>) -> Self {
+        const MESSAGE: &str = "Execution suspended by user";
+        let inner = match frame {
+            Some(frame) => PcodeExecutionException::with_frame(MESSAGE, frame),
+            None => PcodeExecutionException::with_message(MESSAGE),
+        };
+        Self { inner }
+    }
+
+    /// The wrapped execution exception, Java's `super`.
+    pub fn as_execution_exception(&self) -> &PcodeExecutionException {
+        &self.inner
+    }
+
+    /// Placeholder for the inherited `getMessage()`.
+    pub fn message(&self) -> &str {
+        self.inner.message()
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.InjectionErrorPcodeExecutionException`, thrown by
+/// [`PcodeEmulationLibrary`](crate::pcode::emu::default_pcode_thread::PcodeEmulationLibrary)'s
+/// `emu_injection_err` userop, which a service invokes in place of an inject whose Sleigh source
+/// failed to compile. See [`SuspendedPcodeExecutionException`] on the wrapping.
+#[derive(Debug)]
+pub struct InjectionErrorPcodeExecutionException {
+    inner: PcodeExecutionException,
+}
+
+impl InjectionErrorPcodeExecutionException {
+    /// Placeholder for `new InjectionErrorPcodeExecutionException(PcodeFrame, Throwable)`. The one
+    /// call site passes `(null, null)`, so only the frame is accepted here.
+    pub fn new(frame: Option<PcodeFrame>) -> Self {
+        const MESSAGE: &str = "Error compiling injected Sleigh source";
+        let inner = match frame {
+            Some(frame) => PcodeExecutionException::with_frame(MESSAGE, frame),
+            None => PcodeExecutionException::with_message(MESSAGE),
+        };
+        Self { inner }
+    }
+
+    /// The wrapped execution exception, Java's `super`.
+    pub fn as_execution_exception(&self) -> &PcodeExecutionException {
+        &self.inner
+    }
+
+    /// Placeholder for the inherited `getMessage()`.
+    pub fn message(&self) -> &str {
+        self.inner.message()
+    }
+}
+
+/// Placeholder for `ghidra.program.util.ProgramContextImpl`, the default-context store
+/// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread) builds from
+/// its language when the language has a context register.
+///
+/// The one behavior this stub really implements is receiving a language's context settings, since
+/// that is what the thread's constructor does with it
+/// (`language.applyContextSettings(defaultContext)`). Every read-back is a value of the *other*
+/// `RegisterValue` stub -- [`crate::program::seam_stubs::RegisterValue`] is what
+/// [`DefaultProgramContext`] deals in, while this module's [`RegisterValue`] is what the emulator
+/// deals in -- and neither stub can be constructed, so the reads panic until the real class lands.
+pub struct ProgramContextImpl {
+    defaults: Vec<(Box<dyn crate::program::seam_stubs::RegisterValue>, Address, Address)>,
+}
+
+impl ProgramContextImpl {
+    /// Placeholder for `new ProgramContextImpl(Language)`.
+    pub fn new() -> Self {
+        Self { defaults: Vec::new() }
+    }
+
+    /// The context settings received so far, i.e. what `Language.applyContextSettings` recorded.
+    pub fn defaults(&self) -> &[(Box<dyn crate::program::seam_stubs::RegisterValue>, Address, Address)] {
+        &self.defaults
+    }
+
+    /// Placeholder for the inherited `ProgramContext.getDefaultDisassemblyContext()`.
+    pub fn get_default_disassembly_context(&self) -> Box<dyn RegisterValue> {
+        unimplemented!("ProgramContextImpl not yet ported")
+    }
+
+    /// Placeholder for the inherited `ProgramContext.getDefaultValue(Register, Address)`, in the
+    /// emulator's `RegisterValue` domain. Java returns `null` where there is no default.
+    pub fn get_default_value(
+        &self,
+        register: &RegisterRef,
+        address: &Address,
+    ) -> Option<Box<dyn RegisterValue>> {
+        let _ = (register, address);
+        unimplemented!("ProgramContextImpl not yet ported")
+    }
+
+    /// Placeholder for the inherited `ProgramContext.getFlowValue(RegisterValue)`: the part of the
+    /// given context that flows to the next instruction.
+    pub fn get_flow_value(&self, value: &dyn RegisterValue) -> Box<dyn RegisterValue> {
+        let _ = value;
+        unimplemented!("ProgramContextImpl not yet ported")
+    }
+}
+
+impl Default for ProgramContextImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl DefaultProgramContext for ProgramContextImpl {
+    fn set_default_value(
+        &mut self,
+        register_value: Box<dyn crate::program::seam_stubs::RegisterValue>,
+        start: &Address,
+        end: &Address,
+    ) {
+        self.defaults.push((register_value, start.clone(), end.clone()));
+    }
+
+    fn get_default_value(
+        &self,
+        _register: &crate::program::model::lang::register::Register,
+        _address: &Address,
+    ) -> Option<Box<dyn crate::program::seam_stubs::RegisterValue>> {
+        unimplemented!("ProgramContextImpl not yet ported")
+    }
+}
 
 /// Marker trait for `ghidra.pcode.exec.BytesPcodeExecutorStatePiece`, referenced by
 /// [`AuxEmulatorPartsFactory::create_shared_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_shared_state)

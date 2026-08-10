@@ -17,14 +17,15 @@ pub trait InstructionDecoder: Send + Sync {
     ///
     /// # Arguments
     /// * `address` - the address to start decoding
-    /// * `context` - the disassembler/decode context
+    /// * `context` - the disassembler/decode context, or `None` (Java's `null`) for a language
+    ///   with no context register
     ///
     /// # Returns
     /// the decoded instruction
     fn decode_instruction(
         &mut self,
         address: &Address,
-        context: &dyn RegisterValue,
+        context: Option<&dyn RegisterValue>,
     ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>>;
 
     /// Inform the decoder that the emulator thread just branched.
@@ -70,7 +71,7 @@ mod tests {
         fn decode_instruction(
             &mut self,
             _address: &Address,
-            _context: &dyn RegisterValue,
+            _context: Option<&dyn RegisterValue>,
         ) -> Result<Box<dyn PseudoInstruction>, Box<dyn std::error::Error>> {
             Ok(Box::new(MockPseudoInstruction))
         }
@@ -114,7 +115,7 @@ mod tests {
         let addr = Address::new(space, 0x1000);
         let ctx = MockRegisterValue;
 
-        let result = decoder.decode_instruction(&addr, &ctx);
+        let result = decoder.decode_instruction(&addr, Some(&ctx));
         assert!(result.is_ok());
     }
 
