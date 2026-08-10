@@ -63,7 +63,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/Log
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/control/ControlMode.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api control 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/EmulatorFactory.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerAccess.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerDataAccess.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerDataAccess.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerMemoryAccess.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerRegistersAccess.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/listing/DebuggerListing.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api listing 
