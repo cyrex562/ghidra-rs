@@ -509,3 +509,5 @@ ts	stub_class	referenced_by
 2026-08-09T09:30:00+00:00	DBTrace	DBTraceTimeManager
 2026-08-09T09:30:00+00:00	DBTraceObject	DBTraceTimeManager
 2026-08-09T09:30:00+00:00	DBTraceObjectManager	DBTraceTimeManager
+2026-08-09T10:00:00.000000+00:00	PcodeTraceAccess	PcodeTracePropertyAccess
+2026-08-09T10:00:00.000000+00:00	PcodeTraceDataAccess	PcodeTracePropertyAccess
