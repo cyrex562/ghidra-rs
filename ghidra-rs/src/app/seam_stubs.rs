@@ -949,3 +949,27 @@ impl FieldMatcher {
         self.field_name.is_none()
     }
 }
+
+/// Placeholder for Java's `Class<?>`, referenced by
+/// [`FieldMouseHandler`] before the real class is ported. Used as a type token to represent
+/// supported program location types. No members are needed yet.
+pub trait Class: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.viewer.field.FieldMouseHandler`, referenced by
+/// [`FieldMouseHandlerService`](crate::app::services::FieldMouseHandlerService) before the real
+/// class is ported. This is a genuine open extension point with multiple implementations.
+pub trait FieldMouseHandler: Send + Sync {
+    /// Called when a field has been clicked. The object being passed in is guaranteed to be
+    /// one of the types returned in [`get_supported_program_locations`](Self::get_supported_program_locations).
+    fn field_element_clicked(
+        &self,
+        clicked_object: &dyn std::any::Any,
+        source_navigatable: &dyn Navigatable,
+        program_location: &dyn crate::program::util::program_location::ProgramLocation,
+        mouse_event: &dyn crate::docking::seam_stubs::MouseEvent,
+        service_provider: &dyn crate::framework::plugintool::service_provider::ServiceProvider,
+    ) -> bool;
+
+    /// Returns the types that this handler wishes to handle.
+    fn get_supported_program_locations(&self) -> Vec<Box<dyn Class>>;
+}

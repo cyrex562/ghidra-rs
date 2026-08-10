@@ -500,3 +500,4 @@ ts	stub_class	referenced_by
 2026-08-10T12:00:00.000000+00:00	ListingActionContext	DataService
 2026-08-10T08:18:22.801407+00:00	DataTypeReference	DataTypeReferenceFinder
 2026-08-10T08:18:22.801657+00:00	FieldMatcher	DataTypeReferenceFinder
+2026-08-10T08:24:21.297941+00:00	FieldMouseHandler	FieldMouseHandlerService
