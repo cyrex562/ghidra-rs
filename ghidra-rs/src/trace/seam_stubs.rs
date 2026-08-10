@@ -31,6 +31,7 @@ use crate::trace::model::target::path::path_pattern::PathPattern;
 use crate::trace::model::target::trace_object::TraceObject;
 use crate::trace::model::time::schedule::compare_result::CompareResult;
 use crate::trace::model::time::schedule::step::Step;
+use crate::trace::model::time::trace_snapshot::TraceSnapshot;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::util::trace_change_manager::TraceChangeManager;
@@ -132,15 +133,6 @@ pub trait TraceMemoryOperations: Send + Sync {
 /// Placeholder for `ghidra.trace.model.context.TraceRegisterContextManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceRegisterContextManager {}
-
-/// Placeholder for `ghidra.trace.model.time.TraceSnapshot`, referenced by
-/// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
-/// the real port is available. Mirrors the one member referenced in that interface's javadoc:
-/// whether a snapshot is a fork point.
-pub trait TraceSnapshot: Send + Sync {
-    /// Mirrors `TraceSnapshot.isFork()`.
-    fn is_fork(&self) -> bool;
-}
 
 /// Placeholder for `ghidra.trace.model.time.schedule.TraceSchedule`, referenced by
 /// [`TraceTimeManager`](crate::trace::model::time::trace_time_manager::TraceTimeManager) before
@@ -478,14 +470,160 @@ impl DBTraceSnapshot {
 }
 
 impl TraceSnapshot for DBTraceSnapshot {
+    /// `DBTraceSnapshot.getTrace()`: not implementable here, since this placeholder carries no
+    /// back-reference to its owning trace (see the type's docs).
+    fn get_trace(&self) -> Box<dyn Trace> {
+        unimplemented!("DBTraceSnapshot::get_trace placeholder not overridden")
+    }
+
+    fn get_key(&self) -> i64 {
+        self.key
+    }
+
+    fn get_description(&self) -> String {
+        self.data.lock().unwrap().description.clone()
+    }
+
+    fn set_description(&self, description: &str) {
+        self.data.lock().unwrap().description = description.to_string();
+    }
+
+    fn get_real_time(&self) -> i64 {
+        self.data.lock().unwrap().real_time
+    }
+
+    fn set_real_time(&self, millis_since_epoch: i64) {
+        self.data.lock().unwrap().real_time = millis_since_epoch;
+    }
+
+    /// `DBTraceSnapshot.getEventThread()`: not implementable here -- event-thread resolution
+    /// needs `DBTraceThreadManager` and the root object's `TraceEventScope` schema, neither of
+    /// which is ported (see the type's docs).
+    fn get_event_thread(&self) -> Option<Box<dyn TraceThread>> {
+        unimplemented!("DBTraceSnapshot::get_event_thread placeholder not overridden")
+    }
+
+    /// `DBTraceSnapshot.setEventThread(TraceThread)`: see [`Self::get_event_thread`].
+    fn set_event_thread(&self, thread: Option<Box<dyn TraceThread>>) {
+        let _ = thread;
+        unimplemented!("DBTraceSnapshot::set_event_thread placeholder not overridden")
+    }
+
+    fn get_schedule(&self) -> Option<Arc<dyn TraceSchedule>> {
+        self.data.lock().unwrap().schedule.clone()
+    }
+
+    fn get_schedule_string(&self) -> String {
+        self.data.lock().unwrap().schedule_str.clone()
+    }
+
     fn is_fork(&self) -> bool {
         self.data.lock().unwrap().is_fork
+    }
+
+    fn set_schedule(&self, schedule: Option<Arc<dyn TraceSchedule>>) {
+        self.store_schedule(schedule);
+    }
+
+    fn get_version(&self) -> i64 {
+        self.data.lock().unwrap().version
+    }
+
+    fn set_version(&self, version: i64) {
+        self.data.lock().unwrap().version = version;
+    }
+
+    fn is_snap_only(&self, when_inconsistent: bool) -> bool {
+        let data = self.data.lock().unwrap();
+        match &data.schedule {
+            None if self.key < 0 => when_inconsistent,
+            None => true,
+            Some(schedule) => schedule.is_snap_only(),
+        }
+    }
+
+    /// `DBTraceSnapshot.isStale(boolean)`: not implementable here -- staleness is measured
+    /// against the owning trace's emulator cache version, and this placeholder carries no
+    /// back-reference to its trace (see [`Self::get_trace`]).
+    fn is_stale(&self, when_inconsistent: bool) -> bool {
+        let _ = when_inconsistent;
+        unimplemented!("DBTraceSnapshot::is_stale placeholder not overridden")
+    }
+
+    /// `DBTraceSnapshot.delete()`: not implementable here -- deletion needs the owning manager's
+    /// store, which this placeholder does not reference.
+    fn delete(&self) {
+        unimplemented!("DBTraceSnapshot::delete placeholder not overridden")
     }
 }
 
 impl TraceSnapshot for Arc<DBTraceSnapshot> {
+    fn get_trace(&self) -> Box<dyn Trace> {
+        (**self).get_trace()
+    }
+
+    fn get_key(&self) -> i64 {
+        (**self).get_key()
+    }
+
+    fn get_description(&self) -> String {
+        (**self).get_description()
+    }
+
+    fn set_description(&self, description: &str) {
+        (**self).set_description(description)
+    }
+
+    fn get_real_time(&self) -> i64 {
+        (**self).get_real_time()
+    }
+
+    fn set_real_time(&self, millis_since_epoch: i64) {
+        (**self).set_real_time(millis_since_epoch)
+    }
+
+    fn get_event_thread(&self) -> Option<Box<dyn TraceThread>> {
+        (**self).get_event_thread()
+    }
+
+    fn set_event_thread(&self, thread: Option<Box<dyn TraceThread>>) {
+        (**self).set_event_thread(thread)
+    }
+
+    fn get_schedule(&self) -> Option<Arc<dyn TraceSchedule>> {
+        (**self).get_schedule()
+    }
+
+    fn get_schedule_string(&self) -> String {
+        (**self).get_schedule_string()
+    }
+
     fn is_fork(&self) -> bool {
         (**self).is_fork()
+    }
+
+    fn set_schedule(&self, schedule: Option<Arc<dyn TraceSchedule>>) {
+        (**self).set_schedule(schedule)
+    }
+
+    fn get_version(&self) -> i64 {
+        (**self).get_version()
+    }
+
+    fn set_version(&self, version: i64) {
+        (**self).set_version(version)
+    }
+
+    fn is_snap_only(&self, when_inconsistent: bool) -> bool {
+        (**self).is_snap_only(when_inconsistent)
+    }
+
+    fn is_stale(&self, when_inconsistent: bool) -> bool {
+        (**self).is_stale(when_inconsistent)
+    }
+
+    fn delete(&self) {
+        (**self).delete()
     }
 }
 

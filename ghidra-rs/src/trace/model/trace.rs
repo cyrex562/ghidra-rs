@@ -1106,7 +1106,7 @@ mod tests {
         fn create_snapshot(
             &self,
             _description: &str,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceSnapshot> {
+        ) -> Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -1114,14 +1114,14 @@ mod tests {
             &self,
             _snap: i64,
             _create_if_absent: bool,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+        ) -> Option<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
             unimplemented!("not exercised by this smoke test")
         }
 
         fn get_most_recent_snapshot(
             &self,
             _snap: i64,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+        ) -> Option<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -1132,25 +1132,25 @@ mod tests {
         fn get_snapshots_with_schedule(
             &self,
             _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+        ) -> Vec<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
             unimplemented!("not exercised by this smoke test")
         }
 
         fn find_scratch_snapshot(
             &self,
             _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceSnapshot> {
+        ) -> Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot> {
             unimplemented!("not exercised by this smoke test")
         }
 
         fn find_snapshot_with_nearest_prefix(
             &self,
             _schedule: &dyn crate::trace::seam_stubs::TraceSchedule,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+        ) -> Option<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_all_snapshots(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+        fn get_all_snapshots(&self) -> Vec<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -1160,7 +1160,7 @@ mod tests {
             _from_inclusive: bool,
             _to_snap: i64,
             _to_inclusive: bool,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceSnapshot>> {
+        ) -> Vec<Box<dyn crate::trace::model::time::trace_snapshot::TraceSnapshot>> {
             unimplemented!("not exercised by this smoke test")
         }
 

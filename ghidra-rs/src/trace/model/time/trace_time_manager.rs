@@ -1,4 +1,5 @@
-use crate::trace::seam_stubs::{TraceSchedule, TraceSnapshot, TimeRadix};
+use crate::trace::model::time::trace_snapshot::TraceSnapshot;
+use crate::trace::seam_stubs::{TraceSchedule, TimeRadix};
 
 /// The attribute key for controlling the time radix.
 ///
@@ -116,8 +117,72 @@ mod tests {
     }
 
     impl TraceSnapshot for MockSnapshot {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_key(&self) -> i64 {
+            self.key
+        }
+
+        fn get_description(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_description(&self, _description: &str) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_real_time(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_real_time(&self, _millis_since_epoch: i64) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_event_thread(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_event_thread(&self, _thread: Option<Box<dyn crate::trace::seam_stubs::TraceThread>>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_schedule(&self) -> Option<std::sync::Arc<dyn TraceSchedule>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_schedule_string(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+
         fn is_fork(&self) -> bool {
             self.fork
+        }
+
+        fn set_schedule(&self, _schedule: Option<std::sync::Arc<dyn TraceSchedule>>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_version(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_version(&self, _version: i64) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn is_snap_only(&self, _when_inconsistent: bool) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn is_stale(&self, _when_inconsistent: bool) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn delete(&self) {
+            unimplemented!("not exercised by this smoke test")
         }
     }
 

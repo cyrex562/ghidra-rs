@@ -49,10 +49,11 @@ use crate::framework::db::util::error_handler::ErrorHandler;
 use crate::trace::database::db_trace_manager::DBTraceManager;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::time::schedule::step::StepType;
+use crate::trace::model::time::trace_snapshot::TraceSnapshot;
 use crate::trace::model::time::trace_time_manager::{TraceTimeManager, KEY_TIME_RADIX};
 use crate::trace::seam_stubs::{
     time_radix_default, time_radix_from_str, trace_schedule_snap, DBTrace, DBTraceSnapshot,
-    DBTraceThreadManager, TimeRadix, TraceChangeRecord, TraceSchedule, TraceSnapshot,
+    DBTraceThreadManager, TimeRadix, TraceChangeRecord, TraceSchedule,
 };
 
 /// A snapshot key at which the trace's timeline forks, i.e. whose schedule does not simply
