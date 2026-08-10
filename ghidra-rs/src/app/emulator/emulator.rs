@@ -2,10 +2,10 @@ use thiserror::Error;
 
 use crate::app::seam_stubs::{FilteredMemoryState, MemoryAccessFilter};
 use crate::pcode::emulate::emulate_execution_state::EmulateExecutionState;
+use crate::pcode::emulate::break_table_call_back::BreakTableCallBack;
 use crate::pcode::emulate::instruction_decode_exception::InstructionDecodeException;
 use crate::pcode::error::lowlevel_error::LowlevelError;
 use crate::pcode::memstate::memory_state::MemoryState;
-use crate::pcode::seam_stubs::BreakTableCallBack;
 use crate::program::model::address::Address;
 use crate::program::seam_stubs::RegisterValue;
 use crate::util::exception::CancelledException;
@@ -134,7 +134,7 @@ pub trait Emulator {
     /// Get the breakpoint table.
     ///
     /// Corresponds to `Emulator.getBreakTable()`.
-    fn get_break_table(&self) -> &dyn BreakTableCallBack;
+    fn get_break_table(&self) -> &BreakTableCallBack;
 
     /// Returns true if halted at a breakpoint.
     ///
@@ -286,19 +286,46 @@ mod tests {
 
     impl FilteredMemoryState for NullMemoryState {}
 
-    struct NullBreakTable;
+    /// Builds a minimal, valid `SleighLanguage` (one `ram` space, no symbols) purely so a
+    /// [`BreakTableCallBack`] can be constructed; mirrors
+    /// `sleigh::tests::test_sleigh_decode_basic`'s hand-built packed encoding.
+    fn minimal_sleigh_language() -> crate::program::model::lang::sleigh::SleighLanguage {
+        use crate::program::model::address::DefaultAddressFactory;
+        use crate::program::model::lang::sleigh::SleighLanguage;
+        use crate::program::model::pcode::PackedDecode;
 
-    impl crate::pcode::emulate::break_table::BreakTable for NullBreakTable {
-        fn set_emulate(&mut self, _emu: &dyn crate::pcode::seam_stubs::Emulate) {}
-        fn do_pcode_op_break(&self, _curop: &dyn crate::pcode::seam_stubs::PcodeOpRaw) -> bool {
-            false
-        }
-        fn do_address_break(&self, _addr: &Address) -> bool {
-            false
-        }
+        let factory = Arc::new(DefaultAddressFactory::new(vec![]));
+        let mut data = vec![];
+
+        data.extend_from_slice(&[0x60, 0xA1]); // <sleigh
+        data.extend_from_slice(&[0xE0, 0xA2, 0x21, 4]); // version=4
+        data.extend_from_slice(&[0xE0, 0xA3, 0x10]); // bigendian=false
+
+        data.extend_from_slice(&[0x60, 0xA2]); // <spaces defaultspace="ram">
+        data.extend_from_slice(&[0xE0, 0xA9, 0x71, 3, b'r', b'a', b'm']);
+
+        data.extend_from_slice(&[0x60, 0xAD, 0xA0, 0xAD]); // <space_other/>
+
+        data.extend_from_slice(&[0x60, 0xA5]); // <space name="ram" size="4" index="1" delay="1"/>
+        data.extend_from_slice(&[0xCC, 0x71, 3, b'r', b'a', b'm']);
+        data.extend_from_slice(&[0xCF, 0x21, 4]);
+        data.extend_from_slice(&[0xC9, 0x21, 1]);
+        data.extend_from_slice(&[0xE0, 0xAA, 0x21, 1]);
+        data.extend_from_slice(&[0xA0, 0xA5]);
+
+        data.extend_from_slice(&[0xA0, 0xA2]); // </spaces>
+
+        data.extend_from_slice(&[0x60, 0xA6]); // <symbol_table scopesize="1" symbolsize="0">
+        data.extend_from_slice(&[0xE0, 0xAD, 0x21, 1]);
+        data.extend_from_slice(&[0xE0, 0xAE, 0x21, 0]);
+        data.extend_from_slice(&[0x56, 0xC3, 0x41, 0, 0xD6, 0x41, 0, 0x96]); // <scope id=0 parent=0/>
+        data.extend_from_slice(&[0xA0, 0xA6]); // </symbol_table>
+
+        data.extend_from_slice(&[0xA0, 0xA1]); // </sleigh>
+
+        let decoder = PackedDecode::new(factory, data);
+        SleighLanguage::decode(&decoder, "test".to_string()).unwrap()
     }
-
-    impl BreakTableCallBack for NullBreakTable {}
 
     struct TestRegisterValue {
         register: RegisterRef,
@@ -339,7 +366,7 @@ mod tests {
         at_breakpoint: bool,
         mem_state: NullMemoryState,
         filtered_mem_state: NullMemoryState,
-        break_table: NullBreakTable,
+        break_table: BreakTableCallBack,
         context: Option<RegisterRef>,
         filter_count: usize,
     }
@@ -407,7 +434,7 @@ mod tests {
             })
         }
 
-        fn get_break_table(&self) -> &dyn BreakTableCallBack {
+        fn get_break_table(&self) -> &BreakTableCallBack {
             &self.break_table
         }
 
@@ -438,7 +465,7 @@ mod tests {
             at_breakpoint: false,
             mem_state: NullMemoryState,
             filtered_mem_state: NullMemoryState,
-            break_table: NullBreakTable,
+            break_table: BreakTableCallBack::new(Arc::new(minimal_sleigh_language())),
             context: None,
             filter_count: 0,
         }

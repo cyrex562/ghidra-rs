@@ -162,8 +162,20 @@ pub trait FloatFormat {
 }
 
 /// Placeholder for `ghidra.pcode.pcoderaw.PcodeOpRaw`, referenced by
-/// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable) before the real class is ported.
-pub trait PcodeOpRaw: Send + Sync {}
+/// [`BreakTable`](crate::pcode::emulate::break_table::BreakTable) and
+/// [`BreakTableCallBack`](crate::pcode::emulate::break_table_call_back::BreakTableCallBack)
+/// before the real class is ported.
+///
+/// Grown (see `STUBS.tsv`) with a defaulted [`get_input`](Self::get_input) -- Java's
+/// `PcodeOpRaw` extends `PcodeOp`, whose `getInput(int)` `BreakTableCallBack.doPcodeOpBreak`
+/// needs -- so pre-existing bare `impl PcodeOpRaw for Foo {}` blocks keep compiling.
+pub trait PcodeOpRaw: Send + Sync {
+    /// Stands in for the inherited `PcodeOp.getInput(int)`.
+    fn get_input(&self, index: usize) -> Option<crate::program::model::pcode::Varnode> {
+        let _ = index;
+        None
+    }
+}
 
 /// Placeholder for `ghidra.pcode.emulate.Emulate`, referenced by
 /// [`OpBehaviorOther`](crate::pcode::opbehavior::OpBehaviorOther),
@@ -178,12 +190,6 @@ pub trait Emulate: Send + Sync {
     /// Placeholder for `Emulate.getLanguage()`.
     fn get_language(&self) -> Box<dyn Language>;
 }
-
-/// Placeholder for `ghidra.pcode.emulate.BreakTableCallBack`, referenced by
-/// [`Emulator::get_break_table`](crate::app::emulator::Emulator::get_break_table) before the real
-/// class is ported. Mirrors `BreakTableCallBack implements BreakTable`; `Emulator` only ever
-/// returns this type opaquely, so no members beyond the supertrait are needed yet.
-pub trait BreakTableCallBack: crate::pcode::emulate::break_table::BreakTable {}
 
 /// Placeholder for `ghidra.pcode.exec.PcodeProgram`, referenced by
 /// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
