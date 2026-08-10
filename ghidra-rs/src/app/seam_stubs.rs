@@ -979,3 +979,22 @@ pub trait FieldMouseHandler: Send + Sync {
     /// Returns the types that this handler wishes to handle.
     fn get_supported_program_locations(&self) -> Vec<Box<dyn Class>>;
 }
+
+/// Placeholder for `ghidra.app.services.StringValidatorQuery`, referenced by
+/// [`StringValidatorService`](crate::app::services::StringValidatorService) before the real class
+/// is ported. Java's version is a record with a `stringValue()` accessor. Only that method is
+/// modeled; any other members are left for that class's own future port.
+pub trait StringValidatorQuery {
+    /// Returns the string value to validate.
+    fn string_value(&self) -> &str;
+}
+
+/// Placeholder for `ghidra.framework.plugintool.PluginTool`, referenced by
+/// [`StringValidatorService`](crate::app::services::StringValidatorService) before the real class
+/// is ported. `StringValidatorService` only uses `get_services()` to look up all registered
+/// services, so only that method is modeled; the full tool interface is left for its own future
+/// port.
+pub trait PluginTool: Send + Sync {
+    /// Returns all services of the given type that are currently registered with this tool.
+    fn get_services(&self, service_type: &dyn Class) -> Vec<Box<dyn std::any::Any>>;
+}

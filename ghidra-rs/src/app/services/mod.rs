@@ -42,6 +42,7 @@ pub mod progress_service;
 pub mod query_data;
 pub mod string_translation_service;
 pub mod string_validity_score;
+pub mod string_validator_service;
 pub mod terminal;
 pub mod test_dummy_program_manager;
 pub mod trace_rmi_launcher_service;
@@ -112,6 +113,10 @@ pub use string_translation_service::{
     sort_string_translation_services, StringTranslationService, TranslateOptions,
 };
 pub use string_validity_score::StringValidityScore;
+pub use string_validator_service::{
+    dummy_string_validator, get_current_string_validator_services, DummyStringValidator,
+    StringValidatorService,
+};
 pub use terminal::Terminal;
 pub use test_dummy_program_manager::TestDummyProgramManager;
 pub use trace_rmi_launcher_service::TraceRmiLauncherService;
