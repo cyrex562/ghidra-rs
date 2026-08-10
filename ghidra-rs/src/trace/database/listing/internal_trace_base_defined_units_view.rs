@@ -4,7 +4,7 @@ use crate::program::model::lang::Register;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_base_defined_units_view::TraceBaseDefinedUnitsView;
 use crate::trace::model::listing::internal_base_code_units_view::InternalBaseCodeUnitsView;
-use crate::trace::seam_stubs::TracePlatform;
+use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 

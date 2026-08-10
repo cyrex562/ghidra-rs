@@ -69,7 +69,8 @@ use crate::trace::database::listing::db_trace_data_adapter::DBTraceDataAdapter;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_code_unit::TraceCodeUnit;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{DBTraceDefinedDataAdapter, TracePlatform, TraceThread};
+use crate::trace::seam_stubs::{DBTraceDefinedDataAdapter, TraceThread};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// The one abstract member of `AbstractDBTraceDataComponent`: the syntax (e.g. `.fieldName` or
 /// `[index]`) this component contributes to its parent's path name.

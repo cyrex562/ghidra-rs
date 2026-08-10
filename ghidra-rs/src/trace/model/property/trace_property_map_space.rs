@@ -20,7 +20,8 @@ use crate::program::model::lang::Register;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-use crate::trace::seam_stubs::{TracePlatform, TraceRegisterUtils};
+use crate::trace::seam_stubs::{TraceRegisterUtils};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 use super::trace_property_map_operations::TracePropertyMapOperations;
 

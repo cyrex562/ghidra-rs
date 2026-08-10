@@ -14,7 +14,8 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::app::seam_stubs::{DebuggerCoordinates, Target, TracePlatform, TraceSchedule, TraceThread};
+use crate::app::seam_stubs::{DebuggerCoordinates, Target, TraceSchedule, TraceThread};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::trace::model::target::trace_object::TraceObject;
 use crate::framework::model::DomainFile;
 use crate::trace::model::program::TraceProgramView;

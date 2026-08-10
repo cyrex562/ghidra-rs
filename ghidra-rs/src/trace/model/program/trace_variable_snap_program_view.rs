@@ -2,7 +2,7 @@
 //!
 //! Java source: `ghidra.trace.model.program.TraceVariableSnapProgramView`.
 use crate::trace::model::program::trace_program_view::TraceProgramView;
-use crate::trace::seam_stubs::TracePlatform;
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// A [`TraceProgramView`] whose snap (and current platform) can be changed after creation.
 ///

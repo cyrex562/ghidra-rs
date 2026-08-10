@@ -103,7 +103,6 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	TraceRmiAcceptor	TraceRmiService
 2026-07-11T00:00:00Z	TraceRmiServiceListener	TraceRmiService
 2026-07-10T13:00:00Z	TraceSchedule	DebuggerEmulationService
-2026-07-10T13:00:00Z	TracePlatform	DebuggerEmulationService
 2026-07-10T13:00:00Z	Writer	DebuggerEmulationService
 2026-07-10T13:00:00Z	RunResult	DebuggerEmulationService
 2026-07-10T13:15:00Z	GoToOverrideService	GoToService
@@ -396,7 +395,6 @@ ts	stub_class	referenced_by
 2026-08-05T08:18:39.063694+00:00	TraceObjectSchema	SchemaContext
 2026-08-05T09:45:00.000000+00:00	AttributeSchema	PrimitiveTraceObjectSchema
 2026-08-05T08:57:48.874074+00:00	SchemaBuilder	DefaultSchemaContext
-2026-08-06T05:50:59.453305+00:00	TracePlatform	TraceCodeUnit
 2026-08-06T05:50:59.453326+00:00	TraceThread	TraceCodeUnit
 2026-08-07T02:16:00.602637+00:00	TraceSchedule	TraceTimeManager
 2026-08-07T02:22:42.658470+00:00	TimeRadix	TraceTimeManager
@@ -417,7 +415,6 @@ ts	stub_class	referenced_by
 2026-08-07T00:00:00+00:00	DBCachedObjectStoreCore	DBAnnotatedObject
 2026-08-07T05:06:25.268330+00:00	DBTraceObject	TraceObjectValueStorage
 2026-08-07T05:06:25.269952+00:00	DBTraceObjectManager	TraceObjectValueStorage
-2026-08-07T05:10:41.458109+00:00	TracePlatform	InstructionAdapterFromPrototype
 2026-08-07T05:32:33.721442+00:00	TraceChangeRecord	TraceChangeManager
 2026-08-07T05:37:30.000000+00:00	TraceThread	TraceSpaceMixin
 2026-08-07T05:37:30.000000+00:00	TraceRegisterUtils	TraceSpaceMixin
@@ -463,7 +460,6 @@ ts	stub_class	referenced_by
 2026-08-08T11:00:00+00:00	DBTraceOverlaySpaceAdapter	DBTraceMemoryManager
 2026-08-08T08:53:37.732517+00:00	TraceGuestPlatform	TracePlatformManager
 2026-08-08T12:00:00+00:00	DBTraceRegisterContextSpace	DBTraceRegisterContextManager
-2026-08-08T12:00:00+00:00	TracePlatform	DBTraceRegisterContextManager
 2026-08-08T09:54:28+00:00	AbstractDBTracePropertyMap	DBTraceAddressPropertyManager
 2026-08-08T13:45:28.282602+00:00	Emulate	OpBehaviorOther
 2026-08-09T01:50:16.581223+00:00	Emulate	BreakTable
@@ -499,7 +495,6 @@ ts	stub_class	referenced_by
 2026-08-10T01:25:52.545120+00:00	PcodeTraceMemoryAccess	PcodeTraceAccess
 2026-08-10T01:25:52.761166+00:00	TraceThread	PcodeTraceAccess
 2026-08-10T01:48:05.270314+00:00	PcodeTraceMemoryAccess	PcodeDebuggerMemoryAccess
-2026-08-10T02:03:53.009456+00:00	TracePlatform	InternalPcodeTraceDataAccess
 2026-08-10T02:08:05.373048+00:00	PcodeOpRaw	BreakTableCallBack
 2026-08-09T00:00:00.000000+00:00	PcodeInjectLibrary(grown)	PcodeProgram
 2026-08-10T03:15:00.000000+00:00	SemisparseByteArray	BytesPcodeExecutorStateSpace

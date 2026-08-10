@@ -850,10 +850,3 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
     }
 }
 
-/// Placeholder for the unported Java type `TracePlatform`, referenced by
-/// `InternalPcodeTraceDataAccess`.
-///
-/// Generated stub: only a shape hint. Replace with the real port when available.
-pub trait TracePlatform: Send + Sync {
-    // (no public methods parsed from the Java source)
-}

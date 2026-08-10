@@ -21,7 +21,8 @@ use std::future::Future;
 use std::io;
 use std::pin::Pin;
 
-use crate::app::seam_stubs::{RunResult, TracePlatform, TraceSchedule, Writer};
+use crate::app::seam_stubs::{RunResult, TraceSchedule, Writer};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::debug::api::emulation::EmulatorFactory;
 use crate::pcode::emu::pcode_machine::ErasedPcodeMachine;
 use crate::program::model::address::Address;

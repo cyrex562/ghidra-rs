@@ -19,7 +19,7 @@ mod tests {
     use crate::program::seam_stubs::RegisterValue;
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::TracePlatform;
+    use crate::trace::model::guest::trace_platform::TracePlatform;
 
     /// A minimal implementor proving `TraceRegisterContextSpace` is object-safe and that
     /// `get_address_space` returns the space bound at construction.

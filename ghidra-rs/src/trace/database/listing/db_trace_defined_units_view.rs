@@ -91,7 +91,7 @@ mod tests {
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
     use crate::trace::model::listing::internal_base_code_units_view::InternalBaseCodeUnitsView;
-    use crate::trace::seam_stubs::TracePlatform;
+    use crate::trace::model::guest::trace_platform::TracePlatform;
     use std::sync::{Arc, Mutex};
 
     /// One "part" (e.g. instructions, or defined data): a plain in-memory set of addresses,
