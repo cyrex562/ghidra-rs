@@ -1,6 +1,6 @@
 status	mode	depth	fanin	rem	module	path
 DONE	trait	23	47	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/stack/TraceStackFrame.java
-TODO	trait	22	32	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/stack/TraceStack.java
+DONE	trait	22	32	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/stack/TraceStack.java
 TODO	trait	29	7	1	pcode	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/PcodeTraceMemoryAccess.java
 TODO	trait	29	13	26	pcode	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/PcodeTracePropertyAccess.java
 TODO	trait	29	7	1	pcode	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/PcodeTraceRegistersAccess.java
