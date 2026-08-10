@@ -47,7 +47,7 @@ PARK	trait	2	77	8	framework	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/fram
 DONE	trait	2	185	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataService.java
 DONE	trait	2	183	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeReferenceFinder.java
 DONE	trait	2	184	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/FieldMouseHandlerService.java
-TODO	trait	2	185	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/FileSystemBrowserService.java
+DONE	trait	2	185	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/FileSystemBrowserService.java
 TODO	trait	2	183	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/GhidraScriptService.java
 TODO	trait	2	184	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingOverviewProviderService.java
 TODO	trait	2	185	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorService.java
