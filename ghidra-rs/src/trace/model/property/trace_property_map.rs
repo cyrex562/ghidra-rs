@@ -16,7 +16,8 @@
 //! This type was selected as a dependency-cycle cut-point, so it is ported as a trait rather than
 //! being defined alongside its (not yet ported) implementors.
 use crate::program::model::address::AddressSpace;
-use crate::trace::seam_stubs::{TraceStackFrame, TraceThread};
+use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
+use crate::trace::seam_stubs::TraceThread;
 use std::sync::Arc;
 
 use super::trace_property_map_operations::TracePropertyMapOperations;
@@ -54,9 +55,10 @@ where
     ///
     /// Port of the default method `getPropertyMapRegisterSpace(TraceStackFrame, boolean)`. The
     /// Java default delegates to
-    /// [`get_property_map_register_space`](Self::get_property_map_register_space) via the
-    /// frame's stack/thread and level; since `TraceStackFrame` is not yet ported (only a marker
-    /// placeholder exists), this is left unimplemented rather than guessing at that navigation.
+    /// [`get_property_map_register_space`](Self::get_property_map_register_space) via
+    /// `frame.getStack().getThread()` and `frame.getLevel()`; since `TraceStack` (the frame's
+    /// container) is still only a marker placeholder with no `get_thread` accessor, this is left
+    /// unimplemented rather than guessing at that navigation.
     fn get_property_map_register_space_for_frame(
         &self,
         _frame: &dyn TraceStackFrame,
@@ -64,7 +66,7 @@ where
     ) -> Option<Box<dyn TracePropertyMapSpace<T>>> {
         unimplemented!(
             "TracePropertyMap::get_property_map_register_space_for_frame requires the ported \
-             TraceStackFrame (getStack/getThread/getLevel)"
+             TraceStack (getThread)"
         )
     }
 

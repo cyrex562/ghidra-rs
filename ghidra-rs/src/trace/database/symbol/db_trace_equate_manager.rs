@@ -56,8 +56,9 @@ mod tests {
     };
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::symbol::trace_equate::TraceEquate;
+    use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
     use crate::trace::model::symbol::trace_equate_operations::TraceEquateOperations;
-    use crate::trace::seam_stubs::{TraceStackFrame, TraceThread};
+    use crate::trace::seam_stubs::TraceThread;
     use crate::util::exception::{CancelledException, DuplicateNameException};
     use crate::util::lock_hold::Lock;
     use crate::util::task::TaskMonitor;

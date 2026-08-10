@@ -335,7 +335,7 @@ mod tests {
         }
         fn get_code_register_space_for_stack_frame(
             &self,
-            _frame: &dyn crate::trace::seam_stubs::TraceStackFrame,
+            _frame: &dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
             unimplemented!("not exercised by this smoke test")
@@ -421,7 +421,7 @@ mod tests {
         }
         fn get_equate_register_space_for_frame(
             &mut self,
-            _frame: &dyn crate::trace::seam_stubs::TraceStackFrame,
+            _frame: &dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
             unimplemented!("not exercised by this smoke test")
@@ -904,7 +904,7 @@ mod tests {
         }
         fn get_reference_register_space_for_frame(
             &mut self,
-            _frame: &dyn crate::trace::seam_stubs::TraceStackFrame,
+            _frame: &dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
             unimplemented!("not exercised by this smoke test")
@@ -934,7 +934,7 @@ mod tests {
         fn get_frames_in(
             &self,
             _set: &dyn crate::program::model::address::AddressSetView,
-        ) -> Vec<Box<dyn crate::trace::seam_stubs::TraceStackFrame>> {
+        ) -> Vec<Box<dyn crate::trace::model::stack::trace_stack_frame::TraceStackFrame>> {
             unimplemented!("not exercised by this smoke test")
         }
     }

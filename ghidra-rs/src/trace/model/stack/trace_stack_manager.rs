@@ -1,5 +1,6 @@
 use crate::program::model::address::AddressSetView;
-use crate::trace::seam_stubs::{TraceStack, TraceStackFrame, TraceThread};
+use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
+use crate::trace::seam_stubs::{TraceStack, TraceThread};
 
 /// Manages the stacks of threads observed over time in a trace.
 ///
@@ -39,7 +40,58 @@ mod tests {
     impl TraceThread for MockThread {}
 
     struct MockFrame(i32);
-    impl TraceStackFrame for MockFrame {}
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockFrame {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceStackFrame for MockFrame {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_stack(&self) -> Box<dyn TraceStack> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_level(&self) -> i32 {
+            self.0
+        }
+
+        fn get_program_counter(&self, _snap: i64) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_program_counter(
+            &mut self,
+            _span: crate::trace::model::lifespan::Lifespan,
+            _pc: crate::program::model::address::Address,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_stack_pointer(&self, _snap: i64) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_stack_pointer(
+            &mut self,
+            _span: crate::trace::model::lifespan::Lifespan,
+            _sp: crate::program::model::address::Address,
+        ) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_comment(&mut self, _snap: i64, _comment: Option<String>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockStack(i32);
     impl TraceStack for MockStack {}

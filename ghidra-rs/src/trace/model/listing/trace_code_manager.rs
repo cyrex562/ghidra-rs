@@ -3,7 +3,8 @@ use std::sync::Arc;
 use crate::program::model::address::{AddressSetView, AddressSpace};
 use crate::trace::model::listing::trace_code_operations::TraceCodeOperations;
 use crate::trace::model::listing::trace_code_space::TraceCodeSpace;
-use crate::trace::seam_stubs::{TraceStackFrame, TraceThread};
+use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
+use crate::trace::seam_stubs::TraceThread;
 
 /// The manager for trace code units, i.e., the equivalent of `Listing`.
 ///
@@ -511,7 +512,50 @@ mod tests {
     impl TraceThread for MockThread {}
 
     struct MockStackFrame;
-    impl TraceStackFrame for MockStackFrame {}
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockStackFrame {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceStackFrame for MockStackFrame {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_stack(&self) -> Box<dyn crate::trace::seam_stubs::TraceStack> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_level(&self) -> i32 {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_program_counter(&self, _snap: i64) -> Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_program_counter(&mut self, _span: Lifespan, _pc: Address) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_stack_pointer(&self, _snap: i64) -> Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_stack_pointer(&mut self, _span: Lifespan, _sp: Address) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn set_comment(&mut self, _snap: i64, _comment: Option<String>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     /// A minimal implementor proving `TraceCodeManager` is object-safe, extends
     /// `TraceCodeOperations` correctly, and resolves code spaces by address space, thread, frame
