@@ -47,6 +47,7 @@ import argparse
 import csv
 import os
 import re
+import subprocess
 import sys
 from collections import defaultdict
 
@@ -424,6 +425,38 @@ def suggest_by_family(name, impl_names, impl_table=None):
     return None
 
 
+_RESOLVE_CACHE = {}
+
+
+def _resolve_ambiguous(name):
+    """{rust_path: java_rel} for each Rust declaration of `name`, or None if unplaceable."""
+    if name in _RESOLVE_CACHE:
+        return _RESOLVE_CACHE[name]
+    out = None
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        facts, _sub = shape_rules.build_index()
+        paths = subprocess.run(
+            ["bash", "-c", f"grep -rlE --include='*.rs' "
+                           f"'^\\s*pub (trait|struct|enum) {name}\\b' ghidra-rs/src"],
+            capture_output=True, text=True).stdout.split()
+        got = {}
+        for pth in paths:
+            e = shape_rules.resolve_by_path(name, pth, facts)
+            if e:
+                got[pth] = e["rel"]
+        out = got or None
+        if got:
+            out = {p: j for p, j in got.items()}
+            if len(set(got.values())) == 1:
+                out = {"*": next(iter(got.values()))}
+    except Exception:
+        out = None
+    _RESOLVE_CACHE[name] = out
+    return out
+
+
 def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl,
                     java_subtypes=None, java_decls=None, jdk_modeled=frozenset(),
                     java_impl_names=None, java_ext_points=None, java_impl_table=None,
@@ -449,10 +482,24 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
             f"class of the same simple name, so Java's shape here says nothing")
 
     if name in (java_ambiguous or ()):
-        return None, (
-            f"{name} is declared by more than one Java file -- unrelated types sharing a "
-            f"basename (PatternExpression is the sleigh runtime expression AND the pcodeCPort "
-            f"AST node). Resolve which one this port models before deciding")
+        # A shared basename is not automatically unanswerable. Where the Rust tree already
+        # separates the two -- PatternExpression's runtime form at
+        # program/model/lang/sleigh/expression/ and the pcodeCPort AST node at
+        # decompiler/seam_stubs.rs -- placement says which is which, and a placeholder says so
+        # outright in its doc comment. Only a name whose Rust declarations disagree, or that
+        # cannot be placed at all, is a real question.
+        resolved = _resolve_ambiguous(name)
+        if resolved is None:
+            return None, (
+                f"{name} is declared by more than one Java file and its Rust declaration(s) "
+                f"cannot be placed against either -- resolve which one this port models")
+        if len(resolved) > 1:
+            pairs = "; ".join(f"{p} -> {j}" for p, j in sorted(resolved.items()))
+            return None, (
+                f"{name} is ONE queue row covering {len(resolved)} distinct Java classes that "
+                f"the Rust tree already separates ({pairs}). Split the row before deciding")
+        # single Java class after resolution: answerable like any other name
+        java_ambiguous = ()
 
     if java_subtypes is not None:
         j = java_subtypes.get(name, 0)
@@ -709,6 +756,31 @@ def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, famili
                 "note": note,
             }
         )
+    # A DECISION outlives the frontier. Rows are built from types currently reached through a
+    # convention-blocked file, so a type stops being emitted the moment its files leave the
+    # frontier -- and its verdict goes with it. That silently dropped 96 decided rows (35
+    # STRUCT, 26 ACCEPT, 17 ENUM, 15 ARENA, ...) when pattern_audit's exemption shrank the
+    # frontier on 2026-08-10, and they would have been re-derived from scratch, possibly
+    # differently, if the type ever came back. Carry them, marked, with zeroed counts.
+    emitted = {r["type"] for r in rows}
+    carried = 0
+    for name, prev in sorted(prior.items()):
+        if name in emitted:
+            continue
+        verdict, source, note = prev
+        if verdict == "TODO" or str(verdict).startswith("SUGGEST-"):
+            continue                      # only decisions are worth preserving
+        rows.append({
+            "verdict": verdict, "leverage": 0, "occurrences": 0,
+            "fanin": fanin.get(name, 0), "type": name, "category": categorize(name),
+            "source": source or "decided",
+            "note": (note or "") + "  [no longer on the frontier; decision retained]",
+        })
+        carried += 1
+    if carried:
+        print(f"carried {carried} decided verdict(s) whose types left the frontier",
+              file=sys.stderr)
+
     rows.sort(key=lambda r: (-r["leverage"], -r["occurrences"], r["type"]))
     return rows, blocked
 

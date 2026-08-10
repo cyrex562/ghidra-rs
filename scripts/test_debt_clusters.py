@@ -269,6 +269,31 @@ class TestJavaSubtypeScan(unittest.TestCase):
         self.assertEqual(counts["Nothing"], 0)
 
 
+class TestDecisionsOutliveTheFrontier(unittest.TestCase):
+    """A decided verdict must survive its type leaving the blocked set.
+
+    Rows are built from types reached through convention-blocked files, so when the frontier
+    shrinks a type stops being emitted and its verdict goes with it. That dropped 96 decided
+    rows the day pattern_audit's exemption was tightened.
+    """
+
+    def test_decided_rows_are_carried_when_no_longer_reached(self):
+        with tempfile.TemporaryDirectory() as d:
+            prior = os.path.join(d, "q.tsv")
+            with open(prior, "w", encoding="utf-8") as f:
+                f.write("\t".join(dc.QUEUE_COLS) + "\n")
+                f.write("ACCEPT\t5\t5\t0\tGoneButDecided\tx\tmanual\twhy\n")
+                f.write("TODO\t5\t5\t0\tGoneUndecided\tx\t\t\n")
+                f.write("SUGGEST-ENUM\t5\t5\t0\tGoneProposal\tx\tsuggest\t\n")
+            got = dc.load_prior_verdicts(prior)
+            self.assertIn("GoneButDecided", got)
+            # the carry rule itself
+            keep = [n for n, (v, _s, _no) in got.items()
+                    if v != "TODO" and not str(v).startswith("SUGGEST-")]
+            self.assertEqual(keep, ["GoneButDecided"],
+                             "only decisions are carried -- not TODOs or proposals")
+
+
 class TestQueueContents(unittest.TestCase):
     def test_rust_builtins_are_not_convention_decisions(self):
         """`Rc<RefCell<Vec<Foo>>>` makes the cell regex capture Vec, not Foo.
@@ -490,16 +515,44 @@ class TestEvidenceOrdering(unittest.TestCase):
     def test_ambiguous_basename_is_not_answered_from_the_name(self):
         """PatternExpression is two unrelated Java classes.
 
-        java_declarations used to keep whichever file the walk reached first and drop the
-        other, so a "nothing extends it" reading was really "we looked at one of two types".
-        AGENTS.md records this exact failure under "Names are not identities".
+        Still refused -- but the refusal now says WHY and what to do, because the Rust tree
+        already separates them (the runtime form under program/model/lang/sleigh/expression,
+        the pcodeCPort AST node in decompiler/seam_stubs.rs). One queue row covering two
+        types cannot be answered; splitting it can.
         """
         v, note = self._call("PatternExpression",
                              java_subtypes={"PatternExpression": 0},
                              java_decls={"PatternExpression": "class"},
                              java_ambiguous={"PatternExpression"})
         self.assertIsNone(v)
-        self.assertIn("more than one Java file", note)
+        self.assertIn("distinct Java classes", note)
+        self.assertIn("Split the row", note)
+        self.assertIn("pcodeCPort", note)
+
+    def test_ambiguous_name_the_rust_tree_places_consistently_is_answerable(self):
+        """If every Rust declaration of the name resolves to the SAME Java class, the shared
+        basename is a tooling artefact, not a question."""
+        dc._RESOLVE_CACHE["OnlyOnePlace"] = {"*": "a/b/OnlyOnePlace.java"}
+        try:
+            v, note = self._call("OnlyOnePlace",
+                                 java_subtypes={"OnlyOnePlace": 1},
+                                 java_decls={"OnlyOnePlace": "interface"},
+                                 java_impl_names={"OnlyOnePlace": ["OnlyOnePlaceImpl"]},
+                                 java_ambiguous={"OnlyOnePlace"})
+            self.assertEqual(v, "SUGGEST-STRUCT")
+        finally:
+            dc._RESOLVE_CACHE.pop("OnlyOnePlace", None)
+
+    def test_ambiguous_name_with_no_placeable_declaration_still_refuses(self):
+        dc._RESOLVE_CACHE["Nowhere"] = None
+        try:
+            v, note = self._call("Nowhere", java_subtypes={"Nowhere": 0},
+                                 java_decls={"Nowhere": "class"},
+                                 java_ambiguous={"Nowhere"})
+            self.assertIsNone(v)
+            self.assertIn("cannot be placed", note)
+        finally:
+            dc._RESOLVE_CACHE.pop("Nowhere", None)
 
     def test_java_declarations_reports_duplicate_basenames(self):
         import tempfile

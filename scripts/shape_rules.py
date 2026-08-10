@@ -354,6 +354,101 @@ EXTENSION_POINT_ROOTS = {
 _DOUBLE_RE = re.compile(r"^(Stub|Mock|Dummy|Fake|TestDouble|TestDummy)|(Stub|Mock|Dummy|Fake)$")
 
 
+_PLACEHOLDER_FQN = re.compile(
+    r"Placeholder for `((?:[a-z][\w]*\.)+[A-Z]\w*)`", re.S)
+
+
+def placeholder_target(name, rust_path):
+    """The fully-qualified Java name a seam_stubs.rs placeholder says it stands for.
+
+    A stub does not sit in the package path of the class it replaces, so path agreement
+    cannot resolve it -- but the stub says so itself: "Placeholder for
+    `ghidra.program.model.lang.Processor`". That doc comment is the authoritative answer and
+    it is already written on 369 of them.
+    """
+    try:
+        with open(rust_path, encoding="utf-8", errors="replace") as fh:
+            src = fh.read()
+    except OSError:
+        return None
+    m = re.search(r"(?m)^\s*pub (?:trait|struct|enum) " + re.escape(name) + r"\b", src)
+    if not m:
+        return None
+    # the doc block immediately above the declaration
+    head = src[:m.start()]
+    block = []
+    for line in reversed(head.rstrip().split("\n")):
+        if line.lstrip().startswith("///") or line.lstrip().startswith("//"):
+            block.append(line)
+        else:
+            break
+    fq = _PLACEHOLDER_FQN.search("\n".join(reversed(block)))
+    return fq.group(1) if fq else None
+
+
+def resolve_by_path(name, rust_path, facts):
+    """Pick which Java class a Rust declaration models, from where it sits.
+
+    A bare name cannot say: `PatternExpression` is the sleigh runtime expression AND the
+    pcodeCPort AST node. But the Rust tree already answers it by placement -- the pcodeCPort
+    one is at decompiler/slghpatexpress/, and its own doc comment says "Models
+    ghidra.pcodeCPort.slghpatexpress.PatternValue". Scoring candidates by how many trailing
+    package segments their Java path shares with the Rust path recovers that, and it is what
+    turns 32 "ask a human" rows into a handful.
+
+    Returns the winning facts dict, or None when it is genuinely undecidable (no overlap, or a
+    tie).
+    """
+    cands = facts.get(name) or []
+    if len(cands) <= 1:
+        return cands[0] if cands else None
+
+    # A placeholder names its target outright; trust that over any path heuristic.
+    fq = placeholder_target(name, rust_path)
+    if fq:
+        want = fq.replace(".", "/") + ".java"
+        for e in cands:
+            if e["rel"].replace("\\", "/").endswith(want):
+                return e
+        return None       # it names something not among the candidates -- do not guess
+
+    rust_segs = [x for x in os.path.dirname(rust_path).split(os.sep) if x not in ("ghidra-rs", "src", "")]
+
+    def score(e):
+        java_segs = [x for x in os.path.dirname(e["rel"]).split("/")
+                     if x not in ("Ghidra", "src", "main", "java", "ghidra")]
+        # longest common suffix of package segments, compared case-insensitively because the
+        # Rust tree is snake_case (slghpatexpress -> slghpatexpress, pdb2/pdbreader -> pdb2/pdbreader)
+        n = 0
+        for a, b in zip(reversed([x.lower() for x in java_segs]),
+                        reversed([x.replace("_", "").lower() for x in rust_segs])):
+            if a.replace("_", "").lower() == b:
+                n += 1
+            else:
+                break
+        return n
+
+    scored = sorted(((score(e), e) for e in cands), key=lambda t: -t[0])
+    if scored[0][0] and not (len(scored) > 1 and scored[0][0] == scored[1][0]):
+        return scored[0][1]
+
+    # Fallback: a package segment appearing ANYWHERE in the Rust path, for the cases where the
+    # module tree reorganises rather than mirrors -- db/buffers/DataBuffer.java lives at
+    # framework/db/buffer.rs, and app/plugin/processors/sleigh/Constructor.java at
+    # program/model/lang/sleigh/constructor/. Strict suffix alignment scores both zero.
+    rust_set = {x.replace("_", "").lower() for x in rust_segs}
+
+    def overlap(e):
+        java_segs = [x for x in os.path.dirname(e["rel"]).split("/")
+                     if x not in ("Ghidra", "src", "main", "java", "ghidra")]
+        return len({x.replace("_", "").lower() for x in java_segs} & rust_set)
+
+    ov = sorted(((overlap(e), e) for e in cands), key=lambda t: -t[0])
+    if ov[0][0] and not (len(ov) > 1 and ov[0][0] == ov[1][0]):
+        return ov[0][1]
+    return None
+
+
 def is_extension_point(name, facts):
     """True if `name` reaches an extension-point root through its supertypes."""
     seen, stack = set(), [name]
