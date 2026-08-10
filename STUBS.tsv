@@ -481,7 +481,6 @@ ts	stub_class	referenced_by
 2026-08-09T06:00:00.000000+00:00	Emulate	EmulateInstructionStateModifier
 2026-08-09T06:00:00.000000+00:00	RegisterValue	EmulateInstructionStateModifier
 2026-08-09T05:55:29.611198+00:00	BytesPcodeArithmetic	AbstractBytesPcodeExecutorStatePiece
-2026-08-09T05:55:29.611579+00:00	BytesPcodeExecutorStateSpace	AbstractBytesPcodeExecutorStatePiece
 2026-08-09T06:31:24.372319+00:00	SparseAddressRangeMap	AbstractPcodeMachine
 2026-08-09T06:31:24.372319+00:00	InterruptPcodeExecutionException	AbstractPcodeMachine
 2026-08-09T06:31:24.372319+00:00	SleighProgramCompiler	AbstractPcodeMachine
@@ -511,3 +510,4 @@ ts	stub_class	referenced_by
 2026-08-10T02:03:53.009456+00:00	TracePlatform	InternalPcodeTraceDataAccess
 2026-08-10T02:08:05.373048+00:00	PcodeOpRaw	BreakTableCallBack
 2026-08-09T00:00:00.000000+00:00	PcodeInjectLibrary(grown)	PcodeProgram
+2026-08-10T03:15:00.000000+00:00	SemisparseByteArray	BytesPcodeExecutorStateSpace
