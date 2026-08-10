@@ -10,6 +10,7 @@ pub mod method_protector;
 pub mod trace_change_manager;
 pub mod trace_change_record;
 pub mod trace_space_mixin;
+pub mod typed_event_dispatcher;
 pub mod wrapping_code_unit_iterator;
 pub mod wrapping_data_iterator;
 pub mod wrapping_function_iterator;
