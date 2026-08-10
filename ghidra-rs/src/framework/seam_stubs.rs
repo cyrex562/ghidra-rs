@@ -326,28 +326,9 @@ pub trait Font {}
 /// only ever passes this type through as an opaque value, so no members are needed yet.
 pub trait KeyStroke {}
 
-/// Placeholder for `ghidra.framework.model.DomainFolderFilter`, referenced by
-/// [`DomainFileFilter`](crate::framework::model::DomainFileFilter) before the real interface is
-/// ported (`DomainFileFilter extends DomainFolderFilter` in Java). `DomainFileFilter`'s default
-/// `followExternallyLinkedFolders()` implementation calls back into `ignoreExternalLinks()` and
-/// `ignoreFolderLinks()`, so those default methods are reproduced here to match
-/// `ghidra.framework.model.DomainFolderFilter`'s documented Java defaults.
-pub trait DomainFolderFilter {
-    /// Check if folder-links should be ignored (includes internal and external).
-    fn ignore_folder_links(&self) -> bool {
-        false
-    }
-
-    /// Check if link-files should be ignored if the link is external (i.e., Ghidra-URL).
-    fn ignore_external_links(&self) -> bool {
-        true
-    }
-
-    /// Check if link-files should be ignored if the link is broken.
-    fn ignore_broken_links(&self) -> bool {
-        true
-    }
-}
+// `DomainFolderFilter` is ported; this was a placeholder standing in for it. Re-exported so
+// every importer converges on one type instead of two same-named ones.
+pub use crate::framework::model::domain_folder_filter::DomainFolderFilter;
 
 /// Placeholder for `docking.util.image.ToolIconURL`, referenced by
 /// [`ToolTemplate`](crate::framework::model::ToolTemplate) before the real class is ported.

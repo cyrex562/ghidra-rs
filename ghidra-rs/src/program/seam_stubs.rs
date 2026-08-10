@@ -787,10 +787,9 @@ impl GroupPath {
 
 pub use crate::program::model::listing::stack_frame::StackFrame;
 
-/// Placeholder for `ghidra.program.model.listing.VariableFilter`, referenced by
-/// [`Function`](crate::program::model::listing::function::Function)
-/// before the real interface is ported.
-pub trait VariableFilter {}
+// `VariableFilter` is ported; this was a placeholder standing in for it. Re-exported so
+// every importer converges on one type instead of two same-named ones.
+pub use crate::program::model::listing::variable_filter::VariableFilter;
 
 /// Placeholder for `ghidra.program.model.lang.InstructionError.InstructionErrorType`, referenced
 /// by [`InstructionBlock`](crate::program::model::lang::instruction_block::InstructionBlock)
@@ -885,11 +884,9 @@ pub trait ParserContext {
     fn get_prototype(&self) -> Arc<dyn InstructionPrototype>;
 }
 
-/// Placeholder for `ghidra.program.model.lang.Mask`, referenced by
-/// [`InstructionPrototype`](crate::program::model::lang::instruction_prototype::InstructionPrototype)
-/// before the real interface is ported. `InstructionPrototype` only ever returns this type
-/// opaquely, so no members are needed yet.
-pub trait Mask {}
+// `Mask` is ported; this was a placeholder standing in for it. Re-exported so
+// every importer converges on one type instead of two same-named ones.
+pub use crate::program::model::lang::mask::Mask;
 
 /// Placeholder for `ghidra.program.model.lang.InstructionContext`, referenced by
 /// [`Instruction`](crate::program::model::listing::instruction::Instruction)

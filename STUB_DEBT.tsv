@@ -1,5 +1,4 @@
 status	pairing	importers	stubs	class	manifest	java_classes	real_path	stub_paths
-TODO	unique	30	1	VariableFilter	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/VariableFilter.java	src/program/model/listing/variable_filter.rs	src/program/seam_stubs.rs
 TODO	unique	17	1	CodeUnitComments	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/CodeUnitComments.java	src/program/model/listing/code_unit_comments.rs	src/program/seam_stubs.rs
 TODO	unique	17	1	CommentHistory	DONE	Framework/SoftwareModeling:ghidra/program/model/listing/CommentHistory.java	src/program/model/listing/comment_history.rs	src/program/seam_stubs.rs
 TODO	unique	17	1	RefType	DONE	Framework/SoftwareModeling:ghidra/program/model/symbol/RefType.java	src/program/model/symbol/ref_type.rs	src/program/seam_stubs.rs
@@ -22,8 +21,6 @@ TODO	unique	1	1	LongKeyInteriorNode	DONE	Framework/DB:db/LongKeyInteriorNode.jav
 TODO	unique	1	1	Version	DONE	Framework/FileSystem:ghidra/framework/store/Version.java	src/app/plugin/core/analysis/rust/demangler/rust_demangler_format.rs	src/framework/seam_stubs.rs
 TODO	unique	0	1	BasicSpaceProvider	DONE	Framework/SoftwareModeling:ghidra/pcodeCPort/translate/BasicSpaceProvider.java	src/decompiler/translate/basic_space_provider.rs	src/decompiler/seam_stubs.rs
 TODO	unique	0	1	DataTypeInstance	DONE	Framework/SoftwareModeling:ghidra/program/model/data/DataTypeInstance.java	src/program/model/data/data_type_instance.rs	src/program/seam_stubs.rs
-TODO	unique	0	1	DomainFolderFilter	DONE	Framework/Project:ghidra/framework/model/DomainFolderFilter.java	src/framework/model/domain_folder_filter.rs	src/framework/seam_stubs.rs
-TODO	unique	0	1	Mask	DONE	Framework/SoftwareModeling:ghidra/program/model/lang/Mask.java	src/program/model/lang/mask.rs	src/program/seam_stubs.rs
 PARK	ambiguous(2)	49	1	Processor	DONE	Features/PDB:ghidra/app/util/bin/format/pdb2/pdbreader/Processor.java;Framework/SoftwareModeling:ghidra/program/model/lang/Processor.java	src/format/pdb2/pdbreader/processor.rs	src/program/seam_stubs.rs
 PARK	ambiguous(2)	40	1	PatternExpression	DONE	Framework/SoftwareModeling:ghidra/app/plugin/processors/sleigh/expression/PatternExpression.java;Framework/SoftwareModeling:ghidra/pcodeCPort/slghpatexpress/PatternExpression.java	src/program/model/lang/sleigh/expression/mod.rs	src/decompiler/seam_stubs.rs
 PARK	ambiguous(3)	25	1	Pattern	DONE|TODO	Features/Base:ghidra/util/bytesearch/Pattern.java;Framework/SoftwareModeling:ghidra/app/plugin/processors/sleigh/pattern/Pattern.java;Framework/SoftwareModeling:ghidra/pcodeCPort/slghpattern/Pattern.java	src/program/model/lang/sleigh/pattern/mod.rs	src/decompiler/seam_stubs.rs

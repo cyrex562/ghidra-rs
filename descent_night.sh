@@ -328,22 +328,38 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
       gate_ok=1
       gate_msg=$(run_test_gate "$class" "$log" "$TEST_ERR_BASE") || gate_ok=0
       log "$gate_msg"
+
+      # PLACEHOLDER RETIREMENT is part of "verified", not a footnote. PROMOTE MODE tells the
+      # port to delete the seam_stubs.rs placeholder and repoint its importers; when that does
+      # not happen the crate ends up with two types of the same name, which compiles and
+      # silently cannot interoperate. That was reported as a WARN after the merge was already
+      # committed, so it accumulated: BytesPcodeExecutorStatePiece did it on 2026-08-09.
+      #
+      # Only enforced when PROMOTE MODE actually ran ($promote non-empty) -- otherwise a class
+      # whose name merely appears in some unrelated seam_stubs.rs would be parked for nothing.
+      # And never for an ambiguous basename: `Processor` is a placeholder for
+      # ghidra.program.model.lang.Processor AND a real enum ported from the PDB reader, two
+      # unrelated Java classes, so a name match there is not a shadow at all.
+      if [ "$gate_ok" = "1" ] && [ -n "$promote" ]; then
+        njava=$(find orig_src -name "${class}.java" 2>/dev/null | wc -l)
+        if [ "$njava" -le 1 ] && grep -rqE --include='seam_stubs.rs' \
+             "\b(pub +)?(trait|struct|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
+          gate_ok=0
+          gate_msg="placeholder for ${class} SURVIVED the port -- it shadows the real type"
+          log "gate FAIL: $gate_msg (PROMOTE MODE required deleting it and repointing importers)"
+        fi
+      fi
+
       if [ "$gate_ok" = "1" ]; then
         git branch -D "$branch" >/dev/null 2>&1||true
         sed -i "0,/^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)$/s//DONE\1/" "$ORDER"
         git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: mark $class DONE" >/dev/null 2>&1||true
         ported=$((ported+1)); log "OK descent: $class (${mode}) merged"
-        # Retirement is instructed in PROMOTE MODE but never enforced; if the placeholder is
-        # still there it now shadows the real type -- two types, same name, silently unable to
-        # interoperate. Report it rather than letting it accumulate invisibly.
-        if grep -rqE --include='seam_stubs.rs' "\b(pub +)?(trait|struct|enum) +${class}\b" ghidra-rs/src 2>/dev/null; then
-          log "WARN: placeholder for $class SURVIVED the port -- it now shadows the real type (see STUB_DEBT.tsv)"
-        fi
       else
         git reset --hard "$pre_merge" >/dev/null 2>&1||true
         sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
         git add "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: park $class (test gate)" >/dev/null 2>&1||true
-        parked=$((parked+1)); log "PARK descent: $class (test gate: introduced test drift/failures)"
+        parked=$((parked+1)); log "PARK descent: $class (${gate_msg})"
       fi
     else
       git merge --abort >/dev/null 2>&1||true; git reset --hard "$pre_merge" >/dev/null 2>&1||true
