@@ -48,7 +48,7 @@ DONE	trait	2	185	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/Da
 DONE	trait	2	183	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/DataTypeReferenceFinder.java
 DONE	trait	2	184	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/FieldMouseHandlerService.java
 DONE	trait	2	185	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/FileSystemBrowserService.java
-TODO	trait	2	183	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/GhidraScriptService.java
+DONE	trait	2	183	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/GhidraScriptService.java
 TODO	trait	2	184	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingOverviewProviderService.java
 TODO	trait	2	185	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorService.java
 TODO	trait	4	185	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewService.java
