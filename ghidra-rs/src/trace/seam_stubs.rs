@@ -832,12 +832,6 @@ pub trait TraceThread: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.trace.model.stack.TraceStackFrame`, referenced by
-/// [`TraceCodeManager`](crate::trace::model::listing::trace_code_manager::TraceCodeManager) and
-/// [`TraceStackManager`](crate::trace::model::stack::trace_stack_manager::TraceStackManager)
-/// before the real port is available. No members are parsed from the Java source yet.
-pub trait TraceStackFrame: Send + Sync {}
-
 /// Placeholder for `ghidra.trace.model.stack.TraceStack`, referenced by
 /// [`TraceStackManager`](crate::trace::model::stack::trace_stack_manager::TraceStackManager)
 /// before the real port is available. No members are parsed from the Java source yet.
