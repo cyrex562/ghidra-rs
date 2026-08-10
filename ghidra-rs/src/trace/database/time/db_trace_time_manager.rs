@@ -41,11 +41,14 @@
 //! *before* the `notifySnapshotXxx` callbacks run, since those call out into the trace, which may
 //! call back in.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use once_cell::sync::Lazy;
+
 use crate::framework::db::util::error_handler::ErrorHandler;
+use crate::framework::model::{DomainObjectEventIdGenerator, EventType};
 use crate::trace::database::db_trace_manager::DBTraceManager;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::time::schedule::step::StepType;
@@ -53,8 +56,9 @@ use crate::trace::model::time::trace_snapshot::TraceSnapshot;
 use crate::trace::model::time::trace_time_manager::{TraceTimeManager, KEY_TIME_RADIX};
 use crate::trace::seam_stubs::{
     time_radix_default, time_radix_from_str, trace_schedule_snap, DBTrace, DBTraceSnapshot,
-    DBTraceThreadManager, TimeRadix, TraceChangeRecord, TraceSchedule,
+    DBTraceThreadManager, TimeRadix, TraceSchedule,
 };
+use crate::trace::util::trace_change_record::TraceChangeRecord;
 
 /// A snapshot key at which the trace's timeline forks, i.e. whose schedule does not simply
 /// continue from the preceding snapshot.
@@ -78,29 +82,35 @@ impl DBTraceFork {
     pub const SNAP_COLUMN_NAME: &'static str = "Snap";
 }
 
-/// Which snapshot event a [`SnapshotChangeRecord`] carries.
+/// Which snapshot event a [`snapshot_change_record`] carries.
 ///
 /// Stands in for the `TraceEvents.SNAPSHOT_ADDED` / `_CHANGED` / `_DELETED` constants, which live
 /// in the unported `TraceEvents`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum SnapshotEvent {
     Added,
     Changed,
     Deleted,
 }
 
-/// Stands in for `new TraceChangeRecord<>(TraceEvents.SNAPSHOT_xxx, null, snapshot)`.
-///
-/// [`TraceChangeRecord`] is still a marker placeholder, so the trace cannot read anything back out
-/// of this; it exists so the `setChanged` calls are made faithfully rather than dropped.
-#[allow(dead_code)]
-#[derive(Debug)]
-struct SnapshotChangeRecord {
-    event: SnapshotEvent,
-    snapshot_key: i64,
+static SNAPSHOT_EVENT_IDS: Lazy<HashMap<SnapshotEvent, i32>> = Lazy::new(|| {
+    [SnapshotEvent::Added, SnapshotEvent::Changed, SnapshotEvent::Deleted]
+        .into_iter()
+        .map(|event| (event, DomainObjectEventIdGenerator::next()))
+        .collect()
+});
+
+impl EventType for SnapshotEvent {
+    fn get_id(&self) -> i32 {
+        SNAPSHOT_EVENT_IDS.get(self).copied().expect("SnapshotEvent variant should have an id")
+    }
 }
 
-impl TraceChangeRecord for SnapshotChangeRecord {}
+/// Builds the [`TraceChangeRecord`] mirroring `new TraceChangeRecord<>(TraceEvents.SNAPSHOT_xxx,
+/// null, snapshot)`.
+fn snapshot_change_record(event: SnapshotEvent, snapshot_key: i64) -> TraceChangeRecord {
+    TraceChangeRecord::without_values(Box::new(event), None, Some(Box::new(snapshot_key)))
+}
 
 /// The mutable, lock-guarded half of [`DBTraceTimeManager`]: the two tables and the snapshot
 /// table's key counter.
@@ -175,28 +185,19 @@ impl DBTraceTimeManager {
     /// Mirrors `notifySnapshotAdded(DBTraceSnapshot)`.
     fn notify_snapshot_added(&self, snapshot: &Arc<DBTraceSnapshot>) {
         self.trace.update_viewports_snapshot_added(&**snapshot);
-        self.trace.set_changed(&SnapshotChangeRecord {
-            event: SnapshotEvent::Added,
-            snapshot_key: snapshot.get_key(),
-        });
+        self.trace.set_changed(&snapshot_change_record(SnapshotEvent::Added, snapshot.get_key()));
     }
 
     /// Mirrors `notifySnapshotChanged(DBTraceSnapshot)`.
     fn notify_snapshot_changed(&self, snapshot: &Arc<DBTraceSnapshot>) {
         self.trace.update_viewports_snapshot_changed(&**snapshot);
-        self.trace.set_changed(&SnapshotChangeRecord {
-            event: SnapshotEvent::Changed,
-            snapshot_key: snapshot.get_key(),
-        });
+        self.trace.set_changed(&snapshot_change_record(SnapshotEvent::Changed, snapshot.get_key()));
     }
 
     /// Mirrors `notifySnapshotDeleted(DBTraceSnapshot)`.
     fn notify_snapshot_deleted(&self, snapshot: &Arc<DBTraceSnapshot>) {
         self.trace.update_viewports_snapshot_deleted(&**snapshot);
-        self.trace.set_changed(&SnapshotChangeRecord {
-            event: SnapshotEvent::Deleted,
-            snapshot_key: snapshot.get_key(),
-        });
+        self.trace.set_changed(&snapshot_change_record(SnapshotEvent::Deleted, snapshot.get_key()));
     }
 
     /// Milliseconds since the epoch, mirroring `System.currentTimeMillis()`.
@@ -1046,7 +1047,7 @@ mod tests {
             Box::new(MockObjectManager { root: self.root.as_ref().map(Arc::clone) })
         }
 
-        fn set_changed(&self, _event: &dyn TraceChangeRecord) {
+        fn set_changed(&self, _event: &TraceChangeRecord) {
             self.log.lock().unwrap().set_changed += 1;
         }
 

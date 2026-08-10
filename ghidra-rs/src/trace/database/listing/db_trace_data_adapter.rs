@@ -46,7 +46,10 @@
 use std::any::Any;
 use std::sync::Arc;
 
+use once_cell::sync::Lazy;
+
 use crate::docking::settings::settings_definition::SettingsDefinition;
+use crate::framework::model::{DomainObjectEventIdGenerator, EventType};
 use crate::program::model::address::Address;
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::symbol::{RefType, Reference, SourceType};
@@ -55,8 +58,9 @@ use crate::trace::database::data::db_trace_data_settings_operations::{
 };
 use crate::trace::model::listing::trace_code_unit::TraceCodeUnit;
 use crate::trace::model::listing::trace_data::TraceData;
-use crate::trace::seam_stubs::{DBTraceCodeUnitAdapter, DataAdapterFromDataType, TraceChangeRecord};
+use crate::trace::seam_stubs::{DBTraceCodeUnitAdapter, DataAdapterFromDataType};
 use crate::trace::util::data_adapter_minimal::{DataAdapterMinimal, DATA_OP_INDEX};
+use crate::trace::util::trace_change_record::TraceChangeRecord;
 
 // `Settings::get_default_settings` and `TraceChangeManager::set_changed` are called below via
 // `self`/a `&mut dyn TraceChangeManager` receiver whose concrete trait is already fixed by the
@@ -65,14 +69,25 @@ use crate::trace::util::data_adapter_minimal::{DataAdapterMinimal, DATA_OP_INDEX
 // them directly in `impl Settings for ..`/`impl TraceChangeManager for ..` blocks.
 
 /// Opaque event fired via [`TraceChangeManager::set_changed`] to mirror
-/// `TraceEvents.CODE_DATA_SETTINGS_CHANGED`.
+/// `TraceEvents.CODE_DATA_SETTINGS_CHANGED`, which lives in the unported `TraceEvents`.
 ///
-/// `TraceChangeRecord` is (per its own placeholder docs) a bare marker never inspected by its own
-/// getters, so the event kind and payload (`TraceEvents.CODE_DATA_SETTINGS_CHANGED`, the affected
-/// address space, and this unit's bounds in the Java source) carry no representable information
-/// yet; this unit struct simply stands in for "a settings-changed notification occurred."
-struct SettingsChangedRecord;
-impl TraceChangeRecord for SettingsChangedRecord {}
+/// The affected address space and this unit's bounds (part of the Java source's payload) carry no
+/// representable information yet, so [`settings_changed_record`] stands in for "a
+/// settings-changed notification occurred" with no affected object.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct SettingsChangedEvent;
+
+static SETTINGS_CHANGED_EVENT_ID: Lazy<i32> = Lazy::new(DomainObjectEventIdGenerator::next);
+
+impl EventType for SettingsChangedEvent {
+    fn get_id(&self) -> i32 {
+        *SETTINGS_CHANGED_EVENT_ID
+    }
+}
+
+fn settings_changed_record() -> TraceChangeRecord {
+    TraceChangeRecord::without_affected_object(Box::new(SettingsChangedEvent), None)
+}
 
 /// Converts a `Settings::set_value`-style `Box<dyn Any>` into a [`SettingsValue`], mirroring the
 /// Java static `DBTraceDataSettingsOperations.assertKnownType(Object)` check that validates the
@@ -126,7 +141,7 @@ pub trait DBTraceDataAdapter:
     /// Reached via [`DBTraceCodeUnitAdapter::trace_change_manager`] rather than
     /// `getTrace().setChanged(...)`; see that placeholder's docs for why.
     fn notify_settings_changed(&mut self) {
-        DBTraceCodeUnitAdapter::trace_change_manager(self).set_changed(Box::new(SettingsChangedRecord));
+        DBTraceCodeUnitAdapter::trace_change_manager(self).set_changed(&settings_changed_record());
     }
 
     /// Overrides [`DataAdapterMinimal`]'s default to acquire the trace's read lock first.
@@ -492,7 +507,7 @@ mod tests {
     }
 
     impl TraceChangeManager for MockChangeManager {
-        fn set_changed(&mut self, _event: Box<dyn TraceChangeRecord>) {
+        fn set_changed(&mut self, _event: &TraceChangeRecord) {
             self.notifications += 1;
         }
     }
