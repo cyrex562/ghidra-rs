@@ -192,6 +192,38 @@ class TestPreserveStatus(unittest.TestCase):
         self.assertIn("reopened", err)
 
 
+class TestFaninSource(unittest.TestCase):
+    """Priority folds fan-in in, so where fan-in comes from decides the ordering."""
+
+    def test_prefers_the_complete_fanin_table(self):
+        with tempfile.TemporaryDirectory() as d:
+            fan = os.path.join(d, "FANIN.tsv")
+            with open(fan, "w", encoding="utf-8") as f:
+                f.write("class\tfanin\tpath\n")
+                f.write("Widget\t500\ta/Widget.java\n")
+            got = pa.load_fanin("/nonexistent", fan)
+            self.assertEqual(got["Widget"], 500)
+
+    def test_falls_back_to_seam_when_the_table_is_absent(self):
+        with tempfile.TemporaryDirectory() as d:
+            seam = os.path.join(d, "SEAM.tsv")
+            with open(seam, "w", encoding="utf-8") as f:
+                f.write("status\tkind\tfanin\trem\tmodule\tpath\n")
+                f.write("TODO\tinterface\t42\t0\tx\ta/Widget.java\n")
+            got = pa.load_fanin(seam, os.path.join(d, "missing.tsv"))
+            self.assertEqual(got["Widget"], 42)
+
+    def test_seam_coverage_gap_is_what_this_fixes(self):
+        """SEAM.tsv is a 369-row worklist; types outside it silently scored fanin 0."""
+        with tempfile.TemporaryDirectory() as d:
+            seam = os.path.join(d, "SEAM.tsv")
+            with open(seam, "w", encoding="utf-8") as f:
+                f.write("status\tkind\tfanin\trem\tmodule\tpath\n")
+                f.write("TODO\tinterface\t42\t0\tx\ta/InTheWorklist.java\n")
+            got = pa.load_fanin(seam, os.path.join(d, "missing.tsv"))
+            self.assertEqual(got.get("NotInTheWorklist", 0), 0)
+
+
 class TestAcceptedVerdicts(unittest.TestCase):
     """A CONVENTION_QUEUE.tsv verdict must change what counts as debt -- that is the whole
     mechanism by which one decision retires many files. And a PROPOSAL must not."""

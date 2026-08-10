@@ -105,7 +105,34 @@ def strip_comments(text):
     return RE_LINE_COMMENT.sub("", text)
 
 
-def load_seam_fanin(seam_path):
+def load_fanin(seam_path, fanin_path=None):
+    """java_class_name -> reverse-dependency count, for the WHOLE graph where possible.
+
+    Prefers FANIN.tsv (scripts/fanin_gen.py, 13,808 types). Falls back to SEAM.tsv, which is
+    the seam campaign's 369-row worklist and was never a complete index -- using it left 1,139
+    of the 1,310 frontier files (87%) at fanin 0, so their priority was raw score while the
+    171 that happened to be queued for that campaign got multipliers of up to 20x.
+    """
+    if fanin_path is None:
+        fanin_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                  "FANIN.tsv")
+    if os.path.exists(fanin_path):
+        out = {}
+        try:
+            with open(fanin_path, newline="", encoding="utf-8") as f:
+                for r in csv.DictReader(f, delimiter="\t"):
+                    try:
+                        out[r["class"]] = int(r["fanin"])
+                    except (KeyError, ValueError):
+                        continue
+            if out:
+                return out
+        except OSError:
+            pass
+    return _load_seam_fanin(seam_path)
+
+
+def _load_seam_fanin(seam_path):
     """java_class_name (basename, no .java) -> fan-in count, from SEAM.tsv."""
     fanin = {}
     if not seam_path or not os.path.exists(seam_path):
@@ -332,7 +359,7 @@ def main():
         print(f"error: {args.root} not found", file=sys.stderr)
         sys.exit(1)
 
-    fanin = load_seam_fanin(args.seam)
+    fanin = load_fanin(args.seam)
     accepted = load_accepted_types(args.accepted)
     if accepted:
         print(f"honouring {len(accepted)} ACCEPT verdict(s) from {args.accepted}", file=sys.stderr)
