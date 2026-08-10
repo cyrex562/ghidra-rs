@@ -1,3 +1,4 @@
+pub mod annotated_string_handler;
 pub mod annotation;
 pub mod annotation_comment_part;
 pub mod annotation_exception;
