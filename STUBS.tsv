@@ -518,3 +518,4 @@ ts	stub_class	referenced_by
 2026-08-10T15:00:00.000002+00:00	Color	AddressAnnotatedStringHandler
 2026-08-10T15:00:00.000003+00:00	FontMetrics	AddressAnnotatedStringHandler
 2026-08-10T15:00:00.000004+00:00	GoToOverrideService	AddressAnnotatedStringHandler
+2026-08-10T09:49:57.739324+00:00	FieldFormatModel	FormatModelListener
