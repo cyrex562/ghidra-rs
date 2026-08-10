@@ -42,8 +42,8 @@ use crate::pcode::exec::pcode_execution_exception::PcodeExecutionException;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
+use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
-use crate::pcode::seam_stubs::PcodeProgram;
 use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
@@ -179,8 +179,8 @@ impl<T: 'static> PcodeExecutor<T> {
     }
 
     /// Begin execution of the given program, e.g., from an injection or a decoded instruction.
-    pub fn begin(&self, program: &dyn PcodeProgram) -> PcodeFrame {
-        self.begin_code(program.code(), program.userop_names())
+    pub fn begin(&self, program: &PcodeProgram) -> PcodeFrame {
+        self.begin_code(program.code().to_vec(), program.userop_names().clone())
     }
 
     /// Execute a program using the given library.
@@ -188,10 +188,10 @@ impl<T: 'static> PcodeExecutor<T> {
     /// Port of `execute(PcodeProgram, PcodeUseropLibrary)`.
     pub fn execute(
         &self,
-        program: &dyn PcodeProgram,
+        program: &PcodeProgram,
         library: &dyn PcodeUseropLibrary<T>,
     ) -> Result<PcodeFrame, PcodeExecutionException> {
-        self.execute_code(program.code(), program.userop_names(), library)
+        self.execute_code(program.code().to_vec(), program.userop_names().clone(), library)
     }
 
     /// Begin execution of a list of p-code ops.

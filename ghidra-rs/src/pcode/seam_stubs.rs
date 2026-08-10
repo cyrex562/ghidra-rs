@@ -15,6 +15,7 @@ use crate::pcode::exec::pcode_executor_state_piece::{
     ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
 };
 use crate::pcode::exec::pcode_frame::PcodeFrame;
+use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::{
     ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
@@ -191,23 +192,6 @@ pub trait Emulate: Send + Sync {
     fn get_language(&self) -> Box<dyn Language>;
 }
 
-/// Placeholder for `ghidra.pcode.exec.PcodeProgram`, referenced by
-/// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
-/// as an opaque return type, and by
-/// [`PcodeExecutor::execute`](crate::pcode::exec::pcode_executor::PcodeExecutor::execute), which
-/// needs the program's two fields. Both default to empty so an opaque implementor still compiles.
-pub trait PcodeProgram: Send + Sync {
-    /// Placeholder for the `PcodeProgram.code` field.
-    fn code(&self) -> Vec<crate::program::model::pcode::PcodeOp> {
-        Vec::new()
-    }
-
-    /// Placeholder for the `PcodeProgram.useropNames` field.
-    fn userop_names(&self) -> HashMap<i32, String> {
-        HashMap::new()
-    }
-}
-
 /// Placeholder for `ghidra.pcode.exec.ComposedPcodeUseropLibrary`, referenced by
 /// [`PcodeUseropLibrary::compose_with_override`](crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary::compose_with_override)
 /// before the real class is ported. Unlike most stubs here this is a struct, not a trait: `compose`
@@ -303,7 +287,7 @@ impl SleighPcodeUseropDefinition for FixedSleighPcodeUseropDefinition {
         &self,
         _args: &[Option<Varnode>],
         _library: &dyn ErasedPcodeUseropLibrary,
-    ) -> Box<dyn PcodeProgram> {
+    ) -> PcodeProgram {
         unimplemented!(
             "FixedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
         )
@@ -345,7 +329,7 @@ impl SleighPcodeUseropDefinition for OverloadedSleighPcodeUseropDefinition {
         &self,
         _args: &[Option<Varnode>],
         _library: &dyn ErasedPcodeUseropLibrary,
-    ) -> Box<dyn PcodeProgram> {
+    ) -> PcodeProgram {
         unimplemented!(
             "OverloadedSleighPcodeUseropDefinition::program_for needs SleighProgramCompiler, not yet ported"
         )
@@ -514,7 +498,7 @@ impl SleighProgramCompiler {
         _source_name: &str,
         _source: &str,
         _library: &dyn PcodeUseropLibrary<T>,
-    ) -> Box<dyn PcodeProgram> {
+    ) -> PcodeProgram {
         unimplemented!("SleighProgramCompiler not yet ported")
     }
 }

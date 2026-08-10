@@ -63,8 +63,9 @@ use crate::pcode::exec::pcode_userop_library_factory::{
 };
 use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::seam_stubs::{
-    InterruptPcodeExecutionException, PcodeProgram, SleighProgramCompiler, SparseAddressRangeMap,
+    InterruptPcodeExecutionException, SleighProgramCompiler, SparseAddressRangeMap,
 };
 use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::lang::language::Language;
@@ -114,7 +115,7 @@ pub struct AbstractPcodeMachineBase<T: 'static> {
     /// stepping. [`PcodeMachine::set_suspended`] takes `&mut self`, so exclusive access is already
     /// required to write it and a plain `bool` suffices.
     suspended: bool,
-    injects: HashMap<Address, Box<dyn PcodeProgram>>,
+    injects: HashMap<Address, PcodeProgram>,
     access_breakpoints: SparseAddressRangeMap<AccessKind>,
     cb: Arc<dyn PcodeEmulationCallbacks<T>>,
 }
@@ -250,14 +251,14 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
     }
 
     /// Check for a p-code injection (override) at the given address. Port of `getInject(Address)`.
-    pub fn get_inject(&self, address: &Address) -> Option<&dyn PcodeProgram> {
-        self.injects.get(address).map(|p| p.as_ref())
+    pub fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
+        self.injects.get(address)
     }
 
     /// Record the given compiled p-code as the inject at the given address, replacing and
     /// forgetting any inject already there. This is Java's `injects.put(address, pcode)`, shared
     /// by `inject` and `addBreakpoint`.
-    pub fn put_inject(&mut self, address: Address, pcode: Box<dyn PcodeProgram>) {
+    pub fn put_inject(&mut self, address: Address, pcode: PcodeProgram) {
         self.injects.insert(address, pcode);
     }
 
@@ -285,7 +286,7 @@ impl<T: 'static> AbstractPcodeMachineBase<T> {
 
     /// Compile the given Sleigh code for execution by a thread of this machine, linking it against
     /// the stub library. Port of `compileSleigh(String, String)`.
-    pub fn compile_sleigh(&self, source_name: &str, source: &str) -> Box<dyn PcodeProgram> {
+    pub fn compile_sleigh(&self, source_name: &str, source: &str) -> PcodeProgram {
         SleighProgramCompiler::compile_program(
             &self.language,
             source_name,
@@ -645,11 +646,6 @@ mod tests {
 
     impl ErasedPcodeThread for NamedThread {}
 
-    /// The product of the machine's stand-in compiler; opaque, as `PcodeProgram` is here.
-    struct CompiledProgram;
-
-    impl PcodeProgram for CompiledProgram {}
-
     /// Records every callback the machine fires, in order.
     #[derive(Default)]
     struct RecordingCallbacks {
@@ -856,17 +852,17 @@ mod tests {
         }
         /// Stands in for `SleighProgramCompiler.compileProgram`, which is not ported yet: record
         /// the request instead of compiling it.
-        fn compile_sleigh(&self, source_name: &str, source: &str) -> Box<dyn PcodeProgram> {
+        fn compile_sleigh(&self, source_name: &str, source: &str) -> PcodeProgram {
             self.compiled
                 .lock()
                 .unwrap()
                 .push((source_name.to_string(), source.to_string()));
-            Box::new(CompiledProgram)
+            crate::pcode::exec::pcode_program::testing::empty_program()
         }
         fn inject(&mut self, address: &Address, source: &str) {
             AbstractPcodeMachineBase::inject(self, address, source);
         }
-        fn get_inject(&self, address: &Address) -> Option<&dyn PcodeProgram> {
+        fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &Address) {

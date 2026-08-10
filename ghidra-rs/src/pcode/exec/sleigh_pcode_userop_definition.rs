@@ -5,8 +5,8 @@
 use std::sync::Arc;
 
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::Builder as AbstractSleighPcodeUseropDefinitionBuilder;
+use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_userop_library::ErasedPcodeUseropLibrary;
-use crate::pcode::seam_stubs::PcodeProgram;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::Varnode;
 
@@ -46,7 +46,7 @@ pub trait SleighPcodeUseropDefinition {
         &self,
         args: &[Option<Varnode>],
         library: &dyn ErasedPcodeUseropLibrary,
-    ) -> Box<dyn PcodeProgram>;
+    ) -> PcodeProgram;
 }
 
 /// A function body, as it depends on the given arguments.
@@ -223,7 +223,7 @@ mod tests {
             &self,
             _args: &[Option<Varnode>],
             _library: &dyn ErasedPcodeUseropLibrary,
-        ) -> Box<dyn PcodeProgram> {
+        ) -> PcodeProgram {
             unimplemented!("test double has no PcodeProgram")
         }
     }
