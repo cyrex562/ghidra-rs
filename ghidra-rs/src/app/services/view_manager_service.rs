@@ -3,7 +3,8 @@
 //! Port of `ghidra.app.services.ViewManagerService`. The Java `@ServiceInfo` annotation (default
 //! provider `ProgramTreePlugin`) has no Rust equivalent and is omitted.
 
-use crate::app::seam_stubs::{ViewProviderService, ViewService};
+use crate::app::seam_stubs::ViewProviderService;
+use crate::app::services::view_service::ViewService;
 
 /// Service to manage generic views; the view controls what shows up in the code browser.
 pub trait ViewManagerService: ViewService {
@@ -25,11 +26,24 @@ pub trait ViewManagerService: ViewService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::model::address::AddressSet;
     use std::cell::RefCell;
 
     struct MockViewProviderService;
 
-    impl ViewService for MockViewProviderService {}
+    impl ViewService for MockViewProviderService {
+        fn add_to_view(
+            &self,
+            _loc: &dyn crate::program::util::program_location::ProgramLocation,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            Box::new(AddressSet::new())
+        }
+
+        fn get_current_view(&self) -> Box<dyn crate::program::model::address::address_set::AddressSetView>
+        {
+            Box::new(AddressSet::new())
+        }
+    }
     impl ViewProviderService for MockViewProviderService {}
 
     struct MockViewManagerService {
@@ -37,7 +51,19 @@ mod tests {
         last_old_name: RefCell<Option<String>>,
     }
 
-    impl ViewService for MockViewManagerService {}
+    impl ViewService for MockViewManagerService {
+        fn add_to_view(
+            &self,
+            _loc: &dyn crate::program::util::program_location::ProgramLocation,
+        ) -> Box<dyn crate::program::model::address::address_set::AddressSetView> {
+            Box::new(AddressSet::new())
+        }
+
+        fn get_current_view(&self) -> Box<dyn crate::program::model::address::address_set::AddressSetView>
+        {
+            Box::new(AddressSet::new())
+        }
+    }
 
     impl ViewManagerService for MockViewManagerService {
         fn set_current_view_provider(&mut self, _view_name: &str) {
