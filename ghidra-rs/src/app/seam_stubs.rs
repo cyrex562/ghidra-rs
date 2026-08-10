@@ -111,6 +111,14 @@ pub trait Navigatable {
     fn is_connected(&self) -> bool;
 }
 
+/// Placeholder for `ghidra.app.nav.LocationMemento`, referenced by
+/// [`NavigationHistoryService`](crate::app::services::NavigationHistoryService) before the real
+/// class is ported. Java's version is a concrete container class (not an interface), so this is
+/// a plain struct rather than a `dyn`-dispatched trait. `NavigationHistoryService` only ever
+/// passes this type through as a parameter/return value, so no fields are needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LocationMemento;
+
 /// Placeholder for `ghidra.features.base.memsearch.gui.SearchSettings`, referenced by
 /// [`MemorySearchService`](crate::app::services::MemorySearchService) before the real class is
 /// ported. `MemorySearchService` only ever passes this type through as a parameter, so no
