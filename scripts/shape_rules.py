@@ -816,8 +816,24 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None) -> dict:
             "`OnceLock`, not a global `Arc<Mutex<_>>`",
         )
 
-    # R14 -- concrete class. The default, and the largest bucket.
-    return r("R14-concrete-class", "struct", f"concrete Java `class` ({subtype_count} in-repo subclass(es))")
+    # R14 -- concrete class. The default, and the largest bucket. Split by whether anything
+    # actually extends it: the old single rule printed the subclass count in its own note and
+    # then ignored it, so `DBAnnotatedObject` (40 subclasses), `CodeUnitLocation` (31) and
+    # `InjectPayloadSleigh` (18) were all reported as "there is no hierarchy to dispatch over".
+    if subtype_count == 0:
+        return r("R14a-concrete-leaf", "struct", "concrete Java `class` that nothing extends")
+    if subtype_count == 1:
+        return r("R14b-concrete-one-subclass", "struct",
+                 "concrete Java `class` with a single subclass -- inheritance for reuse; port it "
+                 "as a struct and let the subclass embed it")
+    if subtype_count <= 3:
+        return r("R14c-concrete-small-hierarchy", "struct_trait",
+                 f"concrete Java `class` that {subtype_count} classes extend -- it is BOTH "
+                 f"instantiable and a base, so the shared state needs a struct and the "
+                 f"overridable behaviour a trait")
+    return r("R14d-concrete-base", "struct_trait",
+             f"concrete Java `class` that {subtype_count} classes extend -- a real hierarchy, "
+             f"not a leaf; shared state in a struct, overridable behaviour in a trait")
 
 
 def directive_for(res: dict) -> str:
@@ -1008,6 +1024,27 @@ def cmd_audit(args):
                     kind = "iterator_trait"
                 rust.setdefault(m.group(2), []).append((kind, os.path.relpath(p, REPO), i))
 
+    # A DECIDED convention outranks the shape rule. `DBAnnotatedObject` is ARENA,
+    # `CodeUnitLocation` ACCEPT, `BlockGraph` GRAPH, `HighSymbol` ENUM -- all decided
+    # deliberately, and all reported here as "should be struct". Reporting a type as debt
+    # against a shape nobody intends to build sends a remediation pass the wrong way.
+    decided = {}
+    qp = os.path.join(REPO, "CONVENTION_QUEUE.tsv")
+    if os.path.exists(qp):
+        import csv as _csv
+        with open(qp, newline="", encoding="utf-8") as fh:
+            for r in _csv.DictReader(fh, delimiter="\t"):
+                v = (r.get("verdict") or "").strip()
+                t = (r.get("type") or "").strip()
+                if t and v in ("ACCEPT", "ARENA", "ENUM", "ITER", "GRAPH", "STRUCT", "PARK"):
+                    decided[t] = v
+    # what a decided convention implies the Rust declaration should be
+    CONV_OK = {"ACCEPT": {"trait", "iterator_trait"}, "ARENA": {"struct", "trait", "iterator_trait"},
+               "ENUM": {"enum", "struct", "trait", "iterator_trait"},
+               "GRAPH": {"enum", "struct", "trait", "iterator_trait"},
+               "ITER": {"iterator_trait", "struct", "trait"},
+               "STRUCT": {"struct", "enum"}, "PARK": {"struct", "enum", "trait", "iterator_trait"}}
+
     want = {"enum": "enum", "struct": "struct", "trait": ("trait", "iterator_trait"),
             "iterator": ("struct", "enum", "iterator_trait"),
             "error": ("struct", "enum"), "struct_trait": ("struct", "trait")}
@@ -1021,13 +1058,18 @@ def cmd_audit(args):
             continue
         if status.get("orig_src/" + sh["path"]) != "DONE":
             continue  # trait standing in for an unported class = deliberate seam
-        ok = want[sh["shape"]]
-        ok = (ok,) if isinstance(ok, str) else ok
+        conv = decided.get(name)
+        if conv:
+            ok = CONV_OK.get(conv, set())
+        else:
+            ok = want[sh["shape"]]
+            ok = (ok,) if isinstance(ok, str) else ok
         kinds = {d[0] for d in decls}
         if kinds & set(ok):
             continue
         for k, p, ln in decls:
-            rows.append([name, k, sh["shape"], sh["rule"], sh["kind"], f"{p}:{ln}", sh["why"]])
+            rows.append([name, k, conv or sh["shape"], (f"convention {conv}" if conv else sh["rule"]),
+                         sh["kind"], f"{p}:{ln}", sh["why"]])
 
     hdr = ["class", "rust_is", "should_be", "rule", "java_kind", "location", "why"]
     with open(args.out, "w", encoding="utf-8") as fh:

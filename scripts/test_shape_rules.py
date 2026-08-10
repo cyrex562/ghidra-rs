@@ -228,6 +228,28 @@ class TestInterfacesAndAbstracts(unittest.TestCase):
         )
         self.assertEqual(res["shape"], "trait")
 
+    def test_concrete_class_nothing_extends_is_a_plain_struct(self):
+        res, _ = shape("public final class Leaf { private int x; public int f() { return x; } }",
+                       "Leaf", subtypes=0)
+        self.assertEqual(res["shape"], "struct")
+        self.assertEqual(res["rule"], "R14a-concrete-leaf")
+
+    def test_concrete_class_with_many_subclasses_is_not_a_leaf(self):
+        """DBAnnotatedObject has 40 subclasses and was reported as having no hierarchy.
+
+        The old R14 printed the subclass count in its own note and ignored it.
+        """
+        res, _ = shape("public class Base { protected int x; public int f() { return x; } }",
+                       "Base", subtypes=40)
+        self.assertEqual(res["shape"], "struct_trait")
+        self.assertEqual(res["rule"], "R14d-concrete-base")
+        self.assertIn("a real hierarchy", res["why"])
+
+    def test_concrete_class_with_one_subclass_stays_a_struct(self):
+        res, _ = shape("public class Base { protected int x; }", "Base", subtypes=1)
+        self.assertEqual(res["shape"], "struct")
+        self.assertIn("embed it", res["why"])
+
     def test_abstract_class_with_no_subclasses_is_a_struct(self):
         res, _ = shape(
             "public abstract class Orphan { protected int x; public abstract int f(); }",
