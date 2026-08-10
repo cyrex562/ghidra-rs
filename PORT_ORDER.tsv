@@ -59,7 +59,7 @@ DONE	trait	5	46	27	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer
 DONE	trait	3	110	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/ListingField.java
 DONE	trait	2	127	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/ListingHighlightProvider.java
 PARK	trait	7	55	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/FieldMouseHandlerExtension.java
-TODO	trait	5	52	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotatedStringHandler.java
+DONE	trait	5	52	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotatedStringHandler.java
 TODO	trait	4	51	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressAnnotatedStringHandler.java
 TODO	trait	2	19	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/format/FormatModelListener.java
 TODO	trait	4	93	56	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java
