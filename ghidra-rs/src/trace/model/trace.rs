@@ -919,7 +919,7 @@ mod tests {
             _thread: &dyn crate::trace::seam_stubs::TraceThread,
             _snap: i64,
             _create_if_absent: bool,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStack>> {
+        ) -> Option<Box<dyn crate::trace::model::stack::trace_stack::TraceStack>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -927,7 +927,7 @@ mod tests {
             &self,
             _thread: &dyn crate::trace::seam_stubs::TraceThread,
             _snap: i64,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceStack>> {
+        ) -> Option<Box<dyn crate::trace::model::stack::trace_stack::TraceStack>> {
             unimplemented!("not exercised by this smoke test")
         }
 

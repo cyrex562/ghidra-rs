@@ -115,7 +115,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_stack(&self) -> Box<dyn crate::trace::seam_stubs::TraceStack> {
+        fn get_stack(&self) -> Box<dyn crate::trace::model::stack::trace_stack::TraceStack> {
             unimplemented!("not exercised by this smoke test")
         }
 

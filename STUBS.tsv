@@ -470,7 +470,6 @@ ts	stub_class	referenced_by
 2026-08-08T12:00:00+00:00	DBTraceRegisterContextSpace	DBTraceRegisterContextManager
 2026-08-08T12:00:00+00:00	TracePlatform	DBTraceRegisterContextManager
 2026-08-08T09:54:28+00:00	AbstractDBTracePropertyMap	DBTraceAddressPropertyManager
-2026-08-08T09:55:38.021764+00:00	TraceStack	TraceStackManager
 2026-08-08T13:45:28.282602+00:00	Emulate	OpBehaviorOther
 2026-08-09T01:50:16.581223+00:00	Emulate	BreakTable
 2026-08-09T01:50:16.581343+00:00	PcodeOpRaw	BreakTable

@@ -1,6 +1,7 @@
 use crate::program::model::address::AddressSetView;
+use crate::trace::model::stack::trace_stack::TraceStack;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
-use crate::trace::seam_stubs::{TraceStack, TraceThread};
+use crate::trace::seam_stubs::TraceThread;
 
 /// Manages the stacks of threads observed over time in a trace.
 ///
@@ -94,7 +95,56 @@ mod tests {
     }
 
     struct MockStack(i32);
-    impl TraceStack for MockStack {}
+
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockStack {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockStack {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceStack for MockStack {
+        fn get_thread(&self) -> Box<dyn TraceThread> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_depth(&self, _snap: i64) -> i32 {
+            0
+        }
+        fn set_depth(&mut self, _snap: i64, _depth: i32, _at_inner: bool) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_frame(
+            &self,
+            _snap: i64,
+            _level: i32,
+            _ensure_depth: bool,
+        ) -> Option<Box<dyn TraceStackFrame>> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_frames(&self, _snap: i64) -> Vec<Box<dyn TraceStackFrame>> {
+            Vec::new()
+        }
+        fn delete(&mut self) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn remove(&mut self, _snap: i64) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+        fn has_fixed_frames(&self) -> bool {
+            true
+        }
+    }
 
     struct MockStackManager {
         stacks: Mutex<Vec<(&'static str, i64, i32)>>,
