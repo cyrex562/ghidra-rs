@@ -29,3 +29,4 @@ ts	reason	path
 2026-08-09T05:34	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceFocusScope.java
 2026-08-09T05:34	shape-undecided (R8a-constants-interface)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/target/iface/TraceMethod.java
 2026-08-09T21:16	shape-undecided (R8b-marker)	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/PcodeTraceMemoryAccess.java
+2026-08-10T04:12	shape-undecided (R4-annotation)	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/annotation/AutoOptionDefined.java
