@@ -40,6 +40,16 @@ use crate::util::exception::DuplicateNameException;
 use crate::util::lock_hold::Lock;
 use crate::util::task::TaskMonitor;
 
+/// Placeholder for `ghidra.trace.util.TraceEvent`, referenced by
+/// [`TypedEventDispatcher`](crate::trace::util::typed_event_dispatcher::TypedEventDispatcher)
+/// before the real (enum-like registry of `TraceEvent<T, U>` constants, e.g. in `TraceEvents`)
+/// port is available. `TypedEventDispatcher` only ever needs an event's id to key its dispatch
+/// tables, so that is the only member stubbed here.
+pub trait TraceEvent: Send + Sync {
+    /// Mirrors the inherited `EventType.getId()`.
+    fn get_id(&self) -> i32;
+}
+
 /// Placeholder for `ghidra.trace.database.map.AbstractDBTracePropertyMap`, referenced by
 /// [`TraceAddressPropertyManager`](crate::trace::model::property::trace_address_property_manager::TraceAddressPropertyManager)
 /// and
