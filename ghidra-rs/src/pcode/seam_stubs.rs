@@ -348,21 +348,6 @@ pub trait PseudoInstruction: Send + Sync {}
 /// existing references.
 pub trait RegisterValue: Send + Sync {}
 
-/// Placeholder for `ghidra.pcode.emu.ThreadPcodeExecutorState`, referenced by
-/// [`PcodeThread::get_state`](crate::pcode::emu::pcode_thread::PcodeThread::get_state) before the
-/// real class is ported. Java's class is a `PcodeExecutorState<T>` that routes register accesses
-/// to a thread-local piece and memory accesses to the machine's shared piece; only that split,
-/// which is all `PcodeThread` exposes, is declared here.
-pub trait ThreadPcodeExecutorState<T>: PcodeExecutorState<T> {
-    /// Port of `ThreadPcodeExecutorState.getSharedState()`: the memory state, shared among all
-    /// threads of the machine.
-    fn get_shared_state(&self) -> &dyn PcodeExecutorState<T>;
-
-    /// Port of `ThreadPcodeExecutorState.getLocalState()`: the register state, private to this
-    /// thread.
-    fn get_local_state(&self) -> &dyn PcodeExecutorState<T>;
-}
-
 /// Placeholder for `ghidra.pcode.emu.SparseAddressRangeMap`, referenced by
 /// [`AbstractPcodeMachineBase`](crate::pcode::emu::abstract_pcode_machine::AbstractPcodeMachineBase)
 /// as its store of access breakpoints. Exposes the four members that class needs, with the same
