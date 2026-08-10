@@ -48,14 +48,15 @@ use std::pin::Pin;
 
 use crate::app::seam_stubs::{
     DebuggerAddressTranslator, MapEntry, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
-    RegionMapProposal, SectionMapEntry, SectionMapProposal, TraceLocation,
+    RegionMapProposal, SectionMapEntry, SectionMapProposal,
 };
+use crate::trace::model::trace_location::TraceLocation;
 use crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException;
 use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::modules::trace_section::TraceSection;
 use crate::debug::api::modules::DebuggerStaticMappingChangeListener;
 use crate::framework::model::DomainFile;
-use crate::program::model::address::{AddressSetView, AddressSpace};
+use crate::program::model::address::{Address, AddressSetView, AddressSpace};
 use crate::program::model::listing::Program;
 use crate::program::model::mem::MemoryBlock;
 use crate::program::util::ProgramLocation;
@@ -396,7 +397,30 @@ mod tests {
     }
 
     struct MockTraceLocation;
-    impl TraceLocation for MockTraceLocation {}
+    impl TraceLocation for MockTraceLocation {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            std::panic!("MockTraceLocation::get_trace not implemented")
+        }
+
+        fn get_thread(&self) -> Box<dyn crate::trace::model::thread::trace_thread::TraceThread> {
+            std::panic!("MockTraceLocation::get_thread not implemented")
+        }
+
+        fn get_lifespan(&self) -> crate::trace::model::lifespan::Lifespan {
+            crate::trace::model::lifespan::Lifespan::ALL
+        }
+
+        fn get_address(&self) -> Address {
+            let space = AddressSpace::new(
+                "ram",
+                32,
+                1,
+                crate::program::model::address::AddressSpaceType::Ram,
+                0,
+            );
+            Address::new(space, 0)
+        }
+    }
 
     struct MockProgramLocation;
     impl ProgramLocation for MockProgramLocation {
