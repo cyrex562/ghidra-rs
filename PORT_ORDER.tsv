@@ -33,7 +33,7 @@ DONE	trait	11	21	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghid
 DONE	trait	9	53	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TraceChangeRecord.java
 DONE	trait	8	18	12	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/util/TypedEventDispatcher.java
 DONE	trait	7	105	11	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/TraceDomainObjectListener.java
-TODO	trait	6	178	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/thread/TraceThread.java
+DONE	trait	6	178	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/thread/TraceThread.java
 TODO	trait	5	104	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/TraceLocation.java
 TODO	trait	4	106	2	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/DefaultTraceLocation.java
 TODO	trait	3	16	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointCommon.java
