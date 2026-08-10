@@ -44,7 +44,8 @@ use crate::pcode::emu::pcode_emulation_callbacks::{
 };
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::pcode_program::PcodeProgram;
-use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorState, BytesPcodeThread};
+use crate::pcode::emu::bytes_pcode_thread::BytesPcodeThread;
+use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorState};
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
 

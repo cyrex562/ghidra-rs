@@ -1,5 +1,6 @@
 pub mod abstract_pcode_machine;
 pub mod auxiliary;
+pub mod bytes_pcode_thread;
 pub mod default_pcode_thread;
 pub mod instruction_decoder;
 pub mod jit;
@@ -17,6 +18,7 @@ pub mod unix;
 
 pub use abstract_pcode_machine::{AbstractPcodeMachine, AbstractPcodeMachineBase};
 pub use auxiliary::{AuxEmulatorPartsFactory, AuxPcodeEmulator};
+pub use bytes_pcode_thread::BytesPcodeThread;
 pub use default_pcode_thread::{DefaultPcodeThread, PcodeEmulationLibrary, PcodeThreadExecutor};
 pub use instruction_decoder::InstructionDecoder;
 pub use modified_pcode_thread::{ModifiedPcodeThread, PcodeStateModifier};
