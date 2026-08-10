@@ -70,11 +70,63 @@ pub trait JButton {}
 /// exists. `DockingActionIf` only ever returns this type, so no members are needed yet.
 pub trait JMenuItem {}
 
+/// Placeholder for `java.awt.Color`, referenced by [`AttributedString`] before the real class is
+/// ported. Carries no channel data -- callers only ever pass an existing `Color` value through to
+/// a new `AttributedString`, they never inspect it -- so this is an opaque marker rather than an
+/// RGBA struct.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Color;
+
+/// Placeholder for `java.awt.FontMetrics`, referenced by [`AttributedString`] before the real
+/// class is ported. Carries no metric data for the same reason as [`Color`] above.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FontMetrics;
+
 /// Placeholder for `docking.widgets.fieldpanel.field.AttributedString`, referenced by
 /// [`AnnotatedStringHandler`](crate::app::util::viewer::field::annotated_string_handler::AnnotatedStringHandler)
+/// and by
+/// [`AddressAnnotatedStringHandler`](crate::app::util::viewer::field::address_annotated_string_handler::AddressAnnotatedStringHandler)
 /// before the real class is ported. Java's version is a concrete container class (not an
-/// interface), so this is a plain struct rather than a `dyn`-dispatched trait.
-/// `AnnotatedStringHandler::create_annotated_string` only ever passes this type through as a
-/// parameter/return value, so no fields are needed yet.
+/// interface), so this is a plain struct rather than a `dyn`-dispatched trait. Grown with a
+/// `text` field plus the two constructors and two accessors `AddressAnnotatedStringHandler`
+/// needs; `color`/`font_metrics`/`underline` are accepted (mirroring the Java constructor
+/// signatures) but not stored, since no caller reads them back yet.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct AttributedString;
+pub struct AttributedString {
+    text: String,
+}
+
+impl AttributedString {
+    /// Mirrors the 3-arg `AttributedString(String, Color, FontMetrics)` constructor.
+    pub fn new(text: impl Into<String>, _color: Color, _font_metrics: FontMetrics) -> Self {
+        Self { text: text.into() }
+    }
+
+    /// Mirrors the 5-arg `AttributedString(String, Color, FontMetrics, boolean, Color)`
+    /// constructor.
+    pub fn with_underline(
+        text: impl Into<String>,
+        _color: Color,
+        _font_metrics: FontMetrics,
+        _underline: bool,
+        _underline_color: Option<Color>,
+    ) -> Self {
+        Self { text: text.into() }
+    }
+
+    /// Mirrors `AttributedString.getText()` (called `text()` per this crate's accessor
+    /// convention).
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    /// Mirrors `AttributedString.getFontMetrics(int)`.
+    pub fn get_font_metrics(&self, _char_index: i32) -> FontMetrics {
+        FontMetrics
+    }
+
+    /// Mirrors `AttributedString.getColor(int)`.
+    pub fn get_color(&self, _char_index: i32) -> Color {
+        Color
+    }
+}

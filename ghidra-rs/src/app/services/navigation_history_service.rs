@@ -134,6 +134,10 @@ mod tests {
         fn is_connected(&self) -> bool {
             true
         }
+
+        fn get_program(&self) -> Box<dyn Program> {
+            Box::new(MockProgram)
+        }
     }
 
     #[derive(Default)]

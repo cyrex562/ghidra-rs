@@ -57,9 +57,24 @@ mod tests {
         tracking_set: bool,
     }
 
+    struct MockProgram;
+    impl crate::framework::model::DomainObject for MockProgram {}
+    impl crate::program::model::listing::program::Program for MockProgram {
+        fn get_name(&self) -> String {
+            "mock".to_string()
+        }
+        fn get_language_id(&self) -> String {
+            "mock".to_string()
+        }
+    }
+
     impl Navigatable for MockDebuggerListing {
         fn is_connected(&self) -> bool {
             true
+        }
+
+        fn get_program(&self) -> Box<dyn crate::program::model::listing::program::Program> {
+            Box::new(MockProgram)
         }
     }
 

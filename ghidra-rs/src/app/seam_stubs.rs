@@ -102,13 +102,19 @@ pub trait Archive {}
 
 /// Placeholder for `ghidra.app.nav.Navigatable`, referenced by
 /// [`MemorySearchService`](crate::app::services::MemorySearchService) (which only ever passes
-/// this type through as a parameter) and by
+/// this type through as a parameter), by
 /// [`NavigatableActionContext`](crate::app::context::NavigatableActionContext) (whose
 /// `is_active_program` default method mirrors `NavigatableActionContext.isActiveProgram()`,
-/// which calls `Navigatable.isConnected()`) before the real class is ported.
+/// which calls `Navigatable.isConnected()`), and by
+/// [`AddressAnnotatedStringHandler`](crate::app::util::viewer::field::address_annotated_string_handler::AddressAnnotatedStringHandler)
+/// (whose `handle_mouse_click` mirrors `Navigatable.getProgram()`, grown in here for that caller)
+/// before the real class is ported.
 pub trait Navigatable {
     /// Stands in for `Navigatable.isConnected()`.
     fn is_connected(&self) -> bool;
+
+    /// Stands in for `Navigatable.getProgram()`.
+    fn get_program(&self) -> Box<dyn crate::program::model::listing::program::Program>;
 }
 
 /// Placeholder for `ghidra.app.nav.LocationMemento`, referenced by
@@ -222,8 +228,10 @@ pub trait RunResult: Send {
 /// Placeholder for `ghidra.app.services.GoToOverrideService`, referenced by
 /// [`GoToService`](crate::app::services::GoToService) before the real interface is ported.
 /// `GoToService` only ever passes this type through as a parameter/return value, so no members
-/// are needed yet.
-pub trait GoToOverrideService {}
+/// are needed yet. Bounded by `Send + Sync` to match `GoToService`'s own `Send + Sync` bound
+/// (an implementor holding `Arc<dyn GoToOverrideService>` can only itself be `Send + Sync` if
+/// this is too).
+pub trait GoToOverrideService: Send + Sync {}
 
 /// Placeholder for `ghidra.service.graph.GraphDisplayProvider`, referenced by
 /// [`GraphDisplayBroker`](crate::app::services::GraphDisplayBroker) before the real class is
