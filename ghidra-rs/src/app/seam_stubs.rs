@@ -1128,3 +1128,123 @@ pub trait ProxyObj: Send + Sync {
     fn get_object(&self) -> Box<dyn std::any::Any>;
     fn contains(&self, a: &dyn std::any::Any) -> bool;
 }
+
+/// Placeholder for `ghidra.app.decompiler.ClangNode`, referenced by
+/// [`ClangTokenGroup`](crate::app::decompiler::clang_token_group::ClangTokenGroup) (which
+/// implements it) before the real interface is ported. Models the full member set of the real
+/// Java interface, correcting the mechanically-generated shape hint's `Box<dyn Address>` --
+/// [`Address`](crate::program::model::address::Address) is a concrete, already-ported struct, not
+/// a trait -- to the real reused type, and its `Vec<Box<dyn ClangNode>>` out-parameter shape for
+/// `flatten` (Java appends node *references* into the caller's list, it does not hand out owned
+/// clones) to a borrowed `&mut Vec<&dyn ClangNode>`.
+///
+/// Bounded by `Display` so implementors provide `ClangNode.toString()`'s polymorphic dispatch --
+/// needed by [`ClangTokenGroup::to_string`](crate::app::decompiler::clang_token_group::ClangTokenGroup) --
+/// without a bespoke `to_string`-shaped trait method.
+pub trait ClangNode: Send + Sync + std::fmt::Display {
+    /// Stands in for `ClangNode.Parent()`.
+    fn parent(&self) -> Option<&dyn ClangNode>;
+
+    /// Stands in for `ClangNode.getMinAddress()`.
+    fn get_min_address(&self) -> Option<crate::program::model::address::Address>;
+
+    /// Stands in for `ClangNode.getMaxAddress()`.
+    fn get_max_address(&self) -> Option<crate::program::model::address::Address>;
+
+    /// Stands in for `ClangNode.numChildren()`.
+    fn num_children(&self) -> usize;
+
+    /// Stands in for `ClangNode.Child(int)`.
+    fn child(&self, i: usize) -> &dyn ClangNode;
+
+    /// Stands in for `ClangNode.getClangFunction()`.
+    fn get_clang_function(&self) -> Box<dyn ClangFunction>;
+
+    /// Stands in for `ClangNode.flatten(List<ClangNode>)`.
+    fn flatten<'a>(&'a self, list: &mut Vec<&'a dyn ClangNode>);
+}
+
+/// Placeholder for `ghidra.app.decompiler.ClangFunction`, referenced by
+/// [`ClangNode::get_clang_function`] and
+/// [`ClangTokenGroup::get_clang_function`](crate::app::decompiler::clang_token_group::ClangTokenGroup)
+/// before the real class is ported. Both only ever pass this type through as a return value, so
+/// no members are needed yet.
+pub trait ClangFunction: Send + Sync {}
+
+/// Placeholder for `ghidra.app.decompiler.ClangToken`, the leaf-level printable unit that
+/// [`ClangTokenGroup::decode`](crate::app::decompiler::clang_token_group::ClangTokenGroup::decode)'s
+/// default branch builds via the real class's static
+/// `ClangToken.buildToken(int, ClangNode, Decoder, PcodeFactory)` factory. The real `ClangToken`
+/// has a large surface (24 members, plus further per-element-id subclasses such as
+/// `ClangFuncNameToken`, `ClangOpToken`, `ClangVariableToken`) that is out of scope here; this
+/// placeholder only drains the element's attributes (their interpretation is subclass-specific
+/// and deferred to the real port) so the decode loop stays in sync with the stream, and
+/// implements [`ClangNode`] as an addressless leaf so `flatten`/`to_string`/child-counting on an
+/// already-decoded [`ClangTokenGroup`](crate::app::decompiler::clang_token_group::ClangTokenGroup)
+/// keep working. Replace with the real port (and its per-element-id subclass dispatch) when
+/// available.
+pub struct ClangToken {
+    text: String,
+}
+
+impl ClangToken {
+    /// Stands in for `ClangToken.buildToken(int, ClangNode, Decoder, PcodeFactory)`.
+    pub fn build_token(
+        _node: i32,
+        decoder: &dyn crate::program::model::pcode::Decoder,
+        _pfactory: &dyn crate::program::model::pcode::PcodeFactory,
+    ) -> Result<Box<dyn ClangNode>, crate::program::model::pcode::DecoderException> {
+        loop {
+            let attrib_id = decoder.get_next_attribute_id().map_err(|e| {
+                crate::program::model::pcode::DecoderException::with_cause(
+                    "failed to decode ClangToken",
+                    e,
+                )
+            })?;
+            if attrib_id == 0 {
+                break;
+            }
+        }
+        Ok(Box::new(ClangToken {
+            text: String::new(),
+        }))
+    }
+}
+
+impl ClangNode for ClangToken {
+    fn parent(&self) -> Option<&dyn ClangNode> {
+        None
+    }
+
+    fn get_min_address(&self) -> Option<crate::program::model::address::Address> {
+        None
+    }
+
+    fn get_max_address(&self) -> Option<crate::program::model::address::Address> {
+        None
+    }
+
+    fn num_children(&self) -> usize {
+        0
+    }
+
+    fn child(&self, i: usize) -> &dyn ClangNode {
+        panic!("ClangToken (placeholder) has no children, requested index {i}")
+    }
+
+    fn get_clang_function(&self) -> Box<dyn ClangFunction> {
+        panic!(
+            "ClangToken.getClangFunction() needs a wired parent chain, unavailable on the placeholder"
+        )
+    }
+
+    fn flatten<'a>(&'a self, list: &mut Vec<&'a dyn ClangNode>) {
+        list.push(self);
+    }
+}
+
+impl std::fmt::Display for ClangToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.text)
+    }
+}
