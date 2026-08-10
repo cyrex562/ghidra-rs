@@ -57,7 +57,7 @@ DONE	trait	3	79	2	framework	Ghidra/Framework/Gui/src/main/java/ghidra/framework/
 DONE	trait	0	186	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/services/NavigationHistoryService.java
 DONE	trait	5	46	27	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingModel.java
 DONE	trait	3	110	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/ListingField.java
-TODO	trait	2	127	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/ListingHighlightProvider.java
+DONE	trait	2	127	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/ListingHighlightProvider.java
 TODO	trait	7	55	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/FieldMouseHandlerExtension.java
 TODO	trait	5	52	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotatedStringHandler.java
 TODO	trait	4	51	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressAnnotatedStringHandler.java
