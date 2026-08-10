@@ -20,13 +20,17 @@ use crate::pcode::exec::pcode_userop_library::{
     ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
 };
 use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPcodeUseropDefinition};
+use crate::pcode::exec::trace::data::pcode_trace_data_access::PcodeTraceDataAccess;
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
-use crate::program::model::address::{Address, AddressRange, AddressSpace, AddressSpaceType};
+use crate::program::model::address::{
+    Address, AddressRange, AddressSetView, AddressSpace, AddressSpaceType,
+};
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::mem::mem_buffer::MemBuffer;
 use crate::program::model::pcode::Varnode;
+use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use std::collections::HashMap;
 
 fn value_location_const_space() -> &'static Arc<AddressSpace> {
@@ -683,14 +687,6 @@ impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for BytesPcodeExecutorState {
 
 impl PcodeExecutorState<Vec<u8>> for BytesPcodeExecutorState {}
 
-/// Placeholder for the unported Java type `PcodeTraceDataAccess`
-/// (`ghidra.pcode.exec.trace.data.PcodeTraceDataAccess`), referenced by
-/// `PcodeTracePropertyAccess`'s doc links and by [`PcodeTraceAccess`](crate::pcode::exec::trace::data::PcodeTraceAccess).
-/// Generated stub: only a shape hint. Replace with the real port when available.
-pub trait PcodeTraceDataAccess: Send + Sync {
-    // (no public methods parsed from the Java source)
-}
-
 /// Placeholder for the unported Java type `PcodeTraceMemoryAccess`
 /// (`ghidra.pcode.exec.trace.data.PcodeTraceMemoryAccess`), referenced by
 /// [`PcodeTraceAccess`](crate::pcode::exec::trace::data::PcodeTraceAccess). Generated stub: only
@@ -701,17 +697,15 @@ pub trait PcodeTraceMemoryAccess: PcodeTraceDataAccess {
     // (no public methods parsed from the Java source)
 }
 
-/// Placeholder for the unported Java type `DefaultPcodeTraceThreadAccess`
-/// (`ghidra.pcode.exec.trace.data.DefaultPcodeTraceThreadAccess`), referenced by
-/// [`PcodeTraceAccess::new_pcode_trace_thread_access`](crate::pcode::exec::trace::data::PcodeTraceAccess::new_pcode_trace_thread_access).
-/// Generated stub: only the constructor needed by that default method. Java's class multiplexes a
-/// memory shim and a registers shim into one shim; the real port should route each
-/// `PcodeTraceDataAccess` method to whichever of `memory`/`registers` owns the address space
-/// touched. Replace with the real port when available.
+/// The default data-access shim, for both memory and registers.
+///
+/// Port of `ghidra.pcode.exec.trace.data.DefaultPcodeTraceThreadAccess`.
+///
+/// This is not designed for use with the emulator, but rather with stand-alone p-code executors,
+/// e.g., to evaluate a Sleigh expression. It multiplexes a given memory access shim and another
+/// register access shim into a single shim for use in one state piece.
 pub struct DefaultPcodeTraceThreadAccess {
-    #[allow(dead_code)]
     memory: Box<dyn PcodeTraceMemoryAccess>,
-    #[allow(dead_code)]
     registers: Box<
         dyn crate::pcode::exec::trace::data::pcode_trace_registers_access::PcodeTraceRegistersAccess,
     >,
@@ -729,4 +723,68 @@ impl DefaultPcodeTraceThreadAccess {
     }
 }
 
-impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {}
+impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
+    fn get_language(&self) -> Box<dyn Language> {
+        self.memory.get_language()
+    }
+
+    fn set_state(&mut self, range: &AddressRange, state: TraceMemoryState) {
+        if range.space().space_type() == AddressSpaceType::Register {
+            self.registers.set_state(range, state);
+        } else {
+            self.memory.set_state(range, state);
+        }
+    }
+
+    fn get_viewport_state(&self, range: &AddressRange) -> TraceMemoryState {
+        if range.space().space_type() == AddressSpaceType::Register {
+            self.registers.get_viewport_state(range)
+        } else {
+            self.memory.get_viewport_state(range)
+        }
+    }
+
+    fn intersect_view_known(
+        &self,
+        view: &dyn AddressSetView,
+        use_full_spans: bool,
+    ) -> Box<dyn AddressSetView> {
+        let mem_known = self.memory.intersect_view_known(view, use_full_spans);
+        let reg_known = self.registers.intersect_view_known(view, use_full_spans);
+        Box::new(mem_known.union(reg_known.as_ref()))
+    }
+
+    fn put_bytes(&mut self, start: &Address, buf: &[u8]) -> usize {
+        if start.is_register_address() {
+            self.registers.put_bytes(start, buf)
+        } else {
+            self.memory.put_bytes(start, buf)
+        }
+    }
+
+    fn get_bytes(&self, start: &Address, buf: &mut [u8]) -> usize {
+        if start.is_register_address() {
+            self.registers.get_bytes(start, buf)
+        } else {
+            self.memory.get_bytes(start, buf)
+        }
+    }
+
+    fn translate(&self, address: &Address) -> Address {
+        if address.is_register_address() {
+            self.registers.translate(address)
+        } else {
+            self.memory.translate(address)
+        }
+    }
+
+    fn get_property_access<T>(
+        &self,
+        _name: &str,
+    ) -> Box<dyn crate::pcode::exec::trace::data::pcode_trace_property_access::PcodeTracePropertyAccess<T>>
+    where
+        T: 'static,
+    {
+        unimplemented!("This is meant for p-code executor use")
+    }
+}
