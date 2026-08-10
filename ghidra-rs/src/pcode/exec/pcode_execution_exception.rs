@@ -92,6 +92,17 @@ impl PcodeExecutionException {
     pub fn into_frame(self) -> Option<Box<PcodeFrame>> {
         self.frame
     }
+
+    /// Attach a frame to this exception, unless one is already attached.
+    ///
+    /// Java's `frame` is a mutable field, and the executor fills it in as the exception unwinds:
+    /// `if (e.frame == null) { e.frame = frame; }`. See
+    /// [`PcodeExecutor::execute_code`](crate::pcode::exec::pcode_executor::PcodeExecutor::execute_code).
+    pub fn set_frame_if_absent(&mut self, frame: PcodeFrame) {
+        if self.frame.is_none() {
+            self.frame = Some(Box::new(frame));
+        }
+    }
 }
 
 impl std::fmt::Display for PcodeExecutionException {

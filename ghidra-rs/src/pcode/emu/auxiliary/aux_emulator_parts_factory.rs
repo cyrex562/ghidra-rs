@@ -41,13 +41,12 @@ use std::sync::Arc;
 
 use crate::pcode::emu::auxiliary::aux_pcode_emulator::AuxPcodeEmulator;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
+use crate::pcode::exec::pcode_executor::PcodeExecutor;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
-use crate::pcode::seam_stubs::{
-    BytesPcodeExecutorStatePiece, DefaultPcodeThread, PcodeExecutor,
-};
+use crate::pcode::seam_stubs::{BytesPcodeExecutorStatePiece, DefaultPcodeThread};
 use crate::program::model::lang::Language;
 
 /// An auxiliary emulator parts factory.
@@ -90,7 +89,7 @@ pub trait AuxEmulatorPartsFactory<U: 'static> {
         &self,
         _emulator: &dyn AuxPcodeEmulator<U>,
         _thread: &dyn DefaultPcodeThread,
-    ) -> Box<dyn PcodeExecutor<(Vec<u8>, U)>> {
+    ) -> PcodeExecutor<(Vec<u8>, U)> {
         unimplemented!("DefaultPcodeThread.PcodeThreadExecutor not yet ported")
     }
 
@@ -138,8 +137,7 @@ mod tests {
     use crate::pcode::exec::pcode_arithmetic::Purpose;
     use crate::pcode::exec::pcode_userop_library::{nil, ErasedPcodeUseropLibrary, UseropMap};
     use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
-    use crate::pcode::seam_stubs::PcodeExecutor as StubPcodeExecutor;
-    use crate::pcode::seam_stubs::PcodeProgram;
+        use crate::pcode::seam_stubs::PcodeProgram;
     use crate::program::model::address::{AddressSpace, DefaultAddressFactory};
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::sleigh::SleighLanguage;
@@ -378,7 +376,7 @@ mod tests {
         }
         fn execute(
             &self,
-            _executor: &dyn StubPcodeExecutor<(Vec<u8>, i64)>,
+            _executor: &PcodeExecutor<(Vec<u8>, i64)>,
             _library: &dyn PcodeUseropLibrary<(Vec<u8>, i64)>,
             _op: &crate::program::model::pcode::PcodeOp,
             _out_var: Option<&crate::program::model::pcode::Varnode>,

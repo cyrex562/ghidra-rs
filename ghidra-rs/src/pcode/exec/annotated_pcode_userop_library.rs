@@ -40,7 +40,7 @@ use crate::pcode::exec::pcode_userop_library::{
     operand_type, ErasedPcodeUseropLibrary, PcodeUseropDefinition, PcodeUseropLibrary, UseropMap,
 };
 use crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece;
-use crate::pcode::seam_stubs::PcodeExecutor;
+use crate::pcode::exec::pcode_executor::PcodeExecutor;
 use crate::program::model::pcode::{PcodeOp, Varnode};
 
 /// The attributes with which a userop is exported.
@@ -218,7 +218,7 @@ pub enum UseropInputs {
 /// has one signature, so it gets them all and ignores the rest.
 pub struct UseropContext<'a, T: 'static> {
     /// The executor invoking the userop. Java: the `@OpExecutor` parameter.
-    pub executor: &'a dyn PcodeExecutor<T>,
+    pub executor: &'a PcodeExecutor<T>,
     /// The *complete* library for this execution, which may have been composed from more than the
     /// one defining this userop. Java: the `@OpLibrary` parameter.
     pub library: &'a dyn PcodeUseropLibrary<T>,
@@ -324,7 +324,7 @@ impl<T: 'static> AnnotatedPcodeUseropDefinition<T> {
     /// Port of `placeInputs`: convert each input variable per its declared kind.
     fn place_inputs(
         &self,
-        executor: &dyn PcodeExecutor<T>,
+        executor: &PcodeExecutor<T>,
         in_vars: &[Varnode],
     ) -> Vec<UseropValue<T>> {
         let kind_of = |i: usize| match &self.inputs {
@@ -344,7 +344,7 @@ impl<T: 'static> AnnotatedPcodeUseropDefinition<T> {
 fn convert_input<T: 'static>(
     kind: UseropValueKind,
     vn: &Varnode,
-    executor: &dyn PcodeExecutor<T>,
+    executor: &PcodeExecutor<T>,
 ) -> UseropValue<T> {
     if kind == UseropValueKind::Varnode {
         return UseropValue::Varnode(vn.clone());
@@ -442,7 +442,7 @@ impl<T: 'static> PcodeUseropDefinition<T> for AnnotatedPcodeUseropDefinition<T> 
 
     fn execute(
         &self,
-        executor: &dyn PcodeExecutor<T>,
+        executor: &PcodeExecutor<T>,
         library: &dyn PcodeUseropLibrary<T>,
         op: &PcodeOp,
         out_var: Option<&Varnode>,
@@ -585,7 +585,6 @@ mod tests {
 
     use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
     use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, Reason};
-    use crate::pcode::seam_stubs::PcodeProgram;
     use crate::pcode::utils::{bytes_to_long, long_to_bytes};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
@@ -672,37 +671,218 @@ mod tests {
 
     impl PcodeExecutorState<i64> for MapState {}
 
-    struct TestExecutor {
-        state: Mutex<MapState>,
+
+    /// A language just complete enough to bind a [`PcodeExecutor`]: it answers the two things the
+    /// executor's constructor asks of it -- the program counter (none here) and the default space
+    /// -- and nothing else. Paths are spelled out rather than imported, to keep the double local.
+    struct MockLanguage {
+        default_space: Arc<AddressSpace>,
     }
 
-    impl TestExecutor {
-        fn new() -> Self {
-            Self { state: Mutex::new(MapState { cells: HashMap::new() }) }
+    impl Language for MockLanguage {
+        fn get_default_space(&self) -> Arc<AddressSpace> {
+            Arc::clone(&self.default_space)
         }
-
-        fn poke(&self, var: &Varnode, value: i64) {
-            self.state.lock().unwrap().set_var_varnode(var, &value);
+        fn get_default_data_space(&self) -> Arc<AddressSpace> {
+            Arc::clone(&self.default_space)
         }
-
-        fn peek(&self, var: &Varnode) -> i64 {
-            self.state.lock().unwrap().get_var_varnode(var, Reason::Inspect)
+        fn get_program_counter(&self) -> Option<RegisterRef> {
+            None
         }
-    }
-
-    impl PcodeExecutor<i64> for TestExecutor {
-        fn execute(&self, _program: &dyn PcodeProgram, _library: &dyn PcodeUseropLibrary<i64>) {
+        fn get_language_id(&self) -> crate::program::model::lang::language_id::LanguageID {
             unimplemented!("not exercised by these tests")
         }
-        fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<i64>> {
-            Arc::new(I64Arithmetic)
+        fn get_language_description(
+            &self,
+        ) -> Box<dyn crate::program::model::lang::language_description::LanguageDescription> {
+            unimplemented!("not exercised by these tests")
         }
-        fn get_state(&self) -> &Mutex<dyn PcodeExecutorState<i64>> {
-            &self.state
+        fn get_parallel_instruction_helper(
+            &self,
+        ) -> Option<Box<dyn crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper>>
+        {
+            None
         }
-        fn get_reason(&self) -> Reason {
-            Reason::ExecuteRead
+        fn get_processor(&self) -> Box<dyn crate::program::seam_stubs::Processor> {
+            unimplemented!("not exercised by these tests")
         }
+        fn get_version(&self) -> i32 {
+            1
+        }
+        fn get_minor_version(&self) -> i32 {
+            0
+        }
+        fn get_address_factory(&self) -> Box<dyn crate::program::model::address::AddressFactory> {
+            Box::new(crate::program::model::address::DefaultAddressFactory::new(vec![Arc::clone(
+                &self.default_space,
+            )]))
+        }
+        fn is_big_endian(&self) -> bool {
+            false
+        }
+        fn get_instruction_alignment(&self) -> i32 {
+            1
+        }
+        fn supports_pcode(&self) -> bool {
+            true
+        }
+        fn is_volatile(&self, _addr: &Address) -> bool {
+            false
+        }
+        fn parse(
+            &self,
+            _buf: &dyn MemBuffer,
+            _context: &mut dyn crate::program::model::lang::processor_context::ProcessorContext,
+            _in_delay_slot: bool,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype>,
+            crate::program::model::lang::language::ParseError,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_number_of_user_defined_op_names(&self) -> i32 {
+            0
+        }
+        fn get_user_defined_op_name(&self, _index: i32) -> Option<String> {
+            None
+        }
+        fn get_registers_at(&self, _address: &Address) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_register_in_space(
+            &self,
+            _addrspc: &Arc<AddressSpace>,
+            _offset: i64,
+            _size: i32,
+        ) -> Option<RegisterRef> {
+            None
+        }
+        fn get_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_register_names(&self) -> Vec<String> {
+            Vec::new()
+        }
+        fn get_register_by_name(&self, _name: &str) -> Option<RegisterRef> {
+            None
+        }
+        fn get_register_at(&self, _addr: &Address, _size: i32) -> Option<RegisterRef> {
+            None
+        }
+        fn get_context_base_register(&self) -> Option<RegisterRef> {
+            None
+        }
+        fn get_context_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_default_memory_blocks(
+            &self,
+        ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
+            Vec::new()
+        }
+        fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+            Vec::new()
+        }
+        fn get_segmented_space(&self) -> String {
+            String::new()
+        }
+        fn get_volatile_addresses(&self) -> Box<dyn crate::program::model::address::AddressSetView> {
+            Box::new(crate::program::model::address::AddressSet::new())
+        }
+        fn apply_context_settings(
+            &self,
+            _ctx: &mut dyn crate::program::model::listing::default_program_context::DefaultProgramContext,
+        ) {
+        }
+        fn reload_language(
+            &self,
+            _task_monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn get_compatible_compiler_spec_descriptions(
+            &self,
+        ) -> Vec<Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>>
+        {
+            Vec::new()
+        }
+        fn get_compiler_spec_by_id(
+            &self,
+            _compiler_spec_id: &crate::program::model::lang::compiler_spec_id::CompilerSpecID,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
+            crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_default_compiler_spec(
+            &self,
+        ) -> Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn has_property(&self, _key: &str) -> bool {
+            false
+        }
+        fn get_property_as_int(&self, _key: &str, default_int: i32) -> i32 {
+            default_int
+        }
+        fn get_property_as_boolean(&self, _key: &str, default_boolean: bool) -> bool {
+            default_boolean
+        }
+        fn get_property_or(&self, _key: &str, default_string: &str) -> String {
+            default_string.to_string()
+        }
+        fn get_property(&self, _key: &str) -> Option<String> {
+            None
+        }
+        fn get_property_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+        fn has_manual(&self) -> bool {
+            false
+        }
+        fn get_manual_entry(
+            &self,
+            _instruction_mnemonic: &str,
+        ) -> Option<crate::util::manual_entry::ManualEntry> {
+            None
+        }
+        fn get_manual_instruction_mnemonic_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+        fn get_manual_exception(&self) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+            None
+        }
+        fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_register_addresses(&self) -> Box<dyn crate::program::model::address::AddressSetView> {
+            Box::new(crate::program::model::address::AddressSet::new())
+        }
+        fn get_maximum_instruction_length(&self) -> Option<i32> {
+            None
+        }
+    }
+
+    /// A real executor over [`MapState`], standing in for whatever executor would be invoking
+    /// these userops.
+    fn test_executor() -> PcodeExecutor<i64> {
+        PcodeExecutor::new(
+            Arc::new(MockLanguage {
+                default_space: AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0),
+            }),
+            Arc::new(I64Arithmetic),
+            Arc::new(Mutex::new(MapState { cells: HashMap::new() })),
+            Reason::ExecuteRead,
+        )
+    }
+
+    fn poke(executor: &PcodeExecutor<i64>, var: &Varnode, value: i64) {
+        executor.get_state().lock().unwrap().set_var_varnode(var, &value);
+    }
+
+    fn peek(executor: &PcodeExecutor<i64>, var: &Varnode) -> i64 {
+        executor.get_state().lock().unwrap().get_var_varnode(var, Reason::Inspect)
     }
 
     /// The Rust rendering of a Java library declaring:
@@ -828,13 +1008,13 @@ mod tests {
     #[test]
     fn execute_reads_inputs_invokes_the_callback_and_stores_the_result() {
         let library = SumLibrary::new();
-        let executor = TestExecutor::new();
+        let executor = test_executor();
 
         let in0 = varnode(0x1000, 8);
         let in1 = varnode(0x1008, 8);
         let out = varnode(0x2000, 8);
-        executor.poke(&in0, 30);
-        executor.poke(&in1, 12);
+        poke(&executor, &in0, 30);
+        poke(&executor, &in1, 12);
 
         library.get_userops()["__add"].execute(
             &executor,
@@ -846,7 +1026,7 @@ mod tests {
 
         // Java: the return value is written back to the output varnode via
         // state.setVar(outVar, fromPrimitive(result, outVar.getSize(), arithmetic)).
-        assert_eq!(executor.peek(&out), 42);
+        assert_eq!(peek(&executor, &out), 42);
         assert_eq!(library.calls.load(Ordering::SeqCst), 1);
     }
 
@@ -855,11 +1035,11 @@ mod tests {
         // Java: `if (result != null && outVar != null)`. Invoked for effect only, the sum is
         // computed but has nowhere to go.
         let library = SumLibrary::new();
-        let executor = TestExecutor::new();
+        let executor = test_executor();
         let in0 = varnode(0x1000, 8);
         let in1 = varnode(0x1008, 8);
-        executor.poke(&in0, 30);
-        executor.poke(&in1, 12);
+        poke(&executor, &in0, 30);
+        poke(&executor, &in1, 12);
 
         library.get_userops()["__add"].execute(
             &executor,
@@ -870,7 +1050,7 @@ mod tests {
         );
 
         assert_eq!(library.calls.load(Ordering::SeqCst), 1);
-        assert_eq!(executor.peek(&varnode(0x2000, 8)), 0);
+        assert_eq!(peek(&executor, &varnode(0x2000, 8)), 0);
     }
 
     #[test]
@@ -879,7 +1059,7 @@ mod tests {
         // Java: FixedArgsAnnotatedPcodeUseropDefinition.validateInputs throws
         // PcodeExecutionException with exactly this message.
         let library = SumLibrary::new();
-        let executor = TestExecutor::new();
+        let executor = test_executor();
         library.get_userops()["__add"].execute(
             &executor,
             &library,
@@ -892,7 +1072,7 @@ mod tests {
     #[test]
     fn a_variadic_userop_accepts_any_number_of_inputs() {
         let library = SumLibrary::new();
-        let executor = TestExecutor::new();
+        let executor = test_executor();
         let sink = Arc::clone(&library.get_userops()["__sink"]);
 
         sink.execute(&executor, &library, &callother(), None, &[]);
@@ -914,9 +1094,9 @@ mod tests {
         // UseropInputParam record's behavior is pinned. 0x4142434445464748 read as: a Varnode,
         // the raw i64 value, then truncated to 8/16/32/64 bits, split into 32-bit limbs
         // (least-significant first), and finally tested as a condition.
-        let executor = TestExecutor::new();
+        let executor = test_executor();
         let input = varnode(0x1000, 8);
-        executor.poke(&input, 0x4142434445464748);
+        poke(&executor, &input, 0x4142434445464748);
 
         let kinds = vec![
             UseropValueKind::Varnode,
