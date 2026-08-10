@@ -915,3 +915,8 @@ pub trait MemoryAccessFilter {}
 /// `ClipboardService` only ever passes this type through as a parameter, so no members are needed
 /// yet.
 pub trait ClipboardContentProviderService {}
+
+/// Placeholder for `ghidra.app.context.ListingActionContext`, referenced by
+/// [`DataService`](crate::app::services::DataService) before the real class is ported.
+/// `DataService` only ever passes this type through as a parameter, so no members are needed yet.
+pub trait ListingActionContext {}
