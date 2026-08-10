@@ -139,7 +139,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_memory_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceMemoryManager> {
+        fn get_memory_manager(&self) -> Box<dyn crate::trace::model::memory::trace_memory_manager::TraceMemoryManager> {
             unimplemented!()
         }
 

@@ -130,7 +130,7 @@ mod tests {
         ) -> Box<dyn crate::trace::model::guest::trace_platform_manager::TracePlatformManager> {
             unreachable!("next_slice ignores its trace argument")
         }
-        fn get_memory_manager(&self) -> Box<dyn crate::trace::seam_stubs::TraceMemoryManager> {
+        fn get_memory_manager(&self) -> Box<dyn crate::trace::model::memory::trace_memory_manager::TraceMemoryManager> {
             unreachable!("next_slice ignores its trace argument")
         }
         fn get_module_manager(&self) -> Box<dyn crate::trace::model::modules::TraceModuleManager> {
