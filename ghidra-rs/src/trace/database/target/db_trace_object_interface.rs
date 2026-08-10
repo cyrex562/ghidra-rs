@@ -20,9 +20,10 @@
 //!   trait's static-like associated function without already knowing a concrete implementing
 //!   type, so there is no object-safe way to call through to it from here.
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::{ObjectKey, TraceChangeRecord};
+use crate::trace::seam_stubs::ObjectKey;
 use crate::trace::model::target::iface::TraceObjectInterface;
 use crate::trace::model::target::trace_object::TraceObject;
+use crate::trace::util::trace_change_record::TraceChangeRecord;
 
 /// A [`TraceObject`]-backed implementation of another trace-manager interface.
 ///
@@ -36,7 +37,7 @@ pub trait DBTraceObjectInterface: TraceObjectInterface + TraceUniqueObject {
     /// object's trace. If exactly one event needs to be emitted, this method should return the
     /// translated record. If no translation applies, or the translated event(s) were emitted
     /// directly, this returns `None`.
-    fn translate_event(&self, rec: &dyn TraceChangeRecord) -> Option<Box<dyn TraceChangeRecord>>;
+    fn translate_event(&self, rec: &TraceChangeRecord) -> Option<TraceChangeRecord>;
 
     /// A default implementation of `TraceUniqueObject.getObjectKey()`.
     ///
@@ -61,6 +62,7 @@ pub trait DBTraceObjectInterface: TraceObjectInterface + TraceUniqueObject {
 mod tests {
     use super::*;
     use crate::debug::api::tracermi::SchemaName;
+    use crate::framework::model::DomainObjectEvent;
     use crate::trace::seam_stubs::{LifeSet, TraceObjectSchema};
 
     struct MockObjectKey(i32);
@@ -152,7 +154,7 @@ mod tests {
     }
 
     impl DBTraceObjectInterface for MockThread {
-        fn translate_event(&self, _rec: &dyn TraceChangeRecord) -> Option<Box<dyn TraceChangeRecord>> {
+        fn translate_event(&self, _rec: &TraceChangeRecord) -> Option<TraceChangeRecord> {
             None
         }
     }
@@ -212,9 +214,10 @@ mod tests {
         });
         assert!(thread.default_is_deleted());
         assert_eq!(thread.get_object().get_object_key().hash_code(), 7);
-        assert!(thread.translate_event(&MockChangeRecord).is_none());
+        assert!(thread.translate_event(&mock_change_record()).is_none());
     }
 
-    struct MockChangeRecord;
-    impl TraceChangeRecord for MockChangeRecord {}
+    fn mock_change_record() -> TraceChangeRecord {
+        TraceChangeRecord::without_affected_object(Box::new(DomainObjectEvent::Saved), None)
+    }
 }

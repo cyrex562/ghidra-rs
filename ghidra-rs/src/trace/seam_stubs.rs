@@ -35,6 +35,7 @@ use crate::trace::model::time::trace_snapshot::TraceSnapshot;
 use crate::trace::model::trace::Trace;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::util::trace_change_manager::TraceChangeManager;
+use crate::trace::util::trace_change_record::TraceChangeRecord;
 use crate::util::exception::DuplicateNameException;
 use crate::util::lock_hold::Lock;
 use crate::util::task::TaskMonitor;
@@ -851,7 +852,7 @@ pub trait TraceThread: Send + Sync {
 pub trait DBTraceObject: TraceObject {
     /// Mirrors `emitEvents(TraceChangeRecord<?, ?>)`, which forwards a change record to the
     /// object's trace (and to any interfaces the object implements, which may translate it).
-    fn emit_events(&self, record: &dyn TraceChangeRecord) {
+    fn emit_events(&self, record: &TraceChangeRecord) {
         let _ = record;
         unimplemented!("DBTraceObject::emit_events placeholder not overridden")
     }
@@ -1010,14 +1011,6 @@ pub trait DBTraceObjectManager: Send + Sync {
 /// passes this type around opaquely (as the query to combine with any existing constraint); no
 /// members are needed yet.
 pub trait TraceObjectValueQuery: Send + Sync {}
-
-/// Placeholder for `ghidra.trace.util.TraceChangeRecord`, referenced by
-/// [`TraceChangeManager`](crate::trace::util::trace_change_manager::TraceChangeManager) before
-/// the real port is available. The Java interface only ever receives this type as an opaque,
-/// wildcard-typed (`TraceChangeRecord<?, ?>`) event parameter -- it never calls any of the
-/// type's own getters -- so this is a marker trait rather than reproducing
-/// `getAddressSpace`/`getAffectedObject`/`isOldKnown`/`getOldValue`/`getNewValue`.
-pub trait TraceChangeRecord: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.util.TraceRegisterUtils`, referenced by
 /// [`TraceSpaceMixin`](crate::trace::util::trace_space_mixin::TraceSpaceMixin) before the real
@@ -1380,7 +1373,7 @@ pub trait DBTrace: Send + Sync {
     }
 
     /// Mirrors `DBTrace.setChanged(TraceChangeRecord)`.
-    fn set_changed(&self, event: &dyn TraceChangeRecord) {
+    fn set_changed(&self, event: &TraceChangeRecord) {
         let _ = event;
         unimplemented!("DBTrace::set_changed placeholder not overridden")
     }

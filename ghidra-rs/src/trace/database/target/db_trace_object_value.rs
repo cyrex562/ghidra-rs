@@ -53,26 +53,33 @@
 //!   documents for `DBTraceObject.spaceForValue`.
 //! - `TraceEvents.VALUE_LIFESPAN_CHANGED` / `VALUE_DELETED` / `OBJECT_LIFE_CHANGED`. The generic
 //!   event table is unported, so, as in `DBTraceTimeManager`, the three constants become the
-//!   local [`ValueEvent`] enum carried by a local [`ValueChangeRecord`].
+//!   local [`ValueEvent`] enum, built into a real
+//!   [`TraceChangeRecord`](crate::trace::util::trace_change_record::TraceChangeRecord) by
+//!   [`value_change_record`].
 
 use std::any::Any;
+use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, RwLock};
 
+use once_cell::sync::Lazy;
+
+use crate::framework::model::{DomainObjectEventIdGenerator, EventType};
 use crate::trace::database::target::trace_object_value_storage::TraceObjectValueStorage;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::duplicate_key_exception::DuplicateKeyException;
 use crate::trace::model::target::path::key_path::KeyPath;
 use crate::trace::model::target::trace_object_value::{TraceObjectValue, TruncateOrDelete};
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager, TraceChangeRecord};
+use crate::trace::seam_stubs::{DBTraceObject, DBTraceObjectManager};
 use crate::trace::model::target::trace_object::{ConflictResolution, TraceObject};
+use crate::trace::util::trace_change_record::TraceChangeRecord;
 
-/// Which value event a [`ValueChangeRecord`] carries.
+/// Which value event a [`value_change_record`] carries.
 ///
 /// Stands in for the `TraceEvents.VALUE_LIFESPAN_CHANGED` / `VALUE_DELETED` /
 /// `OBJECT_LIFE_CHANGED` constants, which live in the unported `TraceEvents`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ValueEvent {
     /// `TraceEvents.VALUE_LIFESPAN_CHANGED`: a value entry's lifespan was rewritten.
     LifespanChanged,
@@ -83,25 +90,44 @@ pub enum ValueEvent {
     ObjectLifeChanged,
 }
 
-/// Stands in for `new TraceChangeRecord<>(TraceEvents.XXX, null, value, old, new)`.
-///
-/// [`TraceChangeRecord`] is still a marker placeholder, so nothing can read anything back out of
-/// this; it exists so the notifications are made faithfully rather than dropped, and so tests can
-/// observe that they were made.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ValueChangeRecord {
-    /// Which of the three `TraceEvents` constants this record carries.
-    pub event: ValueEvent,
-    /// The affected entry's key. Stands in for the record's affected-object reference, which
-    /// cannot be a `&DBTraceObjectValue` without tying the record to the entry's lifetime.
-    pub entry_key: String,
-    /// The lifespan before the change, for [`ValueEvent::LifespanChanged`].
-    pub old_lifespan: Option<Lifespan>,
-    /// The lifespan after the change, for [`ValueEvent::LifespanChanged`].
-    pub new_lifespan: Option<Lifespan>,
+static VALUE_EVENT_IDS: Lazy<HashMap<ValueEvent, i32>> = Lazy::new(|| {
+    [ValueEvent::LifespanChanged, ValueEvent::Deleted, ValueEvent::ObjectLifeChanged]
+        .into_iter()
+        .map(|event| (event, DomainObjectEventIdGenerator::next()))
+        .collect()
+});
+
+impl EventType for ValueEvent {
+    fn get_id(&self) -> i32 {
+        VALUE_EVENT_IDS.get(self).copied().expect("ValueEvent variant should have an id")
+    }
 }
 
-impl TraceChangeRecord for ValueChangeRecord {}
+/// Builds the [`TraceChangeRecord`] mirroring `new TraceChangeRecord<>(TraceEvents.XXX, null,
+/// value, old, new)`.
+///
+/// The affected entry's key stands in for the record's affected-object reference, which cannot
+/// be a `&DBTraceObjectValue` without tying the record to the entry's lifetime. `old_lifespan` /
+/// `new_lifespan` are only known together (for [`ValueEvent::LifespanChanged`]); otherwise the
+/// record carries no old/new value, mirroring the 3-argument `TraceChangeRecord` constructor.
+fn value_change_record(
+    event: ValueEvent,
+    entry_key: String,
+    old_lifespan: Option<Lifespan>,
+    new_lifespan: Option<Lifespan>,
+) -> TraceChangeRecord {
+    let affected_object = Some(Box::new(entry_key) as Box<dyn Any + Send + Sync>);
+    match (old_lifespan, new_lifespan) {
+        (Some(old), Some(new)) => TraceChangeRecord::new(
+            Box::new(event),
+            None,
+            affected_object,
+            Some(Box::new(old) as Box<dyn Any + Send + Sync>),
+            Some(Box::new(new) as Box<dyn Any + Send + Sync>),
+        ),
+        _ => TraceChangeRecord::without_values(Box::new(event), None, affected_object),
+    }
+}
 
 /// A single value entry (attribute or element) attached to a `DBTraceObject`.
 ///
@@ -205,12 +231,12 @@ impl DBTraceObjectValue {
     pub(crate) fn do_set_lifespan_and_emit(&self, lifespan: Lifespan) {
         let old_lifespan = self.do_get_lifespan();
         self.do_set_lifespan(lifespan);
-        self.emit_to_parent(ValueChangeRecord {
-            event: ValueEvent::LifespanChanged,
-            entry_key: self.do_get_entry_key(),
-            old_lifespan: Some(old_lifespan),
-            new_lifespan: Some(lifespan),
-        });
+        self.emit_to_parent(value_change_record(
+            ValueEvent::LifespanChanged,
+            self.do_get_entry_key(),
+            Some(old_lifespan),
+            Some(lifespan),
+        ));
     }
 
     /// Rewrite this entry's lifespan, re-keying the parent's and child's caches around the write.
@@ -263,12 +289,7 @@ impl DBTraceObjectValue {
         let entry_key = self.do_get_entry_key();
         let parent = self.get_parent_object().expect("cannot delete the root value");
         self.do_delete();
-        parent.emit_events(&ValueChangeRecord {
-            event: ValueEvent::Deleted,
-            entry_key,
-            old_lifespan: None,
-            new_lifespan: None,
-        });
+        parent.emit_events(&value_change_record(ValueEvent::Deleted, entry_key, None, None));
     }
 
     /// Clear `span` out of this entry's lifespan, announcing the child object's life change if
@@ -284,12 +305,12 @@ impl DBTraceObjectValue {
         }
         let child = self.get_child_object();
         let result = self.do_truncate_or_delete(span);
-        child.emit_events(&ValueChangeRecord {
-            event: ValueEvent::ObjectLifeChanged,
-            entry_key: self.do_get_entry_key(),
-            old_lifespan: None,
-            new_lifespan: None,
-        });
+        child.emit_events(&value_change_record(
+            ValueEvent::ObjectLifeChanged,
+            self.do_get_entry_key(),
+            None,
+            None,
+        ));
         result
     }
 
@@ -353,12 +374,12 @@ impl DBTraceObjectValue {
 
         if self.do_is_object() {
             let child = self.get_child_object();
-            child.emit_events(&ValueChangeRecord {
-                event: ValueEvent::ObjectLifeChanged,
+            child.emit_events(&value_change_record(
+                ValueEvent::ObjectLifeChanged,
                 entry_key,
-                old_lifespan: None,
-                new_lifespan: None,
-            });
+                None,
+                None,
+            ));
         }
         Ok(())
     }
@@ -381,7 +402,7 @@ impl DBTraceObjectValue {
     /// Hand `record` to the parent object, if there is one. The root value has no parent to
     /// notify; Java would throw an NPE, but every caller here reaches this only for a non-root
     /// entry.
-    fn emit_to_parent(&self, record: ValueChangeRecord) {
+    fn emit_to_parent(&self, record: TraceChangeRecord) {
         if let Some(parent) = self.get_parent_object() {
             parent.emit_events(&record);
         }
@@ -612,9 +633,7 @@ mod tests {
     }
 
     impl DBTraceObject for MockObject {
-        fn emit_events(&self, record: &dyn TraceChangeRecord) {
-            // `TraceChangeRecord` is still a marker trait, so only the fact of the event can be
-            // observed here, not its contents.
+        fn emit_events(&self, record: &TraceChangeRecord) {
             let _ = record;
             self.fixture.log(format!("{}:emit", self.role));
         }

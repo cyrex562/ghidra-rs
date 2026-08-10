@@ -12,7 +12,7 @@ pub mod value_triple;
 
 pub use db_trace_object_interface::DBTraceObjectInterface;
 pub use db_trace_object_val_path::DBTraceObjectValPath;
-pub use db_trace_object_value::{DBTraceObjectValue, ValueChangeRecord, ValueEvent};
+pub use db_trace_object_value::{DBTraceObjectValue, ValueEvent};
 pub use db_trace_object_value_data::DBTraceObjectValueData;
 pub use db_trace_object_value_r_star_tree::{DBTraceObjectValueMap, DBTraceObjectValueRStarTree};
 pub use immutable_value_box::ImmutableValueBox;
