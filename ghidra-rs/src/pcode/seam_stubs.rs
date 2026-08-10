@@ -656,30 +656,6 @@ impl BytesPcodeArithmetic {
     }
 }
 
-/// Placeholder for `ghidra.pcode.emu.BytesPcodeThread`, referenced by
-/// `PcodeEmulator::create_thread` before the real class (a `DefaultPcodeThread<byte[]>`
-/// specialization with a decoder, executor, frame, local state, library, and injects of its own)
-/// is ported. It is held as an [`ErasedPcodeThread`], which is a bare marker, so nothing
-/// downstream reads anything back off a thread; only the name is kept, so a test can confirm
-/// `PcodeEmulator::create_thread` produced this type with the requested name.
-pub struct BytesPcodeThread {
-    name: String,
-}
-
-impl BytesPcodeThread {
-    /// Placeholder for `new BytesPcodeThread(String, AbstractPcodeMachine<byte[]>)`. The owning
-    /// machine isn't retained -- see the struct docs.
-    pub fn new(name: &str) -> Self {
-        Self { name: name.to_string() }
-    }
-
-    /// Port of the inherited `PcodeThread.getName()`.
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-}
-
-impl ErasedPcodeThread for BytesPcodeThread {}
 
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorState`, referenced by
 /// `PcodeEmulator::create_shared_state`/`create_local_state` before the real class (composed of
