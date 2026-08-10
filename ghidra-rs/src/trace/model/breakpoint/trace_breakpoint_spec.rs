@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 
+use crate::trace::model::breakpoint::trace_breakpoint_common::TraceBreakpointCommon;
 use crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
-use crate::trace::seam_stubs::{TraceBreakpointCommon, TraceBreakpointLocation};
+use crate::trace::seam_stubs::TraceBreakpointLocation;
 
 /// Key for the breakpoint's expression attribute.
 pub const KEY_EXPRESSION: &str = "_expression";
@@ -79,14 +80,93 @@ pub trait TraceBreakpointSpec: TraceBreakpointCommon {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::trace::model::target::iface::TraceObjectInterface;
+    use crate::trace::model::trace::Trace;
+    use crate::trace::model::trace_unique_object::TraceUniqueObject;
+    use crate::trace::seam_stubs::ObjectKey;
 
+    struct MockObjectKey(i32);
 
+    impl ObjectKey for MockObjectKey {
+        fn equals(&self, obj: &dyn std::any::Any) -> bool {
+            obj.downcast_ref::<MockObjectKey>()
+                .is_some_and(|other| other.0 == self.0)
+        }
+
+        fn hash_code(&self) -> i32 {
+            self.0
+        }
+
+        fn compare_to(&self, that: &dyn ObjectKey) -> i32 {
+            self.hash_code() - that.hash_code()
+        }
+    }
 
     struct MockBreakpointSpec {
         kinds: HashSet<TraceBreakpointKind>,
     }
 
-    impl TraceBreakpointCommon for MockBreakpointSpec {}
+    impl TraceUniqueObject for MockBreakpointSpec {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            Box::new(MockObjectKey(1))
+        }
+
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl TraceObjectInterface for MockBreakpointSpec {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("mock")
+        }
+    }
+
+    impl TraceBreakpointCommon for MockBreakpointSpec {
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_path(&self) -> String {
+            "Breakpoints[0]".to_string()
+        }
+
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {}
+
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+
+        fn get_name(&self, _snap: i64) -> String {
+            "Breakpoints[0]".to_string()
+        }
+
+        fn set_enabled(&mut self, _lifespan: Lifespan, _enabled: bool) {}
+
+        fn set_enabled_at(&mut self, _snap: i64, _enabled: bool) {}
+
+        fn is_enabled(&self, _snap: i64) -> bool {
+            true
+        }
+
+        fn set_comment(&mut self, _lifespan: Lifespan, _comment: Option<&str>) {}
+
+        fn set_comment_at(&mut self, _snap: i64, _comment: Option<&str>) {}
+
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+
+        fn remove(&mut self, _snap: i64) {}
+
+        fn delete(&mut self) {}
+
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+
+        fn is_alive(&self, _span: Lifespan) -> bool {
+            true
+        }
+    }
 
     impl TraceBreakpointSpec for MockBreakpointSpec {
         fn get_expression(&self, _snap: i64) -> String {
@@ -150,7 +230,7 @@ mod tests {
 
     #[test]
     fn trace_object_info_matches_java_annotation() {
-        let info = MockBreakpointSpec::trace_object_info();
+        let info = <MockBreakpointSpec as TraceBreakpointSpec>::trace_object_info();
         assert_eq!(info.schema_name, "BreakpointSpec");
         assert_eq!(info.short_name, "breakpoint specification");
         assert_eq!(
