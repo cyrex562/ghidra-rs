@@ -12,6 +12,7 @@ pub mod data_service;
 pub mod data_type_archive_service;
 pub mod data_type_manager_service;
 pub mod data_type_query_service;
+pub mod data_type_reference_finder;
 pub mod debugger_auto_mapping_service;
 pub mod debugger_control_service;
 pub mod debugger_emulation_service;
@@ -63,6 +64,7 @@ pub use data_service::DataService;
 pub use data_type_archive_service::{DataTypeArchiveService, OpenArchiveError, OpenProjectArchiveError};
 pub use data_type_manager_service::DataTypeManagerService;
 pub use data_type_query_service::DataTypeQueryService;
+pub use data_type_reference_finder::DataTypeReferenceFinder;
 pub use debugger_auto_mapping_service::DebuggerAutoMappingService;
 pub use debugger_control_service::{
     ControlModeChangeListener, DebuggerControlService, StateEditFuture, StateEditor,

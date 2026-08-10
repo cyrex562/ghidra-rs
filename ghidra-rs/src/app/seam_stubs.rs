@@ -920,3 +920,32 @@ pub trait ClipboardContentProviderService {}
 /// [`DataService`](crate::app::services::DataService) before the real class is ported.
 /// `DataService` only ever passes this type through as a parameter, so no members are needed yet.
 pub trait ListingActionContext {}
+
+/// Placeholder for `ghidra.app.services.DataTypeReference`, referenced by
+/// [`DataTypeReferenceFinder`](crate::app::services::DataTypeReferenceFinder) before the real
+/// class is ported. Java's version is a concrete container class (not an interface), so this is
+/// a plain struct rather than a `dyn`-dispatched trait. `DataTypeReferenceFinder` only ever
+/// delivers this type through its callback opaquely, so no fields are needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DataTypeReference;
+
+/// Placeholder for `ghidra.app.services.FieldMatcher`, referenced by
+/// [`DataTypeReferenceFinder`](crate::app::services::DataTypeReferenceFinder) before the real
+/// class is ported. Java's version is a concrete class (not an interface), so this is a plain
+/// struct rather than a `dyn`-dispatched trait. Only `field_name` and
+/// [`is_ignored`](Self::is_ignored) are modeled -- the two members
+/// `DataTypeReferenceFinder`'s callers need to build/inspect an 'empty' (match-everything)
+/// matcher -- leaving the fuller offset-matching API (`FieldMatcher(DataType, int)`, `matches`,
+/// `getDisplayText`, ...) for that class's own future port.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FieldMatcher {
+    pub field_name: Option<String>,
+}
+
+impl FieldMatcher {
+    /// Mirrors `FieldMatcher.isIgnored()`: true if no specific field has been specified, so an
+    /// empty matcher signals "match all fields".
+    pub fn is_ignored(&self) -> bool {
+        self.field_name.is_none()
+    }
+}
