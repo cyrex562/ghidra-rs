@@ -683,18 +683,50 @@ impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for BytesPcodeExecutorState {
 
 impl PcodeExecutorState<Vec<u8>> for BytesPcodeExecutorState {}
 
-/// Placeholder for the unported Java type `PcodeTraceAccess`
-/// (`ghidra.pcode.exec.trace.data.PcodeTraceAccess`), referenced by
-/// `PcodeTracePropertyAccess`'s doc links. Generated stub: only a shape hint. Replace with the
-/// real port when available.
-pub trait PcodeTraceAccess: Send + Sync {
-    // (no public methods parsed from the Java source)
-}
-
 /// Placeholder for the unported Java type `PcodeTraceDataAccess`
 /// (`ghidra.pcode.exec.trace.data.PcodeTraceDataAccess`), referenced by
-/// `PcodeTracePropertyAccess`'s doc links. Generated stub: only a shape hint. Replace with the
-/// real port when available.
+/// `PcodeTracePropertyAccess`'s doc links and by [`PcodeTraceAccess`](crate::pcode::exec::trace::data::PcodeTraceAccess).
+/// Generated stub: only a shape hint. Replace with the real port when available.
 pub trait PcodeTraceDataAccess: Send + Sync {
     // (no public methods parsed from the Java source)
 }
+
+/// Placeholder for the unported Java type `PcodeTraceMemoryAccess`
+/// (`ghidra.pcode.exec.trace.data.PcodeTraceMemoryAccess`), referenced by
+/// [`PcodeTraceAccess`](crate::pcode::exec::trace::data::PcodeTraceAccess). Generated stub: only
+/// a shape hint. Java's `PcodeTraceMemoryAccess extends PcodeTraceDataAccess` (adds no members of
+/// its own), so this mirrors that as a supertrait bound. Replace with the real port when
+/// available.
+pub trait PcodeTraceMemoryAccess: PcodeTraceDataAccess {
+    // (no public methods parsed from the Java source)
+}
+
+/// Placeholder for the unported Java type `DefaultPcodeTraceThreadAccess`
+/// (`ghidra.pcode.exec.trace.data.DefaultPcodeTraceThreadAccess`), referenced by
+/// [`PcodeTraceAccess::new_pcode_trace_thread_access`](crate::pcode::exec::trace::data::PcodeTraceAccess::new_pcode_trace_thread_access).
+/// Generated stub: only the constructor needed by that default method. Java's class multiplexes a
+/// memory shim and a registers shim into one shim; the real port should route each
+/// `PcodeTraceDataAccess` method to whichever of `memory`/`registers` owns the address space
+/// touched. Replace with the real port when available.
+pub struct DefaultPcodeTraceThreadAccess {
+    #[allow(dead_code)]
+    memory: Box<dyn PcodeTraceMemoryAccess>,
+    #[allow(dead_code)]
+    registers: Box<
+        dyn crate::pcode::exec::trace::data::pcode_trace_registers_access::PcodeTraceRegistersAccess,
+    >,
+}
+
+impl DefaultPcodeTraceThreadAccess {
+    /// Construct a shim multiplexing `memory` and `registers`.
+    pub fn new(
+        memory: Box<dyn PcodeTraceMemoryAccess>,
+        registers: Box<
+            dyn crate::pcode::exec::trace::data::pcode_trace_registers_access::PcodeTraceRegistersAccess,
+        >,
+    ) -> Self {
+        Self { memory, registers }
+    }
+}
+
+impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {}
