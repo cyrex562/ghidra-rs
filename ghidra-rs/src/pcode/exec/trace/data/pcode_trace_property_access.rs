@@ -5,7 +5,7 @@
 use std::sync::Arc;
 
 use crate::pcode::exec::trace::data::pcode_trace_access::PcodeTraceAccess;
-use crate::pcode::seam_stubs::PcodeTraceDataAccess;
+use crate::pcode::exec::trace::data::pcode_trace_data_access::PcodeTraceDataAccess;
 use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::program::model::lang::language::Language;
 
