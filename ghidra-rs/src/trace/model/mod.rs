@@ -24,6 +24,7 @@ pub mod trace_change_set;
 pub mod trace_closed_exception;
 pub mod trace_domain_object_listener;
 pub mod trace_execution_state;
+pub mod trace_location;
 pub mod trace_options_manager;
 pub mod trace_span;
 pub mod trace_time_viewport;
