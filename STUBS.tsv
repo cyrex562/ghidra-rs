@@ -509,3 +509,5 @@ ts	stub_class	referenced_by
 2026-08-10T09:18:02.614377+00:00	ProxyObj	ListingField
 2026-08-10T09:18:02.614976+00:00	Field	ListingField
 2026-08-10T09:18:02.615347+00:00	FieldLocation	ListingField
+2026-08-10T09:25:00.000000+00:00	Highlight	ListingHighlightProvider
+2026-08-10T09:25:00.000001+00:00	Color	ListingHighlightProvider
