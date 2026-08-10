@@ -5,11 +5,13 @@
 use std::sync::Arc;
 
 use crate::pcode::emu::pcode_machine::PcodeMachine;
+use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
+use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::exec::pcode_executor::PcodeExecutor;
-use crate::pcode::seam_stubs::{RegisterValue, ThreadPcodeExecutorState};
+use crate::pcode::seam_stubs::RegisterValue;
 use crate::program::model::address::Address;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::Instruction;
@@ -44,6 +46,16 @@ pub trait ErasedPcodeThread {}
 ///
 /// `T` is the type of values in the emulated machine state.
 pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
+    /// The concrete type of this thread's shared (memory) state delegate.
+    ///
+    /// [`ThreadPcodeExecutorState`] takes its shared and local delegates as generic parameters
+    /// rather than trait objects (see its module docs), so a thread implementation must name its
+    /// delegates' concrete types here.
+    type SharedState: PcodeExecutorState<T>;
+
+    /// The concrete type of this thread's thread-local (register/unique) state delegate.
+    type LocalState: PcodeExecutorState<T>;
+
     /// Get the name of this thread.
     fn get_name(&self) -> &str;
 
@@ -256,7 +268,7 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     ///
     /// The memory part of this state is shared among all threads in the same machine. See
     /// [`PcodeMachine::get_shared_state`].
-    fn get_state(&self) -> &dyn ThreadPcodeExecutorState<T>;
+    fn get_state(&self) -> &ThreadPcodeExecutorState<T, Self::SharedState, Self::LocalState>;
 
     /// Get the thread's memory and register state for writing.
     ///
@@ -264,7 +276,7 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     /// (`setVar` and friends) needs `&mut` in Rust, so the mutable view is a separate accessor
     /// rather than a getter/setter pair. This follows
     /// [`PcodeMachine::get_shared_state_mut`].
-    fn get_state_mut(&mut self) -> &mut dyn ThreadPcodeExecutorState<T>;
+    fn get_state_mut(&mut self) -> &mut ThreadPcodeExecutorState<T, Self::SharedState, Self::LocalState>;
 
     /// Override the p-code at the given address with the given Sleigh source for only this thread.
     ///
@@ -290,7 +302,74 @@ mod tests {
     use std::collections::HashMap;
 
     use super::*;
+    use crate::pcode::exec::pcode_executor_state_piece::{ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece};
+    use crate::pcode::exec::pcode_state_callbacks::PcodeStateCallbacks;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
+    use crate::program::model::lang::language::Language;
+    use crate::program::model::lang::register::RegisterRef;
+    use crate::program::model::mem::mem_buffer::MemBuffer;
+
+    /// A state that is never actually exercised, only named as
+    /// [`CountingThread`]'s [`PcodeThread::SharedState`]/[`PcodeThread::LocalState`], since its
+    /// `get_state`/`get_state_mut` are themselves unreachable in these tests.
+    struct UnimplementedState;
+
+    impl ErasedPcodeExecutorStatePiece for UnimplementedState {}
+
+    impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for UnimplementedState {
+        fn get_language(&self) -> Box<dyn Language> {
+            unimplemented!("test should not call this")
+        }
+
+        fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+            unimplemented!("test should not call this")
+        }
+
+        fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+            unimplemented!("test should not call this")
+        }
+
+        fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
+            unimplemented!("test should not call this")
+        }
+
+        fn fork<CB: PcodeStateCallbacks>(&self, _cb: &CB) -> Self
+        where
+            Self: Sized,
+        {
+            unimplemented!("test should not call this")
+        }
+
+        fn set_var_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _quantize: bool, _val: &Vec<u8>) {
+            unimplemented!("test should not call this")
+        }
+
+        fn set_var_internal_abstract(&mut self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _val: &Vec<u8>) {
+            unimplemented!("test should not call this")
+        }
+
+        fn get_var_abstract(&self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _quantize: bool, _reason: crate::pcode::exec::pcode_executor_state_piece::Reason) -> Vec<u8> {
+            unimplemented!("test should not call this")
+        }
+
+        fn get_var_internal_abstract(&self, _space: &Arc<AddressSpace>, _offset: &Vec<u8>, _size: i32, _reason: crate::pcode::exec::pcode_executor_state_piece::Reason) -> Vec<u8> {
+            unimplemented!("test should not call this")
+        }
+
+        fn get_register_values(&self) -> Vec<(RegisterRef, Vec<u8>)> {
+            unimplemented!("test should not call this")
+        }
+
+        fn get_concrete_buffer(&self, _address: &Address, _purpose: crate::pcode::exec::pcode_arithmetic::Purpose) -> Box<dyn MemBuffer> {
+            unimplemented!("test should not call this")
+        }
+
+        fn clear(&mut self) {
+            unimplemented!("test should not call this")
+        }
+    }
+
+    impl PcodeExecutorState<Vec<u8>> for UnimplementedState {}
 
     /// A thread that models only what the tests exercise: the name, the counter, the suspension
     /// flag, the per-thread injects, and a decode/execute cycle over fixed-length "instructions".
@@ -326,6 +405,9 @@ mod tests {
     impl ErasedPcodeThread for CountingThread {}
 
     impl PcodeThread<Vec<u8>> for CountingThread {
+        type SharedState = UnimplementedState;
+        type LocalState = UnimplementedState;
+
         fn get_name(&self) -> &str {
             &self.name
         }
@@ -431,11 +513,11 @@ mod tests {
             unimplemented!("test should not call this")
         }
 
-        fn get_state(&self) -> &dyn ThreadPcodeExecutorState<Vec<u8>> {
+        fn get_state(&self) -> &ThreadPcodeExecutorState<Vec<u8>, UnimplementedState, UnimplementedState> {
             unimplemented!("test should not call this")
         }
 
-        fn get_state_mut(&mut self) -> &mut dyn ThreadPcodeExecutorState<Vec<u8>> {
+        fn get_state_mut(&mut self) -> &mut ThreadPcodeExecutorState<Vec<u8>, UnimplementedState, UnimplementedState> {
             unimplemented!("test should not call this")
         }
 
