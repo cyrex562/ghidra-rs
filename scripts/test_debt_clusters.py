@@ -214,10 +214,31 @@ class TestJavaSizedVerdicts(unittest.TestCase):
         self.assertIn("cannot tell which", why)
 
     def test_a_name_java_never_declares_is_not_swept(self):
-        """`IteratorStl`, `RepositoryLike`, `C13SectionLike` -- abstractions the port invented."""
-        v, why = self.call("IteratorStl", 4, {"IteratorStl": 0}, {})
+        """A name with no Java counterpart under ANY of the port's renaming conventions.
+
+        The original example here was `IteratorStl` -- which turned out to be
+        generic/stl/IteratorSTL.java, differing only in acronym case. 142 of 197 rows called
+        "abstractions the port invented" were that kind of near-miss, so this test now uses a
+        name that really is absent.
+        """
+        v, why = self.call("ErasedPcodeThread", 4, {"ErasedPcodeThread": 0}, {})
         self.assertIsNone(v)
         self.assertIn("the port invented", why)
+
+    def test_a_renamed_java_type_is_recognised_not_called_invented(self):
+        """IteratorStl is IteratorSTL; MdMang is MDMang; MdMangLike is a seam for it."""
+        for rust_name in ("IteratorStl", "MdMang", "MdMangLike"):
+            v, why = self.call(rust_name, 4, {rust_name: 0}, {})
+            self.assertNotIn("the port invented", why,
+                             f"{rust_name} has a Java counterpart: {why}")
+            # and it is answered from Java's own shape, not merely acknowledged
+            self.assertTrue(v or "Java declares" in why or "Java subtypes" in why,
+                            f"{rust_name} resolved but produced no evidence: {why}")
+
+    def test_a_nested_java_type_is_recognised(self):
+        """Lifespan.LifeSet has no file of its own, so a basename index cannot see it."""
+        v, why = self.call("LifeSet", 4, {"LifeSet": 0}, {})
+        self.assertNotIn("the port invented", why, why)
 
     def test_a_port_modelling_a_jdk_type_is_not_paired_with_ghidras_class(self):
         """The Rust `Lock` trait documents java.util.concurrent.locks.Lock, while orig_src holds

@@ -412,6 +412,55 @@ class TestNonProductionSources(unittest.TestCase):
             self.assertFalse(sr.is_non_production(rel), rel)
 
 
+class TestShapeTableIsPathKeyed(unittest.TestCase):
+    def test_nested_entries_are_excluded_from_the_path_table(self):
+        """SHAPES.tsv is read by path, first match wins.
+
+        A nested type shares its parent file's path, so including them gave 1,850 duplicate
+        paths and could hand descent_night.sh the shape of a nested action class for the whole
+        file. They stay in the name index; they are not written here.
+        """
+        import csv as _csv
+        path = os.path.join(sr.REPO, "SHAPES.tsv")
+        if not os.path.exists(path):
+            self.skipTest("SHAPES.tsv not built")
+        seen = set()
+        with open(path, newline="", encoding="utf-8") as f:
+            dups = [r["path"] for r in _csv.DictReader(f, delimiter="\t")
+                    if r["path"] in seen or seen.add(r["path"])]
+        self.assertEqual(dups, [], f"{len(dups)} duplicate path(s) in SHAPES.tsv")
+
+
+class TestNameLookup(unittest.TestCase):
+    """The port renames systematically; a basename index sees none of it."""
+
+    FACTS = {"MDMang": [{"rel": "mdemangler/MDMang.java"}],
+             "FSRL": [{"rel": "ghidra/formats/gfilesystem/FSRL.java"}],
+             "AddressKeyIterator": [{"rel": "a/AddressKeyIterator.java"}],
+             "FooLike": [{"rel": "b/FooLike.java"}],
+             "Foo": [{"rel": "b/Foo.java"}]}
+
+    def test_exact_name_wins(self):
+        self.assertEqual(sr.lookup("MDMang", self.FACTS)[0]["rel"], "mdemangler/MDMang.java")
+
+    def test_acronym_case_is_tolerated(self):
+        """Ghidra writes MDMang and FSRL; the Rust port writes MdMang and Fsrl."""
+        self.assertIsNotNone(sr.lookup("MdMang", self.FACTS))
+        self.assertIsNotNone(sr.lookup("Fsrl", self.FACTS))
+
+    def test_seam_suffix_is_stripped(self):
+        """MdMangLike is a seam trait standing in for MDMang."""
+        self.assertEqual(sr.lookup("AddressKeyIteratorLike", self.FACTS)[0]["rel"],
+                         "a/AddressKeyIterator.java")
+
+    def test_a_real_Like_class_is_not_shadowed(self):
+        """Exact match first, so a genuine `FooLike` never resolves to `Foo`."""
+        self.assertEqual(sr.lookup("FooLike", self.FACTS)[0]["rel"], "b/FooLike.java")
+
+    def test_unknown_stays_unknown(self):
+        self.assertIsNone(sr.lookup("NoSuchThingAnywhere", self.FACTS))
+
+
 class TestRealSources(unittest.TestCase):
     """Guard the two live cases the rules were written for, if orig_src is present."""
 

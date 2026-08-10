@@ -386,6 +386,43 @@ def placeholder_target(name, rust_path):
     return fq.group(1) if fq else None
 
 
+# The port renames as it goes, in two systematic ways, and a basename index sees neither:
+#   * acronym case. Ghidra writes MDMang, FSRL, MDObjectCPP; Rust writes MdMang, Fsrl,
+#     MdObjectCpp. 47 rows looked like invented abstractions purely because of capitalisation.
+#   * a `Like`/`Trait` suffix marks a seam trait standing in for a type -- MdMangLike is a
+#     seam for MDMang, AddressKeyIteratorLike for AddressKeyIterator. 55 more.
+_SEAM_SUFFIX = re.compile(r"(Like|Trait)$")
+
+
+def lookup(name, facts, _ci_cache={}):
+    """Java entries for a Rust type name, tolerating the port's renaming conventions.
+
+    Tried in order: the name as written, then case-insensitively, then with a Like/Trait seam
+    suffix removed (also case-insensitively). Exact always wins, so a real `FooLike` class
+    could never be shadowed by `Foo`.
+    """
+    if name in facts:
+        return facts[name]
+    key = id(facts)
+    ci = _ci_cache.get(key)
+    if ci is None:
+        ci = {}
+        for k, v in facts.items():
+            ci.setdefault(k.lower(), (k, v))
+        _ci_cache[key] = ci
+    hit = ci.get(name.lower())
+    if hit:
+        return hit[1]
+    base = _SEAM_SUFFIX.sub("", name)
+    if base != name:
+        if base in facts:
+            return facts[base]
+        hit = ci.get(base.lower())
+        if hit:
+            return hit[1]
+    return None
+
+
 def resolve_by_path(name, rust_path, facts):
     """Pick which Java class a Rust declaration models, from where it sits.
 
@@ -511,6 +548,22 @@ def is_non_production(rel: str) -> bool:
     )
 
 
+_NESTED = re.compile(
+    r"(?m)^[ \t]+(?:(?:public|protected|private|static|final|abstract|sealed|non-sealed)\s+)*"
+    r"(class|interface|enum|record)\s+([A-Z]\w*)")
+
+
+def nested_declarations(src, rel):
+    """Type declarations nested inside another Java file.
+
+    Java requires only the PUBLIC top-level type to match the filename, so nested types have
+    no file of their own -- `Lifespan.LifeSet`, `TraceSchedule.TimeRadix`,
+    `PcodeUseropLibrary.PcodeUseropDefinition`. An index keyed on basenames cannot see them,
+    so 34 of them looked like abstractions the port had invented.
+    """
+    return [(m.group(2), m.group(1)) for m in _NESTED.finditer(src)]
+
+
 def build_index(verbose=False):
     files, facts = [], {}
     for root, _dirs, names in os.walk(ORIG):
@@ -522,6 +575,7 @@ def build_index(verbose=False):
                 continue
             files.append(p)
     subtypes: dict[str, set] = {}
+    nested: dict[str, list] = {}
     for i, p in enumerate(sorted(files)):
         name = os.path.basename(p)[:-5]
         rel = os.path.relpath(p, ORIG)
@@ -530,10 +584,26 @@ def build_index(verbose=False):
             continue
         fa["rel"] = rel
         facts.setdefault(name, []).append(fa)
+        try:
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                _src = strip_java(fh.read())
+        except OSError:
+            _src = ""
+        for nname, nkind in nested_declarations(_src, rel):
+            if nname == name:
+                continue
+            nested.setdefault(nname, []).append(dict(
+                name=nname, kind=nkind, sealed=False, abstract=False, extends=[],
+                implements=[], permits=[], annotations=[], rel=rel, nested_in=name,
+                static_fields=0, instance_fields=0, abstract_methods=0, concrete_methods=0,
+                static_methods=0, private_ctor=False, public_ctor=False, singleton=False))
         for sup in fa["extends"] + fa["implements"]:
             subtypes.setdefault(sup, set()).add(name)
         if verbose and i % 2000 == 0:
             print(f"  indexed {i}/{len(files)}", file=sys.stderr)
+    # Nested types only fill gaps -- a top-level declaration of the same name always wins.
+    for n, entries in nested.items():
+        facts.setdefault(n, entries)
     return facts, subtypes
 
 
@@ -808,6 +878,13 @@ def cmd_index(args):
     rows = []
     for name, entries in facts.items():
         for fa in entries:
+            # SHAPES.tsv is keyed by PATH and read that way -- descent_night.sh takes the first
+            # row matching the file it is about to port. A nested type shares its parent's
+            # path, so writing nested entries here put 1,850 duplicate paths in the table and
+            # could hand a porter the shape of `SaveTraceAction` for DebuggerResources.java.
+            # Nested types belong in the name index (for lookup), never in the path table.
+            if fa.get("nested_in"):
+                continue
             res = classify(fa, len(subtypes.get(name, ())))
             rows.append(
                 [

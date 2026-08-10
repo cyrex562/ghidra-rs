@@ -441,6 +441,44 @@ _RESOLVE_CACHE = {}
 _FACTS = None
 
 
+def _java_kind(name):
+    """Java kind for a name, including NESTED declarations.
+
+    java_declarations() is built from filenames, so it has nothing for a type declared inside
+    another file -- Lifespan.LifeSet, TraceSchedule.TimeRadix, TraceObjectSchema.AttributeSchema.
+    shape_rules' index does carry them, and 49 rows sat unanswerable for want of just the kind.
+    """
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        e = shape_rules.lookup(name, _java_facts())
+        return e[0]["kind"] if e else None
+    except Exception:
+        return None
+
+
+def _java_alias(name):
+    """The Java simple name this Rust name refers to under the port's conventions, or None."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        e = shape_rules.lookup(name, _java_facts())
+        return e[0]["name"] if e and e[0].get("name") != name else (e[0]["name"] if e else None)
+    except Exception:
+        return None
+
+
+def _java_lookup(name):
+    """Java rel-path for a Rust type name via shape_rules' tolerant lookup, or None."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        e = shape_rules.lookup(name, _java_facts())
+        return e[0]["rel"] if e else None
+    except Exception:
+        return None
+
+
 def _java_facts():
     """shape_rules' parsed Java index, built once.
 
@@ -528,9 +566,18 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
         java_ambiguous = ()
 
     if java_subtypes is not None:
-        j = java_subtypes.get(name, 0)
+        # Resolve the port's renaming (acronym case, Like/Trait seam suffix, nested types)
+        # before concluding Java is silent -- 142 of 197 "invented abstraction" rows were
+        # really MDMang vs MdMang, FSRL vs Fsrl, or Lifespan.LifeSet.
+        lookup_name = name
+        if name not in java_subtypes and name not in (java_decls or {}):
+            alt = _java_alias(name)
+            if alt:
+                lookup_name = alt
+        j = java_subtypes.get(lookup_name, 0)
+        name_for_decl = lookup_name
         if j == 0:
-            kind = (java_decls or {}).get(name)
+            kind = (java_decls or {}).get(name_for_decl) or _java_kind(name)
             if kind in ("class", "enum", "record"):
                 if name in unported:
                     # The concrete class has not been ported, so the trait is very likely a
@@ -551,6 +598,11 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
                     f"Java declares {name} as an interface with no in-tree implementers -- either "
                     f"an extension point (-> ACCEPT) or its implementers are unported; the count "
                     f"cannot tell which")
+            resolved = _java_lookup(name)
+            if resolved:
+                return None, (
+                    f"no Java FILE named {name}, but the port's renaming resolves it to "
+                    f"{resolved} -- rerun once the index is rebuilt")
             return None, (
                 f"no Java type named {name} -- an abstraction the port invented, so Java says "
                 f"nothing about its shape")
@@ -569,7 +621,7 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
             # with one implementation is the header-file idiom (dyn_rules P2), whereas a class
             # with one subclass is inheritance-for-reuse, which Rust spells as composition.
             only = ", ".join((java_impl_names or {}).get(name, ())) or "its single implementer"
-            kind = (java_decls or {}).get(name)
+            kind = (java_decls or {}).get(name_for_decl)
             if kind == "interface":
                 return "SUGGEST-STRUCT", (
                     f"one concrete Java implementer ({only}) -- an interface naming a single "
