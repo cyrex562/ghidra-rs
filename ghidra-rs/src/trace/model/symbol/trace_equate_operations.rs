@@ -130,7 +130,7 @@ mod tests {
         fn add_reference(
             &mut self,
             _lifespan: Lifespan,
-            _thread: Option<Box<dyn crate::trace::seam_stubs::TraceThread>>,
+            _thread: Option<Box<dyn crate::trace::model::thread::TraceThread>>,
             _address: Address,
             _operand_index: i32,
         ) -> Box<dyn crate::trace::model::symbol::trace_equate_reference::TraceEquateReference> {
@@ -139,7 +139,7 @@ mod tests {
         fn add_reference_varnode(
             &mut self,
             _lifespan: Lifespan,
-            _thread: Option<Box<dyn crate::trace::seam_stubs::TraceThread>>,
+            _thread: Option<Box<dyn crate::trace::model::thread::TraceThread>>,
             _address: Address,
             _varnode: crate::program::model::pcode::Varnode,
         ) -> Box<dyn crate::trace::model::symbol::trace_equate_reference::TraceEquateReference> {
@@ -154,7 +154,7 @@ mod tests {
         fn get_reference(
             &self,
             _snap: i64,
-            _thread: Option<&dyn crate::trace::seam_stubs::TraceThread>,
+            _thread: Option<&dyn crate::trace::model::thread::TraceThread>,
             _address: &Address,
             _operand_index: i32,
         ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_reference::TraceEquateReference>> {
@@ -163,7 +163,7 @@ mod tests {
         fn get_reference_varnode(
             &self,
             _snap: i64,
-            _thread: Option<&dyn crate::trace::seam_stubs::TraceThread>,
+            _thread: Option<&dyn crate::trace::model::thread::TraceThread>,
             _address: &Address,
             _varnode: &crate::program::model::pcode::Varnode,
         ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_reference::TraceEquateReference>> {

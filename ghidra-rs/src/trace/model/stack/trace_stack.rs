@@ -17,7 +17,7 @@ use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::target::iface::TraceObjectInterface;
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
 use crate::trace::model::trace_unique_object::TraceUniqueObject;
-use crate::trace::seam_stubs::TraceThread;
+use crate::trace::model::thread::TraceThread;
 
 /// A trace of the connected debugger's stack unwind.
 pub trait TraceStack: TraceUniqueObject + TraceObjectInterface {
@@ -100,7 +100,50 @@ mod tests {
     }
 
     struct MockThread(&'static str);
-    impl TraceThread for MockThread {}
+
+    impl TraceUniqueObject for MockThread {
+        fn get_object_key(&self) -> Box<dyn ObjectKey> {
+            Box::new(MockKey(0))
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl TraceObjectInterface for MockThread {
+        fn get_object(&self) -> Box<dyn TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceThread for MockThread {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_key(&self) -> i64 {
+            0
+        }
+        fn get_path(&self) -> String {
+            self.0.to_string()
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            self.0.to_string()
+        }
+        fn set_name(&mut self, _lifespan: crate::trace::model::lifespan::Lifespan, _name: &str) {}
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+        fn set_comment(&mut self, _snap: i64, _comment: Option<&str>) {}
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+        fn delete(&mut self) {}
+        fn remove(&mut self, _snap: i64) {}
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+        fn is_alive(&self, _span: crate::trace::model::lifespan::Lifespan) -> bool {
+            true
+        }
+    }
 
     struct MockStack {
         frames: Mutex<Vec<i32>>,

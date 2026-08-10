@@ -8,6 +8,7 @@ use std::any::TypeId;
 use std::sync::Arc;
 
 use crate::debug::api::tracermi::SchemaName;
+use crate::trace::model::thread::TraceThread;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::program::model::address::{
     Address, AddressFactory, AddressRange, AddressSet, AddressSetView, AddressSpace,
@@ -817,23 +818,6 @@ pub trait SchemaBuilder: Send + Sync {
     /// Builds the schema and adds it to the context the builder was created from. Mirrors
     /// `SchemaBuilder.buildAndAdd()`.
     fn build_and_add(&self) -> Box<dyn TraceObjectSchema>;
-}
-
-/// Placeholder for `ghidra.trace.model.thread.TraceThread`, referenced by
-/// [`TraceCodeUnit`](crate::trace::model::listing::trace_code_unit::TraceCodeUnit) before the real
-/// port is available.
-///
-/// Grown to add the one member
-/// [`Scheduler::one_thread`](crate::trace::model::time::schedule::scheduler::one_thread) needs:
-/// the thread's database key. Defaults to panicking, matching this module's other
-/// grown-but-not-yet-implemented placeholders (see [`TracePlatform::get_trace`]'s docs for the
-/// same reasoning), so the existing marker (`impl TraceThread for T {}`) implementors keep
-/// compiling unchanged.
-pub trait TraceThread: Send + Sync {
-    /// Mirrors `TraceThread.getKey()`.
-    fn get_key(&self) -> i64 {
-        unimplemented!("TraceThread::get_key placeholder not overridden")
-    }
 }
 
 /// Placeholder for `ghidra.trace.database.target.DBTraceObject`, referenced by

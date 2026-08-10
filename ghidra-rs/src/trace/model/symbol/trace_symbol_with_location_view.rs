@@ -7,7 +7,8 @@ use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::symbol::trace_symbol::TraceSymbol;
 use crate::trace::model::symbol::trace_symbol_view::TraceSymbolView;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{TraceRegisterUtils, TraceThread};
+use crate::trace::seam_stubs::TraceRegisterUtils;
+use crate::trace::model::thread::TraceThread;
 use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// A symbol view for things bound by an address range and lifespan.

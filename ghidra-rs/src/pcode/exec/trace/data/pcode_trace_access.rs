@@ -7,7 +7,7 @@ use crate::pcode::exec::trace::data::pcode_trace_data_access::PcodeTraceDataAcce
 use crate::pcode::exec::trace::data::pcode_trace_registers_access::PcodeTraceRegistersAccess;
 use crate::pcode::seam_stubs::{DefaultPcodeTraceThreadAccess, PcodeTraceMemoryAccess};
 use crate::program::model::lang::language::Language;
-use crate::trace::seam_stubs::TraceThread;
+use crate::trace::model::thread::TraceThread;
 
 /// A trace access shim.
 ///
@@ -150,7 +150,50 @@ mod tests {
     }
 
     struct FakeTraceThread;
-    impl TraceThread for FakeTraceThread {}
+
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for FakeTraceThread {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for FakeTraceThread {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceThread for FakeTraceThread {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_key(&self) -> i64 {
+            0
+        }
+        fn get_path(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_name(&mut self, _lifespan: crate::trace::model::lifespan::Lifespan, _name: &str) {}
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+        fn set_comment(&mut self, _snap: i64, _comment: Option<&str>) {}
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+        fn delete(&mut self) {}
+        fn remove(&mut self, _snap: i64) {}
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+        fn is_alive(&self, _span: crate::trace::model::lifespan::Lifespan) -> bool {
+            true
+        }
+    }
 
     /// Tracks how many times each method is invoked, so the default methods'
     /// [`PcodeTraceAccess::get_data_for_thread_state`] wiring can be checked against Java's

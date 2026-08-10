@@ -43,7 +43,7 @@ use crate::program::model::listing::CommentType;
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::{TraceThread};
+    use crate::trace::model::thread::TraceThread;
     use crate::trace::model::guest::trace_platform::TracePlatform;
     use std::any::{Any, TypeId};
     use std::sync::Arc;

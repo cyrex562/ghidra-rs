@@ -77,10 +77,54 @@ mod tests {
     use super::*;
     use crate::program::model::address::AddressSpaceType;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::{TraceRegisterUtils, TraceThread};
+    use crate::trace::seam_stubs::TraceRegisterUtils;
+    use crate::trace::model::thread::TraceThread;
 
     struct MockThread;
-    impl TraceThread for MockThread {}
+
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockThread {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockThread {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceThread for MockThread {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_key(&self) -> i64 {
+            0
+        }
+        fn get_path(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_name(&mut self, _lifespan: crate::trace::model::lifespan::Lifespan, _name: &str) {}
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+        fn set_comment(&mut self, _snap: i64, _comment: Option<&str>) {}
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+        fn delete(&mut self) {}
+        fn remove(&mut self, _snap: i64) {}
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+        fn is_alive(&self, _span: crate::trace::model::lifespan::Lifespan) -> bool {
+            true
+        }
+    }
 
     struct MockRegisterUtils;
     impl TraceRegisterUtils for MockRegisterUtils {

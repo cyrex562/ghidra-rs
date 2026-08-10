@@ -248,7 +248,7 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressFactory, AddressSpaceType};
     use crate::program::model::lang::{CompilerSpec, Language};
-    use crate::trace::seam_stubs::TraceThread;
+    use crate::trace::model::thread::TraceThread;
     use std::cell::RefCell;
     use std::rc::Rc;
 

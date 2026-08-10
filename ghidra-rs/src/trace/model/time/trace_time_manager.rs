@@ -141,11 +141,11 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_event_thread(&self) -> Option<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+        fn get_event_thread(&self) -> Option<Box<dyn crate::trace::model::thread::TraceThread>> {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn set_event_thread(&self, _thread: Option<Box<dyn crate::trace::seam_stubs::TraceThread>>) {
+        fn set_event_thread(&self, _thread: Option<Box<dyn crate::trace::model::thread::TraceThread>>) {
             unimplemented!("not exercised by this smoke test")
         }
 

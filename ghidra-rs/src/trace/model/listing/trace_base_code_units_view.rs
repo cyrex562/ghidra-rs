@@ -199,7 +199,7 @@ mod tests {
     use crate::program::model::util::PropertySet;
     use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
-    use crate::trace::seam_stubs::TraceThread;
+    use crate::trace::model::thread::TraceThread;
     use std::sync::Arc;
 
     #[derive(Clone)]

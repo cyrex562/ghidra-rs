@@ -112,7 +112,6 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	VarnodeTpl	SpecificSymbol
 2026-07-11T00:00:00Z	LanguageCompilerSpecQuery	LanguageService
 2026-07-11T00:00:00Z	ExternalLanguageCompilerSpecQuery	LanguageService
-2026-07-11T00:00:00Z	TraceThread	DebuggerTraceManagerService
 2026-07-11T12:00:00Z	SaveState	Project
 2026-07-11T13:00:00Z	GraphDisplayProvider	GraphDisplayBroker
 2026-07-11T13:00:00Z	GraphDisplay	GraphDisplayBroker
@@ -395,7 +394,6 @@ ts	stub_class	referenced_by
 2026-08-05T08:18:39.063694+00:00	TraceObjectSchema	SchemaContext
 2026-08-05T09:45:00.000000+00:00	AttributeSchema	PrimitiveTraceObjectSchema
 2026-08-05T08:57:48.874074+00:00	SchemaBuilder	DefaultSchemaContext
-2026-08-06T05:50:59.453326+00:00	TraceThread	TraceCodeUnit
 2026-08-07T02:16:00.602637+00:00	TraceSchedule	TraceTimeManager
 2026-08-07T02:22:42.658470+00:00	TimeRadix	TraceTimeManager
 2026-08-07T04:00:00+00:00	BackwardLongKeyIterator	DirectedLongKeyIterator
@@ -415,21 +413,18 @@ ts	stub_class	referenced_by
 2026-08-07T00:00:00+00:00	DBCachedObjectStoreCore	DBAnnotatedObject
 2026-08-07T05:06:25.268330+00:00	DBTraceObject	TraceObjectValueStorage
 2026-08-07T05:06:25.269952+00:00	DBTraceObjectManager	TraceObjectValueStorage
-2026-08-07T05:37:30.000000+00:00	TraceThread	TraceSpaceMixin
 2026-08-07T05:37:30.000000+00:00	TraceRegisterUtils	TraceSpaceMixin
 2026-08-07T05:50:48.973361+00:00	Dimension	EuclideanHyperSpace
 2026-08-07T06:34:55.957007+00:00	TraceObjectValueQuery	DBTraceObjectValueRStarTree
 2026-08-07T06:45:56.952189+00:00	TraceBreakpointCommon	TraceBreakpointSpec
 2026-08-07T06:45:56.953662+00:00	TraceBreakpointLocation	TraceBreakpointSpec
 2026-08-07T07:20:04.910000+00:00	TraceAddressSnapRangeQuery	TraceAddressSnapRangePropertyMapOperations
-2026-08-07T07:30:18.995691+00:00	TraceThread	TraceThreadManager
 2026-08-07T08:02:04.523619+00:00	AbstractDBTraceAddressSnapRangePropertyMapData	DBTraceAddressSnapRangePropertyMap
 2026-08-07T09:15:00.000000+00:00	DBTraceAddressSnapRangePropertyMapSpace	DBTraceAddressSnapRangePropertyMapTree
 2026-08-07T09:15:00.000000+00:00	DBTreeNodeRecord	DBTraceAddressSnapRangePropertyMapTree
 2026-08-07T09:15:00.000000+00:00	DBTreeRecord	DBTraceAddressSnapRangePropertyMapTree
 2026-08-08T01:00:59.943431+00:00	DBCachedObjectStore	DBCachedObjectIndex
 2026-08-08T01:00:59.944839+00:00	DBIndexFieldCodec	DBCachedObjectIndex
-2026-08-08T02:29:17.000000+00:00	TraceThread	TraceEquate
 2026-08-08T02:45:56.342199+00:00	Rectangle2DDirection	TraceReferenceOperations
 2026-08-08T03:11:47.088490+00:00	DBTraceGuestLanguage	InternalTracePlatform
 2026-08-08T04:00:00.000000+00:00	AbstractBaseDBTraceCodeUnitsView	AbstractSingleDBTraceCodeUnitsView
@@ -491,7 +486,6 @@ ts	stub_class	referenced_by
 2026-08-09T09:30:00+00:00	DBTraceObjectManager	DBTraceTimeManager
 2026-08-10T01:25:52.544954+00:00	DefaultPcodeTraceThreadAccess	PcodeTraceAccess
 2026-08-10T01:25:52.545120+00:00	PcodeTraceMemoryAccess	PcodeTraceAccess
-2026-08-10T01:25:52.761166+00:00	TraceThread	PcodeTraceAccess
 2026-08-10T01:48:05.270314+00:00	PcodeTraceMemoryAccess	PcodeDebuggerMemoryAccess
 2026-08-10T02:08:05.373048+00:00	PcodeOpRaw	BreakTableCallBack
 2026-08-09T00:00:00.000000+00:00	PcodeInjectLibrary(grown)	PcodeProgram
@@ -500,5 +494,4 @@ ts	stub_class	referenced_by
 2026-08-10T04:31:06.962065+00:00	InjectionErrorPcodeExecutionException	DefaultPcodeThread
 2026-08-10T04:31:06.962065+00:00	ProgramContextImpl	DefaultPcodeThread
 2026-08-10T04:31:06.962065+00:00	RegisterValue	DefaultPcodeThread
-2026-08-10T05:47:05.437134+00:00	TraceThread	TraceRegister
 2026-08-10T06:32:27.436344+00:00	TraceEvent	TypedEventDispatcher

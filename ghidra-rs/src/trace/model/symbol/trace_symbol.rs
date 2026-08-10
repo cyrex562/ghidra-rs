@@ -4,7 +4,7 @@ use crate::program::model::symbol::Symbol;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::symbol::trace_reference::TraceReference;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::TraceThread;
+use crate::trace::model::thread::TraceThread;
 use crate::util::task::{DummyMonitor, TaskMonitor};
 
 /// A trace symbol.

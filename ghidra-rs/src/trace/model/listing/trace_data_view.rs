@@ -394,7 +394,7 @@ mod tests {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_thread(&self) -> Box<dyn crate::trace::seam_stubs::TraceThread> {
+        fn get_thread(&self) -> Box<dyn crate::trace::model::thread::TraceThread> {
             unimplemented!("not exercised by this smoke test")
         }
 

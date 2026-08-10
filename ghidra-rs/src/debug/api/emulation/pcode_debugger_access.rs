@@ -6,7 +6,7 @@ use crate::debug::api::emulation::pcode_debugger_memory_access::PcodeDebuggerMem
 use crate::debug::api::emulation::pcode_debugger_registers_access::PcodeDebuggerRegistersAccess;
 use crate::pcode::emu::ErasedPcodeThread;
 use crate::pcode::exec::trace::data::pcode_trace_access::PcodeTraceAccess;
-use crate::trace::seam_stubs::TraceThread;
+use crate::trace::model::thread::TraceThread;
 
 /// A trace-and-debugger access shim.
 ///

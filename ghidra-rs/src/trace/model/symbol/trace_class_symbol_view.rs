@@ -55,7 +55,7 @@ mod tests {
     use crate::trace::model::symbol::trace_symbol_manager::TraceSymbolManager;
     use crate::trace::model::symbol::trace_symbol_view::TraceSymbolView;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::TraceThread;
+    use crate::trace::model::thread::TraceThread;
     use crate::util::task::TaskMonitor;
     use std::collections::HashSet;
     use std::sync::Mutex;
