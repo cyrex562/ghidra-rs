@@ -58,6 +58,12 @@ pub trait TraceRmiLaunchOffer {}
 /// as a parameter/return value, so no members are needed yet.
 pub trait ListingMarginProvider {}
 
+/// Placeholder for `ghidra.app.util.viewer.listingpanel.ListingOverviewProvider`, referenced by
+/// [`ListingOverviewProviderService`](crate::app::services::ListingOverviewProviderService) before
+/// the real class is ported. `ListingOverviewProviderService` only ever passes this type through
+/// as a parameter/return value, so no members are needed yet.
+pub trait ListingOverviewProvider: Send + Sync {}
+
 /// Placeholder for `ghidra.debug.api.platform.DebuggerPlatformMapper`, referenced by
 /// [`DebuggerPlatformService`](crate::app::services::DebuggerPlatformService) before the real
 /// class is ported. `DebuggerPlatformService` only ever passes this type through as a
