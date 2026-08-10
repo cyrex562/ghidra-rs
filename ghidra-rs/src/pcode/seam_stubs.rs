@@ -4,7 +4,7 @@
 //! replaced (or grown into a supertrait/struct of) the real port once that Java class is ported.
 //! See `STUBS.tsv` for provenance.
 
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, OnceLock};
 
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
@@ -193,9 +193,20 @@ pub trait Emulate: Send + Sync {
 
 /// Placeholder for `ghidra.pcode.exec.PcodeProgram`, referenced by
 /// [`SleighPcodeUseropDefinition::program_for`](crate::pcode::exec::sleigh_pcode_userop_definition::SleighPcodeUseropDefinition::program_for)
-/// before the real class is ported. Used there only as an opaque return type, so no members are
-/// exposed yet.
-pub trait PcodeProgram: Send + Sync {}
+/// as an opaque return type, and by
+/// [`PcodeExecutor::execute`](crate::pcode::exec::pcode_executor::PcodeExecutor::execute), which
+/// needs the program's two fields. Both default to empty so an opaque implementor still compiles.
+pub trait PcodeProgram: Send + Sync {
+    /// Placeholder for the `PcodeProgram.code` field.
+    fn code(&self) -> Vec<crate::program::model::pcode::PcodeOp> {
+        Vec::new()
+    }
+
+    /// Placeholder for the `PcodeProgram.useropNames` field.
+    fn userop_names(&self) -> HashMap<i32, String> {
+        HashMap::new()
+    }
+}
 
 /// Placeholder for `ghidra.pcode.exec.ComposedPcodeUseropLibrary`, referenced by
 /// [`PcodeUseropLibrary::compose_with_override`](crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary::compose_with_override)
@@ -259,35 +270,6 @@ impl<T: 'static> PcodeUseropLibrary<T> for ComposedPcodeUseropLibrary<T> {
     fn get_userops(&self) -> &UseropMap<T> {
         &self.userops
     }
-}
-
-/// Placeholder for `ghidra.pcode.exec.PcodeExecutor`, referenced by
-/// [`AbstractSleighPcodeUseropDefinitionBase::execute`](crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase::execute),
-/// by [`PcodeUseropDefinition`](crate::pcode::exec::pcode_userop_library::PcodeUseropDefinition),
-/// and by
-/// [`AnnotatedPcodeUseropDefinition`](crate::pcode::exec::annotated_pcode_userop_library::AnnotatedPcodeUseropDefinition)
-/// before the real class is ported. Exposes only the members those call sites need.
-/// `T` is Java's `PcodeExecutor<T>` type parameter: the type of values in the executor's state.
-pub trait PcodeExecutor<T: 'static>: Send + Sync {
-    /// Placeholder for `PcodeExecutor.execute(PcodeProgram, PcodeUseropLibrary)`.
-    fn execute(&self, program: &dyn PcodeProgram, library: &dyn PcodeUseropLibrary<T>);
-
-    /// Placeholder for `PcodeExecutor.getArithmetic()`.
-    ///
-    /// Returns an owned `Arc` rather than a borrow, matching
-    /// [`PcodeExecutorStatePiece::get_arithmetic`].
-    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<T>>;
-
-    /// Placeholder for `PcodeExecutor.getState()`.
-    ///
-    /// Java hands back the state and lets callers both read and write it (a userop, for example,
-    /// reads its inputs and writes its output through it). Writing needs `&mut`, which a
-    /// `&dyn PcodeExecutor` cannot produce, so the state is shared behind a `Mutex`: the executor
-    /// and the userops it runs genuinely share mutable access to it.
-    fn get_state(&self) -> &Mutex<dyn PcodeExecutorState<T>>;
-
-    /// Placeholder for `PcodeExecutor.getReason()`.
-    fn get_reason(&self) -> Reason;
 }
 
 /// Placeholder for `ghidra.pcode.exec.FixedSleighPcodeUseropDefinition`, referenced by

@@ -10,6 +10,7 @@ pub mod paired_pcode_executor_state;
 pub mod paired_pcode_executor_state_piece;
 pub mod pcode_arithmetic;
 pub mod pcode_execution_exception;
+pub mod pcode_executor;
 pub mod pcode_executor_state;
 pub mod pcode_executor_state_piece;
 pub mod pcode_frame;
@@ -41,6 +42,7 @@ pub use paired_pcode_executor_state::PairedPcodeExecutorState;
 pub use paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece;
 pub use pcode_arithmetic::{PcodeArithmetic, Purpose, SIZEOF_SIZEOF};
 pub use pcode_execution_exception::PcodeExecutionException;
+pub use pcode_executor::{op_behavior_kind, OpBehaviorKind, PcodeExecutor};
 pub use pcode_executor_state::PcodeExecutorState;
 pub use pcode_executor_state_piece::{
     ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,

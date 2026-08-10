@@ -16,7 +16,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 use crate::decompiler::slghsymbol::user_op_symbol::UserOpSymbol;
-use crate::pcode::seam_stubs::{ComposedPcodeUseropLibrary, PcodeExecutor};
+use crate::pcode::exec::pcode_executor::PcodeExecutor;
+use crate::pcode::seam_stubs::ComposedPcodeUseropLibrary;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::{PcodeOp, Varnode};
 use crate::sleigh::grammar::location::Location;
@@ -72,7 +73,7 @@ pub trait PcodeUseropDefinition<T: 'static> {
     /// source.
     fn execute(
         &self,
-        executor: &dyn PcodeExecutor<T>,
+        executor: &PcodeExecutor<T>,
         library: &dyn PcodeUseropLibrary<T>,
         op: &PcodeOp,
         out_var: Option<&Varnode>,
@@ -88,7 +89,7 @@ pub trait PcodeUseropDefinition<T: 'static> {
     /// are thus at indices 1..N.
     fn execute_raw(
         &self,
-        executor: &dyn PcodeExecutor<T>,
+        executor: &PcodeExecutor<T>,
         library: &dyn PcodeUseropLibrary<T>,
         op: &PcodeOp,
     ) {
@@ -316,7 +317,7 @@ mod tests {
         }
         fn execute(
             &self,
-            _executor: &dyn PcodeExecutor<i64>,
+            _executor: &PcodeExecutor<i64>,
             _library: &dyn PcodeUseropLibrary<i64>,
             _op: &PcodeOp,
             _out_var: Option<&Varnode>,

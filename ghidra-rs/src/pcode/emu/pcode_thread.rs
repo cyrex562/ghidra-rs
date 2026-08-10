@@ -8,7 +8,8 @@ use crate::pcode::emu::pcode_machine::PcodeMachine;
 use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
-use crate::pcode::seam_stubs::{PcodeExecutor, RegisterValue, ThreadPcodeExecutorState};
+use crate::pcode::exec::pcode_executor::PcodeExecutor;
+use crate::pcode::seam_stubs::{RegisterValue, ThreadPcodeExecutorState};
 use crate::program::model::address::Address;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::Instruction;
@@ -246,7 +247,7 @@ pub trait PcodeThread<T: 'static>: ErasedPcodeThread {
     /// executor is ignored by the thread. It retains the instruction frame, if any. Note that
     /// suspension is implemented by the executor, so if this p-code thread is suspended, the
     /// executor cannot execute any code.
-    fn get_executor(&self) -> &dyn PcodeExecutor<T>;
+    fn get_executor(&self) -> &PcodeExecutor<T>;
 
     /// Get the complete userop library for this thread.
     fn get_userop_library(&self) -> &dyn PcodeUseropLibrary<T>;
@@ -422,7 +423,7 @@ mod tests {
             unimplemented!("test should not call this")
         }
 
-        fn get_executor(&self) -> &dyn PcodeExecutor<Vec<u8>> {
+        fn get_executor(&self) -> &PcodeExecutor<Vec<u8>> {
             unimplemented!("test should not call this")
         }
 

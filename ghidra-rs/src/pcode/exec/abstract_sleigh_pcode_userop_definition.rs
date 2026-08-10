@@ -9,8 +9,9 @@ use crate::pcode::exec::sleigh_pcode_userop_definition::{
     BodyFunc, BuilderStage1, BuilderStage2, SignatureDef, SleighPcodeUseropDefinition, OUT_SYMBOL_NAME,
 };
 use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropLibrary};
+use crate::pcode::exec::pcode_executor::PcodeExecutor;
 use crate::pcode::seam_stubs::{
-    FixedSleighPcodeUseropDefinition, OverloadedSleighPcodeUseropDefinition, PcodeExecutor, PcodeProgram,
+    FixedSleighPcodeUseropDefinition, OverloadedSleighPcodeUseropDefinition, PcodeProgram,
 };
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::{PcodeOp, Varnode};
@@ -107,7 +108,7 @@ impl AbstractSleighPcodeUseropDefinitionBase {
     /// wildcard form, and to the executor, which wants the typed form.
     pub fn execute<T: 'static, D: SleighPcodeUseropDefinition + ?Sized, L: PcodeUseropLibrary<T>>(
         definition: &D,
-        executor: &dyn PcodeExecutor<T>,
+        executor: &PcodeExecutor<T>,
         library: &L,
         _op: &PcodeOp,
         out_arg: Option<Varnode>,
@@ -117,7 +118,12 @@ impl AbstractSleighPcodeUseropDefinitionBase {
         args.push(out_arg);
         args.extend_from_slice(in_args);
         let program = definition.program_for(&args, library);
-        executor.execute(program.as_ref(), library);
+        // Java lets the frame go and any `PcodeExecutionException` propagate out of this `void`
+        // method; the nearest Rust equivalent is to panic, since the userop signature has no way
+        // to report the failure.
+        if let Err(e) = executor.execute(program.as_ref(), library) {
+            panic!("Sleigh userop execution failed: {}", e.message());
+        }
     }
 }
 
@@ -209,6 +215,9 @@ mod tests {
     use super::*;
     use crate::pcode::exec::pcode_userop_library::nil;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType, DefaultAddressFactory};
+    use crate::program::model::lang::language::Language;
+    use crate::program::model::lang::register::RegisterRef;
+    use crate::program::model::mem::MemBuffer;
     use crate::program::model::pcode::PackedDecode;
 
     /// Builds a minimal but real `SleighLanguage`, by feeding a hand-assembled packed-binary
@@ -283,7 +292,14 @@ mod tests {
         use std::cell::Cell;
 
         struct RecordingProgram;
-        impl PcodeProgram for RecordingProgram {}
+        impl PcodeProgram for RecordingProgram {
+            fn code(&self) -> Vec<PcodeOp> {
+                // The executor reads the program's ops to build its frame; seeing that read is
+                // how this test observes the dispatch. An empty program executes no ops.
+                EXECUTED.with(|e| e.set(true));
+                Vec::new()
+            }
+        }
 
         struct RecordingDefinition;
         impl SleighPcodeUseropDefinition for RecordingDefinition {
@@ -307,29 +323,15 @@ mod tests {
             static EXECUTED: Cell<bool> = Cell::new(false);
         }
 
-        struct RecordingExecutor;
-        impl PcodeExecutor<i64> for RecordingExecutor {
-            fn execute(&self, _program: &dyn PcodeProgram, _library: &dyn PcodeUseropLibrary<i64>) {
-                EXECUTED.with(|e| e.set(true));
-            }
-            fn get_arithmetic(
-                &self,
-            ) -> Arc<dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<i64>> {
-                unimplemented!("not exercised by these tests")
-            }
-            fn get_state(
-                &self,
-            ) -> &std::sync::Mutex<dyn crate::pcode::exec::pcode_executor_state::PcodeExecutorState<i64>>
-            {
-                unimplemented!("not exercised by these tests")
-            }
-            fn get_reason(&self) -> crate::pcode::exec::pcode_executor_state_piece::Reason {
-                unimplemented!("not exercised by these tests")
-            }
-        }
-
         let definition = RecordingDefinition;
-        let executor = RecordingExecutor;
+        let executor = PcodeExecutor::new(
+            Arc::new(MockLanguage {
+                default_space: AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1),
+            }),
+            Arc::new(StubArithmetic),
+            Arc::new(std::sync::Mutex::new(StubState)),
+            crate::pcode::exec::pcode_executor_state_piece::Reason::ExecuteRead,
+        );
         let library = nil::<i64>();
         let op = PcodeOp::new(
             crate::program::model::pcode::OpCode::CallOther,
@@ -349,4 +351,337 @@ mod tests {
 
         EXECUTED.with(|e| assert!(e.get()));
     }
+
+    /// A language just complete enough to bind a [`PcodeExecutor`]: it answers the two things the
+    /// executor's constructor asks of it -- the program counter (none here) and the default space
+    /// -- and nothing else. Paths are spelled out rather than imported, to keep the double local.
+    struct MockLanguage {
+        default_space: Arc<AddressSpace>,
+    }
+
+    impl Language for MockLanguage {
+        fn get_default_space(&self) -> Arc<AddressSpace> {
+            Arc::clone(&self.default_space)
+        }
+        fn get_default_data_space(&self) -> Arc<AddressSpace> {
+            Arc::clone(&self.default_space)
+        }
+        fn get_program_counter(&self) -> Option<RegisterRef> {
+            None
+        }
+        fn get_language_id(&self) -> crate::program::model::lang::language_id::LanguageID {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_language_description(
+            &self,
+        ) -> Box<dyn crate::program::model::lang::language_description::LanguageDescription> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_parallel_instruction_helper(
+            &self,
+        ) -> Option<Box<dyn crate::program::model::lang::parallel_instruction_language_helper::ParallelInstructionLanguageHelper>>
+        {
+            None
+        }
+        fn get_processor(&self) -> Box<dyn crate::program::seam_stubs::Processor> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_version(&self) -> i32 {
+            1
+        }
+        fn get_minor_version(&self) -> i32 {
+            0
+        }
+        fn get_address_factory(&self) -> Box<dyn crate::program::model::address::AddressFactory> {
+            Box::new(crate::program::model::address::DefaultAddressFactory::new(vec![Arc::clone(
+                &self.default_space,
+            )]))
+        }
+        fn is_big_endian(&self) -> bool {
+            false
+        }
+        fn get_instruction_alignment(&self) -> i32 {
+            1
+        }
+        fn supports_pcode(&self) -> bool {
+            true
+        }
+        fn is_volatile(&self, _addr: &Address) -> bool {
+            false
+        }
+        fn parse(
+            &self,
+            _buf: &dyn MemBuffer,
+            _context: &mut dyn crate::program::model::lang::processor_context::ProcessorContext,
+            _in_delay_slot: bool,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::instruction_prototype::InstructionPrototype>,
+            crate::program::model::lang::language::ParseError,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_number_of_user_defined_op_names(&self) -> i32 {
+            0
+        }
+        fn get_user_defined_op_name(&self, _index: i32) -> Option<String> {
+            None
+        }
+        fn get_registers_at(&self, _address: &Address) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_register_in_space(
+            &self,
+            _addrspc: &Arc<AddressSpace>,
+            _offset: i64,
+            _size: i32,
+        ) -> Option<RegisterRef> {
+            None
+        }
+        fn get_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_register_names(&self) -> Vec<String> {
+            Vec::new()
+        }
+        fn get_register_by_name(&self, _name: &str) -> Option<RegisterRef> {
+            None
+        }
+        fn get_register_at(&self, _addr: &Address, _size: i32) -> Option<RegisterRef> {
+            None
+        }
+        fn get_context_base_register(&self) -> Option<RegisterRef> {
+            None
+        }
+        fn get_context_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_default_memory_blocks(
+            &self,
+        ) -> Vec<Box<dyn crate::app::plugin::processors::generic::MemoryBlockDefinition>> {
+            Vec::new()
+        }
+        fn get_default_symbols(&self) -> Vec<Box<dyn crate::program::seam_stubs::AddressLabelInfo>> {
+            Vec::new()
+        }
+        fn get_segmented_space(&self) -> String {
+            String::new()
+        }
+        fn get_volatile_addresses(&self) -> Box<dyn crate::program::model::address::AddressSetView> {
+            Box::new(crate::program::model::address::AddressSet::new())
+        }
+        fn apply_context_settings(
+            &self,
+            _ctx: &mut dyn crate::program::model::listing::default_program_context::DefaultProgramContext,
+        ) {
+        }
+        fn reload_language(
+            &self,
+            _task_monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn get_compatible_compiler_spec_descriptions(
+            &self,
+        ) -> Vec<Box<dyn crate::program::model::lang::compiler_spec_description::CompilerSpecDescription>>
+        {
+            Vec::new()
+        }
+        fn get_compiler_spec_by_id(
+            &self,
+            _compiler_spec_id: &crate::program::model::lang::compiler_spec_id::CompilerSpecID,
+        ) -> Result<
+            Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
+            crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_default_compiler_spec(
+            &self,
+        ) -> Box<dyn crate::program::model::lang::compiler_spec::CompilerSpec> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn has_property(&self, _key: &str) -> bool {
+            false
+        }
+        fn get_property_as_int(&self, _key: &str, default_int: i32) -> i32 {
+            default_int
+        }
+        fn get_property_as_boolean(&self, _key: &str, default_boolean: bool) -> bool {
+            default_boolean
+        }
+        fn get_property_or(&self, _key: &str, default_string: &str) -> String {
+            default_string.to_string()
+        }
+        fn get_property(&self, _key: &str) -> Option<String> {
+            None
+        }
+        fn get_property_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+        fn has_manual(&self) -> bool {
+            false
+        }
+        fn get_manual_entry(
+            &self,
+            _instruction_mnemonic: &str,
+        ) -> Option<crate::util::manual_entry::ManualEntry> {
+            None
+        }
+        fn get_manual_instruction_mnemonic_keys(&self) -> std::collections::HashSet<String> {
+            std::collections::HashSet::new()
+        }
+        fn get_manual_exception(&self) -> Option<Box<dyn std::error::Error + Send + Sync + 'static>> {
+            None
+        }
+        fn get_sorted_vector_registers(&self) -> Vec<RegisterRef> {
+            Vec::new()
+        }
+        fn get_register_addresses(&self) -> Box<dyn crate::program::model::address::AddressSetView> {
+            Box::new(crate::program::model::address::AddressSet::new())
+        }
+        fn get_maximum_instruction_length(&self) -> Option<i32> {
+            None
+        }
+    }
+
+    /// Arithmetic and state doubles: the recorded program has no ops, so neither is ever touched.
+    struct StubArithmetic;
+
+    impl crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<i64> for StubArithmetic {
+        fn get_endian(&self) -> Option<crate::program::model::lang::endian::Endian> {
+            Some(crate::program::model::lang::endian::Endian::Little)
+        }
+        fn unary_op(
+            &self,
+            _opcode: crate::program::model::pcode::OpCode,
+            _sizeout: i32,
+            _sizein1: i32,
+            _in1: &i64,
+        ) -> i64 {
+            unimplemented!("not exercised by these tests")
+        }
+        fn binary_op(
+            &self,
+            _opcode: crate::program::model::pcode::OpCode,
+            _sizeout: i32,
+            _sizein1: i32,
+            _in1: &i64,
+            _sizein2: i32,
+            _in2: &i64,
+        ) -> i64 {
+            unimplemented!("not exercised by these tests")
+        }
+        fn mod_before_store(
+            &self,
+            _sizein_offset: i32,
+            _space: &AddressSpace,
+            _in_offset: &i64,
+            _sizein_value: i32,
+            in_value: &i64,
+        ) -> i64 {
+            *in_value
+        }
+        fn mod_after_load(
+            &self,
+            _sizein_offset: i32,
+            _space: &AddressSpace,
+            _in_offset: &i64,
+            _sizein_value: i32,
+            in_value: &i64,
+        ) -> i64 {
+            *in_value
+        }
+        fn from_const_bytes(&self, _value: &[u8]) -> i64 {
+            unimplemented!("not exercised by these tests")
+        }
+        fn to_concrete(
+            &self,
+            _value: &i64,
+            _purpose: crate::pcode::exec::pcode_arithmetic::Purpose,
+        ) -> Result<Vec<u8>, crate::pcode::exec::concretion_error::ConcretionError> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn size_of(&self, _value: &i64) -> i64 {
+            8
+        }
+    }
+
+    struct StubState;
+
+    impl crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece for StubState {}
+
+    impl crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece<i64, i64>
+        for StubState
+    {
+        fn get_language(&self) -> Box<dyn Language> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address_arithmetic(
+            &self,
+        ) -> Arc<dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<i64>> {
+            Arc::new(StubArithmetic)
+        }
+        fn get_arithmetic(
+            &self,
+        ) -> Arc<dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<i64>> {
+            Arc::new(StubArithmetic)
+        }
+        fn stream_pieces(
+            &self,
+        ) -> Vec<&dyn crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece>
+        {
+            vec![self]
+        }
+        fn set_var_abstract(
+            &mut self,
+            _space: &Arc<AddressSpace>,
+            _offset: &i64,
+            _size: i32,
+            _quantize: bool,
+            _val: &i64,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
+        fn set_var_internal_abstract(
+            &mut self,
+            _space: &Arc<AddressSpace>,
+            _offset: &i64,
+            _size: i32,
+            _val: &i64,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_var_abstract(
+            &self,
+            _space: &Arc<AddressSpace>,
+            _offset: &i64,
+            _size: i32,
+            _quantize: bool,
+            _reason: crate::pcode::exec::pcode_executor_state_piece::Reason,
+        ) -> i64 {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_var_internal_abstract(
+            &self,
+            _space: &Arc<AddressSpace>,
+            _offset: &i64,
+            _size: i32,
+            _reason: crate::pcode::exec::pcode_executor_state_piece::Reason,
+        ) -> i64 {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_register_values(&self) -> Vec<(RegisterRef, i64)> {
+            Vec::new()
+        }
+        fn get_concrete_buffer(
+            &self,
+            _address: &Address,
+            _purpose: crate::pcode::exec::pcode_arithmetic::Purpose,
+        ) -> Box<dyn MemBuffer> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn clear(&mut self) {}
+    }
+
+    impl crate::pcode::exec::pcode_executor_state::PcodeExecutorState<i64> for StubState {}
 }

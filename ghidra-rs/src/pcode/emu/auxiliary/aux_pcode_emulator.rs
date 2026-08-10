@@ -312,7 +312,7 @@ mod tests {
         }
         fn execute(
             &self,
-            _executor: &dyn crate::pcode::seam_stubs::PcodeExecutor<(Vec<u8>, i64)>,
+            _executor: &crate::pcode::exec::pcode_executor::PcodeExecutor<(Vec<u8>, i64)>,
             _library: &dyn PcodeUseropLibrary<(Vec<u8>, i64)>,
             _op: &crate::program::model::pcode::PcodeOp,
             _out_var: Option<&crate::program::model::pcode::Varnode>,
