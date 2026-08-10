@@ -480,14 +480,11 @@ impl SleighProgramCompiler {
 /// here against the value-erased [`ErasedPcodeThread`], since that call site does not know `T`).
 pub trait DefaultPcodeThread: ErasedPcodeThread {}
 
-/// Placeholder for `ghidra.pcode.exec.BytesPcodeExecutorStatePiece`, referenced by
+/// Marker trait for `ghidra.pcode.exec.BytesPcodeExecutorStatePiece`, referenced by
 /// [`AuxEmulatorPartsFactory::create_shared_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_shared_state)
 /// and
-/// [`AuxEmulatorPartsFactory::create_local_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_local_state)
-/// before the real class is ported. Both methods only receive the concrete piece and incorporate
-/// it into a composed state (typically via the already-ported
-/// [`PairedPcodeExecutorStatePiece`](crate::pcode::exec::paired_pcode_executor_state_piece::PairedPcodeExecutorStatePiece)),
-/// so no member is exposed here.
+/// [`AuxEmulatorPartsFactory::create_local_state`](crate::pcode::emu::auxiliary::aux_emulator_parts_factory::AuxEmulatorPartsFactory::create_local_state).
+/// The real port is [`crate::pcode::exec::BytesPcodeExecutorStatePiece`].
 pub trait BytesPcodeExecutorStatePiece: Send + Sync {}
 
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeArithmetic`, referenced by
