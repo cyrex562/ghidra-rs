@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::program::model::address::AddressSpace;
 use crate::trace::model::listing::trace_code_space::TraceCodeSpace;
-use crate::trace::seam_stubs::TraceMemoryOperations;
+use crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations;
 
 /// A portion of the memory manager bound to a particular address space.
 ///
@@ -411,6 +411,149 @@ mod tests {
         fn remove_bytes(&mut self, _snap: i64, _start: &Address, _len: i32) {
             unimplemented!("not exercised by this smoke test")
         }
+
+        fn get_trace(&self) -> Box<dyn Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_state(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> crate::trace::model::memory::trace_memory_state::TraceMemoryState {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_view_state(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> (i64, crate::trace::model::memory::trace_memory_state::TraceMemoryState) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_state_entry(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> Option<(
+            Box<dyn TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_view_most_recent_state_entry(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> Option<(
+            Box<dyn TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_view_most_recent_state_entry_where(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+            _predicate: &dyn Fn(
+                crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+            ) -> bool,
+        ) -> Option<(
+            Box<dyn TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_addresses_with_state_in(
+            &self,
+            _span: Lifespan,
+            _set: &dyn AddressSetView,
+            _predicate: &dyn Fn(
+                crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+            ) -> bool,
+        ) -> Box<dyn AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_addresses_with_state(
+            &self,
+            _snap: i64,
+            _predicate: &dyn Fn(
+                crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+            ) -> bool,
+        ) -> Box<dyn AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_addresses_with_state_over(
+            &self,
+            _lifespan: Lifespan,
+            _predicate: &dyn Fn(
+                crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+            ) -> bool,
+        ) -> Box<dyn AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_states(
+            &self,
+            _within: &dyn TraceAddressSnapRange,
+        ) -> Vec<(
+            Box<dyn TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_states_in(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+        ) -> Vec<(
+            Box<dyn TraceAddressSnapRange>,
+            crate::trace::model::memory::trace_memory_state::TraceMemoryState,
+        )> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_bytes(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+            _data: &[u8],
+            _mask: Option<&[u8]>,
+            _forward: bool,
+            _monitor: &dyn TaskMonitor,
+        ) -> Option<Address> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_buffer_at(
+            &self,
+            _snap: i64,
+            _start: &Address,
+            _big_endian: bool,
+        ) -> Box<dyn crate::program::model::mem::MemBuffer> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snap_of_most_recent_change_to_block(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> Option<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_block_size(&self) -> i32 {
+            0
+        }
+
+        fn pack(&mut self) {}
     }
 
     impl TraceMemorySpace for MockMemorySpace {

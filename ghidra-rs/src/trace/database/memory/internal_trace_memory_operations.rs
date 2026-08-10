@@ -16,9 +16,12 @@
 //!   [`TraceBaseCodeUnitsView`](crate::trace::model::listing::trace_base_code_units_view::TraceBaseCodeUnitsView)
 //!   for the same `(long, Register)` vs. `(TracePlatform, long, Register)` overload shape. The
 //!   host-platform-only convenience overloads (which Java defaults onto
-//!   `getTrace().getPlatformManager().getHostPlatform()`) live on the base
-//!   [`TraceMemoryOperations`](crate::trace::seam_stubs::TraceMemoryOperations) interface, not yet
-//!   grown with them, so they are not reproduced here.
+//!   `getTrace().getPlatformManager().getHostPlatform()`) are declared on the base
+//!   [`TraceMemoryOperations`](crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations)
+//!   interface in Java, but are reproduced *here* instead: their bodies call the `_on_platform`
+//!   counterparts, which Rust can only resolve from this trait. Keeping both halves of each
+//!   register overload pair together also keeps exactly one Rust name per Java method across the
+//!   crate. See that module's documentation for the full split.
 //! - `ByteBuffer` position/limit-bounded parameters become `&mut [u8]` slices, per
 //!   [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit)'s
 //!   docs. Where Java shrinks the buffer's limit to avoid over-reading/writing past the register's
@@ -35,48 +38,26 @@
 //!   [`Self::trace_register_utils`], the same translation
 //!   [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)
 //!   already established for the same static-utility-class shape.
-//! - The static `requireOne(AddressRange, Collection, Register)` helper (and the
-//!   `TraceMemoryOperations.oneState` static method it delegates to) become the free functions
-//!   [`require_one`] and [`one_state`] below, per the convention established by
+//! - The static `requireOne(AddressRange, Collection, Register)` helper becomes the free function
+//!   [`require_one`] below, per the convention established by
 //!   [`TraceSymbolManager`](crate::trace::model::symbol::trace_symbol_manager)'s
-//!   `primality_compare` for static interface methods.
+//!   `primality_compare` for static interface methods. The `TraceMemoryOperations.oneState` static
+//!   it delegates to lives with its own interface, as
+//!   [`one_state`](crate::trace::model::memory::trace_memory_operations::one_state), and is
+//!   re-exported here for convenience.
 
 use std::sync::Arc;
 
-use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView, AddressSpace};
+use crate::program::model::address::{AddressRange, AddressSpace};
 use crate::program::model::lang::Register;
 use crate::program::seam_stubs::RegisterValue;
+use crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-use crate::trace::seam_stubs::{TraceMemoryOperations, TracePlatform, TraceRegisterUtils};
+use crate::trace::seam_stubs::{TracePlatform, TraceRegisterUtils};
 use crate::util::lock_hold::{Lock, LockHold};
 
-/// Checks whether `states` represents a single uniform state across `range`, returning `None` if
-/// the entries disagree or don't fully cover `range`.
-///
-/// Mirrors the static `TraceMemoryOperations.oneState(AddressRange, Collection)`.
-pub fn one_state(
-    range: &AddressRange,
-    states: &[(Box<dyn TraceAddressSnapRange>, TraceMemoryState)],
-) -> Option<TraceMemoryState> {
-    let mut iter = states.iter();
-    let Some((first_range, first_state)) = iter.next() else {
-        return Some(TraceMemoryState::IMPLIED_BY_NULL);
-    };
-    let mut remains = AddressSet::from_range(range.clone());
-    remains.delete_range_object(&first_range.get_range());
-    for (entry_range, state) in iter {
-        if state != first_state {
-            return None;
-        }
-        remains.delete_range_object(&entry_range.get_range());
-    }
-    if remains.is_empty() {
-        Some(*first_state)
-    } else {
-        None
-    }
-}
+pub use crate::trace::model::memory::trace_memory_operations::one_state;
 
 /// Asserts that `states` represents a single state across `range`, panicking if more than one
 /// state is present.
@@ -259,12 +240,97 @@ pub trait InternalTraceMemoryOperations: TraceMemoryOperations {
         let range = platform.get_conventional_register_range(&self.get_space(), register);
         self.remove_bytes(snap, range.min_address(), range.length() as i32);
     }
+
+    // ---- host-platform convenience overloads ----
+    //
+    // Declared by `TraceMemoryOperations` in Java, but hosted here because their bodies call the
+    // `_on_platform` counterparts above; see the module documentation.
+
+    /// Set the state of a given register at a given time, on the trace's host platform. Mirrors
+    /// `setState(long, Register, TraceMemoryState)`.
+    fn set_state_for_register(&mut self, snap: i64, register: &Register, state: TraceMemoryState) {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.set_state_on_platform(platform.as_ref(), snap, register, state);
+    }
+
+    /// Assert that a register's range has a single state at the given snap on the host platform,
+    /// and get that state. Mirrors `getState(long, Register)`.
+    ///
+    /// # Panics
+    /// Panics if the register is mapped to more than one state, mirroring the Java method's
+    /// `IllegalStateException`.
+    fn get_state_for_register(&self, snap: i64, register: &Register) -> TraceMemoryState {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.get_state_on_platform(platform.as_ref(), snap, register)
+    }
+
+    /// Get all the entries covering the given host-platform register at the given snap. Mirrors
+    /// `getStates(long, Register)`.
+    fn get_states_for_register(
+        &self,
+        snap: i64,
+        register: &Register,
+    ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.get_states_on_platform(platform.as_ref(), snap, register)
+    }
+
+    /// Set the value of a host-platform register at the given snap, returning the number of bytes
+    /// written. Mirrors `setValue(long, RegisterValue)`.
+    ///
+    /// Note that the trace database tracks state with byte, not bit, precision: assigning even a
+    /// single bit marks the whole byte [`TraceMemoryState::Known`].
+    fn set_value(&mut self, snap: i64, value: &dyn RegisterValue) -> i32 {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.set_value_on_platform(platform.as_ref(), snap, value)
+    }
+
+    /// Write bytes at the given snap and host-platform register address. Mirrors `putBytes(long,
+    /// Register, ByteBuffer)`.
+    ///
+    /// Bit-masked registers are not heeded: to preserve non-masked bits, read the current value
+    /// and combine it first (or use [`Self::set_value`]).
+    fn put_bytes_for_register(&mut self, snap: i64, register: &Register, buf: &mut [u8]) -> i32 {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.put_bytes_on_platform(platform.as_ref(), snap, register, buf)
+    }
+
+    /// Get the most-recent value of a given host-platform register at the given time. Mirrors
+    /// `getValue(long, Register)`.
+    fn get_value(&self, snap: i64, register: &Register) -> Box<dyn RegisterValue> {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.get_value_on_platform(platform.as_ref(), snap, register)
+    }
+
+    /// Get the most-recent value of a given host-platform register at the given time, following
+    /// schedule forks. Mirrors `getViewValue(long, Register)`.
+    fn get_view_value(&self, snap: i64, register: &Register) -> Box<dyn RegisterValue> {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.get_view_value_on_platform(platform.as_ref(), snap, register)
+    }
+
+    /// Get the most-recent bytes of a given host-platform register at the given time. Mirrors
+    /// `getBytes(long, Register, ByteBuffer)`.
+    fn get_bytes_for_register(&self, snap: i64, register: &Register, buf: &mut [u8]) -> i32 {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.get_bytes_on_platform(platform.as_ref(), snap, register, buf)
+    }
+
+    /// Remove a value from the given time and host-platform register. Mirrors `removeValue(long,
+    /// Register)`.
+    ///
+    /// As for [`Self::set_value`], state is tracked per byte: removing even a single bit's
+    /// register marks the whole byte [`TraceMemoryState::Unknown`].
+    fn remove_value(&mut self, snap: i64, register: &Register) {
+        let platform = self.get_trace().get_platform_manager().get_host_platform();
+        self.remove_value_on_platform(platform.as_ref(), snap, register);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::program::model::address::AddressSpaceType;
+    use crate::program::model::address::{Address, AddressSpaceType};
     use crate::program::model::lang::register::RegisterRef;
     use crate::trace::model::lifespan::Lifespan;
 
@@ -522,6 +588,121 @@ mod tests {
             self.bytes.fill(0);
             self.known = false;
         }
+
+        // The remaining members are the base interface's query surface, which this double's
+        // register-overload tests never reach; only the six primitives above are exercised.
+
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_state(&self, _snap: i64, _address: &Address) -> TraceMemoryState {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_view_state(&self, _snap: i64, _address: &Address) -> (i64, TraceMemoryState) {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_state_entry(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_view_most_recent_state_entry(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_view_most_recent_state_entry_where(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+            _predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_addresses_with_state_in(
+            &self,
+            _span: Lifespan,
+            _set: &dyn crate::program::model::address::AddressSetView,
+            _predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_addresses_with_state(
+            &self,
+            _snap: i64,
+            _predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_addresses_with_state_over(
+            &self,
+            _lifespan: Lifespan,
+            _predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Box<dyn crate::program::model::address::AddressSetView> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_states(
+            &self,
+            _within: &dyn TraceAddressSnapRange,
+        ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_most_recent_states_in(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+        ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_bytes(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+            _data: &[u8],
+            _mask: Option<&[u8]>,
+            _forward: bool,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Option<Address> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_buffer_at(
+            &self,
+            _snap: i64,
+            _start: &Address,
+            _big_endian: bool,
+        ) -> Box<dyn crate::program::model::mem::MemBuffer> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_snap_of_most_recent_change_to_block(
+            &self,
+            _snap: i64,
+            _address: &Address,
+        ) -> Option<i64> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_block_size(&self) -> i32 {
+            0
+        }
+
+        fn pack(&mut self) {}
     }
 
     impl InternalTraceMemoryOperations for MockMemorySpace {
