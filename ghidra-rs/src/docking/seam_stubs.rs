@@ -69,3 +69,12 @@ pub trait JButton {}
 /// [`crate::docking::action::docking_action_if::DockingActionIf`] before a Rust equivalent
 /// exists. `DockingActionIf` only ever returns this type, so no members are needed yet.
 pub trait JMenuItem {}
+
+/// Placeholder for `docking.widgets.fieldpanel.field.AttributedString`, referenced by
+/// [`AnnotatedStringHandler`](crate::app::util::viewer::field::annotated_string_handler::AnnotatedStringHandler)
+/// before the real class is ported. Java's version is a concrete container class (not an
+/// interface), so this is a plain struct rather than a `dyn`-dispatched trait.
+/// `AnnotatedStringHandler::create_annotated_string` only ever passes this type through as a
+/// parameter/return value, so no fields are needed yet.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AttributedString;
