@@ -8,3 +8,8 @@
 /// ported. `DebuggerListing` only ever passes this type through as a parameter (`setTrackingSpec`),
 /// so no members are needed yet.
 pub trait LocationTrackingSpec {}
+
+/// Placeholder for `ghidra.debug.api.breakpoint.LogicalBreakpoint`, referenced by
+/// [`LogicalBreakpointsChangeListener`](crate::debug::api::breakpoint::LogicalBreakpointsChangeListener)
+/// before the real class is ported. No methods are currently exposed by the listener interface.
+pub trait LogicalBreakpoint: Send + Sync {}

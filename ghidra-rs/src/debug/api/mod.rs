@@ -1,4 +1,5 @@
 pub mod action;
+pub mod breakpoint;
 pub mod emulation;
 pub mod listing;
 pub mod modules;
@@ -7,6 +8,7 @@ pub mod progress;
 pub mod tracermi;
 pub mod val_str;
 
+pub use breakpoint::LogicalBreakpointsChangeListener;
 pub use emulation::PcodeDebuggerDataAccess;
 pub use listing::DebuggerListing;
 pub use modules::DebuggerStaticMappingChangeListener;

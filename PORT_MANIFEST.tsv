@@ -59,7 +59,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/Locatio
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpec.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/action/LocationTrackingSpecFactory.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api action 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpoint.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api breakpoint 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpointsChangeListener.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api breakpoint 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpointsChangeListener.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api breakpoint
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/control/ControlMode.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api control 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/EmulatorFactory.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/emulation/PcodeDebuggerAccess.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api emulation

@@ -492,3 +492,4 @@ ts	stub_class	referenced_by
 2026-08-10T04:31:06.962065+00:00	ProgramContextImpl	DefaultPcodeThread
 2026-08-10T04:31:06.962065+00:00	RegisterValue	DefaultPcodeThread
 2026-08-10T06:32:27.436344+00:00	TraceEvent	TypedEventDispatcher
+2026-08-10T07:42:31.608240+00:00	LogicalBreakpoint	LogicalBreakpointsChangeListener
