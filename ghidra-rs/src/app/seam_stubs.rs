@@ -998,6 +998,33 @@ pub trait StringValidatorQuery {
 /// `get_layout`, so no members are needed yet.
 pub trait Layout: Send + Sync {}
 
+/// Placeholder for `docking.widgets.fieldpanel.support.Highlight`, referenced by
+/// [`ListingHighlightProvider`](crate::app::util::listing_highlight_provider::ListingHighlightProvider)
+/// before the real class is ported. Models the minimal interface needed: color and span information.
+pub trait Highlight: Send + Sync {
+    /// Returns the starting position of this highlight in the text.
+    fn get_start(&self) -> i32;
+
+    /// Returns the ending position of this highlight in the text.
+    fn get_end(&self) -> i32;
+
+    /// Returns the length of this highlight.
+    fn length(&self) -> i32;
+
+    /// Returns the color for this highlight.
+    fn get_color(&self) -> Box<dyn Color>;
+
+    /// Sets the offset for this highlight.
+    fn set_offset(&self, new_offset: i32);
+
+    /// Returns a string representation of this highlight.
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `java.awt.Color`, referenced by [`Highlight`] before the real class is
+/// ported. `Highlight` only ever returns this type opaquely, so minimal interface is needed.
+pub trait Color: Send + Sync {}
+
 /// Placeholder for `ghidra.framework.plugintool.PluginTool`, referenced by
 /// [`StringValidatorService`](crate::app::services::StringValidatorService) before the real class
 /// is ported. `StringValidatorService` only uses `get_services()` to look up all registered
