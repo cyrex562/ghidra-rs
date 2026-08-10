@@ -62,7 +62,7 @@ PARK	trait	7	55	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/
 DONE	trait	5	52	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AnnotatedStringHandler.java
 DONE	trait	4	51	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressAnnotatedStringHandler.java
 DONE	trait	2	19	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/format/FormatModelListener.java
-TODO	trait	4	93	56	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java
+DONE	trait	4	93	56	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java
 TODO	trait	3	86	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangFunction.java
 TODO	trait	2	104	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangNode.java
 TODO	trait	5	7	3	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/signature/DebugSignature.java
