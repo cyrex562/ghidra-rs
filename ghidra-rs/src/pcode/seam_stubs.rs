@@ -682,3 +682,19 @@ impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for BytesPcodeExecutorState {
 }
 
 impl PcodeExecutorState<Vec<u8>> for BytesPcodeExecutorState {}
+
+/// Placeholder for the unported Java type `PcodeTraceAccess`
+/// (`ghidra.pcode.exec.trace.data.PcodeTraceAccess`), referenced by
+/// `PcodeTracePropertyAccess`'s doc links. Generated stub: only a shape hint. Replace with the
+/// real port when available.
+pub trait PcodeTraceAccess: Send + Sync {
+    // (no public methods parsed from the Java source)
+}
+
+/// Placeholder for the unported Java type `PcodeTraceDataAccess`
+/// (`ghidra.pcode.exec.trace.data.PcodeTraceDataAccess`), referenced by
+/// `PcodeTracePropertyAccess`'s doc links. Generated stub: only a shape hint. Replace with the
+/// real port when available.
+pub trait PcodeTraceDataAccess: Send + Sync {
+    // (no public methods parsed from the Java source)
+}

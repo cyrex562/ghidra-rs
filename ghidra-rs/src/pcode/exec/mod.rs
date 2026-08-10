@@ -17,6 +17,7 @@ pub mod pcode_state_callbacks;
 pub mod pcode_userop_library;
 pub mod pcode_userop_library_factory;
 pub mod sleigh_pcode_userop_definition;
+pub mod trace;
 
 pub use abstract_bytes_pcode_executor_state_piece::{
     AbstractBytesPcodeExecutorStatePiece, AbstractBytesPcodeExecutorStatePieceBase,
