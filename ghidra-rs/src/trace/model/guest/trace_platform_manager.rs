@@ -1,5 +1,6 @@
 use crate::program::model::lang::CompilerSpec;
-use crate::trace::seam_stubs::{TraceGuestPlatform, TracePlatform};
+use crate::trace::seam_stubs::{TraceGuestPlatform};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// Allows the addition of "guest platforms" for disassembling in multiple languages.
 ///

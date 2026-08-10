@@ -24,7 +24,7 @@ mod tests {
     use crate::trace::model::listing::trace_code_unit::TraceCodeUnit;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::TracePlatform;
+    use crate::trace::model::guest::trace_platform::TracePlatform;
 
     /// A trivial view with no units, only realistic enough to prove that a
     /// `TraceBaseCodeUnitsView` impl is automatically usable as a `TraceCodeUnitsView` trait

@@ -28,7 +28,8 @@ use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::symbol::trace_label_symbol::TraceLabelSymbol;
 use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
 use crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWithLocationView;
-use crate::trace::seam_stubs::{TracePlatform, TraceThread};
+use crate::trace::seam_stubs::{TraceThread};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::util::exception::InvalidInputException;
 
 /// A view over a trace's label symbols.

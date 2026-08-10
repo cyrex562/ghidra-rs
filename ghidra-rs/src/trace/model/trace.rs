@@ -450,7 +450,7 @@ mod tests {
     }
     struct MockPlatformManager;
     impl TracePlatformManager for MockPlatformManager {
-        fn get_host_platform(&self) -> Box<dyn crate::trace::seam_stubs::TracePlatform> {
+        fn get_host_platform(&self) -> Box<dyn crate::trace::model::guest::trace_platform::TracePlatform> {
             unimplemented!("not exercised by this smoke test")
         }
     }
@@ -1545,7 +1545,7 @@ mod tests {
     impl TraceVariableSnapProgramView for MockVariableSnapProgramView {
         fn set_snap(&mut self, _snap: i64) {}
 
-        fn set_platform(&mut self, _platform: Box<dyn crate::trace::seam_stubs::TracePlatform>) {}
+        fn set_platform(&mut self, _platform: Box<dyn crate::trace::model::guest::trace_platform::TracePlatform>) {}
     }
     struct MockTimeViewport;
     impl TraceTimeViewport for MockTimeViewport {

@@ -5,7 +5,7 @@ use crate::program::util::code_unit_insertion_exception::CodeUnitInsertionExcept
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_base_defined_units_view::TraceBaseDefinedUnitsView;
 use crate::trace::model::listing::trace_instruction::TraceInstruction;
-use crate::trace::seam_stubs::TracePlatform;
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// A view of instruction units.
 ///

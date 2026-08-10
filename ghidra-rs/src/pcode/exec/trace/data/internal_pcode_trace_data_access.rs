@@ -3,7 +3,7 @@
 //! Port of `ghidra.pcode.exec.trace.data.InternalPcodeTraceDataAccess`.
 
 use crate::pcode::exec::trace::data::pcode_trace_data_access::PcodeTraceDataAccess;
-use crate::pcode::seam_stubs::TracePlatform;
+use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::trace::model::property::trace_property_map_operations::TracePropertyMapOperations;
 use crate::trace::model::trace_time_viewport::TraceTimeViewport;
 
@@ -47,7 +47,6 @@ pub trait InternalPcodeTraceDataAccess: PcodeTraceDataAccess {
 mod tests {
     use super::*;
     use crate::pcode::exec::trace::data::pcode_trace_data_access::PcodeTraceDataAccess;
-    use crate::pcode::seam_stubs::TracePlatform;
     use crate::program::model::address::{Address, AddressRange, AddressSetView, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::language::Language;
     use crate::trace::model::memory::trace_memory_state::TraceMemoryState;

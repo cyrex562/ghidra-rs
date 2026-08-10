@@ -9,7 +9,8 @@ use crate::trace::database::listing::internal_trace_base_defined_units_view::Int
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::listing::trace_defined_data_view::TraceDefinedDataView;
 use crate::trace::model::listing::trace_data::TraceData;
-use crate::trace::seam_stubs::{TraceBasedDataTypeManager, TracePlatform, TraceRegisterUtils};
+use crate::trace::seam_stubs::{TraceBasedDataTypeManager, TraceRegisterUtils};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// An internal view of defined data units with platform-aware create methods.
 ///

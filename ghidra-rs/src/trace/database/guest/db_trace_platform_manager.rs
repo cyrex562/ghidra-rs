@@ -4,7 +4,8 @@ use crate::program::model::lang::Language;
 use crate::trace::database::db_trace_manager::DBTraceManager;
 use crate::trace::database::guest::internal_trace_platform::InternalTracePlatform;
 use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
-use crate::trace::seam_stubs::{DBTrace, DBTraceGuestLanguage, TracePlatform};
+use crate::trace::seam_stubs::{DBTrace, DBTraceGuestLanguage};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// The trace database's platform manager: the host platform, plus any registered guest platforms
 /// (alternate languages/compiler specs used to disassemble regions of the trace).

@@ -12,7 +12,8 @@ use crate::trace::model::symbol::trace_symbol_with_location_view::TraceSymbolWit
 use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
 use crate::trace::model::target::trace_object_manager::TraceObjectManager;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{DBTraceGuestLanguage, TraceObjectSchema, TracePlatform, TraceRegisterUtils};
+use crate::trace::seam_stubs::{DBTraceGuestLanguage, TraceObjectSchema, TraceRegisterUtils};
+use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::trace::model::target::trace_object::TraceObject;
 
 /// Namespace key used to look up (or register) the conventional register-object mapping for
@@ -44,9 +45,9 @@ pub fn reg_map(register: &Register) -> &'static str {
 ///
 /// * `getAddressFactory()` only exists in Java to resolve a diamond between `TracePlatform`'s
 ///   default (`getLanguage().getAddressFactory()`) and `ProgramArchitecture`'s abstract method of
-///   the same signature. [`TracePlatform`](crate::trace::seam_stubs::TracePlatform), the
-///   placeholder for the not-yet-fully-ported Java interface, does not (yet) declare
-///   `get_address_factory`, so there is no diamond to resolve in Rust: implementors simply
+///   the same signature. [`TracePlatform`](crate::trace::model::guest::trace_platform::TracePlatform)
+///   names its equivalent `platform_address_factory` rather than `get_address_factory` precisely
+///   to avoid that diamond, so there is no ambiguity to resolve in Rust: implementors simply
 ///   satisfy [`ProgramArchitecture::get_address_factory`] directly, and this trait does not
 ///   redeclare it.
 ///

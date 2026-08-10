@@ -42,7 +42,7 @@ mod tests {
     use crate::trace::model::listing::trace_undefined_data_view::TraceUndefinedDataView;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::TracePlatform;
+    use crate::trace::model::guest::trace_platform::TracePlatform;
     use crate::util::exception::CancelledException;
     use crate::util::task::TaskMonitor;
 

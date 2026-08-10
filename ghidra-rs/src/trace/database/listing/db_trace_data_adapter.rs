@@ -370,7 +370,8 @@ mod tests {
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::{TracePlatform, TraceThread};
+    use crate::trace::seam_stubs::{TraceThread};
+    use crate::trace::model::guest::trace_platform::TracePlatform;
     use crate::trace::util::trace_change_manager::TraceChangeManager;
     use crate::util::lock_hold::Lock;
     use std::any::TypeId;

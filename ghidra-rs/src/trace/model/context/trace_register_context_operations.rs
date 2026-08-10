@@ -3,7 +3,7 @@ use crate::program::model::lang::{Language, Register};
 use crate::program::seam_stubs::RegisterValue;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-use crate::trace::seam_stubs::TracePlatform;
+use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// Operations for reading and writing register (processor context) values over ranges of
 /// addresses and time within a trace.
