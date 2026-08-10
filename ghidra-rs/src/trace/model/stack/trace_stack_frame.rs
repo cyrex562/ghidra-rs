@@ -1,4 +1,4 @@
-//! A frame in a [`TraceStack`](crate::trace::seam_stubs::TraceStack).
+//! A frame in a [`TraceStack`](crate::trace::model::stack::trace_stack::TraceStack).
 //!
 //! Port of `ghidra.trace.model.stack.TraceStackFrame`.
 
@@ -7,7 +7,7 @@ use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::target::iface::TraceObjectInterface;
 use crate::trace::model::target::info::trace_object_info::TraceObjectInfo;
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::TraceStack;
+use crate::trace::model::stack::trace_stack::TraceStack;
 
 /// Key for the frame's program-counter attribute.
 pub const KEY_PC: &str = "_pc";
