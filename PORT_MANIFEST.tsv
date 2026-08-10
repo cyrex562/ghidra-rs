@@ -893,7 +893,7 @@ orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/databas
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/time/DBTraceTimeManager.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace database time 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/AddressSnap.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/DefaultAddressSnap.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model 
-orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/DefaultTraceLocation.java	TODO	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model 
+orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/DefaultTraceLocation.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/DefaultTraceSpan.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/ImmutableTraceAddressSnapRange.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model 
 orig_src/Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/Lifespan.java	DONE	orig_src Ghidra Debug Framework-TraceModeling src main java ghidra trace model 
