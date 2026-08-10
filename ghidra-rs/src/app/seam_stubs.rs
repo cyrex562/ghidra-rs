@@ -94,6 +94,11 @@ pub trait TargetPublicationListener {}
 /// ported. `CodeFormatService` only ever returns this type, so no members are needed yet.
 pub trait FormatManager {}
 
+/// Placeholder for `ghidra.app.util.viewer.format.FieldFormatModel`, referenced by
+/// [`FormatModelListener`](crate::app::util::viewer::format::format_model_listener::FormatModelListener)
+/// before the real class is ported.
+pub trait FieldFormatModel: Send + Sync {}
+
 /// Placeholder for `ghidra.app.plugin.core.datamgr.archive.Archive`, referenced by
 /// [`DataTypeArchiveService`](crate::app::services::DataTypeArchiveService) before the real
 /// class is ported. `DataTypeArchiveService` only ever returns this type, so no members are
