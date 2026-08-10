@@ -26,6 +26,7 @@ pub mod debugger_trace_manager_service;
 pub mod eclipse_integration_service;
 pub mod field_mouse_handler_service;
 pub mod file_importer_service;
+pub mod file_system_browser_service;
 pub mod function_comparison_service;
 pub mod go_to_service;
 pub mod go_to_service_listener;
@@ -91,6 +92,7 @@ pub use debugger_trace_manager_service::{
 pub use eclipse_integration_service::EclipseIntegrationService;
 pub use field_mouse_handler_service::FieldMouseHandlerService;
 pub use file_importer_service::FileImporterService;
+pub use file_system_browser_service::FileSystemBrowserService;
 pub use function_comparison_service::FunctionComparisonService;
 pub use go_to_service::{GoToService, VALID_GOTO_CHARS};
 pub use go_to_service_listener::GoToServiceListener;
