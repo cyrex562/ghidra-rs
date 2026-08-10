@@ -48,6 +48,17 @@ class TestImplementerCounting(unittest.TestCase):
         impls = sr.concrete_implementers("TraceCodeUnit", facts, subtypes, {})
         self.assertEqual(impls, {"DBTraceData", "DBTraceInstruction"})
 
+    def test_records_and_enums_are_implementations(self):
+        """Lifespan.Impl is a record; counting only `class` hid it and understated the set."""
+        facts, subtypes = facts_for({
+            "Lifespan": ("interface", False, []),
+            "Impl": ("record", False, ["Lifespan"]),
+            "Empty": ("class", False, ["Lifespan"]),
+            "Kind": ("enum", False, ["Lifespan"]),
+        })
+        self.assertEqual(sr.concrete_implementers("Lifespan", facts, subtypes, {}),
+                         {"Impl", "Empty", "Kind"})
+
     def test_abstract_bases_are_not_implementations(self):
         facts, subtypes = facts_for({
             "DataType": ("interface", False, []),

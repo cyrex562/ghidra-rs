@@ -441,6 +441,56 @@ _RESOLVE_CACHE = {}
 _FACTS = None
 
 
+# Claims a promoted note makes, and what current evidence must show for it to still hold.
+_CLAIMS = (
+    ("single implementation", lambda k: k == 1),
+    ("one subclass", lambda k: k == 1),
+    ("one concrete", lambda k: k == 1),
+    ("nothing extends it", lambda k: k == 0),
+    ("small closed set", lambda k: 2 <= k <= ENUM_MAX_VARIANTS),
+    ("storage backings", lambda k: k >= 2),
+    ("inheritance chain", lambda k: k >= 2),
+)
+
+
+def validate_promotions(queue_path):
+    """Reset promoted rows whose stated reasoning no longer matches the implementer counts."""
+    if not os.path.exists(queue_path):
+        return 0
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import shape_rules
+        tbl = shape_rules.load_implementers() or {}
+    except Exception:
+        return 0
+    if not tbl:
+        return 0
+    with open(queue_path, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+    cols = list(rows[0].keys()) if rows else QUEUE_COLS
+    n = 0
+    for r in rows:
+        if (r.get("source") or "").strip() != "promoted":
+            continue
+        e = tbl.get((r.get("type") or "").strip())
+        if not e:
+            continue
+        note = r.get("note") or ""
+        for claim, holds in _CLAIMS:
+            if claim in note and not holds(e["n_concrete"]):
+                r["verdict"], r["source"] = "TODO", ""
+                r["note"] = (f"promotion reset: note claimed '{claim}' but there are now "
+                             f"{e['n_concrete']} concrete implementers")
+                n += 1
+                break
+    if n:
+        with open(queue_path, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=cols, delimiter="\t", lineterminator="\n")
+            w.writeheader()
+            w.writerows(rows)
+    return n
+
+
 def _java_kind(name):
     """Java kind for a name, including NESTED declarations.
 
@@ -943,10 +993,21 @@ def main():
                          "touched. Needed whenever the generator's evidence changes -- it did on "
                          "2026-08-09, when subtype counting moved from direct to the transitive "
                          "concrete closure, and 23 stale SUGGEST-ENUM proposals were frozen.")
+    ap.add_argument(
+        "--validate", action="store_true",
+        help="Check every promoted row against CURRENT evidence and reset the ones whose "
+             "stated reasoning no longer holds. The index has changed under promotions three "
+             "times (direct->transitive subtype counts, test sourcesets excluded, nested "
+             "implementations counted); OpBehaviorOther was promoted STRUCT as "
+             "'one concrete implementer' and has 62. Run after any index rebuild.")
     ap.add_argument("--promote", metavar="VERDICT",
                     help="Promote SUGGEST-<VERDICT> rows to <VERDICT> (e.g. --promote ACCEPT), "
                          "or ALL for every suggestion. This is the review gate.")
     args = ap.parse_args()
+
+    if args.validate:
+        n = validate_promotions(args.out)
+        print(f"reset {n} promoted verdict(s) whose evidence changed", file=sys.stderr)
 
     rows, blocked = build_queue(
         args.debt, args.seam, args.root, args.out, args.max_fanin, args.dyn_threshold,

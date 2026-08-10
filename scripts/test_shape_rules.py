@@ -412,6 +412,27 @@ class TestNonProductionSources(unittest.TestCase):
             self.assertFalse(sr.is_non_production(rel), rel)
 
 
+class TestNestedSupertypes(unittest.TestCase):
+    def test_a_nested_implementation_counts_as_a_subtype(self):
+        """Capturing only (name, kind) made nested implementations invisible.
+
+        40 interfaces read as "no implementer anywhere" while their implementations sat
+        nested in the same file -- Lifespan.LifeSet, FieldSpan, TraceTimeViewport.Occlusion.
+        """
+        src = sr.strip_java("""
+            public interface Outer {
+                public class Impl implements Outer, Other { }
+                public static class Sub extends Base { }
+                interface Marker { }
+            }
+        """)
+        got = {n: (k, e, i) for n, k, e, i, _p in sr.nested_declarations(src, "x/Outer.java")}
+        self.assertEqual(got["Impl"][0], "class")
+        self.assertEqual(got["Impl"][2], ["Outer", "Other"])
+        self.assertEqual(got["Sub"][1], ["Base"])
+        self.assertEqual(got["Marker"][0], "interface")
+
+
 class TestShapeTableIsPathKeyed(unittest.TestCase):
     def test_nested_entries_are_excluded_from_the_path_table(self):
         """SHAPES.tsv is read by path, first match wins.

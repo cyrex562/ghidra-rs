@@ -525,7 +525,11 @@ def concrete_implementers(name, facts, subtypes, _cache=None):
             e = facts.get(sub)
             if not e:
                 continue
-            if e[0]["kind"] == "class" and not e[0]["abstract"] and not _DOUBLE_RE.search(sub):
+            # A record or an enum implementing an interface is as concrete as a class.
+            # Counting only `class` hid Lifespan.Impl (a record) and every enum-based
+            # implementation, understating closed sets that the ENUM verdict turns on.
+            if (e[0]["kind"] in ("class", "record", "enum") and not e[0]["abstract"]
+                    and not _DOUBLE_RE.search(sub)):
                 out.add(sub)
             stack.append(sub)
     _cache[name] = out
@@ -550,7 +554,7 @@ def is_non_production(rel: str) -> bool:
 
 _NESTED = re.compile(
     r"(?m)^[ \t]+(?:(?:public|protected|private|static|final|abstract|sealed|non-sealed)\s+)*"
-    r"(class|interface|enum|record)\s+([A-Z]\w*)")
+    r"(class|interface|enum|record)\s+([A-Z]\w*)([^{]*)")
 
 
 def nested_declarations(src, rel):
@@ -561,7 +565,15 @@ def nested_declarations(src, rel):
     `PcodeUseropLibrary.PcodeUseropDefinition`. An index keyed on basenames cannot see them,
     so 34 of them looked like abstractions the port had invented.
     """
-    return [(m.group(2), m.group(1)) for m in _NESTED.finditer(src)]
+    # The header matters as much as the name. Capturing only (name, kind) made every nested
+    # implementation invisible as a subtype, so 40 interfaces -- Lifespan.LifeSet, FieldSpan,
+    # Occlusion, TraceObjectSchema.AttributeSchema -- read as "no implementer anywhere" when
+    # their implementations were nested in the very same file.
+    out = []
+    for m in _NESTED.finditer(src):
+        ext, imp, per = parse_header(m.group(3) or "")
+        out.append((m.group(2), m.group(1), ext, imp, per))
+    return out
 
 
 def build_index(verbose=False):
@@ -589,12 +601,14 @@ def build_index(verbose=False):
                 _src = strip_java(fh.read())
         except OSError:
             _src = ""
-        for nname, nkind in nested_declarations(_src, rel):
+        for nname, nkind, next_, nimp, nper in nested_declarations(_src, rel):
             if nname == name:
                 continue
+            for sup in next_ + nimp:
+                subtypes.setdefault(sup, set()).add(nname)
             nested.setdefault(nname, []).append(dict(
-                name=nname, kind=nkind, sealed=False, abstract=False, extends=[],
-                implements=[], permits=[], annotations=[], rel=rel, nested_in=name,
+                name=nname, kind=nkind, sealed=False, abstract=False, extends=next_,
+                implements=nimp, permits=nper, annotations=[], rel=rel, nested_in=name,
                 static_fields=0, instance_fields=0, abstract_methods=0, concrete_methods=0,
                 static_methods=0, private_ctor=False, public_ctor=False, singleton=False))
         for sup in fa["extends"] + fa["implements"]:

@@ -12,6 +12,7 @@ on real data, so each has a test here:
 
     python3 scripts/test_debt_clusters.py
 """
+import csv
 import os
 import sys
 import tempfile
@@ -288,6 +289,51 @@ class TestJavaSubtypeScan(unittest.TestCase):
         self.assertEqual(counts["Iface1"], 2)
         self.assertEqual(counts["Iface2"], 1)
         self.assertEqual(counts["Nothing"], 0)
+
+
+class TestPromotionValidation(unittest.TestCase):
+    """A promotion is only as good as the evidence it was made on, and that evidence moves.
+
+    The index changed under promoted verdicts three times: direct -> transitive subtype counts,
+    test sourcesets excluded, nested implementations counted. OpBehaviorOther was promoted
+    STRUCT as "one concrete implementer" and has 62 -- it is the per-processor CALLOTHER
+    extension point.
+    """
+
+    def _queue(self, d, rows):
+        p = os.path.join(d, "q.tsv")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("\t".join(dc.QUEUE_COLS) + "\n")
+            for r in rows:
+                f.write("\t".join(r) + "\n")
+        return p
+
+    def test_reset_when_the_claim_no_longer_holds(self):
+        with tempfile.TemporaryDirectory() as d:
+            q = self._queue(d, [
+                ["STRUCT", "1", "1", "0", "Stale", "", "x", "promoted",
+                 "one concrete Java implementer (Foo)"],
+                ["STRUCT", "1", "1", "0", "Fine", "", "x", "promoted",
+                 "one concrete Java implementer (Bar)"],
+                ["ACCEPT", "1", "1", "0", "Handmade", "", "x", "manual",
+                 "one concrete Java implementer (Baz)"],
+            ])
+            import shape_rules
+            real = shape_rules.load_implementers
+            shape_rules.load_implementers = lambda *a, **k: {
+                "Stale": {"n_concrete": 62}, "Fine": {"n_concrete": 1},
+                "Handmade": {"n_concrete": 62}}
+            try:
+                n = dc.validate_promotions(q)
+            finally:
+                shape_rules.load_implementers = real
+            self.assertEqual(n, 1)
+            got = {r["type"]: r["verdict"] for r in
+                   csv.DictReader(open(q, newline="", encoding="utf-8"), delimiter="\t")}
+            self.assertEqual(got["Stale"], "TODO", "claim broke -- must reset")
+            self.assertEqual(got["Fine"], "STRUCT", "claim still holds")
+            self.assertEqual(got["Handmade"], "ACCEPT",
+                             "a hand-made decision is not a promotion and is never reset")
 
 
 class TestDecisionsOutliveTheFrontier(unittest.TestCase):
