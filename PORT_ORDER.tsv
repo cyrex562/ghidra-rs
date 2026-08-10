@@ -18,7 +18,7 @@ DONE	trait	33	119	44	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode
 DONE	trait	29	100	26	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStateSpace.java
 DONE	trait	28	100	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStatePiece.java
 PARK	trait	27	99	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorState.java
-TODO	trait	26	28	33	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/ThreadPcodeExecutorState.java
+DONE	trait	26	28	33	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/ThreadPcodeExecutorState.java
 TODO	trait	25	28	79	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/DefaultPcodeThread.java
 TODO	trait	24	25	81	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/ModifiedPcodeThread.java
 TODO	trait	23	23	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/BytesPcodeThread.java
