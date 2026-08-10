@@ -497,3 +497,4 @@ ts	stub_class	referenced_by
 2026-08-10T08:12:00.000000+00:00	LogicalBreakpointState	DebuggerLogicalBreakpointService
 2026-08-10T08:12:00.000000+00:00	LogicalBreakpointMode	DebuggerLogicalBreakpointService
 2026-08-10T08:12:00.000000+00:00	LogicalBreakpointConsistency	DebuggerLogicalBreakpointService
+2026-08-10T12:00:00.000000+00:00	ListingActionContext	DataService
