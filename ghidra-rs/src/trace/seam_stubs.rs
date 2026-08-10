@@ -86,50 +86,6 @@ pub trait TraceGuestPlatform: Send + Sync {}
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceMemoryManager {}
 
-/// Placeholder for `ghidra.trace.model.memory.TraceMemoryOperations`, referenced by
-/// [`TraceMemorySpace`](crate::trace::model::memory::trace_memory_space::TraceMemorySpace) before
-/// the real interface is ported. `TraceMemorySpace` only extends this interface as a supertrait
-/// and does not itself call any of its (large) surface of byte/state/register operations, so no
-/// members were needed there.
-///
-/// Grown to add the six abstract (non-register) primitives
-/// [`InternalTraceMemoryOperations`](crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations)'s
-/// register-taking defaults reduce to: setting/querying state and reading/writing/removing bytes
-/// over a plain address range. Java's `ByteBuffer` position/limit-bounded parameters become `&mut
-/// [u8]` slices, the convention already established by
-/// [`MemBuffer`](crate::program::model::mem::MemBuffer) and
-/// [`AbstractDBTraceCodeUnit`](crate::trace::database::listing::abstract_db_trace_code_unit::AbstractDBTraceCodeUnit).
-/// The `Collection<Entry<TraceAddressSnapRange, TraceMemoryState>>` returned by `getStates` becomes
-/// a `Vec` of pairs.
-pub trait TraceMemoryOperations: Send + Sync {
-    /// Set the state of memory over a given time and address range. Mirrors
-    /// `setState(long, AddressRange, TraceMemoryState)`.
-    fn set_state(&mut self, snap: i64, range: &AddressRange, state: TraceMemoryState);
-
-    /// Get all the entries covering the given range effective at the given snap. Mirrors
-    /// `getStates(long, AddressRange)`.
-    fn get_states(
-        &self,
-        snap: i64,
-        range: &AddressRange,
-    ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)>;
-
-    /// Write bytes at the given snap and address, returning the number of bytes written. Mirrors
-    /// `putBytes(long, Address, ByteBuffer)`.
-    fn put_bytes(&mut self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
-
-    /// Read the most recent bytes from the given snap and address, returning the number of bytes
-    /// read. Mirrors `getBytes(long, Address, ByteBuffer)`.
-    fn get_bytes(&self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
-
-    /// Read the most recent bytes from the given snap and address, following schedule forks.
-    /// Mirrors `getViewBytes(long, Address, ByteBuffer)`.
-    fn get_view_bytes(&self, snap: i64, start: &Address, buf: &mut [u8]) -> i32;
-
-    /// Remove bytes from the given time and location. Mirrors `removeBytes(long, Address, int)`.
-    fn remove_bytes(&mut self, snap: i64, start: &Address, len: i32);
-}
-
 /// Placeholder for `ghidra.trace.model.context.TraceRegisterContextManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
 pub trait TraceRegisterContextManager {}

@@ -18,22 +18,25 @@
 //! - Region management (`add_region`/`get_all_regions`/`get_live_region_by_path`/...) defaults
 //!   through [`Self::trace`]'s object manager (`trace.getObjectManager().addMemoryRegion(...)`,
 //!   etc).
-//! - Per-space state/byte queries beyond the six-method
-//!   [`TraceMemoryOperations`](crate::trace::seam_stubs::TraceMemoryOperations) base already
-//!   required (transitively, via the [`InternalTraceMemoryOperations`] supertrait) -- `getState`,
+//! - Per-space state/byte queries declared by the
+//!   [`TraceMemoryOperations`](crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations)
+//!   base (reached transitively, via the [`InternalTraceMemoryOperations`] supertrait) -- `getState`,
 //!   `getViewState`, `getMostRecentStateEntry`, `findBytes`, `getSnapOfMostRecentChangeToBlock`,
-//!   ... -- default through the [`DBTraceDelegatingManager`] supertrait's `delegate_read`/
+//!   ... -- are re-declared here with bodies that delegate per space, since Rust has no way for a
+//!   subtrait to supply a supertrait method's body (what the Java class does by implementing the
+//!   interface). An implementor forwards its `TraceMemoryOperations` members to these; see
+//!   `MockManager` in this module's tests. They default through the [`DBTraceDelegatingManager`]
+//!   supertrait's `delegate_read`/
 //!   `delegate_read_with_default` helpers, against a new minimal
 //!   [`DBTraceMemorySpace`](crate::trace::seam_stubs::DBTraceMemorySpace) placeholder for the
 //!   delegate type `M`. These defaults require `Self: Sized` (the same opt-out
 //!   `DBTraceDelegatingManager`'s own `delegateXxx` helpers use), so they aren't part of this
 //!   trait's `dyn`-safe surface; the core accessors (space/region lookup, overlay management)
 //!   remain callable through `Box<dyn DBTraceMemoryManager>`.
-//! - `setState`'s `Address`/`(Address, Address)`/`AddressSetView` overloads (Rust has no
-//!   overloading) are ported as `set_state_at`/`set_state_between`/`set_state_over`, each building
-//!   an `AddressRange` and calling the base `TraceMemoryOperations::set_state`, the same
-//!   overload-by-suffix convention
-//!   [`InternalTraceMemoryOperations`]'s `_on_platform` methods already established.
+//! - `setState`'s `Address`/`(Address, Address)`/`AddressSetView` overloads are inherited
+//!   verbatim from the base interface (`set_state_at`/`set_state_between`/`set_state_over`), whose
+//!   defaults already build an `AddressRange` and call `TraceMemoryOperations::set_state` -- the
+//!   very thing this class does in Java.
 //! - `getMemoryRegisterSpace`'s three overloads and `getStateChanges` are left abstract (no
 //!   default): resolving a thread/frame to its backing register address space is
 //!   `AbstractDBTraceSpaceBasedManager.getForRegisterSpace`'s responsibility, and querying state
@@ -251,30 +254,6 @@ pub trait DBTraceMemoryManager:
         self.trace().get_object_manager().get_regions_address_set(snap, predicate)
     }
 
-    // ---- state: `setState` overloads, disambiguated by suffix ----
-
-    /// Set the state of memory at a single address. Mirrors `setState(long, Address,
-    /// TraceMemoryState)`.
-    fn set_state_at(&mut self, snap: i64, address: &Address, state: TraceMemoryState) {
-        let range = AddressRange::new(address.clone(), address.clone());
-        self.set_state(snap, &range, state);
-    }
-
-    /// Set the state of memory between two addresses. Mirrors `setState(long, Address, Address,
-    /// TraceMemoryState)`.
-    fn set_state_between(&mut self, snap: i64, start: &Address, end: &Address, state: TraceMemoryState) {
-        self.set_state(snap, &AddressRange::new(start.clone(), end.clone()), state);
-    }
-
-    /// Set the state of memory over an address set. Mirrors `setState(long, AddressSetView,
-    /// TraceMemoryState)`.
-    fn set_state_over(&mut self, snap: i64, set: &dyn AddressSetView, state: TraceMemoryState) {
-        let mut ranges = set.address_ranges();
-        while let Some(range) = ranges.next() {
-            self.set_state(snap, &range, state);
-        }
-    }
-
     // ---- state/byte queries beyond the base six, via `DBTraceDelegatingManager` ----
 
     /// Get the state of memory at a given snap and address, defaulting to
@@ -454,7 +433,8 @@ mod tests {
 
     use crate::program::model::address::AddressSpaceType;
     use crate::trace::database::memory::internal_trace_memory_operations::InternalTraceMemoryOperations;
-    use crate::trace::seam_stubs::{TraceMemoryOperations, TraceRegisterUtils};
+    use crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations;
+    use crate::trace::seam_stubs::TraceRegisterUtils;
     use crate::util::lock_hold::Lock;
 
     #[derive(Default)]
@@ -691,6 +671,125 @@ mod tests {
         fn remove_bytes(&mut self, snap: i64, start: &Address, len: i32) {
             self.delegate.remove_bytes(snap, start, len);
         }
+
+        // The rest of the base interface is what the Java class implements; here each member
+        // forwards to `DBTraceMemoryManager`'s same-named delegating default. This is the
+        // forwarding pattern any real implementor follows -- see this module's documentation.
+
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn get_state(&self, snap: i64, address: &Address) -> TraceMemoryState {
+            DBTraceMemoryManager::get_state(self, snap, address)
+        }
+
+        fn get_view_state(&self, snap: i64, address: &Address) -> (i64, TraceMemoryState) {
+            DBTraceMemoryManager::get_view_state(self, snap, address)
+        }
+
+        fn get_most_recent_state_entry(
+            &self,
+            snap: i64,
+            address: &Address,
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            DBTraceMemoryManager::get_most_recent_state_entry(self, snap, address)
+        }
+
+        fn get_view_most_recent_state_entry(
+            &self,
+            snap: i64,
+            address: &Address,
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            DBTraceMemoryManager::get_view_most_recent_state_entry(self, snap, address)
+        }
+
+        fn get_view_most_recent_state_entry_where(
+            &self,
+            snap: i64,
+            range: &AddressRange,
+            predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Option<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            DBTraceMemoryManager::get_view_most_recent_state_entry_where(
+                self, snap, range, predicate,
+            )
+        }
+
+        fn get_addresses_with_state_in(
+            &self,
+            span: Lifespan,
+            set: &dyn AddressSetView,
+            predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Box<dyn AddressSetView> {
+            Box::new(DBTraceMemoryManager::get_addresses_with_state_in(
+                self, span, set, predicate,
+            ))
+        }
+
+        fn get_addresses_with_state(
+            &self,
+            snap: i64,
+            predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Box<dyn AddressSetView> {
+            Box::new(self.get_addresses_with_state_at_snap(snap, predicate))
+        }
+
+        fn get_addresses_with_state_over(
+            &self,
+            lifespan: Lifespan,
+            predicate: &dyn Fn(TraceMemoryState) -> bool,
+        ) -> Box<dyn AddressSetView> {
+            Box::new(DBTraceMemoryManager::get_addresses_with_state_over(
+                self, lifespan, predicate,
+            ))
+        }
+
+        fn get_most_recent_states(
+            &self,
+            within: &dyn TraceAddressSnapRange,
+        ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            DBTraceMemoryManager::get_most_recent_states(self, within)
+        }
+
+        fn get_most_recent_states_in(
+            &self,
+            _snap: i64,
+            _range: &AddressRange,
+        ) -> Vec<(Box<dyn TraceAddressSnapRange>, TraceMemoryState)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn find_bytes(
+            &self,
+            snap: i64,
+            range: &AddressRange,
+            data: &[u8],
+            mask: Option<&[u8]>,
+            forward: bool,
+            monitor: &dyn TaskMonitor,
+        ) -> Option<Address> {
+            DBTraceMemoryManager::find_bytes(self, snap, range, data, mask, forward, monitor)
+        }
+
+        fn get_buffer_at(&self, snap: i64, start: &Address, big_endian: bool) -> Box<dyn MemBuffer> {
+            DBTraceMemoryManager::get_buffer_at(self, snap, start, big_endian)
+        }
+
+        fn get_snap_of_most_recent_change_to_block(
+            &self,
+            snap: i64,
+            address: &Address,
+        ) -> Option<i64> {
+            DBTraceMemoryManager::get_snap_of_most_recent_change_to_block(self, snap, address)
+        }
+
+        fn get_block_size(&self) -> i32 {
+            DBTraceMemoryManager::get_block_size(self)
+        }
+
+        fn pack(&mut self) {
+            DBTraceMemoryManager::pack(self)
+        }
     }
 
     impl InternalTraceMemoryOperations for MockManager {
@@ -831,11 +930,17 @@ mod tests {
         let space = dummy_space();
         let addr = Address::new(space, 0x10);
 
-        assert_eq!(mgr.get_state(0, &addr), TraceMemoryState::Unknown);
+        assert_eq!(
+            DBTraceMemoryManager::get_state(&mgr, 0, &addr),
+            TraceMemoryState::Unknown
+        );
 
         mgr.set_state_at(0, &addr, TraceMemoryState::Known);
 
-        assert_eq!(mgr.get_state(0, &addr), TraceMemoryState::Known);
+        assert_eq!(
+            DBTraceMemoryManager::get_state(&mgr, 0, &addr),
+            TraceMemoryState::Known
+        );
     }
 
     #[test]
@@ -850,7 +955,10 @@ mod tests {
 
         // The mock only tracks state at the range's minimum address, matching its `set_state`
         // stand-in; still enough to prove the range was built and forwarded correctly.
-        assert_eq!(mgr.get_state(0, &start), TraceMemoryState::Known);
+        assert_eq!(
+            DBTraceMemoryManager::get_state(&mgr, 0, &start),
+            TraceMemoryState::Known
+        );
         let _ = mid;
     }
 
@@ -863,11 +971,11 @@ mod tests {
 
         let written = InternalTraceMemoryOperations::get_space(&mgr);
         let _ = written; // exercise get_space wiring
-        let n = crate::trace::seam_stubs::TraceMemoryOperations::put_bytes(&mut mgr, 0, &addr, &mut src);
+        let n = TraceMemoryOperations::put_bytes(&mut mgr, 0, &addr, &mut src);
         assert_eq!(n, 4);
 
         let mut dst = vec![0u8; 4];
-        let read = crate::trace::seam_stubs::TraceMemoryOperations::get_bytes(&mgr, 0, &addr, &mut dst);
+        let read = TraceMemoryOperations::get_bytes(&mgr, 0, &addr, &mut dst);
         assert_eq!(read, 4);
         assert_eq!(dst, vec![1, 2, 3, 4]);
     }
@@ -875,7 +983,7 @@ mod tests {
     #[test]
     fn get_block_size_is_the_fixed_constant() {
         let mgr = make_manager();
-        assert_eq!(mgr.get_block_size(), 4096);
+        assert_eq!(DBTraceMemoryManager::get_block_size(&mgr), 4096);
     }
 
     #[test]
@@ -883,6 +991,6 @@ mod tests {
         let mgr = make_manager();
         // MockDelegateSpace::pack is a no-op; this proves `pack()` iterates `active_spaces()`
         // without panicking (the delegate would panic on any unstubbed method it didn't expect).
-        mgr.pack();
+        DBTraceMemoryManager::pack(&mgr);
     }
 }
