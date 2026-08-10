@@ -3578,7 +3578,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorQ
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidatorService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/StringValidityScore.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/Terminal.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/TerminalService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/TerminalService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/VSCodeIntegrationService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewManagerService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ViewService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
