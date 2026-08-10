@@ -40,7 +40,7 @@ DONE	trait	3	16	4	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidr
 DONE	trait	2	52	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/breakpoint/TraceBreakpointLocation.java
 DONE	trait	1	6	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/breakpoint/LogicalBreakpointsChangeListener.java
 DONE	trait	0	186	3	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerLogicalBreakpointService.java
-TODO	trait	3	7	24	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/watch/WatchRow.java
+DONE	trait	3	7	24	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/watch/WatchRow.java
 TODO	trait	2	185	1	app	Ghidra/Debug/Debugger-api/src/main/java/ghidra/app/services/DebuggerWatchesService.java
 TODO	trait	4	5	1	framework	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/annotation/AutoOptionDefined.java
 TODO	trait	2	77	8	framework	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/framework/options/AutoOptions.java
