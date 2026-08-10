@@ -625,9 +625,22 @@ def render_dyn_guidance(ctx):
     table = shape_rules.load_implementers()
     if not table:
         return []
-    avoid, fine, seam = [], [], []
+    avoid, fine, seam, decided = [], [], [], []
     for name in dict.fromkeys(names):
         pat, n, kind = dyn_rules.classify_from_table(name, table)
+        action, conv, why = dyn_rules.decide(name, pat, n, kind, table)
+        # A decided convention says what to BUILD, which is more useful than "not a trait
+        # object" and is a different instruction -- an ARENA type may have 174 implementers,
+        # so "there is nothing to dispatch over" would be plainly false for it.
+        if conv and action == "fix":
+            decided.append(f"- `{name}`: {why}")
+            continue
+        if conv and action == "blocked":
+            seam.append(f"- `{name}`: {why}")
+            continue
+        if conv and action == "ok":
+            fine.append(f"- `{name}`: {why}")
+            continue
         if pat == "PA":
             avoid.append(f"- `{name}`: a Java annotation type. It is metadata, not a runtime "
                          f"type -- do not model it as a Rust type at all.")
@@ -650,11 +663,16 @@ def render_dyn_guidance(ctx):
                         f"surface on it that {who} would have to keep.")
         elif pat in ("P4", "P5"):
             fine.append(f"- `{name}`: {n} concrete implementations")
-    if not avoid and not fine and not seam:
+    if not avoid and not fine and not seam and not decided:
         return []
     out = ["## Trait objects: where `dyn` is and is not warranted",
            "Decided from each type's Java hierarchy (concrete implementers, transitively, "
            "excluding abstract bases and test doubles) -- NOT from the Rust tree.", ""]
+    if decided:
+        out.append("**These have a DECIDED convention** (CONVENTION_QUEUE.tsv). Build that, not "
+                   "a trait object:")
+        out.extend(decided)
+        out.append("")
     if avoid:
         out.append("**Do NOT write `Box<dyn T>` / `Arc<dyn T>` / `&dyn T` for these.** There is "
                    "nothing to dispatch over; a trait object here costs a vtable and an "

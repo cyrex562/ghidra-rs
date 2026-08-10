@@ -163,15 +163,25 @@ def load_accepted_types(queue_path):
     return accepted
 
 
-def load_justified_dyn_types():
-    """Types whose Java hierarchy makes a trait object the right answer (dyn_rules P4/P5).
+def load_justified_dyn_types(debt_path=None):
+    """Types a port CANNOT avoid writing `dyn` for today.
 
-    The ACCEPT list above is hand-curated and has 131 entries; the crate references far more
-    types than that, so most genuinely-polymorphic ones have been scoring as debt. `dyn
-    DataType` has 192 concrete implementers in orig_src, `dyn TaskMonitor` 21, `dyn
-    AddressSetView` 21 -- counting those the same as `dyn Trace` (one implementer, DBTrace)
-    is what makes the nightly drift number impossible to act on. Measured over the whole
-    crate, 40.9% of non-std `dyn` mentions are in this justified group.
+    This file's number is the nightly DRIFT signal: did last night's ports add avoidable
+    smells? Avoidable means an alternative exists right now. Three things do not qualify and
+    must not be scored, or the signal measures the migration's size instead of the run's:
+
+      * `dyn` that is CORRECT -- an extension point, or a genuinely polymorphic interface
+        (dyn_rules ok);
+      * a SEAM -- the one concrete implementation is not ported yet, so there is nothing else
+        to write (dyn_rules blocked);
+      * a decided convention whose TARGET has not been built -- `DataType` is decided ENUM
+        with 1,513 `dyn` uses, but no `DataType` enum exists, and a port cannot hold a Copy ID
+        into an arena that is not there. dyn_rules marks those `blocked`, so they arrive here
+        already excluded; counting them tripled the score (34,296 -> 49,380) with work no
+        nightly run could have done differently.
+
+    What remains scored is the avoidable case: a Java class or a single-implementation
+    interface whose concrete Rust type exists today.
 
     Reads the committed DYN_DEBT.tsv when it is present -- that file already holds the
     verdicts and costs milliseconds, where recomputing walks 15,601 Java files. Falls back
@@ -179,15 +189,16 @@ def load_justified_dyn_types():
     failing the audit.
     """
     here = os.path.dirname(os.path.abspath(__file__))
-    debt = os.path.join(os.path.dirname(here), "DYN_DEBT.tsv")
+    debt = debt_path or os.path.join(os.path.dirname(here), "DYN_DEBT.tsv")
     if os.path.exists(debt):
         try:
             with open(debt, newline="", encoding="utf-8") as f:
-                # "blocked" is the P2-seam case: the one concrete implementation is not
-                # ported, so `dyn` is the only thing a porter can write. Counting it as debt
-                # charges the port for work it is not yet possible to do.
+                # Exactly the rows dyn_rules did NOT mark `fix` -- it already accounts for
+                # whether a decided convention is buildable, so a second rule keyed on the
+                # convention NAME would wrongly exempt the ones that are (EquateStore exists,
+                # so `dyn Equate` is avoidable today).
                 out = {r["class"] for r in csv.DictReader(f, delimiter="\t")
-                       if (r.get("verdict") or "").strip() in ("ok", "blocked")}
+                       if (r.get("verdict") or "").strip() != "fix"}
             if out:
                 return out
         except Exception:

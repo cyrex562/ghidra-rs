@@ -163,6 +163,86 @@ class TestClassification(unittest.TestCase):
         self.assertEqual(dr.classify("PatternExpression", facts, self.subtypes, {})[0], "??")
 
 
+class TestConventionDeference(unittest.TestCase):
+    """A decided verdict beats re-derived evidence.
+
+    dyn_rules ignored CONVENTION_QUEUE.tsv and re-derived from implementer counts, so it
+    asked for 4,925 dyn-mentions' worth of already-settled types to be "investigated" --
+    `Program` reported P3/investigate while the queue had said ARENA since the day before.
+    """
+
+    def setUp(self):
+        dr._CONV = {"Decided": "ARENA", "Open": "ACCEPT", "Closed": "ENUM",
+                    "Concrete": "STRUCT", "Parked": "PARK"}
+        dr._RUST_DECLS = {"DecidedStore": "struct", "Closed": "enum"}
+
+    def tearDown(self):
+        dr._CONV = None
+        dr._RUST_DECLS = None
+
+    def test_decided_arena_is_fix_once_the_store_exists(self):
+        dr._RUST_DECLS = {"DecidedStore": "struct"}
+        try:
+            action, conv, why = dr.decide("Decided", "P3", 3, "interface")
+            self.assertEqual((action, conv), ("fix", "ARENA"))
+            self.assertIn("Copy ID", why)
+        finally:
+            dr._RUST_DECLS = None
+
+    def test_decided_arena_is_BLOCKED_while_the_store_does_not_exist(self):
+        """Telling a port to hold a Copy ID into an arena that has not been built is advice it
+        cannot follow -- and complying by inventing an arena is worse than the trait object."""
+        dr._RUST_DECLS = {}
+        try:
+            action, conv, why = dr.decide("Decided", "P3", 3, "interface")
+            self.assertEqual((action, conv), ("blocked", "ARENA"))
+            self.assertIn("does not exist yet", why)
+            self.assertIn("do NOT invent one", why)
+        finally:
+            dr._RUST_DECLS = None
+
+    def test_decided_enum_is_blocked_until_the_enum_is_declared(self):
+        dr._RUST_DECLS = {}
+        try:
+            self.assertEqual(dr.decide("Closed", "P5", 192, "interface")[0], "blocked")
+        finally:
+            dr._RUST_DECLS = None
+        dr._RUST_DECLS = {"Closed": "enum"}
+        try:
+            self.assertEqual(dr.decide("Closed", "P5", 192, "interface")[0], "fix")
+        finally:
+            dr._RUST_DECLS = None
+
+    def test_decided_accept_overrides_fix(self):
+        action, conv, _ = dr.decide("Open", "P2", 1, "interface")
+        self.assertEqual((action, conv), ("ok", "ACCEPT"))
+
+    def test_decided_enum_on_a_many_implementer_type_is_still_work(self):
+        """DataType has 174 implementers (P5/ok) but is decided ENUM, so it is not done."""
+        dr._RUST_DECLS = {"Closed": "enum"}
+        try:
+            action, conv, _ = dr.decide("Closed", "P5", 192, "interface")
+            self.assertEqual((action, conv), ("fix", "ENUM"))
+        finally:
+            dr._RUST_DECLS = None
+
+    def test_decided_struct_stays_blocked_when_the_type_is_unported(self):
+        action, conv, why = dr.decide("Concrete", "P2s", 1, "interface",
+                                      {"Concrete": {"concrete_implementers": ["ConcreteDB"]}})
+        self.assertEqual((action, conv), ("blocked", "STRUCT"))
+        self.assertIn("ConcreteDB", why)
+
+    def test_undecided_falls_back_to_the_evidence(self):
+        action, conv, why = dr.decide("NotInQueue", "P3", 3, "interface")
+        self.assertEqual((action, conv), ("investigate", ""))
+
+    def test_ambiguous_basename_is_never_resolved_by_a_verdict(self):
+        """A verdict recorded against a bare name cannot say which of two Java types it meant."""
+        dr._CONV = {"PatternExpression": "STRUCT"}
+        action, conv, _ = dr.decide("PatternExpression", "??", -1, "ambiguous")
+        self.assertEqual((action, conv), ("skip", ""))
+
+
 class TestRealTree(unittest.TestCase):
     """Guard the live numbers the patterns were derived from."""
 

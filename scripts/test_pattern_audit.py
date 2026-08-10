@@ -236,6 +236,35 @@ class TestAcceptedVerdicts(unittest.TestCase):
                       "--no-justified-dyn", "--out", out)
             self.assertTrue(read_tsv(out), "SUGGEST-ACCEPT must not take effect before review")
 
+    def test_decided_but_unbuilt_conventions_are_not_drift(self):
+        """A port cannot hold a Copy ID into an arena that does not exist yet.
+
+        `DataType` is decided ENUM with 1,513 `dyn` uses. Scoring those tripled the number
+        (34,296 -> 49,380) with work no nightly run could have done differently -- the same
+        mistake as charging for a seam whose implementation is unported. Migration backlog
+        belongs in DYN_DEBT.tsv, not in the drift signal.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            debt = os.path.join(d, "DYN_DEBT.tsv")
+            with open(debt, "w", encoding="utf-8") as f:
+                f.write("verdict\tconvention\tpattern\tdyn_uses\tclass\n")
+                f.write("blocked\tENUM\tP5\t99\tDecidedEnum\n")
+                f.write("blocked\tARENA\tP5\t99\tDecidedArena\n")
+                f.write("fix\tARENA\tP5\t99\tBuiltArena\n")
+                f.write("fix\tSTRUCT\tP2\t99\tBuildableStruct\n")
+                f.write("fix\t\tP1\t99\tPlainClass\n")
+                f.write("ok\tACCEPT\tP5\t99\tOpenSet\n")
+                f.write("blocked\t\tP2s\t99\tUnportedSeam\n")
+            got = pa.load_justified_dyn_types(debt)
+            self.assertIn("DecidedEnum", got, "unbuilt ENUM must not be drift")
+            self.assertIn("DecidedArena", got, "unbuilt ARENA must not be drift")
+            self.assertIn("OpenSet", got, "dyn is correct here")
+            self.assertIn("UnportedSeam", got, "nothing else can be written yet")
+            self.assertNotIn("BuildableStruct", got, "the concrete type exists -- avoidable")
+            self.assertNotIn("BuiltArena", got,
+                             "an arena that EXISTS makes its dyn avoidable, so it is drift")
+            self.assertNotIn("PlainClass", got, "Java class with a concrete Rust type")
+
     def test_justified_dyn_is_exempt_by_default(self):
         """A type with many concrete Java implementers is not ownership debt.
 
