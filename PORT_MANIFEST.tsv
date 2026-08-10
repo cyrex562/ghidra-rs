@@ -6490,7 +6490,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangRet
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangStatement.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangSyntaxToken.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangToken.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTokenGroup.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangTypeToken.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangVariableDecl.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangVariableToken.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 

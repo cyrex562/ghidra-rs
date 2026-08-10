@@ -198,6 +198,18 @@ pub const ELEM_POINTER_SIZE: ElementId = ElementId::new("pointer_size", 152);
 pub const ELEM_SHORT_SIZE: ElementId = ElementId::new("short_size", 153);
 pub const ELEM_SIZE_ALIGNMENT_MAP: ElementId = ElementId::new("size_alignment_map", 154);
 pub const ELEM_WCHAR_SIZE: ElementId = ElementId::new("wchar_size", 155);
+// Real Ghidra id is 20 (`ElementId.java`'s `ELEM_FUNCPROTO`), continuing the local counter above
+// instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
+pub const ELEM_FUNCPROTO: ElementId = ElementId::new("funcproto", 156);
+// Real Ghidra id is 22 (`ElementId.java`'s `ELEM_RETURN_TYPE`), continuing the local counter above.
+pub const ELEM_RETURN_TYPE: ElementId = ElementId::new("return_type", 157);
+// Real Ghidra id is 23 (`ElementId.java`'s `ELEM_STATEMENT`), continuing the local counter above.
+pub const ELEM_STATEMENT: ElementId = ElementId::new("statement", 158);
+// Real Ghidra id is 25 (`ElementId.java`'s `ELEM_VARDECL`), continuing the local counter above.
+pub const ELEM_VARDECL: ElementId = ElementId::new("vardecl", 159);
+// Real Ghidra id is 103 (`ElementId.java`'s `ELEM_BLOCK`), continuing the local counter above
+// (this file's own id 103 is already taken by `ELEM_OUTPUT`, an unrelated sleigh element).
+pub const ELEM_BLOCK: ElementId = ElementId::new("block", 160);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
