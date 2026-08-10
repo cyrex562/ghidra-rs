@@ -3,7 +3,7 @@ use crate::program::model::data::enum_::Enum;
 use crate::program::model::pcode::Varnode;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::symbol::trace_equate_reference::TraceEquateReference;
-use crate::trace::seam_stubs::TraceThread;
+use crate::trace::model::thread::TraceThread;
 
 /// A named, scalar-valued substitution attached to one or more locations within a trace.
 ///
@@ -14,7 +14,7 @@ use crate::trace::seam_stubs::TraceThread;
 /// The Java interface's doc notes it is "like [`Equate`](crate::program::model::symbol::equate::Equate),
 /// except that extending it would prevent references with snaps" -- i.e. every lookup/reference
 /// method here is additionally scoped by a lifespan/snap and (optionally) a
-/// [`TraceThread`](crate::trace::seam_stubs::TraceThread), unlike the plain, address-only
+/// [`TraceThread`](crate::trace::model::thread::TraceThread), unlike the plain, address-only
 /// `Equate`. Because of that, `TraceEquate` is ported standalone rather than as a subtrait of
 /// `Equate`.
 ///
@@ -109,7 +109,49 @@ mod tests {
 
     struct MockThread;
 
-    impl TraceThread for MockThread {}
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockThread {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockThread {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceThread for MockThread {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_key(&self) -> i64 {
+            0
+        }
+        fn get_path(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_name(&mut self, _lifespan: crate::trace::model::lifespan::Lifespan, _name: &str) {}
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+        fn set_comment(&mut self, _snap: i64, _comment: Option<&str>) {}
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+        fn delete(&mut self) {}
+        fn remove(&mut self, _snap: i64) {}
+        fn is_valid(&self, _snap: i64) -> bool {
+            true
+        }
+        fn is_alive(&self, _span: crate::trace::model::lifespan::Lifespan) -> bool {
+            true
+        }
+    }
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);

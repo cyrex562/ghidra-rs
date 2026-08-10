@@ -765,7 +765,7 @@ mod tests {
         fn get_platform(&self) -> Box<dyn TracePlatform> {
             unimplemented!("not exercised by this smoke test")
         }
-        fn get_thread(&self) -> Box<dyn crate::trace::seam_stubs::TraceThread> {
+        fn get_thread(&self) -> Box<dyn crate::trace::model::thread::TraceThread> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_language(&self) -> Box<dyn crate::program::model::lang::Language> {

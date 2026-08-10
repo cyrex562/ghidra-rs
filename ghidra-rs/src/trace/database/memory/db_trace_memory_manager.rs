@@ -66,9 +66,9 @@ use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::memory::trace_memory_manager::TraceMemoryManager;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
+use crate::trace::model::thread::TraceThread;
 use crate::trace::seam_stubs::{
     DBTrace, DBTraceMemorySpace, DBTraceOverlaySpaceAdapter, TraceOverlappedRegionException,
-    TraceThread,
 };
 use crate::util::exception::DuplicateNameException;
 use crate::util::task::TaskMonitor;

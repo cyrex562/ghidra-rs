@@ -45,9 +45,10 @@ use crate::program::model::address::{Address, AddressRange, AddressSpace};
 use crate::trace::database::listing::db_trace_defined_units_view::DBTraceDefinedUnitsView;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
+use crate::trace::model::thread::TraceThread;
 use crate::trace::seam_stubs::{
     DBTrace, DBTraceCodeUnitsView, DBTraceDataView, DBTraceDefinedDataView, DBTraceGuestPlatform,
-    DBTraceInstructionsView, DBTraceUndefinedDataView, TraceThread,
+    DBTraceInstructionsView, DBTraceUndefinedDataView,
 };
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;

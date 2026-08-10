@@ -60,7 +60,8 @@ mod tests {
     use crate::program::model::pcode::Varnode;
     use crate::trace::model::lifespan::Lifespan;
     use crate::trace::model::symbol::trace_equate_reference::TraceEquateReference;
-    use crate::trace::seam_stubs::{ObjectKey, TraceThread};
+    use crate::trace::seam_stubs::ObjectKey;
+    use crate::trace::model::thread::TraceThread;
     use crate::util::database::db_cached_domain_object_adapter::DBCachedDomainObjectAdapter;
     use crate::util::database::db_object_column::DBObjectColumn;
     use crate::util::lock_hold::Lock;

@@ -28,7 +28,7 @@ mod tests {
     use crate::trace::model::symbol::trace_namespace_symbol::TraceNamespaceSymbol;
     use crate::trace::model::symbol::trace_reference::TraceReference;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::TraceThread;
+    use crate::trace::model::thread::TraceThread;
     use crate::util::task::TaskMonitor;
     use std::sync::atomic::{AtomicI64, Ordering};
     use std::sync::Arc;

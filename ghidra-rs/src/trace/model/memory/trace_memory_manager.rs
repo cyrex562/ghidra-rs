@@ -23,8 +23,7 @@
 //!   [`TraceMemoryOperations`](crate::trace::model::memory::trace_memory_operations::TraceMemoryOperations).
 //! - `Entry<TraceAddressSnapRange, TraceMemoryState>` becomes a `(Box<dyn TraceAddressSnapRange>,
 //!   TraceMemoryState)` pair, matching `TraceMemoryOperations`'s own convention.
-//! - `TraceThread` is not yet ported; its
-//!   [`crate::trace::seam_stubs::TraceThread`] placeholder is reused verbatim, matching
+//! - Reuses [`TraceThread`](crate::trace::model::thread::TraceThread), matching
 //!   [`DBTraceMemoryManager`](crate::trace::database::memory::db_trace_memory_manager::DBTraceMemoryManager)'s
 //!   usage.
 //! - `TraceOverlappedRegionException` is not yet ported; its
@@ -53,7 +52,8 @@ use crate::trace::model::memory::trace_memory_space::TraceMemorySpace;
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-use crate::trace::seam_stubs::{TraceOverlappedRegionException, TraceThread};
+use crate::trace::seam_stubs::TraceOverlappedRegionException;
+use crate::trace::model::thread::TraceThread;
 use crate::util::exception::DuplicateNameException;
 
 /// A store of memory observations over time in a trace.

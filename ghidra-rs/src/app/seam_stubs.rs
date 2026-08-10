@@ -187,12 +187,6 @@ pub trait Task {
 // as required by the `+ Send` `RunFuture` (ports Java's `CompletableFuture<EmulationResult>`).
 pub trait TraceSchedule: Send {}
 
-/// Placeholder for `ghidra.trace.model.thread.TraceThread`, referenced by
-/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService) before the
-/// real class is ported. `DebuggerTraceManagerService` only ever passes this type through as a
-/// parameter/return value, so no members are needed yet.
-pub trait TraceThread {}
-
 /// Placeholder for `ghidra.pcode.exec.trace.TraceEmulationIntegration.Writer`, referenced by
 /// [`DebuggerEmulationService`](crate::app::services::DebuggerEmulationService)'s nested
 /// `CachedEmulator` before the real class is ported. `CachedEmulator` only ever stores and

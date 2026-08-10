@@ -52,9 +52,10 @@ mod tests {
     use crate::trace::model::stack::trace_stack_manager::TraceStackManager;
     use crate::trace::model::property::TraceAddressPropertyManager;
     use crate::trace::model::memory::trace_memory_manager::TraceMemoryManager;
+    use crate::trace::model::thread::TraceThread;
     use crate::trace::seam_stubs::{
         TraceBasedDataTypeManager, TraceBookmarkManager,
-        TraceRegisterContextManager, TraceThread,
+        TraceRegisterContextManager,
     };
     use crate::util::lock_hold::{Lock, LockHold};
     use crate::util::task::TaskMonitor;

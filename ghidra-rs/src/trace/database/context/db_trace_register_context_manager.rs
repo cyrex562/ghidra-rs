@@ -9,7 +9,8 @@ use crate::program::seam_stubs::RegisterValue;
 use crate::trace::database::space::db_trace_delegating_manager::DBTraceDelegatingManager;
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-use crate::trace::seam_stubs::{DBTraceRegisterContextSpace, TraceThread};
+use crate::trace::seam_stubs::DBTraceRegisterContextSpace;
+use crate::trace::model::thread::TraceThread;
 use crate::trace::model::guest::trace_platform::TracePlatform;
 
 /// The per-address-space delegate this manager hands out. `Arc`-shared (not owned/boxed), matching

@@ -3,7 +3,8 @@
 use std::sync::Arc;
 
 use crate::trace::model::trace::Trace;
-use crate::trace::seam_stubs::{TraceSchedule, TraceThread};
+use crate::trace::seam_stubs::TraceSchedule;
+use crate::trace::model::thread::TraceThread;
 
 /// A "snapshot in time" in a trace.
 ///

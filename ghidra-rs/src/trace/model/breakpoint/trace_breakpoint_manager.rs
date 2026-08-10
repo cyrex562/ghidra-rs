@@ -18,7 +18,8 @@ use crate::program::model::address::{Address, AddressRange};
 use crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind;
 use crate::trace::model::breakpoint::trace_breakpoint_spec::TraceBreakpointSpec;
 use crate::trace::model::lifespan::Lifespan;
-use crate::trace::seam_stubs::{TraceBreakpointLocation, TraceThread};
+use crate::trace::seam_stubs::TraceBreakpointLocation;
+use crate::trace::model::thread::TraceThread;
 use crate::util::exception::DuplicateNameException;
 
 /// A store for recording breakpoint placement over time in a trace.

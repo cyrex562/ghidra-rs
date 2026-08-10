@@ -106,7 +106,7 @@ mod tests {
     use crate::program::model::symbol::{Namespace, NamespaceType, SourceType, SymbolType};
     use crate::program::model::address::Address;
     use crate::trace::model::symbol::trace_reference::TraceReference;
-    use crate::trace::seam_stubs::TraceThread;
+    use crate::trace::model::thread::TraceThread;
     use crate::util::task::TaskMonitor;
     use std::collections::{BTreeMap, HashSet};
 

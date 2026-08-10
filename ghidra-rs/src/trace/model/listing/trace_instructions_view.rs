@@ -108,7 +108,7 @@ use crate::program::model::listing::CommentType;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
     use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
-    use crate::trace::seam_stubs::TraceThread;
+    use crate::trace::model::thread::TraceThread;
     use crate::util::exception::CancelledException;
     use crate::util::task::TaskMonitor;
     use std::cell::Cell;

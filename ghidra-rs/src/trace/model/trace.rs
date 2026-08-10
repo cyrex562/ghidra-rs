@@ -199,7 +199,7 @@ mod tests {
             _path: &str,
             _lifespan: Lifespan,
             _range: crate::program::model::address::AddressRange,
-            _threads: &[Box<dyn crate::trace::seam_stubs::TraceThread>],
+            _threads: &[Box<dyn crate::trace::model::thread::TraceThread>],
             _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
             _enabled: bool,
             _comment: &str,
@@ -215,7 +215,7 @@ mod tests {
             _path: &str,
             _snap: i64,
             _range: crate::program::model::address::AddressRange,
-            _threads: &[Box<dyn crate::trace::seam_stubs::TraceThread>],
+            _threads: &[Box<dyn crate::trace::model::thread::TraceThread>],
             _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
             _enabled: bool,
             _comment: &str,
@@ -231,7 +231,7 @@ mod tests {
             _path: &str,
             _snap: i64,
             _address: crate::program::model::address::Address,
-            _threads: &[Box<dyn crate::trace::seam_stubs::TraceThread>],
+            _threads: &[Box<dyn crate::trace::model::thread::TraceThread>],
             _kinds: &[crate::trace::model::breakpoint::trace_breakpoint_kind::TraceBreakpointKind],
             _enabled: bool,
             _comment: &str,
@@ -321,14 +321,14 @@ mod tests {
         }
         fn get_code_register_space(
             &self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
             unimplemented!("not exercised by this smoke test")
         }
         fn get_code_register_space_for_frame_level(
             &self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _frame_level: i32,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::listing::TraceCodeSpace>> {
@@ -415,7 +415,7 @@ mod tests {
         }
         fn get_equate_register_space_for_thread(
             &mut self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::symbol::trace_equate_space::TraceEquateSpace>> {
             unimplemented!("not exercised by this smoke test")
@@ -710,7 +710,7 @@ mod tests {
         }
         fn get_memory_register_space_at_frame(
             &self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _frame: i32,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
@@ -718,7 +718,7 @@ mod tests {
         }
         fn get_memory_register_space(
             &self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::memory::trace_memory_space::TraceMemorySpace>> {
             unimplemented!("not exercised by this smoke test")
@@ -1183,7 +1183,7 @@ mod tests {
         }
         fn get_reference_register_space_for_thread(
             &mut self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::symbol::trace_reference_space::TraceReferenceSpace>> {
             unimplemented!("not exercised by this smoke test")
@@ -1202,7 +1202,7 @@ mod tests {
     impl TraceStackManager for MockStackManager {
         fn get_stack(
             &self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _snap: i64,
             _create_if_absent: bool,
         ) -> Option<Box<dyn crate::trace::model::stack::trace_stack::TraceStack>> {
@@ -1211,7 +1211,7 @@ mod tests {
 
         fn get_latest_stack(
             &self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _snap: i64,
         ) -> Option<Box<dyn crate::trace::model::stack::trace_stack::TraceStack>> {
             unimplemented!("not exercised by this smoke test")
@@ -1329,7 +1329,7 @@ mod tests {
             &mut self,
             _path: &str,
             _lifespan: Lifespan,
-        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
         {
             unimplemented!("not exercised by this smoke test")
         }
@@ -1339,7 +1339,7 @@ mod tests {
             _path: &str,
             _display: &str,
             _lifespan: Lifespan,
-        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
         {
             unimplemented!("not exercised by this smoke test")
         }
@@ -1348,7 +1348,7 @@ mod tests {
             &mut self,
             _path: &str,
             _creation_snap: i64,
-        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
         {
             unimplemented!("not exercised by this smoke test")
         }
@@ -1358,16 +1358,16 @@ mod tests {
             _path: &str,
             _display: &str,
             _creation_snap: i64,
-        ) -> Result<Box<dyn crate::trace::seam_stubs::TraceThread>, crate::util::exception::DuplicateNameException>
+        ) -> Result<Box<dyn crate::trace::model::thread::TraceThread>, crate::util::exception::DuplicateNameException>
         {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_all_threads(&self) -> Vec<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+        fn get_all_threads(&self) -> Vec<Box<dyn crate::trace::model::thread::TraceThread>> {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_threads_by_path(&self, _name: &str) -> Vec<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+        fn get_threads_by_path(&self, _name: &str) -> Vec<Box<dyn crate::trace::model::thread::TraceThread>> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -1375,15 +1375,15 @@ mod tests {
             &self,
             _snap: i64,
             _path: &str,
-        ) -> Option<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+        ) -> Option<Box<dyn crate::trace::model::thread::TraceThread>> {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_thread(&self, _key: i64) -> Option<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+        fn get_thread(&self, _key: i64) -> Option<Box<dyn crate::trace::model::thread::TraceThread>> {
             unimplemented!("not exercised by this smoke test")
         }
 
-        fn get_live_threads(&self, _snap: i64) -> Vec<Box<dyn crate::trace::seam_stubs::TraceThread>> {
+        fn get_live_threads(&self, _snap: i64) -> Vec<Box<dyn crate::trace::model::thread::TraceThread>> {
             unimplemented!("not exercised by this smoke test")
         }
     }

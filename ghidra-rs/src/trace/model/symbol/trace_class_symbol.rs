@@ -21,7 +21,7 @@ mod tests {
     use crate::trace::model::symbol::trace_reference::TraceReference;
     use crate::trace::model::symbol::trace_symbol::TraceSymbol;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::TraceThread;
+    use crate::trace::model::thread::TraceThread;
     use crate::util::task::TaskMonitor;
     use std::sync::Arc;
 

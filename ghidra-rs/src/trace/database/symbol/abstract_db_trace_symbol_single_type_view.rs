@@ -233,7 +233,8 @@ mod tests {
     use crate::trace::model::symbol::trace_reference::TraceReference;
     use crate::trace::model::symbol::trace_symbol::TraceSymbol;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::{DBTraceOverlaySpaceAdapter, DBTraceProgramView, TraceThread};
+    use crate::trace::seam_stubs::{DBTraceOverlaySpaceAdapter, DBTraceProgramView};
+    use crate::trace::model::thread::TraceThread;
     use crate::util::lock_hold::Lock;
     use crate::util::task::TaskMonitor;
     use crate::program::util::program_location::ProgramLocation;

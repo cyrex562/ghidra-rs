@@ -493,7 +493,7 @@ mod tests {
             &self,
             _trace: &dyn crate::trace::model::trace::Trace,
             _space: &Arc<AddressSpace>,
-        ) -> Box<dyn crate::trace::seam_stubs::TraceThread> {
+        ) -> Box<dyn crate::trace::model::thread::TraceThread> {
             unimplemented!("not exercised by this smoke test")
         }
 
@@ -507,7 +507,7 @@ mod tests {
 
         fn get_register_address_space(
             &self,
-            _thread: &dyn crate::trace::seam_stubs::TraceThread,
+            _thread: &dyn crate::trace::model::thread::TraceThread,
             _frame_level: i32,
             _create_if_absent: bool,
         ) -> Option<Arc<AddressSpace>> {

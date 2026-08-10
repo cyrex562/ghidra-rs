@@ -91,7 +91,8 @@ mod tests {
     use crate::trace::model::target::path::key_path::{KeyPath, PathFilter};
     use crate::trace::model::symbol::trace_label_symbol::TraceLabelSymbol;
     use crate::trace::model::trace::Trace;
-    use crate::trace::seam_stubs::{TraceObjectSchema, TraceRegisterUtils, TraceThread};
+    use crate::trace::seam_stubs::{TraceObjectSchema, TraceRegisterUtils};
+    use crate::trace::model::thread::TraceThread;
     use crate::util::task::TaskMonitor;
     use std::cell::{Cell, RefCell};
     use std::collections::{HashMap, HashSet};

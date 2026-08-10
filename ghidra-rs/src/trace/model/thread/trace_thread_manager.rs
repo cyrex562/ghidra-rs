@@ -12,7 +12,7 @@
 //! [`TraceModuleManager::add_loaded_module`](crate::trace::model::modules::TraceModuleManager::add_loaded_module).
 
 use crate::trace::model::lifespan::Lifespan;
-use crate::trace::seam_stubs::TraceThread;
+use crate::trace::model::thread::TraceThread;
 use crate::util::exception::DuplicateNameException;
 
 /// A store for observed threads over time in a trace.
@@ -116,7 +116,49 @@ mod tests {
         max: i64,
     }
 
-    impl TraceThread for MockThread {}
+    impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockThread {
+        fn get_object_key(&self) -> Box<dyn crate::trace::seam_stubs::ObjectKey> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_deleted(&self) -> bool {
+            false
+        }
+    }
+
+    impl crate::trace::model::target::iface::TraceObjectInterface for MockThread {
+        fn get_object(&self) -> Box<dyn crate::trace::model::target::trace_object::TraceObject> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+
+    impl TraceThread for MockThread {
+        fn get_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_key(&self) -> i64 {
+            self.key
+        }
+        fn get_path(&self) -> String {
+            self.path.clone()
+        }
+        fn get_name(&self, _snap: i64) -> String {
+            self.path.clone()
+        }
+        fn set_name(&mut self, _lifespan: Lifespan, _name: &str) {}
+        fn set_name_at(&mut self, _snap: i64, _name: &str) {}
+        fn set_comment(&mut self, _snap: i64, _comment: Option<&str>) {}
+        fn get_comment(&self, _snap: i64) -> Option<String> {
+            None
+        }
+        fn delete(&mut self) {}
+        fn remove(&mut self, _snap: i64) {}
+        fn is_valid(&self, snap: i64) -> bool {
+            self.min <= snap && snap < self.max
+        }
+        fn is_alive(&self, span: Lifespan) -> bool {
+            self.min <= span.lmax() && span.lmin() < self.max
+        }
+    }
 
     /// A minimal in-memory manager holding threads keyed by path, used to prove
     /// `TraceThreadManager` is object-safe and that `add_thread`/lookup-by-path/lookup-live

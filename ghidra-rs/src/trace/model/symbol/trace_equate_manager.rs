@@ -16,7 +16,7 @@ use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::symbol::trace_equate::TraceEquate;
 use crate::trace::model::symbol::trace_equate_operations::TraceEquateOperations;
 use crate::trace::model::symbol::trace_equate_space::TraceEquateSpace;
-use crate::trace::seam_stubs::TraceThread;
+use crate::trace::model::thread::TraceThread;
 use crate::util::exception::DuplicateNameException;
 
 /// Validates a candidate equate name, mirroring `TraceEquateManager.validateName(String)`.

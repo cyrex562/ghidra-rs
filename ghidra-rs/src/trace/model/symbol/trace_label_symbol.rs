@@ -30,7 +30,7 @@ mod tests {
     use crate::trace::model::symbol::trace_symbol::TraceSymbol;
     use crate::trace::model::trace::Trace;
     use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
-    use crate::trace::seam_stubs::{TraceThread};
+    use crate::trace::model::thread::TraceThread;
     use crate::trace::model::guest::trace_platform::TracePlatform;
     use crate::util::task::TaskMonitor;
     use std::sync::Arc;
