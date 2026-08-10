@@ -137,7 +137,7 @@ mod tests {
     use crate::pcode::exec::pcode_arithmetic::Purpose;
     use crate::pcode::exec::pcode_userop_library::{nil, ErasedPcodeUseropLibrary, UseropMap};
     use crate::pcode::emu::pcode_emulation_callbacks::PcodeEmulationCallbacks;
-        use crate::pcode::seam_stubs::PcodeProgram;
+    use crate::pcode::exec::pcode_program::PcodeProgram;
     use crate::program::model::address::{AddressSpace, DefaultAddressFactory};
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::lang::sleigh::SleighLanguage;
@@ -611,7 +611,7 @@ mod tests {
         fn is_suspended(&self) -> bool {
             self.base.is_suspended()
         }
-        fn compile_sleigh(&self, _source_name: &str, _source: &str) -> Box<dyn PcodeProgram> {
+        fn compile_sleigh(&self, _source_name: &str, _source: &str) -> PcodeProgram {
             unimplemented!("not exercised by these tests")
         }
         fn inject(&mut self, address: &crate::program::model::address::Address, source: &str) {
@@ -620,7 +620,7 @@ mod tests {
         fn get_inject(
             &self,
             address: &crate::program::model::address::Address,
-        ) -> Option<&dyn PcodeProgram> {
+        ) -> Option<&PcodeProgram> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &crate::program::model::address::Address) {

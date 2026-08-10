@@ -973,7 +973,12 @@ pub trait AddressLabelInfo {}
 /// [`get_payload`](Self::get_payload), needed by
 /// [`InstructionPcodeOverrideImpl`](crate::program::model::listing::instruction_pcode_override::InstructionPcodeOverrideImpl)'s
 /// `getCallFixup` port, with a `None` default so pre-existing bare `impl PcodeInjectLibrary for
-/// Foo {}` blocks keep compiling.
+/// Foo {}` blocks keep compiling. Grown again to add
+/// [`build_inject_context`](Self::build_inject_context), needed by
+/// [`PcodeProgram::from_inject`](crate::pcode::exec::pcode_program::PcodeProgram::from_inject),
+/// with a panicking default -- there is no concrete `InjectContext` implementor yet for a default
+/// method to construct, matching how a library with no real payloads (the `get_payload` default)
+/// couldn't build one anyway.
 pub trait PcodeInjectLibrary {
     /// Stands in for `PcodeInjectLibrary.getPayload(int, String)`. Defaults to `None`, mirroring
     /// a library with no registered payloads.
@@ -984,6 +989,11 @@ pub trait PcodeInjectLibrary {
     ) -> Option<Box<dyn crate::program::model::lang::InjectPayload>> {
         let _ = (inject_type, name);
         None
+    }
+
+    /// Stands in for `PcodeInjectLibrary.buildInjectContext()`.
+    fn build_inject_context(&self) -> Box<dyn InjectContext> {
+        unimplemented!("PcodeInjectLibrary::build_inject_context not yet ported")
     }
 }
 

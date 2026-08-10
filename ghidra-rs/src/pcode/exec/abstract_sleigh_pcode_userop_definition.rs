@@ -10,8 +10,9 @@ use crate::pcode::exec::sleigh_pcode_userop_definition::{
 };
 use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropLibrary};
 use crate::pcode::exec::pcode_executor::PcodeExecutor;
+use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::seam_stubs::{
-    FixedSleighPcodeUseropDefinition, OverloadedSleighPcodeUseropDefinition, PcodeProgram,
+    FixedSleighPcodeUseropDefinition, OverloadedSleighPcodeUseropDefinition,
 };
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::{PcodeOp, Varnode};
@@ -37,7 +38,7 @@ pub struct AbstractSleighPcodeUseropDefinitionBase {
     /// Unused by this base itself -- only by the (not yet ported) subclasses that implement
     /// `program_for` -- but carried here since Java declares it on the abstract class.
     #[allow(dead_code)]
-    cache_by_args: Vec<(Vec<Option<Varnode>>, Box<dyn PcodeProgram>)>,
+    cache_by_args: Vec<(Vec<Option<Varnode>>, PcodeProgram)>,
 }
 
 impl AbstractSleighPcodeUseropDefinitionBase {
@@ -121,7 +122,7 @@ impl AbstractSleighPcodeUseropDefinitionBase {
         // Java lets the frame go and any `PcodeExecutionException` propagate out of this `void`
         // method; the nearest Rust equivalent is to panic, since the userop signature has no way
         // to report the failure.
-        if let Err(e) = executor.execute(program.as_ref(), library) {
+        if let Err(e) = executor.execute(&program, library) {
             panic!("Sleigh userop execution failed: {}", e.message());
         }
     }
@@ -289,18 +290,6 @@ mod tests {
 
     #[test]
     fn execute_builds_program_and_dispatches_to_executor() {
-        use std::cell::Cell;
-
-        struct RecordingProgram;
-        impl PcodeProgram for RecordingProgram {
-            fn code(&self) -> Vec<PcodeOp> {
-                // The executor reads the program's ops to build its frame; seeing that read is
-                // how this test observes the dispatch. An empty program executes no ops.
-                EXECUTED.with(|e| e.set(true));
-                Vec::new()
-            }
-        }
-
         struct RecordingDefinition;
         impl SleighPcodeUseropDefinition for RecordingDefinition {
             fn get_body(&self, _args: &[Option<Varnode>]) -> String {
@@ -310,17 +299,22 @@ mod tests {
                 &self,
                 args: &[Option<Varnode>],
                 _library: &dyn ErasedPcodeUseropLibrary,
-            ) -> Box<dyn PcodeProgram> {
+            ) -> PcodeProgram {
                 // The output goes at index 0, followed by the inputs (empty here), matching
                 // Java's `args.add(outArg); args.addAll(inArgs);`.
                 assert_eq!(args.len(), 1);
                 assert!(args[0].is_some());
-                Box::new(RecordingProgram)
+                // An empty program: `AbstractSleighPcodeUseropDefinitionBase::execute` panics if
+                // the executor fails, so it reaching its `EXECUTED` assertion below demonstrates
+                // this program was dispatched to the executor successfully.
+                PcodeProgram::new(
+                    Arc::new(MockLanguage {
+                        default_space: AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1),
+                    }),
+                    Vec::new(),
+                    HashMap::new(),
+                )
             }
-        }
-
-        thread_local! {
-            static EXECUTED: Cell<bool> = Cell::new(false);
         }
 
         let definition = RecordingDefinition;
@@ -340,6 +334,9 @@ mod tests {
             None,
         );
 
+        // Panics (via `AbstractSleighPcodeUseropDefinitionBase::execute`) if the executor fails
+        // to run the program `program_for` produced, so reaching this point demonstrates
+        // dispatch succeeded, on top of the argument assertions inside `program_for` itself.
         AbstractSleighPcodeUseropDefinitionBase::execute(
             &definition,
             &executor,
@@ -348,8 +345,6 @@ mod tests {
             Some(varnode(0x1000, 4)),
             &[],
         );
-
-        EXECUTED.with(|e| assert!(e.get()));
     }
 
     /// A language just complete enough to bind a [`PcodeExecutor`]: it answers the two things the

@@ -8,7 +8,7 @@ use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_userop_library::PcodeUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
-use crate::pcode::seam_stubs::PcodeProgram;
+use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
 
@@ -163,7 +163,7 @@ pub trait PcodeMachine<T: 'static>: ErasedPcodeMachine {
     ///
     /// This links in the userop library given at construction time and those defining the
     /// emulation userops, e.g., `emu_swi`.
-    fn compile_sleigh(&self, source_name: &str, source: &str) -> Box<dyn PcodeProgram>;
+    fn compile_sleigh(&self, source_name: &str, source: &str) -> PcodeProgram;
 
     /// Override the p-code at the given address with the given Sleigh source.
     ///
@@ -182,7 +182,7 @@ pub trait PcodeMachine<T: 'static>: ErasedPcodeMachine {
     /// Check for a p-code injection (override) at the given address.
     ///
     /// `address` is usually the program counter. The result is most likely `None`.
-    fn get_inject(&self, address: &Address) -> Option<&dyn PcodeProgram>;
+    fn get_inject(&self, address: &Address) -> Option<&PcodeProgram>;
 
     /// Remove the inject, if present, at the given address.
     fn clear_inject(&mut self, address: &Address);
@@ -230,16 +230,29 @@ mod tests {
 
     /// A tiny machine that records only the behavior the tests exercise: SWI mode, suspension, and
     /// the inject/breakpoint map. Everything else is out of reach without a real `SleighLanguage`.
-    #[derive(Default)]
+    ///
+    /// `placeholder_program` stands in for whatever `compile_sleigh` would have produced: the
+    /// tests only check presence/absence of an inject, never its content, so one opaque program is
+    /// shared by every entry in `injects`.
     struct RecordingMachine {
         swi_mode: Option<SwiMode>,
         suspended: bool,
         injects: HashMap<i64, String>,
         access_breakpoints: Vec<(AddressRange, AccessKind)>,
+        placeholder_program: PcodeProgram,
     }
 
-    struct NoProgram;
-    impl PcodeProgram for NoProgram {}
+    impl Default for RecordingMachine {
+        fn default() -> Self {
+            RecordingMachine {
+                swi_mode: None,
+                suspended: false,
+                injects: HashMap::new(),
+                access_breakpoints: Vec::new(),
+                placeholder_program: crate::pcode::exec::pcode_program::testing::empty_program(),
+            }
+        }
+    }
 
     impl ErasedPcodeMachine for RecordingMachine {}
 
@@ -304,8 +317,8 @@ mod tests {
             self.suspended
         }
 
-        fn compile_sleigh(&self, _source_name: &str, _source: &str) -> Box<dyn PcodeProgram> {
-            Box::new(NoProgram)
+        fn compile_sleigh(&self, _source_name: &str, _source: &str) -> PcodeProgram {
+            crate::pcode::exec::pcode_program::testing::empty_program()
         }
 
         fn inject(&mut self, address: &Address, source: &str) {
@@ -313,10 +326,10 @@ mod tests {
             self.injects.insert(address.offset(), source.to_string());
         }
 
-        fn get_inject(&self, address: &Address) -> Option<&dyn PcodeProgram> {
+        fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
             self.injects
                 .get(&address.offset())
-                .map(|_| &NoProgram as &dyn PcodeProgram)
+                .map(|_| &self.placeholder_program)
         }
 
         fn clear_inject(&mut self, address: &Address) {

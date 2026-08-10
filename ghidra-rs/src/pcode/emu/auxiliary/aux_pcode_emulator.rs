@@ -512,7 +512,7 @@ mod tests {
             &self,
             _source_name: &str,
             _source: &str,
-        ) -> Box<dyn crate::pcode::seam_stubs::PcodeProgram> {
+        ) -> crate::pcode::exec::pcode_program::PcodeProgram {
             unimplemented!("not exercised by these tests")
         }
         fn inject(&mut self, address: &crate::program::model::address::Address, source: &str) {
@@ -521,7 +521,7 @@ mod tests {
         fn get_inject(
             &self,
             address: &crate::program::model::address::Address,
-        ) -> Option<&dyn crate::pcode::seam_stubs::PcodeProgram> {
+        ) -> Option<&crate::pcode::exec::pcode_program::PcodeProgram> {
             self.base.get_inject(address)
         }
         fn clear_inject(&mut self, address: &crate::program::model::address::Address) {

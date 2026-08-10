@@ -43,9 +43,8 @@ use crate::pcode::emu::pcode_emulation_callbacks::{
     no_pcode_emulation_callbacks, PcodeEmulationCallbacks,
 };
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
-use crate::pcode::seam_stubs::{
-    BytesPcodeArithmetic, BytesPcodeExecutorState, BytesPcodeThread, PcodeProgram,
-};
+use crate::pcode::exec::pcode_program::PcodeProgram;
+use crate::pcode::seam_stubs::{BytesPcodeArithmetic, BytesPcodeExecutorState, BytesPcodeThread};
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::lang::sleigh::SleighLanguage;
 
@@ -170,7 +169,7 @@ impl PcodeMachine<Vec<u8>> for PcodeEmulator {
         self.base.is_suspended()
     }
 
-    fn compile_sleigh(&self, source_name: &str, source: &str) -> Box<dyn PcodeProgram> {
+    fn compile_sleigh(&self, source_name: &str, source: &str) -> PcodeProgram {
         self.base.compile_sleigh(source_name, source)
     }
 
@@ -178,7 +177,7 @@ impl PcodeMachine<Vec<u8>> for PcodeEmulator {
         AbstractPcodeMachineBase::inject(self, address, source);
     }
 
-    fn get_inject(&self, address: &Address) -> Option<&dyn PcodeProgram> {
+    fn get_inject(&self, address: &Address) -> Option<&PcodeProgram> {
         self.base.get_inject(address)
     }
 

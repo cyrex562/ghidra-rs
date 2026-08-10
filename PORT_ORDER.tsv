@@ -14,7 +14,7 @@ DONE	trait	22	9	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api
 DONE	trait	25	5	3	pcode	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/pcode/exec/trace/data/InternalPcodeTraceDataAccess.java
 DONE	trait	32	7	20	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emulate/BreakTableCallBack.java
 DONE	trait	34	116	98	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeExecutor.java
-TODO	trait	33	119	44	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeProgram.java
+DONE	trait	33	119	44	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/PcodeProgram.java
 TODO	trait	29	100	26	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStateSpace.java
 TODO	trait	28	100	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorStatePiece.java
 TODO	trait	27	99	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/exec/BytesPcodeExecutorState.java

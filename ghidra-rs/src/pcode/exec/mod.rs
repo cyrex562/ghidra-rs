@@ -14,6 +14,7 @@ pub mod pcode_executor;
 pub mod pcode_executor_state;
 pub mod pcode_executor_state_piece;
 pub mod pcode_frame;
+pub mod pcode_program;
 pub mod pcode_state_callbacks;
 pub mod pcode_userop_library;
 pub mod pcode_userop_library_factory;
@@ -48,6 +49,7 @@ pub use pcode_executor_state_piece::{
     ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
 };
 pub use pcode_frame::PcodeFrame;
+pub use pcode_program::PcodeProgram;
 pub use pcode_state_callbacks::{
     check_value_domain, rng_set, NoPcodeStateCallbacks, PcodeStateCallbacks, NONE,
 };
