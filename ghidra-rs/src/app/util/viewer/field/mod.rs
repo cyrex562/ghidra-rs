@@ -1,3 +1,4 @@
+pub mod address_annotated_string_handler;
 pub mod annotated_string_handler;
 pub mod annotation;
 pub mod annotation_comment_part;

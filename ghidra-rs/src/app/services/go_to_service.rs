@@ -33,8 +33,13 @@ pub const VALID_GOTO_CHARS: [char; 3] = ['.', ':', '*'];
 
 /// The GoToService provides a general service for plugins to generate GoTo events.
 ///
-/// Port of `ghidra.app.services.GoToService`.
-pub trait GoToService {
+/// Port of `ghidra.app.services.GoToService`. Bounded by `Send + Sync` (grown for
+/// [`AddressAnnotatedStringHandler`](crate::app::util::viewer::field::address_annotated_string_handler::AddressAnnotatedStringHandler),
+/// whose `handle_mouse_click` retrieves this service through
+/// [`ServiceProvider::get_service`](crate::framework::plugintool::service_provider::ServiceProvider::get_service),
+/// which can only ever hand back a `Box<dyn Any + Send + Sync>` -- so any service type it
+/// resolves to must itself be `Send + Sync`).
+pub trait GoToService: Send + Sync {
     /// Generates a GoTo event and handles any history state that needs to be saved.
     ///
     /// This method attempts to find the program that contains the given location.
@@ -220,6 +225,10 @@ mod tests {
     impl Navigatable for MockNavigatable {
         fn is_connected(&self) -> bool {
             false
+        }
+
+        fn get_program(&self) -> Box<dyn Program> {
+            Box::new(MockProgram)
         }
     }
 

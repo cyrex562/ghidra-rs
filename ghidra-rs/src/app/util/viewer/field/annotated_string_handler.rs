@@ -128,7 +128,7 @@ mod tests {
             _text: &[String],
             _program: &dyn Program,
         ) -> Result<AttributedString, AnnotationException> {
-            Ok(AttributedString)
+            Ok(AttributedString::default())
         }
 
         fn get_supported_annotations(&self) -> Vec<String> {
@@ -204,7 +204,7 @@ mod tests {
                 _text: &[String],
                 _program: &dyn Program,
             ) -> Result<AttributedString, AnnotationException> {
-                Ok(AttributedString)
+                Ok(AttributedString::default())
             }
 
             fn get_supported_annotations(&self) -> Vec<String> {

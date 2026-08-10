@@ -4761,7 +4761,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/template/TemplateSim
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AbstractOffsetFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AbstractOpenCloseField.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AbstractVariableFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressAnnotatedStringHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressAnnotatedStringHandler.java	DONE	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressFieldFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressFieldOptionsPropertyEditor.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/field/AddressFieldOptionsWrappedOption.java	TODO	orig_src Ghidra Features Base src main java ghidra app util viewer field 
