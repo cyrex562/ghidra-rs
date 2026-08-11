@@ -210,6 +210,9 @@ pub const ELEM_VARDECL: ElementId = ElementId::new("vardecl", 159);
 // Real Ghidra id is 103 (`ElementId.java`'s `ELEM_BLOCK`), continuing the local counter above
 // (this file's own id 103 is already taken by `ELEM_OUTPUT`, an unrelated sleigh element).
 pub const ELEM_BLOCK: ElementId = ElementId::new("block", 160);
+pub const ELEM_BLOCKSIG: ElementId = ElementId::new("blocksig", 258);
+pub const ELEM_COPYSIG: ElementId = ElementId::new("copysig", 263);
+pub const ELEM_VARSIG: ElementId = ElementId::new("varsig", 269);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttributeId {
