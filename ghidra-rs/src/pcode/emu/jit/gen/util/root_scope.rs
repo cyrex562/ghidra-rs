@@ -10,7 +10,8 @@ use crate::pcode::emu::jit::gen::util::lbl::{Lbl, LblEm};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::sub_scope::SubScope;
 use crate::pcode::emu::jit::gen::util::types::BNonVoid;
-use crate::pcode::seam_stubs::{ChildScope, Emitter, Next, Scope};
+use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Next};
+use crate::pcode::seam_stubs::{ChildScope, Scope};
 
 /// A local variable declaration recorded by [`RootScope::decl`], kept around only so
 /// [`RootScope::close`] can later hand it to the emitter.
@@ -106,8 +107,9 @@ impl<N: Next> RootScope<N> {
     ///
     /// Port of `RootScope.declVars`.
     fn decl_vars(&mut self) {
-        let taken = std::mem::replace(&mut self.em, Emitter::new());
-        let LblEm { lbl: end, mut em } = Lbl::place(taken);
+        // Cloning an emitter yields another handle on the same method visitor, so this places the
+        // end label and the declarations into the very visitor Java's `this.em` writes to.
+        let LblEm { lbl: end, mut em } = Lbl::place(self.em.clone());
         for v in &self.vars {
             em.visit_local_variable(&v.name, &v.descriptor, self.start.label, end.label, v.index);
         }
@@ -140,7 +142,7 @@ mod tests {
 
     #[test]
     fn decl_assigns_indices_by_slot_count() {
-        let mut scope = RootScope::<StackShape>::new(Emitter::new(), 0);
+        let mut scope = RootScope::<StackShape>::new(Emitter::default(), 0);
         // int (T_INT) occupies 1 slot, so the next local starts right after it.
         let a = scope.decl(T_INT, "a");
         assert_eq!(a.index, 0);
@@ -153,7 +155,7 @@ mod tests {
 
     #[test]
     fn close_declares_recorded_vars_from_start_to_a_new_end_label() {
-        let mut scope = RootScope::<StackShape>::new(Emitter::new(), 0);
+        let mut scope = RootScope::<StackShape>::new(Emitter::default(), 0);
         let start_label = scope.start.label;
         scope.decl(T_INT, "x");
         scope.decl(T_LONG, "y");
@@ -170,7 +172,7 @@ mod tests {
 
     #[test]
     fn close_is_idempotent() {
-        let mut scope = RootScope::<StackShape>::new(Emitter::new(), 0);
+        let mut scope = RootScope::<StackShape>::new(Emitter::default(), 0);
         scope.decl(T_INT, "x");
 
         scope.close();
@@ -185,7 +187,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "There is a child scope active.")]
     fn decl_panics_while_child_scope_active() {
-        let mut scope = RootScope::<StackShape>::new(Emitter::new(), 0);
+        let mut scope = RootScope::<StackShape>::new(Emitter::default(), 0);
         let _child = scope.sub();
         scope.decl(T_INT, "x");
     }

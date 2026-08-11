@@ -4,13 +4,13 @@
 //!
 //! Labels are used as control-flow targets, to specify the scope of local variables, and to
 //! specify the bounds of `try`-`catch` blocks. The Java type parameter `N` statically encodes the
-//! stack contents expected where the label is placed; see [`Emitter`] (not yet ported -- see
-//! [`crate::pcode::seam_stubs`]) for the full scheme.
+//! stack contents expected where the label is placed; see [`Emitter`] for the full scheme.
 
 use std::fmt;
 use std::marker::PhantomData;
 
-use crate::pcode::seam_stubs::{Dead, Emitter, Label, Next};
+use crate::pcode::emu::jit::gen::util::emitter::{Dead, Emitter, Next};
+use crate::pcode::seam_stubs::Label;
 
 /// A label targeting a position in generated JVM bytecode, together with the stack contents
 /// expected there.
@@ -124,17 +124,19 @@ mod tests {
 
     #[test]
     fn place_records_the_generated_label_on_the_emitter() {
-        let em = Emitter::<StackShape>::new();
-        assert_eq!(em.last_visited(), None);
+        let em = Emitter::<StackShape>::default();
+        // Constructing an emitter opens its root scope, which places a label of its own.
+        let opened = em.last_visited();
 
         let LblEm { lbl, em } = Lbl::place(em);
+        assert_ne!(opened, Some(lbl.label));
         assert_eq!(em.last_visited(), Some(lbl.label));
     }
 
     #[test]
     fn place_at_records_the_given_label_on_the_emitter() {
         let lbl = Lbl::<StackShape>::create();
-        let em = Emitter::<StackShape>::new();
+        let em = Emitter::<StackShape>::default();
 
         let em = lbl.place_at(em);
         assert_eq!(em.last_visited(), Some(lbl.label));
@@ -143,7 +145,7 @@ mod tests {
     #[test]
     fn place_dead_resurrects_the_emitter_with_the_label_recorded() {
         let lbl = Lbl::<StackShape>::create();
-        let dead_em = Emitter::<Dead>::new();
+        let dead_em = Emitter::<Dead>::default();
 
         let em = lbl.place_dead(dead_em);
         assert_eq!(em.last_visited(), Some(lbl.label));
