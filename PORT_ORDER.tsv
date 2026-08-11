@@ -11,7 +11,7 @@ DONE	trait	0	176	63	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/deco
 DONE	trait	2	129	1	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTAssociationManager.java
 DONE	trait	6	128	2	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/AssociationHook.java
 DONE	trait	5	170	6	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTSession.java
-TODO	trait	4	143	4	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchSet.java
+DONE	trait	4	143	4	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchSet.java
 TODO	trait	3	147	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelator.java
 TODO	trait	10	9	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemStorage.java
 TODO	trait	12	134	2	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelatorFactory.java
