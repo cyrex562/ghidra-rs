@@ -184,7 +184,7 @@ impl VTAssociationTableDBAdapterBase {
     /// Corresponds to the Java static method `createAdapter(DBHandle)`.
     pub fn create_adapter(
         db_handle: &mut DBHandle,
-    ) -> io::Result<Box<dyn VTAssociationTableDBAdapter>> {
+    ) -> io::Result<Box<dyn VTAssociationTableDBAdapter + Send + Sync>> {
         let adapter =
             VTAssociationTableDBAdapterV0::create(db_handle, TABLE_NAME, Self::table_schema())?;
         Ok(Box::new(adapter))
@@ -197,7 +197,7 @@ impl VTAssociationTableDBAdapterBase {
         db_handle: &DBHandle,
         _open_mode: OpenMode,
         _monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn VTAssociationTableDBAdapter>, VersionException> {
+    ) -> Result<Box<dyn VTAssociationTableDBAdapter + Send + Sync>, VersionException> {
         let adapter = VTAssociationTableDBAdapterV0::open(db_handle, TABLE_NAME)?;
         Ok(Box::new(adapter))
     }

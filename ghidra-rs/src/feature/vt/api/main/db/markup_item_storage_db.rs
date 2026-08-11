@@ -33,8 +33,9 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::feature::seam_stubs::{AssociationDatabaseManager, Stringable, VtAssociation, VtMarkupType};
+use crate::feature::seam_stubs::{Stringable, VTSessionDB, VtAssociation, VtMarkupType};
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
+use crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager;
 use crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::ColumnDescription;
 use crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus;
 use crate::feature::vt::api::main::vt_session::VTSession;
@@ -180,7 +181,7 @@ pub struct MarkupItemStorageDB {
     record: Mutex<DBRecord>,
     association_manager: Arc<AssociationDatabaseManager>,
     association: Arc<dyn VtAssociation>,
-    session: Arc<dyn VTSession>,
+    session: Arc<dyn VTSessionDB>,
 }
 
 impl MarkupItemStorageDB {
@@ -189,7 +190,7 @@ impl MarkupItemStorageDB {
         let key = record.get_key().get_long_value();
         let session = association_manager.get_session();
         let association_key = record.get_long(ColumnDescription::AssociationKeyCol.column()).unwrap_or(0);
-        let association = association_manager.get_association(association_key);
+        let association = association_manager.get_association_by_key(association_key);
         MarkupItemStorageDB {
             state: DbObjectState::new(key),
             record: Mutex::new(record),
@@ -472,9 +473,50 @@ mod tests {
     struct MockVtSession {
         source_program: Arc<dyn crate::program::model::listing::program::Program>,
         destination_program: Arc<dyn crate::program::model::listing::program::Program>,
+        space: Arc<AddressSpace>,
+        lock: Arc<crate::util::lock::ReentrantLock>,
     }
 
     impl DomainObject for MockVtSession {}
+
+    /// The manager takes the concrete `VTSessionDB` (stubbed while that class is unported), so the
+    /// mock implements it alongside the `VTSession` interface the Java class also satisfies.
+    /// Addresses map to and from longs by their raw offset, matching `MockAddressMap`.
+    impl VTSessionDB for MockVtSession {
+        fn get_lock(&self) -> Arc<crate::util::lock::ReentrantLock> {
+            Arc::clone(&self.lock)
+        }
+        fn db_error(&self, error: std::io::Error) {
+            panic!("unexpected database error: {error}");
+        }
+        fn get_source_program(&self) -> Arc<dyn crate::program::model::listing::program::Program> {
+            Arc::clone(&self.source_program)
+        }
+        fn get_destination_program(
+            &self,
+        ) -> Arc<dyn crate::program::model::listing::program::Program> {
+            Arc::clone(&self.destination_program)
+        }
+        fn get_long_from_source_address(&self, address: &Address) -> i64 {
+            address.offset()
+        }
+        fn get_long_from_destination_address(&self, address: &Address) -> i64 {
+            address.offset()
+        }
+        fn get_source_address_from_long(&self, value: i64) -> Address {
+            Address::new(self.space.clone(), value)
+        }
+        fn get_destination_address_from_long(&self, value: i64) -> Address {
+            Address::new(self.space.clone(), value)
+        }
+        fn set_changed(
+            &self,
+            _event_type: crate::feature::vt::api::implementation::vt_event::VtEvent,
+            _old_value: Option<Arc<crate::feature::seam_stubs::VTAssociationDB>>,
+            _new_value: Option<Arc<crate::feature::seam_stubs::VTAssociationDB>>,
+        ) {
+        }
+    }
 
     impl ErrorHandler for MockVtSession {
         fn db_error(&self, _e: std::io::Error) {}
@@ -528,64 +570,14 @@ mod tests {
         }
     }
 
-    struct MockAssociation {
-        key: i64,
-    }
-
-    impl VtAssociation for MockAssociation {
-        fn get_type(&self) -> Box<dyn crate::feature::seam_stubs::VtAssociationType> {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_session(&self) -> Box<dyn VTSession> {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_markup_items(
-            &self,
-            _monitor: &dyn crate::feature::seam_stubs::TaskMonitor,
-        ) -> std::io::Result<Vec<Box<dyn crate::feature::seam_stubs::VtMarkupItem>>> {
-            unimplemented!("not exercised by this test")
-        }
-        fn has_applied_markup_items(&self) -> bool {
-            false
-        }
-        fn get_source_address(&self) -> Address {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_destination_address(&self) -> Address {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>> {
-            Vec::new()
-        }
-        fn set_markup_status(&self, _status: &dyn crate::feature::seam_stubs::VtAssociationMarkupStatus) {}
-        fn get_markup_status(&self) -> Box<dyn crate::feature::seam_stubs::VtAssociationMarkupStatus> {
-            unimplemented!("not exercised by this test")
-        }
-        fn get_status(&self) -> Box<dyn crate::feature::seam_stubs::VtAssociationStatus> {
-            unimplemented!("not exercised by this test")
-        }
-        fn set_accepted(&self) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn clear_status(&self) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn set_rejected(&self) -> std::io::Result<()> {
-            Ok(())
-        }
-        fn get_vote_count(&self) -> i32 {
-            0
-        }
-        fn set_vote_count(&self, _vote_count: i32) {}
-        fn get_key(&self) -> i64 {
-            self.key
-        }
-    }
-
     /// Builds an `AssociationDatabaseManager` plus a freshly-seeded (but not yet persisted)
     /// record, mirroring the fields the Java `MarkupItemStorageDB` constructor reads: association
     /// key, markup type id, source/destination address (identity-mapped through
     /// `MockAddressMap`), status, and both value strings.
+    ///
+    /// The association the record points at is created for real, through the manager: the
+    /// association table hands out sequential keys starting at 0, so rows are created (at
+    /// addresses that don't collide) up to and including the requested key.
     fn build_manager_and_record(
         association_key: i64,
         source_offset: i64,
@@ -595,7 +587,7 @@ mod tests {
     ) -> (Arc<AssociationDatabaseManager>, DBRecord) {
         let mut db_handle = DBHandle::new().unwrap();
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
-        let address_map = Arc::new(MockAddressMap { space });
+        let address_map = Arc::new(MockAddressMap { space: space.clone() });
 
         let source_program = Arc::new(MockProgram {
             name: "source".to_string(),
@@ -606,9 +598,25 @@ mod tests {
             address_map,
         }) as Arc<dyn crate::program::model::listing::program::Program>;
 
-        let session: Arc<dyn VTSession> = Arc::new(MockVtSession { source_program, destination_program });
-        let association_manager = Arc::new(AssociationDatabaseManager::new(&mut db_handle, session).unwrap());
-        association_manager.register_association(association_key, Arc::new(MockAssociation { key: association_key }));
+        let session: Arc<dyn VTSessionDB> = Arc::new(MockVtSession {
+            source_program,
+            destination_program,
+            space: space.clone(),
+            lock: Arc::new(crate::util::lock::ReentrantLock::new("test")),
+        });
+        let association_manager = Arc::new(
+            AssociationDatabaseManager::create_association_manager(&mut db_handle, session).unwrap(),
+        );
+        for i in 0..=association_key {
+            let created = association_manager
+                .get_or_create_association_db(
+                    &Address::new(space.clone(), (i + 1) * 0x10_000),
+                    &Address::new(space.clone(), (i + 1) * 0x20_000),
+                    crate::feature::vt::api::main::vt_association_type::VtAssociationType::Function,
+                )
+                .unwrap();
+            assert_eq!(created.get_key(), i);
+        }
 
         let schema = crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0::table_schema();
         let mut record = DBRecord::new(schema, crate::framework::db::Field::Long(Some(1)));

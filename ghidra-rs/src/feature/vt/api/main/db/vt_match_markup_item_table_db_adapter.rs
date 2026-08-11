@@ -99,7 +99,7 @@ impl VTMatchMarkupItemTableDBAdapterBase {
     /// Java: `createAdapter(DBHandle)`.
     pub fn create_adapter(
         db_handle: &mut DBHandle,
-    ) -> io::Result<Box<dyn VTMatchMarkupItemTableDBAdapter>> {
+    ) -> io::Result<Box<dyn VTMatchMarkupItemTableDBAdapter + Send + Sync>> {
         Ok(Box::new(VTMatchMarkupItemTableDBAdapterV0::create(db_handle)?))
     }
 
@@ -108,7 +108,7 @@ impl VTMatchMarkupItemTableDBAdapterBase {
         db_handle: &DBHandle,
         open_mode: OpenMode,
         monitor: &dyn TaskMonitor,
-    ) -> Result<Box<dyn VTMatchMarkupItemTableDBAdapter>, VersionException> {
+    ) -> Result<Box<dyn VTMatchMarkupItemTableDBAdapter + Send + Sync>, VersionException> {
         Ok(Box::new(VTMatchMarkupItemTableDBAdapterV0::open(db_handle, open_mode, monitor)?))
     }
 }
