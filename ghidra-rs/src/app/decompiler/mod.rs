@@ -6,6 +6,7 @@ pub mod decompiled_function;
 pub mod decompiler_highlight_service;
 pub mod decompiler_highlighter;
 pub mod decompiler_location;
+pub mod decompiler_margin_service;
 pub mod signature;
 
 pub use clang_node::ClangNode;
@@ -15,3 +16,4 @@ pub use decompiled_function::DecompiledFunction;
 pub use decompiler_highlight_service::DecompilerHighlightService;
 pub use decompiler_highlighter::DecompilerHighlighter;
 pub use decompiler_location::DecompilerLocation;
+pub use decompiler_margin_service::DecompilerMarginService;
