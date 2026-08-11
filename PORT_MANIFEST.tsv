@@ -6506,7 +6506,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/Decompil
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerDisposer.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerHighlightService.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerHighlighter.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerLocation.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerLocation.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerLocationInfo.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerMarginService.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/PrettyPrinter.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler 
