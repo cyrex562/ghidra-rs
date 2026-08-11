@@ -5,9 +5,9 @@
 //! This trait represents an operand whose value is stored in a single JVM local variable.
 //! It provides a handle to that local and a method to retrieve its name.
 
+use crate::pcode::emu::jit::gen::opnd::simple_opnd::SimpleOpnd;
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::BPrim;
-use crate::pcode::seam_stubs::SimpleOpnd;
 
 /// A mutable operand that can be contained in a single JVM local variable.
 ///
@@ -19,7 +19,7 @@ use crate::pcode::seam_stubs::SimpleOpnd;
 ///
 /// - `T`: The JVM type (`BPrim`-bounded).
 /// - `JT`: The p-code type (`SimpleJitType`-bounded, but generically represented here).
-pub trait LocalOpnd<T: BPrim + 'static>: SimpleOpnd {
+pub trait LocalOpnd<T: BPrim + 'static>: SimpleOpnd<T> {
     /// Get the local variable handle for this operand.
     ///
     /// Port of `LocalOpnd.local()`.
@@ -42,7 +42,31 @@ mod tests {
         local: Local<crate::pcode::emu::jit::gen::util::types::TInt>,
     }
 
-    impl SimpleOpnd for MockLocalOpnd {}
+    impl SimpleOpnd<crate::pcode::emu::jit::gen::util::types::TInt> for MockLocalOpnd {
+        fn read<N: crate::pcode::emu::jit::gen::util::emitter::Next>(
+            &self,
+            em: crate::pcode::emu::jit::gen::util::emitter::Emitter<N>,
+        ) -> crate::pcode::emu::jit::gen::util::emitter::Emitter<
+            crate::pcode::emu::jit::gen::util::emitter::Ent<
+                N,
+                crate::pcode::emu::jit::gen::util::types::TInt,
+            >,
+        > {
+            em.recast()
+        }
+
+        fn write_direct<N1: crate::pcode::emu::jit::gen::util::emitter::Next>(
+            &self,
+            em: crate::pcode::emu::jit::gen::util::emitter::Emitter<
+                crate::pcode::emu::jit::gen::util::emitter::Ent<
+                    N1,
+                    crate::pcode::emu::jit::gen::util::types::TInt,
+                >,
+            >,
+        ) -> crate::pcode::emu::jit::gen::util::emitter::Emitter<N1> {
+            em.recast()
+        }
+    }
 
     impl LocalOpnd<crate::pcode::emu::jit::gen::util::types::TInt> for MockLocalOpnd {
         fn local(&self) -> &Local<crate::pcode::emu::jit::gen::util::types::TInt> {
