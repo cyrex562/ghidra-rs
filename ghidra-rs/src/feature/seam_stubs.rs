@@ -165,3 +165,124 @@ pub trait VtMatchSet: Send + Sync {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct VtOptions;
 
+/// Placeholder for the unported Java type `VTMatchTagDBAdapterV0`, referenced by
+/// `VTMatchTagDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_match_tag_db_adapter`. `VTMatchTagDBAdapterV0` is a
+/// concrete Java class (not an interface), so this stub is a struct that implements the real
+/// `VTMatchTagDBAdapter` trait using already-ported `Table`/`DBHandle` machinery. Replace with the
+/// real port when `VTMatchTagDBAdapterV0.java` is ported.
+pub struct VTMatchTagDBAdapterV0 {
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTMatchTagDBAdapterV0 {
+    pub fn create(
+        db_handle: &mut crate::framework::db::DBHandle,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle.create_table(table_name.to_string(), schema)?;
+        Ok(Self { table })
+    }
+
+    pub fn open(
+        db_handle: &crate::framework::db::DBHandle,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = db_handle.get_table(table_name).ok_or_else(|| {
+            crate::util::exception::VersionException::with_message(format!(
+                "Missing Table: {table_name}"
+            ))
+        })?;
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { table })
+    }
+}
+
+/// Owned (non-borrowing) record iterator used by [`VTMatchTagDBAdapterV0::get_records`], since
+/// `Table::get_record_iterator` borrows the `RwLockReadGuard` it is called on.
+struct VecRecordIterator {
+    records: std::vec::IntoIter<crate::framework::db::DBRecord>,
+}
+
+impl crate::framework::db::RecordIterator for VecRecordIterator {
+    fn next(&mut self) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        Ok(self.records.next())
+    }
+    fn has_next(&self) -> bool {
+        self.records.len() > 0
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_match_tag_db_adapter::VTMatchTagDBAdapter
+    for VTMatchTagDBAdapterV0
+{
+    fn insert_record(&self, tag_name: &str) -> std::io::Result<crate::framework::db::DBRecord> {
+        if tag_name.trim().is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Cannot create an empty string tag",
+            ));
+        }
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_string(
+            crate::feature::vt::api::main::db::vt_match_tag_db_adapter::ColumnDescription::TagNameCol
+                .column(),
+            Some(tag_name.to_string()),
+        );
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn get_records(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+
+    fn get_record(
+        &self,
+        tag_record_key: i64,
+    ) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(tag_record_key)))
+    }
+
+    fn get_record_count(&self) -> usize {
+        self.table.read().unwrap().get_record_count()
+    }
+
+    fn update_record(&self, record: &crate::framework::db::DBRecord) -> std::io::Result<()> {
+        self.table.write().unwrap().put_record(record.clone())
+    }
+
+    fn delete_record(&self, tag_record_key: i64) -> std::io::Result<bool> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(tag_record_key)))
+    }
+}
+
