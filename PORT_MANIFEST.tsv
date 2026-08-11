@@ -11055,7 +11055,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/IntConstOpnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/IntLocalOpnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/IntReadOnlyLocalOpnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/LocalOpnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/LocalOpnd.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/LongConstOpnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/LongLocalOpnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/MpIntConstOpnd.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen opnd 
