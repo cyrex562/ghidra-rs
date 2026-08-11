@@ -43,7 +43,7 @@ mod tests {
     }
 
     impl JitDefOp for TestIntUnOp {
-        fn out(&self) -> Box<dyn JitOutVar> {
+        fn out(&self) -> std::sync::Arc<dyn JitOutVar> {
             unimplemented!()
         }
     }

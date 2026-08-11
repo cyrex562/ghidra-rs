@@ -56,7 +56,7 @@ mod tests {
     }
 
     impl crate::pcode::seam_stubs::JitDefOp for TestOp {
-        fn out(&self) -> Box<dyn crate::pcode::seam_stubs::JitOutVar> {
+        fn out(&self) -> std::sync::Arc<dyn crate::pcode::seam_stubs::JitOutVar> {
             unimplemented!()
         }
     }
