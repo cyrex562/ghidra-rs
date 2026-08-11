@@ -174,6 +174,40 @@ class TestClassification(unittest.TestCase):
         self.assertEqual(dr.classify("PatternExpression", facts, self.subtypes, {})[0], "??")
 
 
+class TestUnknownMeansUnassessed(unittest.TestCase):
+    """`unknown` must mean "nobody has established what this should be".
+
+    It is what the summary line counts and what debt_clusters pulls into CONVENTION_QUEUE, so
+    anything already settled that lands there inflates the pile of decisions waiting on a
+    person. Two things were diluting it.
+    """
+
+    def test_an_annotation_type_is_a_fix_not_an_open_question(self):
+        """PA's own description states the answer: annotations are not runtime types, so
+        `dyn ServiceInfo` is wrong code. 7 types sat under `unknown` saying so."""
+        self.assertEqual(dr.VERDICT["PA"], "fix")
+        self.assertIn("Delete the trait object", dr.PATTERNS["PA"])
+
+    def test_a_parked_type_is_parked_not_unknown(self):
+        """Someone decided not to decide. That is not the same as nobody having looked, and
+        eight types -- Navigatable, ActionContext, DockingActionIf -- read as though it were."""
+        dr._CONV = {"Parked": "PARK"}
+        try:
+            action, conv, why = dr.decide("Parked", "P5", 9, "interface")
+            self.assertEqual((action, conv), ("parked", "PARK"))
+        finally:
+            dr._CONV = None
+
+    def test_parked_stays_exempt_from_the_debt_score(self):
+        """Only the label changes: pattern_audit exempts every verdict that is not `fix`."""
+        self.assertNotEqual("parked", "fix")
+
+    def test_p0_is_still_genuinely_unknown(self):
+        """An interface implemented only by lambdas/anonymous classes really is unassessed --
+        this change must not empty `unknown` by relabelling everything."""
+        self.assertEqual(dr.VERDICT["P0"], "unknown")
+
+
 class TestConventionDeference(unittest.TestCase):
     """A decided verdict beats re-derived evidence.
 

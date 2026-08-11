@@ -75,7 +75,9 @@ STD_TRAITS = {
 
 PATTERNS = {
     "P0": "interface with no concrete implementer in orig_src -- anonymous/lambda/external, unknown",
-    "PA": "Java annotation type -- not a runtime type; it should not appear as a Rust type at all",
+    "PA": ("Java annotation type -- not a runtime type, so there is nothing to dispatch over. "
+           "Delete the trait object: the metadata belongs in a derive macro, a registry table "
+           "or a const, and `dyn` over it is wrong code rather than an open question"),
     "P1": "Java is a {kind}, not an interface -- use the concrete type",
     "P2": "interface with exactly one concrete implementer -- Java's header-file idiom, use the struct",
     "P2s": "interface with one concrete implementer that is NOT ported yet -- a seam until it is",
@@ -85,7 +87,18 @@ PATTERNS = {
     "??": "ambiguous basename or no Java match -- do not guess",
 }
 
-VERDICT = {"P0": "unknown", "PA": "unknown", "P1": "fix", "P2": "fix", "P2s": "blocked",
+# `unknown` must mean "nobody has established what this should be", because that is what the
+# summary line counts and what debt_clusters now pulls into CONVENTION_QUEUE.tsv. Two things
+# were diluting it:
+#
+#   PA -- a Java annotation type. Its own description states the answer: annotations are not
+#   runtime types, so `dyn ServiceInfo` is wrong code, not an open question. It is `fix`.
+#
+#   A decided PARK verdict, which CONVENTION_ACTION mapped to "unknown" as well, so eight
+#   types someone had deliberately parked read exactly like types nobody had assessed.
+#   `parked` says which. It stays exempt from the debt score -- pattern_audit exempts every
+#   verdict that is not `fix` -- so only the label changes.
+VERDICT = {"P0": "unknown", "PA": "fix", "P1": "fix", "P2": "fix", "P2s": "blocked",
            "P3": "investigate",
            "P4": "ok", "P5": "ok", "??": "skip"}
 
@@ -106,7 +119,7 @@ CONVENTION_ACTION = {
     "GRAPH":  ("fix", "becomes a Kind tag plus an arena id (convention 4)"),
     "ITER":   ("fix", "becomes a type implementing std::iter::Iterator"),
     "STRUCT": ("fix", "becomes the concrete type; there is nothing to dispatch over"),
-    "PARK":   ("unknown", "parked: no convention decided, and re-asking is not wanted"),
+    "PARK":   ("parked", "parked: no convention decided, and re-asking is not wanted"),
 }
 
 _RUST_DECLS = None
@@ -315,7 +328,7 @@ def cmd_audit(args):
             fh.write("\t".join(str(c).replace("\t", " ") for c in r) + "\n")
     total = sum(counts.values())
     print(f"wrote {len(rows)} rows to {args.out}  (of {total} total `dyn` mentions)")
-    for a in ("fix", "blocked", "investigate", "ok", "unknown", "skip"):
+    for a in ("fix", "blocked", "investigate", "ok", "unknown", "parked", "skip"):
         if tally[a]:
             print(f"  {tally[a]:6d}  {100 * tally[a] / total:4.1f}%  {a}")
     print(f"\n  {decided_n} of {total} carry a decided convention from CONVENTION_QUEUE.tsv")

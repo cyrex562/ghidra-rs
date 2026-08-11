@@ -688,6 +688,7 @@ TODO	19.3	10.0	93	RefdFile	filesystem	src/filesystem/gfilesystem/refd_file.rs	dy
 TODO	19.2	19.2	0	DbTraceEquate	trace	src/trace/database/symbol/db_trace_equate.rs	dyn=8,clone/100L=1.2,getset_pairs=2
 TODO	19.1	18.0	6	AssemblyExtendedGrammar	app	src/app/plugin/assembler/sleigh/grammars/assembly_extended_grammar.rs	dyn=9
 TODO	19.1	19.1	0	FunctionDefinitionDb	program	src/program/database/data/function_definition_db.rs	dyn=6,clone/100L=1.1,getset_pairs=6
+TODO	19.0	14.7	29	PluginUtils	framework	src/framework/plugintool/util/plugin_utils.rs	dyn=7
 TODO	18.8	17.7	6	DefaultGhidraProtocolHandler	framework	src/framework/protocol/ghidra/default_ghidra_protocol_handler.rs	dyn=8,clone/100L=1.7
 TODO	18.8	18.8	0	LibraryDb	program	src/program/database/symbol/library_db.rs	dyn=7,clone/100L=1.8,getset_pairs=3
 TODO	18.8	18.8	0	Python		src/script/python.rs	arc_mutex=5,unwrap/100L=3.0
@@ -791,7 +792,6 @@ TODO	13.9	4.7	195	FunctionComparisonService	app	src/app/services/function_compar
 TODO	13.9	12.3	13	DecisionProperties	decompiler	src/decompiler/slghsymbol/decision_properties.rs	dyn=6
 TODO	13.9	10.5	32	TraceCodeSpace	trace	src/trace/model/listing/trace_code_space.rs	dyn=5
 TODO	13.9	12.0	16	MemoryAdapter	trace	src/trace/util/memory_adapter.rs	getset_pairs=12
-TODO	13.8	10.7	29	PluginUtils	framework	src/framework/plugintool/util/plugin_utils.rs	dyn=5
 TODO	13.8	10.8	28	TraceBaseCodeUnitsView	trace	src/trace/model/listing/trace_base_code_units_view.rs	dyn=3,clone/100L=1.8,getset_pairs=3
 TODO	13.7	10.2	34	PcodeEmitPacked	app	src/app/plugin/processors/sleigh/pcode_emit_packed.rs	dyn=5
 TODO	13.7	13.3	3	IsfFunction	program	src/program/model/data/isf/isf_function.rs	dyn=4,clone/100L=1.3,getset_pairs=4
@@ -1170,6 +1170,8 @@ TODO	6.0	6.0	0	MemoryBlockImpl	program	src/program/model/mem/memory_block_impl.r
 TODO	6.0	5.4	11	SourceMapEntryIterator	program	src/program/model/sourcemap/source_map_entry_iterator.rs	dyn=2,clone/100L=1.4
 TODO	6.0	4.7	27	AddressSetPropertyMap	program	src/program/model/util/address_set_property_map.rs	dyn=2
 TODO	6.0	5.2	15	TraceEquateReference	trace	src/trace/model/symbol/trace_equate_reference.rs	dyn=1,clone/100L=1.2,getset_pairs=2
+TODO	6.0	6.0	0	DbAnnotatedColumn	util	src/util/database/annot/db_annotated_column.rs	dyn=3
+TODO	6.0	6.0	0	DbAnnotatedObjectInfo	util	src/util/database/annot/db_annotated_object_info.rs	dyn=3
 TODO	6.0	6.0	0	DbAnnotatedObjectFactory	util	src/util/database/db_annotated_object_factory.rs	dyn=3
 TODO	5.9	5.4	9	MethodInfo	format	src/format/golang/rtti/method_info.rs	clone/100L=5.4
 TODO	5.8	4.6	27	PlateComment	format	src/format/golang/structmapping/plate_comment.rs	dyn=2
@@ -1300,6 +1302,7 @@ TODO	4.0	3.4	18	JitVarnodeVar	pcode	src/pcode/emu/jit/var/jit_varnode_var.rs	clo
 TODO	4.0	4.0	0	OldFunctionDbAdapter	program	src/program/database/oldfunction/old_function_db_adapter.rs	dyn=2
 TODO	4.0	4.0	0	DbRecordAdapter	program	src/program/util/db_record_adapter.rs	dyn=2
 TODO	4.0	3.4	18	TypedEventDispatcher	trace	src/trace/util/typed_event_dispatcher.rs	arc_mutex=1
+TODO	4.0	4.0	0	DbAnnotatedField	util	src/util/database/annot/db_annotated_field.rs	dyn=2
 TODO	4.0	4.0	0	DbCachedDomainObjectAdapter	util	src/util/database/db_cached_domain_object_adapter.rs	dyn=2
 TODO	3.9	3.6	7	DynamicMappingException	app	src/app/plugin/core/debug/stack/dynamic_mapping_exception.rs	clone/100L=3.6
 TODO	3.9	3.6	9	GhidraBundleActivator	app	src/app/plugin/core/osgi/ghidra_bundle_activator.rs	clone/100L=3.6
