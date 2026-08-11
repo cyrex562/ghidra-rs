@@ -11117,7 +11117,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitCop
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitDefOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitFloatAbsOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitFloatAddOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitFloatBinOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitFloatBinOp.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitFloatCeilOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitFloatDivOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitFloatEqualOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
