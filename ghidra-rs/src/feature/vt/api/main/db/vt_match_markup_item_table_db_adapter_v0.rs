@@ -330,12 +330,13 @@ impl RecordIterator for VecRecordIterator {
 mod tests {
     use super::*;
     use crate::feature::seam_stubs::{
-        EolCommentMarkupType, VtAssociation, VtAssociationMarkupStatus, VtAssociationStatus,
-        VtAssociationType, VtMarkupItem as SeamVtMarkupItem, VtMatch, VtMatchSet,
-        TaskMonitor as SeamTaskMonitor,
+        EolCommentMarkupType, VtAssociation, VtMarkupItem as SeamVtMarkupItem, VtMatch, VtMatchSet,
     };
     use crate::feature::vt::api::main::association_hook::AssociationHook;
     use crate::feature::vt::api::main::vt_association_manager::VtAssociationManager;
+    use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
+    use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+    use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
     use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
     use crate::feature::vt::api::main::vt_program_correlator::VTProgramCorrelator;
     use crate::framework::db::util::ErrorHandler;
@@ -537,7 +538,7 @@ mod tests {
     }
 
     impl VtAssociation for MockAssociation {
-        fn get_type(&self) -> Box<dyn VtAssociationType> {
+        fn get_type(&self) -> VtAssociationType {
             unimplemented!("not exercised by this test")
         }
         fn get_session(&self) -> Box<dyn VTSession> {
@@ -546,7 +547,10 @@ mod tests {
                 destination_program: self.destination_program.clone(),
             })
         }
-        fn get_markup_items(&self, _monitor: &dyn SeamTaskMonitor) -> io::Result<Vec<Box<dyn SeamVtMarkupItem>>> {
+        fn get_markup_items(
+            &self,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Vec<Box<dyn SeamVtMarkupItem>>, crate::util::exception::CancelledException> {
             unimplemented!("not exercised by this test")
         }
         fn has_applied_markup_items(&self) -> bool {
@@ -561,20 +565,20 @@ mod tests {
         fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>> {
             Vec::new()
         }
-        fn set_markup_status(&self, _status: &dyn VtAssociationMarkupStatus) {}
-        fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+        fn set_markup_status(&self, _status: VtAssociationMarkupStatus) {}
+        fn get_markup_status(&self) -> VtAssociationMarkupStatus {
             unimplemented!("not exercised by this test")
         }
-        fn get_status(&self) -> Box<dyn VtAssociationStatus> {
+        fn get_status(&self) -> VtAssociationStatus {
             unimplemented!("not exercised by this test")
         }
-        fn set_accepted(&self) -> io::Result<()> {
+        fn set_accepted(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
-        fn clear_status(&self) -> io::Result<()> {
+        fn clear_status(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
-        fn set_rejected(&self) -> io::Result<()> {
+        fn set_rejected(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
         fn get_vote_count(&self) -> i32 {

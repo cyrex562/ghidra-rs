@@ -33,16 +33,21 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::feature::seam_stubs::{Stringable, VTSessionDB, VtAssociation, VtMarkupType};
+use crate::feature::seam_stubs::{Stringable, VTAssociationStatusException, VTSessionDB, VtAssociation, VtMarkupType};
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager;
 use crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::ColumnDescription;
+use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
+use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
 use crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus;
 use crate::feature::vt::api::main::vt_session::VTSession;
 use crate::feature::vt::api::markuptype::vt_markup_type_factory;
 use crate::framework::db::{DBRecord, Field};
 use crate::program::database::db_object::{DbObject, DbObjectState};
 use crate::program::model::address::Address;
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
 
 /// Forwards [`VtAssociation`] to a shared `Arc`, letting [`MarkupItemStorageDB::get_association`]
 /// hand back an owned `Box<dyn VtAssociation>` on every call. See the module docs for why this is
@@ -50,7 +55,7 @@ use crate::program::model::address::Address;
 struct ArcVtAssociation(Arc<dyn VtAssociation>);
 
 impl VtAssociation for ArcVtAssociation {
-    fn get_type(&self) -> Box<dyn crate::feature::seam_stubs::VtAssociationType> {
+    fn get_type(&self) -> VtAssociationType {
         self.0.get_type()
     }
 
@@ -60,8 +65,8 @@ impl VtAssociation for ArcVtAssociation {
 
     fn get_markup_items(
         &self,
-        monitor: &dyn crate::feature::seam_stubs::TaskMonitor,
-    ) -> std::io::Result<Vec<Box<dyn crate::feature::seam_stubs::VtMarkupItem>>> {
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Vec<Box<dyn crate::feature::seam_stubs::VtMarkupItem>>, CancelledException> {
         self.0.get_markup_items(monitor)
     }
 
@@ -81,27 +86,27 @@ impl VtAssociation for ArcVtAssociation {
         self.0.get_related_associations()
     }
 
-    fn set_markup_status(&self, markup_items_status: &dyn crate::feature::seam_stubs::VtAssociationMarkupStatus) {
+    fn set_markup_status(&self, markup_items_status: VtAssociationMarkupStatus) {
         self.0.set_markup_status(markup_items_status)
     }
 
-    fn get_markup_status(&self) -> Box<dyn crate::feature::seam_stubs::VtAssociationMarkupStatus> {
+    fn get_markup_status(&self) -> VtAssociationMarkupStatus {
         self.0.get_markup_status()
     }
 
-    fn get_status(&self) -> Box<dyn crate::feature::seam_stubs::VtAssociationStatus> {
+    fn get_status(&self) -> VtAssociationStatus {
         self.0.get_status()
     }
 
-    fn set_accepted(&self) -> std::io::Result<()> {
+    fn set_accepted(&self) -> Result<(), VTAssociationStatusException> {
         self.0.set_accepted()
     }
 
-    fn clear_status(&self) -> std::io::Result<()> {
+    fn clear_status(&self) -> Result<(), VTAssociationStatusException> {
         self.0.clear_status()
     }
 
-    fn set_rejected(&self) -> std::io::Result<()> {
+    fn set_rejected(&self) -> Result<(), VTAssociationStatusException> {
         self.0.set_rejected()
     }
 

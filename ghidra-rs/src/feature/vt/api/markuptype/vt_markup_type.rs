@@ -42,7 +42,7 @@
 
 use std::sync::Arc;
 
-use crate::feature::seam_stubs::{ProgramLocation, Stringable, TaskMonitor, ToolOptions, VtAssociation, VtMarkupItem};
+use crate::feature::seam_stubs::{ProgramLocation, Stringable, ToolOptions, VtAssociation, VtMarkupItem};
 use crate::feature::vt::api::implementation::markup_item_impl::MarkupItemImpl;
 use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
 use crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType;
@@ -50,6 +50,7 @@ use crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrac
 use crate::framework::options::Options;
 use crate::program::model::address::Address;
 use crate::program::model::listing::{Function, Listing, Program};
+use crate::util::task::TaskMonitor;
 
 /// The shared state and concrete (non-abstract) behavior of a [`VtMarkupType`].
 ///
@@ -162,7 +163,7 @@ impl VtMarkupTypeBase {
         association: &dyn VtAssociation,
         destination_address: Option<&Address>,
         monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Option<Box<dyn Stringable>>> {
+    ) -> Result<Option<Box<dyn Stringable>>, crate::util::exception::CancelledException> {
         let Some(destination_address) = destination_address else {
             return Ok(None);
         };
@@ -279,7 +280,7 @@ pub trait VtMarkupType: Send + Sync {
         association: &dyn VtAssociation,
         destination_address: Option<&Address>,
         monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Option<Box<dyn Stringable>>>
+    ) -> Result<Option<Box<dyn Stringable>>, crate::util::exception::CancelledException>
     where
         Self: Sized,
     {
@@ -525,8 +526,10 @@ impl VtMarkupType for Arc<dyn VtMarkupType> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::feature::seam_stubs::{VtAssociationMarkupStatus, VtAssociationStatus, VtAssociationType as SeamVtAssociationType};
+    use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
+    use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
+    use crate::util::task::DummyMonitor;
 
     fn address(offset: i64) -> Address {
         Address::new(AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1), offset)
@@ -545,7 +548,7 @@ mod tests {
     struct StubAssociation;
 
     impl VtAssociation for StubAssociation {
-        fn get_type(&self) -> Box<dyn SeamVtAssociationType> {
+        fn get_type(&self) -> VtAssociationType {
             unimplemented!("not used by these tests")
         }
 
@@ -556,7 +559,7 @@ mod tests {
         fn get_markup_items(
             &self,
             _monitor: &dyn TaskMonitor,
-        ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+        ) -> Result<Vec<Box<dyn VtMarkupItem>>, crate::util::exception::CancelledException> {
             Ok(Vec::new())
         }
 
@@ -576,25 +579,25 @@ mod tests {
             Vec::new()
         }
 
-        fn set_markup_status(&self, _markup_items_status: &dyn VtAssociationMarkupStatus) {}
+        fn set_markup_status(&self, _markup_items_status: VtAssociationMarkupStatus) {}
 
-        fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+        fn get_markup_status(&self) -> VtAssociationMarkupStatus {
             unimplemented!("not used by these tests")
         }
 
-        fn get_status(&self) -> Box<dyn VtAssociationStatus> {
+        fn get_status(&self) -> VtAssociationStatus {
             unimplemented!("not used by these tests")
         }
 
-        fn set_accepted(&self) -> std::io::Result<()> {
+        fn set_accepted(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
 
-        fn clear_status(&self) -> std::io::Result<()> {
+        fn clear_status(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
 
-        fn set_rejected(&self) -> std::io::Result<()> {
+        fn set_rejected(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
 
@@ -603,14 +606,6 @@ mod tests {
         }
 
         fn set_vote_count(&self, _vote_count: i32) {}
-    }
-
-    struct DummyTaskMonitor;
-
-    impl TaskMonitor for DummyTaskMonitor {
-        fn check_cancelled(&self) -> std::io::Result<()> {
-            Ok(())
-        }
     }
 
     /// Java: `getDisplayName()` just returns the constructor's `name` argument.
@@ -656,7 +651,7 @@ mod tests {
         let result = markup_type.get_original_destination_value_for_applied_markup_of_this_type(
             &StubAssociation,
             None,
-            &DummyTaskMonitor,
+            &DummyMonitor,
         );
         assert!(result.unwrap().is_none());
     }
@@ -669,7 +664,7 @@ mod tests {
         let result = markup_type.get_original_destination_value_for_applied_markup_of_this_type(
             &StubAssociation,
             Some(&destination),
-            &DummyTaskMonitor,
+            &DummyMonitor,
         );
         assert!(result.unwrap().is_none());
     }

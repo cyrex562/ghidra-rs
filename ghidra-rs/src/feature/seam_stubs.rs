@@ -5,103 +5,23 @@
 
 pub use crate::program::model::address::Address as AddressType;
 pub use crate::feature::vt::api::markuptype::vt_markup_type::{VtMarkupType, VtMarkupTypeBase};
+pub use crate::feature::vt::api::main::vt_association::VtAssociation;
 pub use crate::feature::vt::api::main::vt_markup_item::VtMarkupItem;
 
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
+use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
+use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
 use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
 use crate::feature::vt::api::main::vt_score::VtScore;
 use crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrackingApplyException;
 use crate::framework::remote::User;
-
-/// Placeholder for the unported Java type `VTAssociation`, referenced by `VTAssociationManager` and `AssociationHook`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait VtAssociation: Send + Sync {
-    fn get_type(&self) -> Box<dyn VtAssociationType>;
-
-    /// Java: `VTAssociationDB.getSession()`. Returns the real, already-ported `VTSession`
-    /// (`crate::feature::vt::api::main::vt_session::VTSession`) rather than the minimal local
-    /// [`VtSession`] stub below, which predates that port and is now stale for this purpose.
-    fn get_session(&self) -> Box<dyn crate::feature::vt::api::main::vt_session::VTSession>;
-
-    fn get_markup_items(&self, monitor: &dyn TaskMonitor) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>>;
-    fn has_applied_markup_items(&self) -> bool;
-    fn get_source_address(&self) -> AddressType;
-    fn get_destination_address(&self) -> AddressType;
-    fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>>;
-    fn set_markup_status(&self, markup_items_status: &dyn VtAssociationMarkupStatus);
-    fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus>;
-    fn get_status(&self) -> Box<dyn VtAssociationStatus>;
-    fn set_accepted(&self) -> std::io::Result<()>;
-    fn clear_status(&self) -> std::io::Result<()>;
-    fn set_rejected(&self) -> std::io::Result<()>;
-    fn get_vote_count(&self) -> i32;
-    fn set_vote_count(&self, vote_count: i32);
-
-    /// Java: `DBObject.getKey()`, inherited by the concrete `VTAssociationDB`. Defaulted (so
-    /// existing/mock implementors keep compiling) since not every `VtAssociation` implementor
-    /// backs a database row.
-    ///
-    /// Grown for
-    /// [`VTMatchMarkupItemTableDBAdapterV0`](crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0)'s
-    /// port of `VTMatchMarkupItemTableDBAdapterV0.createMarkupItemRecord`.
-    fn get_key(&self) -> i64 {
-        unimplemented!("VtAssociation::get_key not available on this implementor")
-    }
-
-    /// Java: the `(VTSessionDB) association.getSession()` cast that
-    /// [`MarkupItemImpl`] performs before firing a markup event or reading a program's
-    /// modification number. Defaulted to `None` -- the "not a database-backed session" case --
-    /// since [`get_session`](Self::get_session) is not implementable by every implementor.
-    ///
-    /// Grown for the [`MarkupItemImpl`] port.
-    fn get_session_db(&self) -> Option<std::sync::Arc<dyn VTSessionDB>> {
-        None
-    }
-
-    /// Java: `VTAssociationDB.markupItemStatusChanged(VTMarkupItem)`, which forwards to the
-    /// association manager so it can notify every registered `AssociationHook`. Defaulted to a
-    /// no-op, mirroring the `if (!(association instanceof VTAssociationDB)) return;` guard in
-    /// `MarkupItemImpl.fireMarkupItemStatusChanged`.
-    ///
-    /// Grown for the [`MarkupItemImpl`] port.
-    fn markup_item_status_changed(&self, markup_item: &dyn VtMarkupItem) {
-        let _ = markup_item;
-    }
-}
-
-/// Placeholder for `VTAssociationType`.
-pub trait VtAssociationType: Send + Sync {
-    fn display_name(&self) -> &str;
-}
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
 
 /// Placeholder for `VTSession`.
 pub trait VtSession: Send + Sync {
     fn get_name(&self) -> &str;
-}
-
-/// Placeholder for `TaskMonitor`.
-pub trait TaskMonitor: Send + Sync {
-    fn check_cancelled(&self) -> std::io::Result<()>;
-}
-
-/// Placeholder for `VTAssociationMarkupStatus`.
-pub trait VtAssociationMarkupStatus: Send + Sync {
-    fn get_status(&self) -> &str;
-}
-
-/// Placeholder for `VTAssociationStatus`.
-pub trait VtAssociationStatus: Send + Sync {
-    fn get_status(&self) -> &str;
-
-    /// The real, already-ported enum behind this placeholder, for callers that need to ask it
-    /// `canApply()` rather than just print it. Grown for the [`MarkupItemImpl`] port; see the
-    /// bridging impl further down this file.
-    fn association_status(
-        &self,
-    ) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
-        unimplemented!("this VtAssociationStatus placeholder has no ported enum behind it")
-    }
 }
 
 /// Placeholder for `ToolOptions`.
@@ -270,51 +190,6 @@ pub fn association_type_from_ordinal(
         0 => Type::Function,
         1 => Type::Data,
         other => panic!("invalid VTAssociationType ordinal {other}"),
-    }
-}
-
-/// Bridges the real, ported association-status enum onto the [`VtAssociationStatus`] placeholder
-/// trait the `VtAssociation` seam speaks in, so no second status type has to be invented.
-impl VtAssociationStatus
-    for crate::feature::vt::api::main::vt_association_status::VtAssociationStatus
-{
-    fn get_status(&self) -> &str {
-        self.display_name()
-    }
-
-    fn association_status(
-        &self,
-    ) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
-        *self
-    }
-}
-
-/// Bridges the real, ported association-type enum onto the [`VtAssociationType`] placeholder
-/// trait. See [`VtAssociationStatus`]'s impl above.
-impl VtAssociationType for crate::feature::vt::api::main::vt_association_type::VtAssociationType {
-    fn display_name(&self) -> &str {
-        crate::feature::vt::api::main::vt_association_type::VtAssociationType::display_name(self)
-    }
-}
-
-/// Bridges the real, ported markup-status struct onto the [`VtAssociationMarkupStatus`]
-/// placeholder trait. See [`VtAssociationStatus`]'s impl above.
-impl VtAssociationMarkupStatus
-    for crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus
-{
-    fn get_status(&self) -> &str {
-        // The placeholder trait returns a borrowed string; the real `description()` builds an
-        // owned one, so this reports the raw packed value's applied-ness instead, which is the
-        // only thing the seam's callers look at.
-        if self.has_applied_markup() {
-            "Applied"
-        }
-        else if self.is_initialized() {
-            "Unapplied"
-        }
-        else {
-            "Uninitialized"
-        }
     }
 }
 
@@ -574,7 +449,7 @@ impl MarkupItemStorage for MarkupItemStorageImpl {
 struct ArcVtAssociation(std::sync::Arc<dyn VtAssociation>);
 
 impl VtAssociation for ArcVtAssociation {
-    fn get_type(&self) -> Box<dyn VtAssociationType> {
+    fn get_type(&self) -> VtAssociationType {
         self.0.get_type()
     }
 
@@ -585,7 +460,7 @@ impl VtAssociation for ArcVtAssociation {
     fn get_markup_items(
         &self,
         monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+    ) -> Result<Vec<Box<dyn VtMarkupItem>>, CancelledException> {
         self.0.get_markup_items(monitor)
     }
 
@@ -605,27 +480,27 @@ impl VtAssociation for ArcVtAssociation {
         self.0.get_related_associations()
     }
 
-    fn set_markup_status(&self, markup_items_status: &dyn VtAssociationMarkupStatus) {
+    fn set_markup_status(&self, markup_items_status: VtAssociationMarkupStatus) {
         self.0.set_markup_status(markup_items_status)
     }
 
-    fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+    fn get_markup_status(&self) -> VtAssociationMarkupStatus {
         self.0.get_markup_status()
     }
 
-    fn get_status(&self) -> Box<dyn VtAssociationStatus> {
+    fn get_status(&self) -> VtAssociationStatus {
         self.0.get_status()
     }
 
-    fn set_accepted(&self) -> std::io::Result<()> {
+    fn set_accepted(&self) -> Result<(), VTAssociationStatusException> {
         self.0.set_accepted()
     }
 
-    fn clear_status(&self) -> std::io::Result<()> {
+    fn clear_status(&self) -> Result<(), VTAssociationStatusException> {
         self.0.clear_status()
     }
 
-    fn set_rejected(&self) -> std::io::Result<()> {
+    fn set_rejected(&self) -> Result<(), VTAssociationStatusException> {
         self.0.set_rejected()
     }
 
