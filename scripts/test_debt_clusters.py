@@ -89,7 +89,7 @@ class TestSuggestVerdict(unittest.TestCase):
     def test_mock_only_trait_is_deferred_not_collapsed(self):
         """Only test doubles implement it -> the port is unfinished, not a design signal."""
         v, why = self.call("Namespace", impls=0, mocks=51)
-        self.assertIsNone(v)
+        self.assertEqual(v, dc.WAIT_PORT)
         self.assertIn("not ported yet", why)
 
     def test_seam_stub_placeholder_is_deferred(self):
@@ -99,12 +99,56 @@ class TestSuggestVerdict(unittest.TestCase):
 
     def test_unported_class_with_few_impls_is_deferred(self):
         v, why = self.call("HalfPorted", impls=1, unported=("HalfPorted",))
-        self.assertIsNone(v)
+        self.assertEqual(v, dc.WAIT_PORT)
         self.assertIn("PORT_MANIFEST", why)
 
     def test_undeclared_type_suggests_park(self):
         v, _why = self.call("NotHere", traits=0)
         self.assertEqual(v, "SUGGEST-PARK")
+
+
+class TestWaitPortIsNeverSticky(unittest.TestCase):
+    """WAIT-PORT is the generator's own statement about PORT_MANIFEST, which changes nightly.
+
+    Every other non-TODO verdict is kept verbatim as a hand decision. If WAIT-PORT were too,
+    a row would stay blocked forever after its Java class landed and the evidence that finally
+    became available would never be read -- the same class of bug as the 96 decisions that
+    evaporated when types left the frontier, only silent in the other direction.
+    """
+
+    def emit(self, prior_verdict, prior_source="derived", rederive=True):
+        rows = []
+        prior = {dc._qkey("Foo", ""): (prior_verdict, prior_source, "old note")}
+        dc._emit_row(rows, "Foo", "", 5, 5, 0, prior, [], resuggest=False, rederive=rederive)
+        return rows[0]
+
+    def test_a_wait_row_is_re_derived_not_carried(self):
+        self.assertEqual(self.emit(dc.WAIT_PORT)["verdict"], "TODO")
+
+    def test_a_wait_row_survives_a_run_that_cannot_re_derive_it(self):
+        """Only --suggest reads PORT_MANIFEST. Clearing WAIT-PORT on a plain regeneration
+        dropped all 100 rows back to TODO -- reintroducing the exact mislabelling this
+        verdict removes, and silently, because nothing downstream reads it."""
+        self.assertEqual(self.emit(dc.WAIT_PORT, rederive=False)["verdict"], dc.WAIT_PORT)
+
+    def test_a_human_decision_is_still_carried(self):
+        self.assertEqual(self.emit("ACCEPT", "manual")["verdict"], "ACCEPT")
+
+    def test_a_suggestion_is_still_carried_without_resuggest(self):
+        self.assertEqual(self.emit("SUGGEST-ENUM", "suggest")["verdict"], "SUGGEST-ENUM")
+
+    def test_wait_is_recognised_as_generator_owned(self):
+        self.assertTrue(dc.is_derived_verdict(dc.WAIT_PORT))
+        self.assertTrue(dc.is_derived_verdict("SUGGEST-ENUM"))
+        self.assertFalse(dc.is_derived_verdict("ACCEPT"))
+        self.assertFalse(dc.is_derived_verdict("TODO"))
+
+    def test_wait_port_is_not_a_decided_convention(self):
+        """Nothing downstream may act on it. dyn_rules honours a whitelist; WAIT-PORT must
+        not be in it, or `dyn T` sites would be rewritten against a non-answer."""
+        sys.path.insert(0, HERE)
+        import dyn_rules
+        self.assertNotIn(dc.WAIT_PORT, dyn_rules.DECIDED)
 
 
 class TestCollectDeclarations(unittest.TestCase):
@@ -194,7 +238,7 @@ class TestJavaSizedVerdicts(unittest.TestCase):
         v, why = dc.suggest_verdict(
             "Later", {"Later": 1}, {}, {"Later": 20}, {"Later"}, {}, set(),
             {"Later": 0}, {"Later": "class"}, frozenset())
-        self.assertIsNone(v)
+        self.assertEqual(v, dc.WAIT_PORT)
         self.assertIn("seam awaiting that port", why)
 
     def test_a_java_class_nothing_extends_should_not_be_a_trait(self):
@@ -713,7 +757,7 @@ class TestEvidenceOrdering(unittest.TestCase):
         v, note = self._call("TokenPattern", unported={"TokenPattern"},
                              java_subtypes={"TokenPattern": 0},
                              java_decls={"TokenPattern": "class"})
-        self.assertIsNone(v)
+        self.assertEqual(v, dc.WAIT_PORT)
         self.assertIn("seam awaiting that port", note)
 
 

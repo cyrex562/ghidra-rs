@@ -27,6 +27,12 @@ Verdicts (col 1 of CONVENTION_QUEUE.tsv), per OWNERSHIP_MIGRATION.md's conventio
   STRUCT  shouldn't be a trait at all (a trait with 0-2 implementers is usually just a type)
   PARK    genuinely undecidable for now; keep it off the queue but don't keep re-asking
 
+WAIT-PORT is not a verdict anyone makes: it marks a row whose answer is blocked on a Java
+class still TODO in PORT_MANIFEST.tsv. The evidence needed to decide it does not exist yet,
+so asking a human is wasted -- but leaving it TODO made the queue claim 232 open decisions
+when only 40 were real. It is re-derived on every run and goes live the run after its Java
+class is ported, so it can never freeze a row the way a recorded decision would.
+
 SUGGEST-<VERDICT> is a PROPOSAL, not a decision: --suggest writes them from structural
 evidence, and nothing downstream acts on them -- pattern_audit.py honours a bare ACCEPT only,
 never SUGGEST-ACCEPT. Review, then promote in bulk with --promote.
@@ -122,6 +128,23 @@ RE_LINE_COMMENT = re.compile(r"//.*$", re.MULTILINE)
 # (type, java_class); it is blank for the unambiguous majority.
 QUEUE_COLS = ["verdict", "leverage", "occurrences", "fanin", "type", "java_class", "category",
               "source", "note"]
+
+
+# Not a decision and not a proposal: a row whose answer is blocked on a Java class that is
+# still TODO in PORT_MANIFEST.tsv. These used to be emitted as TODO with an explanatory note,
+# which made the queue claim 232 open decisions when 97 of them were waiting on the porter,
+# not on a person.
+#
+# WAIT-PORT must never be sticky. Every other non-TODO verdict is treated as a hand decision
+# and kept verbatim; if this one were, a row would stay WAIT-PORT forever after its Java class
+# landed, and the evidence that finally became available would never be read. `_emit_row`
+# re-derives it unconditionally, unlike SUGGEST-*, which only resets under --resuggest.
+WAIT_PORT = "WAIT-PORT"
+
+
+def is_derived_verdict(v):
+    """Verdicts the generator owns and may overwrite, as opposed to a human's answer."""
+    return str(v).startswith("SUGGEST-") or str(v) == WAIT_PORT
 
 
 def _qkey(name, java_class):
@@ -635,7 +658,7 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
                     # TokenPattern's own doc comment says. A concrete type is still the right END
                     # state, but the work is to port the class, not to convert a trait, and
                     # calling it debt would misdirect whoever picks it up.
-                    return None, (
+                    return WAIT_PORT, (
                         f"Java declares {name} as a {kind} with no subtypes, so a concrete type is "
                         f"the right end state -- but {name} is still TODO in PORT_MANIFEST.tsv, so "
                         f"the trait is a seam awaiting that port, not a shape defect")
@@ -700,12 +723,12 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
     if n_impl == 0 and mock_impls.get(name, 0) > 0:
         # Only test doubles implement it. That is the port being unfinished, not a design
         # signal: the real implementers are Java classes still in the queue.
-        return None, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
-                      f"implementations are not ported yet; revisit then")
+        return WAIT_PORT, (f"only {mock_impls[name]} mock implementer(s) and no real one -- the "
+                           f"implementations are not ported yet; revisit then")
     if n_impl <= 2 and name in unported:
         # Mid-port state, not a design signal: the Java implementers are still queued.
-        return None, (f"only {n_impl} real implementer(s), but {name} is still TODO in "
-                      f"PORT_MANIFEST.tsv -- revisit once the port lands")
+        return WAIT_PORT, (f"only {n_impl} real implementer(s), but {name} is still TODO in "
+                           f"PORT_MANIFEST.tsv -- revisit once the port lands")
     if n_impl == 0:
         return "SUGGEST-STRUCT", "declared a trait but nothing (non-mock) implements it -- not an extension point"
     if n_impl <= 2:
@@ -835,7 +858,8 @@ def shape_of_java(rel_path):
     return _SHAPES.get(rel_path)
 
 
-def _emit_row(rows, name, java_class, leverage, occurrences, fanin, prior, rules, resuggest):
+def _emit_row(rows, name, java_class, leverage, occurrences, fanin, prior, rules, resuggest,
+               rederive=False):
     """Append one queue row for (name, java_class)."""
     prev = prior.get(_qkey(name, java_class))
     # A SUGGEST-* row is a proposal, not a decision, so it must stay re-derivable: the
@@ -843,6 +867,13 @@ def _emit_row(rows, name, java_class, leverage, occurrences, fanin, prior, rules
     # concrete closure) and 23 stale SUGGEST-ENUM proposals would otherwise have survived as
     # frozen answers -- CodeUnit among them. --resuggest resets them; a promotion is untouched.
     if prev and resuggest and str(prev[0]).startswith("SUGGEST-"):
+        prev = ("TODO", "", "")
+    # A WAIT-PORT row is a statement about PORT_MANIFEST, which changes every night. Drop it
+    # so it is re-derived and goes live the run after its Java class is ported -- but ONLY
+    # when this run can actually re-derive it. Only --suggest reads PORT_MANIFEST; clearing
+    # it on a plain regeneration silently reset all 100 rows to TODO, which is the very
+    # mislabelling this verdict exists to remove.
+    if prev and prev[0] == WAIT_PORT and rederive:
         prev = ("TODO", "", "")
     if prev and prev[1] != "family" and prev[0] != "TODO":
         verdict, source, note = prev                # hand-made decision: never recompute
@@ -902,7 +933,7 @@ def load_seam_fanin(seam_path):
 
 
 def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, families,
-                resuggest=False):
+                resuggest=False, rederive=False):
     blocked = load_blocked_rows(debt, max_fanin, dyn_threshold)
     fanin = load_seam_fanin(seam)
     prior = load_prior_verdicts(out_path)
@@ -934,7 +965,7 @@ def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, famili
                 jclasses = sorted(set(variants.values()))
         for jc in jclasses:
             _emit_row(rows, name, jc, len(files), occ_by_type[name], fanin.get(name, 0),
-                      prior, rules, resuggest)
+                      prior, rules, resuggest, rederive)
     # A DECISION outlives the frontier. Rows are built from types currently reached through a
     # convention-blocked file, so a type stops being emitted the moment its files leave the
     # frontier -- and its verdict goes with it. That silently dropped 96 decided rows (35
@@ -1006,12 +1037,13 @@ def main():
     args = ap.parse_args()
 
     if args.validate:
-        n = validate_promotions(args.out)
+        # --validate on its own used to crash: it reads args.out, which defaults to None.
+        n = validate_promotions(args.out or "CONVENTION_QUEUE.tsv")
         print(f"reset {n} promoted verdict(s) whose evidence changed", file=sys.stderr)
 
     rows, blocked = build_queue(
         args.debt, args.seam, args.root, args.out, args.max_fanin, args.dyn_threshold,
-        args.families, resuggest=args.resuggest,
+        args.families, resuggest=args.resuggest, rederive=bool(args.suggest),
     )
     if not rows:
         print("no convention-blocked rows -- nothing to queue", file=sys.stderr)
@@ -1028,7 +1060,7 @@ def main():
         src = "IMPLEMENTERS.tsv (transitive, concrete-only)" if java_impl_names else args.orig_src
         print(f"read {len(java_subtypes)} Java supertypes from {src} and "
               f"{len(java_decls)} declarations from {args.orig_src}", file=sys.stderr)
-        n = 0
+        n = waiting = 0
         for r in rows:
             if r["verdict"] != "TODO":
                 continue
@@ -1052,12 +1084,20 @@ def main():
                                      mock_impls, stub_decl, java_subtypes, java_decls,
                                      jdk_modeled, java_impl_names, java_ext_points,
                                      _load_implementer_table(), java_ambiguous)
-            if v:
+            if v == WAIT_PORT:
+                # Derived, not proposed: there is nothing to promote and nobody to ask. The
+                # source marks it as the generator's own, so `_emit_row` may overwrite it.
+                r["verdict"], r["source"], r["note"] = v, "derived", why
+                waiting += 1
+            elif v:
                 r["verdict"], r["source"], r["note"] = v, "suggest", why
                 n += 1
             elif why:
                 r["source"], r["note"] = "evidence", why
         print(f"proposed {n} verdicts (inert until --promote)", file=sys.stderr)
+        if waiting:
+            print(f"{waiting} row(s) blocked on an unported Java class -> {WAIT_PORT} "
+                  f"(re-derived every run; goes live when the port lands)", file=sys.stderr)
 
     if args.promote:
         want = args.promote.strip().upper()
@@ -1069,7 +1109,10 @@ def main():
                 n += 1
         print(f"promoted {n} suggestion(s) matching {want}", file=sys.stderr)
 
-    decided = [r for r in rows if r["verdict"] != "TODO"]
+    # WAIT-PORT is neither: nobody decided it and nobody has to. Counting it as decided would
+    # overstate progress, counting it as TODO is what this verdict exists to stop.
+    decided = [r for r in rows if r["verdict"] not in ("TODO", WAIT_PORT)]
+    waiting_rows = [r for r in rows if r["verdict"] == WAIT_PORT]
     seen, cumulative = set(), []
     for r in rows:
         cumulative.append(r)
@@ -1082,7 +1125,8 @@ def main():
                 w.writerow(r)
         print(
             f"wrote {len(rows)} type decisions to {args.out} "
-            f"({len(decided)} already decided, {len(rows) - len(decided)} TODO) "
+            f"({len(decided)} already decided, {len(waiting_rows)} awaiting a port, "
+            f"{len(rows) - len(decided) - len(waiting_rows)} TODO) "
             f"covering {len(blocked)} blocked files",
             file=sys.stderr,
         )
