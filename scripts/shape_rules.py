@@ -660,7 +660,8 @@ Do not guess. Port nothing and end with: PORT_RESULT: PARKED shape undecided -- 
 }
 
 
-def classify(facts: dict, subtype_count: int, permits_resolved=None) -> dict:
+def classify(facts: dict, subtype_count: int, permits_resolved=None,
+             marker_use=None) -> dict:
     """Apply the shape rules. Returns {shape, rule, why, confidence}."""
     name, kind = facts["name"], facts["kind"]
     all_supers = facts["extends"] + facts["implements"]
@@ -757,28 +758,68 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None) -> dict:
 
     if kind == "interface":
         if facts["abstract_methods"] == 0 and facts["concrete_methods"] == 0:
-            # R8a -- an interface whose only members are constants (implicitly
-            # public static final). It is part constants module, part type tag, and
-            # which half matters depends on whether anything dispatches on the tag --
-            # which the Java source alone does not say.
-            if facts["static_fields"] > 0:
-                return r(
-                    "R8a-constants-interface",
-                    "park",
-                    f"interface with {facts['static_fields']} constant(s) and no methods: "
-                    f"the constants want a plain module, but "
-                    f"{'the ' + ', '.join(facts['extends']) + ' supertype means' if facts['extends'] else 'it may mean'}"
-                    " something dispatches on it as a type tag -- decide with a human",
-                    "ambiguous",
-                )
-            # R8b -- a true marker interface: no members at all.
-            return r(
-                "R8b-marker",
-                "park",
-                "marker interface -- no methods, no constants; Rust has no equivalent "
-                "and the right seam depends on what tests the marker",
-                "ambiguous",
-            )
+            # R8 -- an interface with no methods is either a constants holder, a type
+            # tag, or dead weight, and the declaration alone does not say which. It
+            # used to park all 141 of them for a human. But the question ("does
+            # anything dispatch on this?") is one the Java tree answers, so the R8
+            # verdict is driven by MARKER_USE.tsv -- the comment-stripped, path-scoped
+            # usage scan from `shape_rules.py index`. Only a type something actually
+            # branches on still needs a person.
+            consts = facts["static_fields"] > 0
+            tag = "R8a-constants-interface" if consts else "R8b-marker"
+            use = marker_use or {}
+            dispatch = use.get("instanceof", 0) + use.get("reflection", 0)
+
+            if use.get("ambiguous"):
+                # Same basename declared at more than one path: the evidence cannot be
+                # attributed to this one. Same guard `write_implementers` applies.
+                return r(tag, "park",
+                         "interface with no methods, and its basename is declared at more "
+                         "than one path -- usage evidence cannot be attributed to this "
+                         "declaration, so the tag/constants question stays open",
+                         "ambiguous")
+            if not use:
+                # No scan available (MARKER_USE.tsv missing). Park rather than guess.
+                return r(tag, "park",
+                         "interface with no methods and no usage scan available -- run "
+                         "`shape_rules.py index` to regenerate MARKER_USE.tsv",
+                         "ambiguous")
+            if dispatch:
+                return r(tag, "park",
+                         f"interface with no methods that {dispatch} site(s) branch on via "
+                         "`instanceof`/`.class` -- a genuine runtime type tag. Rust has no "
+                         "equivalent: it needs an enum discriminant, a downcast seam, or a "
+                         "predicate method. Decide with a human",
+                         "ambiguous")
+            # An interface can carry `static` methods without being dispatchable. They are
+            # free functions, not trait items -- emitting only the marker trait would drop
+            # them on the floor.
+            statics = ""
+            if facts["static_methods"]:
+                statics = (f" It also declares {facts['static_methods']} `static` method(s): "
+                           "port those as free functions in the same module, NOT as trait "
+                           "methods -- nothing dispatches on them.")
+
+            if use.get("typepos"):
+                return r("R8c-marker-as-bound", "trait",
+                         f"interface with no instance methods used as a type in "
+                         f"{use['typepos']} place(s) but never branched on -- an empty "
+                         "marker trait carries it: `pub trait X {}` plus `impl X for ..` "
+                         "on each implementor." + statics)
+            if consts:
+                return r("R8d-constants-module", "module",
+                         f"interface with {facts['static_fields']} constant(s), no methods, "
+                         f"{use.get('const_read', 0)} external constant read(s), and nothing "
+                         "branching on it or naming it as a type -- Java's constant-interface "
+                         "antipattern. Port the constants as a plain `pub const` module. Note "
+                         "Java implementors inherit these names unqualified, so a class that "
+                         "`implements` it and writes a bare `KEY_FOO` needs a `use` of the "
+                         "module in Rust -- not an empty trait to carry the names across")
+            return r("R8e-inert-marker", "trait",
+                     "marker interface with no instance methods, no constants, and no use "
+                     "as a type or dispatch target anywhere in the tree -- emit "
+                     "`pub trait X {}` and implement it on the implementors; it costs "
+                     "nothing and keeps the Java hierarchy legible." + statics)
         # R9 -- open interface. The one case a trait is unambiguously right.
         return r(
             "R9-open-interface",
@@ -901,10 +942,127 @@ def load_implementers(path=IMPLEMENTERS):
     return out or None
 
 
+MARKER_USE = os.path.join(REPO, "MARKER_USE.tsv")
+MARKER_COLS = ["class", "ambiguous", "instanceof", "reflection", "typepos", "const_read"]
+
+
+def marker_candidates(facts):
+    """{name: n_declarations} for every method-less interface -- the R8 population.
+
+    Keyed by basename because that is what a Java reference site gives us. Names declared
+    at more than one path are still returned, flagged, so `classify` can park them instead
+    of attributing another type's `instanceof` sites to this one.
+    """
+    out = {}
+    for name, entries in facts.items():
+        prim = entries[0]
+        if prim["kind"] != "interface":
+            continue
+        if prim["abstract_methods"] or prim["concrete_methods"]:
+            continue
+        out[name] = len(entries)
+    return out
+
+
+def _marker_patterns(names):
+    alt = "|".join(sorted(names, key=len, reverse=True))
+    return [
+        ("instanceof", re.compile(r"\binstanceof\s+(?:final\s+)?(%s)\b" % alt)),
+        ("reflection", re.compile(r"\b(%s)\s*\.\s*class\b" % alt)),
+        ("const_read", re.compile(r"\b(%s)\s*\.\s*[A-Z][A-Z0-9_]*\b" % alt)),
+        ("typepos", re.compile(
+            r"[(,]\s*(?:final\s+)?(%s)\s+[a-z]\w*" % alt              # parameter
+            + r"|<\s*(?:\?\s+extends\s+)?(%s)\s*[,>]" % alt           # generic argument
+            + r"|<\s*\w+\s+extends\s+(%s)\b" % alt                    # generic bound
+            + r"|\(\s*(%s)\s*\)\s*[\w(]" % alt                        # cast
+            + r"|(?:^|[;{}])\s*(?:private|public|protected|static|final|\s)*"
+              r"(%s)\s+[a-z]\w*\s*[=;(]" % alt)),                     # field / local / return
+    ]
+
+
+def scan_marker_use(facts, verbose=False):
+    """{name: {instanceof, reflection, typepos, const_read}} for the R8 population.
+
+    Answers the question R8 used to park on: does anything actually branch on this marker,
+    name it as a type, or read its constants? Scans `strip_java`-ed source, because the raw
+    text is mostly prose -- matching `Check` against unstripped files pulled 1,436 lines,
+    nearly all of them javadoc sentences starting "Check that ...".
+    """
+    cand = marker_candidates(facts)
+    ev = {n: dict.fromkeys(("instanceof", "reflection", "typepos", "const_read"), 0)
+          for n in cand}
+    if not cand:
+        return ev
+    pats = _marker_patterns(cand)
+    import_re = re.compile(r"^\s*(?:import|package)\b")
+    for root, _dirs, names in os.walk(ORIG):
+        for f in names:
+            if not f.endswith(".java"):
+                continue
+            p = os.path.join(root, f)
+            if is_non_production(os.path.relpath(p, ORIG)):
+                continue
+            own = f[:-5]
+            try:
+                with open(p, encoding="utf-8", errors="replace") as fh:
+                    src = strip_java(fh.read())
+            except OSError:
+                continue
+            if not any(n in src for n in cand):
+                continue
+            for line in src.splitlines():
+                if import_re.match(line):
+                    continue
+                for kind, rx in pats:
+                    for m in rx.finditer(line):
+                        n = next(g for g in m.groups() if g)
+                        # A type's own file says nothing about how the rest of the tree
+                        # uses it -- and its `implements` clause is not a use at all.
+                        if n != own:
+                            ev[n][kind] += 1
+    return ev
+
+
+def write_marker_use(facts, out=MARKER_USE, verbose=False):
+    cand = marker_candidates(facts)
+    ev = scan_marker_use(facts, verbose=verbose)
+    rows = [[n, "1" if cand[n] > 1 else "0", str(ev[n]["instanceof"]),
+             str(ev[n]["reflection"]), str(ev[n]["typepos"]), str(ev[n]["const_read"])]
+            for n in sorted(cand)]
+    with open(out, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(MARKER_COLS) + "\n")
+        for r_ in rows:
+            fh.write("\t".join(r_) + "\n")
+    return len(rows)
+
+
+def load_marker_use(path=MARKER_USE):
+    """{class: {ambiguous, instanceof, reflection, typepos, const_read}} or None."""
+    if not os.path.exists(path):
+        return None
+    out = {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            next(fh, None)
+            for line in fh:
+                c = line.rstrip("\n").split("\t")
+                if len(c) != len(MARKER_COLS):
+                    continue
+                out[c[0]] = dict(ambiguous=c[1] == "1", instanceof=int(c[2]),
+                                 reflection=int(c[3]), typepos=int(c[4]),
+                                 const_read=int(c[5]))
+    except Exception:
+        return None
+    return out or None
+
+
 def cmd_index(args):
     facts, subtypes = build_index(verbose=True)
     n = write_implementers(facts, subtypes)
     print(f"wrote {n} rows to {IMPLEMENTERS}")
+    n = write_marker_use(facts, verbose=True)
+    print(f"wrote {n} rows to {MARKER_USE}")
+    markers = load_marker_use()
     rows = []
     for name, entries in facts.items():
         for fa in entries:
@@ -915,7 +1073,8 @@ def cmd_index(args):
             # Nested types belong in the name index (for lookup), never in the path table.
             if fa.get("nested_in"):
                 continue
-            res = classify(fa, len(subtypes.get(name, ())))
+            res = classify(fa, len(subtypes.get(name, ())),
+                           marker_use=(markers or {}).get(name))
             rows.append(
                 [
                     fa["rel"],
@@ -957,7 +1116,8 @@ def _lookup(rel: str):
     if fa is None:
         return None
     _facts, subtypes = build_index()
-    res = classify(fa, len(subtypes.get(name, ())))
+    res = classify(fa, len(subtypes.get(name, ())),
+                   marker_use=(load_marker_use() or {}).get(name))
     return dict(path=rel, **{k: res[k] for k in ("shape", "rule", "confidence", "why", "name")})
 
 

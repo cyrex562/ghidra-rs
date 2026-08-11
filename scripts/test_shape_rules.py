@@ -23,7 +23,7 @@ sys.path.insert(0, HERE)
 import shape_rules as sr
 
 
-def shape(src: str, name: str, subtypes: int = 0):
+def shape(src: str, name: str, subtypes: int = 0, marker_use=None):
     """Classify a Java snippet the way the indexer would."""
     s = sr.strip_java(src)
     kind, mods, end = sr.find_primary(s, name)
@@ -45,7 +45,14 @@ def shape(src: str, name: str, subtypes: int = 0):
         c, b = sr.enum_constants(body)
         f["enum_constants"], f["enum_constant_bodies"] = c, b
     f.update(sr.analyse_body(kind, body, name))
-    return sr.classify(f, subtypes), f
+    return sr.classify(f, subtypes, marker_use=marker_use), f
+
+
+def use(**kw):
+    """A MARKER_USE.tsv row: zeroed counters overridden by keyword."""
+    row = dict(ambiguous=False, instanceof=0, reflection=0, typepos=0, const_read=0)
+    row.update(kw)
+    return row
 
 
 class TestClosedSets(unittest.TestCase):
@@ -141,9 +148,9 @@ class TestValueTypes(unittest.TestCase):
         self.assertEqual(res["shape"], "module")
         self.assertEqual(res["rule"], "R7-statics-holder")
 
-    def test_constants_carrying_interface_parks_with_a_specific_reason(self):
-        """TraceEventScope-style: constants plus a type tag. Which half matters is not
-        answerable from the Java source, so it must not be guessed."""
+    def test_constants_interface_parks_when_no_usage_scan_is_available(self):
+        """The R8 verdict is driven by MARKER_USE.tsv. Without it the declaration alone
+        cannot say whether the constants or the tag matters, so it must not be guessed."""
         res, _ = shape(
             """
             public interface TraceEventScope extends TraceObjectInterface {
@@ -156,7 +163,7 @@ class TestValueTypes(unittest.TestCase):
         )
         self.assertEqual(res["shape"], "park")
         self.assertEqual(res["rule"], "R8a-constants-interface")
-        self.assertIn("TraceObjectInterface", res["why"])
+        self.assertIn("MARKER_USE", res["why"])
 
     def test_class_with_instance_state_is_not_a_constants_module(self):
         res, _ = shape(
@@ -258,6 +265,160 @@ class TestInterfacesAndAbstracts(unittest.TestCase):
         )
         self.assertEqual(res["shape"], "struct")
         self.assertEqual(res["rule"], "R10-abstract-orphan")
+
+
+CONSTS = """
+    public interface GenConsts {
+        String KEY_A = "a";
+        int LIMIT = 7;
+    }
+    """
+
+MARKER = """
+    public interface JitMemoryVar extends JitVarnodeVar {
+    }
+    """
+
+
+class TestMarkerInterfaces(unittest.TestCase):
+    """R8: a method-less interface is only a human question when something branches on it.
+
+    The other 105 of 141 are answerable from the Java tree, and were parking a class a
+    night for no reason.
+    """
+
+    def test_dispatched_marker_still_parks(self):
+        """JitMemoryVar: 2 `instanceof` sites. Rust has no runtime type tag -- this needs
+        an enum discriminant or a downcast seam, which is a real design call."""
+        res, _ = shape(MARKER, "JitMemoryVar", subtypes=3,
+                       marker_use=use(instanceof=2))
+        self.assertEqual(res["shape"], "park")
+        self.assertEqual(res["rule"], "R8b-marker")
+        self.assertIn("instanceof", res["why"])
+
+    def test_reflection_counts_as_dispatch(self):
+        """`X.class` in a registry lookup is a type tag just as much as `instanceof`."""
+        res, _ = shape(MARKER, "JitMemoryVar", marker_use=use(reflection=1))
+        self.assertEqual(res["shape"], "park")
+
+    def test_marker_named_as_a_type_becomes_an_empty_trait(self):
+        """Used as a parameter/field type but never branched on: `pub trait X {}` carries
+        it exactly, with no runtime cost."""
+        res, _ = shape(MARKER, "JitMemoryVar", marker_use=use(typepos=4))
+        self.assertEqual(res["shape"], "trait")
+        self.assertEqual(res["rule"], "R8c-marker-as-bound")
+
+    def test_dispatch_outranks_type_position(self):
+        """A marker can be both. `instanceof` is the harder constraint and must win."""
+        res, _ = shape(MARKER, "JitMemoryVar", marker_use=use(instanceof=1, typepos=9))
+        self.assertEqual(res["shape"], "park")
+
+    def test_constants_interface_with_no_dispatch_is_a_module(self):
+        """GenConsts: 42 external constant reads, nothing branching on it. Java's
+        constant-interface antipattern -- the tag half never mattered."""
+        res, _ = shape(CONSTS, "GenConsts", subtypes=1,
+                       marker_use=use(const_read=42))
+        self.assertEqual(res["shape"], "module")
+        self.assertEqual(res["rule"], "R8d-constants-module")
+
+    def test_constants_interface_used_as_a_type_is_a_trait_not_a_module(self):
+        """Constants plus a type position: a module cannot stand in for a type, so the
+        trait (with associated consts) has to win."""
+        res, _ = shape(CONSTS, "GenConsts", marker_use=use(const_read=3, typepos=2))
+        self.assertEqual(res["shape"], "trait")
+        self.assertEqual(res["rule"], "R8c-marker-as-bound")
+
+    def test_inert_marker_becomes_an_empty_trait(self):
+        """Fld: no dispatch, no type use, no constants. Nothing to decide."""
+        res, _ = shape("public interface Fld { }", "Fld", marker_use=use())
+        self.assertEqual(res["shape"], "trait")
+        self.assertEqual(res["rule"], "R8e-inert-marker")
+
+    def test_ambiguous_basename_parks_rather_than_borrowing_evidence(self):
+        """`Resource` is declared at two paths and one of them IS `instanceof`-tested.
+        Attributing that to the other declaration would be the ambiguous-basename bug
+        that `write_implementers` already guards against."""
+        res, _ = shape("public interface Resource { }", "Resource",
+                       marker_use=use(ambiguous=True, typepos=5))
+        self.assertEqual(res["shape"], "park")
+        self.assertIn("more than one path", res["why"])
+
+    def test_marker_with_static_methods_says_where_they_go(self):
+        """`static` interface methods are free functions, not trait items. 13 R8 rows carry
+        them; emitting only `pub trait X {}` would drop them on the floor."""
+        src = """
+            public interface DirectedRecordIterator {
+                static DirectedRecordIterator getIterator(Table t) { return null; }
+                static DirectedRecordIterator getIndexIterator(Table t) { return null; }
+            }
+            """
+        res, f = shape(src, "DirectedRecordIterator", marker_use=use(typepos=1))
+        self.assertEqual(f["static_methods"], 2)
+        self.assertEqual(res["shape"], "trait")
+        self.assertIn("free functions", res["why"])
+
+    def test_inert_marker_with_statics_also_says_so(self):
+        res, _ = shape(
+            "public interface ByteBufferUtils { static int cmp(int a) { return a; } }",
+            "ByteBufferUtils",
+            marker_use=use(),
+        )
+        self.assertEqual(res["rule"], "R8e-inert-marker")
+        self.assertIn("free functions", res["why"])
+
+    def test_an_interface_with_methods_never_reaches_R8(self):
+        """R9 owns those, and must not start consulting marker evidence."""
+        res, _ = shape(
+            """
+            public interface Openable {
+                void open();
+            }
+            """,
+            "Openable",
+            marker_use=use(instanceof=99),
+        )
+        self.assertEqual(res["shape"], "trait")
+        self.assertEqual(res["rule"], "R9-open-interface")
+
+
+class TestMarkerScan(unittest.TestCase):
+    """The evidence scan itself. Both of these caught a wrong result during the split."""
+
+    def test_scan_ignores_comments(self):
+        """Matching `Check` against raw source pulled 1,436 lines, nearly all javadoc
+        prose ("Check that ..."). The scan must run on stripped source."""
+        src = """
+            package p;
+            /** Check that the Check is a Check. */
+            public class User {
+                // Check c = null;
+                void f(Check c) { }
+            }
+            """
+        s = sr.strip_java(src)
+        pats = dict(sr._marker_patterns(["Check"]))
+        self.assertEqual(len(pats["typepos"].findall(s)), 1)
+
+    def test_import_lines_are_not_uses(self):
+        """An import says a file mentions the name, not that it depends on the shape."""
+        rx = dict(sr._marker_patterns(["Fld"]))["typepos"]
+        self.assertFalse(rx.search("import ghidra.util.Fld;"))
+
+    def test_marker_candidates_are_method_less_interfaces_only(self):
+        facts = {
+            "Marker": [dict(kind="interface", abstract_methods=0, concrete_methods=0)],
+            "Consts": [dict(kind="interface", abstract_methods=0, concrete_methods=0)],
+            "Open": [dict(kind="interface", abstract_methods=3, concrete_methods=0)],
+            "Impl": [dict(kind="class", abstract_methods=0, concrete_methods=0)],
+        }
+        self.assertEqual(set(sr.marker_candidates(facts)), {"Marker", "Consts"})
+
+    def test_candidates_report_declaration_count_for_the_ambiguity_guard(self):
+        facts = {"Resource": [
+            dict(kind="interface", abstract_methods=0, concrete_methods=0),
+            dict(kind="interface", abstract_methods=0, concrete_methods=0),
+        ]}
+        self.assertEqual(sr.marker_candidates(facts)["Resource"], 2)
 
 
 class TestSpecialSupertypes(unittest.TestCase):
