@@ -1095,3 +1095,102 @@ impl CheckoutDialog {
         false
     }
 }
+
+/// Placeholder for the unported Java type `AssociationDatabaseManager`, referenced by
+/// [`MarkupItemStorageDB`](crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB).
+/// `AssociationDatabaseManager` is a concrete Java class (not an interface), so this stub is a
+/// struct rather than a trait, trimmed to the members `MarkupItemStorageDB` actually calls: the
+/// `lock` field it locks around every accessor (Java `ghidra.util.Lock`, already ported as
+/// [`crate::util::lock::ReentrantLock`]), the session/association lookups performed in its
+/// constructor (`getSession()`/package-private `getAssociation(long)`), and the three
+/// record-table operations (package-private `getMarkupItemRecord`/`updateMarkupRecord`/
+/// `removeMarkupRecord`) it forwards to its `markupItemTableAdapter` field in Java -- backed here
+/// by the real, already-ported
+/// [`VTMatchMarkupItemTableDBAdapterV0`](crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0)
+/// (held concretely rather than as `Box<dyn VTMatchMarkupItemTableDBAdapter>`, since that trait
+/// isn't `Send + Sync` and this struct needs to be, being held behind the `Arc` a
+/// `MarkupItemStorageDB`'s `Send + Sync` `MarkupItemStorage` impl requires) rather than a
+/// hand-rolled store. Associations are kept in a simple in-memory map seeded via
+/// [`register_association`](Self::register_association), since the real `associationCache` this
+/// stands in for (`VTAssociationTableDBAdapter` plus a full `VTAssociationDB` port) doesn't exist
+/// yet. Java swallows `IOException` from all three record operations via `session.dbError(e)`;
+/// this stub mirrors that by making them infallible and silently dropping any error. Replace with
+/// the real port when `AssociationDatabaseManager.java` is ported.
+pub struct AssociationDatabaseManager {
+    pub lock: crate::util::lock::ReentrantLock,
+    session: std::sync::Arc<dyn crate::feature::vt::api::main::vt_session::VTSession>,
+    associations: std::sync::RwLock<std::collections::HashMap<i64, std::sync::Arc<dyn VtAssociation>>>,
+    markup_item_table_adapter:
+        crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0,
+}
+
+impl AssociationDatabaseManager {
+    pub fn new(
+        db_handle: &mut crate::framework::db::DBHandle,
+        session: std::sync::Arc<dyn crate::feature::vt::api::main::vt_session::VTSession>,
+    ) -> std::io::Result<Self> {
+        let markup_item_table_adapter = crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0::create(db_handle)?;
+        Ok(Self {
+            lock: crate::util::lock::ReentrantLock::new("AssociationDatabaseManager"),
+            session,
+            associations: std::sync::RwLock::new(std::collections::HashMap::new()),
+            markup_item_table_adapter,
+        })
+    }
+
+    /// Test/seed hook standing in for the real `associationCache` lookup: registers the
+    /// association that [`get_association`](Self::get_association) should hand back for a given
+    /// association key.
+    pub fn register_association(&self, key: i64, association: std::sync::Arc<dyn VtAssociation>) {
+        self.associations.write().unwrap().insert(key, association);
+    }
+
+    /// Java: `AssociationDatabaseManager.getSession()`.
+    pub fn get_session(
+        &self,
+    ) -> std::sync::Arc<dyn crate::feature::vt::api::main::vt_session::VTSession> {
+        self.session.clone()
+    }
+
+    /// Java: `AssociationDatabaseManager.getAssociation(long)`.
+    ///
+    /// # Panics
+    /// Panics if `key` was never registered via
+    /// [`register_association`](Self::register_association), mirroring how the real Java method
+    /// would return whatever the cache loader produces for an unknown association key rather than
+    /// tolerate one that was never persisted.
+    pub fn get_association(&self, key: i64) -> std::sync::Arc<dyn VtAssociation> {
+        self.associations
+            .read()
+            .unwrap()
+            .get(&key)
+            .unwrap_or_else(|| panic!("no association registered for key {key}"))
+            .clone()
+    }
+
+    /// Java: `AssociationDatabaseManager.getMarkupItemRecord(long)`.
+    pub fn get_markup_item_record(&self, key: i64) -> Option<crate::framework::db::DBRecord> {
+        self.markup_item_table_adapter.get_record(key).unwrap_or(None)
+    }
+
+    /// Java: `AssociationDatabaseManager.updateMarkupRecord(DBRecord)`.
+    pub fn update_markup_record(&self, record: &crate::framework::db::DBRecord) {
+        let _ = self.markup_item_table_adapter.update_record(record);
+    }
+
+    /// Java: `AssociationDatabaseManager.removeMarkupRecord(long)`.
+    pub fn remove_markup_record(&self, key: i64) {
+        let _ = self.markup_item_table_adapter.remove_markup_item_record(key);
+    }
+
+    /// Number of markup-item records currently stored. Not present in the Java class; exposed so
+    /// callers can observe [`remove_markup_record`](Self::remove_markup_record)'s effect via
+    /// `Table::get_record_count` (which `Table::delete_record` updates correctly) rather than
+    /// `get_markup_item_record`, since `Table::get_record`/`delete_record` disagree about which of
+    /// the table's two backing stores is authoritative once populated -- see
+    /// `VTMatchMarkupItemTableDBAdapterV0`'s own `remove_markup_item_record` test for the same
+    /// workaround.
+    pub fn markup_item_record_count(&self) -> usize {
+        self.markup_item_table_adapter.get_record_count()
+    }
+}
