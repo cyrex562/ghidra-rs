@@ -864,6 +864,7 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
 /// each with a `type(int)` and a `resolve(JitType)`, plus the static `compare` and `forJavaType`.
 /// `JitType` itself only ever reaches for `INTEGER.type(size)`, so that is the only variant and
 /// the only method modeled here. Replace with the real port when `JitTypeBehavior.java` is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JitTypeBehavior {
     /// The bits are interpreted as an integer.
     Integer,
@@ -1126,5 +1127,49 @@ impl<MR, N> ObjDef<MR, N> {
     pub fn new(em: Emitter<Bot>, params: Vec<MthParam>) -> Self {
         Self { em, params, _marker: PhantomData }
     }
+}
+
+/// Placeholder for the unported Java type `JitVal`, referenced by `JitBinOp`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait JitVal: Send + Sync {
+    fn size(&self) -> i32;
+    fn add_use(&self, op: &dyn JitOp, position: i32);
+    fn remove_use(&self, op: &dyn JitOp, position: i32);
+}
+
+/// Placeholder for the unported Java type `JitOutVar`, referenced by `JitDefOp`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait JitOutVar: Send + Sync {
+    fn set_definition(&self, definition: &dyn JitDefOp);
+    fn definition(&self) -> Option<Box<dyn JitDefOp>>;
+    fn varnode(&self) -> Varnode;
+}
+
+/// Placeholder for the unported Java type `JitOp`, referenced by `JitBinOp`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait JitOp: Send + Sync {
+    fn type_for(&self, position: i32) -> JitTypeBehavior;
+    fn link(&self);
+    fn unlink(&self);
+}
+
+/// Placeholder for the unported Java type `JitDefOp`, referenced by `JitBinOp`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait JitDefOp: JitOp {
+    fn out(&self) -> Box<dyn JitOutVar>;
+}
+
+/// Placeholder for the unported Java type `JitBinOp`, referenced by `JitBoolBinOp`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait JitBinOp: JitDefOp {
+    fn l(&self) -> Box<dyn JitVal>;
+    fn r(&self) -> Box<dyn JitVal>;
+    fn l_type(&self) -> JitTypeBehavior;
+    fn r_type(&self) -> JitTypeBehavior;
 }
 
