@@ -3,6 +3,8 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::app::decompiler::ClangNode;
+
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
 /// [`VSCodeIntegrationService`](crate::app::services::VSCodeIntegrationService) before the
@@ -1129,43 +1131,7 @@ pub trait ProxyObj: Send + Sync {
     fn contains(&self, a: &dyn std::any::Any) -> bool;
 }
 
-/// Placeholder for `ghidra.app.decompiler.ClangNode`, referenced by
-/// [`ClangTokenGroup`](crate::app::decompiler::clang_token_group::ClangTokenGroup) (which
-/// implements it) before the real interface is ported. Models the full member set of the real
-/// Java interface, correcting the mechanically-generated shape hint's `Box<dyn Address>` --
-/// [`Address`](crate::program::model::address::Address) is a concrete, already-ported struct, not
-/// a trait -- to the real reused type, and its `Vec<Box<dyn ClangNode>>` out-parameter shape for
-/// `flatten` (Java appends node *references* into the caller's list, it does not hand out owned
-/// clones) to a borrowed `&mut Vec<&dyn ClangNode>`.
-///
-/// Bounded by `Display` so implementors provide `ClangNode.toString()`'s polymorphic dispatch --
-/// needed by [`ClangTokenGroup::to_string`](crate::app::decompiler::clang_token_group::ClangTokenGroup) --
-/// without a bespoke `to_string`-shaped trait method.
-pub trait ClangNode: Send + Sync + std::fmt::Display {
-    /// Stands in for `ClangNode.Parent()`.
-    fn parent(&self) -> Option<&dyn ClangNode>;
-
-    /// Stands in for `ClangNode.getMinAddress()`.
-    fn get_min_address(&self) -> Option<crate::program::model::address::Address>;
-
-    /// Stands in for `ClangNode.getMaxAddress()`.
-    fn get_max_address(&self) -> Option<crate::program::model::address::Address>;
-
-    /// Stands in for `ClangNode.numChildren()`.
-    fn num_children(&self) -> usize;
-
-    /// Stands in for `ClangNode.Child(int)`.
-    fn child(&self, i: usize) -> &dyn ClangNode;
-
-    /// Stands in for `ClangNode.getClangFunction()`.
-    fn get_clang_function(&self) -> Box<dyn ClangFunction>;
-
-    /// Stands in for `ClangNode.flatten(List<ClangNode>)`.
-    fn flatten<'a>(&'a self, list: &mut Vec<&'a dyn ClangNode>);
-}
-
 /// Placeholder for `ghidra.app.decompiler.ClangFunction`, referenced by
-/// [`ClangNode::get_clang_function`] and
 /// [`ClangTokenGroup::get_clang_function`](crate::app::decompiler::clang_token_group::ClangTokenGroup)
 /// before the real class is ported. Both only ever pass this type through as a return value, so
 /// no members are needed yet.

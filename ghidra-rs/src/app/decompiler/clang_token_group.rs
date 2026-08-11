@@ -3,9 +3,9 @@
 //! A sequence of tokens that form a meaningful group in source code. This group may break up
 //! into subgroups and may be part of a larger group.
 //!
-//! [`ClangNode`] and [`ClangFunction`] are minimal placeholders (see
-//! [`crate::app::seam_stubs`]) since the real interface/class are not ported yet -- this file
-//! sits on a dependency cycle with them. [`decode`](ClangTokenGroup::decode) additionally
+//! [`ClangFunction`] is a minimal placeholder (see
+//! [`crate::app::seam_stubs`]) since the real class is not ported yet -- this file
+//! sits on a dependency cycle with it. [`decode`](ClangTokenGroup::decode) additionally
 //! collapses `ClangFuncProto`/`ClangReturnType`/`ClangStatement`/`ClangVariableDecl` (all of
 //! which `extends ClangTokenGroup` in Java, adding only extra attribute-derived fields such as a
 //! return data type or a bound `HighSymbol`) into plain nested `ClangTokenGroup` children, since
@@ -15,7 +15,8 @@
 
 use std::sync::Arc;
 
-use crate::app::seam_stubs::{ClangFunction, ClangNode, ClangToken};
+use crate::app::decompiler::clang_node::ClangNode;
+use crate::app::seam_stubs::{ClangFunction, ClangToken};
 use crate::program::model::address::Address;
 use crate::program::model::pcode::{
     Decoder, DecoderError, DecoderException, PcodeFactory, ELEM_BLOCK, ELEM_FUNCPROTO,

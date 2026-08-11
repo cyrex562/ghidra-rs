@@ -519,6 +519,5 @@ ts	stub_class	referenced_by
 2026-08-10T15:00:00.000003+00:00	FontMetrics	AddressAnnotatedStringHandler
 2026-08-10T15:00:00.000004+00:00	GoToOverrideService	AddressAnnotatedStringHandler
 2026-08-10T09:49:57.739324+00:00	FieldFormatModel	FormatModelListener
-2026-08-10T09:54:26.397533+00:00	ClangNode	ClangTokenGroup
 2026-08-10T09:54:26.397220+00:00	ClangFunction	ClangTokenGroup
 2026-08-10T09:54:26.398288+00:00	ClangToken	ClangTokenGroup
