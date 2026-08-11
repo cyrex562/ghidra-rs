@@ -1,4 +1,5 @@
 use crate::framework::model::DomainObject;
+use crate::program::database::map::address_map::AddressMap;
 use crate::program::model::address::{Address, AddressFactory, AddressSet, AddressSetView};
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
@@ -164,6 +165,17 @@ pub trait Program: DomainObject + Send + Sync {
     /// port of `PointerDataType.getAddressValue`, which needs it to resolve an
     /// image-base-relative pointer.
     fn get_image_base(&self) -> Option<Address> {
+        None
+    }
+
+    /// Get the address map used to encode/decode this program's addresses into the compact
+    /// integer keys ("address IDs") that on-disk records store.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`VTMatchMarkupItemTableDBAdapterV0`](crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0)'s
+    /// port of `VTMatchMarkupItemTableDBAdapterV0.getAddressID`, which needs it to call
+    /// `AddressMap.getKey`.
+    fn get_address_map(&self) -> Option<Arc<dyn AddressMap>> {
         None
     }
 }

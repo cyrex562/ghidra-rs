@@ -14,7 +14,12 @@ use crate::framework::remote::User;
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait VtAssociation: Send + Sync {
     fn get_type(&self) -> Box<dyn VtAssociationType>;
-    fn get_session(&self) -> Box<dyn VtSession>;
+
+    /// Java: `VTAssociationDB.getSession()`. Returns the real, already-ported `VTSession`
+    /// (`crate::feature::vt::api::main::vt_session::VTSession`) rather than the minimal local
+    /// [`VtSession`] stub below, which predates that port and is now stale for this purpose.
+    fn get_session(&self) -> Box<dyn crate::feature::vt::api::main::vt_session::VTSession>;
+
     fn get_markup_items(&self, monitor: &dyn TaskMonitor) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>>;
     fn has_applied_markup_items(&self) -> bool;
     fn get_source_address(&self) -> AddressType;
@@ -28,6 +33,17 @@ pub trait VtAssociation: Send + Sync {
     fn set_rejected(&self) -> std::io::Result<()>;
     fn get_vote_count(&self) -> i32;
     fn set_vote_count(&self, vote_count: i32);
+
+    /// Java: `DBObject.getKey()`, inherited by the concrete `VTAssociationDB`. Defaulted (so
+    /// existing/mock implementors keep compiling) since not every `VtAssociation` implementor
+    /// backs a database row.
+    ///
+    /// Grown for
+    /// [`VTMatchMarkupItemTableDBAdapterV0`](crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0)'s
+    /// port of `VTMatchMarkupItemTableDBAdapterV0.createMarkupItemRecord`.
+    fn get_key(&self) -> i64 {
+        unimplemented!("VtAssociation::get_key not available on this implementor")
+    }
 }
 
 /// Placeholder for the unported Java type `VTMarkupItem`, referenced by `AssociationHook`.
