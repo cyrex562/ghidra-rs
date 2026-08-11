@@ -1318,8 +1318,8 @@ impl crate::app::decompiler::signature::DebugSignature for VarnodeSignature {
 }
 
 /// Placeholder for `ghidra.app.decompiler.CTokenHighlightMatcher`, referenced by
-/// [`DecompilerHighlightService`] before the real class is ported. This trait matches
-/// tokens and provides highlighting information for the decompiler.
+/// [`DecompilerHighlightService`](crate::app::decompiler::DecompilerHighlightService). This
+/// trait matches tokens and provides highlighting information for the decompiler.
 pub trait CTokenHighlightMatcher: Send + Sync {
     /// Start matching tokens at the given root node.
     fn start(&self, root: &dyn ClangNode);
@@ -1337,20 +1337,4 @@ pub trait CTokenHighlightMatcher: Send + Sync {
     ///
     /// A boxed trait object representing the color for this token.
     fn get_token_highlight(&self, token: &dyn ClangNode) -> Box<dyn Color>;
-}
-
-/// Placeholder for `ghidra.app.decompiler.DecompilerHighlightService`, referenced by
-/// client code that needs to create `DecompilerHighlighter` instances. This service
-/// factory creates highlighter instances from token matchers.
-pub trait DecompilerHighlightService: Send + Sync {
-    /// Create a new highlighter from a token highlight matcher.
-    ///
-    /// # Arguments
-    ///
-    /// * `tm` - The token highlight matcher to use for this highlighter.
-    ///
-    /// # Returns
-    ///
-    /// A boxed `DecompilerHighlighter` that can be used to manage highlights.
-    fn create_highlighter(&self, tm: &dyn CTokenHighlightMatcher) -> Box<dyn crate::app::decompiler::decompiler_highlighter::DecompilerHighlighter>;
 }
