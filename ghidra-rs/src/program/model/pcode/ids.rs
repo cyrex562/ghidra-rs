@@ -210,6 +210,17 @@ pub const ELEM_VARDECL: ElementId = ElementId::new("vardecl", 159);
 // Real Ghidra id is 103 (`ElementId.java`'s `ELEM_BLOCK`), continuing the local counter above
 // (this file's own id 103 is already taken by `ELEM_OUTPUT`, an unrelated sleigh element).
 pub const ELEM_BLOCK: ElementId = ElementId::new("block", 160);
+// Real Ghidra ids are 17/19/21/24/26/86 (`ElementId.java`'s `ELEM_BREAK`/`ELEM_FUNCNAME`/
+// `ELEM_LABEL`/`ELEM_SYNTAX`/`ELEM_VARIABLE`/`ELEM_COMMENT`), all of which collide with other
+// entries already in this table, so they continue the local counter above instead per the same
+// non-wire-compatible numbering scheme as `ELEM_BHEAD`. These are the token element ids
+// `ClangToken::build_token` dispatches on.
+pub const ELEM_BREAK: ElementId = ElementId::new("break", 161);
+pub const ELEM_FUNCNAME: ElementId = ElementId::new("funcname", 162);
+pub const ELEM_LABEL: ElementId = ElementId::new("label", 163);
+pub const ELEM_SYNTAX: ElementId = ElementId::new("syntax", 164);
+pub const ELEM_VARIABLE: ElementId = ElementId::new("variable", 165);
+pub const ELEM_COMMENT: ElementId = ElementId::new("comment", 166);
 pub const ELEM_BLOCKSIG: ElementId = ElementId::new("blocksig", 258);
 pub const ELEM_COPYSIG: ElementId = ElementId::new("copysig", 263);
 pub const ELEM_VARSIG: ElementId = ElementId::new("varsig", 269);
@@ -340,3 +351,7 @@ pub const ATTRIB_CONSTRUCTOR: AttributeId = AttributeId::new("constructor", 171)
 // Real Ghidra id is 92 (`AttributeId.java`'s `ATTRIB_LOGICALSIZE`), continuing the local counter
 // above instead per the same non-wire-compatible numbering scheme as `ELEM_BHEAD`.
 pub const ATTRIB_LOGICALSIZE: AttributeId = AttributeId::new("logicalsize", 172);
+// Real Ghidra id is 37 (`AttributeId.java`'s `ATTRIB_COLOR`), but that collides with this file's
+// own `ATTRIB_UNIQBASE` at 37, so it is renumbered per the same scheme. Carries a
+// `ClangToken` syntax-highlight color.
+pub const ATTRIB_COLOR: AttributeId = AttributeId::new("color", 173);
