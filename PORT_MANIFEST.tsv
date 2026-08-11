@@ -9406,7 +9406,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTableDBAdapter.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTableDBAdapterV0.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTagDB.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTagDBAdapter.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTagDBAdapter.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTagDBAdapterV0.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTSessionContentHandler.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTSessionDB.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
