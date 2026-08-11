@@ -16,7 +16,8 @@
 use std::sync::Arc;
 
 use crate::app::decompiler::clang_node::ClangNode;
-use crate::app::seam_stubs::{ClangFunction, ClangToken};
+use crate::app::decompiler::clang_token::ClangTokenBase;
+use crate::app::seam_stubs::ClangFunction;
 use crate::program::model::address::Address;
 use crate::program::model::pcode::{
     Decoder, DecoderError, DecoderException, PcodeFactory, ELEM_BLOCK, ELEM_FUNCPROTO,
@@ -149,7 +150,7 @@ impl ClangTokenGroup {
                 child.decode(decoder, pfactory)?;
                 self.add_token_group(Box::new(child));
             } else {
-                let tok = ClangToken::build_token(elem, decoder, pfactory)?;
+                let tok = ClangTokenBase::build_token(elem, None, decoder, pfactory)?;
                 self.add_token_group(tok);
             }
             decoder.close_element(elem).map_err(decode_err)?;
@@ -177,8 +178,8 @@ impl ClangTokenGroup {
     /// ancestor stack. Since [`Self::flatten`] already performs the identical depth-first,
     /// leaf-order enumeration eagerly -- and reversing a full forward enumeration is exactly a
     /// backward enumeration for a tree -- this reuses it instead of porting `TokenIterator`'s
-    /// stack machinery. Typed as `ClangNode` rather than `ClangToken` since the leaf/group
-    /// distinction is not yet independently trackable without the real `ClangToken` port.
+    /// stack machinery. Typed as `ClangNode` rather than `ClangToken` since children are stored
+    /// as `ClangNode`s (a group's child may itself be a group, not a token).
     pub fn token_iterator(&self, forward: bool) -> std::vec::IntoIter<&dyn ClangNode> {
         let mut list = Vec::new();
         self.flatten(&mut list);
@@ -278,6 +279,7 @@ mod tests {
     use super::*;
     use crate::program::model::address::{AddressFactory, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::ids::{AttributeId, ElementId};
+    use crate::program::model::pcode::ELEM_SYNTAX;
 
     struct MockNode {
         min: Option<Address>,
@@ -545,7 +547,7 @@ mod tests {
             unimplemented!()
         }
         fn read_string_with_id(&self, _attrib_id: AttributeId) -> Result<String, DecoderError> {
-            unimplemented!()
+            Ok("tok".to_string())
         }
         fn read_space(&self) -> Result<Arc<AddressSpace>, DecoderError> {
             unimplemented!()
@@ -619,7 +621,7 @@ mod tests {
     #[test]
     fn decode_builds_nested_group_and_leaf_token_then_stops() {
         let decoder = ScriptedDecoder {
-            elems: vec![ELEM_BLOCK.id, 0, 999, 0],
+            elems: vec![ELEM_BLOCK.id, 0, ELEM_SYNTAX.id, 0],
             idx: std::sync::atomic::AtomicUsize::new(0),
             open_calls: std::sync::atomic::AtomicUsize::new(0),
             close_calls: std::sync::atomic::AtomicUsize::new(0),

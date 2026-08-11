@@ -2,8 +2,8 @@
 //!
 //! This type is used to convert a C/C++ language token group into readable C/C++ code.
 //!
-//! [`ClangToken`]/[`DecompilerUtils`] are minimal placeholders (see [`crate::app::seam_stubs`])
-//! since the real classes aren't ported yet -- this file sits on a dependency cycle with them.
+//! [`DecompilerUtils`] is a minimal placeholder (see [`crate::app::seam_stubs`]) since the real
+//! class isn't ported yet -- this file sits on a dependency cycle with it.
 //! In particular, [`find_signature`](PrettyPrinter::find_signature)
 //! can never recover a `ClangFuncProto` child today: `ClangTokenGroup::decode`'s existing port
 //! already collapses `ELEM_FUNCPROTO` (like its sibling element ids) into a plain nested
@@ -14,7 +14,8 @@ use std::sync::Arc;
 use crate::app::decompiler::clang_line::ClangLine;
 use crate::app::decompiler::clang_token_group::ClangTokenGroup;
 use crate::app::decompiler::decompiled_function::DecompiledFunction;
-use crate::app::seam_stubs::{ClangToken, ClangTokenKind, DecompilerUtils};
+use crate::app::decompiler::clang_token::{self, ClangTokenBase, ClangTokenKind};
+use crate::app::seam_stubs::DecompilerUtils;
 use crate::program::model::listing::function::Function;
 use crate::program::model::symbol::name_transformer::{IdentityNameTransformer, NameTransformer};
 use crate::util::string_utilities::line_separator;
@@ -64,7 +65,10 @@ impl PrettyPrinter {
             let indent = line.get_indent();
             let tokens = line.get_all_tokens_mut();
             if tokens.is_empty() {
-                tokens.insert(0, ClangToken::build_spacer(indent, INDENT_STRING));
+                tokens.insert(
+                    0,
+                    Box::new(ClangTokenBase::build_spacer(None, indent, INDENT_STRING)),
+                );
             }
         }
     }
@@ -108,7 +112,7 @@ impl PrettyPrinter {
             );
 
             // do not clean constant variable tokens
-            if is_token_to_clean && token.get_syntax_type() == ClangToken::CONST_COLOR {
+            if is_token_to_clean && token.get_syntax_type() == clang_token::CONST_COLOR {
                 is_token_to_clean = false;
             }
 
@@ -142,6 +146,7 @@ impl PrettyPrinter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::decompiler::clang_token::ClangToken;
     use crate::program::model::address::Address;
     use crate::program::model::symbol::Namespace;
     use std::borrow::Cow;
@@ -431,6 +436,10 @@ mod tests {
         }
     }
 
+    fn kinded_token(text: &str, kind: ClangTokenKind, color: i32) -> Box<dyn ClangToken> {
+        Box::new(ClangTokenBase::with_kind(None, text, kind, color))
+    }
+
     fn printer_with(tokgroup: ClangTokenGroup) -> PrettyPrinter {
         PrettyPrinter::new(Arc::new(TestFunction), tokgroup, None)
     }
@@ -459,11 +468,7 @@ mod tests {
     #[test]
     fn print_joins_tokens_with_indent_and_line_separator() {
         let mut group = ClangTokenGroup::new(None);
-        group.add_token_group(Box::new(crate::app::seam_stubs::ClangToken::new(
-            "int x;",
-            ClangTokenKind::Generic,
-            ClangToken::DEFAULT_COLOR,
-        )));
+        group.add_token_group(Box::new(ClangTokenBase::with_text(None, "int x;")));
 
         let printer = printer_with(group);
         let decompiled = printer.print();
@@ -476,9 +481,9 @@ mod tests {
     #[test]
     fn get_text_simplifies_cleanable_kinds_but_not_others() {
         let mut line = ClangLine::new(0, 0);
-        line.add_token(ClangToken::new("my", ClangTokenKind::Variable, ClangToken::DEFAULT_COLOR));
-        line.add_token(ClangToken::new(" + ", ClangTokenKind::Generic, ClangToken::DEFAULT_COLOR));
-        line.add_token(ClangToken::new("field", ClangTokenKind::Field, ClangToken::DEFAULT_COLOR));
+        line.add_token(kinded_token("my", ClangTokenKind::Variable, clang_token::DEFAULT_COLOR));
+        line.add_token(kinded_token(" + ", ClangTokenKind::Generic, clang_token::DEFAULT_COLOR));
+        line.add_token(kinded_token("field", ClangTokenKind::Field, clang_token::DEFAULT_COLOR));
 
         let text = PrettyPrinter::get_text(&line);
         // IdentityNameTransformer never changes anything, so cleaning is a no-op here.
@@ -488,10 +493,10 @@ mod tests {
     #[test]
     fn get_text_skips_cleaning_const_colored_tokens() {
         let mut line = ClangLine::new(0, 1);
-        line.add_token(ClangToken::new(
+        line.add_token(kinded_token(
             "CONST",
             ClangTokenKind::Variable,
-            ClangToken::CONST_COLOR,
+            clang_token::CONST_COLOR,
         ));
 
         let mut buff = String::new();
@@ -504,10 +509,10 @@ mod tests {
     #[test]
     fn get_text_applies_transformer_to_cleanable_kinds() {
         let mut line = ClangLine::new(0, 0);
-        line.add_token(ClangToken::new(
+        line.add_token(kinded_token(
             "bad$name",
             ClangTokenKind::FuncName,
-            ClangToken::DEFAULT_COLOR,
+            clang_token::DEFAULT_COLOR,
         ));
 
         let mut buff = String::new();
@@ -521,11 +526,7 @@ mod tests {
         // An empty-text leaf token flattens into one line with one empty token -- not an
         // *empty* line -- so build the empty-line case directly against a printer's lines
         // instead, mirroring what padEmptyLines actually guards against.
-        group.add_token_group(Box::new(crate::app::seam_stubs::ClangToken::new(
-            "",
-            ClangTokenKind::Generic,
-            ClangToken::DEFAULT_COLOR,
-        )));
+        group.add_token_group(Box::new(ClangTokenBase::with_text(None, "")));
         let mut printer = printer_with(group);
         printer.lines = vec![ClangLine::new(0, 2)];
         printer.pad_empty_lines();
