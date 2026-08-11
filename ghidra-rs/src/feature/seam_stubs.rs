@@ -7,6 +7,7 @@ pub use crate::program::model::address::Address as AddressType;
 
 use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
 use crate::feature::vt::api::main::vt_score::VtScore;
+use crate::framework::remote::User;
 
 /// Placeholder for the unported Java type `VTAssociation`, referenced by `VTAssociationManager` and `AssociationHook`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
@@ -939,3 +940,32 @@ impl crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddress
     }
 }
 
+
+/// Placeholder for the unported Java type `ghidra.app.util.dialog.CheckoutDialog`, referenced by
+/// `do_optional_destination_program_checkout` in
+/// [`vt_session_file_util`](crate::feature::vt::api::util::vt_session_file_util). Minimal
+/// placeholder: only the members that call site needs. The real `CheckoutDialog` blocks on a
+/// Swing modal dialog asking the user whether to check out a file; this port has no GUI to show
+/// one, so [`show_dialog`](Self::show_dialog) always reports [`CANCEL`](Self::CANCEL) and no
+/// checkout is ever attempted. Replace with the real port once a GUI layer exists.
+pub struct CheckoutDialog {
+    pub path_name: String,
+    pub user: Option<User>,
+}
+
+impl CheckoutDialog {
+    pub const CHECKOUT: i32 = 0;
+    pub const CANCEL: i32 = 1;
+
+    pub fn new(path_name: String, user: Option<User>) -> Self {
+        Self { path_name, user }
+    }
+
+    pub fn show_dialog(&self) -> i32 {
+        Self::CANCEL
+    }
+
+    pub fn exclusive_checkout(&self) -> bool {
+        false
+    }
+}
