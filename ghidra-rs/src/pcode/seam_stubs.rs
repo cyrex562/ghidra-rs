@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
+use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Next};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
@@ -914,48 +915,39 @@ impl Default for Label {
     }
 }
 
-/// Placeholder for `ghidra.pcode.emu.jit.gen.util.Emitter.Next`, referenced as the bound on
-/// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl)'s stack-shape type parameter before the
-/// real `Emitter` (and its `Ent`/`Bot` stack-content encoding) is ported. Marker only, as in Java.
-pub trait Next {}
-
-/// Placeholder for `ghidra.pcode.emu.jit.gen.util.Emitter.Dead`, the phantom stack-shape marking
-/// an [`Emitter`] as unreachable. Java documents this interface as having no implementation --
-/// i.e. no instance of it is ever constructed -- so an uninhabited enum is the faithful Rust
-/// equivalent.
-pub enum Dead {}
-
-/// Placeholder for `ghidra.pcode.emu.jit.gen.util.Emitter`, referenced by
-/// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl) and [`Local`](crate::pcode::emu::jit::gen::util::local::Local)
-/// before the real type-checked JVM bytecode emitter (and its wrapped ASM `MethodVisitor`) is ported.
-/// Java's class is unbounded in its stack type parameter `N` (only individual operations, like those in
-/// the not-yet-ported `Op`, bound it via `Ent`/`Bot`), so this stub carries `N` as a plain phantom marker too.
-///
-/// Exposes operations for visiting labels (standing in for `this.mv.visitLabel(label)`) and declaring
-/// local variables (standing in for `this.mv.visitLocalVariable(...)`), plus [`recast`](Self::recast),
-/// standing in for the unchecked `(Emitter) em` cast `Lbl.placeDead` uses to resurrect a dead
-/// emitter. Records the last-visited label and local variable declarations so callers (including tests)
-/// can observe them without a real `MethodVisitor`.
-#[derive(Clone)]
-pub struct Emitter<N> {
+/// Placeholder for ASM's `org.objectweb.asm.MethodVisitor`, the sink wrapped by
+/// [`Emitter`](crate::pcode::emu::jit::gen::util::emitter::Emitter). ASM is an external library
+/// with no Rust equivalent in this crate, so -- as [`Label`] models ASM's `Label` by identity
+/// alone -- this models the visitor by *recording* the visits the ported code makes, which also
+/// lets callers (including tests) observe generated code without a class writer. Only the visits
+/// the ported package makes today are modelled; ASM's `signature`/`exceptions` arguments are
+/// always `null` at those call sites and so are omitted.
+#[derive(Debug, Clone, Default)]
+pub struct MethodVisitor {
+    code_started: bool,
     last_visited: Option<Label>,
     local_variables: Vec<(String, String, Label, Label, i32)>,
-    _marker: PhantomData<N>,
 }
 
-impl<N> Emitter<N> {
-    /// Placeholder for `new Emitter(MethodVisitor)`, without a real `MethodVisitor` to wrap.
+impl MethodVisitor {
+    /// A visitor that has recorded nothing yet.
     pub fn new() -> Self {
-        Self {
-            last_visited: None,
-            local_variables: Vec::new(),
-            _marker: PhantomData,
-        }
+        Self::default()
     }
 
-    /// Stands in for `this.mv.visitLabel(label)`.
-    pub fn visit_label(&mut self, label: &Label) {
-        self.last_visited = Some(*label);
+    /// Stands in for `visitCode()`.
+    pub fn visit_code(&mut self) {
+        self.code_started = true;
+    }
+
+    /// Whether [`visit_code`](Self::visit_code) has been called.
+    pub fn code_started(&self) -> bool {
+        self.code_started
+    }
+
+    /// Stands in for `visitLabel(Label)`.
+    pub fn visit_label(&mut self, label: Label) {
+        self.last_visited = Some(label);
     }
 
     /// The label most recently passed to [`visit_label`](Self::visit_label), if any.
@@ -963,8 +955,7 @@ impl<N> Emitter<N> {
         self.last_visited
     }
 
-    /// Stands in for `this.mv.visitLocalVariable(name, descriptor, signature, start, end, index)`.
-    /// Records the local variable declaration for testing and observation without a real `MethodVisitor`.
+    /// Stands in for `visitLocalVariable(name, descriptor, signature, start, end, index)`.
     pub fn visit_local_variable(
         &mut self,
         name: &str,
@@ -976,27 +967,134 @@ impl<N> Emitter<N> {
         self.local_variables.push((name.to_string(), descriptor.to_string(), start, end, index));
     }
 
-    /// Retrieve all recorded local variable declarations.
+    /// Every local variable declaration recorded so far.
     pub fn local_variables(&self) -> &[(String, String, Label, Label, i32)] {
         &self.local_variables
     }
+}
 
-    /// Stands in for the unchecked cast `(Emitter) em` in `Lbl.placeDead`, which reinterprets an
-    /// `Emitter<Dead>` as an `Emitter<M>` once a label makes the code that follows reachable
-    /// again. Carries over every real (non-phantom) field, so this stays correct as `Emitter`
-    /// grows toward the real port.
-    pub fn recast<M>(self) -> Emitter<M> {
-        Emitter {
-            last_visited: self.last_visited,
-            local_variables: self.local_variables,
-            _marker: PhantomData,
-        }
+/// A method visited on a [`ClassVisitor`], recorded in lieu of a real class file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VisitedMethod {
+    /// The access flags, after the caller has forced `ACC_STATIC` on or off.
+    pub access: i32,
+    /// The name of the method.
+    pub name: String,
+    /// The JVM method descriptor.
+    pub descriptor: String,
+}
+
+/// Placeholder for ASM's `org.objectweb.asm.ClassVisitor`, the class-level sink passed to
+/// [`start_static`](crate::pcode::emu::jit::gen::util::emitter::start_static) and
+/// [`start_instance`](crate::pcode::emu::jit::gen::util::emitter::start_instance). Like
+/// [`MethodVisitor`], it records rather than writes.
+#[derive(Debug, Clone, Default)]
+pub struct ClassVisitor {
+    methods: Vec<VisitedMethod>,
+}
+
+impl ClassVisitor {
+    /// A visitor that has recorded nothing yet.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Stands in for `visitMethod(access, name, descriptor, signature, exceptions)`, which returns
+    /// the visitor for the new method's body. The ported call sites always pass `null` for
+    /// `signature` and `exceptions`.
+    pub fn visit_method(&mut self, access: i32, name: &str, descriptor: &str) -> MethodVisitor {
+        self.methods.push(VisitedMethod {
+            access,
+            name: name.to_string(),
+            descriptor: descriptor.to_string(),
+        });
+        MethodVisitor::new()
+    }
+
+    /// Every method visited so far.
+    pub fn methods(&self) -> &[VisitedMethod] {
+        &self.methods
     }
 }
 
-impl<N> Default for Emitter<N> {
-    fn default() -> Self {
-        Self::new()
+/// Minimal placeholder for the not-yet-ported `ghidra.pcode.emu.jit.gen.util.Methods.MthDesc`, the
+/// type-checked descriptor of a method, consumed by
+/// [`start_static`](crate::pcode::emu::jit::gen::util::emitter::start_static) and
+/// [`start_instance`](crate::pcode::emu::jit::gen::util::emitter::start_instance). Java's record
+/// wraps exactly one value -- the JVM descriptor string -- and derives its type parameters (`MR`,
+/// the return type; `N`, the parameter types) from the builder that produced it. This stub keeps
+/// the field and the parameters, but not the builder API. Replace with the real port when
+/// `Methods.java` is ported.
+pub struct MthDesc<MR, N> {
+    /// The JVM method descriptor, e.g. `"(I)I"`.
+    pub desc: String,
+    _marker: PhantomData<(MR, N)>,
+}
+
+impl<MR, N> MthDesc<MR, N> {
+    /// Wrap a JVM method descriptor. The real port builds these through `MthDesc.derive(..)` so
+    /// that the descriptor and the type parameters cannot disagree.
+    pub fn new(desc: impl Into<String>) -> Self {
+        Self { desc: desc.into(), _marker: PhantomData }
+    }
+
+    /// The JVM method descriptor. Port of the record accessor `desc()`.
+    pub fn desc(&self) -> &str {
+        &self.desc
+    }
+}
+
+/// Minimal placeholder for the not-yet-ported `ghidra.pcode.emu.jit.gen.util.Methods.MthParam`, a
+/// parameter accumulated while defining a method. Java's record is generic in the parameter's
+/// machine type; a `Vec` cannot hold varying type parameters, so this projects out what the
+/// declaration needs, as `RootScope` already does for its variables.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MthParam {
+    /// The JVM descriptor of the parameter's type.
+    pub descriptor: String,
+    /// The name of the parameter.
+    pub name: String,
+}
+
+/// Minimal placeholder for the not-yet-ported `ghidra.pcode.emu.jit.gen.util.Methods.Def`, the
+/// handle to a static method under definition, returned by
+/// [`start_static`](crate::pcode::emu::jit::gen::util::emitter::start_static). Java's record is
+/// `Def<MR, N>(Emitter<Bot> em, List<MthParam<?>> params)`; this stub keeps the components and the
+/// constructor `Emitter.start` calls, but not the `param`/`done` API. Replace with the real port
+/// when `Methods.java` is ported.
+pub struct Def<MR, N> {
+    /// The emitter for the method body.
+    pub em: Emitter<Bot>,
+    /// The parameters declared so far, in reverse declaration order, as in Java.
+    pub params: Vec<MthParam>,
+    _marker: PhantomData<(MR, N)>,
+}
+
+impl<MR, N> Def<MR, N> {
+    /// Port of the canonical record constructor `new Def<>(em, params)`.
+    pub fn new(em: Emitter<Bot>, params: Vec<MthParam>) -> Self {
+        Self { em, params, _marker: PhantomData }
+    }
+}
+
+/// Minimal placeholder for the not-yet-ported `ghidra.pcode.emu.jit.gen.util.Methods.ObjDef`, the
+/// handle to an instance method under definition, returned by
+/// [`start_instance`](crate::pcode::emu::jit::gen::util::emitter::start_instance). Java's record is
+/// `ObjDef<MR, OT, N>(Emitter<Bot> em, List<MthParam<?>> params)`; the `OT` (owner type) parameter
+/// is dropped here because [`TRef`](crate::pcode::emu::jit::gen::util::types::TRef) is not generic
+/// in this port. Replace with the real port when `Methods.java` is ported.
+pub struct ObjDef<MR, N> {
+    /// The emitter for the method body.
+    pub em: Emitter<Bot>,
+    /// The parameters declared so far, in reverse declaration order, as in Java.
+    pub params: Vec<MthParam>,
+    _marker: PhantomData<(MR, N)>,
+}
+
+impl<MR, N> ObjDef<MR, N> {
+    /// Port of the canonical record constructor `new ObjDef<>(em, params)`.
+    pub fn new(em: Emitter<Bot>, params: Vec<MthParam>) -> Self {
+        Self { em, params, _marker: PhantomData }
     }
 }
 

@@ -1,9 +1,11 @@
+pub mod emitter;
 pub mod lbl;
 pub mod local;
 pub mod root_scope;
 pub mod sub_scope;
 pub mod types;
 
+pub use emitter::{Bot, Dead, Emitter, Ent, Next, BOTTOM};
 pub use lbl::{Lbl, LblEm};
 pub use local::Local;
 pub use root_scope::RootScope;

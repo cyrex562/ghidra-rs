@@ -7,7 +7,8 @@
 //! like [`Scope::decl`], [`Def::param`], and [`Def::done`].
 
 use crate::pcode::emu::jit::gen::util::types::BNonVoid;
-use crate::pcode::seam_stubs::{Emitter, Label};
+use crate::pcode::emu::jit::gen::util::emitter::Emitter;
+use crate::pcode::seam_stubs::Label;
 
 /// A handle to a local variable in generated JVM bytecode.
 ///
@@ -75,7 +76,8 @@ pub fn decl<N, T: BNonVoid>(
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::gen::util::types::{SType, T_INT};
-    use crate::pcode::seam_stubs::{Emitter, Label, Next};
+    use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Next};
+    use crate::pcode::seam_stubs::Label;
 
     struct StackShape;
     impl Next for StackShape {}
@@ -103,7 +105,7 @@ mod tests {
         let start = Label::new();
         let end = Label::new();
 
-        let em: Emitter<StackShape> = Emitter::new();
+        let em: Emitter<StackShape> = Emitter::default();
         let em = decl(em, &local, start, end);
 
         let declared = em.local_variables();
@@ -124,7 +126,7 @@ mod tests {
         let start = Label::new();
         let end = Label::new();
 
-        let em: Emitter<StackShape> = Emitter::new();
+        let em: Emitter<StackShape> = Emitter::default();
         let em = decl(em, &local1, start, end);
         let em = decl(em, &local2, start, end);
 
