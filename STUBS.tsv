@@ -571,4 +571,3 @@ ts	stub_class	referenced_by
 2026-08-11T07:23:21.289031+00:00	Def	Emitter
 2026-08-11T07:23:21.289031+00:00	ObjDef	Emitter
 2026-08-11T07:37:00.385784+00:00	Target	DebuggerCoordinates
-2026-08-11T07:52:28.857232+00:00	SimpleOpnd	LocalOpnd

@@ -1098,9 +1098,3 @@ impl<MR, N> ObjDef<MR, N> {
     }
 }
 
-/// Placeholder for `ghidra.pcode.emu.jit.gen.opnd.SimpleOpnd`, referenced by
-/// [`LocalOpnd`](crate::pcode::emu::jit::gen::opnd::LocalOpnd) and its implementers
-/// before the real class is ported. This is a minimal interface stub exposing only the
-/// trait shape; the real port will include the full method suite.
-pub trait SimpleOpnd: Send + Sync {}
-
