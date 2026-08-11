@@ -204,6 +204,178 @@ impl VTMatchTagDBAdapterV0 {
     }
 }
 
+/// Placeholder for the unported Java type `VTMatchInfo`, referenced by
+/// `VTMatchTableDBAdapter::insert_match_record`. Trimmed to the accessors that
+/// `VTMatchTableDBAdapterV0.insertMatchRecord` actually reads (similarity/confidence score,
+/// source/destination length); see `VTMatchInfo.java` for the type's full public surface.
+/// Replace with the real port when available.
+pub trait VTMatchInfo: Send + Sync {
+    fn get_similarity_score(&self) -> crate::feature::vt::api::main::vt_score::VtScore;
+    fn get_confidence_score(&self) -> crate::feature::vt::api::main::vt_score::VtScore;
+    fn get_source_length(&self) -> i32;
+    fn get_destination_length(&self) -> i32;
+}
+
+/// Placeholder for the unported Java type `VTMatchSetDB`, referenced by
+/// `VTMatchTableDBAdapter::insert_match_record`. The parameter is unused by
+/// `VTMatchTableDBAdapterV0.insertMatchRecord` in the real Java implementation, so this stub
+/// carries no members. Replace with the real port when available.
+pub trait VTMatchSetDB: Send + Sync {}
+
+/// Placeholder for the unported Java type `VTAssociationDB`, referenced by
+/// `VTMatchTableDBAdapter::insert_match_record`. Trimmed to `get_key`, the (inherited
+/// `DBAnnotatedObject`) accessor that `VTMatchTableDBAdapterV0.insertMatchRecord` actually reads;
+/// see `VTAssociationDB.java` for the type's full public surface. Replace with the real port when
+/// available.
+pub trait VTAssociationDB: Send + Sync {
+    fn get_key(&self) -> i64;
+}
+
+/// Placeholder for the unported Java type `VTMatchTagDB`, referenced by
+/// `VTMatchTableDBAdapter::insert_match_record`. Trimmed to `get_key`, the (inherited
+/// `DBAnnotatedObject`) accessor that `VTMatchTableDBAdapterV0.insertMatchRecord` actually reads;
+/// see `VTMatchTagDB.java` for the type's full public surface. Replace with the real port when
+/// available.
+pub trait VTMatchTagDB: Send + Sync {
+    fn get_key(&self) -> i64;
+}
+
+/// Placeholder for the unported Java type `VTMatchTableDBAdapterV0`, referenced by
+/// `VTMatchTableDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_match_table_db_adapter`. `VTMatchTableDBAdapterV0` is a
+/// concrete Java class (not an interface), so this stub is a struct that implements the real
+/// `VTMatchTableDBAdapter` trait using already-ported `Table`/`DBHandle` machinery. Replace with
+/// the real port when `VTMatchTableDBAdapterV0.java` is ported.
+pub struct VTMatchTableDBAdapterV0 {
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTMatchTableDBAdapterV0 {
+    pub fn create(
+        db_handle: &mut crate::framework::db::DBHandle,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle.create_table(table_name.to_string(), schema)?;
+        Ok(Self { table })
+    }
+
+    pub fn open(
+        db_handle: &crate::framework::db::DBHandle,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = db_handle.get_table(table_name).ok_or_else(|| {
+            crate::util::exception::VersionException::with_message(format!(
+                "Missing Table: {table_name}"
+            ))
+        })?;
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { table })
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_match_table_db_adapter::VTMatchTableDBAdapter
+    for VTMatchTableDBAdapterV0
+{
+    fn insert_match_record(
+        &self,
+        info: &dyn VTMatchInfo,
+        _match_set: &dyn VTMatchSetDB,
+        association: &dyn VTAssociationDB,
+        tag: Option<&dyn VTMatchTagDB>,
+    ) -> std::io::Result<crate::framework::db::DBRecord> {
+        use crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription;
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_long(ColumnDescription::TagKeyCol.column(), tag.map_or(-1, |t| t.get_key()));
+        record.set_string(
+            ColumnDescription::SimilarityScoreCol.column(),
+            Some(info.get_similarity_score().to_storage_string()),
+        );
+        record.set_string(
+            ColumnDescription::ConfidenceScoreCol.column(),
+            Some(info.get_confidence_score().to_storage_string()),
+        );
+        record.set_long(ColumnDescription::AssociationCol.column(), association.get_key());
+        record.set_int(ColumnDescription::SourceLengthCol.column(), info.get_source_length());
+        record.set_int(
+            ColumnDescription::DestinationLengthCol.column(),
+            info.get_destination_length(),
+        );
+
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn get_records(&self) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+
+    fn get_match_record(
+        &self,
+        match_record_key: i64,
+    ) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(match_record_key)))
+    }
+
+    fn get_record_count(&self) -> usize {
+        self.table.read().unwrap().get_record_count()
+    }
+
+    fn update_record(&self, record: &crate::framework::db::DBRecord) -> std::io::Result<()> {
+        self.table.write().unwrap().put_record(record.clone())
+    }
+
+    fn delete_record(&self, match_record_key: i64) -> std::io::Result<bool> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(match_record_key)))
+    }
+
+    fn get_records_for_association(
+        &self,
+        association_id: i64,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        use crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription;
+
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            if record.get_long(ColumnDescription::AssociationCol.column()) == Some(association_id)
+            {
+                records.push(record);
+            }
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+}
+
 /// Owned (non-borrowing) record iterator used by [`VTMatchTagDBAdapterV0::get_records`], since
 /// `Table::get_record_iterator` borrows the `RwLockReadGuard` it is called on.
 struct VecRecordIterator {
