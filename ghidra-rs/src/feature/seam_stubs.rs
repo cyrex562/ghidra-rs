@@ -5,6 +5,7 @@
 
 pub use crate::program::model::address::Address as AddressType;
 pub use crate::feature::vt::api::markuptype::vt_markup_type::{VtMarkupType, VtMarkupTypeBase};
+pub use crate::feature::vt::api::main::vt_markup_item::VtMarkupItem;
 
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
@@ -69,33 +70,6 @@ pub trait VtAssociation: Send + Sync {
     }
 }
 
-/// Placeholder for the unported Java type `VTMarkupItem`, referenced by `AssociationHook`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait VtMarkupItem: Send + Sync {
-    fn can_apply(&self) -> bool;
-    fn can_unapply(&self) -> bool;
-    fn apply(&self, apply_action: &dyn VtMarkupItemApplyActionType, options: &dyn ToolOptions) -> std::io::Result<()>;
-    fn unapply(&self) -> std::io::Result<()>;
-    fn set_default_destination_address(&self, address: &AddressType, address_source: &str);
-    fn set_destination_address(&self, address: &AddressType);
-    fn get_destination_address_edit_status(&self) -> Box<dyn VtMarkupItemDestinationAddressEditStatus>;
-    fn set_considered(&self, status: &dyn VtMarkupItemConsideredStatus);
-    fn get_status(&self) -> Box<dyn VtMarkupItemStatus>;
-    fn get_status_description(&self) -> String;
-    fn get_association(&self) -> Box<dyn VtAssociation>;
-    fn get_source_address(&self) -> AddressType;
-    fn get_source_location(&self) -> Box<dyn ProgramLocation>;
-    fn get_source_value(&self) -> Box<dyn Stringable>;
-    fn get_destination_address(&self) -> AddressType;
-    fn get_destination_location(&self) -> Box<dyn ProgramLocation>;
-    fn get_destination_address_source(&self) -> String;
-    fn get_current_destination_value(&self) -> Box<dyn Stringable>;
-    fn get_original_destination_value(&self) -> Box<dyn Stringable>;
-    fn supports_apply_action(&self, action_type: &dyn VtMarkupItemApplyActionType) -> bool;
-    fn get_markup_type(&self) -> Box<dyn VtMarkupType>;
-}
-
 /// Placeholder for `VTAssociationType`.
 pub trait VtAssociationType: Send + Sync {
     fn display_name(&self) -> &str;
@@ -109,35 +83,6 @@ pub trait VtSession: Send + Sync {
 /// Placeholder for `TaskMonitor`.
 pub trait TaskMonitor: Send + Sync {
     fn check_cancelled(&self) -> std::io::Result<()>;
-}
-
-/// Placeholder for `VTMarkupItemStatus`.
-pub trait VtMarkupItemStatus: Send + Sync {
-    fn is_applied(&self) -> bool;
-
-    /// The real, already-ported enum behind this placeholder, for callers that need to switch on
-    /// the status rather than just ask whether it is applied. Grown for the [`MarkupItemImpl`]
-    /// port; see the bridging impl below.
-    fn markup_item_status(
-        &self,
-    ) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
-        unimplemented!("this VtMarkupItemStatus placeholder has no ported enum behind it")
-    }
-}
-
-/// Bridges the real, ported markup-item status enum onto the [`VtMarkupItemStatus`] placeholder
-/// trait, so that [`MarkupItemImpl`] -- which speaks the real enum throughout -- can still be
-/// handed to seams typed against the placeholder.
-impl VtMarkupItemStatus for crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
-    fn is_applied(&self) -> bool {
-        self.is_unappliable()
-    }
-
-    fn markup_item_status(
-        &self,
-    ) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
-        *self
-    }
 }
 
 /// Placeholder for `VTAssociationMarkupStatus`.
@@ -159,65 +104,9 @@ pub trait VtAssociationStatus: Send + Sync {
     }
 }
 
-/// Placeholder for `VTMarkupItemApplyActionType`.
-pub trait VtMarkupItemApplyActionType: Send + Sync {
-    fn get_name(&self) -> &str;
-
-    /// The real, already-ported enum behind this placeholder. Grown for the [`MarkupItemImpl`]
-    /// port; see the bridging impl below.
-    fn apply_action_type(
-        &self,
-    ) -> crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType
-    {
-        unimplemented!("this VtMarkupItemApplyActionType placeholder has no ported enum behind it")
-    }
-}
-
-/// Bridges the real, ported apply-action enum onto the [`VtMarkupItemApplyActionType`] placeholder
-/// trait. The placeholder's `get_name` reports the Java enum constant's name.
-impl VtMarkupItemApplyActionType
-    for crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType
-{
-    fn get_name(&self) -> &str {
-        use crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType as Action;
-        match self {
-            Action::Add => "ADD",
-            Action::AddAsPrimary => "ADD_AS_PRIMARY",
-            Action::ReplaceDefaultOnly => "REPLACE_DEFAULT_ONLY",
-            Action::Replace => "REPLACE",
-            Action::ReplaceFirstOnly => "REPLACE_FIRST_ONLY",
-        }
-    }
-
-    fn apply_action_type(
-        &self,
-    ) -> crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType
-    {
-        *self
-    }
-}
-
 /// Placeholder for `ToolOptions`.
 pub trait ToolOptions: Send + Sync {
     fn get_option(&self, key: &str) -> Option<String>;
-}
-
-/// Placeholder for `VTMarkupItemDestinationAddressEditStatus`.
-pub trait VtMarkupItemDestinationAddressEditStatus: Send + Sync {
-    fn is_editable(&self) -> bool;
-}
-
-/// Bridges the real, ported edit-status enum onto the
-/// [`VtMarkupItemDestinationAddressEditStatus`] placeholder trait, so that [`MarkupItemImpl`] can
-/// answer the placeholder-typed `VtMarkupItem::get_destination_address_edit_status` with the enum
-/// its own inherent accessor computes.
-impl VtMarkupItemDestinationAddressEditStatus
-    for crate::feature::vt::api::main::vt_markup_item_destination_address_edit_status::VtMarkupItemDestinationAddressEditStatus
-{
-    fn is_editable(&self) -> bool {
-        use crate::feature::vt::api::main::vt_markup_item_destination_address_edit_status::VtMarkupItemDestinationAddressEditStatus as EditStatus;
-        matches!(self, EditStatus::Editable)
-    }
 }
 
 /// Placeholder for `VTMarkupItemConsideredStatus`.

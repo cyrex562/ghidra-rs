@@ -60,20 +60,17 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::feature::seam_stubs::{
     MarkupItemStorageImpl, ProgramLocation, Stringable, TaskMonitor, ToolOptions, VtAssociation,
-    VtMarkupItem, VtMarkupItemConsideredStatus, VtMarkupType, VtMarkupTypeBase,
+    VtMarkupItemConsideredStatus, VtMarkupType, VtMarkupTypeBase,
 };
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+use crate::feature::vt::api::main::vt_markup_item::{VtMarkupItem, USER_DEFINED_ADDRESS_SOURCE};
 use crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType;
 use crate::feature::vt::api::main::vt_markup_item_destination_address_edit_status::VtMarkupItemDestinationAddressEditStatus;
 use crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus;
 use crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrackingApplyException;
 use crate::program::database::db_object::DbObject;
 use crate::program::model::address::Address;
-
-/// Java: `VTMarkupItem.USER_DEFINED_ADDRESS_SOURCE`. Lives here until `VTMarkupItem.java` itself
-/// is ported, since this is the only type that reads it.
-pub const USER_DEFINED_ADDRESS_SOURCE: &str = "User Defined";
 
 thread_local! {
     /// Java: `private static boolean isUnApplyingItems`. Stops the cascade in
@@ -526,12 +523,7 @@ impl MarkupItemImpl {
                 continue;
             }
             if &item.get_destination_address() == destination_address {
-                item.unapply().map_err(|error| {
-                    VersionTrackingApplyException::with_cause(
-                        "Failed to unapply a related markup item",
-                        error,
-                    )
-                })?;
+                item.unapply()?;
             }
         }
         Ok(())
@@ -729,19 +721,16 @@ impl VtMarkupItem for MarkupItemImpl {
         MarkupItemImpl::can_unapply(self)
     }
 
-    /// The placeholder's `io::Result` return carries the apply failure's message.
     fn apply(
         &self,
-        apply_action: &dyn crate::feature::seam_stubs::VtMarkupItemApplyActionType,
+        apply_action: VtMarkupItemApplyActionType,
         options: &dyn ToolOptions,
-    ) -> std::io::Result<()> {
-        MarkupItemImpl::apply(self, apply_action.apply_action_type(), Some(options))
-            .map_err(|error| std::io::Error::other(error.message().to_string()))
+    ) -> Result<(), VersionTrackingApplyException> {
+        MarkupItemImpl::apply(self, apply_action, Some(options))
     }
 
-    fn unapply(&self) -> std::io::Result<()> {
+    fn unapply(&self) -> Result<(), VersionTrackingApplyException> {
         MarkupItemImpl::unapply(self)
-            .map_err(|error| std::io::Error::other(error.message().to_string()))
     }
 
     fn set_default_destination_address(&self, address: &Address, address_source: &str) {
@@ -756,14 +745,12 @@ impl VtMarkupItem for MarkupItemImpl {
         MarkupItemImpl::set_considered(self, status)
     }
 
-    fn get_destination_address_edit_status(
-        &self,
-    ) -> Box<dyn crate::feature::seam_stubs::VtMarkupItemDestinationAddressEditStatus> {
-        Box::new(MarkupItemImpl::get_destination_address_edit_status(self))
+    fn get_destination_address_edit_status(&self) -> VtMarkupItemDestinationAddressEditStatus {
+        MarkupItemImpl::get_destination_address_edit_status(self)
     }
 
-    fn get_status(&self) -> Box<dyn crate::feature::seam_stubs::VtMarkupItemStatus> {
-        Box::new(MarkupItemImpl::get_status(self))
+    fn get_status(&self) -> VtMarkupItemStatus {
+        MarkupItemImpl::get_status(self)
     }
 
     fn get_status_description(&self) -> String {
@@ -786,8 +773,8 @@ impl VtMarkupItem for MarkupItemImpl {
         MarkupItemImpl::get_source_value(self)
     }
 
-    /// Panics for an item with no destination address yet; the placeholder trait's non-optional
-    /// return cannot express Java's `null`. Use the inherent accessor, which returns an `Option`.
+    /// Panics for an item with no destination address yet; the trait's non-optional return cannot
+    /// express Java's `null`. Use the inherent accessor, which returns an `Option`.
     fn get_destination_address(&self) -> Address {
         MarkupItemImpl::get_destination_address(self)
             .expect("markup item has no destination address")
@@ -809,11 +796,8 @@ impl VtMarkupItem for MarkupItemImpl {
         MarkupItemImpl::get_original_destination_value(self)
     }
 
-    fn supports_apply_action(
-        &self,
-        action_type: &dyn crate::feature::seam_stubs::VtMarkupItemApplyActionType,
-    ) -> bool {
-        MarkupItemImpl::supports_apply_action(self, action_type.apply_action_type())
+    fn supports_apply_action(&self, action_type: VtMarkupItemApplyActionType) -> bool {
+        MarkupItemImpl::supports_apply_action(self, action_type)
     }
 
     fn get_markup_type(&self) -> Box<dyn VtMarkupType> {
@@ -1177,10 +1161,13 @@ mod tests {
         markup_type.same_values = true;
         let markup_item = item(markup_type);
         let seam: &dyn VtMarkupItem = &markup_item;
-        assert_eq!(seam.get_status().markup_item_status(), VtMarkupItemStatus::Same);
+        assert_eq!(seam.get_status(), VtMarkupItemStatus::Same);
         assert_eq!(seam.get_markup_type().get_display_name(), "Label");
         assert!(!seam.can_unapply());
-        assert!(seam.get_destination_address_edit_status().is_editable());
+        assert_eq!(
+            seam.get_destination_address_edit_status(),
+            VtMarkupItemDestinationAddressEditStatus::Editable
+        );
     }
 
     #[test]
