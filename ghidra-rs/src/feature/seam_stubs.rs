@@ -7,13 +7,12 @@ pub use crate::program::model::address::Address as AddressType;
 pub use crate::feature::vt::api::markuptype::vt_markup_type::{VtMarkupType, VtMarkupTypeBase};
 pub use crate::feature::vt::api::main::vt_association::VtAssociation;
 pub use crate::feature::vt::api::main::vt_markup_item::VtMarkupItem;
+pub use crate::feature::vt::api::main::vt_match::VtMatch;
 
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
 use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
 use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
-use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
-use crate::feature::vt::api::main::vt_score::VtScore;
 use crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrackingApplyException;
 use crate::framework::remote::User;
 use crate::util::exception::CancelledException;
@@ -49,22 +48,6 @@ pub trait ProgramLocation: Send + Sync {
 /// Placeholder for `Stringable`.
 pub trait Stringable: Send + Sync {
     fn to_string(&self) -> String;
-}
-
-/// Placeholder for the unported Java type `VTMatch`, referenced by `VTSession`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait VtMatch: Send + Sync {
-    fn get_match_set(&self) -> Box<dyn VtMatchSet>;
-    fn get_association(&self) -> Box<dyn VtAssociation>;
-    fn get_tag(&self) -> VtMatchTag;
-    fn set_tag(&self, tag: VtMatchTag);
-    fn get_similarity_score(&self) -> VtScore;
-    fn get_confidence_score(&self) -> VtScore;
-    fn get_source_address(&self) -> AddressType;
-    fn get_destination_address(&self) -> AddressType;
-    fn get_source_length(&self) -> i32;
-    fn get_destination_length(&self) -> i32;
 }
 
 /// Placeholder for the unported Java type `VTMatchInfo`, referenced by `VTMatchSet::add_match`.
