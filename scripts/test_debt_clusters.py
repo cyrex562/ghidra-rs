@@ -158,6 +158,54 @@ class TestWaitPortIsNeverSticky(unittest.TestCase):
         self.assertNotIn(dc.WAIT_STUB, dyn_rules.DECIDED)
 
 
+class TestUndecidedDynTypesReachTheQueue(unittest.TestCase):
+    """A type marked `investigate` could never get investigated.
+
+    pattern_audit exempts every DYN_DEBT row that is not `fix`, so an `investigate` type's
+    files leave OWNERSHIP_DEBT; the queue is built from blocked files only, so the type is
+    never queued; no verdict is recorded; dyn_rules re-derives `investigate`. Self-sustaining,
+    and it held 128 of the 148 unsettled types.
+    """
+
+    def write(self, rows):
+        d = tempfile.mkdtemp()
+        p = os.path.join(d, "DYN_DEBT.tsv")
+        cols = ["verdict", "convention", "pattern", "dyn_uses", "class", "java_kind",
+                "concrete_impls", "why", "sample_sites"]
+        with open(p, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=cols, delimiter="\t")
+            w.writeheader()
+            for r in rows:
+                w.writerow({c: r.get(c, "") for c in cols})
+        return p
+
+    def test_investigate_and_unknown_are_picked_up(self):
+        p = self.write([
+            {"verdict": "investigate", "class": "LogicalBreakpoint", "dyn_uses": "49",
+             "sample_sites": "a.rs:1,b.rs:2,a.rs:9"},
+            {"verdict": "unknown", "class": "TraceEquateReference", "dyn_uses": "33"},
+        ])
+        got = dc.load_undecided_dyn_types(p)
+        self.assertEqual(got["LogicalBreakpoint"], (49, 2))   # a.rs and b.rs, deduped
+        self.assertIn("TraceEquateReference", got)
+
+    def test_settled_verdicts_are_not_pulled_in(self):
+        """`ok` means dyn is right, `fix` is already actionable, `blocked` is already decided.
+        None of them is an open convention question."""
+        p = self.write([{"verdict": v, "class": f"T{i}", "dyn_uses": "5"}
+                        for i, v in enumerate(("ok", "fix", "blocked", "skip"))])
+        self.assertEqual(dc.load_undecided_dyn_types(p), {})
+
+    def test_rust_builtins_are_not_queued(self):
+        p = self.write([{"verdict": "investigate", "class": "Vec", "dyn_uses": "5"},
+                        {"verdict": "investigate", "class": "Error", "dyn_uses": "5"},
+                        {"verdict": "investigate", "class": "usize", "dyn_uses": "5"}])
+        self.assertEqual(dc.load_undecided_dyn_types(p), {})
+
+    def test_a_missing_file_is_not_an_error(self):
+        self.assertEqual(dc.load_undecided_dyn_types("/nonexistent/DYN_DEBT.tsv"), {})
+
+
 class TestConcreteTypesReachedByACell(unittest.TestCase):
     """`Rc<RefCell<DBHandle>>` puts a concrete type in the queue, but no verdict here fits it.
 

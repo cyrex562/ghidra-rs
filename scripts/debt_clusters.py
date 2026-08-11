@@ -992,6 +992,50 @@ def load_prior_verdicts(path):
     return prior
 
 
+DYN_DEBT = "DYN_DEBT.tsv"
+# Verdicts that mean "dyn_rules could not settle this" -- as opposed to `ok` (dyn is right),
+# `blocked` (decided, waiting on a build) and `fix` (decided, actionable).
+_UNSETTLED = ("investigate", "unknown")
+
+
+def load_undecided_dyn_types(path=DYN_DEBT):
+    """{type: (dyn_uses, n_sites)} for dyn types dyn_rules could not settle.
+
+    These need a convention decision and could not previously get one. The queue is built
+    from types reached through a convention-BLOCKED file, and pattern_audit exempts every
+    DYN_DEBT row whose verdict is not `fix` -- `investigate` among them -- so the files using
+    such a type drop off OWNERSHIP_DEBT, the type never reaches the queue, no verdict is ever
+    recorded, and dyn_rules re-derives `investigate` next run. 128 of the 148 unsettled types
+    were in that loop, LogicalBreakpoint (49 uses) and ObjectStorage (41) among them.
+
+    Feeding them in here breaks it without touching the frontier. Scoring them as debt would
+    have done it too, and done harm: their files would return to the porting queue and the
+    descent would park on the very convention that is undecided, which is the waste the
+    exemption exists to prevent.
+    """
+    out = {}
+    if not path or not os.path.exists(path):
+        return out
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f, delimiter="\t"):
+                if (r.get("verdict") or "").strip() not in _UNSETTLED:
+                    continue
+                name = (r.get("class") or "").strip()
+                if not name or not is_domain_type(name) or name in IDIOMATIC:
+                    continue
+                try:
+                    uses = int(r.get("dyn_uses") or 0)
+                except ValueError:
+                    uses = 0
+                sites = {s.split(":")[0] for s in (r.get("sample_sites") or "").split(",")
+                         if s.strip()}
+                out[name] = (uses, len(sites))
+    except OSError:
+        return {}
+    return out
+
+
 def load_seam_fanin(seam_path):
     fanin = {}
     if not seam_path or not os.path.exists(seam_path):
@@ -1027,6 +1071,15 @@ def build_queue(debt, seam, src_root, out_path, max_fanin, dyn_threshold, famili
         for name, n in types_in_file(full).items():
             files_by_type[name].add(r["path"])
             occ_by_type[name] += n
+
+    # Types dyn_rules could not settle need a verdict whether or not a blocked file reaches
+    # them. Only ADD names: a type already found through a blocked file keeps its real file
+    # count, which is what leverage means and what the queue sorts on.
+    for name, (uses, n_sites) in load_undecided_dyn_types().items():
+        if name in files_by_type:
+            continue
+        files_by_type[name] = {f"(dyn debt: {n_sites} site(s))"} if n_sites else {"(dyn debt)"}
+        occ_by_type[name] = uses
 
     rules = load_family_rules(families)
     rows = []

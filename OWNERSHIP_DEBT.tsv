@@ -168,12 +168,10 @@ TODO	127.4	101.9	25	ModifiedPcodeThread	pcode	src/pcode/emu/modified_pcode_threa
 TODO	126.6	9.2	1276	DataUtilities	program	src/program/model/data/data_utilities.rs	dyn=4,clone/100L=1.2
 TODO	126.2	10.7	1079	FunctionSignature	program	src/program/model/listing/function_signature.rs	dyn=5
 TODO	125.7	35.6	253	ToolChest	framework	src/framework/model/tool_chest.rs	dyn=17,getset_pairs=1
-TODO	125.5	125.5	0	SeamStubs		src/pcode/seam_stubs.rs	dyn=61,getset_pairs=3
 TODO	125.0	35.3	254	DomainFolderChangeListener	framework	src/framework/model/domain_folder_change_listener.rs	dyn=16,rc_refcell=1
 TODO	123.7	123.7	0	AddressXml	program	src/program/model/pcode/address_xml.rs	dyn=60,clone/100L=1.3,getset_pairs=2
 TODO	122.1	39.4	210	AutoService	framework	src/framework/plugintool/auto_service.rs	dyn=15,arc_mutex=2,clone/100L=3.4
 TODO	121.0	86.4	40	SleighInstructionPrototype	app	src/app/plugin/processors/sleigh/sleigh_instruction_prototype.rs	dyn=42,clone/100L=2.4
-TODO	118.1	118.1	0	VtMarkupType	feature	src/feature/vt/api/markuptype/vt_markup_type.rs	dyn=58,getset_pairs=2
 TODO	117.6	32.3	264	ToolTemplate	framework	src/framework/model/tool_template.rs	dyn=15,clone/100L=1.3,getset_pairs=1
 TODO	117.5	117.5	0	SeamStubs		src/program/seam_stubs.rs	dyn=55,getset_pairs=7
 TODO	116.9	21.1	454	DomainFile	framework	src/framework/model/domain_file.rs	dyn=10,getset_pairs=1
@@ -199,6 +197,7 @@ TODO	101.5	59.0	72	CreateFunctionCmd	app	src/app/cmd/function/create_function_cm
 TODO	101.5	87.5	16	TraceReferenceOperations	trace	src/trace/model/symbol/trace_reference_operations.rs	dyn=42,clone/100L=3.5
 TODO	100.4	7.5	1239	DefaultAnnotationHandler	program	src/program/model/data/default_annotation_handler.rs	dyn=3,getset_pairs=1
 TODO	100.3	17.5	473	GlobalReferenceIterator	format	src/format/pdb2/pdbreader/global_reference_iterator.rs	dyn=8,unwrap/100L=1.5
+TODO	100.1	100.1	0	VtMarkupType	feature	src/feature/vt/api/markuptype/vt_markup_type.rs	dyn=49,getset_pairs=2
 TODO	99.4	71.0	40	SleighParserContext	app	src/app/plugin/processors/sleigh/sleigh_parser_context.rs	dyn=34,getset_pairs=2
 TODO	99.4	99.4	0	SeamStubs		src/trace/seam_stubs.rs	dyn=44,getset_pairs=10,unwrap/100L=1.1
 TODO	97.8	77.6	26	SymbolManager	program	src/program/database/symbol/symbol_manager.rs	dyn=26,arc_mutex=6,clone/100L=2.1,unwrap/100L=5.4
@@ -247,21 +246,18 @@ TODO	79.8	37.8	111	HighCodeSymbol	program	src/program/model/pcode/high_code_symb
 TODO	79.5	35.0	127	ListingHighlightProvider	app	src/app/util/listing_highlight_provider.rs	dyn=16,getset_pairs=3
 TODO	79.5	5.9	1247	CompositeTestUtils	program	src/program/model/data/composite_test_utils.rs	dyn=2,clone/100L=1.9
 TODO	78.9	17.8	343	Plugin	framework	src/framework/plugintool/plugin.rs	dyn=8,clone/100L=1.8
-TODO	78.6	78.6	0	SeamStubs		src/feature/seam_stubs.rs	dyn=35,clone/100L=1.1,getset_pairs=4,unwrap/100L=3.5
 TODO	78.3	60.2	30	AssemblerBuilder	app	src/app/plugin/assembler/assembler_builder.rs	dyn=30
 TODO	77.6	62.6	24	TraceObjectValPath	trace	src/trace/model/target/trace_object_val_path.rs	dyn=29,getset_pairs=3
 TODO	77.1	9.6	703	Namespace	program	src/program/model/symbol/namespace.rs	dyn=4,getset_pairs=1
 TODO	77.0	77.0	0	ExternalLocationDb	program	src/program/database/external/external_location_db.rs	dyn=34,clone/100L=1.6,getset_pairs=6,unwrap/100L=1.3
 TODO	76.9	68.7	12	AssemblyNumericTerminal	app	src/app/plugin/assembler/sleigh/symbol/assembly_numeric_terminal.rs	dyn=34
 TODO	76.8	5.6	1272	Enum	program	src/program/model/data/enum_.rs	dyn=2,clone/100L=1.6
-TODO	76.7	71.0	8	AssociationDatabaseManager	feature	src/feature/vt/api/main/db/association_database_manager.rs	dyn=34,unwrap/100L=2.3
 TODO	76.7	35.5	116	PcodeExecutor	pcode	src/pcode/exec/pcode_executor.rs	dyn=12,arc_mutex=2,clone/100L=1.2,getset_pairs=2,unwrap/100L=2.2
 TODO	75.6	21.6	250	WorkspaceChangeListener	framework	src/framework/model/workspace_change_listener.rs	dyn=10,getset_pairs=1
 TODO	75.5	35.1	115	BlockMap	program	src/program/model/pcode/block_map.rs	dyn=15,clone/100L=4.1,getset_pairs=1
 TODO	75.4	20.6	266	Application		src/framework/application.rs	dyn=10
 TODO	75.1	72.2	4	SleighAssemblerBuilder	app	src/app/plugin/assembler/sleigh/sleigh_assembler_builder.rs	dyn=36
 TODO	75.0	48.1	56	Loaded	app	src/app/util/opinion/loaded.rs	dyn=18,rc_refcell=3,clone/100L=1.3,getset_pairs=1
-TODO	74.1	74.1	0	VtMatchMarkupItemTableDbAdapterV0	feature	src/feature/vt/api/main/db/vt_match_markup_item_table_db_adapter_v0.rs	dyn=30,arc_mutex=1,clone/100L=1.7,getset_pairs=7,unwrap/100L=2.4
 TODO	73.1	21.0	248	LongKeyNode	framework	src/framework/db/nodes/long_key_node.rs	arc_mutex=4,getset_pairs=1,unwrap/100L=7.6
 TODO	73.0	62.9	16	TraceSymbolView	trace	src/trace/model/symbol/trace_symbol_view.rs	dyn=30,clone/100L=2.9
 TODO	72.7	5.4	1246	InternalDataTypeComponent	program	src/program/model/data/internal_data_type_component.rs	dyn=2,clone/100L=1.4
@@ -280,7 +276,6 @@ TODO	69.5	36.0	93	FileSystemProbeConflictResolver	filesystem	src/filesystem/gfil
 TODO	69.5	59.4	17	TraceSymbolNoDuplicatesView	trace	src/trace/model/symbol/trace_symbol_no_duplicates_view.rs	dyn=28,clone/100L=2.4,getset_pairs=1
 TODO	69.4	69.4	0	MdQualifier	demangler	src/demangler/naming/md_qualifier.rs	dyn=34,getset_pairs=1
 TODO	69.3	61.9	12	AssemblyParseBranch	app	src/app/plugin/assembler/sleigh/tree/assembly_parse_branch.rs	dyn=30,clone/100L=1.9
-TODO	69.2	61.8	12	MarkupItemImpl	feature	src/feature/vt/api/implementation/markup_item_impl.rs	dyn=28,getset_pairs=3,unwrap/100L=2.0
 TODO	69.1	16.9	309	ProcessorContextView	program	src/program/model/lang/processor_context_view.rs	dyn=7,clone/100L=2.9
 TODO	69.1	17.1	304	AbstractAddressSetView		src/util/abstract_address_set_view.rs	dyn=7,clone/100L=3.1
 TODO	68.8	66.2	4	ModuleManager	program	src/program/database/module/module_manager.rs	dyn=32,getset_pairs=2
@@ -291,9 +286,9 @@ TODO	68.0	6.0	1034	ImmutableAddressSet	program	src/program/model/address/immutab
 TODO	67.8	60.0	13	TraceSymbolWithAddressNoDuplicatesView	trace	src/trace/model/symbol/trace_symbol_with_address_no_duplicates_view.rs	dyn=28,clone/100L=3.0,getset_pairs=1
 TODO	67.7	59.4	14	TraceSymbolWithAddressView	trace	src/trace/model/symbol/trace_symbol_with_address_view.rs	dyn=28,clone/100L=3.4
 TODO	67.5	22.2	204	AutoConfigState	framework	src/framework/plugintool/auto_config_state.rs	dyn=11
-TODO	67.3	67.3	0	VtMatchSet	feature	src/feature/vt/api/main/vt_match_set.rs	dyn=33,getset_pairs=1
 TODO	66.9	19.5	243	MasterTable	framework	src/framework/db/master_table.rs	arc_mutex=4,clone/100L=7.5
 TODO	66.6	36.2	84	PrettyPrinter	app	src/app/decompiler/pretty_printer.rs	dyn=13,getset_pairs=10
+TODO	66.6	66.6	0	SeamStubs		src/feature/seam_stubs.rs	dyn=29,clone/100L=1.1,getset_pairs=4,unwrap/100L=3.5
 TODO	65.8	50.2	31	TokenPattern	decompiler	src/decompiler/slghpatexpress/token_pattern.rs	dyn=23,clone/100L=2.2,getset_pairs=2
 TODO	65.7	14.5	353	PrototypeModel	program	src/program/model/lang/prototype_model.rs	dyn=7
 TODO	65.6	4.9	1239	FileArchiveBasedDataTypeManager	program	src/program/model/data/file_archive_based_data_type_manager.rs	dyn=1,clone/100L=2.9
@@ -307,9 +302,7 @@ TODO	63.8	61.3	4	EquationAnd	decompiler	src/decompiler/slghpatexpress/equation_a
 TODO	63.7	32.5	96	GFileImpl	filesystem	src/filesystem/gfilesystem/g_file_impl.rs	dyn=15,clone/100L=1.5,getset_pairs=1
 TODO	63.6	46.4	37	FieldSpan	util	src/util/database/field_span.rs	dyn=23
 TODO	63.5	15.2	318	InjectPayload	program	src/program/model/lang/inject_payload.rs	dyn=7,getset_pairs=1
-TODO	62.8	52.3	20	JitPhiOp	pcode	src/pcode/emu/jit/op/jit_phi_op.rs	dyn=24,unwrap/100L=3.8
 TODO	62.8	5.5	1042	OverlayAddressSpace	program	src/program/model/address/overlay_address_space.rs	clone/100L=5.5
-TODO	62.3	62.3	0	MarkupItemStorageDb	feature	src/feature/vt/api/main/db/markup_item_storage_db.rs	dyn=26,clone/100L=2.4,getset_pairs=4,unwrap/100L=4.0
 TODO	62.3	45.5	37	SubroutineDestReferenceIterator	program	src/program/model/block/subroutine_dest_reference_iterator.rs	dyn=21,clone/100L=3.5
 TODO	61.9	17.3	258	NodeMgr	framework	src/framework/db/nodes/node_mgr.rs	arc_mutex=2,unwrap/100L=11.3
 TODO	61.9	29.9	107	AnnotatedPcodeUseropLibrary	pcode	src/pcode/exec/annotated_pcode_userop_library.rs	dyn=12,arc_mutex=1,getset_pairs=2
@@ -323,7 +316,6 @@ TODO	60.7	4.3	1312	DataOrganization	program	src/program/model/data/data_organiza
 TODO	60.5	60.5	0	HighParamId	program	src/program/model/pcode/high_param_id.rs	dyn=24,clone/100L=1.5,getset_pairs=11
 TODO	60.3	4.4	1271	StringDataInstance	program	src/program/model/data/string_data_instance.rs	dyn=2
 TODO	60.2	20.0	201	ToggleDockingActionIf	docking	src/docking/action/toggle_docking_action_if.rs	dyn=10
-TODO	60.1	60.1	0	VtSession	feature	src/feature/vt/api/main/vt_session.rs	dyn=29,clone/100L=1.1,getset_pairs=1
 TODO	60.0	16.7	259	DataTypeManagerService	app	src/app/services/data_type_manager_service.rs	dyn=7,getset_pairs=2
 TODO	60.0	52.6	14	TraceReferenceSpace	trace	src/trace/model/symbol/trace_reference_space.rs	dyn=24,clone/100L=4.6
 TODO	59.9	54.0	11	Step	trace	src/trace/model/time/schedule/step.rs	dyn=26,getset_pairs=2
@@ -346,8 +338,10 @@ TODO	57.0	57.0	0	SeamStubs		src/util/seam_stubs.rs	dyn=28,getset_pairs=1
 TODO	56.9	8.0	611	ExternalLocation	program	src/program/model/symbol/external_location.rs	dyn=3,getset_pairs=2
 TODO	56.3	38.3	47	PseudoData	app	src/app/util/pseudo_data.rs	dyn=18,getset_pairs=2
 TODO	56.3	29.3	92	GFileSystemProgramProvider	filesystem	src/filesystem/gfilesystem/g_file_system_program_provider.rs	dyn=13,getset_pairs=3
+TODO	56.1	56.1	0	VtMatchMarkupItemTableDbAdapterV0	feature	src/feature/vt/api/main/db/vt_match_markup_item_table_db_adapter_v0.rs	dyn=21,arc_mutex=1,clone/100L=1.7,getset_pairs=7,unwrap/100L=2.4
 TODO	55.6	4.0	1291	Pointer	program	src/program/model/data/pointer.rs	dyn=2
 TODO	55.2	4.0	1279	Dynamic	program	src/program/model/data/dynamic.rs	dyn=2
+TODO	55.1	51.0	8	AssociationDatabaseManager	feature	src/feature/vt/api/main/db/association_database_manager.rs	dyn=24,unwrap/100L=2.3
 TODO	55.0	55.0	0	MdMangVs2015		src/demangler/md_mang_vs2015.rs	dyn=27,getset_pairs=1
 TODO	54.9	32.5	69	CodeBlock	program	src/program/model/block/code_block.rs	dyn=14,clone/100L=3.8
 TODO	54.8	34.9	57	CodeBlockModel	program	src/program/model/block/code_block_model.rs	dyn=17
@@ -363,12 +357,11 @@ TODO	53.5	27.0	98	AbstractLongOffsetPcodeExecutorStatePiece	pcode	src/pcode/exec
 TODO	53.5	4.0	1238	CustomFormat	program	src/program/model/data/custom_format.rs	clone/100L=4.0
 TODO	53.4	25.3	111	FunctionPrototype	program	src/program/model/pcode/function_prototype.rs	dyn=11,getset_pairs=3
 TODO	53.3	45.2	18	BinaryExpression	decompiler	src/decompiler/slghpatexpress/binary_expression.rs	dyn=19,arc_mutex=1,clone/100L=2.2,getset_pairs=2
+TODO	53.3	53.3	0	VtMatchSet	feature	src/feature/vt/api/main/vt_match_set.rs	dyn=26,getset_pairs=1
 TODO	53.3	4.7	1035	OldGenericNamespaceAddress	program	src/program/model/address/old_generic_namespace_address.rs	clone/100L=4.7
 TODO	53.2	47.9	11	OperandValue	decompiler	src/decompiler/slghpatexpress/operand_value.rs	dyn=22,clone/100L=1.1,getset_pairs=2
 TODO	53.2	53.2	0	DbTraceMemoryManager	trace	src/trace/database/memory/db_trace_memory_manager.rs	dyn=25,getset_pairs=1,unwrap/100L=1.9
 TODO	53.0	51.0	4	EquationRightEllipsis	decompiler	src/decompiler/slghpatexpress/equation_right_ellipsis.rs	dyn=23,clone/100L=2.0,getset_pairs=3
-TODO	52.4	28.0	87	DecompilerHighlightService	app	src/app/decompiler/decompiler_highlight_service.rs	dyn=14
-TODO	52.4	49.0	7	DebugSignature	app	src/app/decompiler/signature/debug_signature.rs	dyn=19,getset_pairs=11
 TODO	52.2	52.2	0	MdObjectCpp	demangler	src/demangler/object/md_object_cpp.rs	dyn=26
 TODO	52.2	3.9	1238	DataTypeArchiveIdDumper	program	src/program/model/data/data_type_archive_id_dumper.rs	dyn=1,clone/100L=1.9
 TODO	51.6	50.6	2	TraceRegisterContextOperations	trace	src/trace/model/context/trace_register_context_operations.rs	dyn=24,clone/100L=1.6,getset_pairs=1
@@ -397,13 +390,18 @@ TODO	48.4	14.1	243	FixedKeyVarRecNode	framework	src/framework/db/fixed_key_var_r
 TODO	48.4	25.9	87	TraceObjectValue	trace	src/trace/model/target/trace_object_value.rs	dyn=10,clone/100L=1.2,getset_pairs=4
 TODO	47.9	43.5	10	ExpressUtils	decompiler	src/decompiler/slghpatexpress/express_utils.rs	dyn=20,clone/100L=1.5,getset_pairs=2
 TODO	47.8	46.0	4	OrPattern	decompiler	src/decompiler/slghpattern/or_pattern.rs	dyn=23
+TODO	47.5	47.5	0	SeamStubs		src/pcode/seam_stubs.rs	dyn=22,getset_pairs=3
 TODO	47.4	42.3	12	PcodeTraceAccess	pcode	src/pcode/exec/trace/data/pcode_trace_access.rs	dyn=20,getset_pairs=2
 TODO	47.4	4.0	1085	BookmarkType	program	src/program/model/listing/bookmark_type.rs	dyn=2
 TODO	47.2	11.6	307	ConstantPool	program	src/program/model/lang/constant_pool.rs	dyn=5,unwrap/100L=1.6
 TODO	47.1	16.6	184	ProgramMerge	program	src/program/util/program_merge.rs	dyn=8
+TODO	46.8	41.8	12	MarkupItemImpl	feature	src/feature/vt/api/implementation/markup_item_impl.rs	dyn=18,getset_pairs=3,unwrap/100L=2.0
 TODO	46.7	23.6	98	TraceOptionsManager	trace	src/trace/model/trace_options_manager.rs	dyn=10,getset_pairs=3
 TODO	46.5	46.5	0	AbstractDbTraceDataComponent	trace	src/trace/database/listing/abstract_db_trace_data_component.rs	dyn=20,clone/100L=1.3,getset_pairs=4,unwrap/100L=1.1
+TODO	46.3	46.3	0	MarkupItemStorageDb	feature	src/feature/vt/api/main/db/markup_item_storage_db.rs	dyn=18,clone/100L=2.4,getset_pairs=4,unwrap/100L=4.0
 TODO	46.2	36.4	27	TraceCodeManager	trace	src/trace/model/listing/trace_code_manager.rs	dyn=16,getset_pairs=4
+TODO	46.1	46.1	0	VtSession	feature	src/feature/vt/api/main/vt_session.rs	dyn=22,clone/100L=1.1,getset_pairs=1
+TODO	46.0	43.0	7	DebugSignature	app	src/app/decompiler/signature/debug_signature.rs	dyn=16,getset_pairs=11
 TODO	45.6	3.4	1240	DataTypeTransferable	program	src/program/model/data/data_type_transferable.rs	dyn=1,clone/100L=1.4
 TODO	45.6	15.0	204	CodeUnitLocation	program	src/program/util/code_unit_location.rs	dyn=6,clone/100L=1.0,getset_pairs=2
 TODO	45.3	44.9	1	FunctionSearchAddressIterator	app	src/app/plugin/core/searchtext/iterators/function_search_address_iterator.rs	dyn=16,getset_pairs=12
@@ -437,7 +435,6 @@ TODO	41.6	41.6	0	ExternalManagerDb	program	src/program/database/external/externa
 TODO	41.2	38.5	7	FunctionRowObject	app	src/app/plugin/core/function_window/function_row_object.rs	dyn=14,getset_pairs=10
 TODO	41.1	29.8	38	ContextCache	app	src/app/plugin/processors/sleigh/context_cache.rs	dyn=12,clone/100L=2.8,getset_pairs=3
 TODO	41.0	41.0	0	SeamStubs		src/demangler/seam_stubs.rs	dyn=20,getset_pairs=1
-TODO	41.0	18.0	128	AssociationHook	feature	src/feature/vt/api/main/association_hook.rs	dyn=9
 TODO	41.0	40.6	1	ExtExternalReference	sarif	src/sarif/export/ref/ext_external_reference.rs	dyn=15,getset_pairs=10
 TODO	40.9	6.0	581	DataRefType	program	src/program/model/symbol/data_ref_type.rs	dyn=3
 TODO	40.9	6.0	582	ExternalReference	program	src/program/model/symbol/external_reference.rs	dyn=3
@@ -481,7 +478,6 @@ TODO	37.1	24.6	51	EnumSettingsDefinition	docking	src/docking/settings/enum_setti
 TODO	37.0	34.3	8	SetFunctionPurgeCommand	app	src/app/cmd/function/set_function_purge_command.rs	dyn=12,getset_pairs=10
 TODO	37.0	33.0	12	RepositoryHandle	framework	src/framework/remote/repository_handle.rs	dyn=16,getset_pairs=1
 TODO	37.0	13.3	178	AddressIteratorConverter	program	src/program/util/address_iterator_converter.rs	dyn=5,clone/100L=3.3
-TODO	36.9	36.9	0	VtRelatedMatch	feature	src/feature/vt/api/util/vt_related_match.rs	dyn=13,getset_pairs=10
 TODO	36.8	36.1	2	ExternalDisassembler	app	src/app/util/disassemble/external_disassembler.rs	dyn=17,getset_pairs=2
 TODO	36.7	36.7	0	ComparableMultiMapStl	generic	src/generic/stl/comparable_multi_map_stl.rs	dyn=17,clone/100L=2.7
 TODO	36.6	36.6	0	DbCachedObjectIndex	util	src/util/database/db_cached_object_index.rs	dyn=18
@@ -501,6 +497,7 @@ TODO	35.2	34.2	3	FunctionEdge		src/graph/function_edge.rs	dyn=12,getset_pairs=10
 TODO	35.1	35.1	0	DbTraceAddressSnapRangePropertyMap	trace	src/trace/database/map/db_trace_address_snap_range_property_map.rs	dyn=14,clone/100L=3.1,getset_pairs=4
 TODO	35.0	26.7	31	TraceObjectManager	trace	src/trace/model/target/trace_object_manager.rs	dyn=13
 TODO	35.0	32.7	7	AbstractStep	trace	src/trace/model/time/schedule/abstract_step.rs	dyn=16
+TODO	34.9	34.9	0	VtRelatedMatch	feature	src/feature/vt/api/util/vt_related_match.rs	dyn=12,getset_pairs=10
 TODO	34.8	34.5	1	DisplayableVariableOffset	feature	src/feature/vt/gui/provider/markuptable/displayable_variable_offset.rs	dyn=12,getset_pairs=10
 TODO	34.7	24.3	43	SleighLanguageDescription	app	src/app/plugin/processors/sleigh/sleigh_language_description.rs	dyn=10,getset_pairs=4
 TODO	34.7	34.7	0	DbCachedObjectStoreEntrySet	util	src/util/database/db_cached_object_store_entry_set.rs	dyn=17
@@ -508,7 +505,6 @@ TODO	34.4	6.0	474	SymbolRecords	format	src/format/pdb2/pdbreader/symbol_records.
 TODO	34.4	28.0	23	PcodeStateInitializer	pcode	src/pcode/emu/pcode_state_initializer.rs	dyn=14
 TODO	34.3	12.0	186	BlockModelServiceListener	app	src/app/services/block_model_service_listener.rs	rc_refcell=4
 TODO	34.2	12.0	185	GoToServiceListener	app	src/app/services/go_to_service_listener.rs	rc_refcell=4
-TODO	34.2	32.3	6	JitOpVisitor	pcode	src/pcode/emu/jit/analysis/jit_op_visitor.rs	dyn=16
 TODO	34.1	9.9	244	FixedKeyInteriorNode	framework	src/framework/db/fixed_key_interior_node.rs	dyn=4,getset_pairs=1
 TODO	34.0	11.1	206	PluginInstaller	framework	src/framework/plugintool/plugin_installer.rs	dyn=5,clone/100L=1.1
 TODO	34.0	34.0	0	Rgb16EncodingSettingsDefinition	program	src/program/model/data/rgb16_encoding_settings_definition.rs	dyn=15,getset_pairs=4
@@ -519,7 +515,6 @@ TODO	33.9	30.0	13	Vertex	util	src/util/graph/vertex.rs	dyn=15
 TODO	33.8	30.2	12	TokenField	decompiler	src/decompiler/slghpatexpress/token_field.rs	dyn=13,clone/100L=2.2,getset_pairs=2
 TODO	33.3	32.0	4	TracePlatformManager	trace	src/trace/model/guest/trace_platform_manager.rs	dyn=16
 TODO	33.0	23.6	40	SleighLanguageProvider	app	src/app/plugin/processors/sleigh/sleigh_language_provider.rs	dyn=9,clone/100L=1.6,getset_pairs=4
-TODO	33.0	33.0	0	VtMarkupItem	feature	src/feature/vt/api/main/vt_markup_item.rs	dyn=16,getset_pairs=1
 TODO	33.0	15.0	120	PcodeExecutorStatePiece	pcode	src/pcode/exec/pcode_executor_state_piece.rs	dyn=4,getset_pairs=7
 TODO	32.9	32.9	0	DbTraceData	trace	src/trace/database/listing/db_trace_data.rs	dyn=14,getset_pairs=4
 TODO	32.7	22.7	44	TraceMemoryManager	trace	src/trace/model/memory/trace_memory_manager.rs	dyn=7,clone/100L=1.7,getset_pairs=7
@@ -549,10 +544,8 @@ TODO	31.2	28.4	10	StartInstructionValue	decompiler	src/decompiler/slghpatexpress
 TODO	31.1	19.2	62	PcodeMachine	pcode	src/pcode/emu/pcode_machine.rs	dyn=9,getset_pairs=1
 TODO	31.0	6.2	400	StringUtilities		src/util/string_utilities.rs	dyn=3
 TODO	30.8	22.8	35	StringSettingsDefinition	docking	src/docking/settings/string_settings_definition.rs	dyn=10,getset_pairs=2
-TODO	30.8	30.8	0	VtAssociationDb	feature	src/feature/vt/api/db/vt_association_db.rs	dyn=12,getset_pairs=3,unwrap/100L=2.8
 TODO	30.8	30.8	0	DbTraceEquateManager	trace	src/trace/database/symbol/db_trace_equate_manager.rs	dyn=14,clone/100L=1.8,getset_pairs=1
 TODO	30.7	27.4	12	InternalTracePlatform	trace	src/trace/database/guest/internal_trace_platform.rs	dyn=12,rc_refcell=1
-TODO	30.5	28.0	9	MarkupItemStorage	feature	src/feature/vt/api/implementation/markup_item_storage.rs	dyn=13,getset_pairs=2
 TODO	30.2	30.2	0	FunctionManagerDb	program	src/program/database/function/function_manager_db.rs	dyn=15
 TODO	30.2	30.2	0	AbstractDbTraceSymbol	trace	src/trace/database/symbol/abstract_db_trace_symbol.rs	dyn=14,getset_pairs=2
 TODO	30.2	30.2	0	DbTraceNamespaceSymbol	trace	src/trace/database/symbol/db_trace_namespace_symbol.rs	dyn=13,clone/100L=2.2,getset_pairs=2
@@ -578,12 +571,14 @@ TODO	28.2	22.2	27	TraceInstruction	trace	src/trace/model/listing/trace_instructi
 TODO	28.1	8.0	251	ProjectListener	framework	src/framework/model/project_listener.rs	dyn=4
 TODO	28.1	22.7	24	TraceDefinedDataView	trace	src/trace/model/listing/trace_defined_data_view.rs	dyn=9,getset_pairs=4
 TODO	28.0	20.0	40	TraceData	trace	src/trace/model/listing/trace_data.rs	dyn=8,getset_pairs=3
+TODO	27.4	12.0	128	AssociationHook	feature	src/feature/vt/api/main/association_hook.rs	dyn=6
 TODO	27.4	27.4	0	OverlaySpaceDbAdapter	program	src/program/database/overlay_space_db_adapter.rs	dyn=13,clone/100L=1.4
 TODO	27.4	9.7	182	RangeMapAdapter	program	src/program/util/range_map_adapter.rs	dyn=4,clone/100L=1.7
 TODO	27.3	27.3	0	DbTraceObjectValueData	trace	src/trace/database/target/db_trace_object_value_data.rs	dyn=13,getset_pairs=1
 TODO	27.2	14.0	94	LocalFileSystem	framework	src/framework/store/local/local_file_system.rs	dyn=6,getset_pairs=2
 TODO	27.2	25.2	8	Algorithms	generic	src/generic/stl/algorithms.rs	dyn=8,clone/100L=9.2
 TODO	26.8	9.4	185	DebuggerWatchesService	app	src/app/services/debugger_watches_service.rs	dyn=2,getset_pairs=5
+TODO	26.8	26.8	0	VtAssociationDb	feature	src/feature/vt/api/db/vt_association_db.rs	dyn=10,getset_pairs=3,unwrap/100L=2.8
 TODO	26.8	23.1	16	SettingsPropertyMap	program	src/program/model/util/settings_property_map.rs	dyn=11,clone/100L=1.1
 TODO	26.7	26.7	0	AiffDataType	program	src/program/model/data/aiff_data_type.rs	dyn=13
 TODO	26.7	6.6	305	BasicCompilerSpecDescription	program	src/program/model/lang/basic_compiler_spec_description.rs	dyn=1,clone/100L=4.6
@@ -600,7 +595,6 @@ TODO	25.9	19.5	33	AbstractOmfRecordFactory	format	src/format/omf/abstract_omf_re
 TODO	25.8	20.0	29	ManagedBufferFileHandle	framework	src/framework/db/buffers/managed_buffer_file_handle.rs	dyn=9,getset_pairs=2
 TODO	25.7	25.4	1	InstructionSearchAddressIterator	app	src/app/plugin/core/searchtext/iterators/instruction_search_address_iterator.rs	dyn=9,clone/100L=1.4,getset_pairs=6
 TODO	25.7	22.7	13	PcodeTracePropertyAccess	pcode	src/pcode/exec/trace/data/pcode_trace_property_access.rs	dyn=10,clone/100L=2.7
-TODO	25.6	14.0	83	DecompilerMarginService	app	src/app/decompiler/decompiler_margin_service.rs	dyn=7
 TODO	25.6	9.0	184	InternalTraceRmiService	app	src/app/services/internal_trace_rmi_service.rs	dyn=4,getset_pairs=1
 TODO	25.5	15.2	68	FileSystem	framework	src/framework/store/file_system.rs	dyn=5,rc_refcell=1,getset_pairs=2
 TODO	25.5	20.6	24	LocalFolderItem	framework	src/framework/store/local/local_folder_item.rs	dyn=9,getset_pairs=2
@@ -642,8 +636,6 @@ TODO	22.4	22.4	0	DbAnnotatedObject	util	src/util/database/db_annotated_object.rs
 TODO	22.4	16.6	35	DomainObjectLockHold		src/util/domain_object_lock_hold.rs	arc_mutex=5,unwrap/100L=1.2
 TODO	22.3	11.1	101	FileSystemRef	filesystem	src/filesystem/gfilesystem/file_system_ref.rs	dyn=3,clone/100L=5.1
 TODO	22.1	18.1	22	TerminalSession	debug	src/debug/api/tracermi/terminal_session.rs	dyn=8,clone/100L=1.1,getset_pairs=1
-TODO	22.0	22.0	0	VtAddressCorrelatorAdapter	feature	src/feature/vt/api/main/db/vt_address_correlator_adapter.rs	dyn=2,arc_mutex=5,getset_pairs=3
-TODO	22.0	22.0	0	VtMatchSetTableDbAdapter	feature	src/feature/vt/api/main/db/vt_match_set_table_db_adapter.rs	dyn=8,arc_mutex=2
 TODO	22.0	22.0	0	DataDb	program	src/program/database/code/data_db.rs	dyn=10,getset_pairs=2
 TODO	21.9	21.9	0	VtAssociationManager	feature	src/feature/vt/api/main/vt_association_manager.rs	dyn=10,clone/100L=1.9
 TODO	21.8	20.0	9	ExpressionEvaluator	generic	src/generic/expressions/expression_evaluator.rs	dyn=10
@@ -661,6 +653,7 @@ TODO	21.3	11.0	94	GFileHashProvider	filesystem	src/filesystem/gfilesystem/g_file
 TODO	21.2	13.6	56	AssemblyResolvedError	app	src/app/plugin/assembler/sleigh/sem/assembly_resolved_error.rs	dyn=6,clone/100L=1.6
 TODO	21.2	6.0	253	DomainFolderFilter	framework	src/framework/model/domain_folder_filter.rs	dyn=3
 TODO	21.2	21.2	0	EquateRefDbAdapter	program	src/program/database/symbol/equate_ref_db_adapter.rs	dyn=10,clone/100L=1.2
+TODO	21.0	21.0	0	VtMarkupItem	feature	src/feature/vt/api/main/vt_markup_item.rs	dyn=10,getset_pairs=1
 TODO	21.0	16.7	26	GImplicitDirectedGraph		src/graph/g_implicit_directed_graph.rs	dyn=7,clone/100L=2.7
 TODO	21.0	20.0	5	HashCalculator	program	src/program/model/correlate/hash_calculator.rs	dyn=7,getset_pairs=6
 TODO	21.0	21.0	0	Mod	util	src/util/function/mod.rs	arc_mutex=7
@@ -676,11 +669,9 @@ TODO	20.4	15.0	36	DataFileItem	framework	src/framework/store/data_file_item.rs	d
 TODO	20.4	20.2	1	MnemonicHashCalculator	program	src/program/model/correlate/mnemonic_hash_calculator.rs	dyn=7,getset_pairs=6
 TODO	20.4	5.1	300	TimedMsg		src/util/timed_msg.rs	unwrap/100L=2.1,lazy_static_mut=1
 TODO	20.3	19.3	5	MemoryBlockDefinition	app	src/app/plugin/processors/generic/memory_block_definition.rs	dyn=1,arc_mutex=5,getset_pairs=1
-TODO	20.3	20.3	0	VtProgramCorrelator	feature	src/feature/vt/api/main/vt_program_correlator.rs	dyn=10
 TODO	20.2	5.7	254	LinkFileInfo	framework	src/framework/model/link_file_info.rs	dyn=2,clone/100L=1.7
 TODO	20.2	13.4	51	CodeBlockReference	program	src/program/model/block/code_block_reference.rs	dyn=4,clone/100L=5.4
 TODO	20.1	15.0	34	OmfRecord	format	src/format/omf/omf_record.rs	dyn=4,rc_refcell=2,getset_pairs=1
-TODO	20.0	20.0	0	VtAssociation	feature	src/feature/vt/api/main/vt_association.rs	dyn=9,getset_pairs=2
 TODO	20.0	20.0	0	GhidraUrl	framework	src/framework/protocol/ghidra/ghidra_url.rs	dyn=7,rc_refcell=2
 TODO	20.0	7.2	178	TraceThread	trace	src/trace/model/thread/trace_thread.rs	dyn=2,clone/100L=1.2,getset_pairs=2
 TODO	19.9	19.5	2	MatchedData	app	src/app/plugin/match/matched_data.rs	dyn=8,clone/100L=1.5,getset_pairs=2
@@ -689,8 +680,6 @@ TODO	19.6	9.3	111	PcodeOverride	program	src/program/model/pcode/pcode_override.r
 TODO	19.6	16.6	18	TraceLabelSymbol	trace	src/trace/model/symbol/trace_label_symbol.rs	dyn=6,clone/100L=1.6,getset_pairs=3
 TODO	19.6	4.9	301	ReversedListIterator		src/util/reversed_list_iterator.rs	dyn=2
 TODO	19.5	3.4	473	C13ExtendedInlineeSourceLine	format	src/format/pdb2/pdbreader/c13_extended_inlinee_source_line.rs	getset_pairs=3
-TODO	19.4	19.4	0	VtMatchMarkupItemTableDbAdapter	feature	src/feature/vt/api/main/db/vt_match_markup_item_table_db_adapter.rs	dyn=8,getset_pairs=3
-TODO	19.4	16.7	16	JitCallOtherOpIf	pcode	src/pcode/emu/jit/op/jit_call_other_op_if.rs	dyn=8
 TODO	19.4	16.0	21	FunctionInlineSettingsDefinition	util	src/util/table/field/function_inline_settings_definition.rs	dyn=7,getset_pairs=2
 TODO	19.4	16.0	21	FunctionNoReturnSettingsDefinition	util	src/util/table/field/function_no_return_settings_definition.rs	dyn=7,getset_pairs=2
 TODO	19.4	16.0	21	FunctionThunkSettingsDefinition	util	src/util/table/field/function_thunk_settings_definition.rs	dyn=7,getset_pairs=2
@@ -713,6 +702,7 @@ TODO	18.1	14.0	29	BufferFileHandle	framework	src/framework/db/buffers/buffer_fil
 TODO	18.1	16.3	11	GhidraProtocolConnector	framework	src/framework/protocol/ghidra/ghidra_protocol_connector.rs	dyn=7,clone/100L=2.3
 TODO	18.1	10.4	74	DbObject	program	src/program/database/db_object.rs	dyn=4,clone/100L=1.7
 TODO	18.0	14.4	25	TraceClosedPluginEvent	app	src/app/plugin/core/debug/event/trace_closed_plugin_event.rs	dyn=6,clone/100L=1.4,getset_pairs=1
+TODO	18.0	18.0	0	VtAddressCorrelatorAdapter	feature	src/feature/vt/api/main/db/vt_address_correlator_adapter.rs	arc_mutex=5,getset_pairs=3
 TODO	18.0	18.0	0	VtMarkupTypeFactory	feature	src/feature/vt/api/markuptype/vt_markup_type_factory.rs	dyn=6,clone/100L=2.0,unwrap/100L=4.0
 TODO	18.0	17.0	6	TraceVariableSnapProgramView	trace	src/trace/model/program/trace_variable_snap_program_view.rs	dyn=7,getset_pairs=3
 TODO	18.0	4.5	300	PairingIteratorMerger		src/util/pairing_iterator_merger.rs	unwrap/100L=4.5
@@ -723,7 +713,6 @@ TODO	17.7	17.7	0	Mod	program	src/program/model/lang/sleigh/symbol/mod.rs	dyn=8,c
 TODO	17.6	13.3	32	AssemblySemanticException	app	src/app/plugin/assembler/assembly_semantic_exception.rs	dyn=6,clone/100L=1.3
 TODO	17.6	15.2	16	ExportTrie	format	src/format/macho/commands/export_trie.rs	dyn=4,rc_refcell=2,getset_pairs=1
 TODO	17.6	8.7	102	PairedPcodeExecutorStatePiece	pcode	src/pcode/exec/paired_pcode_executor_state_piece.rs	dyn=2,getset_pairs=4
-TODO	17.5	17.5	0	VtMatchTableDbAdapter	feature	src/feature/vt/api/main/db/vt_match_table_db_adapter.rs	dyn=7,getset_pairs=3
 TODO	17.5	14.0	25	RemoteManagedBufferFileHandle	framework	src/framework/db/buffers/remote_managed_buffer_file_handle.rs	dyn=6,getset_pairs=2
 TODO	17.3	16.2	7	WatchRow	debug	src/debug/api/watch/watch_row.rs	dyn=5,clone/100L=1.2,getset_pairs=5
 TODO	17.2	15.0	15	MergeProgressModifier	app	src/app/merge/merge_progress_modifier.rs	arc_mutex=5
@@ -751,7 +740,7 @@ TODO	16.2	15.0	8	RemoteRepositoryHandle	framework	src/framework/remote/remote_re
 TODO	16.2	13.2	23	ConcurrentQ	generic	src/generic/concurrent/concurrent_q.rs	clone/100L=1.8,getset_pairs=3,unwrap/100L=8.4
 TODO	16.2	6.5	150	MutableMemBuffer	program	src/program/model/mem/mutable_mem_buffer.rs	clone/100L=6.5
 TODO	16.0	16.0	0	MdNestedName	demangler	src/demangler/naming/md_nested_name.rs	dyn=8
-TODO	16.0	16.0	0	VtProgramCorrelatorFactory	feature	src/feature/vt/api/main/vt_program_correlator_factory.rs	dyn=8
+TODO	16.0	16.0	0	VtAssociation	feature	src/feature/vt/api/main/vt_association.rs	dyn=7,getset_pairs=2
 TODO	16.0	4.0	301	DynamicHelpLocation		src/util/dynamic_help_location.rs	dyn=2
 TODO	15.9	14.1	13	PatternlessSymbol	decompiler	src/decompiler/slghsymbol/patternless_symbol.rs	dyn=5,clone/100L=4.1
 TODO	15.8	4.6	244	FieldKeyInteriorNode	framework	src/framework/db/field_key_interior_node.rs	clone/100L=3.6,getset_pairs=1
@@ -764,6 +753,7 @@ TODO	15.7	13.9	13	ApplicationUtilities		src/util/application_utilities.rs	dyn=6,
 TODO	15.6	15.6	0	DbObjectColumn	util	src/util/database/db_object_column.rs	dyn=4,clone/100L=1.1,unwrap/100L=3.5,lazy_static_mut=1
 TODO	15.5	15.3	1	LabelSearchAddressIterator	app	src/app/plugin/core/searchtext/iterators/label_search_address_iterator.rs	dyn=7,clone/100L=1.3
 TODO	15.5	7.6	104	TaskMonitorSplitter	util	src/util/task/task_monitor_splitter.rs	clone/100L=3.0,getset_pairs=3,unwrap/100L=1.6
+TODO	15.4	15.4	0	VtMatchMarkupItemTableDbAdapter	feature	src/feature/vt/api/main/db/vt_match_markup_item_table_db_adapter.rs	dyn=6,getset_pairs=3
 TODO	15.4	12.0	28	DataHighLevelShaderLanguageSymbolInternals	format	src/format/pdb2/pdbreader/symbol/data_high_level_shader_language_symbol_internals.rs	dyn=6
 TODO	15.4	15.4	0	DbHandle	framework	src/framework/db/db_handle.rs	arc_mutex=4,clone/100L=3.4
 TODO	15.4	3.2	382	DomainObject	framework	src/framework/model/domain_object.rs	dyn=1,getset_pairs=1
@@ -817,6 +807,7 @@ TODO	13.6	10.0	36	TraceCodeUnit	trace	src/trace/model/listing/trace_code_unit.rs
 TODO	13.6	11.7	16	RedBlackTree	util	src/util/datastruct/red_black_tree.rs	clone/100L=9.7,unwrap/100L=2.0
 TODO	13.5	11.4	18	ProgramLocationSupplierContext	app	src/app/context/program_location_supplier_context.rs	dyn=4,clone/100L=3.4
 TODO	13.5	12.5	8	OrExpression	decompiler	src/decompiler/slghpatexpress/or_expression.rs	dyn=6
+TODO	13.5	13.5	0	VtMatchTableDbAdapter	feature	src/feature/vt/api/main/db/vt_match_table_db_adapter.rs	dyn=5,getset_pairs=3
 TODO	13.5	13.5	0	UdifHeader	file	src/file/formats/ios/dmg/udif_header.rs	dyn=3,rc_refcell=2,getset_pairs=1
 TODO	13.5	10.0	35	ManagedBufferFile	framework	src/framework/db/buffers/managed_buffer_file.rs	dyn=4,getset_pairs=2
 TODO	13.5	6.1	121	PcodeStateCallbacks	pcode	src/pcode/exec/pcode_state_callbacks.rs	dyn=1,getset_pairs=2,unwrap/100L=1.9
@@ -837,7 +828,6 @@ TODO	13.1	12.0	9	RightShiftExpression	decompiler	src/decompiler/slghpatexpress/r
 TODO	13.1	4.7	178	CommentChangeRecord	program	src/program/util/comment_change_record.rs	clone/100L=4.7
 TODO	13.0	9.2	41	PcodeEmit	app	src/app/plugin/processors/sleigh/pcode_emit.rs	dyn=3,clone/100L=3.2
 TODO	13.0	3.1	320	ProgramManager	app	src/app/services/program_manager.rs	clone/100L=2.1,getset_pairs=1
-TODO	13.0	13.0	0	VtAssociationTableDbAdapter	feature	src/feature/vt/api/main/db/vt_association_table_db_adapter.rs	dyn=5,getset_pairs=3
 TODO	13.0	12.4	5	BootImageUtil	file	src/file/formats/android/bootimg/boot_image_util.rs	dyn=4,rc_refcell=1,getset_pairs=1
 TODO	13.0	13.0	0	DwarfLengthValue	format	src/format/dwarf/dwarf_length_value.rs	dyn=3,rc_refcell=2,getset_pairs=1
 TODO	13.0	12.3	6	LexerMultiplexer	sleigh	src/sleigh/grammar/lexer_multiplexer.rs	dyn=5,unwrap/100L=1.9
@@ -881,6 +871,7 @@ TODO	12.1	3.0	304	PropertyFile		src/util/property_file.rs	dyn=1,clone/100L=1.0
 TODO	12.0	12.0	0	Mod	app	src/app/util/html/mod.rs	dyn=6
 TODO	12.0	12.0	0	SeamStubs		src/decompiler/seam_stubs.rs	dyn=6
 TODO	12.0	10.7	12	EpsilonSymbol	decompiler	src/decompiler/slghsymbol/epsilon_symbol.rs	dyn=5
+TODO	12.0	12.0	0	VtMatchSetTableDbAdapter	feature	src/feature/vt/api/main/db/vt_match_set_table_db_adapter.rs	dyn=3,arc_mutex=2
 TODO	12.0	12.0	0	DbBuffer	framework	src/framework/db/db_buffer.rs	dyn=6
 TODO	12.0	12.0	0	GhidraUrlConnection	framework	src/framework/protocol/ghidra/ghidra_url_connection.rs	dyn=6
 TODO	12.0	11.4	5	FindPathsAlgorithm	graph	src/graph/algo/find_paths_algorithm.rs	dyn=5,clone/100L=1.4
@@ -921,7 +912,6 @@ TODO	11.6	11.4	2	ThunkFunctionAdapter	program	src/program/database/function/thun
 TODO	11.5	11.2	3	RemoveExternalRefCmd	app	src/app/cmd/refs/remove_external_ref_cmd.rs	dyn=5,clone/100L=1.2
 TODO	11.5	11.1	4	SetPrimaryRefCmd	app	src/app/cmd/refs/set_primary_ref_cmd.rs	dyn=5,clone/100L=1.1
 TODO	11.5	4.0	188	EclipseIntegrationService	app	src/app/services/eclipse_integration_service.rs	dyn=2
-TODO	11.5	11.5	0	VtMatch	feature	src/feature/vt/api/main/vt_match.rs	dyn=5,getset_pairs=1
 TODO	11.5	11.4	1	RelocationImportedName	format	src/format/ne/relocation_imported_name.rs	dyn=2,rc_refcell=2,getset_pairs=1
 TODO	11.5	11.4	1	RelocationImportedOrdinal	format	src/format/ne/relocation_imported_ordinal.rs	dyn=2,rc_refcell=2,getset_pairs=1
 TODO	11.5	11.5	0	OmfAlignSym	format	src/format/pe/debug/omf_align_sym.rs	dyn=2,rc_refcell=2,getset_pairs=1
@@ -933,7 +923,6 @@ TODO	11.4	11.4	0	RelocationOsFixup	format	src/format/ne/relocation_os_fixup.rs	d
 TODO	11.4	11.4	0	DebugCoffLineNumber	format	src/format/pe/debug/debug_coff_line_number.rs	dyn=2,rc_refcell=2,getset_pairs=1
 TODO	11.4	11.4	0	OmfLibrary	format	src/format/pe/debug/omf_library.rs	dyn=2,rc_refcell=2,getset_pairs=1
 TODO	11.4	8.5	34	TextDataItem	framework	src/framework/store/text_data_item.rs	dyn=3,getset_pairs=2
-TODO	11.4	9.9	15	JitDirectMemoryVar	pcode	src/pcode/emu/jit/var/jit_direct_memory_var.rs	dyn=4,clone/100L=1.9
 TODO	11.4	10.0	14	SpatialMap	util	src/util/database/spatial/spatial_map.rs	dyn=5
 TODO	11.3	10.0	13	ValueMapSymbol	decompiler	src/decompiler/slghsymbol/value_map_symbol.rs	dyn=5
 TODO	11.3	11.3	0	DataSym32New	format	src/format/pe/debug/data_sym32_new.rs	dyn=2,rc_refcell=2,getset_pairs=1
@@ -963,6 +952,7 @@ TODO	11.0	10.4	6	BlockStreamServer	server	src/server/stream/block_stream_server.
 TODO	11.0	8.4	31	AsyncUtils		src/util/async_utils.rs	dyn=4
 TODO	10.9	10.3	6	ScalarRowObject	app	src/app/plugin/core/scalartable/scalar_row_object.rs	dyn=3,clone/100L=2.3,getset_pairs=2
 TODO	10.9	7.2	51	AddressAnnotatedStringHandler	app	src/app/util/viewer/field/address_annotated_string_handler.rs	dyn=3,getset_pairs=1
+TODO	10.9	10.0	9	MarkupItemStorage	feature	src/feature/vt/api/implementation/markup_item_storage.rs	dyn=4,getset_pairs=2
 TODO	10.9	10.0	9	GBinaryReader	filesystem	src/filesystem/ghidra/g_binary_reader.rs	rc_refcell=3,getset_pairs=1
 TODO	10.9	10.0	9	AttributeManager	util	src/util/graph/attributes/attribute_manager.rs	dyn=5
 TODO	10.8	8.0	35	DatabaseItem	framework	src/framework/store/database_item.rs	dyn=3,getset_pairs=2
@@ -986,6 +976,7 @@ TODO	10.4	10.0	4	ProgramCorrelatorInfoFake	feature	src/feature/vt/api/implementa
 TODO	10.4	10.4	0	UnsupportedMapDb	program	src/program/database/properties/unsupported_map_db.rs	dyn=5
 TODO	10.4	8.9	17	TraceBreakpointManager	trace	src/trace/model/breakpoint/trace_breakpoint_manager.rs	dyn=2,getset_pairs=4
 TODO	10.4	10.0	4	ByteTrieIfc	util	src/util/search/trie/byte_trie_ifc.rs	dyn=5
+TODO	10.3	10.3	0	VtProgramCorrelator	feature	src/feature/vt/api/main/vt_program_correlator.rs	dyn=5
 TODO	10.3	8.0	29	BufferFileAdapter	framework	src/framework/db/buffers/buffer_file_adapter.rs	dyn=3,getset_pairs=2
 TODO	10.3	10.3	0	MemoryBlockDb	program	src/program/database/mem/memory_block_db.rs	arc_mutex=2,clone/100L=1.6,getset_pairs=1,unwrap/100L=1.6
 TODO	10.3	10.3	0	RangeSplitter	program	src/program/model/address/range_splitter.rs	clone/100L=4.0,unwrap/100L=6.3
@@ -1037,7 +1028,7 @@ TODO	9.1	9.1	0	DbTraceReference	trace	src/trace/database/symbol/db_trace_referen
 TODO	9.1	7.3	25	WeakValueHashMap	util	src/util/datastruct/weak_value_hash_map.rs	clone/100L=7.3
 TODO	9.0	8.5	6	AnalyzerEnablementState	app	src/app/plugin/core/analysis/analyzer_enablement_state.rs	dyn=4
 TODO	9.0	7.4	22	AddressableRowObject	app	src/app/tablechooser/addressable_row_object.rs	clone/100L=7.4
-TODO	9.0	9.0	0	VtMatchTagDbAdapter	feature	src/feature/vt/api/main/db/vt_match_tag_db_adapter.rs	dyn=3,getset_pairs=3
+TODO	9.0	9.0	0	VtAssociationTableDbAdapter	feature	src/feature/vt/api/main/db/vt_association_table_db_adapter.rs	dyn=3,getset_pairs=3
 TODO	9.0	9.0	0	PointerDb	program	src/program/database/data/pointer_db.rs	dyn=4,clone/100L=1.0
 TODO	9.0	8.7	3	FunctionTagMappingAdapter	program	src/program/database/function/function_tag_mapping_adapter.rs	dyn=4
 TODO	9.0	8.7	4	SourceMapAdapter	program	src/program/database/sourcemap/source_map_adapter.rs	dyn=4
@@ -1060,7 +1051,6 @@ TODO	8.7	8.0	9	MinusExpression	decompiler	src/decompiler/slghpatexpress/minus_ex
 TODO	8.7	8.0	9	NotExpression	decompiler	src/decompiler/slghpatexpress/not_expression.rs	dyn=4
 TODO	8.7	8.5	2	DisplayableLabel	feature	src/feature/vt/gui/provider/matchtable/displayable_label.rs	dyn=4
 TODO	8.7	8.7	0	PartitionTableEntry	file	src/file/formats/android/bootimg/partition_table_entry.rs	dyn=2,rc_refcell=1,getset_pairs=1
-TODO	8.7	7.4	18	JitVarnodeVar	pcode	src/pcode/emu/jit/var/jit_varnode_var.rs	dyn=2,clone/100L=3.4
 TODO	8.7	8.7	0	FunctionTagManagerDb	program	src/program/database/function/function_tag_manager_db.rs	dyn=4
 TODO	8.7	8.7	0	SourceFileManagerDb	program	src/program/database/sourcemap/source_file_manager_db.rs	dyn=3,clone/100L=2.7
 TODO	8.7	8.3	5	Factory	program	src/program/model/address/factory.rs	clone/100L=8.3
@@ -1085,6 +1075,7 @@ TODO	8.2	8.0	3	FunctionExtentGenerator	feature	src/feature/fid/hash/function_ext
 TODO	8.2	7.5	9	StreamPumper		src/pty/stream_pumper.rs	arc_mutex=2,clone/100L=1.5
 TODO	8.2	7.1	16	TraceBreakpointCommon	trace	src/trace/model/breakpoint/trace_breakpoint_common.rs	dyn=2,clone/100L=1.1,getset_pairs=2
 TODO	8.2	6.0	37	AbstractDirectedLongKeyIterator	util	src/util/database/abstract_directed_long_key_iterator.rs	dyn=3
+TODO	8.2	6.0	37	AbstractDirectedRecordIterator	util	src/util/database/abstract_directed_record_iterator.rs	dyn=3
 TODO	8.1	7.6	7	DeletedMatch	feature	src/feature/vt/api/main/db/deleted_match.rs	clone/100L=7.6
 TODO	8.1	6.0	35	BufferMgr	framework	src/framework/db/buffer_mgr.rs	arc_mutex=2
 TODO	8.1	4.0	102	SleighPcodeUseropDefinition	pcode	src/pcode/exec/sleigh_pcode_userop_definition.rs	dyn=2
@@ -1113,13 +1104,13 @@ TODO	7.8	7.0	11	NamespaceManager	program	src/program/database/symbol/namespace_m
 TODO	7.8	6.0	30	GhidraFileFilter	util	src/util/filechooser/ghidra_file_filter.rs	dyn=3
 TODO	7.8	7.7	1	LogPanelAppender		src/util/log_panel_appender.rs	clone/100L=3.8,unwrap/100L=3.8
 TODO	7.7	6.0	28	AddrSpace	decompiler	src/decompiler/space/addr_space.rs	dyn=3
-TODO	7.7	6.0	28	JitIntBinOp	pcode	src/pcode/emu/jit/op/jit_int_bin_op.rs	dyn=3
 TODO	7.7	7.7	0	DbFieldAdapter	program	src/program/database/util/db_field_adapter.rs	dyn=3,clone/100L=1.7
 TODO	7.7	6.5	19	TraceConflictedMappingException	trace	src/trace/model/modules/trace_conflicted_mapping_exception.rs	dyn=3
 TODO	7.6	6.0	26	SleighSymbol	decompiler	src/decompiler/slghsymbol/sleigh_symbol.rs	dyn=3
 TODO	7.5	7.4	1	ErrorWarningReporter	decompiler	src/decompiler/slgh_compile/error_warning_reporter.rs	rc_refcell=2,clone/100L=1.4
-TODO	7.4	6.0	23	JitIntTestOp	pcode	src/pcode/emu/jit/op/jit_int_test_op.rs	dyn=3
+TODO	7.5	7.5	0	VtMatch	feature	src/feature/vt/api/main/vt_match.rs	dyn=3,getset_pairs=1
 TODO	7.4	3.1	138	TraceAddressSnapRange	trace	src/trace/model/trace_address_snap_range.rs	clone/100L=3.1
+TODO	7.3	4.0	83	DecompilerMarginService	app	src/app/decompiler/decompiler_margin_service.rs	dyn=2
 TODO	7.3	6.5	12	AssemblyParseToken	app	src/app/plugin/assembler/sleigh/tree/assembly_parse_token.rs	dyn=3
 TODO	7.3	7.0	4	FrequentSequence	feature	src/feature/closedpatternmining/frequent_sequence.rs	clone/100L=7.0
 TODO	7.3	6.8	8	GhidraProtocolHandler	framework	src/framework/protocol/ghidra/ghidra_protocol_handler.rs	dyn=3
@@ -1129,14 +1120,10 @@ TODO	7.2	7.1	2	JarEntryRootNode	generic	src/generic/jar/jar_entry_root_node.rs	d
 TODO	7.1	6.0	19	FormatModelListener	app	src/app/util/viewer/format/format_model_listener.rs	dyn=3
 TODO	7.1	6.0	19	DecompileFunctionTask	feature	src/feature/bsim/query/decompile_function_task.rs	arc_mutex=2
 TODO	7.1	7.0	2	AbstractMessageDigest	generic	src/generic/hash/abstract_message_digest.rs	dyn=2,getset_pairs=3
-TODO	7.1	6.0	19	JitFloatBinOp	pcode	src/pcode/emu/jit/op/jit_float_bin_op.rs	dyn=3
-TODO	7.1	6.0	18	JitFloatTestOp	pcode	src/pcode/emu/jit/op/jit_float_test_op.rs	dyn=3
 TODO	7.1	7.1	0	DbKeyAdapter	program	src/program/util/db_key_adapter.rs	dyn=2,clone/100L=3.1
 TODO	7.1	6.0	19	TraceStaticMappingManager	trace	src/trace/model/modules/trace_static_mapping_manager.rs	dyn=3
 TODO	7.0	7.0	0	Record	framework	src/framework/db/record.rs	getset_pairs=7
 TODO	7.0	7.0	0	SeamStubs		src/generic/seam_stubs.rs	arc_mutex=1,unwrap/100L=3.1
-TODO	7.0	6.0	16	JitBoolBinOp	pcode	src/pcode/emu/jit/op/jit_bool_bin_op.rs	dyn=3
-TODO	7.0	6.0	17	JitVar	pcode	src/pcode/emu/jit/var/jit_var.rs	dyn=3
 TODO	7.0	4.5	55	DbCache	program	src/program/database/db_cache.rs	dyn=2
 TODO	7.0	3.3	112	CollectionUtils	util	src/util/util/collection_utils.rs	getset_pairs=3
 TODO	7.0	7.0	0	ProxyUtilitiesTest	util	src/util/util/deeper/proxy_utilities_test.rs	dyn=3,clone/100L=1.0
@@ -1149,7 +1136,6 @@ TODO	6.8	4.6	47	TraceStackFrame	trace	src/trace/model/stack/trace_stack_frame.rs
 TODO	6.7	6.2	8	FunctionParameterAdapter	program	src/program/database/data/function_parameter_adapter.rs	dyn=2,clone/100L=2.2
 TODO	6.6	6.3	5	DumpData	file	src/file/formats/dump/dump_data.rs	clone/100L=1.3,getset_pairs=5
 TODO	6.6	3.3	100	MsType	format	src/format/pdb2/pdbreader/type/ms_type.rs	unwrap/100L=3.3
-TODO	6.6	3.5	90	RootScope	pcode	src/pcode/emu/jit/gen/util/root_scope.rs	dyn=1,clone/100L=1.5
 TODO	6.6	6.6	0	BuiltinDbAdapter	program	src/program/database/data/builtin_db_adapter.rs	dyn=2,clone/100L=2.6
 TODO	6.6	5.2	27	Range	program	src/program/model/address/range.rs	clone/100L=5.2
 TODO	6.6	6.6	0	Mod	program	src/program/model/lang/sleigh/mod.rs	dyn=2,clone/100L=2.6
@@ -1207,7 +1193,6 @@ TODO	5.5	5.4	2	RelocationManager	program	src/program/database/reloc/relocation_m
 TODO	5.5	5.1	7	OverlappingNamespaceException	program	src/program/database/symbol/overlapping_namespace_exception.rs	clone/100L=5.1
 TODO	5.5	4.1	35	ContextCommit	program	src/program/model/lang/sleigh/constructor/context_commit.rs	dyn=1,clone/100L=2.1
 TODO	5.5	5.1	8	TraceGuestPlatformMappedRange	trace	src/trace/model/guest/trace_guest_platform_mapped_range.rs	clone/100L=2.1,getset_pairs=3
-TODO	5.5	4.0	37	AbstractDirectedRecordIterator	util	src/util/database/abstract_directed_record_iterator.rs	dyn=2
 TODO	5.4	5.1	5	AssemblyParseTransitionTable	app	src/app/plugin/assembler/sleigh/parse/assembly_parse_transition_table.rs	dyn=1,clone/100L=3.1
 TODO	5.4	4.0	34	InputBlockStream	framework	src/framework/db/buffers/input_block_stream.rs	dyn=2
 TODO	5.4	3.1	73	EnumEditor	framework	src/framework/options/enum_editor.rs	clone/100L=1.1,getset_pairs=2
@@ -1225,6 +1210,7 @@ TODO	5.2	5.0	4	ConstructorEntryVisitor	app	src/app/plugin/languages/sleigh/const
 TODO	5.2	5.0	5	SubtableEntryVisitor	app	src/app/plugin/languages/sleigh/subtable_entry_visitor.rs	dyn=2,getset_pairs=1
 TODO	5.2	4.0	30	BlockStreamHandle	framework	src/framework/db/buffers/block_stream_handle.rs	dyn=2
 TODO	5.2	4.2	24	RecoveryFileTest	framework	src/framework/db/buffers/recovery_file_test.rs	dyn=1,clone/100L=2.2
+TODO	5.2	4.3	20	JitPhiOp	pcode	src/pcode/emu/jit/op/jit_phi_op.rs	unwrap/100L=3.8
 TODO	5.2	5.2	0	EquateDbAdapter	program	src/program/database/symbol/equate_db_adapter.rs	dyn=2,clone/100L=1.2
 TODO	5.2	5.0	3	AnnotationUtilities	util	src/util/util/annotation_utilities.rs	clone/100L=5.0
 TODO	5.1	4.8	6	StringAndScores	app	src/app/plugin/core/string/string_and_scores.rs	clone/100L=1.1,getset_pairs=2,unwrap/100L=1.7
@@ -1233,6 +1219,7 @@ TODO	5.1	5.0	2	MemoryInfo	file	src/file/formats/dump/apport/memory_info.rs	getse
 TODO	5.1	3.8	35	Json		src/generic/json.rs	getset_pairs=3
 TODO	5.1	5.0	2	TraceProgramViewMemory	trace	src/trace/model/program/trace_program_view_memory.rs	dyn=2,getset_pairs=1
 TODO	5.1	4.3	19	ListenerErrorHandler	util	src/util/datastruct/listener_error_handler.rs	arc_mutex=1,clone/100L=1.3
+TODO	5.0	5.0	0	VtMatchTagDbAdapter	feature	src/feature/vt/api/main/db/vt_match_tag_db_adapter.rs	dyn=1,getset_pairs=3
 TODO	5.0	5.0	0	PointerDbAdapter	program	src/program/database/data/pointer_db_adapter.rs	dyn=1,clone/100L=3.0
 TODO	5.0	4.8	4	FunctionTagAdapter	program	src/program/database/function/function_tag_adapter.rs	dyn=2
 TODO	5.0	4.5	10	AbstractPtyTest		src/pty/abstract_pty_test.rs	arc_mutex=1,clone/100L=1.5
@@ -1241,14 +1228,12 @@ TODO	5.0	4.3	16	WeakStore	util	src/util/datastruct/weak_store.rs	unwrap/100L=4.3
 TODO	4.9	4.6	7	OriginalCompositeListener	app	src/app/plugin/core/compositeeditor/original_composite_listener.rs	clone/100L=4.6
 TODO	4.9	4.8	3	PersistentOpenCloseManager	app	src/app/util/viewer/util/persistent_open_close_manager.rs	dyn=1,clone/100L=1.0,getset_pairs=1
 TODO	4.9	4.6	6	SecureRandomFactory	generic	src/generic/random/secure_random_factory.rs	unwrap/100L=4.6
-TODO	4.9	4.0	23	JitFloatUnOp	pcode	src/pcode/emu/jit/op/jit_float_un_op.rs	dyn=2
 TODO	4.9	4.3	13	MemoryBank	pcode	src/pcode/memstate/memory_bank.rs	dyn=1,getset_pairs=2
 TODO	4.9	4.8	3	IsfComponent	program	src/program/model/data/isf/isf_component.rs	dyn=2
 TODO	4.9	4.3	15	TraceOffsetReference	trace	src/trace/model/symbol/trace_offset_reference.rs	dyn=1,clone/100L=2.3
 TODO	4.8	4.5	6	MemoryMapper	app	src/app/plugin/core/debug/client/tracermi/memory_mapper.rs	clone/100L=4.5
 TODO	4.8	4.4	8	ConditionTester	docking	src/docking/widgets/conditiontestpanel/condition_tester.rs	clone/100L=4.4
 TODO	4.8	4.0	21	AbstractCompile2MsSymbol	format	src/format/pdb2/pdbreader/symbol/abstract_compile2_ms_symbol.rs	dyn=2
-TODO	4.8	4.0	20	JitIntUnOp	pcode	src/pcode/emu/jit/op/jit_int_un_op.rs	dyn=2
 TODO	4.8	4.8	0	ProtoDbAdapter	program	src/program/database/code/proto_db_adapter.rs	dyn=2
 TODO	4.8	4.8	0	ProgramTreeDbAdapter	program	src/program/database/module/program_tree_db_adapter.rs	dyn=2
 TODO	4.8	4.8	0	VariableStorageDbAdapter	program	src/program/database/symbol/variable_storage_db_adapter.rs	dyn=2
@@ -1311,6 +1296,7 @@ TODO	4.0	4.0	0	GhidraUrlResultHandler	framework	src/framework/protocol/ghidra/gh
 TODO	4.0	4.0	0	VersionedDbListener	framework	src/framework/store/db/versioned_db_listener.rs	dyn=2
 TODO	4.0	4.0	0	EmptyIteratorStl	generic	src/generic/stl/empty_iterator_stl.rs	dyn=2
 TODO	4.0	3.8	5	LockFactory	generic	src/generic/util/lock_factory.rs	lazy_static_mut=1
+TODO	4.0	3.4	18	JitVarnodeVar	pcode	src/pcode/emu/jit/var/jit_varnode_var.rs	clone/100L=3.4
 TODO	4.0	4.0	0	OldFunctionDbAdapter	program	src/program/database/oldfunction/old_function_db_adapter.rs	dyn=2
 TODO	4.0	4.0	0	DbRecordAdapter	program	src/program/util/db_record_adapter.rs	dyn=2
 TODO	4.0	3.4	18	TypedEventDispatcher	trace	src/trace/util/typed_event_dispatcher.rs	arc_mutex=1
