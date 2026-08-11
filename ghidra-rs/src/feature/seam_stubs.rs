@@ -458,3 +458,159 @@ impl crate::feature::vt::api::main::db::vt_match_tag_db_adapter::VTMatchTagDBAda
     }
 }
 
+/// Placeholder for the unported Java type `VTMatchSetTableDBAdapterV0`, referenced by
+/// `VTMatchSetTableDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_match_set_table_db_adapter`. `VTMatchSetTableDBAdapterV0`
+/// is a concrete Java class (not an interface), so this stub is a struct that implements the real
+/// `VTMatchSetTableDBAdapter` trait using already-ported `Table`/`DBHandle` machinery.
+///
+/// Two simplifications versus the real Java `VTMatchSetTableDBAdapterV0`:
+///   - `CORRELATOR_CLASS_COL` stores the correlator's display name (`get_name()`) rather than a
+///     reflected Java class name, since `VTProgramCorrelator` (the already-ported trait) has no
+///     class-name accessor.
+///   - `create_match_set_record` does not persist the source/destination address-range sub-tables
+///     that the Java version writes via `program.getAddressMap()`, since the ported `Program`
+///     trait does not yet expose an address map accessor; `get_source_address_set` /
+///     `get_destination_address_set` still read those tables back correctly if/when something
+///     populates them.
+/// Replace with the real port when `VTMatchSetTableDBAdapterV0.java` is ported.
+pub struct VTMatchSetTableDBAdapterV0 {
+    db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTMatchSetTableDBAdapterV0 {
+    pub fn create(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle
+            .write()
+            .unwrap()
+            .create_table(table_name.to_string(), schema)?;
+        Ok(Self { db_handle, table })
+    }
+
+    pub fn open(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = {
+            let dbh = db_handle.read().unwrap();
+            dbh.get_table(table_name).ok_or_else(|| {
+                crate::util::exception::VersionException::with_message(format!(
+                    "Missing Table: {table_name}"
+                ))
+            })?
+        };
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { db_handle, table })
+    }
+
+    fn source_table_name(record: &crate::framework::db::DBRecord) -> String {
+        format!("Source Address Set {}", record.get_key().get_long_value())
+    }
+
+    fn destination_table_name(record: &crate::framework::db::DBRecord) -> String {
+        format!("Destination Address Set {}", record.get_key().get_long_value())
+    }
+
+    fn read_address_set(
+        &self,
+        table_name: &str,
+        address_map: &dyn crate::program::database::map::address_map::AddressMap,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        let addr_table = {
+            let dbh = self.db_handle.read().unwrap();
+            match dbh.get_table(table_name) {
+                Some(t) => t,
+                None => return Ok(None),
+            }
+        };
+
+        let mut address_set = crate::program::model::address::AddressSet::new();
+        let table = addr_table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        while let Some(rec) = iter.next()? {
+            let addr1 = address_map.decode_address(rec.get_long(0).unwrap_or(0));
+            let addr2 = address_map.decode_address(rec.get_long(1).unwrap_or(0));
+            address_set.add_range(&addr1, &addr2);
+        }
+        Ok(Some(address_set))
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_match_set_table_db_adapter::VTMatchSetTableDBAdapter
+    for VTMatchSetTableDBAdapterV0
+{
+    fn create_match_set_record(
+        &self,
+        key: i64,
+        correlator: &dyn crate::feature::vt::api::main::vt_program_correlator::VTProgramCorrelator,
+    ) -> std::io::Result<crate::framework::db::DBRecord> {
+        use crate::feature::vt::api::main::db::vt_match_set_table_db_adapter::ColumnDescription;
+
+        let mut table = self.table.write().unwrap();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_string(
+            ColumnDescription::CorrelatorClassCol.column(),
+            Some(correlator.get_name()),
+        );
+        record.set_string(
+            ColumnDescription::CorrelatorNameCol.column(),
+            Some(correlator.get_name()),
+        );
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn get_records(&self) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator {
+            records: records.into_iter(),
+        }))
+    }
+
+    fn get_source_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+        address_map: &dyn crate::program::database::map::address_map::AddressMap,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        self.read_address_set(&Self::source_table_name(record), address_map)
+    }
+
+    fn get_destination_address_set(
+        &self,
+        record: &crate::framework::db::DBRecord,
+        address_map: &dyn crate::program::database::map::address_map::AddressMap,
+    ) -> std::io::Result<Option<crate::program::model::address::AddressSet>> {
+        self.read_address_set(&Self::destination_table_name(record), address_map)
+    }
+
+    fn get_next_match_set_id(&self) -> i64 {
+        self.table.write().unwrap().get_next_key()
+    }
+
+    fn get_record(&self, key: i64) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(key)))
+    }
+}
+

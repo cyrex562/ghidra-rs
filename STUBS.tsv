@@ -545,3 +545,4 @@ ts	stub_class	referenced_by
 2026-08-10T00:00:00.000000+00:00	VTAssociationDB	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchTagDB	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchTableDBAdapterV0	VTMatchTableDBAdapter
+2026-08-10T00:00:00.000000+00:00	VTMatchSetTableDBAdapterV0	VTMatchSetTableDBAdapter
