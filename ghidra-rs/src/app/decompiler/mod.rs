@@ -1,3 +1,4 @@
+pub mod clang_line;
 pub mod clang_node;
 pub mod clang_token_group;
 pub mod component;
@@ -10,6 +11,7 @@ pub mod decompiler_margin_service;
 pub mod pretty_printer;
 pub mod signature;
 
+pub use clang_line::ClangLine;
 pub use clang_node::ClangNode;
 pub use clang_token_group::ClangTokenGroup;
 pub use decompile_exception::DecompileException;
