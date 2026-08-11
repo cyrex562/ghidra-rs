@@ -9477,7 +9477,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/uti
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTFunctionSizeUtil.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTMatchUtil.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTOptions.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTRelatedMatch.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTRelatedMatch.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTRelatedMatchUtil.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTSessionFileUtil.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VersionTrackingApplyException.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api util
