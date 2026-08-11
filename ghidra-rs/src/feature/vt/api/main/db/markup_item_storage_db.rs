@@ -388,7 +388,7 @@ impl std::fmt::Display for MarkupItemStorageDB {
         writeln!(f, "MarkupItemStorageDB")?;
         writeln!(f, "\tSource Address          = {}", self.get_source_address())?;
         writeln!(f, "\tDest Address            = {}", self.get_destination_address())?;
-        writeln!(f, "\tMarkup Class            = {}", self.get_markup_type().get_name())?;
+        writeln!(f, "\tMarkup Class            = {}", self.get_markup_type().get_display_name())?;
         writeln!(f, "\tStatus                  = {}", self.get_status())?;
         writeln!(f, "\tSource Value            = {}", self.get_source_value().to_string())?;
         writeln!(f, "\tDest Value              = {}", self.get_destination_value().to_string())?;
@@ -668,7 +668,7 @@ mod tests {
         assert_eq!(storage.get_source_address().offset(), 0x1000);
         assert_eq!(storage.get_destination_address().offset(), 0x2000);
         assert_eq!(storage.get_destination_address_source(), "Analysis");
-        assert_eq!(storage.get_markup_type().get_name(), "EOL Comment");
+        assert_eq!(storage.get_markup_type().get_display_name(), "EOL Comment");
         assert_eq!(storage.get_status(), VtMarkupItemStatus::Unapplied);
         assert_eq!(storage.get_status_description(), "Unapplied");
         assert_eq!(storage.get_source_value().to_string(), "src-val");

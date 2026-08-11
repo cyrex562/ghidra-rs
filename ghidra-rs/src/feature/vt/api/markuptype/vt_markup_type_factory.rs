@@ -30,15 +30,15 @@ fn registry() -> &'static Registry {
         // database. Commented-out ids in the Java source (not yet ported markup types) are
         // omitted here rather than carried forward as dead code.
         let entries: Vec<(i32, Arc<dyn VtMarkupType>)> = vec![
-            (12, Arc::new(EolCommentMarkupType)),
-            (13, Arc::new(FunctionNameMarkupType)),
-            (22, Arc::new(LabelMarkupType)),
-            (23, Arc::new(PlateCommentMarkupType)),
-            (24, Arc::new(PostCommentMarkupType)),
-            (25, Arc::new(PreCommentMarkupType)),
-            (26, Arc::new(RepeatableCommentMarkupType)),
-            (27, Arc::new(DataTypeMarkupType)),
-            (29, Arc::new(FunctionSignatureMarkupType)),
+            (12, Arc::new(EolCommentMarkupType::new())),
+            (13, Arc::new(FunctionNameMarkupType::new())),
+            (22, Arc::new(LabelMarkupType::new())),
+            (23, Arc::new(PlateCommentMarkupType::new())),
+            (24, Arc::new(PostCommentMarkupType::new())),
+            (25, Arc::new(PreCommentMarkupType::new())),
+            (26, Arc::new(RepeatableCommentMarkupType::new())),
+            (27, Arc::new(DataTypeMarkupType::new())),
+            (29, Arc::new(FunctionSignatureMarkupType::new())),
         ];
         RwLock::new(entries)
     })
@@ -116,10 +116,10 @@ mod tests {
     #[test]
     fn get_markup_type_looks_up_by_id() {
         let eol = get_markup_type(12).expect("id 12 should be registered");
-        assert_eq!(eol.get_name(), "EOL Comment");
+        assert_eq!(eol.get_display_name(), "EOL Comment");
 
         let function_signature = get_markup_type(29).expect("id 29 should be registered");
-        assert_eq!(function_signature.get_name(), "Function Signature");
+        assert_eq!(function_signature.get_display_name(), "Function Signature");
 
         // 11 is a commented-out id in the Java source (never registered by this port); 9999 is
         // deliberately not asserted against here since another test in this module registers it
@@ -138,7 +138,7 @@ mod tests {
         std::env::set_var(SystemUtilities::TESTING_PROPERTY, "true");
         assert!(SystemUtilities::is_in_testing_mode());
 
-        let unregistered: Arc<dyn VtMarkupType> = Arc::new(LabelMarkupType);
+        let unregistered: Arc<dyn VtMarkupType> = Arc::new(LabelMarkupType::new());
         // Distinct `Arc` from the one seeded into the registry, so this is genuinely unregistered
         // by pointer identity even though `LabelMarkupType` is already registered under id 22.
         let id = get_id(&unregistered);
