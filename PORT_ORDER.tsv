@@ -15,7 +15,7 @@ DONE	trait	4	143	4	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/
 DONE	trait	3	147	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelator.java
 DONE	trait	10	9	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemStorage.java
 DONE	trait	12	134	2	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelatorFactory.java
-TODO	trait	12	7	30	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTRelatedMatch.java
+DONE	trait	12	7	30	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/util/VTRelatedMatch.java
 TODO	trait	19	5	46	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTagDBAdapter.java
 TODO	trait	16	5	50	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchTableDBAdapter.java
 TODO	trait	15	5	47	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchSetTableDBAdapter.java
