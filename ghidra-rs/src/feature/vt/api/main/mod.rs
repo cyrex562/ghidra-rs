@@ -1,5 +1,6 @@
 pub mod association_hook;
 pub mod db;
+pub mod vt_association;
 pub mod vt_association_manager;
 pub mod vt_association_markup_status;
 pub mod vt_association_status;

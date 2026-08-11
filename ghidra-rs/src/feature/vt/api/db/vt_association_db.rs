@@ -26,13 +26,17 @@
 use std::sync::{Arc, Mutex};
 
 use crate::feature::seam_stubs::{
-    association_status_from_ordinal, association_type_from_ordinal, AddressType, TaskMonitor,
-    VTSessionDB, VtAssociation, VtAssociationMarkupStatus, VtAssociationStatus, VtAssociationType,
-    VtMarkupItem,
+    association_status_from_ordinal, association_type_from_ordinal, AddressType,
+    VTAssociationStatusException, VTSessionDB, VtAssociation, VtMarkupItem,
 };
 use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
+use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
 use crate::framework::db::DBRecord;
 use crate::program::database::db_object::{DbObject, DbObjectState};
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
 
 /// Database-backed version-tracking association: one row of the `AssociationTable`.
 ///
@@ -83,11 +87,10 @@ impl VTAssociationDB {
         *self.record.lock().unwrap() = record;
     }
 
-    /// Java: `VTAssociationDB.getStatus()`, returning the real ported enum rather than the
-    /// [`VtAssociationStatus`] placeholder trait that the `VtAssociation` seam still speaks in. The
-    /// `VtAssociation::get_status` impl below wraps this value. Named apart from the trait method
-    /// so that a shared `Arc<VTAssociationDB>` -- for which both this type's and `Arc`'s
-    /// `VtAssociation` impls are in scope -- resolves unambiguously.
+    /// Java: `VTAssociationDB.getStatus()`. The `VtAssociation::get_status` impl below just
+    /// forwards to this. Named apart from the trait method so that a shared `Arc<VTAssociationDB>`
+    /// -- for which both this type's and `Arc`'s `VtAssociation` impls are in scope -- resolves
+    /// unambiguously.
     pub fn get_association_status(
         &self,
     ) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
@@ -149,8 +152,8 @@ impl DbObject for VTAssociationDB {
 }
 
 impl VtAssociation for VTAssociationDB {
-    fn get_type(&self) -> Box<dyn VtAssociationType> {
-        Box::new(self.get_association_type())
+    fn get_type(&self) -> VtAssociationType {
+        self.get_association_type()
     }
 
     fn get_session(&self) -> Box<dyn crate::feature::vt::api::main::vt_session::VTSession> {
@@ -162,7 +165,7 @@ impl VtAssociation for VTAssociationDB {
     fn get_markup_items(
         &self,
         _monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+    ) -> Result<Vec<Box<dyn VtMarkupItem>>, CancelledException> {
         unimplemented!(
             "VTAssociationDB::get_markup_items requires the unported MarkupItemManagerImpl; use \
              AssociationDatabaseManager::get_applied_markup_items"
@@ -202,27 +205,27 @@ impl VtAssociation for VTAssociationDB {
         )
     }
 
-    fn set_markup_status(&self, _markup_items_status: &dyn VtAssociationMarkupStatus) {
+    fn set_markup_status(&self, _markup_items_status: VtAssociationMarkupStatus) {
         unimplemented!("VTAssociationDB::set_markup_status must persist through the manager")
     }
 
-    fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
-        Box::new(self.get_association_markup_status())
+    fn get_markup_status(&self) -> VtAssociationMarkupStatus {
+        self.get_association_markup_status()
     }
 
-    fn get_status(&self) -> Box<dyn VtAssociationStatus> {
-        Box::new(self.get_association_status())
+    fn get_status(&self) -> VtAssociationStatus {
+        self.get_association_status()
     }
 
-    fn set_accepted(&self) -> std::io::Result<()> {
+    fn set_accepted(&self) -> Result<(), VTAssociationStatusException> {
         unimplemented!("VTAssociationDB::set_accepted must go through AssociationDatabaseManager")
     }
 
-    fn clear_status(&self) -> std::io::Result<()> {
+    fn clear_status(&self) -> Result<(), VTAssociationStatusException> {
         unimplemented!("VTAssociationDB::clear_status must go through AssociationDatabaseManager")
     }
 
-    fn set_rejected(&self) -> std::io::Result<()> {
+    fn set_rejected(&self) -> Result<(), VTAssociationStatusException> {
         unimplemented!("VTAssociationDB::set_rejected must go through AssociationDatabaseManager")
     }
 
@@ -252,7 +255,7 @@ impl VtAssociation for VTAssociationDB {
 /// (which is what the ported `VTAssociationManager` seam returns) without cloning the underlying
 /// object, mirroring how `MarkupItemStorageDB` forwards through its own `Arc`.
 impl VtAssociation for Arc<VTAssociationDB> {
-    fn get_type(&self) -> Box<dyn VtAssociationType> {
+    fn get_type(&self) -> VtAssociationType {
         (**self).get_type()
     }
 
@@ -263,7 +266,7 @@ impl VtAssociation for Arc<VTAssociationDB> {
     fn get_markup_items(
         &self,
         monitor: &dyn TaskMonitor,
-    ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+    ) -> Result<Vec<Box<dyn VtMarkupItem>>, CancelledException> {
         (**self).get_markup_items(monitor)
     }
 
@@ -283,27 +286,27 @@ impl VtAssociation for Arc<VTAssociationDB> {
         (**self).get_related_associations()
     }
 
-    fn set_markup_status(&self, markup_items_status: &dyn VtAssociationMarkupStatus) {
+    fn set_markup_status(&self, markup_items_status: VtAssociationMarkupStatus) {
         (**self).set_markup_status(markup_items_status)
     }
 
-    fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+    fn get_markup_status(&self) -> VtAssociationMarkupStatus {
         (**self).get_markup_status()
     }
 
-    fn get_status(&self) -> Box<dyn VtAssociationStatus> {
+    fn get_status(&self) -> VtAssociationStatus {
         VtAssociation::get_status(&**self)
     }
 
-    fn set_accepted(&self) -> std::io::Result<()> {
+    fn set_accepted(&self) -> Result<(), VTAssociationStatusException> {
         (**self).set_accepted()
     }
 
-    fn clear_status(&self) -> std::io::Result<()> {
+    fn clear_status(&self) -> Result<(), VTAssociationStatusException> {
         (**self).clear_status()
     }
 
-    fn set_rejected(&self) -> std::io::Result<()> {
+    fn set_rejected(&self) -> Result<(), VTAssociationStatusException> {
         (**self).set_rejected()
     }
 

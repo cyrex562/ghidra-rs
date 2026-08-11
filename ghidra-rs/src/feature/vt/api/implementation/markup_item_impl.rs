@@ -59,7 +59,7 @@ use std::cell::Cell;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::feature::seam_stubs::{
-    MarkupItemStorageImpl, ProgramLocation, Stringable, TaskMonitor, ToolOptions, VtAssociation,
+    MarkupItemStorageImpl, ProgramLocation, Stringable, ToolOptions, VtAssociation,
     VtMarkupItemConsideredStatus, VtMarkupType, VtMarkupTypeBase,
 };
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
@@ -71,6 +71,7 @@ use crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus;
 use crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrackingApplyException;
 use crate::program::database::db_object::DbObject;
 use crate::program::model::address::Address;
+use crate::util::task::DummyMonitor;
 
 thread_local! {
     /// Java: `private static boolean isUnApplyingItems`. Stops the cascade in
@@ -241,7 +242,7 @@ impl MarkupItemImpl {
             let association = self.get_association();
             // Java catches `CancelledException` here and ignores it; the dummy monitor never
             // cancels, so the error arm is unreachable in practice.
-            if let Ok(items) = association.get_markup_items(&DummyTaskMonitor) {
+            if let Ok(items) = association.get_markup_items(&DummyMonitor) {
                 if self.markup_type.conflicts_with_other_markup(self, &items) {
                     return VtMarkupItemStatus::Conflict;
                 }
@@ -285,17 +286,16 @@ impl MarkupItemImpl {
         VtMarkupItemDestinationAddressEditStatus::Editable
     }
 
-    /// Java: `getAssociation().getStatus()`, recovered as the real ported enum through the
-    /// association seam's placeholder status.
+    /// Java: `getAssociation().getStatus()`.
     fn association_status(&self) -> VtAssociationStatus {
-        self.get_association().get_status().association_status()
+        self.get_association().get_status()
     }
 
     /// Java: `canApply()`.
     pub fn can_apply(&self) -> bool {
         let association = self.get_association();
-        let association_status = association.get_status().association_status();
-        match association.get_markup_items(&DummyTaskMonitor) {
+        let association_status = association.get_status();
+        match association.get_markup_items(&DummyMonitor) {
             Ok(markup_items) => {
                 association_status.can_apply()
                     && self.get_status().is_appliable()
@@ -511,7 +511,7 @@ impl MarkupItemImpl {
         };
         let association = self.get_association();
         // Java: `catch (CancelledException e)` -- can't happen with a dummy monitor.
-        let Ok(markup_items) = association.get_markup_items(&DummyTaskMonitor) else {
+        let Ok(markup_items) = association.get_markup_items(&DummyMonitor) else {
             return Ok(());
         };
 
@@ -679,16 +679,6 @@ impl std::fmt::Display for MarkupItemImpl {
     }
 }
 
-/// Java: `TaskMonitor.DUMMY`, the monitor `MarkupItemImpl` passes whenever it asks its association
-/// for the other markup items. Never cancels.
-struct DummyTaskMonitor;
-
-impl TaskMonitor for DummyTaskMonitor {
-    fn check_cancelled(&self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
-
 /// Java: `new ToolOptions("VT Options Default")`, the empty options
 /// [`MarkupItemImpl::apply`] substitutes for a null argument.
 struct DefaultToolOptions;
@@ -811,8 +801,10 @@ mod tests {
 
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    use crate::feature::seam_stubs::{VtAssociationMarkupStatus, VtAssociationType};
+    use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
+    use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
+    use crate::util::task::TaskMonitor;
 
     fn address(offset: i64) -> Address {
         Address::new(AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1), offset)
@@ -886,7 +878,7 @@ mod tests {
     }
 
     impl VtAssociation for TestAssociation {
-        fn get_type(&self) -> Box<dyn VtAssociationType> {
+        fn get_type(&self) -> VtAssociationType {
             unimplemented!("not used by these tests")
         }
 
@@ -897,7 +889,7 @@ mod tests {
         fn get_markup_items(
             &self,
             _monitor: &dyn TaskMonitor,
-        ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+        ) -> Result<Vec<Box<dyn VtMarkupItem>>, crate::util::exception::CancelledException> {
             Ok(Vec::new())
         }
 
@@ -917,25 +909,25 @@ mod tests {
             Vec::new()
         }
 
-        fn set_markup_status(&self, _markup_items_status: &dyn VtAssociationMarkupStatus) {}
+        fn set_markup_status(&self, _markup_items_status: VtAssociationMarkupStatus) {}
 
-        fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+        fn get_markup_status(&self) -> VtAssociationMarkupStatus {
             unimplemented!("not used by these tests")
         }
 
-        fn get_status(&self) -> Box<dyn crate::feature::seam_stubs::VtAssociationStatus> {
-            Box::new(self.status)
+        fn get_status(&self) -> VtAssociationStatus {
+            self.status
         }
 
-        fn set_accepted(&self) -> std::io::Result<()> {
+        fn set_accepted(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
 
-        fn clear_status(&self) -> std::io::Result<()> {
+        fn clear_status(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
 
-        fn set_rejected(&self) -> std::io::Result<()> {
+        fn set_rejected(&self) -> Result<(), crate::feature::seam_stubs::VTAssociationStatusException> {
             Ok(())
         }
 
