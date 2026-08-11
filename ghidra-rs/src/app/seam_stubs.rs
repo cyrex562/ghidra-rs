@@ -3,7 +3,7 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
-use crate::app::decompiler::ClangNode;
+use crate::app::decompiler::{ClangNode, ClangTokenGroup, DecompiledFunction};
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
@@ -1338,3 +1338,47 @@ pub trait CTokenHighlightMatcher: Send + Sync {
     /// A boxed trait object representing the color for this token.
     fn get_token_highlight(&self, token: &dyn ClangNode) -> Box<dyn Color>;
 }
+
+/// Placeholder trait for `ghidra.app.decompiler.DecompileResults`, referenced by
+/// [`DecompilerLocation`](crate::app::decompiler::DecompilerLocation). This represents
+/// the decompilation results (C-AST, DFG, and CFG). The real class is not yet ported.
+pub trait DecompileResults: Send + Sync {
+    /// Returns whether decompilation has completed.
+    fn decompile_completed(&self) -> bool;
+
+    /// Returns the function that was decompiled.
+    fn get_function(&self) -> Box<dyn crate::program::model::listing::function::Function>;
+
+    /// Returns whether the decompilation timed out.
+    fn is_timed_out(&self) -> bool;
+
+    /// Returns whether the decompilation was cancelled.
+    fn is_cancelled(&self) -> bool;
+
+    /// Returns whether the decompilation failed to start.
+    fn failed_to_start(&self) -> bool;
+
+    /// Returns whether the decompilation results are valid.
+    fn is_valid(&self) -> bool;
+
+    /// Returns the error message if decompilation failed.
+    fn get_error_message(&self) -> String;
+
+    /// Returns the high-level function representation.
+    fn get_high_function(&self) -> Box<dyn HighFunction>;
+
+    /// Returns the high-level parameter ID information.
+    fn get_high_param_id(&self) -> Box<dyn HighParamID>;
+
+    /// Returns the C code token markup.
+    fn get_c_code_markup(&self) -> ClangTokenGroup;
+
+    /// Returns the decompiled function representation.
+    fn get_decompiled_function(&self) -> DecompiledFunction;
+}
+
+/// Placeholder trait for `ghidra.app.decompiler.HighFunction`.
+pub trait HighFunction: Send + Sync {}
+
+/// Placeholder trait for `ghidra.app.decompiler.HighParamID`.
+pub trait HighParamID: Send + Sync {}
