@@ -1,5 +1,7 @@
+pub mod sub_scope;
 pub mod types;
 
+pub use sub_scope::SubScope;
 pub use types::{
     BNonVoid, BPrim, BType, SNonVoid, SPrim, SType, TCat1, TCat2, TBool, TByte, TChar, TDouble,
     TFloat, TInt, TLong, TRef, TShort, TVoid, T_BOOL, T_BOOL_ARR, T_BYTE, T_BYTE_ARR, T_CHAR,
