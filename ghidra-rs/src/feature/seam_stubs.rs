@@ -614,3 +614,109 @@ impl crate::feature::vt::api::main::db::vt_match_set_table_db_adapter::VTMatchSe
     }
 }
 
+/// Placeholder for the unported Java type `VTAddressCorrelationAdapterV0`, referenced by
+/// `VTAddressCorrelatorAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_address_correlator_adapter`.
+/// `VTAddressCorrelationAdapterV0` is a concrete Java class (not an interface), so this stub is a
+/// struct that implements the real `VTAddressCorrelatorAdapter` trait using already-ported
+/// `Table`/`DBHandle` machinery. Replace with the real port when
+/// `VTAddressCorrelationAdapterV0.java` is ported.
+pub struct VTAddressCorrelationAdapterV0 {
+    base: crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase,
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTAddressCorrelationAdapterV0 {
+    pub fn create(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle
+            .write()
+            .unwrap()
+            .create_table(table_name.to_string(), schema)?;
+        Ok(Self {
+            base: crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase::new(db_handle),
+            table,
+        })
+    }
+
+    pub fn open(
+        db_handle: std::sync::Arc<std::sync::RwLock<crate::framework::db::DBHandle>>,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = {
+            let dbh = db_handle.read().unwrap();
+            dbh.get_table(table_name).ok_or_else(|| {
+                crate::util::exception::VersionException::with_message(format!(
+                    "Missing Table: {table_name}"
+                ))
+            })?
+        };
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self {
+            base: crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase::new(db_handle),
+            table,
+        })
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapter
+    for VTAddressCorrelationAdapterV0
+{
+    fn base(
+        &self,
+    ) -> &crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddressCorrelatorAdapterBase
+    {
+        &self.base
+    }
+
+    fn create_address_record(
+        &self,
+        _source_entry_long: i64,
+        source_long: i64,
+        destination_long: i64,
+    ) -> std::io::Result<()> {
+        use crate::feature::vt::api::main::db::vt_address_correlator_adapter::ColumnDescription;
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        // Faithful port of the Java source: SOURCE_ENTRY_COL is populated with `source_long`,
+        // not `source_entry_long` -- see `VTAddressCorrelationAdapterV0.createAddressRecord`.
+        record.set_long(ColumnDescription::SourceEntryCol.column(), source_long);
+        record.set_long(ColumnDescription::SourceAddressCol.column(), source_long);
+        record.set_long(ColumnDescription::DestinationAddressCol.column(), destination_long);
+
+        table.put_record(record)
+    }
+
+    fn get_address_records(
+        &self,
+        source_entry_long: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_address_correlator_adapter::ColumnDescription;
+
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            if record.get_long(ColumnDescription::SourceEntryCol.column()) == Some(source_entry_long)
+            {
+                records.push(record);
+            }
+        }
+        Ok(records)
+    }
+}
+
