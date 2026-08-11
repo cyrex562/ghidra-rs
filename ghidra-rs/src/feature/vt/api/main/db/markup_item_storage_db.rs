@@ -512,8 +512,8 @@ mod tests {
         fn set_changed(
             &self,
             _event_type: crate::feature::vt::api::implementation::vt_event::VtEvent,
-            _old_value: Option<Arc<crate::feature::seam_stubs::VTAssociationDB>>,
-            _new_value: Option<Arc<crate::feature::seam_stubs::VTAssociationDB>>,
+            _old_value: Option<Arc<crate::feature::vt::api::db::vt_association_db::VTAssociationDB>>,
+            _new_value: Option<Arc<crate::feature::vt::api::db::vt_association_db::VTAssociationDB>>,
         ) {
         }
     }
