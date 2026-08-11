@@ -41,9 +41,10 @@ use std::io;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use crate::feature::seam_stubs::{
-    association_status_ordinal, MarkupItemImpl, VTAssociationDB, VTAssociationStatusException,
-    VTSessionDB, VtAssociation, VtMarkupItem,
+    association_status_ordinal, MarkupItemImpl, VTAssociationStatusException, VTSessionDB,
+    VtAssociation, VtMarkupItem,
 };
+use crate::feature::vt::api::db::vt_association_db::VTAssociationDB;
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::implementation::vt_event::VtEvent;
 use crate::feature::vt::api::main::association_hook::AssociationHook;

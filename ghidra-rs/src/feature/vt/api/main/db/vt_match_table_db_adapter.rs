@@ -12,8 +12,9 @@ use std::io;
 use std::sync::Arc;
 
 use crate::feature::seam_stubs::{
-    VTAssociationDB, VTMatchInfo, VTMatchSetDB, VTMatchTableDBAdapterV0, VTMatchTagDB,
+    VTMatchInfo, VTMatchSetDB, VTMatchTableDBAdapterV0, VTMatchTagDB,
 };
+use crate::feature::vt::api::db::vt_association_db::VTAssociationDB;
 use crate::framework::data::OpenMode;
 use crate::framework::db::{DBHandle, DBRecord, FieldType, RecordIterator, Schema};
 use crate::util::exception::VersionException;

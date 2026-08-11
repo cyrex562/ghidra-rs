@@ -542,7 +542,6 @@ ts	stub_class	referenced_by
 2026-08-10T00:00:00.000000+00:00	VTMatchTagDBAdapterV0	VTMatchTagDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchInfo	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchSetDB	VTMatchTableDBAdapter
-2026-08-10T00:00:00.000000+00:00	VTAssociationDB	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchTagDB	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchTableDBAdapterV0	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchSetTableDBAdapterV0	VTMatchSetTableDBAdapter
@@ -559,6 +558,5 @@ ts	stub_class	referenced_by
 2026-08-11T04:15:07.000000+00:00	RepeatableCommentMarkupType	VTMarkupTypeFactory
 2026-08-11T04:15:08.000000+00:00	DataTypeMarkupType	VTMarkupTypeFactory
 2026-08-11T00:00:00.000000+00:00	VTSessionDB	AssociationDatabaseManager
-2026-08-11T00:00:00.000000+00:00	VTAssociationDB	AssociationDatabaseManager
 2026-08-11T00:00:00.000000+00:00	VTAssociationStatusException	AssociationDatabaseManager
 2026-08-11T00:00:00.000000+00:00	MarkupItemImpl	AssociationDatabaseManager
