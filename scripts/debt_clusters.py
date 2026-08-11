@@ -27,11 +27,13 @@ Verdicts (col 1 of CONVENTION_QUEUE.tsv), per OWNERSHIP_MIGRATION.md's conventio
   STRUCT  shouldn't be a trait at all (a trait with 0-2 implementers is usually just a type)
   PARK    genuinely undecidable for now; keep it off the queue but don't keep re-asking
 
-WAIT-PORT is not a verdict anyone makes: it marks a row whose answer is blocked on a Java
-class still TODO in PORT_MANIFEST.tsv. The evidence needed to decide it does not exist yet,
-so asking a human is wasted -- but leaving it TODO made the queue claim 232 open decisions
-when only 40 were real. It is re-derived on every run and goes live the run after its Java
-class is ported, so it can never freeze a row the way a recorded decision would.
+WAIT-PORT and WAIT-STUB are not verdicts anyone makes: they mark rows whose answer is blocked
+on something the porter has not finished. WAIT-PORT waits on a Java class still TODO in
+PORT_MANIFEST.tsv; WAIT-STUB waits on a seam_stubs.rs placeholder being retired. The evidence
+needed to decide either does not exist yet, so asking a human is wasted -- but leaving them
+TODO made the queue claim 232 open decisions when only 40 were real. Both are re-derived on
+every run and go live once the thing they wait on lands, so neither can freeze a row the way
+a recorded decision would.
 
 SUGGEST-<VERDICT> is a PROPOSAL, not a decision: --suggest writes them from structural
 evidence, and nothing downstream acts on them -- pattern_audit.py honours a bare ACCEPT only,
@@ -141,10 +143,20 @@ QUEUE_COLS = ["verdict", "leverage", "occurrences", "fanin", "type", "java_class
 # re-derives it unconditionally, unlike SUGGEST-*, which only resets under --resuggest.
 WAIT_PORT = "WAIT-PORT"
 
+# The same idea for the other blocked-on-the-port state: a trait declared in seam_stubs.rs is
+# a compile-time stand-in the harness created so callers could build before the real type
+# existed. Its ownership shape is decided when the stub is RETIRED (STUB_DEBT.tsv tracks
+# that), not now -- and unlike WAIT-PORT there is usually no Java class of the same name
+# coming, because these are JDK/Swing shims (Color, MouseEvent, JButton) or seam names the
+# port invented (GraphNavigatorSeam, KeyManagerFactoryLike).
+WAIT_STUB = "WAIT-STUB"
+
+_WAIT = (WAIT_PORT, WAIT_STUB)
+
 
 def is_derived_verdict(v):
     """Verdicts the generator owns and may overwrite, as opposed to a human's answer."""
-    return str(v).startswith("SUGGEST-") or str(v) == WAIT_PORT
+    return str(v).startswith("SUGGEST-") or str(v) in _WAIT
 
 
 def _qkey(name, java_class):
@@ -676,6 +688,22 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
                 return None, (
                     f"no Java FILE named {name}, but the port's renaming resolves it to "
                     f"{resolved} -- rerun once the index is rebuilt")
+            # Java has now been asked and had nothing to say, so consulting the Rust side does
+            # not violate the ordering rule above -- it is the fallback that rule provides for.
+            # "declared in seam_stubs.rs" is a strictly better account of the row than "an
+            # abstraction the port invented": the harness wrote it, and it is scheduled for
+            # deletion. 28 rows were reading as invented abstractions for want of this check.
+            # No n_impl guard here, unlike the placeholder check further down. Once Java has
+            # no type of this name at all, "declared in seam_stubs.rs" is decisive on its own,
+            # and an implementer count cannot argue with it: JdomElement's two "implementers"
+            # are NullJdomElement -- the stub's own null object, in seam_stubs.rs -- and a test
+            # mock. Requiring n_impl == 0 left four rows (AuthCallback, Class, DBIndexFieldCodec,
+            # JdomElement) labelled inventions on the strength of their own scaffolding.
+            if name in stub_decl:
+                return WAIT_STUB, (
+                    f"no Java type named {name}, and it is a seam_stubs.rs placeholder -- a "
+                    f"compile-time stand-in, not an abstraction anyone designed. Its shape is "
+                    f"decided when the stub is retired (STUB_DEBT.tsv), not here")
             return None, (
                 f"no Java type named {name} -- an abstraction the port invented, so Java says "
                 f"nothing about its shape")
@@ -873,7 +901,7 @@ def _emit_row(rows, name, java_class, leverage, occurrences, fanin, prior, rules
     # when this run can actually re-derive it. Only --suggest reads PORT_MANIFEST; clearing
     # it on a plain regeneration silently reset all 100 rows to TODO, which is the very
     # mislabelling this verdict exists to remove.
-    if prev and prev[0] == WAIT_PORT and rederive:
+    if prev and prev[0] in _WAIT and rederive:
         prev = ("TODO", "", "")
     if prev and prev[1] != "family" and prev[0] != "TODO":
         verdict, source, note = prev                # hand-made decision: never recompute
@@ -1084,7 +1112,7 @@ def main():
                                      mock_impls, stub_decl, java_subtypes, java_decls,
                                      jdk_modeled, java_impl_names, java_ext_points,
                                      _load_implementer_table(), java_ambiguous)
-            if v == WAIT_PORT:
+            if v in _WAIT:
                 # Derived, not proposed: there is nothing to promote and nobody to ask. The
                 # source marks it as the generator's own, so `_emit_row` may overwrite it.
                 r["verdict"], r["source"], r["note"] = v, "derived", why
@@ -1096,8 +1124,9 @@ def main():
                 r["source"], r["note"] = "evidence", why
         print(f"proposed {n} verdicts (inert until --promote)", file=sys.stderr)
         if waiting:
-            print(f"{waiting} row(s) blocked on an unported Java class -> {WAIT_PORT} "
-                  f"(re-derived every run; goes live when the port lands)", file=sys.stderr)
+            print(f"{waiting} row(s) blocked on an unported class or a seam stub -> "
+                  f"{WAIT_PORT}/{WAIT_STUB} (re-derived every run; each goes live when the "
+                  f"thing it waits on lands)", file=sys.stderr)
 
     if args.promote:
         want = args.promote.strip().upper()
@@ -1111,8 +1140,8 @@ def main():
 
     # WAIT-PORT is neither: nobody decided it and nobody has to. Counting it as decided would
     # overstate progress, counting it as TODO is what this verdict exists to stop.
-    decided = [r for r in rows if r["verdict"] not in ("TODO", WAIT_PORT)]
-    waiting_rows = [r for r in rows if r["verdict"] == WAIT_PORT]
+    decided = [r for r in rows if r["verdict"] not in ("TODO",) + _WAIT]
+    waiting_rows = [r for r in rows if r["verdict"] in _WAIT]
     seen, cumulative = set(), []
     for r in rows:
         cumulative.append(r)

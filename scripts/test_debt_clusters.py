@@ -137,6 +137,12 @@ class TestWaitPortIsNeverSticky(unittest.TestCase):
     def test_a_suggestion_is_still_carried_without_resuggest(self):
         self.assertEqual(self.emit("SUGGEST-ENUM", "suggest")["verdict"], "SUGGEST-ENUM")
 
+    def test_a_wait_stub_row_is_re_derived_too(self):
+        self.assertEqual(self.emit(dc.WAIT_STUB)["verdict"], "TODO")
+
+    def test_a_wait_stub_row_also_survives_a_non_deriving_run(self):
+        self.assertEqual(self.emit(dc.WAIT_STUB, rederive=False)["verdict"], dc.WAIT_STUB)
+
     def test_wait_is_recognised_as_generator_owned(self):
         self.assertTrue(dc.is_derived_verdict(dc.WAIT_PORT))
         self.assertTrue(dc.is_derived_verdict("SUGGEST-ENUM"))
@@ -144,11 +150,53 @@ class TestWaitPortIsNeverSticky(unittest.TestCase):
         self.assertFalse(dc.is_derived_verdict("TODO"))
 
     def test_wait_port_is_not_a_decided_convention(self):
-        """Nothing downstream may act on it. dyn_rules honours a whitelist; WAIT-PORT must
-        not be in it, or `dyn T` sites would be rewritten against a non-answer."""
+        """Nothing downstream may act on either. dyn_rules honours a whitelist; neither WAIT
+        verdict may be in it, or `dyn T` sites would be rewritten against a non-answer."""
         sys.path.insert(0, HERE)
         import dyn_rules
         self.assertNotIn(dc.WAIT_PORT, dyn_rules.DECIDED)
+        self.assertNotIn(dc.WAIT_STUB, dyn_rules.DECIDED)
+
+
+class TestSeamStubPlaceholders(unittest.TestCase):
+    """A trait in seam_stubs.rs is a compile-time stand-in, not an abstraction anyone designed.
+
+    28 of them read as "an abstraction the port invented" because that conclusion returned
+    before the placeholder check further down could run. Java is still asked first -- these
+    only reach the stub check once Java has been asked and had nothing to say.
+    """
+
+    def call(self, name, impls=0, stubs=(), java_decls=None, java_subtypes=None):
+        return dc.suggest_verdict(
+            name, {name: 1}, {}, {name: impls} if impls else {}, set(), {}, set(stubs),
+            java_subtypes if java_subtypes is not None else {name: 0},
+            java_decls or {}, frozenset())
+
+    def test_a_stub_with_no_java_counterpart_is_a_placeholder_not_an_invention(self):
+        v, why = self.call("MouseEvent", stubs=("MouseEvent",))
+        self.assertEqual(v, dc.WAIT_STUB)
+        self.assertIn("seam_stubs.rs placeholder", why)
+        self.assertNotIn("the port invented", why)
+
+    def test_a_non_stub_with_no_java_counterpart_is_still_an_invention(self):
+        """The 23 abstractions declared in real modules are genuine open questions."""
+        v, why = self.call("ErasedPcodeThread")
+        self.assertIsNone(v)
+        self.assertIn("the port invented", why)
+
+    def test_an_implementer_count_does_not_argue_with_being_a_stub(self):
+        """Where Java has no type of the name, seam_stubs.rs is decisive whatever implements
+        it: JdomElement's implementers are its own NullJdomElement plus a test mock, and the
+        count excluded four rows on the strength of their own scaffolding."""
+        v, why = self.call("JdomElement", impls=2, stubs=("JdomElement",))
+        self.assertEqual(v, dc.WAIT_STUB)
+
+    def test_java_is_still_asked_before_the_stub_check(self):
+        """The ordering rule this check sits under: Java first, Rust-side evidence only as the
+        fallback. A stub whose Java type has a real hierarchy must be answered from Java."""
+        v, why = self.call("Shaped", stubs=("Shaped",), java_subtypes={"Shaped": 4},
+                           java_decls={"Shaped": "interface"})
+        self.assertNotEqual(v, dc.WAIT_STUB)
 
 
 class TestCollectDeclarations(unittest.TestCase):
