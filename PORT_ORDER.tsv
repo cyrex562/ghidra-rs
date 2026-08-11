@@ -3,7 +3,7 @@ DONE	trait	2	104	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decom
 DONE	trait	5	7	3	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/signature/DebugSignature.java
 DONE	trait	5	86	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerHighlighter.java
 DONE	trait	4	87	3	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerHighlightService.java
-TODO	trait	4	84	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerLocation.java
+DONE	trait	4	84	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerLocation.java
 TODO	trait	4	83	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/DecompilerMarginService.java
 TODO	trait	2	84	10	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/PrettyPrinter.java
 TODO	trait	1	93	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangLine.java
