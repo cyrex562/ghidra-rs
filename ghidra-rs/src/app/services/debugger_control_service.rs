@@ -11,7 +11,8 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::app::seam_stubs::{ControlMode, DebuggerCoordinates};
+use crate::app::seam_stubs::ControlMode;
+use crate::debug::api::tracemgr::DebuggerCoordinates;
 use crate::program::model::address::Address;
 use crate::program::model::lang::Register;
 use crate::program::seam_stubs::RegisterValue;
@@ -54,7 +55,7 @@ pub trait StateEditor {
     fn get_service(&self) -> Box<dyn DebuggerControlService>;
 
     /// Returns the coordinates this editor is bound to.
-    fn get_coordinates(&self) -> Box<dyn DebuggerCoordinates>;
+    fn get_coordinates(&self) -> DebuggerCoordinates;
 
     /// Checks whether the variable at the given address and length can currently be edited.
     fn is_variable_editable(&self, address: &Address, length: i32) -> bool;
@@ -107,7 +108,7 @@ pub trait DebuggerControlService {
     fn remove_mode_change_listener(&mut self, listener: &dyn ControlModeChangeListener);
 
     /// Creates a state editor bound to the given coordinates.
-    fn create_state_editor(&self, coordinates: Box<dyn DebuggerCoordinates>) -> Box<dyn StateEditor>;
+    fn create_state_editor(&self, coordinates: DebuggerCoordinates) -> Box<dyn StateEditor>;
 
     /// Creates a state editor whose coordinates follow the trace manager for the given trace.
     fn create_state_editor_for_trace(&self, trace: &dyn Trace) -> Box<dyn StateEditor>;
@@ -120,9 +121,6 @@ pub trait DebuggerControlService {
 mod tests {
     use super::*;
 
-    struct MockCoordinates;
-    impl DebuggerCoordinates for MockCoordinates {}
-
     struct MockControlMode;
     impl ControlMode for MockControlMode {}
 
@@ -133,8 +131,8 @@ mod tests {
             Box::new(MockDebuggerControlService)
         }
 
-        fn get_coordinates(&self) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn get_coordinates(&self) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
         fn is_variable_editable(&self, _address: &Address, _length: i32) -> bool {
@@ -161,7 +159,7 @@ mod tests {
 
         fn create_state_editor(
             &self,
-            _coordinates: Box<dyn DebuggerCoordinates>,
+            _coordinates: DebuggerCoordinates,
         ) -> Box<dyn StateEditor> {
             Box::new(MockStateEditor)
         }

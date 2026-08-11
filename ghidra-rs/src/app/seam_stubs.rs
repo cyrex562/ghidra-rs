@@ -6,6 +6,10 @@
 use crate::app::decompiler::{
     ClangLine, ClangNode, ClangTokenBase, ClangTokenGroup, DecompiledFunction,
 };
+use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
+use crate::trace::model::target::path::KeyPath;
+use crate::trace::model::thread::TraceThread;
+use crate::trace::model::trace::Trace;
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
@@ -35,14 +39,6 @@ pub trait FunctionComparisonPanel {}
 /// `ControlModeChangeListener` before the real class is ported. `DebuggerControlService` only
 /// ever passes this type through as a parameter/return value, so no members are needed yet.
 pub trait ControlMode {}
-
-/// Placeholder for `ghidra.debug.api.tracemgr.DebuggerCoordinates`, referenced by
-/// [`DebuggerControlService`](crate::app::services::DebuggerControlService) and its nested
-/// `StateEditor`, and by
-/// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService), before the
-/// real class is ported. Both services only ever pass this type through as a parameter/return
-/// value, so no members are needed yet.
-pub trait DebuggerCoordinates {}
 
 /// Placeholder for `ghidra.debug.api.action.AutoMapSpec`, referenced by
 /// [`DebuggerAutoMappingService`](crate::app::services::DebuggerAutoMappingService) before the
@@ -79,12 +75,56 @@ pub trait DebuggerPlatformMapper {}
 /// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService), and
 /// [`InternalPcodeDebuggerDataAccess`](crate::app::plugin::core::debug::service::emulation::InternalPcodeDebuggerDataAccess)
 /// before the real class is ported.
+///
+/// Grown with the members
+/// [`DebuggerCoordinates`](crate::debug::api::tracemgr::DebuggerCoordinates) resolves focus
+/// through. Those default to panicking so the existing two-member implementors (all of them test
+/// doubles that only ever report liveness and a snap) keep compiling unchanged; the real port
+/// replaces every default.
 pub trait Target {
     /// Check if the target is still valid.
     fn is_valid(&self) -> bool;
 
     /// Get the current snapshot key for the target.
     fn get_snap(&self) -> i64;
+
+    /// Get the trace into which this target is recorded.
+    ///
+    /// Mirrors `Target.getTrace()`.
+    fn get_trace(&self) -> Box<dyn Trace> {
+        unimplemented!("Target::get_trace placeholder not overridden")
+    }
+
+    /// Check if the target supports a notion of focus, i.e., whether [`Self::get_focus`] means
+    /// anything.
+    ///
+    /// Mirrors `Target.isSupportsFocus()`.
+    fn is_supports_focus(&self) -> bool {
+        unimplemented!("Target::is_supports_focus placeholder not overridden")
+    }
+
+    /// Get the path of the object the target currently has focused, if any.
+    ///
+    /// Mirrors `Target.getFocus()`, whose `null` return becomes `None`.
+    fn get_focus(&self) -> Option<KeyPath> {
+        unimplemented!("Target::get_focus placeholder not overridden")
+    }
+
+    /// Find the thread containing the object at the given path.
+    ///
+    /// Mirrors `Target.getThreadForSuccessor(KeyPath)`.
+    fn get_thread_for_successor(&self, path: &KeyPath) -> Option<Box<dyn TraceThread>> {
+        let _ = path;
+        unimplemented!("Target::get_thread_for_successor placeholder not overridden")
+    }
+
+    /// Find the stack frame containing the object at the given path.
+    ///
+    /// Mirrors `Target.getStackFrameForSuccessor(KeyPath)`.
+    fn get_stack_frame_for_successor(&self, path: &KeyPath) -> Option<Box<dyn TraceStackFrame>> {
+        let _ = path;
+        unimplemented!("Target::get_stack_frame_for_successor placeholder not overridden")
+    }
 }
 
 /// Placeholder for `ghidra.debug.api.target.TargetPublicationListener`, referenced by

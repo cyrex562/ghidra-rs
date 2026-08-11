@@ -14,7 +14,8 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::app::seam_stubs::{DebuggerCoordinates, Target, TraceSchedule};
+use crate::app::seam_stubs::{Target, TraceSchedule};
+use crate::debug::api::tracemgr::DebuggerCoordinates;
 use crate::trace::model::thread::TraceThread;
 use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::trace::model::target::trace_object::TraceObject;
@@ -90,10 +91,10 @@ pub trait DebuggerTraceManagerService {
     /// Get the current coordinates.
     ///
     /// This entails everything except the current address.
-    fn get_current(&self) -> Box<dyn DebuggerCoordinates>;
+    fn get_current(&self) -> DebuggerCoordinates;
 
     /// Get the current coordinates for a given trace.
-    fn get_current_for(&self, trace: &dyn Trace) -> Box<dyn DebuggerCoordinates>;
+    fn get_current_for(&self, trace: &dyn Trace) -> DebuggerCoordinates;
 
     /// Get the active trace, or `None`.
     fn get_current_trace(&self) -> Option<Box<dyn Trace>>;
@@ -182,14 +183,14 @@ pub trait DebuggerTraceManagerService {
     /// last-active thread for the desired trace.
     fn activate_and_notify(
         &mut self,
-        coordinates: Box<dyn DebuggerCoordinates>,
+        coordinates: DebuggerCoordinates,
         cause: ActivationCause,
     ) -> TraceManagerVoidFuture;
 
     /// Activate the given coordinates, caused by the user.
     ///
     /// See [`activate_with_cause`](Self::activate_with_cause).
-    fn activate(&mut self, coordinates: Box<dyn DebuggerCoordinates>) {
+    fn activate(&mut self, coordinates: DebuggerCoordinates) {
         self.activate_with_cause(coordinates, ActivationCause::User);
     }
 
@@ -197,14 +198,14 @@ pub trait DebuggerTraceManagerService {
     ///
     /// If asynchronous notification is needed, use
     /// [`activate_and_notify`](Self::activate_and_notify).
-    fn activate_with_cause(&mut self, coordinates: Box<dyn DebuggerCoordinates>, cause: ActivationCause);
+    fn activate_with_cause(&mut self, coordinates: DebuggerCoordinates, cause: ActivationCause);
 
     /// Resolve coordinates for the given trace using the manager's "best judgment".
     ///
     /// The manager may use a variety of sources of context including the current trace, the last
     /// coordinates for a trace, the target's last/current activation, the list of live threads,
     /// etc.
-    fn resolve_trace(&self, trace: &dyn Trace) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_trace(&self, trace: &dyn Trace) -> DebuggerCoordinates;
 
     /// Activate the given trace.
     fn activate_trace(&mut self, trace: &dyn Trace) {
@@ -215,7 +216,7 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given target using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_target(&self, target: &dyn Target) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_target(&self, target: &dyn Target) -> DebuggerCoordinates;
 
     /// Activate the given target.
     fn activate_target(&mut self, target: &dyn Target) {
@@ -226,7 +227,7 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given platform using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_platform(&self, platform: &dyn TracePlatform) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_platform(&self, platform: &dyn TracePlatform) -> DebuggerCoordinates;
 
     /// Activate the given platform.
     fn activate_platform(&mut self, platform: &dyn TracePlatform) {
@@ -237,7 +238,7 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given thread using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_thread(&self, thread: &dyn TraceThread) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_thread(&self, thread: &dyn TraceThread) -> DebuggerCoordinates;
 
     /// Activate the given thread.
     fn activate_thread(&mut self, thread: &dyn TraceThread) {
@@ -248,7 +249,7 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given snap using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_snap(&self, snap: i64) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_snap(&self, snap: i64) -> DebuggerCoordinates;
 
     /// Activate the given snapshot key.
     fn activate_snap(&mut self, snap: i64) {
@@ -259,7 +260,7 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given time using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_time(&self, time: &dyn TraceSchedule) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_time(&self, time: &dyn TraceSchedule) -> DebuggerCoordinates;
 
     /// Activate the given point in time, possibly invoking emulation.
     fn activate_time(&mut self, time: &dyn TraceSchedule) {
@@ -270,13 +271,13 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given view using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_view(&self, view: &dyn TraceProgramView) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_view(&self, view: &dyn TraceProgramView) -> DebuggerCoordinates;
 
     /// Resolve coordinates for the given frame level using the manager's "best judgment".
     ///
     /// `frame_level` is the frame level, `0` being the innermost. See
     /// [`resolve_trace`](Self::resolve_trace).
-    fn resolve_frame(&self, frame_level: i32) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_frame(&self, frame_level: i32) -> DebuggerCoordinates;
 
     /// Activate the given stack frame, `0` being innermost.
     fn activate_frame(&mut self, frame_level: i32) {
@@ -287,7 +288,7 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given object path using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_path(&self, path: &KeyPath) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_path(&self, path: &KeyPath) -> DebuggerCoordinates;
 
     /// Activate the given canonical object path.
     fn activate_path(&mut self, path: &KeyPath) {
@@ -298,7 +299,7 @@ pub trait DebuggerTraceManagerService {
     /// Resolve coordinates for the given object using the manager's "best judgment".
     ///
     /// See [`resolve_trace`](Self::resolve_trace).
-    fn resolve_object(&self, object: &dyn TraceObject) -> Box<dyn DebuggerCoordinates>;
+    fn resolve_object(&self, object: &dyn TraceObject) -> DebuggerCoordinates;
 
     /// Activate the given object.
     fn activate_object(&mut self, object: &dyn TraceObject) {
@@ -335,7 +336,7 @@ pub trait DebuggerTraceManagerService {
     /// If the coordinates do not include a schedule, this simply returns the coordinates'
     /// snapshot. Otherwise, it searches for the first snapshot whose schedule is the
     /// coordinates' schedule.
-    fn find_snapshot(&self, coordinates: &dyn DebuggerCoordinates) -> Option<i64>;
+    fn find_snapshot(&self, coordinates: &DebuggerCoordinates) -> Option<i64>;
 
     /// Materialize the given coordinates to a snapshot in the same trace.
     ///
@@ -344,7 +345,7 @@ pub trait DebuggerTraceManagerService {
     /// materialized in the trace, then this may complete immediately with the
     /// previously-materialized snapshot key. Otherwise, this must invoke emulation, store the
     /// result into a chosen snapshot, and complete with its key.
-    fn materialize(&mut self, coordinates: Box<dyn DebuggerCoordinates>) -> MaterializeFuture;
+    fn materialize(&mut self, coordinates: DebuggerCoordinates) -> MaterializeFuture;
 }
 
 #[cfg(test)]
@@ -511,9 +512,6 @@ mod tests {
         }
     }
 
-    struct MockCoordinates;
-    impl DebuggerCoordinates for MockCoordinates {}
-
     struct MockService {
         open: Vec<()>,
         save_by_default: bool,
@@ -525,12 +523,12 @@ mod tests {
             self.open.iter().map(|_| Box::new(MockTrace) as Box<dyn Trace>).collect()
         }
 
-        fn get_current(&self) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn get_current(&self) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn get_current_for(&self, _trace: &dyn Trace) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn get_current_for(&self, _trace: &dyn Trace) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
         fn get_current_trace(&self) -> Option<Box<dyn Trace>> {
@@ -608,7 +606,7 @@ mod tests {
 
         fn activate_and_notify(
             &mut self,
-            _coordinates: Box<dyn DebuggerCoordinates>,
+            _coordinates: DebuggerCoordinates,
             _cause: ActivationCause,
         ) -> TraceManagerVoidFuture {
             Box::pin(async {})
@@ -616,49 +614,49 @@ mod tests {
 
         fn activate_with_cause(
             &mut self,
-            _coordinates: Box<dyn DebuggerCoordinates>,
+            _coordinates: DebuggerCoordinates,
             _cause: ActivationCause,
         ) {
         }
 
-        fn resolve_trace(&self, _trace: &dyn Trace) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_trace(&self, _trace: &dyn Trace) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_target(&self, _target: &dyn Target) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_target(&self, _target: &dyn Target) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_platform(&self, _platform: &dyn TracePlatform) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_platform(&self, _platform: &dyn TracePlatform) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_thread(&self, _thread: &dyn TraceThread) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_thread(&self, _thread: &dyn TraceThread) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_snap(&self, _snap: i64) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_snap(&self, _snap: i64) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_time(&self, _time: &dyn TraceSchedule) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_time(&self, _time: &dyn TraceSchedule) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_view(&self, _view: &dyn TraceProgramView) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_view(&self, _view: &dyn TraceProgramView) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_frame(&self, _frame_level: i32) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_frame(&self, _frame_level: i32) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_path(&self, _path: &KeyPath) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_path(&self, _path: &KeyPath) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
-        fn resolve_object(&self, _object: &dyn TraceObject) -> Box<dyn DebuggerCoordinates> {
-            Box::new(MockCoordinates)
+        fn resolve_object(&self, _object: &dyn TraceObject) -> DebuggerCoordinates {
+            DebuggerCoordinates::nowhere()
         }
 
         fn set_save_traces_by_default(&mut self, enabled: bool) {
@@ -685,11 +683,11 @@ mod tests {
 
         fn remove_auto_close_on_terminate_change_listener(&mut self, _listener: &dyn BooleanChangeAdapter) {}
 
-        fn find_snapshot(&self, _coordinates: &dyn DebuggerCoordinates) -> Option<i64> {
+        fn find_snapshot(&self, _coordinates: &DebuggerCoordinates) -> Option<i64> {
             None
         }
 
-        fn materialize(&mut self, _coordinates: Box<dyn DebuggerCoordinates>) -> MaterializeFuture {
+        fn materialize(&mut self, _coordinates: DebuggerCoordinates) -> MaterializeFuture {
             Box::pin(async { 0 })
         }
     }
@@ -719,11 +717,11 @@ mod tests {
             fn get_open_traces(&self) -> Vec<Box<dyn Trace>> {
                 Vec::new()
             }
-            fn get_current(&self) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn get_current(&self) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn get_current_for(&self, _trace: &dyn Trace) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn get_current_for(&self, _trace: &dyn Trace) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
             fn get_current_trace(&self) -> Option<Box<dyn Trace>> {
                 None
@@ -766,47 +764,47 @@ mod tests {
             fn close_dead_traces(&mut self) {}
             fn activate_and_notify(
                 &mut self,
-                _coordinates: Box<dyn DebuggerCoordinates>,
+                _coordinates: DebuggerCoordinates,
                 _cause: ActivationCause,
             ) -> TraceManagerVoidFuture {
                 Box::pin(async {})
             }
             fn activate_with_cause(
                 &mut self,
-                _coordinates: Box<dyn DebuggerCoordinates>,
+                _coordinates: DebuggerCoordinates,
                 cause: ActivationCause,
             ) {
                 *self.0.borrow_mut() = Some(cause);
             }
-            fn resolve_trace(&self, _trace: &dyn Trace) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_trace(&self, _trace: &dyn Trace) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_target(&self, _target: &dyn Target) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_target(&self, _target: &dyn Target) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_platform(&self, _platform: &dyn TracePlatform) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_platform(&self, _platform: &dyn TracePlatform) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_thread(&self, _thread: &dyn TraceThread) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_thread(&self, _thread: &dyn TraceThread) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_snap(&self, _snap: i64) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_snap(&self, _snap: i64) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_time(&self, _time: &dyn TraceSchedule) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_time(&self, _time: &dyn TraceSchedule) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_view(&self, _view: &dyn TraceProgramView) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_view(&self, _view: &dyn TraceProgramView) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_frame(&self, _frame_level: i32) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_frame(&self, _frame_level: i32) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_path(&self, _path: &KeyPath) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_path(&self, _path: &KeyPath) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
-            fn resolve_object(&self, _object: &dyn TraceObject) -> Box<dyn DebuggerCoordinates> {
-                Box::new(MockCoordinates)
+            fn resolve_object(&self, _object: &dyn TraceObject) -> DebuggerCoordinates {
+                DebuggerCoordinates::nowhere()
             }
             fn set_save_traces_by_default(&mut self, _enabled: bool) {}
             fn is_save_traces_by_default(&self) -> bool {
@@ -820,16 +818,16 @@ mod tests {
             }
             fn add_auto_close_on_terminate_change_listener(&mut self, _listener: Box<dyn BooleanChangeAdapter>) {}
             fn remove_auto_close_on_terminate_change_listener(&mut self, _listener: &dyn BooleanChangeAdapter) {}
-            fn find_snapshot(&self, _coordinates: &dyn DebuggerCoordinates) -> Option<i64> {
+            fn find_snapshot(&self, _coordinates: &DebuggerCoordinates) -> Option<i64> {
                 None
             }
-            fn materialize(&mut self, _coordinates: Box<dyn DebuggerCoordinates>) -> MaterializeFuture {
+            fn materialize(&mut self, _coordinates: DebuggerCoordinates) -> MaterializeFuture {
                 Box::pin(async { 0 })
             }
         }
 
         let mut service = CauseCapturingService(std::cell::RefCell::new(None));
-        service.activate(Box::new(MockCoordinates));
+        service.activate(DebuggerCoordinates::nowhere());
         assert_eq!(*service.0.borrow(), Some(ActivationCause::User));
     }
 

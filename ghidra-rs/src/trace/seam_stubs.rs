@@ -150,6 +150,16 @@ pub trait TraceSchedule: Send + Sync {
     fn compare_to(&self, that: &dyn TraceSchedule) -> i32 {
         self.compare_schedule(that).compare_to()
     }
+
+    /// Mirrors `TraceSchedule.differsOnlyByPatch(TraceSchedule)`: whether `that` is this schedule
+    /// with at most an extra or differing final patch step.
+    ///
+    /// Grown for
+    /// [`DebuggerCoordinates::differs_only_by_patch`](crate::debug::api::tracemgr::DebuggerCoordinates::differs_only_by_patch).
+    fn differs_only_by_patch(&self, that: &dyn TraceSchedule) -> bool {
+        let _ = that;
+        unimplemented!("TraceSchedule::differs_only_by_patch placeholder not overridden")
+    }
 }
 
 /// Placeholder for the static factory `TraceSchedule.snap(long)`, which builds the snap-only
@@ -211,6 +221,15 @@ impl TraceSchedule for SnapOnlySchedule {
         } else {
             CompareResult::Equals
         }
+    }
+
+    fn differs_only_by_patch(&self, that: &dyn TraceSchedule) -> bool {
+        // Java requires equal snaps, then compares the step sequences. With both of *this*
+        // schedule's sequences empty, `Sequence.differsOnlyByPatch` reduces to "`that` has no
+        // steps of its own", which for the schedules this placeholder can see is exactly
+        // `isSnapOnly()`. A schedule consisting solely of patch steps would also qualify in Java,
+        // but the unported `Sequence`/`Step` machinery is what distinguishes those.
+        self.snap == that.get_snap() && that.is_snap_only()
     }
 }
 
