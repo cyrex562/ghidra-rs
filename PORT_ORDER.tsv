@@ -46,7 +46,7 @@ DONE	trait	23	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 PARK	trait	23	88	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Check.java
 PARK	trait	23	88	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Fld.java
 DONE	trait	21	18	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/SimpleOpnd.java
-TODO	trait	20	9	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/ConstSimpleOpnd.java
+DONE	trait	20	9	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/ConstSimpleOpnd.java
 TODO	trait	17	28	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitType.java
 TODO	trait	19	16	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolBinOp.java
 TODO	trait	39	16	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitCallOtherOpIf.java
