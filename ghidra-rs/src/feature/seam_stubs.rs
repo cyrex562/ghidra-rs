@@ -137,6 +137,13 @@ pub trait VtMatch: Send + Sync {
     fn get_destination_length(&self) -> i32;
 }
 
+/// Placeholder for the unported Java type `VTMatchInfo`, referenced by `VTMatchSet::add_match`.
+/// `VTMatchInfo` is a concrete Java class (not an interface), so this stub is a struct rather
+/// than a trait. Generated stub: shape hint only, no fields yet since nothing in the crate reads
+/// them. Replace with the real port when available.
+#[derive(Debug, Default, Clone)]
+pub struct VtMatchInfo;
+
 /// Placeholder for the unported Java type `VTMatchSet`, referenced by `VTSession`.
 /// Generated stub: only a shape hint. `add_match`/`get_program_correlator_info` are omitted
 /// pending ports of `VTMatchInfo`/`VTProgramCorrelatorInfo`, which have no known shape yet.
