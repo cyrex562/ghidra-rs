@@ -3,41 +3,54 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
-use crate::program::model::address::Address;
+pub use crate::program::model::address::Address as AddressType;
 
-/// Placeholder for the unported Java type `VTAssociation`, referenced by `VTAssociationManager`.
-/// Generated stub: only a shape hint. Replace with the real port when available.
+/// Placeholder for the unported Java type `VTAssociation`, referenced by `VTAssociationManager` and `AssociationHook`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait VtAssociation: Send + Sync {
-    /// Returns the type of this association.
     fn get_type(&self) -> Box<dyn VtAssociationType>;
-    /// Returns the session this association belongs to.
     fn get_session(&self) -> Box<dyn VtSession>;
-    /// Returns the markup items for this association.
     fn get_markup_items(&self, monitor: &dyn TaskMonitor) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>>;
-    /// Checks if this association has any applied markup items.
     fn has_applied_markup_items(&self) -> bool;
-    /// Returns the source address of this association.
-    fn get_source_address(&self) -> Address;
-    /// Returns the destination address of this association.
-    fn get_destination_address(&self) -> Address;
-    /// Returns associations related to this one.
+    fn get_source_address(&self) -> AddressType;
+    fn get_destination_address(&self) -> AddressType;
     fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>>;
-    /// Sets the markup status for this association.
     fn set_markup_status(&self, markup_items_status: &dyn VtAssociationMarkupStatus);
-    /// Returns the markup status of this association.
     fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus>;
-    /// Returns the status of this association.
     fn get_status(&self) -> Box<dyn VtAssociationStatus>;
-    /// Marks this association as accepted.
     fn set_accepted(&self) -> std::io::Result<()>;
-    /// Clears the status of this association.
     fn clear_status(&self) -> std::io::Result<()>;
-    /// Marks this association as rejected.
     fn set_rejected(&self) -> std::io::Result<()>;
-    /// Returns the vote count for this association.
     fn get_vote_count(&self) -> i32;
-    /// Sets the vote count for this association.
     fn set_vote_count(&self, vote_count: i32);
+}
+
+/// Placeholder for the unported Java type `VTMarkupItem`, referenced by `AssociationHook`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait VtMarkupItem: Send + Sync {
+    fn can_apply(&self) -> bool;
+    fn can_unapply(&self) -> bool;
+    fn apply(&self, apply_action: &dyn VtMarkupItemApplyActionType, options: &dyn ToolOptions) -> std::io::Result<()>;
+    fn unapply(&self) -> std::io::Result<()>;
+    fn set_default_destination_address(&self, address: &AddressType, address_source: &str);
+    fn set_destination_address(&self, address: &AddressType);
+    fn get_destination_address_edit_status(&self) -> Box<dyn VtMarkupItemDestinationAddressEditStatus>;
+    fn set_considered(&self, status: &dyn VtMarkupItemConsideredStatus);
+    fn get_status(&self) -> Box<dyn VtMarkupItemStatus>;
+    fn get_status_description(&self) -> String;
+    fn get_association(&self) -> Box<dyn VtAssociation>;
+    fn get_source_address(&self) -> AddressType;
+    fn get_source_location(&self) -> Box<dyn ProgramLocation>;
+    fn get_source_value(&self) -> Box<dyn Stringable>;
+    fn get_destination_address(&self) -> AddressType;
+    fn get_destination_location(&self) -> Box<dyn ProgramLocation>;
+    fn get_destination_address_source(&self) -> String;
+    fn get_current_destination_value(&self) -> Box<dyn Stringable>;
+    fn get_original_destination_value(&self) -> Box<dyn Stringable>;
+    fn supports_apply_action(&self, action_type: &dyn VtMarkupItemApplyActionType) -> bool;
+    fn get_markup_type(&self) -> Box<dyn VtMarkupType>;
 }
 
 /// Placeholder for `VTAssociationType`.
@@ -55,11 +68,6 @@ pub trait TaskMonitor: Send + Sync {
     fn check_cancelled(&self) -> std::io::Result<()>;
 }
 
-/// Placeholder for `VTMarkupItem`.
-pub trait VtMarkupItem: Send + Sync {
-    fn get_status(&self) -> Box<dyn VtMarkupItemStatus>;
-}
-
 /// Placeholder for `VTMarkupItemStatus`.
 pub trait VtMarkupItemStatus: Send + Sync {
     fn is_applied(&self) -> bool;
@@ -73,4 +81,39 @@ pub trait VtAssociationMarkupStatus: Send + Sync {
 /// Placeholder for `VTAssociationStatus`.
 pub trait VtAssociationStatus: Send + Sync {
     fn get_status(&self) -> &str;
+}
+
+/// Placeholder for `VTMarkupItemApplyActionType`.
+pub trait VtMarkupItemApplyActionType: Send + Sync {
+    fn get_name(&self) -> &str;
+}
+
+/// Placeholder for `ToolOptions`.
+pub trait ToolOptions: Send + Sync {
+    fn get_option(&self, key: &str) -> Option<String>;
+}
+
+/// Placeholder for `VTMarkupItemDestinationAddressEditStatus`.
+pub trait VtMarkupItemDestinationAddressEditStatus: Send + Sync {
+    fn is_editable(&self) -> bool;
+}
+
+/// Placeholder for `VTMarkupItemConsideredStatus`.
+pub trait VtMarkupItemConsideredStatus: Send + Sync {
+    fn is_considered(&self) -> bool;
+}
+
+/// Placeholder for `ProgramLocation`.
+pub trait ProgramLocation: Send + Sync {
+    fn get_address(&self) -> AddressType;
+}
+
+/// Placeholder for `Stringable`.
+pub trait Stringable: Send + Sync {
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `VTMarkupType`.
+pub trait VtMarkupType: Send + Sync {
+    fn get_name(&self) -> &str;
 }
