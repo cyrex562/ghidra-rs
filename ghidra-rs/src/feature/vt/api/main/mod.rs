@@ -9,6 +9,7 @@ pub mod vt_markup_item;
 pub mod vt_markup_item_apply_action_type;
 pub mod vt_markup_item_destination_address_edit_status;
 pub mod vt_markup_item_status;
+pub mod vt_match;
 pub mod vt_match_set;
 pub mod vt_match_tag;
 pub mod vt_program_correlator;

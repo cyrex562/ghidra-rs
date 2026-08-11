@@ -85,7 +85,7 @@ mod tests {
     }
 
     impl VtMatch for MockMatch {
-        fn get_match_set(&self) -> Box<dyn crate::feature::seam_stubs::VtMatchSet> {
+        fn get_match_set(&self) -> Box<dyn VTMatchSet> {
             unimplemented!("not exercised by this test")
         }
 
