@@ -898,25 +898,31 @@ pub trait Next {}
 pub enum Dead {}
 
 /// Placeholder for `ghidra.pcode.emu.jit.gen.util.Emitter`, referenced by
-/// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl) before the real type-checked JVM bytecode
-/// emitter (and its wrapped ASM `MethodVisitor`) is ported. Java's class is unbounded in its stack
-/// type parameter `N` (only individual operations, like those in the not-yet-ported `Op`, bound it
-/// via `Ent`/`Bot`), so this stub carries `N` as a plain phantom marker too.
+/// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl) and [`Local`](crate::pcode::emu::jit::gen::util::local::Local)
+/// before the real type-checked JVM bytecode emitter (and its wrapped ASM `MethodVisitor`) is ported.
+/// Java's class is unbounded in its stack type parameter `N` (only individual operations, like those in
+/// the not-yet-ported `Op`, bound it via `Ent`/`Bot`), so this stub carries `N` as a plain phantom marker too.
 ///
-/// Exposes only the one operation `Lbl` needs -- visiting (placing) a label at the current
-/// bytecode position, standing in for `this.mv.visitLabel(label)` -- plus [`recast`](Self::recast),
+/// Exposes operations for visiting labels (standing in for `this.mv.visitLabel(label)`) and declaring
+/// local variables (standing in for `this.mv.visitLocalVariable(...)`), plus [`recast`](Self::recast),
 /// standing in for the unchecked `(Emitter) em` cast `Lbl.placeDead` uses to resurrect a dead
-/// emitter. Records the last-visited label so callers (including tests) can observe placement
-/// without a real `MethodVisitor`.
+/// emitter. Records the last-visited label and local variable declarations so callers (including tests)
+/// can observe them without a real `MethodVisitor`.
+#[derive(Clone)]
 pub struct Emitter<N> {
     last_visited: Option<Label>,
+    local_variables: Vec<(String, String, Label, Label, i32)>,
     _marker: PhantomData<N>,
 }
 
 impl<N> Emitter<N> {
     /// Placeholder for `new Emitter(MethodVisitor)`, without a real `MethodVisitor` to wrap.
     pub fn new() -> Self {
-        Self { last_visited: None, _marker: PhantomData }
+        Self {
+            last_visited: None,
+            local_variables: Vec::new(),
+            _marker: PhantomData,
+        }
     }
 
     /// Stands in for `this.mv.visitLabel(label)`.
@@ -929,12 +935,34 @@ impl<N> Emitter<N> {
         self.last_visited
     }
 
+    /// Stands in for `this.mv.visitLocalVariable(name, descriptor, signature, start, end, index)`.
+    /// Records the local variable declaration for testing and observation without a real `MethodVisitor`.
+    pub fn visit_local_variable(
+        &mut self,
+        name: &str,
+        descriptor: &str,
+        start: Label,
+        end: Label,
+        index: i32,
+    ) {
+        self.local_variables.push((name.to_string(), descriptor.to_string(), start, end, index));
+    }
+
+    /// Retrieve all recorded local variable declarations.
+    pub fn local_variables(&self) -> &[(String, String, Label, Label, i32)] {
+        &self.local_variables
+    }
+
     /// Stands in for the unchecked cast `(Emitter) em` in `Lbl.placeDead`, which reinterprets an
     /// `Emitter<Dead>` as an `Emitter<M>` once a label makes the code that follows reachable
     /// again. Carries over every real (non-phantom) field, so this stays correct as `Emitter`
     /// grows toward the real port.
     pub fn recast<M>(self) -> Emitter<M> {
-        Emitter { last_visited: self.last_visited, _marker: PhantomData }
+        Emitter {
+            last_visited: self.last_visited,
+            local_variables: self.local_variables,
+            _marker: PhantomData,
+        }
     }
 }
 
