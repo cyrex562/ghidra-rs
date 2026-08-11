@@ -614,6 +614,225 @@ impl crate::feature::vt::api::main::db::vt_match_set_table_db_adapter::VTMatchSe
     }
 }
 
+/// Placeholder for the unported Java type `VTAssociationTableDBAdapterV0`, referenced by
+/// `VTAssociationTableDBAdapterBase::create_adapter`/`get_adapter` in
+/// `crate::feature::vt::api::main::db::vt_association_table_db_adapter`.
+/// `VTAssociationTableDBAdapterV0` is a concrete Java class (not an interface), so this stub is a
+/// struct that implements the real `VTAssociationTableDBAdapter` trait using already-ported
+/// `Table`/`DBHandle` machinery. `getRecordsForSourceAddress`/`getRecordsForDestinationAddress`
+/// use `Table.indexIterator` in the real Java implementation; since the ported `Table` has no
+/// field-index support yet, these scan and filter instead (same simplification already used by
+/// `VTMatchTableDBAdapterV0::get_records_for_association` above). Replace with the real port when
+/// `VTAssociationTableDBAdapterV0.java` is ported.
+pub struct VTAssociationTableDBAdapterV0 {
+    table: std::sync::Arc<std::sync::RwLock<crate::framework::db::Table>>,
+}
+
+impl VTAssociationTableDBAdapterV0 {
+    pub fn create(
+        db_handle: &mut crate::framework::db::DBHandle,
+        table_name: &str,
+        schema: std::sync::Arc<crate::framework::db::Schema>,
+    ) -> std::io::Result<Self> {
+        let table = db_handle.create_table(table_name.to_string(), schema)?;
+        Ok(Self { table })
+    }
+
+    pub fn open(
+        db_handle: &crate::framework::db::DBHandle,
+        table_name: &str,
+    ) -> Result<Self, crate::util::exception::VersionException> {
+        let table = db_handle.get_table(table_name).ok_or_else(|| {
+            crate::util::exception::VersionException::with_message(format!(
+                "Missing Table: {table_name}"
+            ))
+        })?;
+        let version = table.read().unwrap().get_schema().get_version();
+        if version != 0 {
+            return Err(crate::util::exception::VersionException::with_message(format!(
+                "Expected version 0 for table {table_name} but got {version}"
+            )));
+        }
+        Ok(Self { table })
+    }
+
+    fn scan_by_long_column(
+        &self,
+        column: usize,
+        value: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            if record.get_long(column) == Some(value) {
+                records.push(record);
+            }
+        }
+        Ok(records)
+    }
+}
+
+impl crate::feature::vt::api::main::db::vt_association_table_db_adapter::VTAssociationTableDBAdapter
+    for VTAssociationTableDBAdapterV0
+{
+    fn insert_record(
+        &self,
+        source_address_id: i64,
+        destination_address_id: i64,
+        association_type: crate::feature::vt::api::main::vt_association_type::VtAssociationType,
+        status: crate::feature::vt::api::main::vt_association_status::VtAssociationStatus,
+        vote_count: i32,
+    ) -> std::io::Result<crate::framework::db::DBRecord> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+        use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
+        use crate::feature::vt::api::main::vt_association_type::VtAssociationType;
+
+        // Java: `type.ordinal()` / `lockedStatus.ordinal()`. Neither ported enum exposes an
+        // `ordinal()` accessor, so the enum-declaration order is mirrored here by hand.
+        let type_ordinal: i8 = match association_type {
+            VtAssociationType::Function => 0,
+            VtAssociationType::Data => 1,
+        };
+        let status_ordinal: i8 = match status {
+            VtAssociationStatus::Available => 0,
+            VtAssociationStatus::Accepted => 1,
+            VtAssociationStatus::Blocked => 2,
+            VtAssociationStatus::Rejected => 3,
+        };
+
+        let mut table = self.table.write().unwrap();
+        let key = table.get_next_key();
+        let schema = table.get_schema();
+        let mut record = crate::framework::db::DBRecord::new(
+            schema,
+            crate::framework::db::Field::Long(Some(key)),
+        );
+        record.set_long(ColumnDescription::SourceAddressCol.column(), source_address_id);
+        record.set_long(ColumnDescription::DestinationAddressCol.column(), destination_address_id);
+        record.set_byte(ColumnDescription::TypeCol.column(), type_ordinal);
+        record.set_byte(ColumnDescription::StatusCol.column(), status_ordinal);
+        record.set_int(ColumnDescription::VoteCountCol.column(), vote_count);
+
+        table.put_record(record.clone())?;
+        Ok(record)
+    }
+
+    fn delete_record(&self, key: i64) -> std::io::Result<()> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(key)))?;
+        Ok(())
+    }
+
+    fn get_records_for_source_address(
+        &self,
+        address_id: i64,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let records =
+            self.scan_by_long_column(ColumnDescription::SourceAddressCol.column(), address_id)?;
+        Ok(Box::new(VecRecordIterator { records: records.into_iter() }))
+    }
+
+    fn get_records_for_destination_address(
+        &self,
+        address_id: i64,
+    ) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let records = self
+            .scan_by_long_column(ColumnDescription::DestinationAddressCol.column(), address_id)?;
+        Ok(Box::new(VecRecordIterator { records: records.into_iter() }))
+    }
+
+    fn get_record_count(&self) -> usize {
+        self.table.read().unwrap().get_record_count()
+    }
+
+    fn get_records(&self) -> std::io::Result<Box<dyn crate::framework::db::RecordIterator>> {
+        let table = self.table.read().unwrap();
+        let mut iter = table.get_record_iterator()?;
+        let mut records = Vec::new();
+        while let Some(record) = iter.next()? {
+            records.push(record);
+        }
+        Ok(Box::new(VecRecordIterator { records: records.into_iter() }))
+    }
+
+    fn get_record(&self, key: i64) -> std::io::Result<Option<crate::framework::db::DBRecord>> {
+        self.table
+            .read()
+            .unwrap()
+            .get_record(&crate::framework::db::Field::Long(Some(key)))
+    }
+
+    fn get_related_association_records_by_source_and_destination_address(
+        &self,
+        source_address_id: i64,
+        destination_address_id: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let mut records =
+            self.scan_by_long_column(ColumnDescription::SourceAddressCol.column(), source_address_id)?;
+        records.extend(self.scan_by_long_column(
+            ColumnDescription::DestinationAddressCol.column(),
+            destination_address_id,
+        )?);
+        dedupe_records_by_key(&mut records);
+        Ok(records)
+    }
+
+    fn get_related_association_records_by_source_address(
+        &self,
+        source_address_id: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let mut records =
+            self.scan_by_long_column(ColumnDescription::SourceAddressCol.column(), source_address_id)?;
+        dedupe_records_by_key(&mut records);
+        Ok(records)
+    }
+
+    fn get_related_association_records_by_destination_address(
+        &self,
+        destination_address_id: i64,
+    ) -> std::io::Result<Vec<crate::framework::db::DBRecord>> {
+        use crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription;
+
+        let mut records = self.scan_by_long_column(
+            ColumnDescription::DestinationAddressCol.column(),
+            destination_address_id,
+        )?;
+        dedupe_records_by_key(&mut records);
+        Ok(records)
+    }
+
+    fn update_record(&self, record: &crate::framework::db::DBRecord) -> std::io::Result<()> {
+        self.table.write().unwrap().put_record(record.clone())
+    }
+
+    fn remove_association(&self, id: i64) -> std::io::Result<()> {
+        self.table
+            .write()
+            .unwrap()
+            .delete_record(&crate::framework::db::Field::Long(Some(id)))?;
+        Ok(())
+    }
+}
+
+/// Java: `HashSet<DBRecord>` construction, where `DBRecord.equals()`/`hashCode()` compare by key
+/// (see `db.DBRecord`). Deduplicates by primary key, which is equivalent here since two records
+/// sharing a key are necessarily the same row.
+fn dedupe_records_by_key(records: &mut Vec<crate::framework::db::DBRecord>) {
+    let mut seen = std::collections::HashSet::new();
+    records.retain(|r| seen.insert(r.get_key().get_long_value()));
+}
+
 /// Placeholder for the unported Java type `VTAddressCorrelationAdapterV0`, referenced by
 /// `VTAddressCorrelatorAdapterBase::create_adapter`/`get_adapter` in
 /// `crate::feature::vt::api::main::db::vt_address_correlator_adapter`.
