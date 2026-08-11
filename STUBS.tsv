@@ -533,3 +533,7 @@ ts	stub_class	referenced_by
 2026-08-11T06:00:00.000000+00:00	VTAssociation	VTAssociationManager
 2026-08-11T06:00:00.000001+00:00	VTAssociation	AssociationHook
 2026-08-11T06:00:00.000002+00:00	VTMarkupItem	AssociationHook
+2026-08-11T02:24:27.086920+00:00	VTAssociation	VTSession
+2026-08-11T02:24:27.087513+00:00	VTMatch	VTSession
+2026-08-11T02:24:27.087777+00:00	VTMatchSet	VTSession
+2026-08-11T02:24:27.088415+00:00	VTProgramCorrelator	VTSession

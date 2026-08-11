@@ -5,6 +5,9 @@
 
 pub use crate::program::model::address::Address as AddressType;
 
+use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
+use crate::feature::vt::api::main::vt_score::VtScore;
+
 /// Placeholder for the unported Java type `VTAssociation`, referenced by `VTAssociationManager` and `AssociationHook`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
@@ -116,4 +119,51 @@ pub trait Stringable: Send + Sync {
 /// Placeholder for `VTMarkupType`.
 pub trait VtMarkupType: Send + Sync {
     fn get_name(&self) -> &str;
+}
+
+/// Placeholder for the unported Java type `VTMatch`, referenced by `VTSession`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait VtMatch: Send + Sync {
+    fn get_match_set(&self) -> Box<dyn VtMatchSet>;
+    fn get_association(&self) -> Box<dyn VtAssociation>;
+    fn get_tag(&self) -> VtMatchTag;
+    fn set_tag(&self, tag: VtMatchTag);
+    fn get_similarity_score(&self) -> VtScore;
+    fn get_confidence_score(&self) -> VtScore;
+    fn get_source_address(&self) -> AddressType;
+    fn get_destination_address(&self) -> AddressType;
+    fn get_source_length(&self) -> i32;
+    fn get_destination_length(&self) -> i32;
+}
+
+/// Placeholder for the unported Java type `VTMatchSet`, referenced by `VTSession`.
+/// Generated stub: only a shape hint. `add_match`/`get_program_correlator_info` are omitted
+/// pending ports of `VTMatchInfo`/`VTProgramCorrelatorInfo`, which have no known shape yet.
+/// Replace with the real port when available.
+pub trait VtMatchSet: Send + Sync {
+    fn get_session(&self) -> Box<dyn VtSession>;
+    fn get_matches(&self) -> Vec<Box<dyn VtMatch>>;
+    fn get_match_count(&self) -> i32;
+    fn get_id(&self) -> i32;
+    fn delete_match(&self, match_item: &dyn VtMatch);
+    fn remove_match(&self, match_item: &dyn VtMatch) -> bool;
+    fn has_removable_matches(&self) -> bool;
+}
+
+/// Placeholder for the unported Java type `VTProgramCorrelator`, referenced by `VTSession`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait VtProgramCorrelator: Send + Sync {
+    fn correlate(
+        &self,
+        session: &dyn VtSession,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> std::io::Result<Box<dyn VtMatchSet>>;
+    fn get_name(&self) -> String;
+    fn get_options(&self) -> Box<dyn ToolOptions>;
+    fn get_source_address_set(&self) -> Box<dyn crate::program::model::address::AddressSetView>;
+    fn get_source_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
+    fn get_destination_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
+    fn get_destination_address_set(&self) -> Box<dyn crate::program::model::address::AddressSetView>;
 }
