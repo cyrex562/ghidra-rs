@@ -9393,7 +9393,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/TableColumn.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/TableDescriptor.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAddressCorrelationAdapterV0.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAddressCorrelatorAdapter.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAddressCorrelatorAdapter.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAssociationDB.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAssociationTableDBAdapter.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAssociationTableDBAdapterV0.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api db 
