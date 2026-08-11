@@ -1,5 +1,6 @@
 use crate::feature::seam_stubs::{VtAssociation, VtMatch, VtMatchInfo};
 use crate::feature::vt::api::implementation::vt_program_correlator_info::VtProgramCorrelatorInfo;
+use crate::feature::vt::api::main::vt_program_correlator::VTProgramCorrelator;
 use crate::feature::vt::api::main::vt_session::VTSession;
 use crate::program::model::address::Address;
 
@@ -167,7 +168,7 @@ mod tests {
 
         fn create_match_set(
             &mut self,
-            _correlator: &dyn crate::feature::seam_stubs::VtProgramCorrelator,
+            _correlator: &dyn VTProgramCorrelator,
         ) -> Box<dyn crate::feature::seam_stubs::VtMatchSet> {
             unimplemented!("not exercised by this test")
         }
