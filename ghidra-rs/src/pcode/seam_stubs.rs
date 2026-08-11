@@ -1163,6 +1163,23 @@ pub trait JitVal: Send + Sync {
     fn is_input_var(&self) -> bool {
         false
     }
+
+    /// Double-dispatch hook standing in for Java's `switch (v) { case JitConstVal ... }` in
+    /// `JitOpVisitor.visitVal`.
+    ///
+    /// Grown (see `STUBS.tsv`) for
+    /// [`JitOpVisitor`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor): a
+    /// sealed-interface `switch` has no Rust equivalent over a `dyn` trait, so each concrete
+    /// `JitVal` overrides this to call back into its matching `JitOpVisitor::visit_*` method.
+    /// Defaulted so existing `impl JitVal for Foo` blocks keep compiling; the default mirrors
+    /// Java's unreachable `default -> throw new AssertionError()` arm.
+    fn accept_val(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        let _ = visitor;
+        panic!("AssertionError: unrecognized JitVal");
+    }
 }
 
 /// Placeholder for the unported Java type `JitOutVar`, referenced by `JitDefOp`.
@@ -1188,6 +1205,25 @@ pub trait JitOp: Send + Sync {
     fn type_for(&self, position: i32) -> JitTypeBehavior;
     fn link(&self);
     fn unlink(&self);
+
+    /// Double-dispatch hook standing in for Java's `switch (op) { case JitUnOp ... }` in
+    /// `JitOpVisitor.visitOp`.
+    ///
+    /// Grown (see `STUBS.tsv`) for
+    /// [`JitOpVisitor`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor): a
+    /// sealed-interface `switch` has no Rust equivalent over a `dyn` trait, so each concrete
+    /// `JitOp` overrides this to call back into its matching `JitOpVisitor::visit_*` method.
+    /// Defaulted so existing `impl JitOp for Foo` blocks keep compiling; the default mirrors
+    /// Java's unreachable `default -> throw new AssertionError(...)` arm. Leaf types under the
+    /// still-interface-level `JitUnOp`/`JitBinOp` cases have no concrete implementor in this
+    /// crate yet, so they too fall back to this default until one is ported.
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        let _ = visitor;
+        panic!("AssertionError: Unrecognized op");
+    }
 }
 
 /// Placeholder for the unported Java type `JitDefOp`, referenced by `JitBinOp`.
@@ -1321,6 +1357,429 @@ impl JitVal for JitInputVar {
 
     fn is_input_var(&self) -> bool {
         true
+    }
+
+    /// `JitInputVar` does not implement the real [`JitVar`](crate::pcode::emu::jit::var::JitVar)
+    /// trait in this port (see the type-level doc), so unlike the other `JitVar`-flavored
+    /// `JitVal`s this routes straight to `visit_input_var` rather than through `visit_var`.
+    fn accept_val(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_input_var(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitStoreOp`, referenced by
+/// [`JitOpVisitor::visit_store_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_store_op).
+/// No fields: nothing in this crate yet inspects a store op's contents. Replace with the real
+/// port when `JitStoreOp.java` is ported.
+pub struct JitStoreOp;
+
+impl JitOp for JitStoreOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitStoreOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_store_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitLoadOp`, referenced by
+/// [`JitOpVisitor::visit_load_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_load_op).
+/// No fields: nothing in this crate yet inspects a load op's contents. Replace with the real
+/// port when `JitLoadOp.java` is ported.
+pub struct JitLoadOp;
+
+impl JitOp for JitLoadOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitLoadOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_load_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCallOtherOp`, referenced
+/// by [`JitOpVisitor::visit_call_other_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_call_other_op).
+/// No fields: nothing in this crate yet inspects a call-other op's contents. Replace with the
+/// real port when `JitCallOtherOp.java` is ported.
+pub struct JitCallOtherOp;
+
+impl JitOp for JitCallOtherOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitCallOtherOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_call_other_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCallOtherDefOp`,
+/// referenced by [`JitOpVisitor::visit_call_other_def_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_call_other_def_op).
+/// No fields: nothing in this crate yet inspects a call-other-def op's contents. Replace with
+/// the real port when `JitCallOtherDefOp.java` is ported.
+pub struct JitCallOtherDefOp;
+
+impl JitOp for JitCallOtherDefOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitCallOtherDefOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_call_other_def_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCallOtherMissingOp`,
+/// referenced by [`JitOpVisitor::visit_call_other_missing_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_call_other_missing_op).
+/// No fields: nothing in this crate yet inspects a call-other-missing op's contents. Replace
+/// with the real port when `JitCallOtherMissingOp.java` is ported.
+pub struct JitCallOtherMissingOp;
+
+impl JitOp for JitCallOtherMissingOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitCallOtherMissingOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_call_other_missing_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCatenateOp`, referenced
+/// by [`JitOpVisitor::visit_catenate_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_catenate_op).
+/// No fields: nothing in this crate yet inspects a catenate op's contents. Replace with the real
+/// port when `JitCatenateOp.java` is ported.
+pub struct JitCatenateOp;
+
+impl JitOp for JitCatenateOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitCatenateOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_catenate_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitSynthSubPieceOp`,
+/// referenced by [`JitOpVisitor::visit_sub_piece_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_sub_piece_op).
+/// No fields: nothing in this crate yet inspects a sub-piece op's contents. Replace with the
+/// real port when `JitSynthSubPieceOp.java` is ported.
+pub struct JitSynthSubPieceOp;
+
+impl JitOp for JitSynthSubPieceOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitSynthSubPieceOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_sub_piece_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitBranchOp`, referenced by
+/// [`JitOpVisitor::visit_branch_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_branch_op).
+/// No fields: nothing in this crate yet inspects a branch op's contents. Replace with the real
+/// port when `JitBranchOp.java` is ported.
+pub struct JitBranchOp;
+
+impl JitOp for JitBranchOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitBranchOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_branch_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCBranchOp`, referenced
+/// by [`JitOpVisitor::visit_c_branch_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_c_branch_op).
+/// No fields: nothing in this crate yet inspects a conditional-branch op's contents. Replace
+/// with the real port when `JitCBranchOp.java` is ported.
+pub struct JitCBranchOp;
+
+impl JitOp for JitCBranchOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitCBranchOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_c_branch_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitBranchIndOp`, referenced
+/// by [`JitOpVisitor::visit_branch_ind_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_branch_ind_op).
+/// No fields: nothing in this crate yet inspects an indirect-branch op's contents. Replace with
+/// the real port when `JitBranchIndOp.java` is ported.
+pub struct JitBranchIndOp;
+
+impl JitOp for JitBranchIndOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitBranchIndOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_branch_ind_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitUnimplementedOp`,
+/// referenced by [`JitOpVisitor::visit_unimplemented_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_unimplemented_op).
+/// No fields: nothing in this crate yet inspects an unimplemented op's contents. Replace with
+/// the real port when `JitUnimplementedOp.java` is ported.
+pub struct JitUnimplementedOp;
+
+impl JitOp for JitUnimplementedOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitUnimplementedOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_unimplemented_op(self);
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitNopOp`, referenced by
+/// [`JitOpVisitor::visit_nop_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_nop_op).
+/// No fields: nothing in this crate yet inspects a nop op's contents. Replace with the real port
+/// when `JitNopOp.java` is ported.
+pub struct JitNopOp;
+
+impl JitOp for JitNopOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        unimplemented!("JitNopOp not yet ported")
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_nop_op(self);
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.var.JitConstVal`, referenced by
+/// [`JitOpVisitor::visit_const_val`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_const_val).
+/// No fields: nothing in this crate yet inspects a constant value's contents. Replace with the
+/// real port (including the `BigInteger` value) when `JitConstVal.java` is ported.
+pub struct JitConstVal;
+
+impl JitVal for JitConstVal {
+    fn size(&self) -> i32 {
+        0
+    }
+
+    fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn accept_val(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_const_val(self);
+    }
+}
+
+/// Placeholder for the unported Java enum `ghidra.pcode.emu.jit.var.JitFailVal`, referenced by
+/// [`JitOpVisitor::visit_fail_val`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_fail_val).
+/// No fields: nothing in this crate yet inspects a fail value's contents. Replace with the real
+/// port when `JitFailVal.java` is ported.
+pub struct JitFailVal;
+
+impl JitVal for JitFailVal {
+    fn size(&self) -> i32 {
+        0
+    }
+
+    fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn accept_val(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_fail_val(self);
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.var.JitMissingVar`, referenced
+/// by [`JitOpVisitor::visit_missing_var`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_missing_var).
+/// No fields: nothing in this crate yet inspects a missing var's contents (Java's
+/// `generatePhi(JitDataFlowModel, JitBlock)` needs the also-unported `JitDataFlowModel`).
+/// Replace with the real port when `JitMissingVar.java` is ported.
+pub struct JitMissingVar;
+
+impl JitVal for JitMissingVar {
+    fn size(&self) -> i32 {
+        0
+    }
+
+    fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn accept_val(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        // Route through `JitVar::accept_var` (a plain method call on the concrete `Self`, not
+        // through `visitor`) since `JitOpVisitor::visit_var` itself is `Self: Sized`-bounded and
+        // so isn't callable on the `dyn JitOpVisitor` this method is given.
+        crate::pcode::emu::jit::var::JitVar::accept_var(self, visitor);
+    }
+}
+
+impl crate::pcode::emu::jit::var::JitVar for JitMissingVar {
+    fn id(&self) -> i32 {
+        unimplemented!("JitMissingVar not yet ported")
+    }
+
+    fn space(&self) -> Arc<AddressSpace> {
+        unimplemented!("JitMissingVar not yet ported")
+    }
+
+    fn accept_var(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_missing_var(self);
+    }
+}
+
+/// Placeholder for the unported Java enum `ghidra.pcode.emu.jit.var.JitIndirectMemoryVar`,
+/// referenced by [`JitOpVisitor::visit_indirect_memory_var`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_indirect_memory_var).
+/// Java has only the one enum constant `INSTANCE`, "used as a temporary dummy" (see that
+/// visitor method's docs) -- mirrored here by [`INSTANCE`](Self::INSTANCE). No fields: nothing
+/// in this crate yet inspects this type's contents. Replace with the real port when
+/// `JitIndirectMemoryVar.java` is ported.
+pub struct JitIndirectMemoryVar;
+
+impl JitIndirectMemoryVar {
+    /// Port of the enum constant `JitIndirectMemoryVar.INSTANCE`.
+    pub const INSTANCE: JitIndirectMemoryVar = JitIndirectMemoryVar;
+}
+
+impl JitVal for JitIndirectMemoryVar {
+    fn size(&self) -> i32 {
+        0
+    }
+
+    fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn accept_val(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        crate::pcode::emu::jit::var::JitVar::accept_var(self, visitor);
+    }
+}
+
+impl crate::pcode::emu::jit::var::JitVar for JitIndirectMemoryVar {
+    fn id(&self) -> i32 {
+        unimplemented!("JitIndirectMemoryVar not yet ported")
+    }
+
+    fn space(&self) -> Arc<AddressSpace> {
+        unimplemented!("JitIndirectMemoryVar not yet ported")
+    }
+
+    fn accept_var(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_indirect_memory_var(self);
     }
 }
 

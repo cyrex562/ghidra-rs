@@ -17,6 +17,25 @@ pub trait JitVar: JitVal {
 
     /// The address space of this variable.
     fn space(&self) -> Arc<AddressSpace>;
+
+    /// Double-dispatch hook standing in for Java's `switch (v) { case JitInputVar ... }` in
+    /// `JitOpVisitor.visitVar`.
+    ///
+    /// Grown (see `STUBS.tsv`) for
+    /// [`JitOpVisitor`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor): a
+    /// sealed-interface `switch` has no Rust equivalent over a `dyn` trait, so each concrete
+    /// `JitVar` overrides this to call back into its matching `JitOpVisitor::visit_*` method.
+    /// Defaulted so existing `impl JitVar for Foo` blocks keep compiling; the default mirrors
+    /// Java's unreachable `default -> throw new AssertionError()` arm. The still-interface-level
+    /// `JitOutVar` case has no concrete implementor in this crate yet, so it too falls back to
+    /// this default until one is ported.
+    fn accept_var(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        let _ = visitor;
+        panic!("AssertionError: unrecognized JitVar");
+    }
 }
 
 #[cfg(test)]

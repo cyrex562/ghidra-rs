@@ -42,6 +42,16 @@ impl JitVal for JitDirectMemoryVar {
     fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
 
     fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn accept_val(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        // A plain method call on the concrete `Self`, not through `visitor`, since
+        // `JitOpVisitor::visit_var` is `Self: Sized`-bounded and so isn't callable on the
+        // `dyn JitOpVisitor` this method is given.
+        JitVar::accept_var(self, visitor);
+    }
 }
 
 impl JitVar for JitDirectMemoryVar {
@@ -51,6 +61,13 @@ impl JitVar for JitDirectMemoryVar {
 
     fn space(&self) -> Arc<AddressSpace> {
         Arc::clone(self.varnode.get_address().space())
+    }
+
+    fn accept_var(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_direct_memory_var(self);
     }
 }
 

@@ -134,6 +134,13 @@ impl JitOp for JitPhiOp {
             input.remove_use(self, 0);
         }
     }
+
+    fn accept(
+        &self,
+        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
+    ) {
+        visitor.visit_phi_op(self);
+    }
 }
 
 impl JitDefOp for JitPhiOp {
