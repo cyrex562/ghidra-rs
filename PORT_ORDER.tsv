@@ -34,7 +34,7 @@ DONE	trait	2	159	6	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/
 DONE	trait	1	152	4	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTAssociation.java
 DONE	trait	0	171	2	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatch.java
 PARK	trait	5	92	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Misc.java
-TODO	trait	5	91	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/SubScope.java
+DONE	trait	5	91	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/SubScope.java
 TODO	trait	4	98	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Scope.java
 TODO	trait	2	92	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Lbl.java
 TODO	trait	1	101	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Local.java
