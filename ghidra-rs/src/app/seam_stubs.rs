@@ -1214,3 +1214,105 @@ impl std::fmt::Display for ClangToken {
         write!(f, "{}", self.text)
     }
 }
+
+/// Placeholder for `ghidra.app.decompiler.signature.BlockSignature`, referenced by
+/// [`decode_signatures`](crate::app::decompiler::signature::decode_signatures) before the real
+/// class is ported. `decode_signatures` only needs to construct an instance and drive it through
+/// the [`DebugSignature`](crate::app::decompiler::signature::DebugSignature) trait, so `decode`/
+/// `print_raw` are left as no-ops here; the real port will fill in `BlockSignature`'s `blockSeq`/
+/// `index`/`opSeq`/`opcode`/`previousOpSeq`/`previousOpcode` fields and their stream format.
+pub struct BlockSignature {
+    base: crate::app::decompiler::signature::DebugSignatureBase,
+}
+
+impl BlockSignature {
+    pub fn new() -> Self {
+        Self { base: crate::app::decompiler::signature::DebugSignatureBase::new() }
+    }
+}
+
+impl Default for BlockSignature {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::app::decompiler::signature::DebugSignature for BlockSignature {
+    fn decode(
+        &mut self,
+        _decoder: &dyn crate::program::model::pcode::decoder::Decoder,
+    ) -> Result<(), crate::program::model::pcode::decoder_exception::DecoderException> {
+        Ok(())
+    }
+
+    fn print_raw(&self, _language: &dyn crate::program::model::lang::language::Language, buf: &mut String) {
+        buf.push_str(&format!("{:x}", self.base.hash));
+    }
+}
+
+/// Placeholder for `ghidra.app.decompiler.signature.CopySignature`, referenced by
+/// [`decode_signatures`](crate::app::decompiler::signature::decode_signatures) before the real
+/// class is ported. See [`BlockSignature`]'s doc comment for the shape of this placeholder; the
+/// real port will fill in `CopySignature`'s `index` field and its stream format.
+pub struct CopySignature {
+    base: crate::app::decompiler::signature::DebugSignatureBase,
+}
+
+impl CopySignature {
+    pub fn new() -> Self {
+        Self { base: crate::app::decompiler::signature::DebugSignatureBase::new() }
+    }
+}
+
+impl Default for CopySignature {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::app::decompiler::signature::DebugSignature for CopySignature {
+    fn decode(
+        &mut self,
+        _decoder: &dyn crate::program::model::pcode::decoder::Decoder,
+    ) -> Result<(), crate::program::model::pcode::decoder_exception::DecoderException> {
+        Ok(())
+    }
+
+    fn print_raw(&self, _language: &dyn crate::program::model::lang::language::Language, buf: &mut String) {
+        buf.push_str(&format!("{:x}", self.base.hash));
+    }
+}
+
+/// Placeholder for `ghidra.app.decompiler.signature.VarnodeSignature`, referenced by
+/// [`decode_signatures`](crate::app::decompiler::signature::decode_signatures) before the real
+/// class is ported. See [`BlockSignature`]'s doc comment for the shape of this placeholder; the
+/// real port will fill in `VarnodeSignature`'s `vn`/`seqNum`/`opcode` fields and its stream
+/// format.
+pub struct VarnodeSignature {
+    base: crate::app::decompiler::signature::DebugSignatureBase,
+}
+
+impl VarnodeSignature {
+    pub fn new() -> Self {
+        Self { base: crate::app::decompiler::signature::DebugSignatureBase::new() }
+    }
+}
+
+impl Default for VarnodeSignature {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::app::decompiler::signature::DebugSignature for VarnodeSignature {
+    fn decode(
+        &mut self,
+        _decoder: &dyn crate::program::model::pcode::decoder::Decoder,
+    ) -> Result<(), crate::program::model::pcode::decoder_exception::DecoderException> {
+        Ok(())
+    }
+
+    fn print_raw(&self, _language: &dyn crate::program::model::lang::language::Language, buf: &mut String) {
+        buf.push_str(&format!("{:x}", self.base.hash));
+    }
+}

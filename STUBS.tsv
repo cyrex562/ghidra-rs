@@ -521,3 +521,6 @@ ts	stub_class	referenced_by
 2026-08-10T09:49:57.739324+00:00	FieldFormatModel	FormatModelListener
 2026-08-10T09:54:26.397220+00:00	ClangFunction	ClangTokenGroup
 2026-08-10T09:54:26.398288+00:00	ClangToken	ClangTokenGroup
+2026-08-11T01:06:52.190956+00:00	BlockSignature	DebugSignature
+2026-08-11T01:06:52.191105+00:00	CopySignature	DebugSignature
+2026-08-11T01:06:52.191244+00:00	VarnodeSignature	DebugSignature
