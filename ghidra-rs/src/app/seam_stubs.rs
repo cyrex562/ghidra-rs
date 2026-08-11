@@ -1382,3 +1382,9 @@ pub trait HighFunction: Send + Sync {}
 
 /// Placeholder trait for `ghidra.app.decompiler.HighParamID`.
 pub trait HighParamID: Send + Sync {}
+
+/// Placeholder trait for `ghidra.app.decompiler.component.DecompilerPanel`.
+pub trait DecompilerPanel: Send + Sync {}
+
+/// Placeholder trait for `ghidra.app.decompiler.component.margin.DecompilerMarginProvider`.
+pub trait DecompilerMarginProvider: Send + Sync {}
