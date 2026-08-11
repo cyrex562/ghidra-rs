@@ -44,7 +44,7 @@ DONE	trait	0	112	15	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/a
 PARK	trait	19	20	68	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/GenConsts.java
 DONE	trait	23	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/LocalOpnd.java
 PARK	trait	23	88	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Check.java
-TODO	trait	23	88	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Fld.java
+PARK	trait	23	88	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Fld.java
 TODO	trait	21	18	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/SimpleOpnd.java
 TODO	trait	20	9	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/ConstSimpleOpnd.java
 TODO	trait	17	28	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitType.java
