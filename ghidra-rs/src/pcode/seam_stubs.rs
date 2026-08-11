@@ -1173,3 +1173,15 @@ pub trait JitBinOp: JitDefOp {
     fn r_type(&self) -> JitTypeBehavior;
 }
 
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitDataFlowState.MiniDFState`,
+/// referenced by [`JitCallOtherOpIf`](crate::pcode::emu::jit::op::jit_call_other_op_if::JitCallOtherOpIf).
+///
+/// Java's `MiniDFState` is a non-static inner class of the also-unported `JitDataFlowState`: a
+/// minimal snapshot of the data-flow machine state (per-address-space maps of offset to defining
+/// [`JitVal`]) captured at a `CALLOTHER` call site. Nothing in `JitCallOtherOpIf` inspects the
+/// snapshot's contents -- it only stores and returns the value obtained from `captureState()` --
+/// so this stub carries no fields. Replace with the real port (including `mapFor`/`getDefinitions`)
+/// when `JitDataFlowState.java` is ported.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct MiniDFState;
+
