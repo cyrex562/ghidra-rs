@@ -1,6 +1,7 @@
 pub mod deleted_match;
 pub mod vt_address_correlator_adapter;
 pub mod vt_association_table_db_adapter;
+pub mod vt_match_markup_item_table_db_adapter;
 pub mod vt_match_markup_item_table_db_adapter_v0;
 pub mod vt_match_set_table_db_adapter;
 pub mod vt_match_table_db_adapter;
@@ -14,6 +15,9 @@ pub use vt_address_correlator_adapter::{
 pub use vt_association_table_db_adapter::{
     ColumnDescription as AssociationTableColumnDescription, VTAssociationTableDBAdapter,
     VTAssociationTableDBAdapterBase, TABLE_NAME as ASSOCIATION_TABLE_TABLE_NAME,
+};
+pub use vt_match_markup_item_table_db_adapter::{
+    VTMatchMarkupItemTableDBAdapter, VTMatchMarkupItemTableDBAdapterBase,
 };
 pub use vt_match_markup_item_table_db_adapter_v0::{
     ColumnDescription as MarkupItemTableColumnDescription, VTMatchMarkupItemTableDBAdapterV0,
