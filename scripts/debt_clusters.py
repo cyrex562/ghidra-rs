@@ -617,7 +617,17 @@ def suggest_verdict(name, traits, types_, impls, unported, mock_impls, stub_decl
     if not is_trait and not is_type:
         return "SUGGEST-PARK", "not declared in the crate (external type or unresolved stub)"
     if not is_trait:
-        return None, ""                       # already a concrete type; `dyn` match is suspect
+        # Already a concrete type, so it was captured by the Rc<RefCell<T>>/Arc<Mutex<T>> half
+        # of the scan, not by `dyn T`. That is a real question, but not THIS queue's question:
+        # the verdicts here (ACCEPT/ENUM/ITER/GRAPH/STRUCT) all answer "what should this trait
+        # become", and there is no trait. Saying nothing left 30 rows in the queue with an
+        # empty note, indistinguishable from rows nobody had got to yet.
+        return None, (
+            f"{name} is already a concrete type ({is_type} declaration(s)), not a trait -- it "
+            f"is here because a shared cell (Rc<RefCell<{name}>> / Arc<Mutex<{name}>>) reaches "
+            f"it. That is an ownership question (OWNERSHIP_MIGRATION.md conventions 1 and 3: "
+            f"arena + typed Copy ID, or snapshot+transaction for DB objects), not a trait "
+            f"convention, so no verdict in this queue answers it")
     # ORDER MATTERS. The two Rust-side deferrals below ("only mocks", "seam_stubs placeholder")
     # used to run FIRST and short-circuit, so 555 of 748 TODO rows were parked as "revisit once
     # the port lands" without Java ever being asked -- and Java had a clear answer for 417 of
@@ -827,15 +837,57 @@ def alias_map(text):
     return out
 
 
+def strip_test_module(text):
+    """Remove `#[cfg(test)]` items, brace-matched. Returns the production text.
+
+    An `Rc<RefCell<MockState>>` inside a test module is a test double's plumbing, not an
+    ownership decision anyone has to make. Three such doubles (MockState, MockAnimatorState,
+    MockDomainObject) were sitting in the queue as undecided types.
+
+    Truncating at the first `#[cfg(test)]` is NOT good enough, though it is the usual Rust
+    layout. trace_time_viewport.rs puts its test module at line 235 of 522, register.rs at
+    576 of 867, task_listener.rs at 14 of 47: cutting there discarded production code and
+    silently dropped 17 live rows, `Task` and `Occlusion` among them. So match the item's
+    braces and remove only that span.
+    """
+    out, i = [], 0
+    while True:
+        j = text.find("#[cfg(test)]", i)
+        if j < 0:
+            out.append(text[i:])
+            return "".join(out)
+        out.append(text[i:j])
+        # The attribute applies to the next item: a braced block, or something ended by `;`
+        # (`#[cfg(test)] use ..;`). Whichever comes first wins.
+        brace, semi = text.find("{", j), text.find(";", j)
+        if brace < 0 or (0 <= semi < brace):
+            i = len(text) if semi < 0 else semi + 1
+            continue
+        depth, k = 0, brace
+        while k < len(text):
+            if text[k] == "{":
+                depth += 1
+            elif text[k] == "}":
+                depth -= 1
+                if depth == 0:
+                    k += 1
+                    break
+            k += 1
+        i = k
+
+
 def types_in_file(path):
-    """Types reached via dyn / Rc<RefCell<>> / Arc<Mutex<>>, comments stripped, idiomatic
-    trait objects excluded. Returns {name: occurrence_count}."""
+    """Types reached via dyn / Rc<RefCell<>> / Arc<Mutex<>>, comments and the test module
+    stripped, idiomatic trait objects excluded. Returns {name: occurrence_count}."""
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as fh:
             text = fh.read()
     except OSError:
         return {}
-    text = RE_LINE_COMMENT.sub("", text)
+    # Comments FIRST: strip_test_module counts braces, and a `//` comment containing one
+    # derails the match and swallows the rest of the file. Stripping in the other order
+    # removed 274 types from the queue, AbstractIntegerDataType and Transaction among them.
+    text = strip_test_module(RE_LINE_COMMENT.sub("", text))
     aliases = alias_map(text)
     counts = defaultdict(int)
     for rx in (RE_DYN, RE_CELL):

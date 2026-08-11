@@ -158,6 +158,85 @@ class TestWaitPortIsNeverSticky(unittest.TestCase):
         self.assertNotIn(dc.WAIT_STUB, dyn_rules.DECIDED)
 
 
+class TestConcreteTypesReachedByACell(unittest.TestCase):
+    """`Rc<RefCell<DBHandle>>` puts a concrete type in the queue, but no verdict here fits it.
+
+    30 rows carried an empty note for this reason, which reads identically to a row nobody
+    has looked at yet.
+    """
+
+    def test_a_concrete_type_says_why_no_verdict_applies(self):
+        v, why = dc.suggest_verdict("DBHandle", {}, {"DBHandle": 1}, {}, set(), {}, set())
+        self.assertIsNone(v)
+        self.assertTrue(why, "a concrete-type row must explain itself, not return an empty note")
+        self.assertIn("ownership question", why)
+
+    def test_a_type_declared_nowhere_is_still_park(self):
+        v, why = dc.suggest_verdict("Ghost", {}, {}, {}, set(), {}, set())
+        self.assertEqual(v, "SUGGEST-PARK")
+
+
+class TestTestModuleIsNotEvidence(unittest.TestCase):
+    """A shared cell inside `#[cfg(test)]` is a test double's plumbing, not a decision."""
+
+    def _scan(self, body):
+        d = tempfile.mkdtemp()
+        p = os.path.join(d, "x.rs")
+        with open(p, "w") as fh:
+            fh.write(body)
+        return dc.types_in_file(p)
+
+    def test_a_cell_in_the_test_module_is_ignored(self):
+        found = self._scan(
+            "fn real() { let a: Rc<RefCell<ProgramDb>> = todo!(); }\n"
+            "#[cfg(test)]\nmod tests {\n"
+            "    fn t() { let m: Rc<RefCell<MockState>> = todo!(); }\n}\n"
+        )
+        self.assertIn("ProgramDb", found)
+        self.assertNotIn("MockState", found)
+
+    def test_a_file_with_no_test_module_is_untouched(self):
+        self.assertIn("Keeper", self._scan("let k: Rc<RefCell<Keeper>> = todo!();"))
+
+    def test_production_code_after_a_test_module_survives(self):
+        """The regression this cost: truncating at the first `#[cfg(test)]` threw away the
+        rest of the file. trace_time_viewport.rs has its test module at line 235 of 522, and
+        17 live rows -- Task and Occlusion among them -- vanished."""
+        found = self._scan(
+            "#[cfg(test)]\nmod tests {\n"
+            "    fn t() { let m: Rc<RefCell<MockState>> = todo!(); }\n}\n"
+            "fn after() { let r: Rc<RefCell<Occlusion>> = todo!(); }\n"
+        )
+        self.assertIn("Occlusion", found)
+        self.assertNotIn("MockState", found)
+
+    def test_nested_braces_in_the_test_module_are_matched(self):
+        found = self._scan(
+            "#[cfg(test)]\nmod tests {\n"
+            "    fn t() { if x { let m: Rc<RefCell<MockState>> = todo!(); } }\n}\n"
+            "fn after() { let r: Rc<RefCell<Keeper>> = todo!(); }\n"
+        )
+        self.assertIn("Keeper", found)
+        self.assertNotIn("MockState", found)
+
+    def test_a_cfg_test_attribute_on_a_use_statement_ends_at_the_semicolon(self):
+        found = self._scan(
+            "#[cfg(test)] use foo::Bar;\n"
+            "fn after() { let r: Rc<RefCell<Keeper>> = todo!(); }\n"
+        )
+        self.assertIn("Keeper", found)
+
+    def test_two_test_modules_both_go(self):
+        found = self._scan(
+            "#[cfg(test)]\nmod a { fn t() { let m: Rc<RefCell<MockOne>> = todo!(); } }\n"
+            "fn mid() { let r: Rc<RefCell<Keeper>> = todo!(); }\n"
+            "#[cfg(test)]\nmod b { fn t() { let m: Rc<RefCell<MockTwo>> = todo!(); } }\n"
+        )
+        self.assertIn("Keeper", found)
+        self.assertNotIn("MockOne", found)
+        self.assertNotIn("MockTwo", found)
+
+
 class TestSeamStubPlaceholders(unittest.TestCase):
     """A trait in seam_stubs.rs is a compile-time stand-in, not an abstraction anyone designed.
 
