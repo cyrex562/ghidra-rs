@@ -538,3 +538,4 @@ ts	stub_class	referenced_by
 2026-08-11T02:24:27.087777+00:00	VTMatchSet	VTSession
 2026-08-11T02:24:27.088415+00:00	VTProgramCorrelator	VTSession
 2026-08-11T06:15:00.000000+00:00	VTMatchInfo	VTMatchSet
+2026-08-11T03:00:15.274089+00:00	VTOptions	VTProgramCorrelatorFactory
