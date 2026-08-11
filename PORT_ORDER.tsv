@@ -9,7 +9,7 @@ DONE	trait	2	84	10	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decom
 DONE	trait	1	93	2	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangLine.java
 DONE	trait	0	176	63	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/ClangToken.java
 DONE	trait	2	129	1	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTAssociationManager.java
-TODO	trait	6	128	2	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/AssociationHook.java
+DONE	trait	6	128	2	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/AssociationHook.java
 TODO	trait	5	170	6	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTSession.java
 TODO	trait	4	143	4	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatchSet.java
 TODO	trait	3	147	3	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTProgramCorrelator.java
