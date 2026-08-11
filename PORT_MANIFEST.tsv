@@ -9455,7 +9455,7 @@ orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/mar
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/PreCommentMarkupType.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api markuptype 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/RepeatableCommentMarkupType.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api markuptype 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/VTMarkupType.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api markuptype 
-orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/VTMarkupTypeFactory.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api markuptype 
+orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/VTMarkupTypeFactory.java	DONE	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api markuptype
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/stringable/DataTypeStringable.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api stringable 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/stringable/FunctionNameStringable.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api stringable 
 orig_src/Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/stringable/FunctionSignatureStringable.java	TODO	orig_src Ghidra Features VersionTracking src main java ghidra feature vt api stringable 

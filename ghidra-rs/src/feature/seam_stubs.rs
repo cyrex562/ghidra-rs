@@ -941,6 +941,116 @@ impl crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddress
 }
 
 
+/// Placeholder for the unported Java type `EolCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). `EolCommentMarkupType`
+/// is a concrete Java class (not an interface), so this is a unit struct rather than a trait.
+/// Trimmed to implementing the already-ported [`VtMarkupType`] trait with the display name read
+/// off the Java constructor (`super("EOL Comment")`), since that is all the factory needs.
+/// Replace with the real port when `EolCommentMarkupType.java` is ported.
+pub struct EolCommentMarkupType;
+
+impl VtMarkupType for EolCommentMarkupType {
+    fn get_name(&self) -> &str {
+        "EOL Comment"
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionNameMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `FunctionNameMarkupType.java` is ported.
+pub struct FunctionNameMarkupType;
+
+impl VtMarkupType for FunctionNameMarkupType {
+    fn get_name(&self) -> &str {
+        "Function Name"
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionSignatureMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `FunctionSignatureMarkupType.java` is ported.
+pub struct FunctionSignatureMarkupType;
+
+impl VtMarkupType for FunctionSignatureMarkupType {
+    fn get_name(&self) -> &str {
+        "Function Signature"
+    }
+}
+
+/// Placeholder for the unported Java type `LabelMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `LabelMarkupType.java` is ported.
+pub struct LabelMarkupType;
+
+impl VtMarkupType for LabelMarkupType {
+    fn get_name(&self) -> &str {
+        "Label"
+    }
+}
+
+/// Placeholder for the unported Java type `PlateCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `PlateCommentMarkupType.java` is ported.
+pub struct PlateCommentMarkupType;
+
+impl VtMarkupType for PlateCommentMarkupType {
+    fn get_name(&self) -> &str {
+        "Plate Comment"
+    }
+}
+
+/// Placeholder for the unported Java type `PostCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `PostCommentMarkupType.java` is ported.
+pub struct PostCommentMarkupType;
+
+impl VtMarkupType for PostCommentMarkupType {
+    fn get_name(&self) -> &str {
+        "Post Comment"
+    }
+}
+
+/// Placeholder for the unported Java type `PreCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `PreCommentMarkupType.java` is ported.
+pub struct PreCommentMarkupType;
+
+impl VtMarkupType for PreCommentMarkupType {
+    fn get_name(&self) -> &str {
+        "Pre Comment"
+    }
+}
+
+/// Placeholder for the unported Java type `RepeatableCommentMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `RepeatableCommentMarkupType.java` is ported.
+pub struct RepeatableCommentMarkupType;
+
+impl VtMarkupType for RepeatableCommentMarkupType {
+    fn get_name(&self) -> &str {
+        "Repeatable Comment"
+    }
+}
+
+/// Placeholder for the unported Java type `DataTypeMarkupType`, referenced by
+/// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
+/// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
+/// `DataTypeMarkupType.java` is ported.
+pub struct DataTypeMarkupType;
+
+impl VtMarkupType for DataTypeMarkupType {
+    fn get_name(&self) -> &str {
+        "Data Type"
+    }
+}
+
 /// Placeholder for the unported Java type `ghidra.app.util.dialog.CheckoutDialog`, referenced by
 /// `do_optional_destination_program_checkout` in
 /// [`vt_session_file_util`](crate::feature::vt::api::util::vt_session_file_util). Minimal
