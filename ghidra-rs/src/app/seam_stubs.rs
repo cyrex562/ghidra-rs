@@ -3,7 +3,7 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
-use crate::app::decompiler::{ClangNode, ClangTokenGroup, DecompiledFunction};
+use crate::app::decompiler::{ClangLine, ClangNode, ClangTokenGroup, DecompiledFunction};
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
@@ -1300,61 +1300,6 @@ impl std::fmt::Display for ClangToken {
     }
 }
 
-/// Placeholder for `ghidra.app.decompiler.ClangLine`, referenced by
-/// [`PrettyPrinter`](crate::app::decompiler::pretty_printer::PrettyPrinter) before the real class
-/// is ported. Only the members `PrettyPrinter` actually calls
-/// (`getIndentString`/`getIndent`/`getAllTokens`, plus enough to build one from
-/// [`DecompilerUtils::to_lines`]) are modeled; `getNumTokens`/`getLineNumber`/`getToken`/
-/// `indexOfToken`/`toDebugString`/`toString` are left for that class's own future port.
-pub struct ClangLine {
-    indent_level: i32,
-    tokens: Vec<ClangToken>,
-}
-
-/// Mirrors `PrettyPrinter.INDENT_STRING` (a single space), duplicated here rather than referenced
-/// from `pretty_printer` to avoid a module dependency back onto the type this file exists to
-/// unblock.
-const INDENT_STRING: &str = " ";
-
-impl ClangLine {
-    /// Mirrors `ClangLine(int, int)`, minus the unused `lineNumber` (no current caller reads
-    /// `getLineNumber()`).
-    pub fn new(indent: i32) -> Self {
-        Self {
-            indent_level: indent,
-            tokens: Vec::new(),
-        }
-    }
-
-    /// Stands in for `ClangLine.getIndentString()`.
-    pub fn get_indent_string(&self) -> String {
-        INDENT_STRING.repeat(self.indent_level.max(0) as usize)
-    }
-
-    /// Stands in for `ClangLine.getIndent()`.
-    pub fn get_indent(&self) -> i32 {
-        self.indent_level
-    }
-
-    /// Stands in for `ClangLine.getAllTokens()`.
-    pub fn get_all_tokens(&self) -> &Vec<ClangToken> {
-        &self.tokens
-    }
-
-    /// Mutable counterpart of [`get_all_tokens`](Self::get_all_tokens), standing in for the
-    /// aliasing Java gets for free by returning the live `tokens` list reference (used by
-    /// `PrettyPrinter.padEmptyLines` to insert a spacer into an empty line in place).
-    pub fn get_all_tokens_mut(&mut self) -> &mut Vec<ClangToken> {
-        &mut self.tokens
-    }
-
-    /// Stands in for `ClangLine.addToken(ClangToken)`.
-    pub fn add_token(&mut self, mut tok: ClangToken) {
-        tok.set_line_parent();
-        self.tokens.push(tok);
-    }
-}
-
 /// Placeholder for `ghidra.app.decompiler.component.DecompilerUtils`, referenced by
 /// [`PrettyPrinter`](crate::app::decompiler::pretty_printer::PrettyPrinter) before the real class
 /// is ported. Only `toLines` -- which `PrettyPrinter`'s constructor calls to derive its `lines`
@@ -1380,7 +1325,7 @@ impl DecompilerUtils {
         if nodes.is_empty() {
             return Vec::new();
         }
-        let mut line = ClangLine::new(0);
+        let mut line = ClangLine::new(0, 0);
         for node in nodes {
             line.add_token(ClangToken::new(
                 node.to_string(),

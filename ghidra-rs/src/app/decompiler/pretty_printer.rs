@@ -2,18 +2,19 @@
 //!
 //! This type is used to convert a C/C++ language token group into readable C/C++ code.
 //!
-//! [`ClangLine`]/[`ClangToken`]/[`DecompilerUtils`] are minimal placeholders (see
-//! [`crate::app::seam_stubs`]) since the real classes aren't ported yet -- this file sits on a
-//! dependency cycle with them. In particular, [`find_signature`](PrettyPrinter::find_signature)
+//! [`ClangToken`]/[`DecompilerUtils`] are minimal placeholders (see [`crate::app::seam_stubs`])
+//! since the real classes aren't ported yet -- this file sits on a dependency cycle with them.
+//! In particular, [`find_signature`](PrettyPrinter::find_signature)
 //! can never recover a `ClangFuncProto` child today: `ClangTokenGroup::decode`'s existing port
 //! already collapses `ELEM_FUNCPROTO` (like its sibling element ids) into a plain nested
 //! `ClangTokenGroup`, so that distinction is lost before `PrettyPrinter` ever sees it.
 
 use std::sync::Arc;
 
+use crate::app::decompiler::clang_line::ClangLine;
 use crate::app::decompiler::clang_token_group::ClangTokenGroup;
 use crate::app::decompiler::decompiled_function::DecompiledFunction;
-use crate::app::seam_stubs::{ClangLine, ClangToken, ClangTokenKind, DecompilerUtils};
+use crate::app::seam_stubs::{ClangToken, ClangTokenKind, DecompilerUtils};
 use crate::program::model::listing::function::Function;
 use crate::program::model::symbol::name_transformer::{IdentityNameTransformer, NameTransformer};
 use crate::util::string_utilities::line_separator;
@@ -474,7 +475,7 @@ mod tests {
 
     #[test]
     fn get_text_simplifies_cleanable_kinds_but_not_others() {
-        let mut line = ClangLine::new(0);
+        let mut line = ClangLine::new(0, 0);
         line.add_token(ClangToken::new("my", ClangTokenKind::Variable, ClangToken::DEFAULT_COLOR));
         line.add_token(ClangToken::new(" + ", ClangTokenKind::Generic, ClangToken::DEFAULT_COLOR));
         line.add_token(ClangToken::new("field", ClangTokenKind::Field, ClangToken::DEFAULT_COLOR));
@@ -486,7 +487,7 @@ mod tests {
 
     #[test]
     fn get_text_skips_cleaning_const_colored_tokens() {
-        let mut line = ClangLine::new(1);
+        let mut line = ClangLine::new(0, 1);
         line.add_token(ClangToken::new(
             "CONST",
             ClangTokenKind::Variable,
@@ -502,7 +503,7 @@ mod tests {
 
     #[test]
     fn get_text_applies_transformer_to_cleanable_kinds() {
-        let mut line = ClangLine::new(0);
+        let mut line = ClangLine::new(0, 0);
         line.add_token(ClangToken::new(
             "bad$name",
             ClangTokenKind::FuncName,
@@ -526,7 +527,7 @@ mod tests {
             ClangToken::DEFAULT_COLOR,
         )));
         let mut printer = printer_with(group);
-        printer.lines = vec![ClangLine::new(2)];
+        printer.lines = vec![ClangLine::new(0, 2)];
         printer.pad_empty_lines();
 
         assert_eq!(printer.get_lines().len(), 1);
