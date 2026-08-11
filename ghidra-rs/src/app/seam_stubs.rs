@@ -1140,20 +1140,67 @@ pub trait ClangFunction: Send + Sync {}
 /// Placeholder for `ghidra.app.decompiler.ClangToken`, the leaf-level printable unit that
 /// [`ClangTokenGroup::decode`](crate::app::decompiler::clang_token_group::ClangTokenGroup::decode)'s
 /// default branch builds via the real class's static
-/// `ClangToken.buildToken(int, ClangNode, Decoder, PcodeFactory)` factory. The real `ClangToken`
-/// has a large surface (24 members, plus further per-element-id subclasses such as
-/// `ClangFuncNameToken`, `ClangOpToken`, `ClangVariableToken`) that is out of scope here; this
-/// placeholder only drains the element's attributes (their interpretation is subclass-specific
-/// and deferred to the real port) so the decode loop stays in sync with the stream, and
-/// implements [`ClangNode`] as an addressless leaf so `flatten`/`to_string`/child-counting on an
-/// already-decoded [`ClangTokenGroup`](crate::app::decompiler::clang_token_group::ClangTokenGroup)
-/// keep working. Replace with the real port (and its per-element-id subclass dispatch) when
-/// available.
+/// `ClangToken.buildToken(int, ClangNode, Decoder, PcodeFactory)` factory, and that
+/// [`PrettyPrinter`](crate::app::decompiler::pretty_printer::PrettyPrinter) walks to render source
+/// text. The real `ClangToken` has a large surface (24 members, plus further per-element-id
+/// subclasses such as `ClangFuncNameToken`, `ClangOpToken`, `ClangVariableToken`) that is out of
+/// scope here; [`kind`](Self::kind) stands in for Java's `instanceof` checks against five of those
+/// subclasses (the only ones `PrettyPrinter` distinguishes), via a plain enum discriminant rather
+/// than separate marker traits, since none of those subclasses' own (unrelated) accessors are
+/// needed by any current caller. [`build_token`](Self::build_token) only drains the element's
+/// attributes (their interpretation is subclass-specific and deferred to the real port) so the
+/// decode loop stays in sync with the stream -- it always produces
+/// [`ClangTokenKind::Generic`], since the real per-element-id subclass dispatch isn't ported yet.
+/// Implements [`ClangNode`] as an addressless, parentless leaf so `flatten`/`to_string`/
+/// child-counting on an already-decoded
+/// [`ClangTokenGroup`](crate::app::decompiler::clang_token_group::ClangTokenGroup) keep working.
+/// Replace with the real port (and its per-element-id subclass dispatch) when available.
 pub struct ClangToken {
     text: String,
+    syntax_type: i32,
+    kind: ClangTokenKind,
+    /// Whether [`set_line_parent`](Self::set_line_parent) has been called. The real
+    /// `lineparent` back-pointer isn't retained (no current caller reads it back), so this is
+    /// just bookkeeping that the call happened, avoiding a self-referential `ClangLine` borrow.
+    has_line_parent: bool,
+}
+
+/// Discriminates which of `ClangToken`'s real Java subclasses a [`ClangToken`] placeholder stands
+/// in for, standing in for the `instanceof ClangFuncNameToken`/`ClangVariableToken`/
+/// `ClangTypeToken`/`ClangFieldToken`/`ClangLabelToken` checks in
+/// [`PrettyPrinter::get_text`](crate::app::decompiler::pretty_printer::PrettyPrinter::get_text) --
+/// the only place this crate currently distinguishes those five subclasses. `Generic` covers
+/// every other real subclass (`ClangOpToken`, `ClangSyntaxToken`, `ClangBreak`, ...), none of
+/// which `PrettyPrinter` treats specially.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClangTokenKind {
+    Generic,
+    FuncName,
+    Variable,
+    Type,
+    Field,
+    Label,
 }
 
 impl ClangToken {
+    /// Mirrors `ClangToken.CONST_COLOR`.
+    pub const CONST_COLOR: i32 = 5;
+    /// Mirrors `ClangToken.DEFAULT_COLOR`.
+    pub const DEFAULT_COLOR: i32 = 8;
+
+    /// Construct a token directly (there is no real-decoder-driven way to produce anything but
+    /// [`ClangTokenKind::Generic`] yet -- see [`build_token`](Self::build_token) -- so this is
+    /// how callers such as [`DecompilerUtils::to_lines`] and tests build one with a specific
+    /// [`kind`](Self::kind)).
+    pub fn new(text: impl Into<String>, kind: ClangTokenKind, syntax_type: i32) -> Self {
+        Self {
+            text: text.into(),
+            syntax_type,
+            kind,
+            has_line_parent: false,
+        }
+    }
+
     /// Stands in for `ClangToken.buildToken(int, ClangNode, Decoder, PcodeFactory)`.
     pub fn build_token(
         _node: i32,
@@ -1171,9 +1218,47 @@ impl ClangToken {
                 break;
             }
         }
-        Ok(Box::new(ClangToken {
-            text: String::new(),
-        }))
+        Ok(Box::new(ClangToken::new(
+            String::new(),
+            ClangTokenKind::Generic,
+            Self::DEFAULT_COLOR,
+        )))
+    }
+
+    /// Stands in for `ClangToken.buildSpacer(ClangNode, int, String)`. The Java version's `par`
+    /// parameter is dropped since this placeholder never tracks a parent (see the struct docs).
+    pub fn build_spacer(indent: i32, indent_str: &str) -> ClangToken {
+        ClangToken::new(
+            indent_str.repeat(indent.max(0) as usize),
+            ClangTokenKind::Generic,
+            Self::DEFAULT_COLOR,
+        )
+    }
+
+    /// Stands in for `ClangToken.getText()`.
+    pub fn get_text(&self) -> &str {
+        &self.text
+    }
+
+    /// Stands in for `ClangToken.getSyntaxType()`.
+    pub fn get_syntax_type(&self) -> i32 {
+        self.syntax_type
+    }
+
+    /// Which real `ClangToken` subclass this placeholder stands in for. See [`ClangTokenKind`].
+    pub fn kind(&self) -> ClangTokenKind {
+        self.kind
+    }
+
+    /// Stands in for `ClangToken.setLineParent(ClangLine)`. See the `has_line_parent` field docs
+    /// for why no reference to the line itself is retained.
+    pub fn set_line_parent(&mut self) {
+        self.has_line_parent = true;
+    }
+
+    /// Whether [`set_line_parent`](Self::set_line_parent) has been called on this token.
+    pub fn has_line_parent(&self) -> bool {
+        self.has_line_parent
     }
 }
 
@@ -1212,6 +1297,98 @@ impl ClangNode for ClangToken {
 impl std::fmt::Display for ClangToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.text)
+    }
+}
+
+/// Placeholder for `ghidra.app.decompiler.ClangLine`, referenced by
+/// [`PrettyPrinter`](crate::app::decompiler::pretty_printer::PrettyPrinter) before the real class
+/// is ported. Only the members `PrettyPrinter` actually calls
+/// (`getIndentString`/`getIndent`/`getAllTokens`, plus enough to build one from
+/// [`DecompilerUtils::to_lines`]) are modeled; `getNumTokens`/`getLineNumber`/`getToken`/
+/// `indexOfToken`/`toDebugString`/`toString` are left for that class's own future port.
+pub struct ClangLine {
+    indent_level: i32,
+    tokens: Vec<ClangToken>,
+}
+
+/// Mirrors `PrettyPrinter.INDENT_STRING` (a single space), duplicated here rather than referenced
+/// from `pretty_printer` to avoid a module dependency back onto the type this file exists to
+/// unblock.
+const INDENT_STRING: &str = " ";
+
+impl ClangLine {
+    /// Mirrors `ClangLine(int, int)`, minus the unused `lineNumber` (no current caller reads
+    /// `getLineNumber()`).
+    pub fn new(indent: i32) -> Self {
+        Self {
+            indent_level: indent,
+            tokens: Vec::new(),
+        }
+    }
+
+    /// Stands in for `ClangLine.getIndentString()`.
+    pub fn get_indent_string(&self) -> String {
+        INDENT_STRING.repeat(self.indent_level.max(0) as usize)
+    }
+
+    /// Stands in for `ClangLine.getIndent()`.
+    pub fn get_indent(&self) -> i32 {
+        self.indent_level
+    }
+
+    /// Stands in for `ClangLine.getAllTokens()`.
+    pub fn get_all_tokens(&self) -> &Vec<ClangToken> {
+        &self.tokens
+    }
+
+    /// Mutable counterpart of [`get_all_tokens`](Self::get_all_tokens), standing in for the
+    /// aliasing Java gets for free by returning the live `tokens` list reference (used by
+    /// `PrettyPrinter.padEmptyLines` to insert a spacer into an empty line in place).
+    pub fn get_all_tokens_mut(&mut self) -> &mut Vec<ClangToken> {
+        &mut self.tokens
+    }
+
+    /// Stands in for `ClangLine.addToken(ClangToken)`.
+    pub fn add_token(&mut self, mut tok: ClangToken) {
+        tok.set_line_parent();
+        self.tokens.push(tok);
+    }
+}
+
+/// Placeholder for `ghidra.app.decompiler.component.DecompilerUtils`, referenced by
+/// [`PrettyPrinter`](crate::app::decompiler::pretty_printer::PrettyPrinter) before the real class
+/// is ported. Only `toLines` -- which `PrettyPrinter`'s constructor calls to derive its `lines`
+/// field from a decoded [`ClangTokenGroup`](crate::app::decompiler::clang_token_group::ClangTokenGroup)
+/// -- is modeled; `DecompilerUtils`'s much larger action-context/data-type-tracing/selection
+/// surface belongs to that class's own future port.
+///
+/// The real `toLines` splits its input into multiple `ClangLine`s at `ClangBreak` boundaries and
+/// merges runs of `ClangCommentToken`s -- neither of which exist as distinguishable Rust types yet
+/// (`ClangTokenGroup::decode`'s current port always builds leaf tokens as the single generic
+/// [`ClangToken`] placeholder above, with no real subclass information preserved past that point).
+/// This stub can therefore only flatten the group into one [`ClangLine`] at indent 0; replace with
+/// a faithful multi-line split once `ClangToken`'s real subclass hierarchy (in particular
+/// `ClangBreak`) is ported.
+pub struct DecompilerUtils;
+
+impl DecompilerUtils {
+    /// Stands in for `DecompilerUtils.toLines(ClangTokenGroup)`. See the struct docs for why this
+    /// always returns at most one line.
+    pub fn to_lines(group: &ClangTokenGroup) -> Vec<ClangLine> {
+        let mut nodes = Vec::new();
+        group.flatten(&mut nodes);
+        if nodes.is_empty() {
+            return Vec::new();
+        }
+        let mut line = ClangLine::new(0);
+        for node in nodes {
+            line.add_token(ClangToken::new(
+                node.to_string(),
+                ClangTokenKind::Generic,
+                ClangToken::DEFAULT_COLOR,
+            ));
+        }
+        vec![line]
     }
 }
 
