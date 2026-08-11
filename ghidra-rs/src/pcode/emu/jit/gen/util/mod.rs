@@ -1,6 +1,8 @@
+pub mod lbl;
 pub mod sub_scope;
 pub mod types;
 
+pub use lbl::{Lbl, LblEm};
 pub use sub_scope::SubScope;
 pub use types::{
     BNonVoid, BPrim, BType, SNonVoid, SPrim, SType, TCat1, TCat2, TBool, TByte, TChar, TDouble,

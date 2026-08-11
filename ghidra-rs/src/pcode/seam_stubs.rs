@@ -4,6 +4,8 @@
 //! replaced (or grown into a supertrait/struct of) the real port once that Java class is ported.
 //! See `STUBS.tsv` for provenance.
 
+use std::marker::PhantomData;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
@@ -855,5 +857,90 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait Scope: Send + Sync {
     // (no public methods parsed from the Java source)
+}
+
+/// Placeholder for ASM's `org.objectweb.asm.Label`, wrapped by
+/// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl) and visited by [`Emitter`] before the real
+/// type-checked JVM bytecode emitter is ported. ASM's `Label` is an opaque, mutable marker for a
+/// bytecode position; only its identity is observable outside the (also unported) `MethodVisitor`,
+/// so this stub models identity alone via a monotonic id -- mirroring how
+/// [`crate::pcode::emu::jit::gen::util::types`] already replaces ASM's `Type` with a plain JVM
+/// descriptor string in lieu of a full ASM port.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Label {
+    id: u64,
+}
+
+impl Label {
+    /// Port of `new Label()`. Each call yields a label distinct from every other, matching ASM's
+    /// reference-identity semantics.
+    pub fn new() -> Self {
+        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
+        Self { id: NEXT_ID.fetch_add(1, Ordering::Relaxed) }
+    }
+}
+
+impl Default for Label {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Placeholder for `ghidra.pcode.emu.jit.gen.util.Emitter.Next`, referenced as the bound on
+/// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl)'s stack-shape type parameter before the
+/// real `Emitter` (and its `Ent`/`Bot` stack-content encoding) is ported. Marker only, as in Java.
+pub trait Next {}
+
+/// Placeholder for `ghidra.pcode.emu.jit.gen.util.Emitter.Dead`, the phantom stack-shape marking
+/// an [`Emitter`] as unreachable. Java documents this interface as having no implementation --
+/// i.e. no instance of it is ever constructed -- so an uninhabited enum is the faithful Rust
+/// equivalent.
+pub enum Dead {}
+
+/// Placeholder for `ghidra.pcode.emu.jit.gen.util.Emitter`, referenced by
+/// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl) before the real type-checked JVM bytecode
+/// emitter (and its wrapped ASM `MethodVisitor`) is ported. Java's class is unbounded in its stack
+/// type parameter `N` (only individual operations, like those in the not-yet-ported `Op`, bound it
+/// via `Ent`/`Bot`), so this stub carries `N` as a plain phantom marker too.
+///
+/// Exposes only the one operation `Lbl` needs -- visiting (placing) a label at the current
+/// bytecode position, standing in for `this.mv.visitLabel(label)` -- plus [`recast`](Self::recast),
+/// standing in for the unchecked `(Emitter) em` cast `Lbl.placeDead` uses to resurrect a dead
+/// emitter. Records the last-visited label so callers (including tests) can observe placement
+/// without a real `MethodVisitor`.
+pub struct Emitter<N> {
+    last_visited: Option<Label>,
+    _marker: PhantomData<N>,
+}
+
+impl<N> Emitter<N> {
+    /// Placeholder for `new Emitter(MethodVisitor)`, without a real `MethodVisitor` to wrap.
+    pub fn new() -> Self {
+        Self { last_visited: None, _marker: PhantomData }
+    }
+
+    /// Stands in for `this.mv.visitLabel(label)`.
+    pub fn visit_label(&mut self, label: &Label) {
+        self.last_visited = Some(*label);
+    }
+
+    /// The label most recently passed to [`visit_label`](Self::visit_label), if any.
+    pub fn last_visited(&self) -> Option<Label> {
+        self.last_visited
+    }
+
+    /// Stands in for the unchecked cast `(Emitter) em` in `Lbl.placeDead`, which reinterprets an
+    /// `Emitter<Dead>` as an `Emitter<M>` once a label makes the code that follows reachable
+    /// again. Carries over every real (non-phantom) field, so this stays correct as `Emitter`
+    /// grows toward the real port.
+    pub fn recast<M>(self) -> Emitter<M> {
+        Emitter { last_visited: self.last_visited, _marker: PhantomData }
+    }
+}
+
+impl<N> Default for Emitter<N> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
