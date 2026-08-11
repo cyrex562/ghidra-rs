@@ -29,7 +29,7 @@ DONE	trait	7	5	9	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/fe
 DONE	trait	6	8	72	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/AssociationDatabaseManager.java
 DONE	trait	5	15	15	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTAssociationDB.java
 DONE	trait	4	12	31	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/impl/MarkupItemImpl.java
-TODO	trait	3	35	20	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/VTMarkupType.java
+DONE	trait	3	35	20	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/markuptype/VTMarkupType.java
 TODO	trait	2	159	6	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMarkupItem.java
 TODO	trait	1	152	4	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTAssociation.java
 TODO	trait	0	171	2	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/main/VTMatch.java
