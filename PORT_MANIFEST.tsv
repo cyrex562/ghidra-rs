@@ -11182,7 +11182,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/Abstr
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/AbstractJitVar.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/AbstractJitVarnodeVar.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitConstVal.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitDirectMemoryVar.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitDirectMemoryVar.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitFailVal.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitIndirectMemoryVar.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitInputVar.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 

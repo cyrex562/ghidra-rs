@@ -1202,3 +1202,10 @@ pub trait JitBinOp: JitDefOp {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct MiniDFState;
 
+/// Placeholder for the unported Java type `JitMemoryVar`, referenced by `JitDirectMemoryVar`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait JitMemoryVar: Send + Sync {
+    // (no public methods parsed from the Java source)
+}
+
