@@ -11174,7 +11174,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitPop
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitStoreOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitSubPieceOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitSynthSubPieceOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitSyntheticOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitSyntheticOp.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitUnOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitUnimplementedOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/AbstractJitOutVar.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit var 
