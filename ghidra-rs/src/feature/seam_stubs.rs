@@ -4,8 +4,8 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 pub use crate::program::model::address::Address as AddressType;
+pub use crate::feature::vt::api::markuptype::vt_markup_type::{VtMarkupType, VtMarkupTypeBase};
 
-use crate::feature::vt::api::implementation::markup_item_impl::MarkupItemImpl;
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
 use crate::feature::vt::api::main::vt_score::VtScore;
@@ -240,246 +240,6 @@ pub trait ProgramLocation: Send + Sync {
 /// Placeholder for `Stringable`.
 pub trait Stringable: Send + Sync {
     fn to_string(&self) -> String;
-}
-
-/// Placeholder for `VTMarkupType`.
-///
-/// Grown for the [`MarkupItemImpl`] port: everything below `get_name` is a `VTMarkupType` member
-/// that `MarkupItemImpl` calls on its markup type. Each one carries the Java base class's own
-/// default where it has one (`validateDestinationAddress` hands the suggested address back
-/// unchanged; `conflictsWithOtherMarkup` answers `false`); the members that are `abstract` in Java
-/// panic instead, so that the nine placeholder markup types further down this file keep compiling
-/// until each is really ported.
-pub trait VtMarkupType: Send + Sync {
-    fn get_name(&self) -> &str;
-
-    /// Java: the `type instanceof FunctionEntryPointBasedAbstractMarkupType` narrowing in
-    /// `MarkupItemImpl.getDestinationAddressEditStatus()`. Rust has no `instanceof`, so the
-    /// classification is asked of the markup type itself.
-    fn is_function_entry_point_based(&self) -> bool {
-        false
-    }
-
-    /// Java: the `type instanceof DataTypeMarkupType` narrowing in
-    /// `MarkupItemImpl.getDestinationAddressEditStatus()`. See
-    /// [`is_function_entry_point_based`](Self::is_function_entry_point_based).
-    fn is_data_type_based(&self) -> bool {
-        false
-    }
-
-    /// Java: `VTMarkupType.validateDestinationAddress`, whose base implementation accepts any
-    /// address it is given.
-    fn validate_destination_address(
-        &self,
-        association: &dyn VtAssociation,
-        source_address: &AddressType,
-        suggested_destination_address: &AddressType,
-    ) -> AddressType {
-        let _ = (association, source_address);
-        suggested_destination_address.clone()
-    }
-
-    /// Java: `VTMarkupType.conflictsWithOtherMarkup`, whose base implementation reports no
-    /// conflict.
-    fn conflicts_with_other_markup(
-        &self,
-        markup_item: &MarkupItemImpl,
-        markup_items: &[Box<dyn VtMarkupItem>],
-    ) -> bool {
-        let _ = (markup_item, markup_items);
-        false
-    }
-
-    /// Java: `VTMarkupType.hasSameSourceAndDestinationValues` (abstract).
-    fn has_same_source_and_destination_values(&self, markup_item: &MarkupItemImpl) -> bool {
-        let _ = markup_item;
-        unimplemented!("{}: hasSameSourceAndDestinationValues is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.getSourceValue` (abstract).
-    fn get_source_value(
-        &self,
-        association: &dyn VtAssociation,
-        source_address: &AddressType,
-    ) -> Box<dyn Stringable> {
-        let _ = (association, source_address);
-        unimplemented!("{}: getSourceValue is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.getCurrentDestinationValue` (abstract).
-    fn get_current_destination_value(
-        &self,
-        association: &dyn VtAssociation,
-        destination_address: &AddressType,
-    ) -> Box<dyn Stringable> {
-        let _ = (association, destination_address);
-        unimplemented!("{}: getCurrentDestinationValue is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.getOriginalDestinationValue` (abstract).
-    fn get_original_destination_value(
-        &self,
-        association: &dyn VtAssociation,
-        destination_address: &AddressType,
-    ) -> Box<dyn Stringable> {
-        let _ = (association, destination_address);
-        unimplemented!("{}: getOriginalDestinationValue is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.getSourceLocation` (abstract).
-    fn get_source_location(
-        &self,
-        association: &dyn VtAssociation,
-        source_address: &AddressType,
-    ) -> Box<dyn ProgramLocation> {
-        let _ = (association, source_address);
-        unimplemented!("{}: getSourceLocation is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.getDestinationLocation` (abstract).
-    fn get_destination_location(
-        &self,
-        association: &dyn VtAssociation,
-        destination_address: &AddressType,
-    ) -> Box<dyn ProgramLocation> {
-        let _ = (association, destination_address);
-        unimplemented!("{}: getDestinationLocation is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.applyMarkup` (abstract). Returns whether the markup was applied.
-    fn apply_markup(
-        &self,
-        markup_item: &MarkupItemImpl,
-        markup_options: &dyn ToolOptions,
-    ) -> Result<bool, VersionTrackingApplyException> {
-        let _ = (markup_item, markup_options);
-        unimplemented!("{}: applyMarkup is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.unapplyMarkup` (abstract).
-    fn unapply_markup(
-        &self,
-        markup_item: &MarkupItemImpl,
-    ) -> Result<(), VersionTrackingApplyException> {
-        let _ = markup_item;
-        unimplemented!("{}: unapplyMarkup is not ported yet", self.get_name())
-    }
-
-    /// Java: `VTMarkupType.supportsApplyAction` (abstract).
-    fn supports_apply_action(
-        &self,
-        apply_action: crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType,
-    ) -> bool {
-        let _ = apply_action;
-        false
-    }
-}
-
-/// Lets a shared markup type -- which is how
-/// [`vt_markup_type_factory`](crate::feature::vt::api::markuptype::vt_markup_type_factory) hands
-/// its singletons out -- be passed as the owned `Box<dyn VtMarkupType>` that
-/// [`MarkupItemStorage`](crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage)
-/// returns, without cloning the singleton and without a hand-written forwarding wrapper that would
-/// silently fall back to the defaults above for every member it forgot to override.
-impl VtMarkupType for std::sync::Arc<dyn VtMarkupType> {
-    fn get_name(&self) -> &str {
-        (**self).get_name()
-    }
-
-    fn is_function_entry_point_based(&self) -> bool {
-        (**self).is_function_entry_point_based()
-    }
-
-    fn is_data_type_based(&self) -> bool {
-        (**self).is_data_type_based()
-    }
-
-    fn validate_destination_address(
-        &self,
-        association: &dyn VtAssociation,
-        source_address: &AddressType,
-        suggested_destination_address: &AddressType,
-    ) -> AddressType {
-        (**self).validate_destination_address(
-            association,
-            source_address,
-            suggested_destination_address,
-        )
-    }
-
-    fn conflicts_with_other_markup(
-        &self,
-        markup_item: &MarkupItemImpl,
-        markup_items: &[Box<dyn VtMarkupItem>],
-    ) -> bool {
-        (**self).conflicts_with_other_markup(markup_item, markup_items)
-    }
-
-    fn has_same_source_and_destination_values(&self, markup_item: &MarkupItemImpl) -> bool {
-        (**self).has_same_source_and_destination_values(markup_item)
-    }
-
-    fn get_source_value(
-        &self,
-        association: &dyn VtAssociation,
-        source_address: &AddressType,
-    ) -> Box<dyn Stringable> {
-        (**self).get_source_value(association, source_address)
-    }
-
-    fn get_current_destination_value(
-        &self,
-        association: &dyn VtAssociation,
-        destination_address: &AddressType,
-    ) -> Box<dyn Stringable> {
-        (**self).get_current_destination_value(association, destination_address)
-    }
-
-    fn get_original_destination_value(
-        &self,
-        association: &dyn VtAssociation,
-        destination_address: &AddressType,
-    ) -> Box<dyn Stringable> {
-        (**self).get_original_destination_value(association, destination_address)
-    }
-
-    fn get_source_location(
-        &self,
-        association: &dyn VtAssociation,
-        source_address: &AddressType,
-    ) -> Box<dyn ProgramLocation> {
-        (**self).get_source_location(association, source_address)
-    }
-
-    fn get_destination_location(
-        &self,
-        association: &dyn VtAssociation,
-        destination_address: &AddressType,
-    ) -> Box<dyn ProgramLocation> {
-        (**self).get_destination_location(association, destination_address)
-    }
-
-    fn apply_markup(
-        &self,
-        markup_item: &MarkupItemImpl,
-        markup_options: &dyn ToolOptions,
-    ) -> Result<bool, VersionTrackingApplyException> {
-        (**self).apply_markup(markup_item, markup_options)
-    }
-
-    fn unapply_markup(
-        &self,
-        markup_item: &MarkupItemImpl,
-    ) -> Result<(), VersionTrackingApplyException> {
-        (**self).unapply_markup(markup_item)
-    }
-
-    fn supports_apply_action(
-        &self,
-        apply_action: crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType,
-    ) -> bool {
-        (**self).supports_apply_action(apply_action)
-    }
 }
 
 /// Placeholder for the unported Java type `VTMatch`, referenced by `VTSession`.
@@ -1726,11 +1486,25 @@ impl crate::feature::vt::api::main::db::vt_address_correlator_adapter::VTAddress
 /// Trimmed to implementing the already-ported [`VtMarkupType`] trait with the display name read
 /// off the Java constructor (`super("EOL Comment")`), since that is all the factory needs.
 /// Replace with the real port when `EolCommentMarkupType.java` is ported.
-pub struct EolCommentMarkupType;
+pub struct EolCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl EolCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("EOL Comment") }
+    }
+}
+
+impl Default for EolCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for EolCommentMarkupType {
-    fn get_name(&self) -> &str {
-        "EOL Comment"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 }
 
@@ -1738,11 +1512,25 @@ impl VtMarkupType for EolCommentMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `FunctionNameMarkupType.java` is ported.
-pub struct FunctionNameMarkupType;
+pub struct FunctionNameMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl FunctionNameMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Function Name") }
+    }
+}
+
+impl Default for FunctionNameMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for FunctionNameMarkupType {
-    fn get_name(&self) -> &str {
-        "Function Name"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 
     /// Java: `FunctionNameMarkupType extends FunctionEntryPointBasedAbstractMarkupType`.
@@ -1755,11 +1543,25 @@ impl VtMarkupType for FunctionNameMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `FunctionSignatureMarkupType.java` is ported.
-pub struct FunctionSignatureMarkupType;
+pub struct FunctionSignatureMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl FunctionSignatureMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Function Signature") }
+    }
+}
+
+impl Default for FunctionSignatureMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for FunctionSignatureMarkupType {
-    fn get_name(&self) -> &str {
-        "Function Signature"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 
     /// Java: `FunctionSignatureMarkupType extends FunctionEntryPointBasedAbstractMarkupType`.
@@ -1772,11 +1574,25 @@ impl VtMarkupType for FunctionSignatureMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `LabelMarkupType.java` is ported.
-pub struct LabelMarkupType;
+pub struct LabelMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl LabelMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Label") }
+    }
+}
+
+impl Default for LabelMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for LabelMarkupType {
-    fn get_name(&self) -> &str {
-        "Label"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 }
 
@@ -1784,11 +1600,25 @@ impl VtMarkupType for LabelMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `PlateCommentMarkupType.java` is ported.
-pub struct PlateCommentMarkupType;
+pub struct PlateCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl PlateCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Plate Comment") }
+    }
+}
+
+impl Default for PlateCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for PlateCommentMarkupType {
-    fn get_name(&self) -> &str {
-        "Plate Comment"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 }
 
@@ -1796,11 +1626,25 @@ impl VtMarkupType for PlateCommentMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `PostCommentMarkupType.java` is ported.
-pub struct PostCommentMarkupType;
+pub struct PostCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl PostCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Post Comment") }
+    }
+}
+
+impl Default for PostCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for PostCommentMarkupType {
-    fn get_name(&self) -> &str {
-        "Post Comment"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 }
 
@@ -1808,11 +1652,25 @@ impl VtMarkupType for PostCommentMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `PreCommentMarkupType.java` is ported.
-pub struct PreCommentMarkupType;
+pub struct PreCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl PreCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Pre Comment") }
+    }
+}
+
+impl Default for PreCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for PreCommentMarkupType {
-    fn get_name(&self) -> &str {
-        "Pre Comment"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 }
 
@@ -1820,11 +1678,25 @@ impl VtMarkupType for PreCommentMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `RepeatableCommentMarkupType.java` is ported.
-pub struct RepeatableCommentMarkupType;
+pub struct RepeatableCommentMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl RepeatableCommentMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Repeatable Comment") }
+    }
+}
+
+impl Default for RepeatableCommentMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for RepeatableCommentMarkupType {
-    fn get_name(&self) -> &str {
-        "Repeatable Comment"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 }
 
@@ -1832,11 +1704,25 @@ impl VtMarkupType for RepeatableCommentMarkupType {
 /// [`VTMarkupTypeFactory`](crate::feature::vt::api::markuptype::vt_markup_type_factory). See
 /// [`EolCommentMarkupType`] for the trimming rationale. Replace with the real port when
 /// `DataTypeMarkupType.java` is ported.
-pub struct DataTypeMarkupType;
+pub struct DataTypeMarkupType {
+    base: VtMarkupTypeBase,
+}
+
+impl DataTypeMarkupType {
+    pub fn new() -> Self {
+        Self { base: VtMarkupTypeBase::new("Data Type") }
+    }
+}
+
+impl Default for DataTypeMarkupType {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl VtMarkupType for DataTypeMarkupType {
-    fn get_name(&self) -> &str {
-        "Data Type"
+    fn base(&self) -> &VtMarkupTypeBase {
+        &self.base
     }
 
     /// Java: the `type instanceof DataTypeMarkupType` branch of

@@ -284,9 +284,10 @@ fn address_id(program: &dyn Program, address: &Address) -> i64 {
 /// [`vt_markup_type_factory`] -- falling back to `VTMarkupTypeFactory::get_id`'s own
 /// unregistered-type handling (test-mode registration, or a panic) when no match is found.
 fn resolve_markup_type_id(markup_type: Box<dyn VtMarkupType>) -> i32 {
-    let name = markup_type.get_name().to_string();
-    if let Some(registered) =
-        vt_markup_type_factory::get_markup_types().into_iter().find(|mt| mt.get_name() == name)
+    let name = markup_type.get_display_name().to_string();
+    if let Some(registered) = vt_markup_type_factory::get_markup_types()
+        .into_iter()
+        .find(|mt| mt.get_display_name() == name)
     {
         return vt_markup_type_factory::get_id(&registered);
     }
@@ -603,7 +604,7 @@ mod tests {
 
     impl MarkupItemStorage for MockMarkupItemStorage {
         fn get_markup_type(&self) -> Box<dyn VtMarkupType> {
-            Box::new(EolCommentMarkupType)
+            Box::new(EolCommentMarkupType::new())
         }
         fn get_association(&self) -> Box<dyn VtAssociation> {
             Box::new(MockAssociation {

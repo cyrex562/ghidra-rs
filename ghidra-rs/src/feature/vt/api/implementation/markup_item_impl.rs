@@ -60,7 +60,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::feature::seam_stubs::{
     MarkupItemStorageImpl, ProgramLocation, Stringable, TaskMonitor, ToolOptions, VtAssociation,
-    VtMarkupItem, VtMarkupItemConsideredStatus, VtMarkupType,
+    VtMarkupItem, VtMarkupItemConsideredStatus, VtMarkupType, VtMarkupTypeBase,
 };
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
@@ -162,10 +162,9 @@ impl MarkupItemImpl {
         &*self.markup_type
     }
 
-    /// Java: `getDisplayName()`, which is `markupType.getDisplayName()` -- the name the ported
-    /// [`VtMarkupType`] seam calls `get_name`.
+    /// Java: `getDisplayName()`, which is `markupType.getDisplayName()`.
     pub fn get_display_name(&self) -> String {
-        self.markup_type.get_name().to_string()
+        self.markup_type.get_display_name().to_string()
     }
 
     /// Java: `getStorage()` narrowed by its one caller's `instanceof MarkupItemStorageDB` test and
@@ -520,7 +519,7 @@ impl MarkupItemImpl {
         };
 
         for item in markup_items {
-            if item.get_markup_type().get_name() != self.markup_type.get_name() {
+            if item.get_markup_type().get_display_name() != self.markup_type.get_display_name() {
                 continue;
             }
             if !item.can_unapply() {
@@ -681,7 +680,7 @@ impl std::fmt::Display for MarkupItemImpl {
         writeln!(f)?;
         writeln!(f, "MarkupItemImpl")?;
         writeln!(f, "\tSource Address          = {}", storage.get_source_address())?;
-        writeln!(f, "\tMarkup Type             = {}", self.markup_type.get_name())?;
+        writeln!(f, "\tMarkup Type             = {}", self.markup_type.get_display_name())?;
         writeln!(f, "\tStatus                  = {}", storage.get_status())?;
         writeln!(f, "\tStatus Description      = {}", storage.get_status_description())?;
         writeln!(f, "\tSource Value            = {}", storage.get_source_value().to_string())
@@ -838,7 +837,7 @@ mod tests {
     /// A markup type whose answers the tests can dictate, standing in for the real (unported)
     /// markup types.
     struct TestMarkupType {
-        name: &'static str,
+        base: VtMarkupTypeBase,
         entry_point_based: bool,
         data_type_based: bool,
         conflicts: bool,
@@ -849,7 +848,7 @@ mod tests {
     impl TestMarkupType {
         fn new(name: &'static str) -> Self {
             Self {
-                name,
+                base: VtMarkupTypeBase::new(name),
                 entry_point_based: false,
                 data_type_based: false,
                 conflicts: false,
@@ -860,8 +859,8 @@ mod tests {
     }
 
     impl VtMarkupType for TestMarkupType {
-        fn get_name(&self) -> &str {
-            self.name
+        fn base(&self) -> &VtMarkupTypeBase {
+            &self.base
         }
 
         fn is_function_entry_point_based(&self) -> bool {
@@ -996,7 +995,7 @@ mod tests {
     #[test]
     fn markup_type_and_display_name_come_from_the_storage() {
         let markup_item = item(TestMarkupType::new("EOL Comment"));
-        assert_eq!(markup_item.get_markup_type().get_name(), "EOL Comment");
+        assert_eq!(markup_item.get_markup_type().get_display_name(), "EOL Comment");
         assert_eq!(markup_item.get_display_name(), "EOL Comment");
         assert_eq!(markup_item.get_source_address(), address(0x1000));
     }
@@ -1179,7 +1178,7 @@ mod tests {
         let markup_item = item(markup_type);
         let seam: &dyn VtMarkupItem = &markup_item;
         assert_eq!(seam.get_status().markup_item_status(), VtMarkupItemStatus::Same);
-        assert_eq!(seam.get_markup_type().get_name(), "Label");
+        assert_eq!(seam.get_markup_type().get_display_name(), "Label");
         assert!(!seam.can_unapply());
         assert!(seam.get_destination_address_edit_status().is_editable());
     }
