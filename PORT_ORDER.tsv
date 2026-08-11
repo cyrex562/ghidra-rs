@@ -39,7 +39,7 @@ DONE	trait	4	98	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/em
 DONE	trait	2	92	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Lbl.java
 DONE	trait	1	101	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Local.java
 DONE	trait	1	90	6	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/RootScope.java
-TODO	trait	0	142	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Emitter.java
+DONE	trait	0	142	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Emitter.java
 TODO	trait	0	112	15	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracemgr/DebuggerCoordinates.java
 TODO	trait	19	20	68	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/GenConsts.java
 TODO	trait	23	10	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/opnd/LocalOpnd.java
