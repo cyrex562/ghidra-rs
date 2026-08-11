@@ -158,19 +158,3 @@ pub trait VtMatchSet: Send + Sync {
     fn has_removable_matches(&self) -> bool;
 }
 
-/// Placeholder for the unported Java type `VTProgramCorrelator`, referenced by `VTSession`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait VtProgramCorrelator: Send + Sync {
-    fn correlate(
-        &self,
-        session: &dyn VtSession,
-        monitor: &dyn crate::util::task::TaskMonitor,
-    ) -> std::io::Result<Box<dyn VtMatchSet>>;
-    fn get_name(&self) -> String;
-    fn get_options(&self) -> Box<dyn ToolOptions>;
-    fn get_source_address_set(&self) -> Box<dyn crate::program::model::address::AddressSetView>;
-    fn get_source_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
-    fn get_destination_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
-    fn get_destination_address_set(&self) -> Box<dyn crate::program::model::address::AddressSetView>;
-}

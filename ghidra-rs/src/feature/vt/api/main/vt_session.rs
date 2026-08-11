@@ -1,10 +1,11 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use crate::feature::seam_stubs::{VtAssociation, VtMatch, VtMatchSet, VtProgramCorrelator};
+use crate::feature::seam_stubs::{VtAssociation, VtMatch, VtMatchSet};
 use crate::feature::vt::api::main::association_hook::AssociationHook;
 use crate::feature::vt::api::main::vt_association_manager::VtAssociationManager;
 use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
+use crate::feature::vt::api::main::vt_program_correlator::VTProgramCorrelator;
 use crate::framework::db::util::ErrorHandler;
 use crate::framework::model::DomainObject;
 use crate::program::model::listing::program::Program;
@@ -25,7 +26,7 @@ pub trait VTSession: DomainObject + ErrorHandler + Send + Sync {
 
     /// Creates a new match set that will contain all matches discovered by a program-correlator
     /// run, and adds it to this session.
-    fn create_match_set(&mut self, correlator: &dyn VtProgramCorrelator) -> Box<dyn VtMatchSet>;
+    fn create_match_set(&mut self, correlator: &dyn VTProgramCorrelator) -> Box<dyn VtMatchSet>;
 
     /// Returns all match sets contained in this session.
     fn get_match_sets(&self) -> Vec<Box<dyn VtMatchSet>>;
@@ -154,7 +155,7 @@ mod tests {
             &self.association_manager
         }
 
-        fn create_match_set(&mut self, _correlator: &dyn VtProgramCorrelator) -> Box<dyn VtMatchSet> {
+        fn create_match_set(&mut self, _correlator: &dyn VTProgramCorrelator) -> Box<dyn VtMatchSet> {
             unimplemented!("not exercised by this test")
         }
 
