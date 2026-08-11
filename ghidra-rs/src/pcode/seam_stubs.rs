@@ -850,3 +850,10 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
     }
 }
 
+/// Placeholder for the unported Java type `Scope`, referenced by `SubScope`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait Scope: Send + Sync {
+    // (no public methods parsed from the Java source)
+}
+
