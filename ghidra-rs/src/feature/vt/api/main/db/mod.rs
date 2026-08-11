@@ -1,4 +1,5 @@
 pub mod deleted_match;
+pub mod markup_item_storage_db;
 pub mod vt_address_correlator_adapter;
 pub mod vt_association_table_db_adapter;
 pub mod vt_match_markup_item_table_db_adapter;
@@ -8,6 +9,7 @@ pub mod vt_match_table_db_adapter;
 pub mod vt_match_tag_db_adapter;
 
 pub use deleted_match::DeletedMatch;
+pub use markup_item_storage_db::MarkupItemStorageDB;
 pub use vt_address_correlator_adapter::{
     ColumnDescription as AddressCorrelationTableColumnDescription, VTAddressCorrelatorAdapter,
     VTAddressCorrelatorAdapterBase, TABLE_NAME as ADDRESS_CORRELATION_TABLE_TABLE_NAME,
