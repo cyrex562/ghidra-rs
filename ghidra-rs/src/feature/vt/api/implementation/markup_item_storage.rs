@@ -18,7 +18,19 @@ pub trait MarkupItemStorage: Send + Sync {
     fn get_source_address(&self) -> Address;
 
     /// Returns the destination address (in the current program).
+    ///
+    /// Only meaningful when [`has_destination_address`](Self::has_destination_address) is `true`.
     fn get_destination_address(&self) -> Address;
+
+    /// Returns whether a destination address has been assigned yet.
+    ///
+    /// Java's `getDestinationAddress()` simply returns `null` for an item whose destination has
+    /// not been set, and `MarkupItemImpl` branches on that; this trait's non-optional return
+    /// cannot express it, so the question is asked separately. Defaults to `true` for storages
+    /// that always have one (every database-backed row does).
+    fn has_destination_address(&self) -> bool {
+        true
+    }
 
     /// Returns a description of the source of the destination address.
     fn get_destination_address_source(&self) -> String;
@@ -49,6 +61,18 @@ pub trait MarkupItemStorage: Send + Sync {
 
     /// Updates both the source and destination values.
     fn set_source_destination_values(&mut self, source_value: Box<dyn Stringable>, destination_value: Box<dyn Stringable>);
+
+    /// Narrows this storage to the database-backed implementation, if that is what it is.
+    ///
+    /// Stands in for Java's `markupItemStorage instanceof MarkupItemStorageDB` test, which
+    /// `AssociationDatabaseManager.removeStoredMarkupItems` performs on the storage it gets from
+    /// each `MarkupItemImpl`. Defaults to `None` -- the "not database-backed" answer.
+    fn as_storage_db(
+        &self,
+    ) -> Option<&crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB>
+    {
+        None
+    }
 }
 
 #[cfg(test)]

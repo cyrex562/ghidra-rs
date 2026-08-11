@@ -237,6 +237,15 @@ impl VtAssociation for VTAssociationDB {
     fn get_key(&self) -> i64 {
         VTAssociationDB::get_key(self)
     }
+
+    /// Java: the `(VTSessionDB) association.getSession()` cast that `MarkupItemImpl` performs.
+    /// Unlike [`get_session`](VtAssociation::get_session), which would need the missing
+    /// `VTSessionDB -> VTSession` bridge, this association already holds the very `VTSessionDB`
+    /// the cast is after -- unless it was built by [`VTAssociationDB::from_record`], which has no
+    /// session at all.
+    fn get_session_db(&self) -> Option<Arc<dyn VTSessionDB>> {
+        self.session.clone()
+    }
 }
 
 /// Lets a shared, cached [`VTAssociationDB`] be handed out as an owned `Box<dyn VtAssociation>`
@@ -308,6 +317,10 @@ impl VtAssociation for Arc<VTAssociationDB> {
 
     fn get_key(&self) -> i64 {
         VTAssociationDB::get_key(self)
+    }
+
+    fn get_session_db(&self) -> Option<Arc<dyn VTSessionDB>> {
+        (**self).get_session_db()
     }
 }
 

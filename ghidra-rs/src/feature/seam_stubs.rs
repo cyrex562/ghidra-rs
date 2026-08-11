@@ -5,8 +5,11 @@
 
 pub use crate::program::model::address::Address as AddressType;
 
+use crate::feature::vt::api::implementation::markup_item_impl::MarkupItemImpl;
+use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_match_tag::VtMatchTag;
 use crate::feature::vt::api::main::vt_score::VtScore;
+use crate::feature::vt::api::util::version_tracking_apply_exception::VersionTrackingApplyException;
 use crate::framework::remote::User;
 
 /// Placeholder for the unported Java type `VTAssociation`, referenced by `VTAssociationManager` and `AssociationHook`.
@@ -43,6 +46,26 @@ pub trait VtAssociation: Send + Sync {
     /// port of `VTMatchMarkupItemTableDBAdapterV0.createMarkupItemRecord`.
     fn get_key(&self) -> i64 {
         unimplemented!("VtAssociation::get_key not available on this implementor")
+    }
+
+    /// Java: the `(VTSessionDB) association.getSession()` cast that
+    /// [`MarkupItemImpl`] performs before firing a markup event or reading a program's
+    /// modification number. Defaulted to `None` -- the "not a database-backed session" case --
+    /// since [`get_session`](Self::get_session) is not implementable by every implementor.
+    ///
+    /// Grown for the [`MarkupItemImpl`] port.
+    fn get_session_db(&self) -> Option<std::sync::Arc<dyn VTSessionDB>> {
+        None
+    }
+
+    /// Java: `VTAssociationDB.markupItemStatusChanged(VTMarkupItem)`, which forwards to the
+    /// association manager so it can notify every registered `AssociationHook`. Defaulted to a
+    /// no-op, mirroring the `if (!(association instanceof VTAssociationDB)) return;` guard in
+    /// `MarkupItemImpl.fireMarkupItemStatusChanged`.
+    ///
+    /// Grown for the [`MarkupItemImpl`] port.
+    fn markup_item_status_changed(&self, markup_item: &dyn VtMarkupItem) {
+        let _ = markup_item;
     }
 }
 
@@ -91,6 +114,30 @@ pub trait TaskMonitor: Send + Sync {
 /// Placeholder for `VTMarkupItemStatus`.
 pub trait VtMarkupItemStatus: Send + Sync {
     fn is_applied(&self) -> bool;
+
+    /// The real, already-ported enum behind this placeholder, for callers that need to switch on
+    /// the status rather than just ask whether it is applied. Grown for the [`MarkupItemImpl`]
+    /// port; see the bridging impl below.
+    fn markup_item_status(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
+        unimplemented!("this VtMarkupItemStatus placeholder has no ported enum behind it")
+    }
+}
+
+/// Bridges the real, ported markup-item status enum onto the [`VtMarkupItemStatus`] placeholder
+/// trait, so that [`MarkupItemImpl`] -- which speaks the real enum throughout -- can still be
+/// handed to seams typed against the placeholder.
+impl VtMarkupItemStatus for crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
+    fn is_applied(&self) -> bool {
+        self.is_unappliable()
+    }
+
+    fn markup_item_status(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
+        *self
+    }
 }
 
 /// Placeholder for `VTAssociationMarkupStatus`.
@@ -101,11 +148,53 @@ pub trait VtAssociationMarkupStatus: Send + Sync {
 /// Placeholder for `VTAssociationStatus`.
 pub trait VtAssociationStatus: Send + Sync {
     fn get_status(&self) -> &str;
+
+    /// The real, already-ported enum behind this placeholder, for callers that need to ask it
+    /// `canApply()` rather than just print it. Grown for the [`MarkupItemImpl`] port; see the
+    /// bridging impl further down this file.
+    fn association_status(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
+        unimplemented!("this VtAssociationStatus placeholder has no ported enum behind it")
+    }
 }
 
 /// Placeholder for `VTMarkupItemApplyActionType`.
 pub trait VtMarkupItemApplyActionType: Send + Sync {
     fn get_name(&self) -> &str;
+
+    /// The real, already-ported enum behind this placeholder. Grown for the [`MarkupItemImpl`]
+    /// port; see the bridging impl below.
+    fn apply_action_type(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType
+    {
+        unimplemented!("this VtMarkupItemApplyActionType placeholder has no ported enum behind it")
+    }
+}
+
+/// Bridges the real, ported apply-action enum onto the [`VtMarkupItemApplyActionType`] placeholder
+/// trait. The placeholder's `get_name` reports the Java enum constant's name.
+impl VtMarkupItemApplyActionType
+    for crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType
+{
+    fn get_name(&self) -> &str {
+        use crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType as Action;
+        match self {
+            Action::Add => "ADD",
+            Action::AddAsPrimary => "ADD_AS_PRIMARY",
+            Action::ReplaceDefaultOnly => "REPLACE_DEFAULT_ONLY",
+            Action::Replace => "REPLACE",
+            Action::ReplaceFirstOnly => "REPLACE_FIRST_ONLY",
+        }
+    }
+
+    fn apply_action_type(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType
+    {
+        *self
+    }
 }
 
 /// Placeholder for `ToolOptions`.
@@ -118,9 +207,29 @@ pub trait VtMarkupItemDestinationAddressEditStatus: Send + Sync {
     fn is_editable(&self) -> bool;
 }
 
+/// Bridges the real, ported edit-status enum onto the
+/// [`VtMarkupItemDestinationAddressEditStatus`] placeholder trait, so that [`MarkupItemImpl`] can
+/// answer the placeholder-typed `VtMarkupItem::get_destination_address_edit_status` with the enum
+/// its own inherent accessor computes.
+impl VtMarkupItemDestinationAddressEditStatus
+    for crate::feature::vt::api::main::vt_markup_item_destination_address_edit_status::VtMarkupItemDestinationAddressEditStatus
+{
+    fn is_editable(&self) -> bool {
+        use crate::feature::vt::api::main::vt_markup_item_destination_address_edit_status::VtMarkupItemDestinationAddressEditStatus as EditStatus;
+        matches!(self, EditStatus::Editable)
+    }
+}
+
 /// Placeholder for `VTMarkupItemConsideredStatus`.
 pub trait VtMarkupItemConsideredStatus: Send + Sync {
     fn is_considered(&self) -> bool;
+
+    /// Java: `VTMarkupItemConsideredStatus.getMarkupItemStatus()`, the status
+    /// `MarkupItemImpl.setConsidered` writes to the item's storage. Grown for the
+    /// [`MarkupItemImpl`] port.
+    fn get_markup_item_status(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus;
 }
 
 /// Placeholder for `ProgramLocation`.
@@ -134,8 +243,243 @@ pub trait Stringable: Send + Sync {
 }
 
 /// Placeholder for `VTMarkupType`.
+///
+/// Grown for the [`MarkupItemImpl`] port: everything below `get_name` is a `VTMarkupType` member
+/// that `MarkupItemImpl` calls on its markup type. Each one carries the Java base class's own
+/// default where it has one (`validateDestinationAddress` hands the suggested address back
+/// unchanged; `conflictsWithOtherMarkup` answers `false`); the members that are `abstract` in Java
+/// panic instead, so that the nine placeholder markup types further down this file keep compiling
+/// until each is really ported.
 pub trait VtMarkupType: Send + Sync {
     fn get_name(&self) -> &str;
+
+    /// Java: the `type instanceof FunctionEntryPointBasedAbstractMarkupType` narrowing in
+    /// `MarkupItemImpl.getDestinationAddressEditStatus()`. Rust has no `instanceof`, so the
+    /// classification is asked of the markup type itself.
+    fn is_function_entry_point_based(&self) -> bool {
+        false
+    }
+
+    /// Java: the `type instanceof DataTypeMarkupType` narrowing in
+    /// `MarkupItemImpl.getDestinationAddressEditStatus()`. See
+    /// [`is_function_entry_point_based`](Self::is_function_entry_point_based).
+    fn is_data_type_based(&self) -> bool {
+        false
+    }
+
+    /// Java: `VTMarkupType.validateDestinationAddress`, whose base implementation accepts any
+    /// address it is given.
+    fn validate_destination_address(
+        &self,
+        association: &dyn VtAssociation,
+        source_address: &AddressType,
+        suggested_destination_address: &AddressType,
+    ) -> AddressType {
+        let _ = (association, source_address);
+        suggested_destination_address.clone()
+    }
+
+    /// Java: `VTMarkupType.conflictsWithOtherMarkup`, whose base implementation reports no
+    /// conflict.
+    fn conflicts_with_other_markup(
+        &self,
+        markup_item: &MarkupItemImpl,
+        markup_items: &[Box<dyn VtMarkupItem>],
+    ) -> bool {
+        let _ = (markup_item, markup_items);
+        false
+    }
+
+    /// Java: `VTMarkupType.hasSameSourceAndDestinationValues` (abstract).
+    fn has_same_source_and_destination_values(&self, markup_item: &MarkupItemImpl) -> bool {
+        let _ = markup_item;
+        unimplemented!("{}: hasSameSourceAndDestinationValues is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.getSourceValue` (abstract).
+    fn get_source_value(
+        &self,
+        association: &dyn VtAssociation,
+        source_address: &AddressType,
+    ) -> Box<dyn Stringable> {
+        let _ = (association, source_address);
+        unimplemented!("{}: getSourceValue is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.getCurrentDestinationValue` (abstract).
+    fn get_current_destination_value(
+        &self,
+        association: &dyn VtAssociation,
+        destination_address: &AddressType,
+    ) -> Box<dyn Stringable> {
+        let _ = (association, destination_address);
+        unimplemented!("{}: getCurrentDestinationValue is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.getOriginalDestinationValue` (abstract).
+    fn get_original_destination_value(
+        &self,
+        association: &dyn VtAssociation,
+        destination_address: &AddressType,
+    ) -> Box<dyn Stringable> {
+        let _ = (association, destination_address);
+        unimplemented!("{}: getOriginalDestinationValue is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.getSourceLocation` (abstract).
+    fn get_source_location(
+        &self,
+        association: &dyn VtAssociation,
+        source_address: &AddressType,
+    ) -> Box<dyn ProgramLocation> {
+        let _ = (association, source_address);
+        unimplemented!("{}: getSourceLocation is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.getDestinationLocation` (abstract).
+    fn get_destination_location(
+        &self,
+        association: &dyn VtAssociation,
+        destination_address: &AddressType,
+    ) -> Box<dyn ProgramLocation> {
+        let _ = (association, destination_address);
+        unimplemented!("{}: getDestinationLocation is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.applyMarkup` (abstract). Returns whether the markup was applied.
+    fn apply_markup(
+        &self,
+        markup_item: &MarkupItemImpl,
+        markup_options: &dyn ToolOptions,
+    ) -> Result<bool, VersionTrackingApplyException> {
+        let _ = (markup_item, markup_options);
+        unimplemented!("{}: applyMarkup is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.unapplyMarkup` (abstract).
+    fn unapply_markup(
+        &self,
+        markup_item: &MarkupItemImpl,
+    ) -> Result<(), VersionTrackingApplyException> {
+        let _ = markup_item;
+        unimplemented!("{}: unapplyMarkup is not ported yet", self.get_name())
+    }
+
+    /// Java: `VTMarkupType.supportsApplyAction` (abstract).
+    fn supports_apply_action(
+        &self,
+        apply_action: crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType,
+    ) -> bool {
+        let _ = apply_action;
+        false
+    }
+}
+
+/// Lets a shared markup type -- which is how
+/// [`vt_markup_type_factory`](crate::feature::vt::api::markuptype::vt_markup_type_factory) hands
+/// its singletons out -- be passed as the owned `Box<dyn VtMarkupType>` that
+/// [`MarkupItemStorage`](crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage)
+/// returns, without cloning the singleton and without a hand-written forwarding wrapper that would
+/// silently fall back to the defaults above for every member it forgot to override.
+impl VtMarkupType for std::sync::Arc<dyn VtMarkupType> {
+    fn get_name(&self) -> &str {
+        (**self).get_name()
+    }
+
+    fn is_function_entry_point_based(&self) -> bool {
+        (**self).is_function_entry_point_based()
+    }
+
+    fn is_data_type_based(&self) -> bool {
+        (**self).is_data_type_based()
+    }
+
+    fn validate_destination_address(
+        &self,
+        association: &dyn VtAssociation,
+        source_address: &AddressType,
+        suggested_destination_address: &AddressType,
+    ) -> AddressType {
+        (**self).validate_destination_address(
+            association,
+            source_address,
+            suggested_destination_address,
+        )
+    }
+
+    fn conflicts_with_other_markup(
+        &self,
+        markup_item: &MarkupItemImpl,
+        markup_items: &[Box<dyn VtMarkupItem>],
+    ) -> bool {
+        (**self).conflicts_with_other_markup(markup_item, markup_items)
+    }
+
+    fn has_same_source_and_destination_values(&self, markup_item: &MarkupItemImpl) -> bool {
+        (**self).has_same_source_and_destination_values(markup_item)
+    }
+
+    fn get_source_value(
+        &self,
+        association: &dyn VtAssociation,
+        source_address: &AddressType,
+    ) -> Box<dyn Stringable> {
+        (**self).get_source_value(association, source_address)
+    }
+
+    fn get_current_destination_value(
+        &self,
+        association: &dyn VtAssociation,
+        destination_address: &AddressType,
+    ) -> Box<dyn Stringable> {
+        (**self).get_current_destination_value(association, destination_address)
+    }
+
+    fn get_original_destination_value(
+        &self,
+        association: &dyn VtAssociation,
+        destination_address: &AddressType,
+    ) -> Box<dyn Stringable> {
+        (**self).get_original_destination_value(association, destination_address)
+    }
+
+    fn get_source_location(
+        &self,
+        association: &dyn VtAssociation,
+        source_address: &AddressType,
+    ) -> Box<dyn ProgramLocation> {
+        (**self).get_source_location(association, source_address)
+    }
+
+    fn get_destination_location(
+        &self,
+        association: &dyn VtAssociation,
+        destination_address: &AddressType,
+    ) -> Box<dyn ProgramLocation> {
+        (**self).get_destination_location(association, destination_address)
+    }
+
+    fn apply_markup(
+        &self,
+        markup_item: &MarkupItemImpl,
+        markup_options: &dyn ToolOptions,
+    ) -> Result<bool, VersionTrackingApplyException> {
+        (**self).apply_markup(markup_item, markup_options)
+    }
+
+    fn unapply_markup(
+        &self,
+        markup_item: &MarkupItemImpl,
+    ) -> Result<(), VersionTrackingApplyException> {
+        (**self).unapply_markup(markup_item)
+    }
+
+    fn supports_apply_action(
+        &self,
+        apply_action: crate::feature::vt::api::main::vt_markup_item_apply_action_type::VtMarkupItemApplyActionType,
+    ) -> bool {
+        (**self).supports_apply_action(apply_action)
+    }
 }
 
 /// Placeholder for the unported Java type `VTMatch`, referenced by `VTSession`.
@@ -288,6 +632,12 @@ impl VtAssociationStatus
     fn get_status(&self) -> &str {
         self.display_name()
     }
+
+    fn association_status(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
+        *self
+    }
 }
 
 /// Bridges the real, ported association-type enum onto the [`VtAssociationType`] placeholder
@@ -371,6 +721,38 @@ pub trait VTSessionDB: Send + Sync {
             std::sync::Arc<crate::feature::vt::api::db::vt_association_db::VTAssociationDB>,
         >,
     );
+
+    /// Java: `setObjectChanged(VTEvent.MARKUP_ITEM_STATUS_CHANGED, markupItemStorage, oldStatus,
+    /// newStatus)`, fired by `MarkupItemImpl.fireMarkupItemStatusChanged`. Narrowed to that one
+    /// event the way [`set_changed`](Self::set_changed) above is narrowed to associations, with
+    /// the affected object reported as the markup item rather than the storage behind it (the two
+    /// are one-to-one, and the item is the handle every consumer can use). Defaulted to a no-op so
+    /// existing implementors keep compiling.
+    ///
+    /// Grown for the [`MarkupItemImpl`] port.
+    fn markup_item_status_changed(
+        &self,
+        markup_item: &dyn VtMarkupItem,
+        old_status: crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus,
+        new_status: crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus,
+    ) {
+        let _ = (markup_item, old_status, new_status);
+    }
+
+    /// Java: `setObjectChanged(VTEvent.MARKUP_ITEM_DESTINATION_CHANGED, markupItem,
+    /// oldDestinationAddress, newDestinationAddress)`, fired by
+    /// `MarkupItemImpl.doSetDestinationAddress`. See
+    /// [`markup_item_status_changed`](Self::markup_item_status_changed).
+    ///
+    /// Grown for the [`MarkupItemImpl`] port.
+    fn markup_item_destination_changed(
+        &self,
+        markup_item: &dyn VtMarkupItem,
+        old_destination: Option<&AddressType>,
+        new_destination: &AddressType,
+    ) {
+        let _ = (markup_item, old_destination, new_destination);
+    }
 }
 
 /// Placeholder for the unported Java type `ghidra.feature.vt.api.util.VTAssociationStatusException`,
@@ -401,37 +783,231 @@ impl std::fmt::Display for VTAssociationStatusException {
 
 impl std::error::Error for VTAssociationStatusException {}
 
-/// Placeholder for the unported Java type `MarkupItemImpl`, referenced by
-/// `AssociationDatabaseManager.removeStoredMarkupItems(List<MarkupItemImpl>)`. That method reads
-/// exactly one member, `getStorage()`, and acts only when the storage is a `MarkupItemStorageDB`;
-/// since Rust has no `instanceof`, that narrowing is represented directly as an `Option`. Replace
-/// with the real port when `MarkupItemImpl.java` is ported.
-pub struct MarkupItemImpl {
-    storage: Option<
-        std::sync::Arc<crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB>,
-    >,
+/// Placeholder for the unported Java type `MarkupItemStorageImpl`, the purely in-memory
+/// [`MarkupItemStorage`] that [`MarkupItemImpl::new`] builds for a markup item that has no
+/// database row yet.
+///
+/// `MarkupItemStorageImpl` is a concrete Java class (not an interface), so this stub is a struct
+/// implementing the already-ported [`MarkupItemStorage`] trait. One deliberate deviation, forced
+/// by that trait's signatures: in Java each setter returns a `MarkupItemStorage` and returns
+/// `associationDBM.addMarkupItem(this)` -- i.e. it *promotes* the item into the database and hands
+/// back a `MarkupItemStorageDB` in its place. The ported setters return `()` and cannot swap the
+/// caller's storage for one of a different concrete type, so this stub records the change in
+/// memory only; the promotion is left for the real port. Replace with the real port when
+/// `MarkupItemStorageImpl.java` is ported.
+pub struct MarkupItemStorageImpl {
+    association: std::sync::Arc<dyn VtAssociation>,
+    markup_type: std::sync::Arc<dyn VtMarkupType>,
+    source_address: AddressType,
+    destination_address: std::sync::Mutex<Option<AddressType>>,
+    destination_address_source: std::sync::Mutex<Option<String>>,
+    status: std::sync::Mutex<crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus>,
+    status_description: std::sync::Mutex<Option<String>>,
+    source_value: std::sync::Mutex<Option<String>>,
+    destination_value: std::sync::Mutex<Option<String>>,
 }
 
-impl MarkupItemImpl {
+impl MarkupItemStorageImpl {
+    /// Java: `MarkupItemStorageImpl(VTAssociation, VTMarkupType, Address)`, which delegates to the
+    /// five-argument constructor with a null destination address and address source.
     pub fn new(
-        storage: Option<
-            std::sync::Arc<
-                crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB,
-            >,
-        >,
+        association: std::sync::Arc<dyn VtAssociation>,
+        markup_type: std::sync::Arc<dyn VtMarkupType>,
+        source_address: AddressType,
     ) -> Self {
-        Self { storage }
+        Self::with_destination(association, markup_type, source_address, None, None)
     }
 
-    /// Java: `MarkupItemImpl.getStorage()`, already narrowed to the database-backed case.
-    pub fn get_storage_db(
+    /// Java: `MarkupItemStorageImpl(VTAssociation, VTMarkupType, Address, Address, String)`.
+    pub fn with_destination(
+        association: std::sync::Arc<dyn VtAssociation>,
+        markup_type: std::sync::Arc<dyn VtMarkupType>,
+        source_address: AddressType,
+        destination_address: Option<AddressType>,
+        destination_address_source: Option<String>,
+    ) -> Self {
+        Self {
+            association,
+            markup_type,
+            source_address,
+            destination_address: std::sync::Mutex::new(destination_address),
+            destination_address_source: std::sync::Mutex::new(destination_address_source),
+            status: std::sync::Mutex::new(
+                crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus::Unapplied,
+            ),
+            status_description: std::sync::Mutex::new(None),
+            source_value: std::sync::Mutex::new(None),
+            destination_value: std::sync::Mutex::new(None),
+        }
+    }
+}
+
+impl MarkupItemStorage for MarkupItemStorageImpl {
+    fn get_markup_type(&self) -> Box<dyn VtMarkupType> {
+        Box::new(self.markup_type.clone())
+    }
+
+    fn get_association(&self) -> Box<dyn VtAssociation> {
+        Box::new(ArcVtAssociation(self.association.clone()))
+    }
+
+    fn get_source_address(&self) -> AddressType {
+        self.source_address.clone()
+    }
+
+    fn has_destination_address(&self) -> bool {
+        self.destination_address.lock().unwrap().is_some()
+    }
+
+    fn get_destination_address(&self) -> AddressType {
+        self.destination_address
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("MarkupItemStorageImpl has no destination address; check has_destination_address")
+    }
+
+    fn get_destination_address_source(&self) -> String {
+        self.destination_address_source.lock().unwrap().clone().unwrap_or_default()
+    }
+
+    fn get_status(&self) -> crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus {
+        *self.status.lock().unwrap()
+    }
+
+    fn get_status_description(&self) -> String {
+        self.status_description.lock().unwrap().clone().unwrap_or_default()
+    }
+
+    fn get_source_value(&self) -> Box<dyn Stringable> {
+        Box::new(PlainStringable(self.source_value.lock().unwrap().clone().unwrap_or_default()))
+    }
+
+    fn get_destination_value(&self) -> Box<dyn Stringable> {
+        Box::new(PlainStringable(self.destination_value.lock().unwrap().clone().unwrap_or_default()))
+    }
+
+    fn set_status(
+        &mut self,
+        status: crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus,
+    ) {
+        *self.status.lock().unwrap() = status;
+    }
+
+    fn reset(&mut self) {
+        // Java: `reset()` returns `this` -- an in-memory item has no database row to drop.
+    }
+
+    fn set_destination_address(&mut self, address: AddressType, address_source: String) {
+        *self.destination_address.lock().unwrap() = Some(address);
+        *self.destination_address_source.lock().unwrap() = Some(address_source);
+    }
+
+    fn set_apply_failed(&mut self, message: String) {
+        *self.status.lock().unwrap() =
+            crate::feature::vt::api::main::vt_markup_item_status::VtMarkupItemStatus::FailedApply;
+        *self.status_description.lock().unwrap() = Some(message);
+    }
+
+    fn set_source_destination_values(
+        &mut self,
+        source_value: Box<dyn Stringable>,
+        destination_value: Box<dyn Stringable>,
+    ) {
+        *self.source_value.lock().unwrap() = Some(source_value.to_string());
+        *self.destination_value.lock().unwrap() = Some(destination_value.to_string());
+    }
+}
+
+/// Hands a shared [`VtAssociation`] back as the owned `Box<dyn VtAssociation>` that
+/// [`MarkupItemStorage::get_association`] returns, without requiring `Clone` on the trait. Mirrors
+/// the wrapper `MarkupItemStorageDB` uses for the same purpose.
+struct ArcVtAssociation(std::sync::Arc<dyn VtAssociation>);
+
+impl VtAssociation for ArcVtAssociation {
+    fn get_type(&self) -> Box<dyn VtAssociationType> {
+        self.0.get_type()
+    }
+
+    fn get_session(&self) -> Box<dyn crate::feature::vt::api::main::vt_session::VTSession> {
+        self.0.get_session()
+    }
+
+    fn get_markup_items(
         &self,
-    ) -> Option<
-        &std::sync::Arc<
-            crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB,
-        >,
-    > {
-        self.storage.as_ref()
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+        self.0.get_markup_items(monitor)
+    }
+
+    fn has_applied_markup_items(&self) -> bool {
+        self.0.has_applied_markup_items()
+    }
+
+    fn get_source_address(&self) -> AddressType {
+        self.0.get_source_address()
+    }
+
+    fn get_destination_address(&self) -> AddressType {
+        self.0.get_destination_address()
+    }
+
+    fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>> {
+        self.0.get_related_associations()
+    }
+
+    fn set_markup_status(&self, markup_items_status: &dyn VtAssociationMarkupStatus) {
+        self.0.set_markup_status(markup_items_status)
+    }
+
+    fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+        self.0.get_markup_status()
+    }
+
+    fn get_status(&self) -> Box<dyn VtAssociationStatus> {
+        self.0.get_status()
+    }
+
+    fn set_accepted(&self) -> std::io::Result<()> {
+        self.0.set_accepted()
+    }
+
+    fn clear_status(&self) -> std::io::Result<()> {
+        self.0.clear_status()
+    }
+
+    fn set_rejected(&self) -> std::io::Result<()> {
+        self.0.set_rejected()
+    }
+
+    fn get_vote_count(&self) -> i32 {
+        self.0.get_vote_count()
+    }
+
+    fn set_vote_count(&self, vote_count: i32) {
+        self.0.set_vote_count(vote_count)
+    }
+
+    fn get_key(&self) -> i64 {
+        self.0.get_key()
+    }
+
+    fn get_session_db(&self) -> Option<std::sync::Arc<dyn VTSessionDB>> {
+        self.0.get_session_db()
+    }
+
+    fn markup_item_status_changed(&self, markup_item: &dyn VtMarkupItem) {
+        self.0.markup_item_status_changed(markup_item)
+    }
+}
+
+/// The minimal [`Stringable`] this file needs: a value that is already just its rendered string.
+/// Mirrors `MarkupItemStorageDB`'s `RawStringable`.
+struct PlainStringable(String);
+
+impl Stringable for PlainStringable {
+    fn to_string(&self) -> String {
+        self.0.clone()
     }
 }
 
@@ -1168,6 +1744,11 @@ impl VtMarkupType for FunctionNameMarkupType {
     fn get_name(&self) -> &str {
         "Function Name"
     }
+
+    /// Java: `FunctionNameMarkupType extends FunctionEntryPointBasedAbstractMarkupType`.
+    fn is_function_entry_point_based(&self) -> bool {
+        true
+    }
 }
 
 /// Placeholder for the unported Java type `FunctionSignatureMarkupType`, referenced by
@@ -1179,6 +1760,11 @@ pub struct FunctionSignatureMarkupType;
 impl VtMarkupType for FunctionSignatureMarkupType {
     fn get_name(&self) -> &str {
         "Function Signature"
+    }
+
+    /// Java: `FunctionSignatureMarkupType extends FunctionEntryPointBasedAbstractMarkupType`.
+    fn is_function_entry_point_based(&self) -> bool {
+        true
     }
 }
 
@@ -1251,6 +1837,12 @@ pub struct DataTypeMarkupType;
 impl VtMarkupType for DataTypeMarkupType {
     fn get_name(&self) -> &str {
         "Data Type"
+    }
+
+    /// Java: the `type instanceof DataTypeMarkupType` branch of
+    /// `MarkupItemImpl.getDestinationAddressEditStatus()`.
+    fn is_data_type_based(&self) -> bool {
+        true
     }
 }
 
