@@ -50,7 +50,7 @@ mod tests {
     }
 
     impl JitDefOp for TestFloatBinOp {
-        fn out(&self) -> Box<dyn JitOutVar> {
+        fn out(&self) -> std::sync::Arc<dyn JitOutVar> {
             unimplemented!()
         }
     }

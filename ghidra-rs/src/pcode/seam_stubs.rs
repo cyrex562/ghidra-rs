@@ -864,19 +864,34 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
 /// each with a `type(int)` and a `resolve(JitType)`, plus the static `compare` and `forJavaType`.
 /// `JitType` itself only ever reaches for `INTEGER.type(size)`, so that is the only variant and
 /// the only method modeled here. Replace with the real port when `JitTypeBehavior.java` is ported.
+///
+/// Grown (see `STUBS.tsv`) with the `Copy` variant that [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp)
+/// and `JitCopyOp` (not yet ported) report: no type requirement of their own, but an implication
+/// that the output shares the inputs' interpretation. Unlike `Integer`/`Float`, `Copy.type(int)`
+/// throws `AssertionError` in Java, since a copy has no type of its own to compute -- modeled here
+/// by [`type_of`](Self::type_of) panicking for that variant.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JitTypeBehavior {
     /// The bits are interpreted as an integer.
     Integer,
     /// The bits are interpreted as a float.
     Float,
+    /// No type requirement of its own; the output shares the inputs' interpretation.
+    Copy,
 }
 
 impl JitTypeBehavior {
     /// Apply this behavior to a value of the given size to determine its type.
     ///
     /// Port of `JitTypeBehavior.INTEGER.type(int)`.
+    ///
+    /// # Panics
+    ///
+    /// If `self` is [`JitTypeBehavior::Copy`], matching Java's `COPY.type(int)`.
     pub fn type_of(&self, size: i32) -> AnyJitType {
+        if matches!(self, JitTypeBehavior::Copy) {
+            panic!("AssertionError: JitTypeBehavior::Copy has no type");
+        }
         debug_assert!(size > 0);
         match size {
             1..=4 => AnyJitType::Int(IntJitType::for_size(size)),
@@ -1138,14 +1153,31 @@ pub trait JitVal: Send + Sync {
     fn size(&self) -> i32;
     fn add_use(&self, op: &dyn JitOp, position: i32);
     fn remove_use(&self, op: &dyn JitOp, position: i32);
+
+    /// Whether this value is a `JitInputVar`, i.e., an input to the passage.
+    ///
+    /// Grown (see `STUBS.tsv`) to stand in for Java's `instanceof JitInputVar` check in
+    /// `JitPhiOp.hasInputOption()`, since `JitInputVar` is not a downcast target here. Defaulted
+    /// to `false` so existing `impl JitVal for Foo` blocks keep compiling; only
+    /// [`JitInputVar`] overrides it.
+    fn is_input_var(&self) -> bool {
+        false
+    }
 }
 
 /// Placeholder for the unported Java type `JitOutVar`, referenced by `JitDefOp`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
+///
+/// Grown (see `STUBS.tsv`) for `JitPhiOp`, the first real (non-test-mock) implementor: Java's
+/// `setDefinition`/`definition` are nullable (`JitDefOp definition`), so `set_definition` takes
+/// `Option<&dyn JitDefOp>` rather than a bare reference, and `definition()` returns
+/// `Option<Arc<dyn JitDefOp>>` -- `Arc` rather than `Box` because the defining op's identity must
+/// be comparable against a live `&self` elsewhere (see `JitPhiOp::unlink`'s port of
+/// `out().definition() == this`), which a freshly-boxed copy could never satisfy.
 pub trait JitOutVar: Send + Sync {
-    fn set_definition(&self, definition: &dyn JitDefOp);
-    fn definition(&self) -> Option<Box<dyn JitDefOp>>;
+    fn set_definition(&self, definition: Option<&dyn JitDefOp>);
+    fn definition(&self) -> Option<Arc<dyn JitDefOp>>;
     fn varnode(&self) -> Varnode;
 }
 
@@ -1161,8 +1193,12 @@ pub trait JitOp: Send + Sync {
 /// Placeholder for the unported Java type `JitDefOp`, referenced by `JitBinOp`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
+///
+/// Grown (see `STUBS.tsv`): `out()` returns `Arc<dyn JitOutVar>` rather than `Box`, matching the
+/// change to [`JitOutVar`] -- the output var is a shared node in the use-def graph (also reachable
+/// via, e.g., the data-flow model), not a value uniquely owned by one op.
 pub trait JitDefOp: JitOp {
-    fn out(&self) -> Box<dyn JitOutVar>;
+    fn out(&self) -> Arc<dyn JitOutVar>;
 
     fn type_(&self) -> JitTypeBehavior {
         JitTypeBehavior::Integer
@@ -1207,5 +1243,84 @@ pub struct MiniDFState;
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait JitMemoryVar: Send + Sync {
     // (no public methods parsed from the Java source)
+}
+
+/// Placeholder for the unported Java type
+/// `ghidra.pcode.emu.jit.analysis.JitControlFlowModel.JitBlock`, referenced by
+/// [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp). Java's class extends
+/// `PcodeProgram` and carries the passage's basic-block analysis; `JitPhiOp` only stores which
+/// block produced it and uses it to build a [`BlockFlow`], so this stub models reference identity
+/// alone -- as [`Label`] already does for ASM's `Label`. Replace with the real port when
+/// `JitControlFlowModel.java` is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct JitBlock {
+    id: u64,
+}
+
+impl JitBlock {
+    /// A block distinct from every other, standing in for Java reference identity.
+    pub fn new() -> Self {
+        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
+        Self { id: NEXT_ID.fetch_add(1, Ordering::Relaxed) }
+    }
+}
+
+impl Default for JitBlock {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Placeholder for the unported Java type
+/// `ghidra.pcode.emu.jit.analysis.JitControlFlowModel.BlockFlow`, referenced by
+/// [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp). Java's record also carries an
+/// `IntBranch` (the p-code branch op that produced the flow), not yet ported and not needed by any
+/// current call site -- `JitPhiOp` only builds flows via [`BlockFlow::entry`]. Replace with the
+/// real port (including `branch`) when `JitControlFlowModel.java` is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BlockFlow {
+    /// The source block, or `None` for a flow entering the passage from outside.
+    pub from: Option<JitBlock>,
+    /// The destination block.
+    pub to: JitBlock,
+}
+
+impl BlockFlow {
+    /// Port of `BlockFlow.entry(JitBlock)`: a flow representing passage entry into `to`.
+    pub fn entry(to: JitBlock) -> Self {
+        Self { from: None, to }
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.var.JitInputVar`, referenced by
+/// [`JitPhiOp::add_input_option`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp::add_input_option).
+/// Java's class extends `AbstractJitVal` (not yet ported, so use tracking is a no-op here, matching
+/// [`JitDirectMemoryVar`](crate::pcode::emu::jit::var::jit_direct_memory_var::JitDirectMemoryVar)'s
+/// [`JitVal`] impl) and adds no members of its own beyond the varnode passed to its constructor.
+/// [`JitVal::is_input_var`] distinguishes it from other values, standing in for Java's
+/// `instanceof JitInputVar` check. Replace with the real port when `JitInputVar.java` is ported.
+pub struct JitInputVar {
+    varnode: Varnode,
+}
+
+impl JitInputVar {
+    /// Port of `new JitInputVar(Varnode)`.
+    pub fn new(varnode: Varnode) -> Self {
+        Self { varnode }
+    }
+}
+
+impl JitVal for JitInputVar {
+    fn size(&self) -> i32 {
+        self.varnode.get_size()
+    }
+
+    fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn is_input_var(&self) -> bool {
+        true
+    }
 }
 

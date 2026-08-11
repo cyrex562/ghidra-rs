@@ -6,6 +6,7 @@ pub mod jit_float_un_op;
 pub mod jit_int_bin_op;
 pub mod jit_int_test_op;
 pub mod jit_int_un_op;
+pub mod jit_phi_op;
 pub mod jit_synthetic_op;
 
 pub use jit_bool_bin_op::JitBoolBinOp;
@@ -16,4 +17,5 @@ pub use jit_float_un_op::JitFloatUnOp;
 pub use jit_int_bin_op::JitIntBinOp;
 pub use jit_int_test_op::JitIntTestOp;
 pub use jit_int_un_op::JitIntUnOp;
+pub use jit_phi_op::JitPhiOp;
 pub use jit_synthetic_op::JitSyntheticOp;
