@@ -240,12 +240,509 @@ pub trait VTMatchInfo: Send + Sync {
 pub trait VTMatchSetDB: Send + Sync {}
 
 /// Placeholder for the unported Java type `VTAssociationDB`, referenced by
-/// `VTMatchTableDBAdapter::insert_match_record`. Trimmed to `get_key`, the (inherited
-/// `DBAnnotatedObject`) accessor that `VTMatchTableDBAdapterV0.insertMatchRecord` actually reads;
-/// see `VTAssociationDB.java` for the type's full public surface. Replace with the real port when
-/// available.
-pub trait VTAssociationDB: Send + Sync {
-    fn get_key(&self) -> i64;
+/// `VTMatchTableDBAdapter::insert_match_record` and, since it is the concrete association type the
+/// whole class traffics in, by
+/// [`AssociationDatabaseManager`](crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager).
+/// `VTAssociationDB` is a concrete Java class (not an interface), so this stub is a struct.
+///
+/// Trimmed to what those two clients need: the record-derived accessors (`getKey`, `getStatus`,
+/// `getSourceAddress`, `getDestinationAddress`, `getType`, `getVoteCount`, `getMarkupStatus`) plus
+/// the `DbObject` bookkeeping (`setInvalid`/`refresh`) the manager's caches drive. The real Java
+/// class reaches back into its `AssociationDatabaseManager` for every one of those; this stub
+/// instead holds the [`VTSessionDB`] the manager would have delegated the address translation to,
+/// which is enough for the read side and avoids a reference cycle back to the manager. Everything
+/// that genuinely needs the unported manager (markup-item traversal, status mutation that must be
+/// persisted, related-association lookup) is left `unimplemented!()` here and is instead driven by
+/// `AssociationDatabaseManager`'s own methods, which have the adapters and session on hand.
+///
+/// Replace with the real port when `VTAssociationDB.java` is ported.
+pub struct VTAssociationDB {
+    state: crate::program::database::db_object::DbObjectState,
+    record: std::sync::Mutex<crate::framework::db::DBRecord>,
+    session: Option<std::sync::Arc<dyn VTSessionDB>>,
+}
+
+impl VTAssociationDB {
+    /// Java: package-private constructor `VTAssociationDB(AssociationDatabaseManager, DBRecord)`,
+    /// with the manager narrowed to the session it would have been asked for address translation.
+    pub fn new(
+        record: crate::framework::db::DBRecord,
+        session: std::sync::Arc<dyn VTSessionDB>,
+    ) -> Self {
+        let key = record.get_key().get_long_value();
+        Self {
+            state: crate::program::database::db_object::DbObjectState::new(key),
+            record: std::sync::Mutex::new(record),
+            session: Some(session),
+        }
+    }
+
+    /// Builds a session-less association, for callers that only read the columns of the record
+    /// itself. Has no Java counterpart -- the real `VTAssociationDB` always has its manager -- and
+    /// exists because [`VTMatchTableDBAdapter::insert_match_record`](crate::feature::vt::api::main::db::vt_match_table_db_adapter::VTMatchTableDBAdapter::insert_match_record)
+    /// reads nothing but `getKey()`. The address accessors panic on an association built this way.
+    pub fn from_record(record: crate::framework::db::DBRecord) -> Self {
+        let key = record.get_key().get_long_value();
+        Self {
+            state: crate::program::database::db_object::DbObjectState::new(key),
+            record: std::sync::Mutex::new(record),
+            session: None,
+        }
+    }
+
+    /// Java: `DBObject.getKey()`.
+    pub fn get_key(&self) -> i64 {
+        self.state.get_key()
+    }
+
+    /// Java: `VTAssociationDB.getRecord()` (package-private).
+    pub fn get_record(&self) -> crate::framework::db::DBRecord {
+        self.record.lock().unwrap().clone()
+    }
+
+    /// Replaces this association's cached record. Stands in for the record write-back that the
+    /// real `VTAssociationDB.setStatus`/`setVoteCount` perform on their own record before handing
+    /// it to `associationManager.updateAssociationRecord`.
+    pub fn set_record(&self, record: crate::framework::db::DBRecord) {
+        *self.record.lock().unwrap() = record;
+    }
+
+    /// Java: `VTAssociationDB.getStatus()`, returning the real ported enum rather than the
+    /// [`VtAssociationStatus`] placeholder trait that the `VtAssociation` seam still speaks in.
+    /// The `VtAssociation::get_status` impl below wraps this value. Named apart from the trait
+    /// method so that a shared `Arc<VTAssociationDB>` -- for which both this type's and `Arc`'s
+    /// `VtAssociation` impls are in scope -- resolves unambiguously.
+    pub fn get_association_status(&self) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
+        association_status_from_ordinal(
+            self.record
+                .lock()
+                .unwrap()
+                .get_byte(
+                    crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription::StatusCol
+                        .column(),
+                )
+                .unwrap_or(0),
+        )
+    }
+
+    /// Java: `VTAssociationDB.getType()`.
+    pub fn get_association_type(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_association_type::VtAssociationType {
+        association_type_from_ordinal(
+            self.record
+                .lock()
+                .unwrap()
+                .get_byte(
+                    crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription::TypeCol
+                        .column(),
+                )
+                .unwrap_or(0),
+        )
+    }
+
+    /// Java: `VTAssociationDB.getMarkupStatus()`.
+    pub fn get_association_markup_status(
+        &self,
+    ) -> crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus {
+        crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus::from_status(
+            self.record
+                .lock()
+                .unwrap()
+                .get_byte(
+                    crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription::AppliedStatusCol
+                        .column(),
+                )
+                .unwrap_or(0) as i32,
+        )
+    }
+
+    fn session(&self) -> &std::sync::Arc<dyn VTSessionDB> {
+        self.session
+            .as_ref()
+            .expect("VTAssociationDB was built without a session; address accessors are unavailable")
+    }
+}
+
+/// Java: `VTAssociationStatus.values()[ordinal]`, mirroring the ported enum's declaration order
+/// (the ported enum exposes no `ordinal()`, so the mapping is spelled out, matching
+/// `VTAssociationTableDBAdapterV0`'s own hand-rolled mapping above).
+pub fn association_status_from_ordinal(
+    ordinal: i8,
+) -> crate::feature::vt::api::main::vt_association_status::VtAssociationStatus {
+    use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus as Status;
+    match ordinal {
+        0 => Status::Available,
+        1 => Status::Accepted,
+        2 => Status::Blocked,
+        3 => Status::Rejected,
+        other => panic!("invalid VTAssociationStatus ordinal {other}"),
+    }
+}
+
+/// Java: `VTAssociationStatus.ordinal()`. Inverse of [`association_status_from_ordinal`].
+pub fn association_status_ordinal(
+    status: crate::feature::vt::api::main::vt_association_status::VtAssociationStatus,
+) -> i8 {
+    use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus as Status;
+    match status {
+        Status::Available => 0,
+        Status::Accepted => 1,
+        Status::Blocked => 2,
+        Status::Rejected => 3,
+    }
+}
+
+/// Java: `VTAssociationType.values()[ordinal]`.
+pub fn association_type_from_ordinal(
+    ordinal: i8,
+) -> crate::feature::vt::api::main::vt_association_type::VtAssociationType {
+    use crate::feature::vt::api::main::vt_association_type::VtAssociationType as Type;
+    match ordinal {
+        0 => Type::Function,
+        1 => Type::Data,
+        other => panic!("invalid VTAssociationType ordinal {other}"),
+    }
+}
+
+impl crate::program::database::db_object::DbObject for VTAssociationDB {
+    fn state(&self) -> &crate::program::database::db_object::DbObjectState {
+        &self.state
+    }
+
+    /// Java: `VTAssociationDB.refresh(DBRecord)`, minus the `record == null` branch that re-reads
+    /// the row through `associationManager.getAssociationRecord(key)` -- this stub has no manager
+    /// to ask, so a record-less refresh keeps the record it already holds.
+    fn refresh(&self, record: Option<&crate::framework::db::DBRecord>) -> bool {
+        if let Some(record) = record {
+            *self.record.lock().unwrap() = record.clone();
+        }
+        true
+    }
+}
+
+impl VtAssociation for VTAssociationDB {
+    fn get_type(&self) -> Box<dyn VtAssociationType> {
+        Box::new(self.get_association_type())
+    }
+
+    fn get_session(&self) -> Box<dyn crate::feature::vt::api::main::vt_session::VTSession> {
+        unimplemented!("VTAssociationDB::get_session requires the unported VTSessionDB port")
+    }
+
+    fn get_markup_items(
+        &self,
+        _monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+        unimplemented!(
+            "VTAssociationDB::get_markup_items requires the unported MarkupItemManager; use \
+             AssociationDatabaseManager::get_applied_markup_items"
+        )
+    }
+
+    /// Java: `VTAssociationDB.hasAppliedMarkupItems()`, which reads the cached markup status.
+    fn has_applied_markup_items(&self) -> bool {
+        self.get_association_markup_status().has_applied_markup()
+    }
+
+    fn get_source_address(&self) -> AddressType {
+        let value = self
+            .record
+            .lock()
+            .unwrap()
+            .get_long(
+                crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription::SourceAddressCol
+                    .column(),
+            )
+            .unwrap_or(0);
+        self.session().get_source_address_from_long(value)
+    }
+
+    fn get_destination_address(&self) -> AddressType {
+        let value = self
+            .record
+            .lock()
+            .unwrap()
+            .get_long(
+                crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription::DestinationAddressCol
+                    .column(),
+            )
+            .unwrap_or(0);
+        self.session().get_destination_address_from_long(value)
+    }
+
+    fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>> {
+        unimplemented!(
+            "VTAssociationDB::get_related_associations requires the association manager; use \
+             AssociationDatabaseManager::get_related_associations_by_source_and_destination_address"
+        )
+    }
+
+    fn set_markup_status(&self, _markup_items_status: &dyn VtAssociationMarkupStatus) {
+        unimplemented!("VTAssociationDB::set_markup_status must persist through the manager")
+    }
+
+    fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+        Box::new(self.get_association_markup_status())
+    }
+
+    fn get_status(&self) -> Box<dyn VtAssociationStatus> {
+        Box::new(self.get_association_status())
+    }
+
+    fn set_accepted(&self) -> std::io::Result<()> {
+        unimplemented!("VTAssociationDB::set_accepted must go through AssociationDatabaseManager")
+    }
+
+    fn clear_status(&self) -> std::io::Result<()> {
+        unimplemented!("VTAssociationDB::clear_status must go through AssociationDatabaseManager")
+    }
+
+    fn set_rejected(&self) -> std::io::Result<()> {
+        unimplemented!("VTAssociationDB::set_rejected must go through AssociationDatabaseManager")
+    }
+
+    fn get_vote_count(&self) -> i32 {
+        self.record
+            .lock()
+            .unwrap()
+            .get_int(
+                crate::feature::vt::api::main::db::vt_association_table_db_adapter::ColumnDescription::VoteCountCol
+                    .column(),
+            )
+            .unwrap_or(0)
+    }
+
+    fn set_vote_count(&self, _vote_count: i32) {
+        unimplemented!("VTAssociationDB::set_vote_count must persist through the manager")
+    }
+
+    fn get_key(&self) -> i64 {
+        VTAssociationDB::get_key(self)
+    }
+}
+
+/// Lets a shared, cached [`VTAssociationDB`] be handed out as an owned `Box<dyn VtAssociation>`
+/// (which is what the ported `VTAssociationManager` seam returns) without cloning the underlying
+/// object, mirroring how `MarkupItemStorageDB` forwards through its own `Arc`.
+impl VtAssociation for std::sync::Arc<VTAssociationDB> {
+    fn get_type(&self) -> Box<dyn VtAssociationType> {
+        (**self).get_type()
+    }
+
+    fn get_session(&self) -> Box<dyn crate::feature::vt::api::main::vt_session::VTSession> {
+        VtAssociation::get_session(&**self)
+    }
+
+    fn get_markup_items(
+        &self,
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<Vec<Box<dyn VtMarkupItem>>> {
+        (**self).get_markup_items(monitor)
+    }
+
+    fn has_applied_markup_items(&self) -> bool {
+        (**self).has_applied_markup_items()
+    }
+
+    fn get_source_address(&self) -> AddressType {
+        (**self).get_source_address()
+    }
+
+    fn get_destination_address(&self) -> AddressType {
+        (**self).get_destination_address()
+    }
+
+    fn get_related_associations(&self) -> Vec<Box<dyn VtAssociation>> {
+        (**self).get_related_associations()
+    }
+
+    fn set_markup_status(&self, markup_items_status: &dyn VtAssociationMarkupStatus) {
+        (**self).set_markup_status(markup_items_status)
+    }
+
+    fn get_markup_status(&self) -> Box<dyn VtAssociationMarkupStatus> {
+        (**self).get_markup_status()
+    }
+
+    fn get_status(&self) -> Box<dyn VtAssociationStatus> {
+        VtAssociation::get_status(&**self)
+    }
+
+    fn set_accepted(&self) -> std::io::Result<()> {
+        (**self).set_accepted()
+    }
+
+    fn clear_status(&self) -> std::io::Result<()> {
+        (**self).clear_status()
+    }
+
+    fn set_rejected(&self) -> std::io::Result<()> {
+        (**self).set_rejected()
+    }
+
+    fn get_vote_count(&self) -> i32 {
+        (**self).get_vote_count()
+    }
+
+    fn set_vote_count(&self, vote_count: i32) {
+        (**self).set_vote_count(vote_count)
+    }
+
+    fn get_key(&self) -> i64 {
+        VTAssociationDB::get_key(self)
+    }
+}
+
+/// Bridges the real, ported association-status enum onto the [`VtAssociationStatus`] placeholder
+/// trait the `VtAssociation` seam speaks in, so no second status type has to be invented.
+impl VtAssociationStatus
+    for crate::feature::vt::api::main::vt_association_status::VtAssociationStatus
+{
+    fn get_status(&self) -> &str {
+        self.display_name()
+    }
+}
+
+/// Bridges the real, ported association-type enum onto the [`VtAssociationType`] placeholder
+/// trait. See [`VtAssociationStatus`]'s impl above.
+impl VtAssociationType for crate::feature::vt::api::main::vt_association_type::VtAssociationType {
+    fn display_name(&self) -> &str {
+        crate::feature::vt::api::main::vt_association_type::VtAssociationType::display_name(self)
+    }
+}
+
+/// Bridges the real, ported markup-status struct onto the [`VtAssociationMarkupStatus`]
+/// placeholder trait. See [`VtAssociationStatus`]'s impl above.
+impl VtAssociationMarkupStatus
+    for crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus
+{
+    fn get_status(&self) -> &str {
+        // The placeholder trait returns a borrowed string; the real `description()` builds an
+        // owned one, so this reports the raw packed value's applied-ness instead, which is the
+        // only thing the seam's callers look at.
+        if self.has_applied_markup() {
+            "Applied"
+        }
+        else if self.is_initialized() {
+            "Unapplied"
+        }
+        else {
+            "Uninitialized"
+        }
+    }
+}
+
+/// Placeholder for the unported Java type `VTSessionDB`, the concrete session that owns an
+/// [`AssociationDatabaseManager`](crate::feature::vt::api::main::db::association_database_manager::AssociationDatabaseManager).
+/// `VTSessionDB` is a concrete Java class (`extends DomainObjectAdapterDB implements VTSession`),
+/// but it sits on the far side of a dependency cycle from the manager, so it is stubbed here as a
+/// trait: the manager only ever calls it, never constructs it, and a trait keeps the two ports
+/// decoupled until the real class lands.
+///
+/// Trimmed to the members `AssociationDatabaseManager` (and, through it, `MarkupItemStorageDB`)
+/// actually calls: the shared [`ReentrantLock`](crate::util::lock::ReentrantLock) both classes
+/// guard their records with, the four address<->long translations, the two program accessors, the
+/// `dbError` funnel every swallowed `IOException` goes through, and `setChanged`. Replace with the
+/// real port when `VTSessionDB.java` is ported.
+pub trait VTSessionDB: Send + Sync {
+    /// Java: `VTSessionDB.getLock()`.
+    fn get_lock(&self) -> std::sync::Arc<crate::util::lock::ReentrantLock>;
+
+    /// Java: `DomainObjectAdapterDB.dbError(IOException)`, which wraps and rethrows. Ports that
+    /// call it treat the failure as swallowed, matching how the Java callers here proceed.
+    fn db_error(&self, error: std::io::Error);
+
+    /// Java: `VTSessionDB.getSourceProgram()`.
+    fn get_source_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
+
+    /// Java: `VTSessionDB.getDestinationProgram()`.
+    fn get_destination_program(
+        &self,
+    ) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
+
+    /// Java: `VTSessionDB.getLongFromSourceAddress(Address)`.
+    fn get_long_from_source_address(&self, address: &AddressType) -> i64;
+
+    /// Java: `VTSessionDB.getLongFromDestinationAddress(Address)`.
+    fn get_long_from_destination_address(&self, address: &AddressType) -> i64;
+
+    /// Java: `VTSessionDB.getSourceAddressFromLong(long)`.
+    fn get_source_address_from_long(&self, value: i64) -> AddressType;
+
+    /// Java: `VTSessionDB.getDestinationAddressFromLong(long)`.
+    fn get_destination_address_from_long(&self, value: i64) -> AddressType;
+
+    /// Java: `VTSessionDB.setChanged(VTEvent, Object, Object)`. The generic `Object` values are
+    /// narrowed to associations, which is all `AssociationDatabaseManager` ever passes.
+    fn set_changed(
+        &self,
+        event_type: crate::feature::vt::api::implementation::vt_event::VtEvent,
+        old_value: Option<std::sync::Arc<VTAssociationDB>>,
+        new_value: Option<std::sync::Arc<VTAssociationDB>>,
+    );
+}
+
+/// Placeholder for the unported Java type `ghidra.feature.vt.api.util.VTAssociationStatusException`,
+/// the checked exception `AssociationDatabaseManager.setAssociationAccepted`/
+/// `clearAcceptedAssociation` throw when a status transition is not legal. The Java class carries
+/// nothing but its message. Replace with the real port when `VTAssociationStatusException.java` is
+/// ported.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VTAssociationStatusException {
+    message: String,
+}
+
+impl VTAssociationStatusException {
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into() }
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl std::fmt::Display for VTAssociationStatusException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for VTAssociationStatusException {}
+
+/// Placeholder for the unported Java type `MarkupItemImpl`, referenced by
+/// `AssociationDatabaseManager.removeStoredMarkupItems(List<MarkupItemImpl>)`. That method reads
+/// exactly one member, `getStorage()`, and acts only when the storage is a `MarkupItemStorageDB`;
+/// since Rust has no `instanceof`, that narrowing is represented directly as an `Option`. Replace
+/// with the real port when `MarkupItemImpl.java` is ported.
+pub struct MarkupItemImpl {
+    storage: Option<
+        std::sync::Arc<crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB>,
+    >,
+}
+
+impl MarkupItemImpl {
+    pub fn new(
+        storage: Option<
+            std::sync::Arc<
+                crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB,
+            >,
+        >,
+    ) -> Self {
+        Self { storage }
+    }
+
+    /// Java: `MarkupItemImpl.getStorage()`, already narrowed to the database-backed case.
+    pub fn get_storage_db(
+        &self,
+    ) -> Option<
+        &std::sync::Arc<
+            crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB,
+        >,
+    > {
+        self.storage.as_ref()
+    }
 }
 
 /// Placeholder for the unported Java type `VTMatchTagDB`, referenced by
@@ -303,7 +800,7 @@ impl crate::feature::vt::api::main::db::vt_match_table_db_adapter::VTMatchTableD
         &self,
         info: &dyn VTMatchInfo,
         _match_set: &dyn VTMatchSetDB,
-        association: &dyn VTAssociationDB,
+        association: &VTAssociationDB,
         tag: Option<&dyn VTMatchTagDB>,
     ) -> std::io::Result<crate::framework::db::DBRecord> {
         use crate::feature::vt::api::main::db::vt_match_table_db_adapter::ColumnDescription;
@@ -1093,104 +1590,5 @@ impl CheckoutDialog {
 
     pub fn exclusive_checkout(&self) -> bool {
         false
-    }
-}
-
-/// Placeholder for the unported Java type `AssociationDatabaseManager`, referenced by
-/// [`MarkupItemStorageDB`](crate::feature::vt::api::main::db::markup_item_storage_db::MarkupItemStorageDB).
-/// `AssociationDatabaseManager` is a concrete Java class (not an interface), so this stub is a
-/// struct rather than a trait, trimmed to the members `MarkupItemStorageDB` actually calls: the
-/// `lock` field it locks around every accessor (Java `ghidra.util.Lock`, already ported as
-/// [`crate::util::lock::ReentrantLock`]), the session/association lookups performed in its
-/// constructor (`getSession()`/package-private `getAssociation(long)`), and the three
-/// record-table operations (package-private `getMarkupItemRecord`/`updateMarkupRecord`/
-/// `removeMarkupRecord`) it forwards to its `markupItemTableAdapter` field in Java -- backed here
-/// by the real, already-ported
-/// [`VTMatchMarkupItemTableDBAdapterV0`](crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0)
-/// (held concretely rather than as `Box<dyn VTMatchMarkupItemTableDBAdapter>`, since that trait
-/// isn't `Send + Sync` and this struct needs to be, being held behind the `Arc` a
-/// `MarkupItemStorageDB`'s `Send + Sync` `MarkupItemStorage` impl requires) rather than a
-/// hand-rolled store. Associations are kept in a simple in-memory map seeded via
-/// [`register_association`](Self::register_association), since the real `associationCache` this
-/// stands in for (`VTAssociationTableDBAdapter` plus a full `VTAssociationDB` port) doesn't exist
-/// yet. Java swallows `IOException` from all three record operations via `session.dbError(e)`;
-/// this stub mirrors that by making them infallible and silently dropping any error. Replace with
-/// the real port when `AssociationDatabaseManager.java` is ported.
-pub struct AssociationDatabaseManager {
-    pub lock: crate::util::lock::ReentrantLock,
-    session: std::sync::Arc<dyn crate::feature::vt::api::main::vt_session::VTSession>,
-    associations: std::sync::RwLock<std::collections::HashMap<i64, std::sync::Arc<dyn VtAssociation>>>,
-    markup_item_table_adapter:
-        crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0,
-}
-
-impl AssociationDatabaseManager {
-    pub fn new(
-        db_handle: &mut crate::framework::db::DBHandle,
-        session: std::sync::Arc<dyn crate::feature::vt::api::main::vt_session::VTSession>,
-    ) -> std::io::Result<Self> {
-        let markup_item_table_adapter = crate::feature::vt::api::main::db::vt_match_markup_item_table_db_adapter_v0::VTMatchMarkupItemTableDBAdapterV0::create(db_handle)?;
-        Ok(Self {
-            lock: crate::util::lock::ReentrantLock::new("AssociationDatabaseManager"),
-            session,
-            associations: std::sync::RwLock::new(std::collections::HashMap::new()),
-            markup_item_table_adapter,
-        })
-    }
-
-    /// Test/seed hook standing in for the real `associationCache` lookup: registers the
-    /// association that [`get_association`](Self::get_association) should hand back for a given
-    /// association key.
-    pub fn register_association(&self, key: i64, association: std::sync::Arc<dyn VtAssociation>) {
-        self.associations.write().unwrap().insert(key, association);
-    }
-
-    /// Java: `AssociationDatabaseManager.getSession()`.
-    pub fn get_session(
-        &self,
-    ) -> std::sync::Arc<dyn crate::feature::vt::api::main::vt_session::VTSession> {
-        self.session.clone()
-    }
-
-    /// Java: `AssociationDatabaseManager.getAssociation(long)`.
-    ///
-    /// # Panics
-    /// Panics if `key` was never registered via
-    /// [`register_association`](Self::register_association), mirroring how the real Java method
-    /// would return whatever the cache loader produces for an unknown association key rather than
-    /// tolerate one that was never persisted.
-    pub fn get_association(&self, key: i64) -> std::sync::Arc<dyn VtAssociation> {
-        self.associations
-            .read()
-            .unwrap()
-            .get(&key)
-            .unwrap_or_else(|| panic!("no association registered for key {key}"))
-            .clone()
-    }
-
-    /// Java: `AssociationDatabaseManager.getMarkupItemRecord(long)`.
-    pub fn get_markup_item_record(&self, key: i64) -> Option<crate::framework::db::DBRecord> {
-        self.markup_item_table_adapter.get_record(key).unwrap_or(None)
-    }
-
-    /// Java: `AssociationDatabaseManager.updateMarkupRecord(DBRecord)`.
-    pub fn update_markup_record(&self, record: &crate::framework::db::DBRecord) {
-        let _ = self.markup_item_table_adapter.update_record(record);
-    }
-
-    /// Java: `AssociationDatabaseManager.removeMarkupRecord(long)`.
-    pub fn remove_markup_record(&self, key: i64) {
-        let _ = self.markup_item_table_adapter.remove_markup_item_record(key);
-    }
-
-    /// Number of markup-item records currently stored. Not present in the Java class; exposed so
-    /// callers can observe [`remove_markup_record`](Self::remove_markup_record)'s effect via
-    /// `Table::get_record_count` (which `Table::delete_record` updates correctly) rather than
-    /// `get_markup_item_record`, since `Table::get_record`/`delete_record` disagree about which of
-    /// the table's two backing stores is authoritative once populated -- see
-    /// `VTMatchMarkupItemTableDBAdapterV0`'s own `remove_markup_item_record` test for the same
-    /// workaround.
-    pub fn markup_item_record_count(&self) -> usize {
-        self.markup_item_table_adapter.get_record_count()
     }
 }

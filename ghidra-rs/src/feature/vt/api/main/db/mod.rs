@@ -1,3 +1,4 @@
+pub mod association_database_manager;
 pub mod deleted_match;
 pub mod markup_item_storage_db;
 pub mod vt_address_correlator_adapter;
@@ -8,6 +9,7 @@ pub mod vt_match_set_table_db_adapter;
 pub mod vt_match_table_db_adapter;
 pub mod vt_match_tag_db_adapter;
 
+pub use association_database_manager::AssociationDatabaseManager;
 pub use deleted_match::DeletedMatch;
 pub use markup_item_storage_db::MarkupItemStorageDB;
 pub use vt_address_correlator_adapter::{

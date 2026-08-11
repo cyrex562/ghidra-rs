@@ -109,7 +109,7 @@ pub trait VTMatchTableDBAdapter {
         &self,
         info: &dyn VTMatchInfo,
         match_set: &dyn VTMatchSetDB,
-        association: &dyn VTAssociationDB,
+        association: &VTAssociationDB,
         tag: Option<&dyn VTMatchTagDB>,
     ) -> io::Result<DBRecord>;
 
@@ -254,11 +254,13 @@ mod tests {
     struct FakeMatchSet;
     impl VTMatchSetDB for FakeMatchSet {}
 
-    struct FakeAssociation(i64);
-    impl VTAssociationDB for FakeAssociation {
-        fn get_key(&self) -> i64 {
-            self.0
-        }
+    /// Builds a session-less `VTAssociationDB` whose only interesting property is its key, which
+    /// is all `insertMatchRecord` reads off the association.
+    fn fake_association(key: i64) -> VTAssociationDB {
+        VTAssociationDB::from_record(DBRecord::new(
+            crate::feature::vt::api::main::db::vt_association_table_db_adapter::VTAssociationTableDBAdapterBase::table_schema(),
+            crate::framework::db::Field::Long(Some(key)),
+        ))
     }
 
     struct FakeTag(i64);
@@ -280,7 +282,7 @@ mod tests {
             dest_len: 20,
         };
         let match_set = FakeMatchSet;
-        let association = FakeAssociation(7);
+        let association = fake_association(7);
         let tag = FakeTag(3);
 
         let record = adapter
@@ -316,7 +318,7 @@ mod tests {
             dest_len: 2,
         };
         let record = adapter
-            .insert_match_record(&info, &FakeMatchSet, &FakeAssociation(1), None)
+            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
             .unwrap();
 
         assert_eq!(record.get_long(ColumnDescription::TagKeyCol.column()), Some(-1));
@@ -334,7 +336,7 @@ mod tests {
             dest_len: 2,
         };
         let record = adapter
-            .insert_match_record(&info, &FakeMatchSet, &FakeAssociation(1), None)
+            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
             .unwrap();
         let key = record.get_key().get_long_value();
 
@@ -355,13 +357,13 @@ mod tests {
             dest_len: 2,
         };
         adapter
-            .insert_match_record(&info, &FakeMatchSet, &FakeAssociation(1), None)
+            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
             .unwrap();
         adapter
-            .insert_match_record(&info, &FakeMatchSet, &FakeAssociation(2), None)
+            .insert_match_record(&info, &FakeMatchSet, &fake_association(2), None)
             .unwrap();
         adapter
-            .insert_match_record(&info, &FakeMatchSet, &FakeAssociation(1), None)
+            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
             .unwrap();
 
         let mut iter = adapter.get_records_for_association(1).unwrap();
