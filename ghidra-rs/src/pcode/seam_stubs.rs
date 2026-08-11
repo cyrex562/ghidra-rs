@@ -8,6 +8,9 @@ use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
+use crate::pcode::emu::jit::analysis::jit_type::{
+    AnyJitType, IntJitType, LongJitType, MpIntJitType,
+};
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Next};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
@@ -850,6 +853,33 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
         T: 'static,
     {
         unimplemented!("This is meant for p-code executor use")
+    }
+}
+
+/// Minimal placeholder for the not-yet-ported `ghidra.pcode.emu.jit.analysis.JitTypeBehavior`,
+/// referenced by [`unify`](crate::pcode::emu::jit::analysis::jit_type::unify) and
+/// [`unify_least`](crate::pcode::emu::jit::analysis::jit_type::unify_least).
+///
+/// The real Java type is an enum of four behaviors -- `ANY`, `INTEGER`, `FLOAT`, and `COPY` --
+/// each with a `type(int)` and a `resolve(JitType)`, plus the static `compare` and `forJavaType`.
+/// `JitType` itself only ever reaches for `INTEGER.type(size)`, so that is the only variant and
+/// the only method modeled here. Replace with the real port when `JitTypeBehavior.java` is ported.
+pub enum JitTypeBehavior {
+    /// The bits are interpreted as an integer.
+    Integer,
+}
+
+impl JitTypeBehavior {
+    /// Apply this behavior to a value of the given size to determine its type.
+    ///
+    /// Port of `JitTypeBehavior.INTEGER.type(int)`.
+    pub fn type_of(&self, size: i32) -> AnyJitType {
+        debug_assert!(size > 0);
+        match size {
+            1..=4 => AnyJitType::Int(IntJitType::for_size(size)),
+            5..=8 => AnyJitType::Long(LongJitType::for_size(size)),
+            _ => AnyJitType::MpInt(MpIntJitType::for_size(size)),
+        }
     }
 }
 
