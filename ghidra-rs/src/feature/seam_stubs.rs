@@ -158,3 +158,10 @@ pub trait VtMatchSet: Send + Sync {
     fn has_removable_matches(&self) -> bool;
 }
 
+/// Placeholder for the unported Java type `VTOptions`, referenced by `VTProgramCorrelatorFactory`.
+/// `VTOptions` is a concrete Java class (not an interface), so this stub is a struct rather than a
+/// trait. Generated stub: shape hint only, no fields yet since nothing in the crate reads them.
+/// Replace with the real port when available.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct VtOptions;
+
