@@ -859,6 +859,34 @@ pub trait Scope: Send + Sync {
     // (no public methods parsed from the Java source)
 }
 
+/// Minimal placeholder for the not-yet-ported `ghidra.pcode.emu.jit.gen.util.ChildScope`,
+/// referenced by [`RootScope::sub`](crate::pcode::emu::jit::gen::util::root_scope::RootScope::sub).
+///
+/// In Java, `ChildScope` extends `RootScope` and holds a back-reference to its parent scope so
+/// that closing it clears the parent's active-child marker. This stub provides only what
+/// `RootScope::sub` needs today: an owned, self-contained [`SubScope`] backed by its own
+/// `RootScope` that continues the parent's local-variable numbering. It does not yet wire the
+/// parent-notification-on-close behavior -- that bookkeeping belongs to the real `ChildScope`.
+/// Replace with the real port (including the parent link) when `ChildScope.java` is ported.
+pub struct ChildScope<N> {
+    inner: crate::pcode::emu::jit::gen::util::root_scope::RootScope<N>,
+}
+
+impl<N> ChildScope<N> {
+    /// Wrap an already-constructed child `RootScope`.
+    pub(crate) fn new(inner: crate::pcode::emu::jit::gen::util::root_scope::RootScope<N>) -> Self {
+        Self { inner }
+    }
+}
+
+impl<N: Send + Sync> Scope for ChildScope<N> {}
+
+impl<N: Send + Sync + Next> crate::pcode::emu::jit::gen::util::sub_scope::SubScope for ChildScope<N> {
+    fn close(&mut self) {
+        self.inner.close();
+    }
+}
+
 /// Placeholder for ASM's `org.objectweb.asm.Label`, wrapped by
 /// [`Lbl`](crate::pcode::emu::jit::gen::util::lbl::Lbl) and visited by [`Emitter`] before the real
 /// type-checked JVM bytecode emitter is ported. ASM's `Label` is an opaque, mutable marker for a
