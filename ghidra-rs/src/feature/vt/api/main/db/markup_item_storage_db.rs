@@ -44,17 +44,6 @@ use crate::framework::db::{DBRecord, Field};
 use crate::program::database::db_object::{DbObject, DbObjectState};
 use crate::program::model::address::Address;
 
-/// Forwards [`VtMarkupType`] to a shared `Arc`, letting [`MarkupItemStorageDB::get_markup_type`]
-/// hand back an owned `Box<dyn VtMarkupType>` on every call without cloning the registry
-/// singleton it points at. See the module docs for why this is needed.
-struct ArcMarkupType(Arc<dyn VtMarkupType>);
-
-impl VtMarkupType for ArcMarkupType {
-    fn get_name(&self) -> &str {
-        self.0.get_name()
-    }
-}
-
 /// Forwards [`VtAssociation`] to a shared `Arc`, letting [`MarkupItemStorageDB::get_association`]
 /// hand back an owned `Box<dyn VtAssociation>` on every call. See the module docs for why this is
 /// needed.
@@ -126,6 +115,17 @@ impl VtAssociation for ArcVtAssociation {
 
     fn get_key(&self) -> i64 {
         self.0.get_key()
+    }
+
+    fn get_session_db(&self) -> Option<Arc<dyn VTSessionDB>> {
+        self.0.get_session_db()
+    }
+
+    fn markup_item_status_changed(
+        &self,
+        markup_item: &dyn crate::feature::seam_stubs::VtMarkupItem,
+    ) {
+        self.0.markup_item_status_changed(markup_item)
     }
 }
 
@@ -230,7 +230,9 @@ impl MarkupItemStorage for MarkupItemStorageDB {
         };
         let markup_type = vt_markup_type_factory::get_markup_type(ordinal)
             .unwrap_or_else(|| panic!("unregistered VTMarkupType id {ordinal}"));
-        Box::new(ArcMarkupType(markup_type))
+        // `Arc<dyn VtMarkupType>` itself implements `VtMarkupType` by forwarding, so the shared
+        // registry singleton can be handed back as an owned `Box` without cloning it.
+        Box::new(markup_type)
     }
 
     fn get_association(&self) -> Box<dyn VtAssociation> {
@@ -353,6 +355,12 @@ impl MarkupItemStorage for MarkupItemStorageDB {
         let key = self.get_key();
         self.association_manager.remove_markup_record(key);
         self.state.set_deleted();
+    }
+
+    /// Java: the `markupItemStorage instanceof MarkupItemStorageDB` test that
+    /// `AssociationDatabaseManager.removeStoredMarkupItems` performs -- this is that storage.
+    fn as_storage_db(&self) -> Option<&MarkupItemStorageDB> {
+        Some(self)
     }
 
     fn set_destination_address(&mut self, address: Address, address_source: String) {

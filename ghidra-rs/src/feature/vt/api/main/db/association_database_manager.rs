@@ -41,9 +41,10 @@ use std::io;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use crate::feature::seam_stubs::{
-    association_status_ordinal, MarkupItemImpl, VTAssociationStatusException, VTSessionDB,
-    VtAssociation, VtMarkupItem,
+    association_status_ordinal, VTAssociationStatusException, VTSessionDB, VtAssociation,
+    VtMarkupItem,
 };
+use crate::feature::vt::api::implementation::markup_item_impl::MarkupItemImpl;
 use crate::feature::vt::api::db::vt_association_db::VTAssociationDB;
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::implementation::vt_event::VtEvent;
@@ -276,8 +277,9 @@ impl AssociationDatabaseManager {
     /// use).
     pub fn remove_stored_markup_items(&self, impls: &[MarkupItemImpl]) {
         for impl_item in impls {
-            if let Some(storage_db) = impl_item.get_storage_db() {
-                self.remove_markup_record(storage_db.get_key());
+            // Java: `markupItemImpl.getStorage() instanceof MarkupItemStorageDB`, then its key.
+            if let Some(key) = impl_item.get_storage_db_key() {
+                self.remove_markup_record(key);
             }
         }
     }
