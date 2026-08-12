@@ -2220,24 +2220,6 @@ impl FieldForArrDirect {
 /// are exposed. Replace with the real port when available.
 pub trait JitCompiledPassage: Send + Sync {}
 
-/// A generator whose implementation is to emit invocations of a named method in
-/// `JitCompiledPassage`.
-///
-/// Port of `ghidra.pcode.emu.jit.gen.access.MethodAccessGen`.
-pub trait MethodAccessGen: Send + Sync {
-    /// Choose the name of the read method, e.g. `JitCompiledPassage.readInt1(byte[], int)`, to
-    /// use for the given variable size.
-    ///
-    /// Port of `MethodAccessGen.chooseReadName`.
-    fn choose_read_name(&self, size: i32) -> String;
-
-    /// Choose the name of the write method, e.g. `JitCompiledPassage.writeInt1(int, byte[],
-    /// int)`, to use for the given variable size.
-    ///
-    /// Port of `MethodAccessGen.chooseWriteName`.
-    fn choose_write_name(&self, size: i32) -> String;
-}
-
 /// Placeholder for the unported Java type `AccessGen<JT>`, referenced by
 /// [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen), which extends
 /// `AccessGen<MpIntJitType>`. In Java, `AccessGen`'s only abstract-looking members
