@@ -1423,6 +1423,61 @@ impl crate::pcode::emu::jit::var::JitVarnodeVar for JitInputVar {
     }
 }
 
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.var.JitLocalOutVar`, referenced by
+/// [`LocalOutVarGen`](crate::pcode::emu::jit::gen::var::local_out_var_gen::LocalOutVarGen). Java's
+/// class extends `AbstractJitOutVar extends AbstractJitVarnodeVar`, so, like [`JitInputVar`], use
+/// tracking is a no-op here. Unlike `JitInputVar`'s fixed `id` of `-1`, this type's `id` is
+/// caller-supplied, matching `AbstractJitOutVar`'s constructor. `AbstractJitOutVar`'s `definition`
+/// bookkeeping (`JitOutVar.setDefinition`/`definition`) is not modeled: `LocalOutVarGen` only
+/// needs `JitVarnodeVar` to satisfy `LocalVarGen<V: JitVarnodeVar>`'s bound.
+///
+/// Grown (see `STUBS.tsv`) with [`JitVar`](crate::pcode::emu::jit::var::JitVar) and
+/// [`JitVarnodeVar`](crate::pcode::emu::jit::var::JitVarnodeVar) impls for
+/// [`LocalOutVarGen`](crate::pcode::emu::jit::gen::var::local_out_var_gen::LocalOutVarGen), whose
+/// Java counterpart binds `LocalVarGen<JitLocalOutVar>` and so requires
+/// `JitLocalOutVar: JitVarnodeVar`.
+pub struct JitLocalOutVar {
+    id: i32,
+    varnode: Varnode,
+}
+
+impl JitLocalOutVar {
+    /// Port of `new JitLocalOutVar(int, Varnode)`.
+    pub fn new(id: i32, varnode: Varnode) -> Self {
+        Self { id, varnode }
+    }
+}
+
+impl JitVal for JitLocalOutVar {
+    fn size(&self) -> i32 {
+        self.varnode.get_size()
+    }
+
+    fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+}
+
+impl crate::pcode::emu::jit::var::JitVar for JitLocalOutVar {
+    /// Port of `AbstractJitVarnodeVar`'s caller-supplied `id`, as passed by `JitLocalOutVar`'s
+    /// constructor.
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    /// Port of `AbstractJitVarnodeVar.space()`.
+    fn space(&self) -> Arc<AddressSpace> {
+        Arc::clone(self.varnode.get_address().space())
+    }
+}
+
+impl crate::pcode::emu::jit::var::JitVarnodeVar for JitLocalOutVar {
+    /// Port of `AbstractJitVarnodeVar.varnode()`.
+    fn varnode(&self) -> Varnode {
+        self.varnode.clone()
+    }
+}
+
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitStoreOp`, referenced by
 /// [`JitOpVisitor::visit_store_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_store_op).
 ///
