@@ -658,3 +658,4 @@ ts	stub_class	referenced_by
 2026-08-12T07:00:00.000000+00:00	JitDataFlowModel	JitVarScopeModel
 2026-08-12T08:00:00.000000+00:00	ValGen	SubMemoryVarGen
 2026-08-12T08:00:00.000000+00:00	JitCodeGenerator	SubMemoryVarGen
+2026-08-12T09:00:00.000000+00:00	MpToStackConv	SubVarHandler

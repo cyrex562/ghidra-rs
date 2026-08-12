@@ -14,13 +14,13 @@ use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
 use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
 use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
 use crate::pcode::emu::jit::analysis::jit_type::{
-    AnyJitType, AnySimpleJitType, IntJitType, JitType, LongJitType, MpIntJitType,
+    AnyJitType, AnySimpleJitType, IntJitType, JitType, LongJitType, MpIntJitType, SimpleJitType,
 };
 use crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel;
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
-use crate::pcode::emu::jit::gen::util::types::TRef;
+use crate::pcode::emu::jit::gen::util::types::{BPrim, TRef};
 use crate::pcode::emu::jit::op::JitPhiOp;
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
@@ -3204,5 +3204,73 @@ impl MpAccessGen for MpIntAccessGen {
     ) -> Emitter<N1> {
         em.recast()
     }
+}
+
+/// Placeholder for the unported Java static dispatch `Opnd.convertToOpnd`/`Opnd.getStackToMp`
+/// (`ghidra.pcode.emu.jit.gen.opnd.Opnd`), referenced by
+/// [`SubVarHandler`](crate::pcode::emu::jit::alloc::sub_var_handler::SubVarHandler)'s default
+/// `genLoadToOpnd`. The real dispatch looks up one of `IntToMpInt`/`LongToMpInt`/`FloatToMpInt`/
+/// `DoubleToMpInt` and builds a real `MpIntLocalOpnd`; none of that machinery is ported, and the
+/// marker-only [`Opnd`] stub exposes no way to construct one, so this only preserves the
+/// type-level stack-shape plumbing -- dropping the value on the JVM stack and returning a
+/// stand-in [`StubMpOpnd`] -- without emitting real bytecode, mirroring [`MpIntAccessGen`]'s stub
+/// methods above.
+pub fn convert_to_opnd<FT: BPrim, FJT: SimpleJitType<B = FT>, N: Next>(
+    em: Emitter<Ent<N, FT>>,
+    from: FJT,
+    name: &str,
+    to: MpIntJitType,
+    ext: Ext,
+    scope: &dyn Scope,
+) -> OpndEm<MpIntJitType, N> {
+    let _ = (from, name, to, ext, scope);
+    OpndEm::new(Box::new(StubMpOpnd), em.recast())
+}
+
+/// Placeholder for the unported Java static dispatch `Opnd.convertToArray`/`Opnd.getStackToMp`
+/// (`ghidra.pcode.emu.jit.gen.opnd.Opnd`), referenced by
+/// [`SubVarHandler`](crate::pcode::emu::jit::alloc::sub_var_handler::SubVarHandler)'s default
+/// `genLoadToArray`. See [`convert_to_opnd`] for why this only preserves stack shape.
+#[allow(clippy::too_many_arguments)]
+pub fn convert_to_array<FT: BPrim, FJT: SimpleJitType<B = FT>, N: Next>(
+    em: Emitter<Ent<N, FT>>,
+    from: FJT,
+    name: &str,
+    to: MpIntJitType,
+    ext: Ext,
+    scope: &dyn Scope,
+    slack: i32,
+) -> Emitter<Ent<N, TRef>> {
+    let _ = (from, name, to, ext, scope, slack);
+    em.recast()
+}
+
+/// Placeholder for the unported Java interface `Opnd.MpToStackConv<FT, FLT, FJT, TT, TJT>`
+/// (`ghidra.pcode.emu.jit.gen.opnd.Opnd.MpToStackConv`), referenced by
+/// [`SubVarHandler::get_conv_to_sub`](crate::pcode::emu::jit::alloc::sub_var_handler::SubVarHandler::get_conv_to_sub).
+/// Java's `FT`/`FLT`/`FJT` are fixed to `int`/`IntJitType`/`MpIntJitType` at every call site
+/// `SubVarHandler` makes, so only the "to" side (`TT`/`TJT`) stays generic here. The real
+/// implementors (`MpIntToInt`, `MpIntToLong`, `MpIntToFloat`, `MpIntToDouble` in Java) read an
+/// [`Opnd`]'s legs, which the marker-only [`Opnd`] stub cannot yet expose, so both methods here
+/// only preserve the type-level stack-shape plumbing, per the same convention as
+/// [`convert_to_opnd`].
+pub trait MpToStackConv: Send + Sync {
+    /// Port of `MpToStackConv.convertOpndToStack(Emitter<N>, Opnd<FJT>, TJT, Ext)`.
+    fn convert_opnd_to_stack<TT: BPrim, TJT: SimpleJitType<B = TT>, N: Next>(
+        &self,
+        em: Emitter<N>,
+        from: &dyn Opnd<MpIntJitType>,
+        to: TJT,
+        ext: Ext,
+    ) -> Emitter<Ent<N, TT>>;
+
+    /// Port of `MpToStackConv.convertArrayToStack(Emitter<N0>, FJT, TJT, Ext)`.
+    fn convert_array_to_stack<TT: BPrim, TJT: SimpleJitType<B = TT>, N: Next>(
+        &self,
+        em: Emitter<Ent<N, TRef>>,
+        from: MpIntJitType,
+        to: TJT,
+        ext: Ext,
+    ) -> Emitter<Ent<N, TT>>;
 }
 
