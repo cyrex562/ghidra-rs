@@ -2684,6 +2684,63 @@ pub trait JitCodeGenerator: Send + Sync {
         let _ = (local_this, v, opnd, ext, scope);
         em
     }
+
+    /// Emit bytecode to read the given value onto the top of the operand stack.
+    ///
+    /// Port of `JitCodeGenerator.genReadToStack(Emitter<N>, Local<TRef<THIS>>, JitVal, JT, Ext)`,
+    /// referenced by
+    /// [`FloatConvertUnOpGen`](crate::pcode::emu::jit::gen::op::float_convert_un_op_gen::FloatConvertUnOpGen).
+    /// Java's real body dispatches to the also-unported `ValGen.lookup(v)`. Like
+    /// [`Self::gen_read_to_opnd`], this preserves only the type-level stack-shape plumbing -- the
+    /// incoming stack passes through unchanged, recast with the new entry on top -- since no real
+    /// value is pushed. Requires `Self: Sized` (the type parameters `UT`/`UJT` make this method
+    /// generic, which is incompatible with `dyn` dispatch), so it drops out of the vtable instead
+    /// of making the trait as a whole object-unsafe, the same technique
+    /// [`VarHandler`](crate::pcode::emu::jit::alloc::var_handler::VarHandler) already uses.
+    fn gen_read_to_stack<UT, UJT, N>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        v: &dyn JitVal,
+        type_: UJT,
+        ext: Ext,
+    ) -> Emitter<Ent<N, UT>>
+    where
+        Self: Sized,
+        UT: BPrim,
+        UJT: SimpleJitType<B = UT>,
+        N: Next,
+    {
+        let _ = (local_this, v, type_, ext);
+        em.recast()
+    }
+
+    /// Emit bytecode to store the value on top of the operand stack into the given variable.
+    ///
+    /// Port of `JitCodeGenerator.genWriteFromStack(Emitter<N0>, Local<TRef<THIS>>, JitVar, JT,
+    /// Ext, Scope)`, referenced by
+    /// [`FloatConvertUnOpGen`](crate::pcode::emu::jit::gen::op::float_convert_un_op_gen::FloatConvertUnOpGen).
+    /// Java's `v` parameter is `JitVar`; narrowed to `&dyn JitOutVar` here, per the same
+    /// convention as [`Self::gen_write_from_opnd`]. See [`Self::gen_read_to_stack`] on why this
+    /// only preserves stack shape and requires `Self: Sized`.
+    fn gen_write_from_stack<OT, OJT, N>(
+        &self,
+        em: Emitter<Ent<N, OT>>,
+        local_this: &Local<TRef>,
+        v: &dyn JitOutVar,
+        type_: OJT,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> Emitter<N>
+    where
+        Self: Sized,
+        OT: BPrim,
+        OJT: SimpleJitType<B = OT>,
+        N: Next,
+    {
+        let _ = (local_this, v, type_, ext, scope);
+        em.recast()
+    }
 }
 
 /// Placeholder for the unported Java type `JitAllocationModel`
