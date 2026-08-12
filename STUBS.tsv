@@ -668,3 +668,4 @@ ts	stub_class	referenced_by
 2026-08-12T12:00:00.000000+00:00	Scope	IntOpUnOpGen
 2026-08-12T07:09:07.265814+00:00	IntZExtOpGen	CopyOpGen
 2026-08-12T07:09:07.266008+00:00	JitCopyOp	CopyOpGen
+2026-08-12T08:02:41.227524+00:00	JitCodeGenerator	IntShiftBinOpGen
