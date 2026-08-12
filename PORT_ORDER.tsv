@@ -12,7 +12,7 @@ DONE	trait	40	4	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 DONE	trait	38	5	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/AccessGen.java
 DONE	trait	37	3	12	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/MemoryVarGen.java
 DONE	trait	36	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/DirectMemoryVarGen.java
-TODO	trait	40	6	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/BinOpGen.java
+DONE	trait	40	6	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/BinOpGen.java
 TODO	trait	38	15	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/VarHandler.java
 TODO	trait	37	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/LocalVarGen.java
 TODO	trait	36	3	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/InputVarGen.java
