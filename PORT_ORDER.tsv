@@ -44,7 +44,7 @@ DONE	trait	23	2	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/em
 DONE	trait	24	6	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatOpUnOpGen.java
 DONE	trait	24	4	9	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatOpBinOpGen.java
 DONE	trait	24	4	9	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatCompareBinOpGen.java
-TODO	trait	24	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatConvertUnOpGen.java
+DONE	trait	24	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatConvertUnOpGen.java
 TODO	trait	24	4	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntPredBinOpGen.java
 TODO	trait	24	6	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntCompareBinOpGen.java
 TODO	trait	24	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntShiftBinOpGen.java
