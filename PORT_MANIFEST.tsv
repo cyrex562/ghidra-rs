@@ -11099,7 +11099,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/W
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/WholeLocalOutVarGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/WholeMemoryOutVarGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBinOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolAndOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolAndOp.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolBinOp.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolNegateOp.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolOrOp.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit op 

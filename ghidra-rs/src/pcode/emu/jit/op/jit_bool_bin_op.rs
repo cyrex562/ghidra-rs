@@ -38,6 +38,7 @@ pub trait JitBoolBinOp: JitBinOp {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pcode::emu::jit::var::JitOutVar;
 
     struct TestOp;
 
@@ -57,7 +58,7 @@ mod tests {
     }
 
     impl JitDefOp for TestOp {
-        fn out(&self) -> std::sync::Arc<dyn crate::pcode::seam_stubs::JitOutVar> {
+        fn out(&self) -> std::sync::Arc<dyn JitOutVar> {
             unimplemented!()
         }
     }
