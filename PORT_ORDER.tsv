@@ -31,7 +31,7 @@ DONE	trait	30	2	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/em
 DONE	trait	30	2	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubLocalVarGen.java
 DONE	trait	27	11	35	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/VarGen.java
 DONE	trait	26	14	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/JvmLocal.java
-TODO	trait	26	3	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubVarHandler.java
+DONE	trait	26	3	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubVarHandler.java
 TODO	trait	26	5	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SimpleVarHandler.java
 TODO	trait	24	3	25	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/AlignedMpIntHandler.java
 TODO	trait	25	3	9	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubInLongHandler.java
