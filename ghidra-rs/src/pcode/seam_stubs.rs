@@ -11,7 +11,8 @@ use std::sync::{Arc, OnceLock};
 use crate::pcode::emu::jit::analysis::jit_type::{
     AnyJitType, IntJitType, JitType, LongJitType, MpIntJitType,
 };
-use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Next};
+use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
+use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -2165,13 +2166,77 @@ impl PcodeArithmetic<Option<AddressSet>> for AddressesReadPcodeArithmetic {
 /// Generated stub: only a shape hint. This type is passed through to implementors of
 /// `InstanceFieldReq` without calling its methods in the type itself, so no methods are exposed.
 /// Replace with the real port when available.
-pub trait JitCodeGenerator: Send + Sync {}
+pub trait JitCodeGenerator: Send + Sync {
+    /// Request the field backing the direct-array block for the given space, starting at the
+    /// given block offset.
+    ///
+    /// Port of `JitCodeGenerator.requestFieldForArrDirect(Address)`, referenced by
+    /// [`IntAccessGen`](crate::pcode::emu::jit::gen::access::int_access_gen::IntAccessGen).
+    /// Java passes an `Address`; that requires an owning `Arc<AddressSpace>` this trait's callers
+    /// do not have, so this stub takes the `(space, offset)` pair an `Address` wraps instead.
+    /// Defaulted (rather than required) so the existing marker implementors of this trait, which
+    /// predate this method, keep compiling.
+    fn request_field_for_arr_direct(
+        &self,
+        space: &crate::program::model::address::AddressSpace,
+        offset: i64,
+    ) -> FieldForArrDirect {
+        let _ = space;
+        unimplemented!("JitCodeGenerator::request_field_for_arr_direct stub: offset {offset}")
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.gen.FieldForArrDirect`,
+/// referenced by
+/// [`IntAccessGen`](crate::pcode::emu::jit::gen::access::int_access_gen::IntAccessGen). Real
+/// `genLoad` bytecode emission depends on `Op`/`Methods`
+/// (`ghidra.pcode.emu.jit.gen.util.Op`/`Methods`), unported namespace interfaces of JVM opcode
+/// helpers, so this stub only records the block offset it was requested for and performs no real
+/// bytecode emission. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FieldForArrDirect {
+    /// The offset, within its space, of the block this field backs.
+    pub offset: i64,
+}
+
+impl FieldForArrDirect {
+    /// Emit code to load this field's array reference onto the stack.
+    ///
+    /// Port of `FieldForArrDirect.genLoad(Emitter, Local, JitCodeGenerator)`. A stub: pushes no
+    /// real value, since the opcode it would emit (`Op::getfield`) is not yet ported.
+    pub fn gen_load<N: Next>(
+        &self,
+        em: Emitter<N>,
+        _local_this: &Local<crate::pcode::emu::jit::gen::util::types::TRef>,
+        _gen: &dyn JitCodeGenerator,
+    ) -> Emitter<Ent<N, crate::pcode::emu::jit::gen::util::types::TRef>> {
+        em.recast()
+    }
+}
 
 /// Placeholder for the unported Java type `JitCompiledPassage`, referenced by `InstanceFieldReq`.
 /// Generated stub: only a shape hint. This type is used as a bound on the generic type parameter
 /// in methods of `InstanceFieldReq` without calling its methods in the type itself, so no methods
 /// are exposed. Replace with the real port when available.
 pub trait JitCompiledPassage: Send + Sync {}
+
+/// A generator whose implementation is to emit invocations of a named method in
+/// `JitCompiledPassage`.
+///
+/// Port of `ghidra.pcode.emu.jit.gen.access.MethodAccessGen`.
+pub trait MethodAccessGen: Send + Sync {
+    /// Choose the name of the read method, e.g. `JitCompiledPassage.readInt1(byte[], int)`, to
+    /// use for the given variable size.
+    ///
+    /// Port of `MethodAccessGen.chooseReadName`.
+    fn choose_read_name(&self, size: i32) -> String;
+
+    /// Choose the name of the write method, e.g. `JitCompiledPassage.writeInt1(int, byte[],
+    /// int)`, to use for the given variable size.
+    ///
+    /// Port of `MethodAccessGen.chooseWriteName`.
+    fn choose_write_name(&self, size: i32) -> String;
+}
 
 /// Placeholder for the unported Java type `AccessGen<JT>`, referenced by
 /// [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen), which extends
