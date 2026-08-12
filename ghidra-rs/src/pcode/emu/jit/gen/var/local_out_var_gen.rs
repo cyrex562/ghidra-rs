@@ -108,7 +108,8 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_type::IntJitType;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::gen::util::types::TInt;
-    use crate::pcode::seam_stubs::{MethodVisitor, OpndEm, StubMpOpnd, VarGen};
+    use crate::pcode::emu::jit::gen::var::var_gen::VarGen;
+    use crate::pcode::seam_stubs::{MethodVisitor, OpndEm, StubMpOpnd};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::Varnode;
 

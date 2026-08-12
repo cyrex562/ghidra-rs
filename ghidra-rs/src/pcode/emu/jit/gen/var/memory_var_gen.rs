@@ -13,21 +13,11 @@
 //!   dropped in favor of a non-generic `Local<TRef>` and `&dyn JitCodeGenerator`, matching the
 //!   convention set by
 //!   [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen).
-//! - `VarGen<V>` (`ghidra.pcode.emu.jit.gen.var.VarGen`) is this file's forward reference in a
-//!   dependency cycle among the `var` package's generators; it is not ported yet, so a minimal
-//!   stub -- covering only the six methods this type's defaults implement -- lives in
-//!   [`seam_stubs`](crate::pcode::seam_stubs); see `STUBS.tsv`.
-//! - `genReadToStack`'s Java bound `<T extends BPrim<?>, JT extends SimpleJitType<T, JT>>`
-//!   dispatches to the byte-order-specific `AccessGen` via an unchecked cast that Java's sealed
-//!   `SimpleJitType` hierarchy justifies. Rust cannot recover a generic `JT` from
-//!   [`lookup_simple`]'s erased return the way Java's cast does, so
-//!   [`gen_read_value_direct_to_stack`] instead erases `JT` (via
-//!   [`SimpleJitType::erase_simple`]) to perform the lookup, then [`Emitter::recast`]s the
-//!   concrete accessor's result back to `Ent<N, JT::B>` -- the same "trust the caller's static
-//!   typing" contract `recast` already serves throughout this port (see the `Emitter` module
-//!   docs). Only [`IntJitType`] and [`LongJitType`] currently have real `SimpleAccessGen`
-//!   implementations; the `Float`/`Double` arms are unimplemented until `FloatAccessGen`/
-//!   `DoubleAccessGen` grow one.
+//! - `genValInit` and `genReadToStack` delegate to [`gen_varnode_init`] and
+//!   [`gen_read_val_direct_to_stack`], the statics of
+//!   [`VarGen`](crate::pcode::emu::jit::gen::var::var_gen) this file used to carry privately while
+//!   that type was an unported forward reference. See that module's docs for the erase-then-recast
+//!   deviation `gen_read_val_direct_to_stack` requires.
 //! - `genReadLegToStack`'s real JVM-opcode emission (`Op::ldc__i`, `Op::ishl`, `Op::ishr`) is not
 //!   yet ported, for the reason given in the
 //!   [`IntAccessGen`](crate::pcode::emu::jit::gen::access::int_access_gen) module docs (`Op.java`
@@ -38,22 +28,19 @@
 use crate::pcode::emu::jit::analysis::jit_type::{
     IntJitType, LeggedJitType, MpIntJitType, SimpleJitType,
 };
-use crate::pcode::emu::jit::gen::access::access_gen::{
-    gen_read_to_bool, lookup_mp, lookup_simple, AnySimpleAccessGen,
-};
+use crate::pcode::emu::jit::gen::access::access_gen::{gen_read_to_bool, lookup_mp};
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
-use crate::pcode::emu::jit::gen::access::simple_access_gen::SimpleAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
 use crate::pcode::emu::jit::var::JitVarnodeVar;
 use crate::pcode::emu::jit::analysis::JitDataFlowArithmetic;
-use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, OpndEm, Scope, VarGen};
+use crate::pcode::emu::jit::gen::var::var_gen::{
+    gen_read_val_direct_to_stack, gen_varnode_init, VarGen,
+};
+use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, OpndEm, Scope};
 use crate::program::model::lang::Endian;
 use crate::program::model::pcode::Varnode;
-
-/// Mirrors `GenConsts.BLOCK_SIZE` (`SemisparseByteArray.BLOCK_SIZE`).
-const BLOCK_SIZE: i64 = 0x1000;
 
 /// The number of bytes in a JVM `int`, i.e., Java's `Integer.BYTES`.
 const INT_BYTES: i32 = 4;
@@ -100,7 +87,7 @@ pub trait MemoryVarGen<V: JitVarnodeVar>: VarGen<V> {
     {
         let _ = ext;
         let vn = self.get_varnode(gen, v);
-        gen_read_value_direct_to_stack(em, local_this, gen, type_, &vn)
+        gen_read_val_direct_to_stack(em, local_this, gen, type_, &vn)
     }
 
     /// Port of `MemoryVarGen.genReadToOpnd`.
@@ -146,7 +133,7 @@ pub trait MemoryVarGen<V: JitVarnodeVar>: VarGen<V> {
                         ),
                     };
                     let em =
-                        gen_read_value_direct_to_stack(em, local_this, gen, IntJitType::I1, &msb_vn);
+                        gen_read_val_direct_to_stack(em, local_this, gen, IntJitType::I1, &msb_vn);
                     em.recast()
                 }
             };
@@ -154,7 +141,7 @@ pub trait MemoryVarGen<V: JitVarnodeVar>: VarGen<V> {
         let endian = gen.get_analysis_context().get_endian();
         let sub_vn = JitDataFlowArithmetic::sub_piece_vn(endian, &vn, leg * INT_BYTES, INT_BYTES);
         let leg_type = type_.leg_types_le_typed()[leg as usize];
-        gen_read_value_direct_to_stack(em, local_this, gen, leg_type, &sub_vn)
+        gen_read_val_direct_to_stack(em, local_this, gen, leg_type, &sub_vn)
     }
 
     /// Port of `MemoryVarGen.genReadToArray`.
@@ -185,54 +172,6 @@ pub trait MemoryVarGen<V: JitVarnodeVar>: VarGen<V> {
     ) -> Emitter<Ent<N, TInt>> {
         let vn = self.get_varnode(gen, v);
         gen_read_to_bool(em, local_this, gen, &vn)
-    }
-}
-
-/// Emit bytecode necessary to support access to the given varnode.
-///
-/// Port of `VarGen.genVarnodeInit`, a static of the not-yet-ported `VarGen` (see the [module
-/// docs](self) on the cycle this breaks). Requests the field backing each block the varnode
-/// spans, so the fields appear in the classfile in address order.
-fn gen_varnode_init<N: Next>(
-    em: Emitter<N>,
-    gen: &dyn JitCodeGenerator,
-    vn: &Varnode,
-) -> Emitter<N> {
-    let start = vn.get_offset();
-    let end_incl = start + vn.get_size() as i64 - 1;
-    let start_block = start.div_euclid(BLOCK_SIZE) * BLOCK_SIZE;
-    let end_block_incl = end_incl.div_euclid(BLOCK_SIZE) * BLOCK_SIZE;
-    let space = vn.get_address().space();
-    let mut block = start_block;
-    // Use != instead of < to allow wrap-around, as Java does.
-    while block != end_block_incl + BLOCK_SIZE {
-        gen.request_field_for_arr_direct(space, block);
-        block += BLOCK_SIZE;
-    }
-    em
-}
-
-/// Emit bytecode that loads the given varnode with the given p-code type onto the stack.
-///
-/// Port of `VarGen.genReadValDirectToStack`; see the [module docs](self) on the erase-then-recast
-/// deviation this requires.
-fn gen_read_value_direct_to_stack<JT: SimpleJitType, N: Next>(
-    em: Emitter<N>,
-    local_this: &Local<TRef>,
-    gen: &dyn JitCodeGenerator,
-    type_: JT,
-    vn: &Varnode,
-) -> Emitter<Ent<N, JT::B>> {
-    let endian = gen.get_analysis_context().get_endian();
-    match lookup_simple(endian, &type_.erase_simple()) {
-        AnySimpleAccessGen::Int(g) => g.gen_read_to_stack(em, local_this, gen, vn).recast(),
-        AnySimpleAccessGen::Long(g) => g.gen_read_to_stack(em, local_this, gen, vn).recast(),
-        AnySimpleAccessGen::Float(_) => {
-            unimplemented!("FloatAccessGen does not implement SimpleAccessGen yet")
-        }
-        AnySimpleAccessGen::Double(_) => {
-            unimplemented!("DoubleAccessGen does not implement SimpleAccessGen yet")
-        }
     }
 }
 
