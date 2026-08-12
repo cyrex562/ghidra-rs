@@ -2636,6 +2636,54 @@ pub trait JitCodeGenerator: Send + Sync {
     fn get_variable_scope_model(&self) -> Arc<JitVarScopeModel> {
         unimplemented!("JitCodeGenerator::get_variable_scope_model stub")
     }
+
+    /// Emit bytecode to load a p-code value into a fresh multi-precision operand.
+    ///
+    /// Port of `JitCodeGenerator.genReadToOpnd(Emitter, Local, JitVal, MpIntJitType, Ext, Scope)`,
+    /// referenced by
+    /// [`IntBitwiseBinOpGen`](crate::pcode::emu::jit::gen::op::int_bitwise_bin_op_gen::IntBitwiseBinOpGen).
+    /// Java's real body dispatches to the also-unported `ValGen.lookup(v)`. Like
+    /// [`MpIntAccessGen`]'s stub impl of the analogous [`MpAccessGen::gen_read_to_opnd`], this
+    /// preserves only the type-level stack-shape plumbing -- the incoming stack is untouched --
+    /// and hands back a stand-in [`StubMpOpnd`]. Defaulted (rather than required) so the existing
+    /// marker implementors of this trait, which predate this method, keep compiling.
+    fn gen_read_to_opnd(
+        &self,
+        em: Emitter<Bot>,
+        local_this: &Local<TRef>,
+        v: &dyn JitVal,
+        type_: MpIntJitType,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> OpndEm<MpIntJitType, Bot> {
+        let _ = (local_this, v, type_, ext, scope);
+        OpndEm::new(Box::new(StubMpOpnd), em)
+    }
+
+    /// Emit bytecode to store a multi-precision operand's legs into a p-code variable.
+    ///
+    /// Port of `JitCodeGenerator.genWriteFromOpnd(Emitter, Local, JitVar, Opnd, Ext, Scope)`,
+    /// referenced by
+    /// [`IntBitwiseBinOpGen`](crate::pcode::emu::jit::gen::op::int_bitwise_bin_op_gen::IntBitwiseBinOpGen).
+    /// Java's `v` parameter is `JitVar`; this narrows it to `&dyn JitOutVar` -- the only concrete
+    /// source this trait's callers have (`JitDefOp::out()`), since this crate's [`JitOutVar`] stub
+    /// does not (yet) extend the real [`JitVar`](crate::pcode::emu::jit::var::JitVar) port. Java's
+    /// real body dispatches to the also-unported `VarGen.lookup(v)`; per the same convention as
+    /// [`gen_read_to_opnd`](Self::gen_read_to_opnd), this only preserves the stack shape -- the
+    /// incoming stack passes through unchanged. Defaulted (rather than required) so the existing
+    /// marker implementors of this trait, which predate this method, keep compiling.
+    fn gen_write_from_opnd(
+        &self,
+        em: Emitter<Bot>,
+        local_this: &Local<TRef>,
+        v: &dyn JitOutVar,
+        opnd: &dyn Opnd<MpIntJitType>,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> Emitter<Bot> {
+        let _ = (local_this, v, opnd, ext, scope);
+        em
+    }
 }
 
 /// Placeholder for the unported Java type `JitAllocationModel`
