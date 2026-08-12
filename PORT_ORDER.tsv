@@ -55,7 +55,7 @@ DONE	trait	19	73	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 DONE	trait	18	15	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolAndOp.java
 DONE	trait	17	10	74	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitTypeModel.java
 DONE	trait	16	42	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitTypeBehavior.java
-TODO	trait	15	20	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBinOp.java
+DONE	trait	15	20	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBinOp.java
 TODO	trait	18	8	20	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/JitPassageDecoder.java
 TODO	trait	17	2	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecodedStride.java
 TODO	trait	16	4	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOneStride.java
