@@ -11011,7 +11011,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/In
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntCountUnOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntDivOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntEqualOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntExtUnOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntExtUnOpGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntLeftOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntLessEqualOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntLessOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
