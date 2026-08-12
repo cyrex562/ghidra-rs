@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use crate::pcode::seam_stubs::{JitConstVal, JitOp, JitOutVar, JitTypeBehavior};
+use crate::pcode::seam_stubs::{JitConstVal, JitMissingVar, JitOp, JitOutVar, JitTypeBehavior};
 
 /// The use of a value node by an operator node.
 ///
@@ -99,6 +99,15 @@ pub trait JitVal: Send + Sync {
 
     /// This value as a [`JitOutVar`], if it is one. See [`as_const_val`](Self::as_const_val).
     fn as_out_var(&self) -> Option<&dyn JitOutVar> {
+        None
+    }
+
+    /// This value as a [`JitMissingVar`], if it is one.
+    ///
+    /// Grown (see `STUBS.tsv`) to stand in for Java's `instanceof JitMissingVar` check in
+    /// [`JitDataFlowBlockAnalyzer`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer)'s
+    /// `fillPhiFromBlock` and `MiniDFState.generatePhis`. See [`as_const_val`](Self::as_const_val).
+    fn as_missing_var(&self) -> Option<&JitMissingVar> {
         None
     }
 

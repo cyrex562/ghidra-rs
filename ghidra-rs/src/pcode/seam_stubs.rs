@@ -4,17 +4,21 @@
 //! replaced (or grown into a supertrait/struct of) the real port once that Java class is ported.
 //! See `STUBS.tsv` for provenance.
 
+use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
+use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
+use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
 use crate::pcode::emu::jit::analysis::jit_type::{AnyJitType, IntJitType, LongJitType, MpIntJitType};
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
-use crate::pcode::emu::jit::var::{JitVal, JitVar};
+use crate::pcode::emu::jit::op::JitPhiOp;
+use crate::pcode::emu::jit::var::{JitVal, JitVar, JitVarnodeVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -2157,20 +2161,50 @@ impl JitVal for JitFailVal {
 }
 
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.var.JitMissingVar`, referenced
-/// by [`JitOpVisitor::visit_missing_var`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_missing_var).
-/// No fields: nothing in this crate yet inspects a missing var's contents (Java's
-/// `generatePhi(JitDataFlowModel, JitBlock)` needs the also-unported `JitDataFlowModel`).
-/// Replace with the real port when `JitMissingVar.java` is ported.
-pub struct JitMissingVar;
+/// by [`JitOpVisitor::visit_missing_var`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_missing_var)
+/// and by [`JitDataFlowBlockAnalyzer`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer),
+/// which downcasts a definition to this type (via [`JitVal::as_missing_var`]) and calls
+/// [`Self::generate_phi`] on it. Java's class extends `AbstractJitVarnodeVar` with a fixed `id` of
+/// `-1` -- mirrored here exactly as [`JitInputVar`] already does.
+///
+/// Grown (see `STUBS.tsv`) with the `varnode` field, [`JitVar`](crate::pcode::emu::jit::var::JitVar)/
+/// [`JitVarnodeVar`](crate::pcode::emu::jit::var::JitVarnodeVar) impls, and
+/// [`Self::generate_phi`] for `JitDataFlowBlockAnalyzer`.
+pub struct JitMissingVar {
+    varnode: Varnode,
+}
+
+impl JitMissingVar {
+    /// Port of `new JitMissingVar(Varnode)`.
+    pub fn new(varnode: Varnode) -> Self {
+        Self { varnode }
+    }
+
+    /// Create the phi node for this missing variable.
+    ///
+    /// Port of `JitMissingVar.generatePhi(JitDataFlowModel, JitBlock)`.
+    pub fn generate_phi(&self, dfm: &Arc<dyn JitDataFlowModel>, block: JitBlock) -> Arc<JitPhiOp> {
+        let out = dfm.generate_out_var(&self.varnode);
+        let phi = Arc::new(JitPhiOp::new(block, out));
+        dfm.notify_op(Arc::clone(&phi) as Arc<dyn JitOp>);
+        phi
+    }
+}
 
 impl JitVal for JitMissingVar {
     fn size(&self) -> i32 {
-        0
+        self.varnode.get_size()
     }
 
     fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
 
     fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    /// Grown (see `STUBS.tsv`) to stand in for Java's `instanceof JitMissingVar` check in
+    /// `JitDataFlowBlockAnalyzer.fillPhiFromBlock` and `MiniDFState.generatePhis`.
+    fn as_missing_var(&self) -> Option<&JitMissingVar> {
+        Some(self)
+    }
 
     fn accept_val(
         &self,
@@ -2184,12 +2218,15 @@ impl JitVal for JitMissingVar {
 }
 
 impl crate::pcode::emu::jit::var::JitVar for JitMissingVar {
+    /// Port of `AbstractJitVarnodeVar`'s fixed `id` of `-1` passed by `JitMissingVar`'s
+    /// constructor.
     fn id(&self) -> i32 {
-        unimplemented!("JitMissingVar not yet ported")
+        -1
     }
 
+    /// Port of `AbstractJitVarnodeVar.space()`.
     fn space(&self) -> Arc<AddressSpace> {
-        unimplemented!("JitMissingVar not yet ported")
+        Arc::clone(self.varnode.get_address().space())
     }
 
     fn accept_var(
@@ -2197,6 +2234,13 @@ impl crate::pcode::emu::jit::var::JitVar for JitMissingVar {
         visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
     ) {
         visitor.visit_missing_var(self);
+    }
+}
+
+impl crate::pcode::emu::jit::var::JitVarnodeVar for JitMissingVar {
+    /// Port of `AbstractJitVarnodeVar.varnode()`.
+    fn varnode(&self) -> Varnode {
+        self.varnode.clone()
     }
 }
 
@@ -2525,22 +2569,42 @@ pub trait JitAllocationModel: Send + Sync {
 /// Placeholder for the unported Java type `JitAnalysisContext`
 /// (`ghidra.pcode.emu.jit.analysis.JitAnalysisContext`), referenced by
 /// [`JitCodeGenerator::get_analysis_context`]. Java's class also carries the data-flow, type, and
-/// scope models built during passage analysis; only the one member downstream code currently
-/// needs -- the target's endianness -- is modeled here.
-#[derive(Debug, Clone, Copy)]
+/// scope models built during passage analysis; only the members downstream code currently needs
+/// are modeled here.
+///
+/// Grown (see `STUBS.tsv`) with `entry_blocks` for
+/// [`JitDataFlowBlockAnalyzer`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer),
+/// which computes `isEntry` from `context.getOpEntry(block.first()) != null`. Java's `getOpEntry`
+/// takes a `PcodeOp` looked up via the also-identity-only [`JitBlock`] (see that type's doc for
+/// why it carries no op list), so this collapses the `block.first()` + `getOpEntry()` chain into
+/// one query -- "is `block` a passage entry" -- directly against a set of known entry blocks.
+/// No longer `Copy` (a `HashSet` isn't), but every existing call site already constructs a fresh
+/// context rather than copying one.
+#[derive(Debug, Clone)]
 pub struct JitAnalysisContext {
     endian: Endian,
+    entry_blocks: HashSet<JitBlock>,
 }
 
 impl JitAnalysisContext {
-    /// Construct a context for the given endianness.
+    /// Construct a context for the given endianness, with no known entry blocks.
     pub fn new(endian: Endian) -> Self {
-        Self { endian }
+        Self { endian, entry_blocks: HashSet::new() }
+    }
+
+    /// Construct a context for the given endianness and set of passage-entry blocks.
+    pub fn with_entry_blocks(endian: Endian, entry_blocks: HashSet<JitBlock>) -> Self {
+        Self { endian, entry_blocks }
     }
 
     /// Port of `JitAnalysisContext.getEndian()`.
     pub fn get_endian(&self) -> Endian {
         self.endian
+    }
+
+    /// Stand-in for `getOpEntry(block.first()) != null`. See the type-level doc.
+    pub fn is_block_entry(&self, block: JitBlock) -> bool {
+        self.entry_blocks.contains(&block)
     }
 }
 
@@ -2577,6 +2641,215 @@ pub trait JitDataFlowModel: Send + Sync {
         out.set_definition_arc(Some(Arc::clone(&op)));
         self.notify_op(op);
         out
+    }
+
+    /// Port of `JitDataFlowModel.getArithmetic()`.
+    ///
+    /// Grown (see `STUBS.tsv`) for
+    /// [`JitDataFlowBlockAnalyzer`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer),
+    /// which stores the model's arithmetic in its constructor, same as Java. Defaulted so
+    /// existing implementors (which predate this port) keep compiling.
+    fn get_arithmetic(&self) -> JitDataFlowArithmetic {
+        unimplemented!("JitDataFlowModel::get_arithmetic stub")
+    }
+
+    /// Port of `JitDataFlowModel.getLibrary()`. See [`Self::get_arithmetic`].
+    fn get_library(&self) -> JitDataFlowUseropLibrary {
+        unimplemented!("JitDataFlowModel::get_library stub")
+    }
+
+    /// Port of `JitDataFlowModel.getOrCreateAnalyzer(JitBlock)`. See [`Self::get_arithmetic`].
+    fn get_or_create_analyzer(&self, block: JitBlock) -> Arc<JitDataFlowBlockAnalyzer> {
+        let _ = block;
+        unimplemented!("JitDataFlowModel::get_or_create_analyzer stub")
+    }
+
+    /// Stand-in for `block.flowsTo()`, a method Java puts on the also-unported
+    /// `JitControlFlowModel.JitBlock` -- which this crate's [`JitBlock`] cannot carry, being
+    /// deliberately identity-only (see that type's doc). Relocated here since `JitDataFlowModel`
+    /// is the nearest already-stubbed type with a plausible view of the control-flow graph (real
+    /// Java's `JitDataFlowModel` holds the `JitControlFlowModel` that backs this data). Defaults
+    /// to no known inward flows, the conservative/honest answer until
+    /// `JitControlFlowModel.java` is ported.
+    fn flows_to(&self, block: JitBlock) -> Vec<BlockFlow> {
+        let _ = block;
+        Vec::new()
+    }
+
+    /// Port of enqueuing into `JitDataFlowModel.phiQueue` (`dfm.phiQueue.add(phi)`). See
+    /// [`Self::get_arithmetic`].
+    fn phi_queue_add(&self, phi: Arc<JitPhiOp>) {
+        let _ = phi;
+        unimplemented!("JitDataFlowModel::phi_queue_add stub")
+    }
+
+    /// Port of `JitDataFlowModel.generateDirectMemoryVar(Varnode)`. See [`Self::get_arithmetic`].
+    fn generate_direct_memory_var(&self, vn: &Varnode) -> Arc<dyn JitVal> {
+        let _ = vn;
+        unimplemented!("JitDataFlowModel::generate_direct_memory_var stub")
+    }
+}
+
+/// Placeholder for the unported Java type
+/// `ghidra.pcode.emu.jit.analysis.JitDataFlowUseropLibrary`, referenced by
+/// [`JitDataFlowModel::get_library`] and passed opaquely to [`JitDataFlowExecutor::execute`].
+/// Java's class wraps every userop, routing `CALLOTHER` handling into the use-def graph; nothing
+/// in this crate yet calls any of its members, so this stub carries none. Replace with the real
+/// port when `JitDataFlowUseropLibrary.java` is ported.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct JitDataFlowUseropLibrary;
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitDataFlowExecutor`,
+/// referenced by
+/// [`JitDataFlowBlockAnalyzer::do_intrablock`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer::do_intrablock).
+/// Java's class extends `PcodeExecutor<JitVal>`, overriding branch/call handling to keep
+/// control-flow ops out of the use-def graph. Actually interpreting a block's p-code is far
+/// beyond what a stub can model (it is the entire abstract interpreter), so
+/// [`Self::execute`] panics; only the constructor shape is modeled, to keep
+/// `do_intrablock`'s call faithful to Java's `new JitDataFlowExecutor(context, dfm,
+/// state).execute(block, library)`. Replace with the real port when
+/// `JitDataFlowExecutor.java` is ported.
+pub struct JitDataFlowExecutor<'a> {
+    context: &'a JitAnalysisContext,
+    dfm: Arc<dyn JitDataFlowModel>,
+    state: &'a JitDataFlowState,
+}
+
+impl<'a> JitDataFlowExecutor<'a> {
+    /// Port of `new JitDataFlowExecutor(JitAnalysisContext, JitDataFlowModel, JitDataFlowState)`.
+    pub fn new(
+        context: &'a JitAnalysisContext,
+        dfm: Arc<dyn JitDataFlowModel>,
+        state: &'a JitDataFlowState,
+    ) -> Self {
+        Self { context, dfm, state }
+    }
+
+    /// Port of the inherited `PcodeExecutor.execute(PcodeProgram, PcodeUseropLibrary)`, as called
+    /// on a block (`JitBlock` extends `PcodeProgram` in Java).
+    pub fn execute(&self, block: JitBlock, library: &JitDataFlowUseropLibrary) {
+        let _ = (self.context, &self.dfm, self.state, block, library);
+        unimplemented!(
+            "JitDataFlowExecutor::execute stub: full p-code interpretation requires \
+             JitDataFlowExecutor.java"
+        )
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitDataFlowState`,
+/// referenced by
+/// [`JitDataFlowBlockAnalyzer`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer),
+/// which owns one per block. Java's class tracks, per address space, an interval map from byte
+/// offset to defining [`JitVal`], resolving overlapping/adjacent pieces via
+/// [`JitDataFlowArithmetic`]'s truncation helpers, and generating [`JitMissingVar`]s for gaps
+/// (`MiniDFState.doGetDefinitions`).
+///
+/// This stub models only the exact-match case: [`Self::get_definitions`] returns the single
+/// definition recorded for the exact varnode requested, or a single whole-varnode
+/// [`JitMissingVar`] if none was recorded -- never the multi-piece overlapping case, which needs
+/// `MiniDFState`'s real interval algorithm. [`Self::get_var`] and [`Self::generate_phis`] mirror
+/// `JitDataFlowState.getVar`/`MiniDFState.generatePhis` otherwise faithfully (constant-space and
+/// memory-space branches, missing-var-to-phi substitution, catenate fallback). Replace with the
+/// real port when `JitDataFlowState.java` is ported.
+pub struct JitDataFlowState {
+    dfm: Arc<dyn JitDataFlowModel>,
+    block: JitBlock,
+    definitions: Mutex<Vec<(Varnode, Arc<dyn JitVal>)>>,
+    varnodes_read: Mutex<Vec<Varnode>>,
+    varnodes_written: Mutex<Vec<Varnode>>,
+}
+
+impl JitDataFlowState {
+    /// Port of `new JitDataFlowState(JitAnalysisContext, JitDataFlowModel, JitBlock)`.
+    pub fn new(_context: &JitAnalysisContext, dfm: Arc<dyn JitDataFlowModel>, block: JitBlock) -> Self {
+        Self {
+            dfm,
+            block,
+            definitions: Mutex::new(Vec::new()),
+            varnodes_read: Mutex::new(Vec::new()),
+            varnodes_written: Mutex::new(Vec::new()),
+        }
+    }
+
+    /// Port of `JitDataFlowState.getDefinitions(Varnode)`. See the type-level doc for how this
+    /// stub simplifies `MiniDFState.doGetDefinitions`.
+    pub fn get_definitions(&self, varnode: &Varnode) -> Vec<Arc<dyn JitVal>> {
+        let defs = self.definitions.lock().unwrap();
+        if let Some((_, v)) = defs.iter().rev().find(|(vn, _)| vn == varnode) {
+            return vec![Arc::clone(v)];
+        }
+        vec![Arc::new(JitMissingVar::new(varnode.clone()))]
+    }
+
+    /// Port of `MiniDFState.generatePhis(List<JitVal>, Collection<JitPhiOp>)`: replace each
+    /// missing variable in `defs` with the output of a freshly generated phi node, enqueueing
+    /// that phi if `enqueue` is given.
+    pub fn generate_phis(
+        &self,
+        defs: Vec<Arc<dyn JitVal>>,
+        enqueue: Option<&dyn Fn(Arc<JitPhiOp>)>,
+    ) -> Vec<Arc<dyn JitVal>> {
+        defs.into_iter()
+            .map(|v| {
+                if let Some(missing) = v.as_missing_var() {
+                    let phi = missing.generate_phi(&self.dfm, self.block);
+                    if let Some(enqueue) = enqueue {
+                        enqueue(Arc::clone(&phi));
+                    }
+                    let varnode = missing.varnode();
+                    let out: Arc<dyn JitVal> = phi.out();
+                    self.set_var(&varnode, Arc::clone(&out));
+                    out
+                }
+                else {
+                    v
+                }
+            })
+            .collect()
+    }
+
+    /// Port of `PcodeExecutorStatePiece.setVar(Varnode, JitVal)` (the varnode-level convenience
+    /// over `JitDataFlowState.setVar(AddressSpace, JitVal, int, boolean, JitVal)`, restricted --
+    /// as every call site here is -- to a concrete varnode rather than a computed address).
+    pub fn set_var(&self, varnode: &Varnode, val: Arc<dyn JitVal>) {
+        self.varnodes_written.lock().unwrap().push(varnode.clone());
+        let mut defs = self.definitions.lock().unwrap();
+        if let Some(entry) = defs.iter_mut().find(|(vn, _)| vn == varnode) {
+            entry.1 = val;
+        }
+        else {
+            defs.push((varnode.clone(), val));
+        }
+    }
+
+    /// Port of `JitDataFlowState.getVar(AddressSpace, JitVal, int, boolean, Reason)`, as called
+    /// via the varnode-level convenience `getVar(Varnode, Reason)` -- see [`Self::set_var`] for
+    /// why the space/offset/size form is skipped.
+    pub fn get_var(&self, varnode: &Varnode, reason: Reason) -> Arc<dyn JitVal> {
+        let _ = reason;
+        let space = varnode.get_address().space();
+        if space.space_type() == AddressSpaceType::Constant {
+            return Arc::new(JitConstVal::new(varnode.get_size(), varnode.get_offset() as i128));
+        }
+        if space.is_memory_space() {
+            return self.dfm.generate_direct_memory_var(varnode);
+        }
+        self.varnodes_read.lock().unwrap().push(varnode.clone());
+        let defs = self.generate_phis(self.get_definitions(varnode), None);
+        if defs.len() == 1 {
+            return defs.into_iter().next().unwrap();
+        }
+        self.dfm.get_arithmetic().catenate(varnode, defs)
+    }
+
+    /// Port of `JitDataFlowState.getVarnodesRead()`.
+    pub fn get_varnodes_read(&self) -> Vec<Varnode> {
+        self.varnodes_read.lock().unwrap().clone()
+    }
+
+    /// Port of `JitDataFlowState.getVarnodesWritten()`.
+    pub fn get_varnodes_written(&self) -> Vec<Varnode> {
+        self.varnodes_written.lock().unwrap().clone()
     }
 }
 
