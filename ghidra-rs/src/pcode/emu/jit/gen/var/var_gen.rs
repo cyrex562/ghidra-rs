@@ -48,6 +48,7 @@
 //!   overloading, so the latter is [`gen_write_val_direct_from_stack_of_var`].
 
 use crate::pcode::emu::jit::analysis::jit_type::{MpIntJitType, SimpleJitType};
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel;
 use crate::pcode::emu::jit::gen::access::access_gen::{lookup_simple, AnySimpleAccessGen};
 use crate::pcode::emu::jit::gen::access::simple_access_gen::SimpleAccessGen;
@@ -440,7 +441,7 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::op::JitPhiOp;
     use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
-    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitControlFlowModel, JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, JitOutVar, MethodVisitor, };
+    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitControlFlowModel, JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, MethodVisitor, };
 use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;

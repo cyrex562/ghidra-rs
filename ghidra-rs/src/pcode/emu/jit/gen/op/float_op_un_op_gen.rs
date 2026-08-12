@@ -30,6 +30,7 @@
 //!   [`IntExtUnOpGen`](super::int_ext_un_op_gen::IntExtUnOpGen) already rely on.
 
 use crate::pcode::emu::jit::gen::op::un_op_gen::UnOpGen;
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::types::{TDouble, TFloat};
 use crate::pcode::emu::jit::op::jit_float_un_op::JitFloatUnOp;
@@ -83,7 +84,7 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::types::TRef;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{Ext, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen};
+    use crate::pcode::seam_stubs::{Ext, JitTypeBehavior, MethodVisitor, OpGen};
     use std::sync::Arc;
 
     struct TestFloatUnOp;

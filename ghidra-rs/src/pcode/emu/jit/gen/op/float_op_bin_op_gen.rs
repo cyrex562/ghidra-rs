@@ -30,6 +30,7 @@
 //!   [`FloatOpUnOpGen`](super::float_op_un_op_gen::FloatOpUnOpGen) already relies on.
 
 use crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen;
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::types::{TDouble, TFloat};
 use crate::pcode::emu::jit::op::jit_float_bin_op::JitFloatBinOp;
@@ -89,7 +90,7 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::types::TRef;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{Ext, JitBinOp, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen};
+    use crate::pcode::seam_stubs::{Ext, JitBinOp, JitTypeBehavior, MethodVisitor, OpGen};
     use std::sync::Arc;
 
     struct TestFloatBinOp;

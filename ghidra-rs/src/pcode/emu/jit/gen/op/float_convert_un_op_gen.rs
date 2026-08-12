@@ -90,8 +90,8 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_type::{DoubleJitType, FloatJitType};
     use crate::pcode::emu::jit::gen::util::types::{TDouble, TFloat};
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
-    use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{Ext, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen};
+    use crate::pcode::emu::jit::var::{JitVal, JitOutVar};
+    use crate::pcode::seam_stubs::{Ext, JitTypeBehavior, MethodVisitor, OpGen};
     use std::sync::Arc;
 
     struct MockVal;
@@ -114,13 +114,29 @@ mod tests {
         fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
+    impl crate::pcode::emu::jit::var::JitVar for MockOutVar {
+        fn id(&self) -> i32 {
+            0
+        }
+        fn space(&self) -> Arc<crate::program::model::address::AddressSpace> {
+            Arc::new(crate::program::model::address::AddressSpace::new("test", 64, 1, crate::program::model::address::AddressSpaceType::Ram, 0))
+        }
+    }
+
+    impl crate::pcode::emu::jit::var::JitVarnodeVar for MockOutVar {
+        fn varnode(&self) -> crate::program::model::pcode::Varnode {
+            use crate::program::model::pcode::Varnode;
+            use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
+            let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
+            let addr = Address::new(Arc::new(space), 0);
+            Varnode::new(addr, 8)
+        }
+    }
+
     impl JitOutVar for MockOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
             None
-        }
-        fn varnode(&self) -> crate::program::model::pcode::Varnode {
-            unimplemented!("not exercised: gen_write_from_stack's stub body ignores v")
         }
     }
 

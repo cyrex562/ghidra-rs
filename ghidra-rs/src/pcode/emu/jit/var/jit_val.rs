@@ -6,8 +6,9 @@
 
 use std::sync::Arc;
 
-use crate::pcode::seam_stubs::{JitConstVal, JitMissingVar, JitOutVar, JitTypeBehavior};
+use crate::pcode::seam_stubs::{JitConstVal, JitMissingVar, JitTypeBehavior};
 use crate::pcode::emu::jit::op::JitOp;
+use super::JitOutVar;
 
 /// The use of a value node by an operator node.
 ///

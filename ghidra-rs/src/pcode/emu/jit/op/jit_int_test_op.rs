@@ -3,6 +3,7 @@
 //! Port of `ghidra.pcode.emu.jit.op.JitIntTestOp`.
 
 use crate::pcode::emu::jit::op::JitIntBinOp;
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::seam_stubs::JitTypeBehavior;
 
 /// A binary p-code operator use-def node with integer inputs and a boolean output.
@@ -24,7 +25,7 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitBinOp, JitOutVar};
+    use crate::pcode::seam_stubs::{JitBinOp};
 
     struct TestIntTestOp;
 

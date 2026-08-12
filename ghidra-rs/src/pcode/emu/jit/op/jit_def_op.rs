@@ -5,7 +5,8 @@
 use std::sync::Arc;
 
 use crate::pcode::emu::jit::op::JitOp;
-use crate::pcode::seam_stubs::{JitCatenateOp, JitOutVar, JitSynthSubPieceOp, JitTypeBehavior};
+use crate::pcode::emu::jit::var::JitOutVar;
+use crate::pcode::seam_stubs::{JitCatenateOp, JitSynthSubPieceOp, JitTypeBehavior};
 
 /// A p-code operator use-def node with an output.
 ///
@@ -91,6 +92,25 @@ mod tests {
         fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
+
+    impl crate::pcode::emu::jit::var::JitVar for MockOutVar {
+        fn id(&self) -> i32 {
+            0
+        }
+        fn space(&self) -> Arc<AddressSpace> {
+            Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0))
+        }
+    }
+
+    impl crate::pcode::emu::jit::var::JitVarnodeVar for MockOutVar {
+        fn varnode(&self) -> crate::program::model::pcode::Varnode {
+            use crate::program::model::pcode::Varnode;
+            let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
+            let addr = Address::new(Arc::new(space), 0);
+            Varnode::new(addr, 8)
+        }
+    }
+
     impl JitOutVar for MockOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {
             // Can't store a &dyn as Arc, so this is a no-op in the test
@@ -102,10 +122,6 @@ mod tests {
 
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
             self.definition.lock().unwrap().clone()
-        }
-
-        fn varnode(&self) -> Varnode {
-            self.varnode.clone()
         }
     }
 

@@ -63,8 +63,8 @@ use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{BPrim, TRef};
 use crate::pcode::emu::jit::op::JitIntBinOp;
-use crate::pcode::emu::jit::var::JitVal;
-use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, JitOutVar, Scope};
+use crate::pcode::emu::jit::var::{JitVal, JitOutVar};
+use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, Scope};
 
 /// An extension for integer shift operators.
 ///
@@ -324,6 +324,7 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::gen::util::types::TInt;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
+    use crate::pcode::emu::jit::var::JitOutVar;
     use crate::pcode::seam_stubs::{JitTypeBehavior, MethodVisitor, OpGen};
     use std::sync::Arc;
 
@@ -347,13 +348,29 @@ mod tests {
         fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
+
+    impl crate::pcode::emu::jit::var::JitVar for MockOutVar {
+        fn id(&self) -> i32 {
+            0
+        }
+        fn space(&self) -> Arc<AddressSpace> {
+            Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0))
+        }
+    }
+
+    impl crate::pcode::emu::jit::var::JitVarnodeVar for MockOutVar {
+        fn varnode(&self) -> crate::program::model::pcode::Varnode {
+            use crate::program::model::pcode::Varnode;
+            let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
+            let addr = Address::new(Arc::new(space), 0);
+            Varnode::new(addr, 8)
+        }
+    }
+
     impl JitOutVar for MockOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
             None
-        }
-        fn varnode(&self) -> crate::program::model::pcode::Varnode {
-            unimplemented!("not exercised: gen_write_from_stack's stub body ignores v")
         }
     }
 
@@ -368,7 +385,7 @@ mod tests {
     }
 
     impl JitDefOp for TestIntBinOp {
-        fn out(&self) -> Arc<dyn crate::pcode::seam_stubs::JitOutVar> {
+        fn out(&self) -> Arc<dyn JitOutVar> {
             Arc::new(MockOutVar)
         }
     }

@@ -19,6 +19,7 @@
 //!   [`seam_stubs`](crate::pcode::seam_stubs); see `STUBS.tsv`.
 
 use crate::pcode::emu::jit::analysis::jit_type::MpIntJitType;
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::gen::util::emitter::Bot;
 use crate::pcode::emu::jit::gen::util::emitter::Emitter;
 use crate::pcode::emu::jit::gen::util::local::Local;
@@ -124,7 +125,7 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior, MethodVisitor, Scope};
+    use crate::pcode::seam_stubs::{JitTypeBehavior, MethodVisitor, Scope};
     use std::sync::Arc;
 
     struct TestBinOp;
