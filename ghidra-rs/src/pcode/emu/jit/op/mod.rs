@@ -8,6 +8,7 @@ pub mod jit_int_test_op;
 pub mod jit_int_un_op;
 pub mod jit_phi_op;
 pub mod jit_synthetic_op;
+pub mod jit_un_op;
 
 pub use jit_bool_bin_op::JitBoolBinOp;
 pub use jit_call_other_op_if::JitCallOtherOpIf;
@@ -19,3 +20,4 @@ pub use jit_int_test_op::JitIntTestOp;
 pub use jit_int_un_op::JitIntUnOp;
 pub use jit_phi_op::JitPhiOp;
 pub use jit_synthetic_op::JitSyntheticOp;
+pub use jit_un_op::JitUnOp;

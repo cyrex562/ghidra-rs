@@ -2,7 +2,7 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.analysis.JitOpVisitor`.
 
-use crate::pcode::emu::jit::op::JitPhiOp;
+use crate::pcode::emu::jit::op::{JitPhiOp, JitUnOp};
 use crate::pcode::emu::jit::var::{JitDirectMemoryVar, JitVal, JitVar};
 use crate::pcode::seam_stubs::{
     JitBranchIndOp, JitBranchOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherMissingOp,
@@ -10,7 +10,7 @@ use crate::pcode::seam_stubs::{
     JitLoadOp, JitMissingVar, JitNopOp, JitOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp,
     JitUnimplementedOp,
 };
-use crate::pcode::seam_stubs::{JitBinOp, JitUnOp};
+use crate::pcode::seam_stubs::JitBinOp;
 
 /// A visitor for traversing the use-def graph.
 ///
