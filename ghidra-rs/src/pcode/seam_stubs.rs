@@ -1478,6 +1478,63 @@ impl crate::pcode::emu::jit::var::JitVarnodeVar for JitLocalOutVar {
     }
 }
 
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.var.JitMemoryOutVar`, referenced
+/// by [`MemoryOutVarGen`](crate::pcode::emu::jit::gen::var::memory_out_var_gen::MemoryOutVarGen).
+/// Java's class extends `AbstractJitOutVar extends AbstractJitVarnodeVar` and implements the
+/// marker `JitMemoryVar`, exactly as [`JitDirectMemoryVar`](
+/// crate::pcode::emu::jit::var::jit_direct_memory_var::JitDirectMemoryVar) does -- but unlike that
+/// type (and like [`JitLocalOutVar`]), this one is not ported as a top-level module yet, so it
+/// stays here as a stub, grown (see `STUBS.tsv`) with the same `JitVal`/`JitVar`/`JitVarnodeVar`
+/// impls `JitLocalOutVar` has, plus `JitMemoryVar`. `AbstractJitOutVar`'s `definition` bookkeeping
+/// is not modeled, since `MemoryOutVarGen` never touches it.
+pub struct JitMemoryOutVar {
+    id: i32,
+    varnode: Varnode,
+}
+
+impl JitMemoryOutVar {
+    /// Port of `new JitMemoryOutVar(int, Varnode)`.
+    pub fn new(id: i32, varnode: Varnode) -> Self {
+        Self { id, varnode }
+    }
+}
+
+impl JitVal for JitMemoryOutVar {
+    fn size(&self) -> i32 {
+        self.varnode.get_size()
+    }
+
+    /// Port of `JitMemoryOutVar.addUse`, which unconditionally throws: these variables are never
+    /// used by downstream p-code ops in the use-def graph (see the type's Java doc comment).
+    fn add_use(&self, _op: &dyn JitOp, _position: i32) {
+        panic!("AssertionError: JitMemoryOutVar.addUse")
+    }
+
+    fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+}
+
+impl crate::pcode::emu::jit::var::JitVar for JitMemoryOutVar {
+    /// Port of `AbstractJitVarnodeVar`'s caller-supplied `id`, as passed by `JitMemoryOutVar`'s
+    /// constructor.
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    /// Port of `AbstractJitVarnodeVar.space()`.
+    fn space(&self) -> Arc<AddressSpace> {
+        Arc::clone(self.varnode.get_address().space())
+    }
+}
+
+impl crate::pcode::emu::jit::var::JitVarnodeVar for JitMemoryOutVar {
+    /// Port of `AbstractJitVarnodeVar.varnode()`.
+    fn varnode(&self) -> Varnode {
+        self.varnode.clone()
+    }
+}
+
+impl JitMemoryVar for JitMemoryOutVar {}
+
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitStoreOp`, referenced by
 /// [`JitOpVisitor::visit_store_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_store_op).
 ///
