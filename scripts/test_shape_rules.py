@@ -280,6 +280,98 @@ MARKER = """
     """
 
 
+class TestNestedTypesAreNotMembers(unittest.TestCase):
+    """A nested `record` header ends in `)` with no `=`, so it read as a method signature.
+
+    Inside an interface a method without `default` counts as abstract, so `Misc` -- four
+    static utilities and a nested record, zero abstract methods -- was classified
+    R9-open-interface and the porter was told to emit a trait. It parked twice, correctly,
+    and diagnosed the bug itself both times.
+    """
+
+    MISC = """
+        public interface Misc {
+            static <T1> T1 cast1(Emitter<T1> em) { return null; }
+            record TryCatchBlock<T extends Throwable, N extends Next>(Lbl<N> end,
+                    Lbl<N> handler) {
+            }
+            static Void finish(Emitter<Dead> em) { return null; }
+        }
+        """
+
+    def test_a_nested_record_is_not_an_abstract_method(self):
+        res, f = shape(self.MISC, "Misc")
+        self.assertEqual(f["abstract_methods"], 0)
+        self.assertEqual(f["static_methods"], 2)
+
+    def test_the_static_utility_interface_is_a_module_not_a_trait(self):
+        """Java's interface-as-namespace idiom: a trait here would be empty and implemented
+        by nobody. The porter that parked it said the same -- "a plain module of free
+        functions"."""
+        res, _ = shape(self.MISC, "Misc", marker_use=use())
+        self.assertEqual(res["shape"], "module")
+        self.assertEqual(res["rule"], "R8f-statics-module")
+
+    def test_a_nested_class_is_not_a_member_either(self):
+        _res, f = shape(
+            """
+            public interface Holder {
+                class Impl implements Holder { public void go() {} }
+                void go();
+            }
+            """,
+            "Holder",
+        )
+        self.assertEqual(f["abstract_methods"], 1)
+
+    def test_a_parameter_named_record_is_still_a_method(self):
+        """The guard is anchored on purpose: an unanchored `\\brecord\\b` also matches the
+        parameter in `void add(DBRecord record)` and would drop real methods."""
+        _res, f = shape(
+            "public interface Sink { void add(DBRecord record); void clear(); }",
+            "Sink",
+        )
+        self.assertEqual(f["abstract_methods"], 2)
+
+    def test_a_class_of_only_nested_types_is_a_namespace_module(self):
+        """VTMatchApplyChoices is eight nested enums and nothing else. It reached `module`
+        before only because the nested headers were miscounted as static fields; fixing that
+        would have demoted it to an empty struct, which is worse than the accident."""
+        res, f = shape(
+            """
+            public class VTMatchApplyChoices {
+                public static enum ReplaceChoices { REPLACE, EXCLUDE }
+                public static enum CommentChoices { APPEND, OVERWRITE }
+            }
+            """,
+            "VTMatchApplyChoices",
+        )
+        self.assertEqual(f["nested_types"], 2)
+        self.assertEqual(res["shape"], "module")
+        self.assertEqual(res["rule"], "R7b-namespace")
+        self.assertIn("do NOT emit an empty struct", res["why"])
+
+    def test_a_class_with_real_members_is_not_a_namespace(self):
+        res, _ = shape(
+            """
+            public class Holder {
+                private int value;
+                public static enum Kind { A, B }
+                public int get() { return value; }
+            }
+            """,
+            "Holder",
+        )
+        self.assertEqual(res["shape"], "struct")
+
+    def test_a_method_returning_a_record_type_is_still_a_method(self):
+        _res, f = shape(
+            "public interface Reader { DBRecord next(); }",
+            "Reader",
+        )
+        self.assertEqual(f["abstract_methods"], 1)
+
+
 class TestMarkerInterfaces(unittest.TestCase):
     """R8: a method-less interface is only a human question when something branches on it.
 
@@ -357,13 +449,16 @@ class TestMarkerInterfaces(unittest.TestCase):
         self.assertEqual(res["shape"], "trait")
         self.assertIn("free functions", res["why"])
 
-    def test_inert_marker_with_statics_also_says_so(self):
+    def test_an_interface_of_only_statics_is_a_module(self):
+        """Not an inert marker: there is content, it just is not dispatchable. Same idiom R7
+        recognises for classes."""
         res, _ = shape(
             "public interface ByteBufferUtils { static int cmp(int a) { return a; } }",
             "ByteBufferUtils",
             marker_use=use(),
         )
-        self.assertEqual(res["rule"], "R8e-inert-marker")
+        self.assertEqual(res["shape"], "module")
+        self.assertEqual(res["rule"], "R8f-statics-module")
         self.assertIn("free functions", res["why"])
 
     def test_an_interface_with_methods_never_reaches_R8(self):

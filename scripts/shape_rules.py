@@ -238,6 +238,7 @@ def analyse_body(kind: str, body: str, name: str):
     """Count the members that decide a shape."""
     static_fields = instance_fields = 0
     abstract_methods = concrete_methods = static_methods = 0
+    nested_types = 0
     private_ctor = public_ctor = False
     has_instance_singleton = False
 
@@ -261,6 +262,23 @@ def analyse_body(kind: str, body: str, name: str):
                 private_ctor = True
             else:
                 public_ctor = True
+            continue
+        # A nested TYPE, not a member. A `record Foo(int a, int b)` header ends in `)` with
+        # no `=`, so the method-signature test below claimed it, and inside an interface a
+        # method with no `default` counts as abstract: `Misc` reported "1 abstract method"
+        # when it has none (four statics and a nested record), so R9 called it an open
+        # interface and the porter was told to emit a trait. It parked twice, correctly, at
+        # about $3.26 a turn. Nested types are indexed by `nested_declarations`; here they
+        # are simply not members of the enclosing type.
+        #
+        # Anchored deliberately. An unanchored `\brecord\b` also matches the parameter in
+        # `void add(DBRecord record)`, which would drop real methods.
+        if re.match(
+            r"\s*(?:(?:public|protected|private|static|final|abstract|sealed|non-sealed"
+            r"|strictfp|@\w+(?:\([^)]*\))?)\s+)*(?:class|interface|enum|record)\s+\w+",
+            d,
+        ):
+            nested_types += 1
             continue
         # A `=` ahead of any `(` means an initialised field, not a method -- otherwise
         # `static final Registry INSTANCE = new Registry()` reads as a method signature
@@ -293,6 +311,7 @@ def analyse_body(kind: str, body: str, name: str):
         abstract_methods=abstract_methods,
         concrete_methods=concrete_methods,
         static_methods=static_methods,
+        nested_types=nested_types,
         private_ctor=private_ctor,
         public_ctor=public_ctor,
         singleton=private_ctor and has_instance_singleton,
@@ -756,6 +775,29 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None,
             f"{' and '.join(bits)}, no instance state and no instance methods",
         )
 
+    # R7b -- a pure namespace: no members at all, only nested types. VTMatchApplyChoices is
+    # eight nested enums and nothing else; GThemeDefaults is nested static classes. Rust
+    # spells that as a module holding the ported nested types, never as an empty struct.
+    # These two reached `module` before by accident -- the nested headers were miscounted as
+    # static fields -- so fixing that accounting would have demoted them to R14a struct.
+    if (
+        kind in ("class", "interface")
+        and facts.get("nested_types", 0) > 0
+        and facts["instance_fields"] == 0
+        and facts["static_fields"] == 0
+        and facts["concrete_methods"] == 0
+        and facts["abstract_methods"] == 0
+        and facts["static_methods"] == 0
+        and not facts["public_ctor"]
+    ):
+        return r(
+            "R7b-namespace",
+            "module",
+            f"no members at all, only {facts['nested_types']} nested type(s) -- a namespace, "
+            "not a type. Port it as a module holding the nested types; do NOT emit an empty "
+            f"struct named `{name}`",
+        )
+
     if kind == "interface":
         if facts["abstract_methods"] == 0 and facts["concrete_methods"] == 0:
             # R8 -- an interface with no methods is either a constants holder, a type
@@ -806,6 +848,16 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None,
                          f"{use['typepos']} place(s) but never branched on -- an empty "
                          "marker trait carries it: `pub trait X {}` plus `impl X for ..` "
                          "on each implementor." + statics)
+            # Nothing dispatches on it and nothing names it as a type, but it carries static
+            # methods: Java's "interface as a namespace for statics" idiom, the same thing R7
+            # recognises for classes. A trait would be empty and implemented by nobody.
+            if facts["static_methods"] and not consts:
+                return r("R8f-statics-module", "module",
+                         f"interface with {facts['static_methods']} `static` method(s), no "
+                         "instance methods, no constants, and nothing branching on it or "
+                         "naming it as a type -- Java's interface-as-namespace idiom. Port "
+                         "the statics as free functions in a plain module; there is nothing "
+                         "to implement and nothing to dispatch over")
             if consts:
                 return r("R8d-constants-module", "module",
                          f"interface with {facts['static_fields']} constant(s), no methods, "
@@ -819,7 +871,7 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None,
                      "marker interface with no instance methods, no constants, and no use "
                      "as a type or dispatch target anywhere in the tree -- emit "
                      "`pub trait X {}` and implement it on the implementors; it costs "
-                     "nothing and keeps the Java hierarchy legible." + statics)
+                     "nothing and keeps the Java hierarchy legible")
         # R9 -- open interface. The one case a trait is unambiguously right.
         return r(
             "R9-open-interface",
