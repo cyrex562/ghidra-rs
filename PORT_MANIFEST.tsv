@@ -10908,7 +10908,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPassag
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeEmulator.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeThread.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitThreadBytesPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/AlignedMpIntHandler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/AlignedMpIntHandler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/DoubleVarAlloc.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/FloatVarAlloc.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/IntInIntHandler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 

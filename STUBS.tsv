@@ -659,3 +659,7 @@ ts	stub_class	referenced_by
 2026-08-12T08:00:00.000000+00:00	ValGen	SubMemoryVarGen
 2026-08-12T08:00:00.000000+00:00	JitCodeGenerator	SubMemoryVarGen
 2026-08-12T09:00:00.000000+00:00	MpToStackConv	SubVarHandler
+2026-08-12T10:00:00.000000+00:00	MpIntLocalOpnd	AlignedMpIntHandler
+2026-08-12T10:00:00.000000+00:00	IntVarAlloc	AlignedMpIntHandler
+2026-08-12T10:00:00.000000+00:00	IntInIntHandler	AlignedMpIntHandler
+2026-08-12T10:00:00.000000+00:00	ShiftedMpIntHandler	AlignedMpIntHandler
