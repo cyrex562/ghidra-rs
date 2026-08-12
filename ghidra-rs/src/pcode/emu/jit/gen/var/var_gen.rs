@@ -439,9 +439,10 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_type::IntJitType;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::op::JitPhiOp;
+    use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
     use crate::pcode::seam_stubs::{
         FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitControlFlowModel,
-        JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, JitOp, JitOutVar, JvmLocal,
+        JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, JitOp, JitOutVar,
         MethodVisitor,
     };
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
