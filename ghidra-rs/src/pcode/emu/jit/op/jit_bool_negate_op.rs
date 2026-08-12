@@ -145,6 +145,14 @@ mod tests {
 
     struct MockOutVar;
 
+    impl JitVal for MockOutVar {
+        fn size(&self) -> i32 {
+            8
+        }
+        fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+        fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+    }
+
     impl JitOutVar for MockOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {

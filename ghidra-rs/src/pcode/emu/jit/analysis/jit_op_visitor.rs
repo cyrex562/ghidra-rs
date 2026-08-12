@@ -158,6 +158,16 @@ mod tests {
         varnode: Varnode,
     }
 
+    impl JitVal for MockOutVar {
+        fn size(&self) -> i32 {
+            self.varnode.get_size()
+        }
+
+        fn add_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+
+        fn remove_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+    }
+
     impl JitOutVarStub for MockOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
 

@@ -6,7 +6,7 @@
 
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
 use crate::pcode::emu::jit::analysis::jit_type::{AnyJitType, IntJitType, LongJitType, MpIntJitType};
@@ -42,7 +42,7 @@ use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::mem::mem_buffer::MemBuffer;
-use crate::program::model::pcode::{OpCode, Varnode};
+use crate::program::model::pcode::{OpCode, PcodeOp, Varnode};
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use std::collections::HashMap;
 
@@ -1175,10 +1175,31 @@ impl<MR, N> ObjDef<MR, N> {
 /// `Option<Arc<dyn JitDefOp>>` -- `Arc` rather than `Box` because the defining op's identity must
 /// be comparable against a live `&self` elsewhere (see `JitPhiOp::unlink`'s port of
 /// `out().definition() == this`), which a freshly-boxed copy could never satisfy.
-pub trait JitOutVar: Send + Sync {
+///
+/// Grown (see `STUBS.tsv`) with the [`JitVal`] supertrait for
+/// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
+/// which returns generated output variables where a `JitVal` is expected (e.g.
+/// `dfm.notifyOp(..).out()` as the result of an arithmetic op). This matches Java, where
+/// `JitOutVar extends JitVarnodeVar extends JitVar extends JitVal`; only the `JitVal` link is
+/// modeled here, since no call site yet needs an out var's `id()`/`space()`.
+pub trait JitOutVar: JitVal {
     fn set_definition(&self, definition: Option<&dyn JitDefOp>);
     fn definition(&self) -> Option<Arc<dyn JitDefOp>>;
     fn varnode(&self) -> Varnode;
+
+    /// The retaining form of [`Self::set_definition`].
+    ///
+    /// Grown (see `STUBS.tsv`) for
+    /// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
+    /// which builds op nodes whose outputs must later report them back through
+    /// [`Self::definition`]. Java does this wiring in `AbstractJitDefOp.link()`, as
+    /// `out.setDefinition(this)`; `link(&self)` here cannot produce the `Arc<Self>` an out var
+    /// has to keep, so the shared handle is passed in explicitly at the construction site (see
+    /// [`JitDataFlowModel::notify_def_op`]). Defaults to a no-op so existing `impl JitOutVar`
+    /// blocks -- which model no definition storage at all -- keep compiling.
+    fn set_definition_arc(&self, definition: Option<Arc<dyn JitDefOp>>) {
+        let _ = definition;
+    }
 }
 
 /// Placeholder for the unported Java type `JitOp`, referenced by `JitBinOp`.
@@ -1221,6 +1242,22 @@ pub trait JitDefOp: JitOp {
 
     fn type_(&self) -> JitTypeBehavior {
         JitTypeBehavior::Integer
+    }
+
+    /// Stand-in for Java's `definition instanceof JitSynthSubPieceOp subsub` in
+    /// `JitDataFlowArithmetic.trySimplifiedSubPiece`.
+    ///
+    /// Grown (see `STUBS.tsv`): `dyn JitDefOp` carries no downcast facility, so -- as
+    /// [`JitVal::is_input_var`] already does for `instanceof JitInputVar` -- the check is modeled
+    /// as a defaulted query that only the matching type overrides.
+    fn as_synth_sub_piece_op(&self) -> Option<&JitSynthSubPieceOp> {
+        None
+    }
+
+    /// Stand-in for Java's `definition instanceof JitCatenateOp cat` in
+    /// `JitDataFlowArithmetic.trySimplifiedSubPiece`. See [`Self::as_synth_sub_piece_op`].
+    fn as_catenate_op(&self) -> Option<&JitCatenateOp> {
+        None
     }
 }
 
@@ -1346,6 +1383,10 @@ impl JitVal for JitInputVar {
         true
     }
 
+    fn as_varnode_var(&self) -> Option<&dyn crate::pcode::emu::jit::var::JitVarnodeVar> {
+        Some(self)
+    }
+
     /// `JitInputVar` does not implement the real [`JitVar`](crate::pcode::emu::jit::var::JitVar)
     /// trait in this port (see the type-level doc), so unlike the other `JitVar`-flavored
     /// `JitVal`s this routes straight to `visit_input_var` rather than through `visit_var`.
@@ -1380,24 +1421,27 @@ impl crate::pcode::emu::jit::var::JitVarnodeVar for JitInputVar {
 /// [`LocalOutVarGen`](crate::pcode::emu::jit::gen::var::local_out_var_gen::LocalOutVarGen). Java's
 /// class extends `AbstractJitOutVar extends AbstractJitVarnodeVar`, so, like [`JitInputVar`], use
 /// tracking is a no-op here. Unlike `JitInputVar`'s fixed `id` of `-1`, this type's `id` is
-/// caller-supplied, matching `AbstractJitOutVar`'s constructor. `AbstractJitOutVar`'s `definition`
-/// bookkeeping (`JitOutVar.setDefinition`/`definition`) is not modeled: `LocalOutVarGen` only
-/// needs `JitVarnodeVar` to satisfy `LocalVarGen<V: JitVarnodeVar>`'s bound.
+/// caller-supplied, matching `AbstractJitOutVar`'s constructor.
 ///
 /// Grown (see `STUBS.tsv`) with [`JitVar`](crate::pcode::emu::jit::var::JitVar) and
 /// [`JitVarnodeVar`](crate::pcode::emu::jit::var::JitVarnodeVar) impls for
 /// [`LocalOutVarGen`](crate::pcode::emu::jit::gen::var::local_out_var_gen::LocalOutVarGen), whose
 /// Java counterpart binds `LocalVarGen<JitLocalOutVar>` and so requires
-/// `JitLocalOutVar: JitVarnodeVar`.
+/// `JitLocalOutVar: JitVarnodeVar`; and with `AbstractJitOutVar`'s `definition` bookkeeping (a
+/// [`JitOutVar`] impl) for
+/// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
+/// which generates these as the outputs of use-def op nodes and later reads back their defining
+/// op. The field is a [`Mutex`] because Java mutates it through a shared reference.
 pub struct JitLocalOutVar {
     id: i32,
     varnode: Varnode,
+    definition: Mutex<Option<Arc<dyn JitDefOp>>>,
 }
 
 impl JitLocalOutVar {
     /// Port of `new JitLocalOutVar(int, Varnode)`.
     pub fn new(id: i32, varnode: Varnode) -> Self {
-        Self { id, varnode }
+        Self { id, varnode, definition: Mutex::new(None) }
     }
 }
 
@@ -1409,6 +1453,33 @@ impl JitVal for JitLocalOutVar {
     fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
 
     fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn as_varnode_var(&self) -> Option<&dyn crate::pcode::emu::jit::var::JitVarnodeVar> {
+        Some(self)
+    }
+
+    fn as_out_var(&self) -> Option<&dyn JitOutVar> {
+        Some(self)
+    }
+}
+
+impl JitOutVar for JitLocalOutVar {
+    /// A no-op: a borrowed `&dyn JitDefOp` cannot be retained past the call. See
+    /// [`JitOutVar::set_definition_arc`], which this stub implements for real.
+    fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
+
+    fn set_definition_arc(&self, definition: Option<Arc<dyn JitDefOp>>) {
+        *self.definition.lock().unwrap() = definition;
+    }
+
+    /// Port of `AbstractJitOutVar.definition()`.
+    fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
+        self.definition.lock().unwrap().clone()
+    }
+
+    fn varnode(&self) -> Varnode {
+        self.varnode.clone()
+    }
 }
 
 impl crate::pcode::emu::jit::var::JitVar for JitLocalOutVar {
@@ -1438,17 +1509,18 @@ impl crate::pcode::emu::jit::var::JitVarnodeVar for JitLocalOutVar {
 /// crate::pcode::emu::jit::var::jit_direct_memory_var::JitDirectMemoryVar) does -- but unlike that
 /// type (and like [`JitLocalOutVar`]), this one is not ported as a top-level module yet, so it
 /// stays here as a stub, grown (see `STUBS.tsv`) with the same `JitVal`/`JitVar`/`JitVarnodeVar`
-/// impls `JitLocalOutVar` has, plus `JitMemoryVar`. `AbstractJitOutVar`'s `definition` bookkeeping
-/// is not modeled, since `MemoryOutVarGen` never touches it.
+/// impls `JitLocalOutVar` has, plus `JitMemoryVar` -- and, like `JitLocalOutVar`,
+/// `AbstractJitOutVar`'s `definition` bookkeeping.
 pub struct JitMemoryOutVar {
     id: i32,
     varnode: Varnode,
+    definition: Mutex<Option<Arc<dyn JitDefOp>>>,
 }
 
 impl JitMemoryOutVar {
     /// Port of `new JitMemoryOutVar(int, Varnode)`.
     pub fn new(id: i32, varnode: Varnode) -> Self {
-        Self { id, varnode }
+        Self { id, varnode, definition: Mutex::new(None) }
     }
 }
 
@@ -1464,6 +1536,32 @@ impl JitVal for JitMemoryOutVar {
     }
 
     fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn as_varnode_var(&self) -> Option<&dyn crate::pcode::emu::jit::var::JitVarnodeVar> {
+        Some(self)
+    }
+
+    fn as_out_var(&self) -> Option<&dyn JitOutVar> {
+        Some(self)
+    }
+}
+
+impl JitOutVar for JitMemoryOutVar {
+    /// A no-op, like [`JitLocalOutVar`]'s: see [`JitOutVar::set_definition_arc`].
+    fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
+
+    fn set_definition_arc(&self, definition: Option<Arc<dyn JitDefOp>>) {
+        *self.definition.lock().unwrap() = definition;
+    }
+
+    /// Port of `AbstractJitOutVar.definition()`.
+    fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
+        self.definition.lock().unwrap().clone()
+    }
+
+    fn varnode(&self) -> Varnode {
+        self.varnode.clone()
+    }
 }
 
 impl crate::pcode::emu::jit::var::JitVar for JitMemoryOutVar {
@@ -1493,27 +1591,47 @@ impl JitMemoryVar for JitMemoryOutVar {}
 ///
 /// Grown (see `STUBS.tsv`) with the `offset`/`value` record components for
 /// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
-/// which visits both. `link`/`unlink`/`type_for` remain unimplemented since nothing needs them yet.
+/// which visits both; and then with the full record header (`op`/`space`, and `Arc` rather than
+/// `Box` operands, since the use-def graph shares its values) for
+/// [`JitDataFlowArithmetic::mod_before_store_from_pcode_op`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
+/// which constructs these. `link`/`unlink`/`type_for` remain unimplemented since nothing needs
+/// them yet.
 pub struct JitStoreOp {
-    offset: Box<dyn JitVal>,
-    value: Box<dyn JitVal>,
+    op: PcodeOp,
+    space: AddressSpace,
+    offset: Arc<dyn JitVal>,
+    value: Arc<dyn JitVal>,
 }
 
 impl JitStoreOp {
-    /// Port of `new JitStoreOp(PcodeOp, AddressSpace, JitVal, JitVal)`, restricted to the
-    /// `offset`/`value` components this crate currently needs.
-    pub fn new(offset: Box<dyn JitVal>, value: Box<dyn JitVal>) -> Self {
-        Self { offset, value }
+    /// Port of `new JitStoreOp(PcodeOp, AddressSpace, JitVal, JitVal)`.
+    pub fn new(
+        op: PcodeOp,
+        space: AddressSpace,
+        offset: Arc<dyn JitVal>,
+        value: Arc<dyn JitVal>,
+    ) -> Self {
+        Self { op, space, offset, value }
+    }
+
+    /// Port of the record accessor `op()`.
+    pub fn op(&self) -> &PcodeOp {
+        &self.op
+    }
+
+    /// Port of the record accessor `space()`.
+    pub fn space(&self) -> &AddressSpace {
+        &self.space
     }
 
     /// Port of the record accessor `offset()`.
-    pub fn offset(&self) -> &dyn JitVal {
-        self.offset.as_ref()
+    pub fn offset(&self) -> &Arc<dyn JitVal> {
+        &self.offset
     }
 
     /// Port of the record accessor `value()`.
-    pub fn value(&self) -> &dyn JitVal {
-        self.value.as_ref()
+    pub fn value(&self) -> &Arc<dyn JitVal> {
+        &self.value
     }
 }
 
@@ -1539,21 +1657,41 @@ impl JitOp for JitStoreOp {
 ///
 /// Grown (see `STUBS.tsv`) with the `offset` record component for
 /// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
-/// which visits it. `link`/`unlink`/`type_for` remain unimplemented since nothing needs them yet.
+/// which visits it; and then with the full record header (`op`/`out`/`space`) for
+/// [`JitDataFlowArithmetic::mod_after_load_from_pcode_op`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
+/// which constructs these and reads back `out()`. `link`/`unlink`/`type_for` remain unimplemented
+/// since nothing needs them yet.
 pub struct JitLoadOp {
-    offset: Box<dyn JitVal>,
+    op: PcodeOp,
+    out: Arc<dyn JitOutVar>,
+    space: AddressSpace,
+    offset: Arc<dyn JitVal>,
 }
 
 impl JitLoadOp {
-    /// Port of `new JitLoadOp(PcodeOp, JitOutVar, AddressSpace, JitVal)`, restricted to the
-    /// `offset` component this crate currently needs.
-    pub fn new(offset: Box<dyn JitVal>) -> Self {
-        Self { offset }
+    /// Port of `new JitLoadOp(PcodeOp, JitOutVar, AddressSpace, JitVal)`.
+    pub fn new(
+        op: PcodeOp,
+        out: Arc<dyn JitOutVar>,
+        space: AddressSpace,
+        offset: Arc<dyn JitVal>,
+    ) -> Self {
+        Self { op, out, space, offset }
+    }
+
+    /// Port of the record accessor `op()`.
+    pub fn op(&self) -> &PcodeOp {
+        &self.op
+    }
+
+    /// Port of the record accessor `space()`.
+    pub fn space(&self) -> &AddressSpace {
+        &self.space
     }
 
     /// Port of the record accessor `offset()`.
-    pub fn offset(&self) -> &dyn JitVal {
-        self.offset.as_ref()
+    pub fn offset(&self) -> &Arc<dyn JitVal> {
+        &self.offset
     }
 }
 
@@ -1571,6 +1709,12 @@ impl JitOp for JitLoadOp {
         visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
     ) {
         visitor.visit_load_op(self);
+    }
+}
+
+impl JitDefOp for JitLoadOp {
+    fn out(&self) -> Arc<dyn JitOutVar> {
+        Arc::clone(&self.out)
     }
 }
 
@@ -1685,21 +1829,23 @@ impl JitOp for JitCallOtherMissingOp {
 ///
 /// Grown (see `STUBS.tsv`) with the `parts` record component for
 /// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
-/// which visits each part. `link`/`unlink`/`type_for` remain unimplemented since nothing needs
-/// them yet.
+/// which visits each part; and then with the `out` component (and `Arc` rather than `Box` parts,
+/// since [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic)
+/// re-catenates a *copy* of an existing op's part list when simplifying a subpiece).
+/// `link`/`unlink`/`type_for` remain unimplemented since nothing needs them yet.
 pub struct JitCatenateOp {
-    parts: Vec<Box<dyn JitVal>>,
+    out: Arc<dyn JitOutVar>,
+    parts: Vec<Arc<dyn JitVal>>,
 }
 
 impl JitCatenateOp {
-    /// Port of `new JitCatenateOp(JitOutVar, List)`, restricted to the `parts` component this
-    /// crate currently needs.
-    pub fn new(parts: Vec<Box<dyn JitVal>>) -> Self {
-        Self { parts }
+    /// Port of `new JitCatenateOp(JitOutVar, List)`.
+    pub fn new(out: Arc<dyn JitOutVar>, parts: Vec<Arc<dyn JitVal>>) -> Self {
+        Self { out, parts }
     }
 
     /// Port of the record accessor `parts()`.
-    pub fn parts(&self) -> &[Box<dyn JitVal>] {
+    pub fn parts(&self) -> &[Arc<dyn JitVal>] {
         &self.parts
     }
 }
@@ -1721,27 +1867,45 @@ impl JitOp for JitCatenateOp {
     }
 }
 
+impl JitDefOp for JitCatenateOp {
+    fn out(&self) -> Arc<dyn JitOutVar> {
+        Arc::clone(&self.out)
+    }
+
+    fn as_catenate_op(&self) -> Option<&JitCatenateOp> {
+        Some(self)
+    }
+}
+
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitSynthSubPieceOp`,
 /// referenced by [`JitOpVisitor::visit_sub_piece_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_sub_piece_op).
 ///
 /// Grown (see `STUBS.tsv`) with the `v` record component for
 /// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
-/// which visits it. `out`/`offset`/`link`/`unlink`/`type_for` remain unimplemented since nothing
-/// needs them yet.
+/// which visits it; and then with the `out`/`offset` components for
+/// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
+/// which constructs these and folds a subpiece-of-a-subpiece by adding the two offsets.
+/// `link`/`unlink`/`type_for` remain unimplemented since nothing needs them yet.
 pub struct JitSynthSubPieceOp {
-    v: Box<dyn JitVal>,
+    out: Arc<dyn JitOutVar>,
+    offset: i32,
+    v: Arc<dyn JitVal>,
 }
 
 impl JitSynthSubPieceOp {
-    /// Port of `new JitSynthSubPieceOp(JitOutVar, int, JitVal)`, restricted to the `v` component
-    /// this crate currently needs.
-    pub fn new(v: Box<dyn JitVal>) -> Self {
-        Self { v }
+    /// Port of `new JitSynthSubPieceOp(JitOutVar, int, JitVal)`.
+    pub fn new(out: Arc<dyn JitOutVar>, offset: i32, v: Arc<dyn JitVal>) -> Self {
+        Self { out, offset, v }
+    }
+
+    /// Port of the record accessor `offset()`: the number of bytes shifted right.
+    pub fn offset(&self) -> i32 {
+        self.offset
     }
 
     /// Port of the record accessor `v()`.
-    pub fn v(&self) -> &dyn JitVal {
-        self.v.as_ref()
+    pub fn v(&self) -> &Arc<dyn JitVal> {
+        &self.v
     }
 }
 
@@ -1759,6 +1923,16 @@ impl JitOp for JitSynthSubPieceOp {
         visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
     ) {
         visitor.visit_sub_piece_op(self);
+    }
+}
+
+impl JitDefOp for JitSynthSubPieceOp {
+    fn out(&self) -> Arc<dyn JitOutVar> {
+        Arc::clone(&self.out)
+    }
+
+    fn as_synth_sub_piece_op(&self) -> Option<&JitSynthSubPieceOp> {
+        Some(self)
     }
 }
 
@@ -1946,6 +2120,10 @@ impl JitVal for JitConstVal {
     fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
 
     fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+    fn as_const_val(&self) -> Option<&JitConstVal> {
+        Some(self)
+    }
 
     fn accept_val(
         &self,
@@ -2366,30 +2544,104 @@ impl JitAnalysisContext {
     }
 }
 
-/// Placeholder for the unported Java type `JitDataFlowArithmetic`
-/// (`ghidra.pcode.emu.jit.analysis.JitDataFlowArithmetic`), referenced by
-/// [`MemoryVarGen`](crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen). Only the one
-/// static member downstream code needs -- computing the varnode for a byte-aligned subpiece -- is
-/// modeled; the rest of the class (a `PcodeArithmetic<JitVal>` implementation) is unported.
-pub struct JitDataFlowArithmetic;
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitDataFlowModel`,
+/// referenced by
+/// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
+/// which owns one and routes every use-def node it builds through it. Java's class carries the
+/// whole intra-block data-flow analysis (the value/op tables, phi and synthetic node lists, the
+/// per-block analyzers, Graphviz export...); only the two members the arithmetic actually calls
+/// are modeled here. It is a trait rather than a struct because the real model is the forward edge
+/// of a dependency cycle -- it constructs the arithmetic, and the arithmetic calls back into it.
+/// Replace with the real port when `JitDataFlowModel.java` is ported.
+pub trait JitDataFlowModel: Send + Sync {
+    /// Port of `JitDataFlowModel.generateOutVar(Varnode)`: allocate the SSA output variable for a
+    /// p-code op writing `out`.
+    fn generate_out_var(&self, out: &Varnode) -> Arc<dyn JitOutVar>;
 
-impl JitDataFlowArithmetic {
-    /// Port of the static `JitDataFlowArithmetic.subPieceVn(Endian, Varnode, int, int)`.
+    /// Port of `JitDataFlowModel.notifyOp(JitOp)`: link the op into the use-def graph and record
+    /// it in the model.
     ///
-    /// # Panics
+    /// Java's version is generic and returns its argument; callers here already hold the op, so
+    /// this returns nothing. See [`Self::notify_def_op`] for the `notifyOp(..).out()` shape that
+    /// every `JitDataFlowArithmetic` call site uses.
+    fn notify_op(&self, op: Arc<dyn JitOp>);
+
+    /// Port of the `dfm.notifyOp(op).out()` idiom: notify, then hand back the op's output
+    /// variable.
     ///
-    /// If `offset` and `size` would leave a non-positive size, mirroring Java's `AssertionError`.
-    pub fn sub_piece_vn(endian: Endian, whole: &Varnode, offset: i32, size: i32) -> Varnode {
-        let min_size = (whole.get_size() - offset).min(size);
-        assert!(min_size >= 1, "AssertionError: subpiece would have non-positive size");
-        let addr_offset = match endian {
-            Endian::Big => whole.get_size() - offset - min_size,
-            Endian::Little => offset,
-        };
-        Varnode::new(
-            whole.get_address().add(addr_offset as i64).expect("address overflow"),
-            min_size,
-        )
+    /// This also performs the `out.setDefinition(this)` wiring that Java does inside
+    /// `AbstractJitDefOp.link()` -- see [`JitOutVar::set_definition_arc`] for why it cannot happen
+    /// in [`JitOp::link`] here.
+    fn notify_def_op(&self, op: Arc<dyn JitDefOp>) -> Arc<dyn JitOutVar> {
+        let out = op.out();
+        out.set_definition_arc(Some(Arc::clone(&op)));
+        self.notify_op(op);
+        out
+    }
+}
+
+/// Port of `JitOp.unOp(PcodeOp, JitOutVar, JitVal)`: build the use-def node for a unary p-code op.
+///
+/// A free function rather than a trait member because Java declares it `static` on the
+/// [`JitOp`] interface. Only [`OpCode::BoolNegate`] has a ported node type
+/// ([`JitBoolNegateOp`](crate::pcode::emu::jit::op::JitBoolNegateOp)); every other arm of Java's
+/// switch names a class that is not ported yet, so it panics as Java's `default` arm does for an
+/// unrecognized opcode. Extend it as each `JitXxxOp.java` lands.
+pub fn jit_op_un_op(op: &PcodeOp, out: Arc<dyn JitOutVar>, u: Arc<dyn JitVal>) -> Arc<dyn JitDefOp> {
+    match op.opcode {
+        OpCode::BoolNegate => {
+            Arc::new(crate::pcode::emu::jit::op::JitBoolNegateOp::new(op.clone(), out, u))
+        }
+        opcode => panic!("UnsupportedOperationException: Unrecognized un op: {opcode:?}"),
+    }
+}
+
+/// Port of `JitOp.binOp(PcodeOp, JitOutVar, JitVal, JitVal)`: build the use-def node for a binary
+/// p-code op.
+///
+/// See [`jit_op_un_op`]. No binary node type is ported yet, so this always panics; the parameters
+/// are named to match Java's so the arms can be filled in as they land.
+pub fn jit_op_bin_op(
+    op: &PcodeOp,
+    out: Arc<dyn JitOutVar>,
+    l: Arc<dyn JitVal>,
+    r: Arc<dyn JitVal>,
+) -> Arc<dyn JitDefOp> {
+    let (_out, _l, _r) = (out, l, r);
+    panic!("UnsupportedOperationException: Unrecognized bin op: {:?}", op.opcode)
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.opbehavior.OpBehaviorSubpiece`, referenced
+/// by
+/// [`JitDataFlowArithmetic::subpiece`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic::subpiece)
+/// to fold a subpiece of a constant. `ghidra.pcode.opbehavior` is ported only as far as the
+/// `OpBehavior` traits, with no per-opcode behaviors and no `OpBehaviorFactory`, so this stub
+/// carries the one method that call site needs -- and carries it for real, since the semantics
+/// (eliminating the sign-extension bits `BigInteger.shiftRight` would produce) are not obvious.
+pub struct OpBehaviorSubpiece;
+
+impl OpBehaviorSubpiece {
+    /// Port of `OpBehaviorSubpiece.evaluateBinary(int, int, BigInteger, BigInteger)`, with `i128`
+    /// standing in for `BigInteger` as it does throughout this crate.
+    pub fn evaluate_binary_big(_sizeout: i32, sizein: i32, in1: i128, in2: i128) -> i128 {
+        // Must eliminate the sign-extension bits an arithmetic shift right would produce.
+        let mut signbit = sizein * 8 - 1;
+        let mut res = in1;
+        let negative = signbit >= 0 && signbit < 128 && (res >> signbit) & 1 != 0;
+        if negative {
+            res &= crate::pcode::utils::calc_bigmask(sizein);
+            res &= !(1i128 << signbit);
+        }
+        let shift = in2 as i32 * 8;
+        if shift >= 128 {
+            return 0;
+        }
+        res >>= shift;
+        signbit -= shift;
+        if negative && signbit >= 0 {
+            res |= 1i128 << signbit; // restore shifted sign bit
+        }
+        res
     }
 }
 
