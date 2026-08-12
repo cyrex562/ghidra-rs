@@ -803,3 +803,39 @@ pub trait Dimension<P: HyperPoint, B: HyperBox<P>>: Send + Sync {
     /// Whether `outer` encloses `inner` along this dimension, mirroring `encloses(B, B)`.
     fn encloses(&self, outer: &B, inner: &B) -> bool;
 }
+
+/// Placeholder for `ghidra.util.NumericUtilities`, referenced by
+/// [`PrettyBytes`](crate::pcode::exec::debugger_pcode_utils::PrettyBytes) before the real class is
+/// ported. Java's version is a final class of statics, so this is a unit struct with associated
+/// functions rather than a trait. Only the hex-rendering entry points that call site needs are
+/// declared; unlike most stubs these carry real bodies, since their behavior is short and fully
+/// determined: two lowercase, zero-padded hex digits per byte, joined by the delimiter.
+pub struct NumericUtilities;
+
+impl NumericUtilities {
+    /// Port of `NumericUtilities.convertBytesToString(byte[], String)`.
+    pub fn convert_bytes_to_string(bytes: &[u8], delimiter: &str) -> String {
+        Self::convert_bytes_to_string_range(bytes, 0, bytes.len(), delimiter)
+    }
+
+    /// Port of `NumericUtilities.convertBytesToString(byte[], int, int, String)`.
+    ///
+    /// Panics where Java's `Objects.checkFromToIndex` throws `IndexOutOfBoundsException`.
+    pub fn convert_bytes_to_string_range(
+        bytes: &[u8],
+        start: usize,
+        len: usize,
+        delimiter: &str,
+    ) -> String {
+        let end = start + len;
+        assert!(end <= bytes.len(), "byte range exceeds the array's length");
+        let mut sb = String::with_capacity(len * (2 + delimiter.len()));
+        for byte in &bytes[start..end] {
+            if !sb.is_empty() {
+                sb.push_str(delimiter);
+            }
+            sb.push_str(&format!("{:02x}", byte));
+        }
+        sb
+    }
+}

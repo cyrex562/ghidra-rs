@@ -606,3 +606,8 @@ ts	stub_class	referenced_by
 2026-08-11T10:00:01.600000+00:00	JitFailVal	JitOpVisitor
 2026-08-11T10:00:01.700000+00:00	JitMissingVar	JitOpVisitor
 2026-08-11T10:00:01.800000+00:00	JitIndirectMemoryVar	JitOpVisitor
+2026-08-11T12:00:00.000000+00:00	NumericUtilities	DebuggerPcodeUtils
+2026-08-11T12:00:00.100000+00:00	TraceMemoryStatePcodeArithmetic	DebuggerPcodeUtils
+2026-08-11T12:00:00.200000+00:00	AddressesReadPcodeArithmetic	DebuggerPcodeUtils
+2026-08-11T12:00:00.300000+00:00	ValueLocation	DebuggerPcodeUtils
+2026-08-11T12:00:00.400000+00:00	BytesPcodeArithmetic	DebuggerPcodeUtils
