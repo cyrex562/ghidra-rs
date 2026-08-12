@@ -2741,6 +2741,64 @@ pub trait JitCodeGenerator: Send + Sync {
         let _ = (local_this, v, type_, ext, scope);
         em.recast()
     }
+
+    /// Emit bytecode to load a p-code value into a fresh `int[]` on top of the operand stack.
+    ///
+    /// Port of `JitCodeGenerator.genReadToArray(Emitter, Local, JitVal, MpIntJitType, Ext, Scope,
+    /// int)`, referenced by
+    /// [`IntShiftBinOpGen`](crate::pcode::emu::jit::gen::op::int_shift_bin_op_gen::IntShiftBinOpGen).
+    /// Java's real body allocates the array and dispatches to the also-unported `ValGen.lookup(v)`
+    /// to fill it. Like [`Self::gen_read_to_stack`], this preserves only the type-level
+    /// stack-shape plumbing -- the incoming stack passes through unchanged, recast with an
+    /// `int[]` reference on top -- since no real array is allocated. Defaulted (rather than
+    /// required) so the existing marker implementors of this trait, which predate this method,
+    /// keep compiling.
+    #[allow(clippy::too_many_arguments)]
+    fn gen_read_to_array<N>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        v: &dyn JitVal,
+        type_: MpIntJitType,
+        ext: Ext,
+        scope: &dyn Scope,
+        slack: i32,
+    ) -> Emitter<Ent<N, TRef>>
+    where
+        Self: Sized,
+        N: Next,
+    {
+        let _ = (local_this, v, type_, ext, scope, slack);
+        em.recast()
+    }
+
+    /// Emit bytecode to store the `int[]` on top of the operand stack into the given variable.
+    ///
+    /// Port of `JitCodeGenerator.genWriteFromArray(Emitter, Local, JitVar, MpIntJitType, Ext,
+    /// Scope)`, referenced by
+    /// [`IntShiftBinOpGen`](crate::pcode::emu::jit::gen::op::int_shift_bin_op_gen::IntShiftBinOpGen).
+    /// Java's `v` parameter is `JitVar`; narrowed to `&dyn JitOutVar` here, per the same
+    /// convention as [`Self::gen_write_from_stack`]. Java's real body dispatches to the
+    /// also-unported `VarGen.lookup(v)`; this only preserves the stack shape -- the `int[]`
+    /// reference on top is popped, and the incoming tail passes through unchanged. Defaulted
+    /// (rather than required) so the existing marker implementors of this trait, which predate
+    /// this method, keep compiling.
+    fn gen_write_from_array<N>(
+        &self,
+        em: Emitter<Ent<N, TRef>>,
+        local_this: &Local<TRef>,
+        v: &dyn JitOutVar,
+        type_: MpIntJitType,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> Emitter<N>
+    where
+        Self: Sized,
+        N: Next,
+    {
+        let _ = (local_this, v, type_, ext, scope);
+        em.recast()
+    }
 }
 
 /// Placeholder for the unported Java type `JitAllocationModel`
