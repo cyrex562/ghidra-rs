@@ -11089,7 +11089,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/M
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubDirectMemoryVarGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubInputVarGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubLocalOutVarGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubLocalVarGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubLocalVarGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubMemoryOutVarGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubMemoryVarGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/ValGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen var 
