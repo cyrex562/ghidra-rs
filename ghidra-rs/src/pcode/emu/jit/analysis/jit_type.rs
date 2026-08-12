@@ -137,6 +137,16 @@ pub trait SimpleJitType: LeggedJitType<Leg = Self> + Copy {
     ///
     /// Port of `SimpleJitType.ext()`, whose Java return type is `SimpleJitType<T, JT>`.
     fn ext_simple(&self) -> Self;
+
+    /// Erase this type to the closed [`AnySimpleJitType`] enum.
+    ///
+    /// Bridges a generic `JT: SimpleJitType` type parameter to the erased enum that
+    /// [`lookup_simple`](crate::pcode::emu::jit::gen::access::access_gen::lookup_simple) requires:
+    /// Java's `AccessGen.lookupSimple(Endian, JT)` recovers the concrete `JT` via an unchecked
+    /// cast justified by the sealed `SimpleJitType` hierarchy, but Rust has no covariant
+    /// existential return to do the same from a generic call site (see that function's module
+    /// docs), so generic callers erase with this method instead.
+    fn erase_simple(&self) -> AnySimpleJitType;
 }
 
 // ── Concrete types ────────────────────────────────────────────────────────────
@@ -227,6 +237,10 @@ impl SimpleJitType for IntJitType {
 
     fn ext_simple(&self) -> Self {
         Self::I4
+    }
+
+    fn erase_simple(&self) -> AnySimpleJitType {
+        AnySimpleJitType::Int(*self)
     }
 }
 
@@ -333,6 +347,10 @@ impl SimpleJitType for LongJitType {
     fn ext_simple(&self) -> Self {
         Self::I8
     }
+
+    fn erase_simple(&self) -> AnySimpleJitType {
+        AnySimpleJitType::Long(*self)
+    }
 }
 
 /// The p-code type for floating-point of size 4, i.e., that fits in a JVM `float`.
@@ -398,6 +416,10 @@ impl SimpleJitType for FloatJitType {
     fn ext_simple(&self) -> Self {
         *self
     }
+
+    fn erase_simple(&self) -> AnySimpleJitType {
+        AnySimpleJitType::Float(*self)
+    }
 }
 
 /// The p-code type for floating-point of size 8, i.e., that fits in a JVM `double`.
@@ -462,6 +484,10 @@ impl SimpleJitType for DoubleJitType {
 
     fn ext_simple(&self) -> Self {
         *self
+    }
+
+    fn erase_simple(&self) -> AnySimpleJitType {
+        AnySimpleJitType::Double(*self)
     }
 }
 
@@ -1090,6 +1116,14 @@ mod tests {
                 AnySimpleJitType::Int(IntJitType::I1),
             ]
         );
+    }
+
+    #[test]
+    fn erase_simple_wraps_each_concrete_type_in_its_matching_variant() {
+        assert_eq!(IntJitType::I2.erase_simple(), AnySimpleJitType::Int(IntJitType::I2));
+        assert_eq!(LongJitType::I6.erase_simple(), AnySimpleJitType::Long(LongJitType::I6));
+        assert_eq!(FloatJitType::F4.erase_simple(), AnySimpleJitType::Float(FloatJitType::F4));
+        assert_eq!(DoubleJitType::F8.erase_simple(), AnySimpleJitType::Double(DoubleJitType::F8));
     }
 
     #[test]
