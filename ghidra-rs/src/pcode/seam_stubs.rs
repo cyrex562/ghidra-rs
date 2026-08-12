@@ -9,6 +9,8 @@ use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+
 use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
 use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
@@ -881,77 +883,6 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
         T: 'static,
     {
         unimplemented!("This is meant for p-code executor use")
-    }
-}
-
-/// Minimal placeholder for the not-yet-ported `ghidra.pcode.emu.jit.analysis.JitTypeBehavior`,
-/// referenced by [`unify`](crate::pcode::emu::jit::analysis::jit_type::unify) and
-/// [`unify_least`](crate::pcode::emu::jit::analysis::jit_type::unify_least).
-///
-/// The real Java type is an enum of four behaviors -- `ANY`, `INTEGER`, `FLOAT`, and `COPY` --
-/// each with a `type(int)` and a `resolve(JitType)`, plus the static `compare` and `forJavaType`.
-/// Only the variants and members this crate's ports reach for are modeled here; `resolve` and
-/// `forJavaType` are still missing. Replace with the real port when `JitTypeBehavior.java` is
-/// ported.
-///
-/// Grown (see `STUBS.tsv`) with:
-/// - the `Copy` variant that [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp) and
-///   `JitCopyOp` report: no type requirement of their own, but an implication that the output
-///   shares the inputs' interpretation. Unlike `Integer`/`Float`, `Copy.type(int)` throws
-///   `AssertionError` in Java, since a copy has no type of its own to compute -- modeled here by
-///   [`type_of`](Self::type_of) panicking for that variant;
-/// - the `Any` variant and [`compare`](Self::compare), for
-///   [`JitTypeModel`](crate::pcode::emu::jit::analysis::jit_type_model::JitTypeModel), whose
-///   voting starts every value at `ANY` and breaks ties by this ordering.
-///
-/// The variants are declared in Java's constant order, so the derived [`Ord`] reproduces the
-/// `ordinal()` comparison [`compare`](Self::compare) is defined in terms of.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum JitTypeBehavior {
-    /// No type requirement or interpretation.
-    Any,
-    /// The bits are interpreted as an integer.
-    Integer,
-    /// The bits are interpreted as a float.
-    Float,
-    /// No type requirement of its own; the output shares the inputs' interpretation.
-    Copy,
-}
-
-impl JitTypeBehavior {
-    /// Apply this behavior to a value of the given size to determine its type.
-    ///
-    /// Port of `JitTypeBehavior.type(int)`. As in Java, [`Any`](Self::Any) defaults to integers.
-    ///
-    /// # Panics
-    ///
-    /// If `self` is [`JitTypeBehavior::Copy`], matching Java's `COPY.type(int)`.
-    pub fn type_of(&self, size: i32) -> AnyJitType {
-        match self {
-            Self::Copy => panic!("AssertionError: JitTypeBehavior::Copy has no type"),
-            Self::Float => match size {
-                4 => AnyJitType::Float(FloatJitType::F4),
-                8 => AnyJitType::Double(DoubleJitType::F8),
-                _ => AnyJitType::MpFloat(MpFloatJitType::for_size(size)),
-            },
-            // If no type is specified, we default to ints.
-            Self::Any | Self::Integer => {
-                debug_assert!(size > 0);
-                match size {
-                    1..=4 => AnyJitType::Int(IntJitType::for_size(size)),
-                    5..=8 => AnyJitType::Long(LongJitType::for_size(size)),
-                    _ => AnyJitType::MpInt(MpIntJitType::for_size(size)),
-                }
-            }
-        }
-    }
-
-    /// Compare two behaviors by preference. The behavior declared first is preferred.
-    ///
-    /// Port of the static `JitTypeBehavior.compare(JitTypeBehavior, JitTypeBehavior)`, whose
-    /// comparator-style `int` becomes an [`Ordering`](std::cmp::Ordering).
-    pub fn compare(b1: JitTypeBehavior, b2: JitTypeBehavior) -> std::cmp::Ordering {
-        b1.cmp(&b2)
     }
 }
 

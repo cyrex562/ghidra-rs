@@ -3,6 +3,7 @@ pub mod jit_data_flow_block_analyzer;
 pub mod jit_op_upward_visitor;
 pub mod jit_op_visitor;
 pub mod jit_type;
+pub mod jit_type_behavior;
 pub mod jit_type_model;
 pub mod jit_var_scope_model;
 
@@ -16,3 +17,4 @@ pub use jit_type::{
     AnyJitType, AnySimpleJitType, DoubleJitType, FloatJitType, IntJitType, JitType, LeggedJitType,
     LongJitType, MpFloatJitType, MpIntJitType, SimpleJitType,
 };
+pub use jit_type_behavior::JitTypeBehavior;

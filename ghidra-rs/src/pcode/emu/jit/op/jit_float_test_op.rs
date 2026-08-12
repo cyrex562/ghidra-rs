@@ -4,7 +4,7 @@
 
 use crate::pcode::emu::jit::op::JitFloatBinOp;
 use crate::pcode::emu::jit::var::JitOutVar;
-use crate::pcode::seam_stubs::JitTypeBehavior;
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
 
 /// A binary p-code operator use-def node with floating-point inputs and a boolean output.
 ///

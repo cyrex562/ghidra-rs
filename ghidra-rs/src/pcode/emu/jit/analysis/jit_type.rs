@@ -38,7 +38,7 @@ use std::cmp::Ordering;
 use crate::pcode::emu::jit::gen::util::types::{
     BPrim, TDouble, TFloat, TInt, TLong, T_DOUBLE, T_FLOAT, T_INT, T_LONG,
 };
-use crate::pcode::seam_stubs::JitTypeBehavior;
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
 
 /// The size of a JVM `int` in bytes, i.e., Java's `Integer.BYTES`.
 const INT_BYTES: i32 = 4;

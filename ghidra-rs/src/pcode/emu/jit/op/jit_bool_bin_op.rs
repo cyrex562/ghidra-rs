@@ -5,7 +5,8 @@
 //! integers according to JitTypeBehavior.
 
 use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
-use crate::pcode::seam_stubs::{JitBinOp, JitTypeBehavior};
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+use crate::pcode::seam_stubs::JitBinOp;
 
 /// A binary p-code operator use-def node with boolean (integer) types.
 ///

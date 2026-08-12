@@ -4,10 +4,9 @@
 
 use std::sync::Arc;
 
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
 use crate::pcode::emu::jit::var::{JitVal, JitOutVar};
-use crate::pcode::seam_stubs::{
-    JitTypeBehavior, JitUnimplementedOp,
-};
+use crate::pcode::seam_stubs::JitUnimplementedOp;
 use crate::program::model::pcode::{OpCode, PcodeOp};
 
 use super::{JitBoolNegateOp, JitDefOp};

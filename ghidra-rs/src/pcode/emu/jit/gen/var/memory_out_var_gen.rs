@@ -383,7 +383,10 @@ mod tests {
         let v = make_var(4, 0x1000, 4);
         struct FakeOp;
         impl JitOp for FakeOp {
-            fn type_for(&self, _position: i32) -> crate::pcode::seam_stubs::JitTypeBehavior {
+            fn type_for(
+                &self,
+                _position: i32,
+            ) -> crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior {
                 unimplemented!()
             }
             fn link(&self) {}

@@ -144,7 +144,8 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::JitDefOp;
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitBlock, JitTypeBehavior};
+    use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+    use crate::pcode::seam_stubs::JitBlock;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber, Varnode};
     use std::sync::{Arc, Mutex};
@@ -202,8 +203,8 @@ mod tests {
             Arc::new(TagVal(self.0))
         }
 
-        fn u_type(&self) -> crate::pcode::seam_stubs::JitTypeBehavior {
-            crate::pcode::seam_stubs::JitTypeBehavior::Integer
+        fn u_type(&self) -> JitTypeBehavior {
+            JitTypeBehavior::Integer
         }
     }
 

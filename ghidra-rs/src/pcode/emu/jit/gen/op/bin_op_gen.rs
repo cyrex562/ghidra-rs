@@ -125,7 +125,8 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitTypeBehavior, MethodVisitor, Scope};
+    use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+    use crate::pcode::seam_stubs::{MethodVisitor, Scope};
     use std::sync::Arc;
 
     struct TestBinOp;
