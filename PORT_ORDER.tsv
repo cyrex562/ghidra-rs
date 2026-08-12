@@ -36,7 +36,7 @@ DONE	trait	26	5	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 DONE	trait	24	3	25	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/AlignedMpIntHandler.java
 DONE	trait	25	3	9	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubInLongHandler.java
 DONE	trait	26	8	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntOpBinOpGen.java
-TODO	trait	25	6	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntBitwiseBinOpGen.java
+DONE	trait	25	6	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntBitwiseBinOpGen.java
 TODO	trait	25	6	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/UnOpGen.java
 TODO	trait	24	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntOpUnOpGen.java
 TODO	trait	24	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntExtUnOpGen.java
