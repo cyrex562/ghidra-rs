@@ -19,10 +19,11 @@
 //!   Java members are all `static`), so its stub is a marker only.
 
 use crate::pcode::emu::jit::analysis::jit_type::MpIntJitType;
+use crate::pcode::emu::jit::gen::access::access_gen::AccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::TRef;
-use crate::pcode::seam_stubs::{AccessGen, Ext, JitCodeGenerator, Opnd, OpndEm, Scope};
+use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, Opnd, OpndEm, Scope};
 use crate::program::model::pcode::Varnode;
 
 /// An access generator for a multi-precision integer variable.

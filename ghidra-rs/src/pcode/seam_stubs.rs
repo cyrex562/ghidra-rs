@@ -8,9 +8,7 @@ use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
-use crate::pcode::emu::jit::analysis::jit_type::{
-    AnyJitType, IntJitType, JitType, LongJitType, MpIntJitType,
-};
+use crate::pcode::emu::jit::analysis::jit_type::{AnyJitType, IntJitType, LongJitType, MpIntJitType};
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
@@ -2220,14 +2218,39 @@ impl FieldForArrDirect {
 /// are exposed. Replace with the real port when available.
 pub trait JitCompiledPassage: Send + Sync {}
 
-/// Placeholder for the unported Java type `AccessGen<JT>`, referenced by
-/// [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen), which extends
-/// `AccessGen<MpIntJitType>`. In Java, `AccessGen`'s only abstract-looking members
-/// (`lookup`/`lookupSimple`/`lookupMp`/`genReadToBool`) are all `static`, so it contributes no
-/// instance methods for an implementor to satisfy; this stub is therefore a marker only. Replace
-/// with the real port (as a module of free functions, per this crate's convention for Java
-/// namespace interfaces) when available.
-pub trait AccessGen<JT: JitType>: Send + Sync {}
+/// Placeholder for the unported Java enum `ghidra.pcode.emu.jit.gen.access.FloatAccessGen`,
+/// referenced by
+/// [`AccessGen::lookup`/`AccessGen::lookup_simple`](crate::pcode::emu::jit::gen::access::access_gen).
+/// Mirrors the shape of the already-ported
+/// [`IntAccessGen`](crate::pcode::emu::jit::gen::access::int_access_gen::IntAccessGen) (BE/LE
+/// constants only); its real `genReadToStack`/`genWriteFromStack` bodies belong to its own port.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FloatAccessGen {
+    /// The big-endian instance. Port of the `FloatAccessGen.BE` constant.
+    Be,
+    /// The little-endian instance. Port of the `FloatAccessGen.LE` constant.
+    Le,
+}
+
+/// Placeholder for the unported Java enum `ghidra.pcode.emu.jit.gen.access.DoubleAccessGen`; see
+/// [`FloatAccessGen`] docs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DoubleAccessGen {
+    /// The big-endian instance. Port of the `DoubleAccessGen.BE` constant.
+    Be,
+    /// The little-endian instance. Port of the `DoubleAccessGen.LE` constant.
+    Le,
+}
+
+/// Placeholder for the unported Java enum `ghidra.pcode.emu.jit.gen.access.MpIntAccessGen`; see
+/// [`FloatAccessGen`] docs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MpIntAccessGen {
+    /// The big-endian instance. Port of the `MpIntAccessGen.BE` constant.
+    Be,
+    /// The little-endian instance. Port of the `MpIntAccessGen.LE` constant.
+    Le,
+}
 
 /// Placeholder for the unported Java type `Opnd<T>`, referenced by
 /// [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen). Generated
