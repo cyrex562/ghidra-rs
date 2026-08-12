@@ -6,9 +6,8 @@ use std::sync::{Arc, Mutex};
 
 use crate::pcode::emu::jit::op::JitSyntheticOp;
 use crate::pcode::emu::jit::var::JitVal;
-use crate::pcode::seam_stubs::{
-    BlockFlow, JitBlock, JitDefOp, JitInputVar, JitOp, JitOutVar, JitTypeBehavior,
-};
+use crate::pcode::seam_stubs::{BlockFlow, JitBlock, JitDefOp, JitInputVar, JitOutVar, JitTypeBehavior, };
+use crate::pcode::emu::jit::op::JitOp;
 
 /// The synthetic use-def node for phi nodes.
 ///

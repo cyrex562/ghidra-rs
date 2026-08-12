@@ -3,10 +3,8 @@
 //! Port of `ghidra.pcode.emu.jit.analysis.JitOpUpwardVisitor`.
 
 use crate::pcode::emu::jit::op::{JitPhiOp, JitUnOp};
-use crate::pcode::seam_stubs::{
-    JitBinOp, JitBranchIndOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherOp, JitCatenateOp,
-    JitLoadOp, JitOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp,
-};
+use crate::pcode::seam_stubs::{JitBinOp, JitBranchIndOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherOp, JitCatenateOp, JitLoadOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp, };
+use crate::pcode::emu::jit::op::JitOp;
 
 use super::jit_op_visitor::JitOpVisitor;
 
@@ -129,7 +127,7 @@ pub trait JitOpUpwardVisitor: JitOpVisitor {
     /// Port of `visitOutVar`: visit the op that defines this variable.
     ///
     /// Requires `Self: Sized`, like [`JitOpVisitor::visit_op`], since the body reborrows `self`
-    /// as the `&mut dyn JitOpVisitor` that [`JitOp::accept`](crate::pcode::seam_stubs::JitOp::accept)
+    /// as the `&mut dyn JitOpVisitor` that [`JitOp::accept`](JitOp::accept)
     /// takes.
     fn visit_out_var(&mut self, v: &dyn JitOutVar)
     where

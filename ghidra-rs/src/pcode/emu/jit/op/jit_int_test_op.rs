@@ -23,7 +23,8 @@ pub trait JitIntTestOp: JitIntBinOp {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitBinOp, JitDefOp, JitOp, JitOutVar};
+    use crate::pcode::seam_stubs::{JitBinOp, JitDefOp, JitOutVar};
+use crate::pcode::emu::jit::op::JitOp;
 
     struct TestIntTestOp;
 

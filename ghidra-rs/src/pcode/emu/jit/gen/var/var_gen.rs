@@ -440,11 +440,8 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::op::JitPhiOp;
     use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
-    use crate::pcode::seam_stubs::{
-        FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitControlFlowModel,
-        JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, JitOp, JitOutVar,
-        MethodVisitor,
-    };
+    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitControlFlowModel, JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, JitOutVar, MethodVisitor, };
+use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
     use std::collections::HashMap;

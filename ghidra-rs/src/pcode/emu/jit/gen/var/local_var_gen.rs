@@ -32,6 +32,7 @@
 //!   once `JitAllocationModel` is ported with a way to recover the concrete handler type (or
 //!   `VarHandler` grows a dyn-safe load path).
 
+use crate::pcode::emu::jit::op::JitOp;
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
 use crate::pcode::emu::jit::analysis::jit_type::{MpIntJitType, SimpleJitType};
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
@@ -186,8 +187,8 @@ mod tests {
             self.varnode.get_size()
         }
 
-        fn add_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
-        fn remove_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+        fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+        fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
     impl crate::pcode::emu::jit::var::JitVar for TestVarnodeVar {

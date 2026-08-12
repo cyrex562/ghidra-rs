@@ -30,7 +30,8 @@ pub trait JitIntUnOp: JitUnOp {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitDefOp, JitOp, JitOutVar};
+    use crate::pcode::seam_stubs::{JitDefOp, JitOutVar};
+use crate::pcode::emu::jit::op::JitOp;
 
     struct TestIntUnOp;
 

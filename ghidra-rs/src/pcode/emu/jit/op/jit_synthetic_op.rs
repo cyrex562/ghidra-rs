@@ -2,7 +2,7 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.op.JitSyntheticOp`.
 
-use crate::pcode::seam_stubs::JitOp;
+use crate::pcode::emu::jit::op::JitOp;
 use crate::program::model::pcode::PcodeOp;
 
 /// A synthetic p-code operator use-def node.
@@ -25,7 +25,7 @@ pub trait JitSyntheticOp: JitOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{JitOp, JitTypeBehavior};
+    use crate::pcode::seam_stubs::JitTypeBehavior;
     use std::panic;
 
     struct TestSyntheticOp;

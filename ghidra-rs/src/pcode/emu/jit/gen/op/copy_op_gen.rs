@@ -48,7 +48,8 @@ impl IntExtUnOpGen<JitCopyOp> for CopyOpGen {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{Ext, JitOp};
+    use crate::pcode::seam_stubs::Ext;
+use crate::pcode::emu::jit::op::JitOp;
     use std::sync::Arc;
 
     #[test]

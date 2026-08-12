@@ -323,9 +323,8 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_type::IntJitType;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::gen::util::types::TInt;
-    use crate::pcode::seam_stubs::{
-        JitDefOp, JitOp, JitTypeBehavior, MethodVisitor, OpGen,
-    };
+    use crate::pcode::seam_stubs::{JitDefOp, JitTypeBehavior, MethodVisitor, OpGen, };
+use crate::pcode::emu::jit::op::JitOp;
     use std::sync::Arc;
 
     struct MockVal;

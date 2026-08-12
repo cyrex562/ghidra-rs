@@ -4,12 +4,8 @@
 
 use crate::pcode::emu::jit::op::{JitPhiOp, JitUnOp};
 use crate::pcode::emu::jit::var::{JitDirectMemoryVar, JitVal, JitVar};
-use crate::pcode::seam_stubs::{
-    JitBranchIndOp, JitBranchOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherMissingOp,
-    JitCallOtherOp, JitCatenateOp, JitConstVal, JitFailVal, JitIndirectMemoryVar, JitInputVar,
-    JitLoadOp, JitMissingVar, JitNopOp, JitOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp,
-    JitUnimplementedOp,
-};
+use crate::pcode::seam_stubs::{JitBranchIndOp, JitBranchOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherMissingOp, JitCallOtherOp, JitCatenateOp, JitConstVal, JitFailVal, JitIndirectMemoryVar, JitInputVar, JitLoadOp, JitMissingVar, JitNopOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp, JitUnimplementedOp, };
+use crate::pcode::emu::jit::op::JitOp;
 use crate::pcode::seam_stubs::JitBinOp;
 
 /// A visitor for traversing the use-def graph.
@@ -163,9 +159,9 @@ mod tests {
             self.varnode.get_size()
         }
 
-        fn add_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+        fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
 
-        fn remove_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+        fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
     impl JitOutVarStub for MockOutVar {
