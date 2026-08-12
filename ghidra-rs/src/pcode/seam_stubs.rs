@@ -9,8 +9,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use crate::pcode::emu::jit::analysis::jit_type::{AnyJitType, IntJitType, LongJitType, MpIntJitType};
+use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
+use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
+use crate::pcode::emu::jit::var::JitVar;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -2182,6 +2185,65 @@ pub trait JitCodeGenerator: Send + Sync {
         let _ = space;
         unimplemented!("JitCodeGenerator::request_field_for_arr_direct stub: offset {offset}")
     }
+
+    /// Get the context of the current analysis.
+    ///
+    /// Port of `JitCodeGenerator.getAnalysisContext()`, referenced by
+    /// [`MemoryVarGen`](crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen). Defaulted
+    /// (rather than required) so the existing marker implementors of this trait, which predate
+    /// this method, keep compiling.
+    fn get_analysis_context(&self) -> JitAnalysisContext {
+        unimplemented!("JitCodeGenerator::get_analysis_context stub")
+    }
+}
+
+/// Placeholder for the unported Java type `JitAnalysisContext`
+/// (`ghidra.pcode.emu.jit.analysis.JitAnalysisContext`), referenced by
+/// [`JitCodeGenerator::get_analysis_context`]. Java's class also carries the data-flow, type, and
+/// scope models built during passage analysis; only the one member downstream code currently
+/// needs -- the target's endianness -- is modeled here.
+#[derive(Debug, Clone, Copy)]
+pub struct JitAnalysisContext {
+    endian: Endian,
+}
+
+impl JitAnalysisContext {
+    /// Construct a context for the given endianness.
+    pub fn new(endian: Endian) -> Self {
+        Self { endian }
+    }
+
+    /// Port of `JitAnalysisContext.getEndian()`.
+    pub fn get_endian(&self) -> Endian {
+        self.endian
+    }
+}
+
+/// Placeholder for the unported Java type `JitDataFlowArithmetic`
+/// (`ghidra.pcode.emu.jit.analysis.JitDataFlowArithmetic`), referenced by
+/// [`MemoryVarGen`](crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen). Only the one
+/// static member downstream code needs -- computing the varnode for a byte-aligned subpiece -- is
+/// modeled; the rest of the class (a `PcodeArithmetic<JitVal>` implementation) is unported.
+pub struct JitDataFlowArithmetic;
+
+impl JitDataFlowArithmetic {
+    /// Port of the static `JitDataFlowArithmetic.subPieceVn(Endian, Varnode, int, int)`.
+    ///
+    /// # Panics
+    ///
+    /// If `offset` and `size` would leave a non-positive size, mirroring Java's `AssertionError`.
+    pub fn sub_piece_vn(endian: Endian, whole: &Varnode, offset: i32, size: i32) -> Varnode {
+        let min_size = (whole.get_size() - offset).min(size);
+        assert!(min_size >= 1, "AssertionError: subpiece would have non-positive size");
+        let addr_offset = match endian {
+            Endian::Big => whole.get_size() - offset - min_size,
+            Endian::Little => offset,
+        };
+        Varnode::new(
+            whole.get_address().add(addr_offset as i64).expect("address overflow"),
+            min_size,
+        )
+    }
 }
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.gen.FieldForArrDirect`,
@@ -2294,5 +2356,157 @@ impl Ext {
     pub fn for_signed(signed: bool) -> Self {
         if signed { Ext::Sign } else { Ext::Zero }
     }
+}
+
+/// A stand-in operand returned by [`MpIntAccessGen`]'s stub [`MpAccessGen`] impl. Carries no
+/// state, since the real bytecode-generation logic (and thus any real operand data) is not yet
+/// ported.
+#[derive(Debug, Clone, Copy)]
+pub struct StubMpOpnd;
+
+impl Opnd<MpIntJitType> for StubMpOpnd {}
+
+/// Minimal stub implementation of [`MpAccessGen`] for the placeholder [`MpIntAccessGen`], in the
+/// same spirit as [`FieldForArrDirect::gen_load`]: it preserves the type-level stack-shape
+/// plumbing but performs no real bytecode emission, since that depends on `Op`/`Methods`, which
+/// are not yet ported. Referenced by
+/// [`MemoryVarGen`](crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen).
+impl MpAccessGen for MpIntAccessGen {
+    fn gen_read_to_opnd<N: Next>(
+        &self,
+        em: Emitter<N>,
+        _local_this: &Local<TRef>,
+        _gen: &dyn JitCodeGenerator,
+        _vn: &Varnode,
+        _type_: MpIntJitType,
+        _ext: Ext,
+        _scope: &dyn Scope,
+    ) -> OpndEm<MpIntJitType, N> {
+        OpndEm::new(Box::new(StubMpOpnd), em)
+    }
+
+    fn gen_read_to_array<N: Next>(
+        &self,
+        em: Emitter<N>,
+        _local_this: &Local<TRef>,
+        _gen: &dyn JitCodeGenerator,
+        _vn: &Varnode,
+        _type_: MpIntJitType,
+        _ext: Ext,
+        _scope: &dyn Scope,
+        _slack: i32,
+    ) -> Emitter<Ent<N, TRef>> {
+        em.recast()
+    }
+
+    fn gen_write_from_opnd<N: Next>(
+        &self,
+        em: Emitter<N>,
+        _local_this: &Local<TRef>,
+        _gen: &dyn JitCodeGenerator,
+        _opnd: &dyn Opnd<MpIntJitType>,
+        _vn: &Varnode,
+    ) -> Emitter<N> {
+        em
+    }
+
+    fn gen_write_from_array<N1: Next>(
+        &self,
+        em: Emitter<Ent<N1, TRef>>,
+        _local_this: &Local<TRef>,
+        _gen: &dyn JitCodeGenerator,
+        _vn: &Varnode,
+        _scope: &dyn Scope,
+    ) -> Emitter<N1> {
+        em.recast()
+    }
+}
+
+/// Placeholder for the unported Java type `VarGen` (`ghidra.pcode.emu.jit.gen.var.VarGen`),
+/// referenced by [`MemoryVarGen`](crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen)
+/// to break the dependency cycle that file sits on (`MemoryVarGen` is a forward reference from
+/// `VarGen`'s own package).
+///
+/// Generated stub: minimal, covering only the six methods `MemoryVarGen`'s defaults implement --
+/// the abstract methods Java's `ValGen<V>` declares and `VarGen<V> extends ValGen<V>` inherits
+/// unchanged. Java's `VarGen<V>` also declares `genWriteFromStack`/`genWriteFromOpnd`/
+/// `genWriteFromArray` (its own abstract methods) and inherits `subpiece` from `ValGen`;
+/// `MemoryVarGen` neither calls nor overrides any of those, so they are omitted here per the
+/// "only the methods this type needs" stubbing rule -- a concrete implementor ported later (e.g.
+/// `WholeDirectMemoryVarGen`) will need to grow this stub with them.
+///
+/// Java's `<THIS extends JitCompiledPassage>` type parameter, repeated on every method, is
+/// dropped in favor of a non-generic `Local<TRef>` and `&dyn JitCodeGenerator`, matching the
+/// convention set by [`MpAccessGen`].
+pub trait VarGen<V: JitVar>: Send + Sync {
+    /// Port of the inherited `ValGen.genValInit`.
+    fn gen_val_init<N: Next>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+    ) -> Emitter<N>;
+
+    /// Port of the inherited `ValGen.genReadToStack`.
+    fn gen_read_to_stack<JT, N>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+        type_: JT,
+        ext: Ext,
+    ) -> Emitter<Ent<N, JT::B>>
+    where
+        JT: crate::pcode::emu::jit::analysis::jit_type::SimpleJitType,
+        N: Next;
+
+    /// Port of the inherited `ValGen.genReadToOpnd`.
+    fn gen_read_to_opnd<N: Next>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+        type_: MpIntJitType,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> OpndEm<MpIntJitType, N>;
+
+    /// Port of the inherited `ValGen.genReadLegToStack`.
+    fn gen_read_leg_to_stack<N: Next>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+        type_: MpIntJitType,
+        leg: i32,
+        ext: Ext,
+    ) -> Emitter<Ent<N, TInt>>;
+
+    /// Port of the inherited `ValGen.genReadToArray`.
+    #[allow(clippy::too_many_arguments)]
+    fn gen_read_to_array<N: Next>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+        type_: MpIntJitType,
+        ext: Ext,
+        scope: &dyn Scope,
+        slack: i32,
+    ) -> Emitter<Ent<N, TRef>>;
+
+    /// Port of the inherited `ValGen.genReadToBool`.
+    fn gen_read_to_bool<N: Next>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+    ) -> Emitter<Ent<N, TInt>>;
 }
 
