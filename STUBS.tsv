@@ -638,3 +638,4 @@ ts	stub_class	referenced_by
 2026-08-12T05:20:00.000000+00:00	OpGen	BinOpGen
 2026-08-12T05:30:00.000000+00:00	JitAllocationModel	LocalVarGen
 2026-08-12T05:40:00.000000+00:00	JitInputVar	InputVarGen
+2026-08-12T05:50:00.000000+00:00	JitLocalOutVar	LocalOutVarGen
