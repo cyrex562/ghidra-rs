@@ -1361,6 +1361,14 @@ impl BlockFlow {
 /// [`JitVal`] impl) and adds no members of its own beyond the varnode passed to its constructor.
 /// [`JitVal::is_input_var`] distinguishes it from other values, standing in for Java's
 /// `instanceof JitInputVar` check. Replace with the real port when `JitInputVar.java` is ported.
+///
+/// Grown (see `STUBS.tsv`) with [`JitVar`](crate::pcode::emu::jit::var::JitVar) and
+/// [`JitVarnodeVar`](crate::pcode::emu::jit::var::JitVarnodeVar) impls for
+/// [`InputVarGen`](crate::pcode::emu::jit::gen::var::input_var_gen::InputVarGen), whose Java
+/// counterpart binds `LocalVarGen<JitInputVar>` and so requires `JitInputVar: JitVarnodeVar`.
+/// This matches the real `JitInputVar extends AbstractJitVarnodeVar`, whose constructor passes a
+/// fixed `id` of `-1` (see `AbstractJitVarnodeVar`'s module docs) and derives `space()` from the
+/// varnode's address.
 pub struct JitInputVar {
     varnode: Varnode,
 }
@@ -1393,6 +1401,25 @@ impl JitVal for JitInputVar {
         visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
     ) {
         visitor.visit_input_var(self);
+    }
+}
+
+impl crate::pcode::emu::jit::var::JitVar for JitInputVar {
+    /// Port of `AbstractJitVarnodeVar`'s fixed `id` of `-1` passed by `JitInputVar`'s constructor.
+    fn id(&self) -> i32 {
+        -1
+    }
+
+    /// Port of `AbstractJitVarnodeVar.space()`.
+    fn space(&self) -> Arc<AddressSpace> {
+        Arc::clone(self.varnode.get_address().space())
+    }
+}
+
+impl crate::pcode::emu::jit::var::JitVarnodeVar for JitInputVar {
+    /// Port of `AbstractJitVarnodeVar.varnode()`.
+    fn varnode(&self) -> Varnode {
+        self.varnode.clone()
     }
 }
 
