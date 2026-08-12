@@ -3,7 +3,7 @@
 //! Port of `ghidra.pcode.emu.jit.op.JitFloatBinOp`.
 
 use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-use crate::pcode::seam_stubs::JitBinOp;
+use crate::pcode::emu::jit::op::JitBinOp;
 
 /// A binary p-code operator use-def node with floating-point types.
 ///
@@ -58,11 +58,11 @@ mod tests {
     }
 
     impl JitBinOp for TestFloatBinOp {
-        fn l(&self) -> Box<dyn JitVal> {
+        fn l(&self) -> std::sync::Arc<dyn JitVal> {
             unimplemented!()
         }
 
-        fn r(&self) -> Box<dyn JitVal> {
+        fn r(&self) -> std::sync::Arc<dyn JitVal> {
             unimplemented!()
         }
 

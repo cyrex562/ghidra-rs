@@ -23,9 +23,8 @@ pub trait JitIntTestOp: JitIntBinOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
+    use crate::pcode::emu::jit::op::{JitBinOp, JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitBinOp};
 
     struct TestIntTestOp;
 
@@ -46,11 +45,11 @@ mod tests {
     }
 
     impl JitBinOp for TestIntTestOp {
-        fn l(&self) -> Box<dyn JitVal> {
+        fn l(&self) -> std::sync::Arc<dyn JitVal> {
             unimplemented!()
         }
 
-        fn r(&self) -> Box<dyn JitVal> {
+        fn r(&self) -> std::sync::Arc<dyn JitVal> {
             unimplemented!()
         }
 

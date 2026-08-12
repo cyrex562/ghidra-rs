@@ -392,12 +392,12 @@ mod tests {
         }
     }
 
-    impl crate::pcode::seam_stubs::JitBinOp for TestIntBinOp {
-        fn l(&self) -> Box<dyn JitVal> {
-            Box::new(MockVal)
+    impl crate::pcode::emu::jit::op::JitBinOp for TestIntBinOp {
+        fn l(&self) -> Arc<dyn JitVal> {
+            Arc::new(MockVal)
         }
-        fn r(&self) -> Box<dyn JitVal> {
-            Box::new(MockVal)
+        fn r(&self) -> Arc<dyn JitVal> {
+            Arc::new(MockVal)
         }
         fn l_type(&self) -> JitTypeBehavior {
             JitTypeBehavior::Integer

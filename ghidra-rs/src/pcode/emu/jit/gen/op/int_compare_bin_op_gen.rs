@@ -300,12 +300,12 @@ mod tests {
         }
     }
 
-    impl crate::pcode::seam_stubs::JitBinOp for TestIntTestOp {
-        fn l(&self) -> Box<dyn JitVal> {
+    impl crate::pcode::emu::jit::op::JitBinOp for TestIntTestOp {
+        fn l(&self) -> Arc<dyn JitVal> {
             unimplemented!()
         }
 
-        fn r(&self) -> Box<dyn JitVal> {
+        fn r(&self) -> Arc<dyn JitVal> {
             unimplemented!()
         }
 

@@ -1131,16 +1131,6 @@ impl<MR, N> ObjDef<MR, N> {
     }
 }
 
-/// Placeholder for the unported Java type `JitBinOp`, referenced by `JitBoolBinOp`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait JitBinOp: JitDefOp {
-    fn l(&self) -> Box<dyn JitVal>;
-    fn r(&self) -> Box<dyn JitVal>;
-    fn l_type(&self) -> JitTypeBehavior;
-    fn r_type(&self) -> JitTypeBehavior;
-}
-
 /// Placeholder for the unported Java type `OpGen`, referenced by
 /// [`BinOpGen`](crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen).
 /// Generated stub: only a shape hint. Java's `OpGen<T extends JitOp>` also declares an abstract

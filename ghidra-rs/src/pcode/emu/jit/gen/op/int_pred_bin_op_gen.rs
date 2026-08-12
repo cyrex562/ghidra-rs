@@ -41,7 +41,8 @@ use crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TLong, TRef};
-use crate::pcode::seam_stubs::{JitBinOp, JitCodeGenerator, Scope};
+use crate::pcode::emu::jit::op::JitBinOp;
+use crate::pcode::seam_stubs::{JitCodeGenerator, Scope};
 
 /// An extension for integer operators whose outputs are boolean.
 ///
@@ -251,11 +252,11 @@ mod tests {
     }
 
     impl JitBinOp for TestBinOp {
-        fn l(&self) -> Box<dyn JitVal> {
+        fn l(&self) -> Arc<dyn JitVal> {
             unimplemented!()
         }
 
-        fn r(&self) -> Box<dyn JitVal> {
+        fn r(&self) -> Arc<dyn JitVal> {
             unimplemented!()
         }
 

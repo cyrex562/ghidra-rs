@@ -19,12 +19,13 @@
 //!   [`seam_stubs`](crate::pcode::seam_stubs); see `STUBS.tsv`.
 
 use crate::pcode::emu::jit::analysis::jit_type::MpIntJitType;
+use crate::pcode::emu::jit::op::JitBinOp;
 use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::gen::util::emitter::Bot;
 use crate::pcode::emu::jit::gen::util::emitter::Emitter;
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::TRef;
-use crate::pcode::seam_stubs::{Ext, JitBinOp, JitCodeGenerator, OpGen, Scope};
+use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, OpGen, Scope};
 
 /// A choice of static method parameter to take as operator output.
 ///
@@ -148,11 +149,11 @@ mod tests {
     }
 
     impl JitBinOp for TestBinOp {
-        fn l(&self) -> Box<dyn JitVal> {
+        fn l(&self) -> Arc<dyn JitVal> {
             unimplemented!()
         }
 
-        fn r(&self) -> Box<dyn JitVal> {
+        fn r(&self) -> Arc<dyn JitVal> {
             unimplemented!()
         }
 
