@@ -4,9 +4,9 @@
 
 use std::sync::Arc;
 
+use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
 use crate::pcode::emu::jit::var::JitVal;
-use crate::pcode::seam_stubs::{JitDefOp, JitOutVar, JitTypeBehavior};
-use crate::pcode::emu::jit::op::JitOp;
+use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior};
 use crate::program::model::pcode::{OpCode, PcodeOp};
 
 use super::{JitBoolUnOp, JitUnOp};
@@ -90,7 +90,7 @@ impl JitBoolUnOp for JitBoolNegateOp {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::JitDefOp as JitDefOpTrait;
+    use crate::pcode::emu::jit::op::JitDefOp as JitDefOpTrait;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::SequenceNumber;
 

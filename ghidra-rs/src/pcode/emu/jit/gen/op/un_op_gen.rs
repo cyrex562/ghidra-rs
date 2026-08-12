@@ -30,8 +30,8 @@ pub trait UnOpGen<T: JitUnOp>: OpGen<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{JitDefOp, JitOutVar, JitTypeBehavior};
-use crate::pcode::emu::jit::op::JitOp;
+    use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
+    use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior};
     use std::sync::Arc;
 
     struct TestUnOp;

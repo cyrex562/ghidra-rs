@@ -4,8 +4,9 @@
 
 use std::sync::Arc;
 
+use crate::pcode::emu::jit::op::JitDefOp;
 use crate::pcode::emu::jit::var::JitVal;
-use crate::pcode::seam_stubs::{JitDefOp, JitTypeBehavior};
+use crate::pcode::seam_stubs::JitTypeBehavior;
 
 /// A p-code operator use-def node with one input and one output.
 ///
@@ -30,8 +31,8 @@ pub trait JitUnOp: JitDefOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{JitDefOp, JitOutVar};
-use crate::pcode::emu::jit::op::JitOp;
+    use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
+    use crate::pcode::seam_stubs::JitOutVar;
 
     struct TestUnOp;
 

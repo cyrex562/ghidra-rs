@@ -6,12 +6,12 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
-use crate::pcode::emu::jit::op::JitPhiOp;
+use crate::pcode::emu::jit::op::{JitDefOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
 use crate::pcode::seam_stubs::{
     BlockFlow, JitAnalysisContext, JitBlock, JitDataFlowExecutor, JitDataFlowModel,
-    JitDataFlowState, JitDataFlowUseropLibrary, JitDefOp,
+    JitDataFlowState, JitDataFlowUseropLibrary,
 };
 use crate::program::model::lang::register::Register;
 use crate::program::model::pcode::Varnode;

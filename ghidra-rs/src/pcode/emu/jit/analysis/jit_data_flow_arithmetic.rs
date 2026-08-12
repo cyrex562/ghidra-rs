@@ -4,12 +4,12 @@
 
 use std::sync::Arc;
 
-use crate::pcode::emu::jit::op::{jit_op_bin_op, jit_op_un_op, JitOp};
+use crate::pcode::emu::jit::op::{jit_op_bin_op, jit_op_un_op, JitDefOp, JitOp};
 use crate::pcode::emu::jit::var::{jit_val, JitVal};
 use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::seam_stubs::{
-    JitAnalysisContext, JitCatenateOp, JitDataFlowModel, JitDefOp, JitLoadOp, JitOutVar,
+    JitAnalysisContext, JitCatenateOp, JitDataFlowModel, JitLoadOp, JitOutVar,
     JitStoreOp, JitSynthSubPieceOp, OpBehaviorSubpiece,
 };
 use crate::pcode::utils::{big_integer_to_bytes, bytes_to_big_integer};
