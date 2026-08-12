@@ -19,7 +19,7 @@ DONE	trait	36	3	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 DONE	trait	36	3	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/LocalOutVarGen.java
 DONE	trait	36	3	12	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/MemoryOutVarGen.java
 DONE	trait	34	95	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitVal.java
-TODO	trait	33	24	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitUnOp.java
+DONE	trait	33	24	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitUnOp.java
 TODO	trait	32	14	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolUnOp.java
 TODO	trait	31	15	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolNegateOp.java
 TODO	trait	30	17	89	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowArithmetic.java
