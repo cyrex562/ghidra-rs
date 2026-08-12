@@ -14,6 +14,7 @@ use crate::pcode::emu::jit::analysis::jit_type::{
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Next};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
+use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_execution_exception::PcodeExecutionException;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
@@ -30,14 +31,15 @@ use crate::pcode::exec::sleigh_pcode_userop_definition::{SignatureDef, SleighPco
 use crate::pcode::exec::trace::data::pcode_trace_data_access::PcodeTraceDataAccess;
 use crate::pcode::floatformat::big_float::{BigFloat, MathContext};
 use crate::program::model::address::{
-    Address, AddressRange, AddressSetView, AddressSpace, AddressSpaceType,
+    Address, AddressRange, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
 };
+use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::mem::mem_buffer::MemBuffer;
-use crate::program::model::pcode::Varnode;
+use crate::program::model::pcode::{OpCode, Varnode};
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use std::collections::HashMap;
 
@@ -83,6 +85,12 @@ impl ValueLocation {
     /// Port of `ValueLocation.isEmpty()`.
     pub fn is_empty(&self) -> bool {
         self.nodes.is_empty()
+    }
+
+    /// Port of `ValueLocation.getAddress()`: the address of the first (most significant) varnode,
+    /// or `None` where Java returns `null` for an empty location.
+    pub fn get_address(&self) -> Option<&Address> {
+        self.nodes.first().map(Varnode::get_address)
     }
 
     /// Port of `ValueLocation.getConst()`. Returns `None` if any varnode is non-constant.
@@ -643,12 +651,20 @@ pub trait BytesPcodeExecutorStatePiece: Send + Sync {}
 /// Placeholder for `ghidra.pcode.exec.BytesPcodeArithmetic`, referenced by
 /// [`AbstractBytesPcodeExecutorStatePiece`](crate::pcode::exec::abstract_bytes_pcode_executor_state_piece::AbstractBytesPcodeExecutorStatePiece)'s
 /// two-argument constructor solely for its static factory `forLanguage`, used to build a default
-/// arithmetic from a language alone. No other member is referenced.
+/// arithmetic from a language alone, and by
+/// [`WatchValuePcodeArithmetic`](crate::pcode::exec::debugger_pcode_utils::WatchValuePcodeArithmetic)
+/// for `forEndian`. No other member is referenced.
 pub struct BytesPcodeArithmetic;
 
 impl BytesPcodeArithmetic {
     /// Port of the static factory `BytesPcodeArithmetic.forLanguage(Language)`.
     pub fn for_language(_language: &Arc<dyn Language>) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+        unimplemented!("BytesPcodeArithmetic not yet ported")
+    }
+
+    /// Port of the static factory `BytesPcodeArithmetic.forEndian(boolean)`, which selects between
+    /// the Java enum's `BIG_ENDIAN` and `LITTLE_ENDIAN` constants.
+    pub fn for_endian(_big_endian: bool) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
         unimplemented!("BytesPcodeArithmetic not yet ported")
     }
 
@@ -1780,6 +1796,219 @@ impl crate::pcode::emu::jit::var::JitVar for JitIndirectMemoryVar {
         visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
     ) {
         visitor.visit_indirect_memory_var(self);
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.trace.TraceMemoryStatePcodeArithmetic`, referenced by
+/// [`WatchValuePcodeArithmetic`](crate::pcode::exec::debugger_pcode_utils::WatchValuePcodeArithmetic)
+/// before the real class is ported. Java's version is an enum with a single `INSTANCE` constant,
+/// so this mirrors it as a one-variant enum. Its whole body is short and endian-agnostic, so
+/// unlike most stubs it carries real behavior: a rudimentary taint analysis in which any input
+/// that is not [`TraceMemoryState::Known`] taints the result to
+/// [`TraceMemoryState::Unknown`].
+///
+/// Java's `T` is `TraceMemoryState`, whose references may be `null`; as with
+/// [`LocationPcodeArithmetic`](crate::pcode::exec::location_pcode_arithmetic::LocationPcodeArithmetic),
+/// the Rust port uses `Option<TraceMemoryState>` for `T` to carry that nullability through the
+/// generic [`PcodeArithmetic`] trait.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TraceMemoryStatePcodeArithmetic {
+    /// The singleton instance.
+    Instance,
+}
+
+impl PcodeArithmetic<Option<TraceMemoryState>> for TraceMemoryStatePcodeArithmetic {
+    fn get_domain(&self) -> &'static str {
+        "TraceMemoryState"
+    }
+
+    fn get_endian(&self) -> Option<Endian> {
+        None
+    }
+
+    fn unary_op(
+        &self,
+        _opcode: OpCode,
+        _sizeout: i32,
+        _sizein1: i32,
+        in1: &Option<TraceMemoryState>,
+    ) -> Option<TraceMemoryState> {
+        *in1
+    }
+
+    fn binary_op(
+        &self,
+        _opcode: OpCode,
+        _sizeout: i32,
+        _sizein1: i32,
+        in1: &Option<TraceMemoryState>,
+        _sizein2: i32,
+        in2: &Option<TraceMemoryState>,
+    ) -> Option<TraceMemoryState> {
+        if *in1 == Some(TraceMemoryState::Known) && *in2 == Some(TraceMemoryState::Known) {
+            Some(TraceMemoryState::Known)
+        }
+        else {
+            Some(TraceMemoryState::Unknown)
+        }
+    }
+
+    /// Shouldn't see STORE during Sleigh eval, anyway.
+    fn mod_before_store(
+        &self,
+        _sizein_offset: i32,
+        _space: &AddressSpace,
+        _in_offset: &Option<TraceMemoryState>,
+        _sizein_value: i32,
+        in_value: &Option<TraceMemoryState>,
+    ) -> Option<TraceMemoryState> {
+        *in_value
+    }
+
+    fn mod_after_load(
+        &self,
+        _sizein_offset: i32,
+        _space: &AddressSpace,
+        in_offset: &Option<TraceMemoryState>,
+        _sizein_value: i32,
+        in_value: &Option<TraceMemoryState>,
+    ) -> Option<TraceMemoryState> {
+        if *in_offset == Some(TraceMemoryState::Known)
+            && *in_value == Some(TraceMemoryState::Known)
+        {
+            Some(TraceMemoryState::Known)
+        }
+        else {
+            Some(TraceMemoryState::Unknown)
+        }
+    }
+
+    fn from_const_bytes(&self, _value: &[u8]) -> Option<TraceMemoryState> {
+        Some(TraceMemoryState::Known)
+    }
+
+    fn from_const_u64(&self, _value: u64, _size: i32) -> Option<TraceMemoryState> {
+        Some(TraceMemoryState::Known)
+    }
+
+    fn from_const_big_int(
+        &self,
+        _value: i128,
+        _size: i32,
+        _is_contextreg: bool,
+    ) -> Option<TraceMemoryState> {
+        Some(TraceMemoryState::Known)
+    }
+
+    fn to_concrete(
+        &self,
+        _value: &Option<TraceMemoryState>,
+        purpose: Purpose,
+    ) -> Result<Vec<u8>, ConcretionError> {
+        Err(ConcretionError::new("Cannot make TraceMemoryState concrete", purpose))
+    }
+
+    fn size_of(&self, _value: &Option<TraceMemoryState>) -> i64 {
+        panic!("Cannot get size of a TraceMemoryState")
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.AddressesReadPcodeArithmetic`, referenced by
+/// [`WatchValuePcodeArithmetic`](crate::pcode::exec::debugger_pcode_utils::WatchValuePcodeArithmetic)
+/// before the real class is ported. Java's version is an enum with a single `INSTANCE` constant,
+/// so this mirrors it as a one-variant enum, and, its body being short and endian-agnostic, it
+/// carries real behavior: it reports the union of all addresses read.
+///
+/// Java's `T` is the `AddressSetView` interface, whose references may be `null`. Since every value
+/// this arithmetic produces is either a fresh `AddressSet` or a union of two, the Rust port uses
+/// the concrete `Option<AddressSet>` rather than a trait object, again carrying nullability in the
+/// `Option`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum AddressesReadPcodeArithmetic {
+    /// The singleton instance.
+    Instance,
+}
+
+impl PcodeArithmetic<Option<AddressSet>> for AddressesReadPcodeArithmetic {
+    fn get_domain(&self) -> &'static str {
+        "AddressSetView"
+    }
+
+    fn get_endian(&self) -> Option<Endian> {
+        None
+    }
+
+    fn unary_op(
+        &self,
+        _opcode: OpCode,
+        _sizeout: i32,
+        _sizein1: i32,
+        in1: &Option<AddressSet>,
+    ) -> Option<AddressSet> {
+        in1.clone()
+    }
+
+    fn binary_op(
+        &self,
+        _opcode: OpCode,
+        _sizeout: i32,
+        _sizein1: i32,
+        in1: &Option<AddressSet>,
+        _sizein2: i32,
+        in2: &Option<AddressSet>,
+    ) -> Option<AddressSet> {
+        Some(in1.as_ref()?.union(in2.as_ref()?))
+    }
+
+    fn mod_before_store(
+        &self,
+        _sizein_offset: i32,
+        _space: &AddressSpace,
+        _in_offset: &Option<AddressSet>,
+        _sizein_value: i32,
+        in_value: &Option<AddressSet>,
+    ) -> Option<AddressSet> {
+        in_value.clone()
+    }
+
+    fn mod_after_load(
+        &self,
+        _sizein_address: i32,
+        _space: &AddressSpace,
+        in_offset: &Option<AddressSet>,
+        _sizein_value: i32,
+        in_value: &Option<AddressSet>,
+    ) -> Option<AddressSet> {
+        Some(in_value.as_ref()?.union(in_offset.as_ref()?))
+    }
+
+    fn from_const_bytes(&self, _value: &[u8]) -> Option<AddressSet> {
+        Some(AddressSet::new())
+    }
+
+    fn from_const_u64(&self, _value: u64, _size: i32) -> Option<AddressSet> {
+        Some(AddressSet::new())
+    }
+
+    fn from_const_big_int(
+        &self,
+        _value: i128,
+        _size: i32,
+        _is_contextreg: bool,
+    ) -> Option<AddressSet> {
+        Some(AddressSet::new())
+    }
+
+    fn to_concrete(
+        &self,
+        _value: &Option<AddressSet>,
+        purpose: Purpose,
+    ) -> Result<Vec<u8>, ConcretionError> {
+        Err(ConcretionError::new("Cannot make 'addresses read' concrete", purpose))
+    }
+
+    fn size_of(&self, _value: &Option<AddressSet>) -> i64 {
+        unimplemented!("Cannot get size of an 'addresses read' set")
     }
 }
 

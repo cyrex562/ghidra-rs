@@ -5,6 +5,7 @@ pub mod annotated_pcode_userop_library;
 pub mod bytes_pcode_executor_state_piece;
 pub mod bytes_pcode_executor_state_space;
 pub mod concretion_error;
+pub mod debugger_pcode_utils;
 pub mod default_pcode_userop_library;
 pub mod location_pcode_arithmetic;
 pub mod paired_pcode_arithmetic;
@@ -39,6 +40,10 @@ pub use annotated_pcode_userop_library::{
     PcodeUserop, UseropCallback, UseropContext, UseropInputs, UseropValue, UseropValueKind,
 };
 pub use concretion_error::ConcretionError;
+pub use debugger_pcode_utils::{
+    DebuggerPcodeUtils, PrettyBytes, WatchValue, WatchValuePcodeArithmetic,
+    WatchValuePcodeExecutorState, WatchValuePcodeExecutorStatePiece,
+};
 pub use default_pcode_userop_library::DefaultPcodeUseropLibrary;
 pub use location_pcode_arithmetic::LocationPcodeArithmetic;
 pub use paired_pcode_arithmetic::PairedPcodeArithmetic;
