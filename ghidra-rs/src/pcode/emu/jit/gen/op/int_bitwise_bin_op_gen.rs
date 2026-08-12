@@ -108,9 +108,9 @@ mod tests {
     use crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen;
     use crate::pcode::emu::jit::gen::util::emitter::{Ent, Next};
     use crate::pcode::emu::jit::gen::util::types::{TInt, TLong};
+    use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{Ext, JitDefOp, JitOutVar, JitTypeBehavior, MethodVisitor, };
-use crate::pcode::emu::jit::op::JitOp;
+    use crate::pcode::seam_stubs::{Ext, JitOutVar, JitTypeBehavior, MethodVisitor};
     use std::sync::Arc;
 
     struct MockOutVar;

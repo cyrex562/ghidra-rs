@@ -21,7 +21,7 @@ use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{BPrim, TInt, TRef};
-use crate::pcode::emu::jit::op::{JitOp, JitPhiOp};
+use crate::pcode::emu::jit::op::{JitDefOp, JitOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
@@ -1210,36 +1210,6 @@ pub trait JitOutVar: JitVal {
     }
 }
 
-/// Placeholder for the unported Java type `JitDefOp`, referenced by `JitBinOp`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-///
-/// Grown (see `STUBS.tsv`): `out()` returns `Arc<dyn JitOutVar>` rather than `Box`, matching the
-/// change to [`JitOutVar`] -- the output var is a shared node in the use-def graph (also reachable
-/// via, e.g., the data-flow model), not a value uniquely owned by one op.
-pub trait JitDefOp: JitOp {
-    fn out(&self) -> Arc<dyn JitOutVar>;
-
-    fn type_(&self) -> JitTypeBehavior {
-        JitTypeBehavior::Integer
-    }
-
-    /// Stand-in for Java's `definition instanceof JitSynthSubPieceOp subsub` in
-    /// `JitDataFlowArithmetic.trySimplifiedSubPiece`.
-    ///
-    /// Grown (see `STUBS.tsv`): `dyn JitDefOp` carries no downcast facility, so -- as
-    /// [`JitVal::is_input_var`] already does for `instanceof JitInputVar` -- the check is modeled
-    /// as a defaulted query that only the matching type overrides.
-    fn as_synth_sub_piece_op(&self) -> Option<&JitSynthSubPieceOp> {
-        None
-    }
-
-    /// Stand-in for Java's `definition instanceof JitCatenateOp cat` in
-    /// `JitDataFlowArithmetic.trySimplifiedSubPiece`. See [`Self::as_synth_sub_piece_op`].
-    fn as_catenate_op(&self) -> Option<&JitCatenateOp> {
-        None
-    }
-}
 
 /// Placeholder for the unported Java type `JitBinOp`, referenced by `JitBoolBinOp`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);

@@ -4,10 +4,10 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::pcode::emu::jit::op::JitSyntheticOp;
+use crate::pcode::emu::jit::op::{JitDefOp, JitOp, JitSyntheticOp};
 use crate::pcode::emu::jit::var::JitVal;
-use crate::pcode::seam_stubs::{BlockFlow, JitBlock, JitDefOp, JitInputVar, JitOutVar, JitTypeBehavior, };
-use crate::pcode::emu::jit::op::JitOp;
+use crate::pcode::seam_stubs::{BlockFlow, JitBlock, JitInputVar, JitOutVar, JitTypeBehavior};
+
 
 /// The synthetic use-def node for phi nodes.
 ///

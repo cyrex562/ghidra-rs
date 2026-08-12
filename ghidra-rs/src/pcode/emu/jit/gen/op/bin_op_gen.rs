@@ -122,9 +122,9 @@ pub trait BinOpGen<T: JitBinOp>: OpGen<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitDefOp, JitOutVar, JitTypeBehavior, MethodVisitor, Scope};
-use crate::pcode::emu::jit::op::JitOp;
+    use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior, MethodVisitor, Scope};
     use std::sync::Arc;
 
     struct TestBinOp;

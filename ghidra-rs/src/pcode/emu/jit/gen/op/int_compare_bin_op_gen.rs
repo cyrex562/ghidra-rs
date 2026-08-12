@@ -275,10 +275,9 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::analysis::jit_type::LongJitType;
     use crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen;
-    use crate::pcode::emu::jit::op::{JitIntBinOp, JitIntTestOp};
+    use crate::pcode::emu::jit::op::{JitDefOp, JitIntBinOp, JitIntTestOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitDefOp, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen, };
-use crate::pcode::emu::jit::op::JitOp;
+    use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior, MethodVisitor, OpGen};
     use std::sync::Arc;
 
     struct TestIntTestOp;

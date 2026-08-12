@@ -141,7 +141,8 @@ pub trait JitOpVisitor: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{JitBlock, JitDefOp, JitOutVar as JitOutVarStub};
+    use crate::pcode::emu::jit::op::JitDefOp;
+    use crate::pcode::seam_stubs::{JitBlock, JitOutVar as JitOutVarStub};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::Varnode;
     use std::sync::{Arc, Mutex};

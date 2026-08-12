@@ -141,8 +141,9 @@ pub trait JitOpUpwardVisitor: JitOpVisitor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pcode::emu::jit::op::JitDefOp;
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitBlock, JitDefOp, JitTypeBehavior};
+    use crate::pcode::seam_stubs::{JitBlock, JitTypeBehavior};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber, Varnode};
     use std::sync::{Arc, Mutex};

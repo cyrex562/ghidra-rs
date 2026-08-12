@@ -112,10 +112,9 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::gen::util::types::TRef;
-    use crate::pcode::emu::jit::op::JitFloatBinOp;
+    use crate::pcode::emu::jit::op::{JitDefOp, JitFloatBinOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{Ext, JitBinOp, JitDefOp, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen, };
-use crate::pcode::emu::jit::op::JitOp;
+    use crate::pcode::seam_stubs::{Ext, JitBinOp, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen};
     use std::sync::Arc;
 
     struct TestFloatTestOp;
