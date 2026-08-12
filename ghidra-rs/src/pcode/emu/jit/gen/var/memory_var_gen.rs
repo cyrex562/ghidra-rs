@@ -239,8 +239,8 @@ fn gen_read_value_direct_to_stack<JT: SimpleJitType, N: Next>(
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
-    use crate::pcode::emu::jit::var::{JitVar, JitVarnodeVar};
-    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAnalysisContext, JitOp, JitVal, MethodVisitor};
+    use crate::pcode::emu::jit::var::{JitVal, JitVar, JitVarnodeVar};
+    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAnalysisContext, JitOp, MethodVisitor};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use std::sync::{Arc, Mutex};
 

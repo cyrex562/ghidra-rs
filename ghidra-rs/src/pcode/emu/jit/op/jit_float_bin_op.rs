@@ -35,7 +35,8 @@ pub trait JitFloatBinOp: JitBinOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::{JitDefOp, JitOp, JitOutVar, JitVal};
+    use crate::pcode::emu::jit::var::JitVal;
+    use crate::pcode::seam_stubs::{JitDefOp, JitOp, JitOutVar};
 
     struct TestFloatBinOp;
 

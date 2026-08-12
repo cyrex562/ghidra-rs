@@ -4,8 +4,8 @@
 
 use std::sync::Arc;
 
-use crate::pcode::emu::jit::var::{JitVar, JitVarnodeVar};
-use crate::pcode::seam_stubs::{JitMemoryVar, JitOp, JitVal};
+use crate::pcode::emu::jit::var::{JitVal, JitVar, JitVarnodeVar};
+use crate::pcode::seam_stubs::{JitMemoryVar, JitOp};
 use crate::program::model::address::AddressSpace;
 use crate::program::model::pcode::Varnode;
 

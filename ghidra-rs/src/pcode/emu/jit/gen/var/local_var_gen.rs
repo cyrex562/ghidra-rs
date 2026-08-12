@@ -169,9 +169,8 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::analysis::jit_type::AnyJitType;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
-    use crate::pcode::seam_stubs::{
-        JitAllocationModel, JitVal, MethodVisitor, VarGen,
-    };
+    use crate::pcode::emu::jit::var::JitVal;
+    use crate::pcode::seam_stubs::{JitAllocationModel, MethodVisitor, VarGen};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::pcode::Varnode;

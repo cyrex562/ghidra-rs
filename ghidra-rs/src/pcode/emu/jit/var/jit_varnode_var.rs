@@ -19,7 +19,7 @@ pub trait JitVarnodeVar: JitVar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::JitVal;
+    use crate::pcode::emu::jit::var::JitVal;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use std::sync::Arc;
 
