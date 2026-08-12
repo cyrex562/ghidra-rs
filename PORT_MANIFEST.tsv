@@ -10983,7 +10983,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/Co
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatAbsOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatAddOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatCeilOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatCompareBinOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatCompareBinOpGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatConvertUnOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatDivOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/FloatEqualOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
