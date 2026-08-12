@@ -28,11 +28,12 @@
 //!   referenced by this port.
 
 use crate::pcode::emu::jit::analysis::jit_type::IntJitType;
+use crate::pcode::emu::jit::gen::access::access_gen::AccessGen;
 use crate::pcode::emu::jit::gen::access::simple_access_gen::SimpleAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
-use crate::pcode::seam_stubs::{AccessGen, JitCodeGenerator};
+use crate::pcode::seam_stubs::JitCodeGenerator;
 use crate::program::model::address::AddressSpace;
 use crate::program::model::pcode::Varnode;
 

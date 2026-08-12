@@ -11,10 +11,11 @@
 //!   port of [`SimpleJitType`](crate::pcode::emu::jit::analysis::jit_type::SimpleJitType).
 
 use crate::pcode::emu::jit::analysis::jit_type::SimpleJitType;
+use crate::pcode::emu::jit::gen::access::access_gen::AccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{BPrim, TRef};
-use crate::pcode::seam_stubs::{AccessGen, JitCodeGenerator};
+use crate::pcode::seam_stubs::JitCodeGenerator;
 use crate::program::model::pcode::Varnode;
 
 /// An access generator for simple-typed variables.

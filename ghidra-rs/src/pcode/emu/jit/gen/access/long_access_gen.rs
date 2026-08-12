@@ -27,12 +27,13 @@
 //! - `BLOCK_SIZE` mirrors `GenConsts.BLOCK_SIZE`, as in [`IntAccessGen`].
 
 use crate::pcode::emu::jit::analysis::jit_type::LongJitType;
+use crate::pcode::emu::jit::gen::access::access_gen::AccessGen;
 use crate::pcode::emu::jit::gen::access::method_access_gen::MethodAccessGen;
 use crate::pcode::emu::jit::gen::access::simple_access_gen::SimpleAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TLong, TRef};
-use crate::pcode::seam_stubs::{AccessGen, JitCodeGenerator};
+use crate::pcode::seam_stubs::JitCodeGenerator;
 use crate::program::model::lang::Endian;
 use crate::program::model::pcode::Varnode;
 
