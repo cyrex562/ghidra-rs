@@ -26,6 +26,7 @@ use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{BPrim, TInt, TRef};
 use crate::pcode::emu::jit::op::{JitDefOp, JitOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar, JitOutVar};
+use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -52,6 +53,7 @@ use crate::program::model::lang::language::Language;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
+use crate::program::model::listing::program_context::ProgramContext;
 use crate::program::model::mem::mem_buffer::MemBuffer;
 use crate::program::model::pcode::{OpCode, PcodeOp, Varnode};
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
@@ -376,11 +378,12 @@ pub trait PseudoInstruction: Send + Sync {}
 /// real class is ported. This is a minimal interface stub exposing only the methods needed by
 /// existing references.
 ///
-/// Grown (see `STUBS.tsv`) with the four members
+/// Grown (see `STUBS.tsv`) with the five members
 /// [`DefaultPcodeThread`](crate::pcode::emu::default_pcode_thread::DefaultPcodeThread)'s context
-/// handling needs. All four are defaulted so pre-existing bare `impl RegisterValue for Foo {}`
-/// blocks keep compiling; the defaults panic, since the real class carries the value and mask this
-/// stub does not.
+/// handling and [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder)'s
+/// `AddrCtx` construction need. All five are defaulted so pre-existing bare
+/// `impl RegisterValue for Foo {}` blocks keep compiling; the defaults panic, since the real class
+/// carries the value and mask this stub does not.
 pub trait RegisterValue: Send + Sync {
     /// Stands in for `RegisterValue.getRegister()`: the register this value is associated with.
     fn get_register(&self) -> RegisterRef {
@@ -403,6 +406,12 @@ pub trait RegisterValue: Send + Sync {
     /// onto this value, preferring `other` wherever both specify a bit.
     fn combine_values(&self, other: &dyn RegisterValue) -> Box<dyn RegisterValue> {
         let _ = other;
+        unimplemented!("RegisterValue not yet ported")
+    }
+
+    /// Stands in for `RegisterValue.getUnsignedValue()`: this value as an unsigned integer
+    /// (`BigInteger` in Java, `i128` here per the crate-wide convention).
+    fn get_unsigned_value(&self) -> i128 {
         unimplemented!("RegisterValue not yet ported")
     }
 }
@@ -3603,6 +3612,217 @@ impl crate::pcode::emu::jit::op::jit_un_op::JitUnOp for JitCopyOp {
 
     fn u_type(&self) -> JitTypeBehavior {
         JitTypeBehavior::Integer
+    }
+}
+
+/// Placeholder for `ghidra.pcode.exec.DecodePcodeExecutionException`, referenced by
+/// [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder),
+/// which catches it specifically (letting any other exception from decode propagate) and converts
+/// it into a [`DecodeErrorInstruction`]. Real class also carries the program counter where decode
+/// was attempted; not needed by that catch site, so only the message is kept.
+#[derive(Debug)]
+pub struct DecodePcodeExecutionException {
+    message: String,
+}
+
+impl DecodePcodeExecutionException {
+    /// Construct an exception with the given message.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into() }
+    }
+
+    /// Stands in for the inherited `Throwable.getMessage()`.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl std::fmt::Display for DecodePcodeExecutionException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for DecodePcodeExecutionException {}
+
+/// Placeholder for `ghidra.app.util.PseudoInstruction`'s subtype
+/// `ghidra.pcode.emu.jit.JitPassage.DecodeErrorInstruction`, returned by
+/// [`JitPassage::decode_error`] and, in turn, by
+/// [`JitPassageDecoder::decode_instruction`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder::decode_instruction)
+/// when the underlying decoder reports a [`DecodePcodeExecutionException`]. Real class builds a
+/// single-byte "instruction" whose translated p-code throws
+/// [`DecodePcodeExecutionException`] with `message` if ever executed; that translation isn't
+/// ported, so this stub keeps only the message the real constructor also just stores.
+#[derive(Debug, Clone)]
+pub struct DecodeErrorInstruction {
+    message: String,
+}
+
+impl DecodeErrorInstruction {
+    /// Port of `new DecodeErrorInstruction(Language, Address, RegisterValue, String)`. The
+    /// language, address, and context select the (unported) translated p-code and are not needed
+    /// to answer [`message`](Self::message), the only member any current call site reads.
+    pub fn new(
+        _language: Arc<dyn Language>,
+        _address: Address,
+        _ctx: Option<&dyn RegisterValue>,
+        message: impl Into<String>,
+    ) -> Self {
+        Self { message: message.into() }
+    }
+
+    /// Port of `DecodeErrorInstruction.getMessage()`.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl PseudoInstruction for DecodeErrorInstruction {}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.JitPassage`, the decoded output of
+/// [`JitPassageDecoder::decode_passage`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder::decode_passage).
+/// Real class holds every instruction, p-code op, and branch record of a decoded passage -- far
+/// beyond a stub -- built by the also-unported [`DecoderForOnePassage`]. This models only what
+/// `JitPassageDecoder` itself references directly: the nested [`AddrCtx`] address-context pair and
+/// the [`decode_error`](Self::decode_error) factory. Replace with the real port (and drop this
+/// placeholder) when `JitPassage.java` lands.
+pub struct JitPassage {
+    _private: (),
+}
+
+impl JitPassage {
+    /// Port of the static factory `JitPassage.decodeError(Language, Address, RegisterValue,
+    /// String)`: build the "instruction" standing in for a decode failure at `address`.
+    pub fn decode_error(
+        language: Arc<dyn Language>,
+        address: Address,
+        ctx: Option<&dyn RegisterValue>,
+        message: impl Into<String>,
+    ) -> DecodeErrorInstruction {
+        DecodeErrorInstruction::new(language, address, ctx, message)
+    }
+}
+
+/// Port of the nested `ghidra.pcode.emu.jit.JitPassage.AddrCtx` record: an address paired with the
+/// contextreg value in effect when decode reaches it. Modelled as a free-standing type here since
+/// Rust has no static nested class; see [`JitPassage`] for the type it nests under in Java.
+///
+/// Not `Debug`: `rv_ctx` is `Option<Arc<dyn RegisterValue>>`, and the stub trait doesn't require
+/// `Debug` of its implementors.
+#[derive(Clone)]
+pub struct AddrCtx {
+    /// The contextreg value as an unsigned integer, or `0` when `rv_ctx` is `None`. Port of
+    /// `AddrCtx.biCtx`.
+    pub bi_ctx: i128,
+    /// The contextreg value, or `None` when the language has no context register. Port of
+    /// `AddrCtx.rvCtx`.
+    pub rv_ctx: Option<Arc<dyn RegisterValue>>,
+    /// The address. Port of `AddrCtx.address`.
+    pub address: Address,
+}
+
+impl AddrCtx {
+    /// Port of `new AddrCtx(RegisterValue, Address)`.
+    pub fn new(ctx: Option<Arc<dyn RegisterValue>>, address: Address) -> Self {
+        let bi_ctx = ctx.as_deref().map(RegisterValue::get_unsigned_value).unwrap_or(0);
+        Self { bi_ctx, rv_ctx: ctx, address }
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderUseropLibrary`,
+/// referenced by
+/// [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder),
+/// which only constructs and stores one. Real class wraps the emulator's userop library to
+/// override `emu_exec_decoded`/`emu_skip_decoded` and to inline p-code userops during decode; none
+/// of that is exercised by `JitPassageDecoder` itself, so this keeps just the wrapped library.
+/// Replace with the real port when `DecoderUseropLibrary.java` lands.
+pub struct DecoderUseropLibrary {
+    #[allow(dead_code)]
+    rt_lib: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
+}
+
+impl DecoderUseropLibrary {
+    /// Port of `new DecoderUseropLibrary(PcodeUseropLibrary<byte[]>)`.
+    pub fn new(rt_lib: Arc<dyn PcodeUseropLibrary<Vec<u8>>>) -> Self {
+        Self { rt_lib }
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.JitPcodeThread`, referenced by
+/// [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder),
+/// with which it sits on a dependency cycle (the real `JitPcodeThread.getEntryPrototype` takes a
+/// `JitPassageDecoder`). Real class extends `BytesPcodeThread` and drives the whole JIT
+/// fetch-decode-translate-execute loop; this stub exposes only the three getters
+/// `JitPassageDecoder`'s constructor calls. `decoder` is shared (`Arc<Mutex<_>>`) rather than
+/// owned outright because Java hands the very same `InstructionDecoder` object to both the thread
+/// and the passage decoder, and later mutates it through either reference. Replace with the real
+/// port when `JitPcodeThread.java` lands.
+pub struct JitPcodeThread {
+    decoder: Arc<Mutex<dyn InstructionDecoder>>,
+    default_context: Option<Arc<dyn ProgramContext>>,
+    userop_library: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
+}
+
+impl JitPcodeThread {
+    /// Construct a thread stub from its decoder, default context, and userop library.
+    pub fn new(
+        decoder: Arc<Mutex<dyn InstructionDecoder>>,
+        default_context: Option<Arc<dyn ProgramContext>>,
+        userop_library: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
+    ) -> Self {
+        Self { decoder, default_context, userop_library }
+    }
+
+    /// Port of `JitPcodeThread.getDecoder()`.
+    pub fn get_decoder(&self) -> Arc<Mutex<dyn InstructionDecoder>> {
+        Arc::clone(&self.decoder)
+    }
+
+    /// Port of `JitPcodeThread.getDefaultContext()`.
+    pub fn get_default_context(&self) -> Option<Arc<dyn ProgramContext>> {
+        self.default_context.clone()
+    }
+
+    /// Port of the inherited `PcodeThread.getUseropLibrary()`.
+    pub fn get_userop_library(&self) -> Arc<dyn PcodeUseropLibrary<Vec<u8>>> {
+        Arc::clone(&self.userop_library)
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderForOnePassage`,
+/// referenced by
+/// [`JitPassageDecoder::decode_passage`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder::decode_passage).
+/// Real class implements the whole fetch-decode-translate seed-queue algorithm described on
+/// `JitPassageDecoder`'s docs -- far beyond a stub -- so
+/// [`decode_passage`](Self::decode_passage)/[`finish`](Self::finish) panic if actually invoked.
+/// Replace with the real port when `DecoderForOnePassage.java` lands.
+pub struct DecoderForOnePassage<'a> {
+    #[allow(dead_code)]
+    decoder: &'a crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder,
+    #[allow(dead_code)]
+    seed: AddrCtx,
+    #[allow(dead_code)]
+    max_ops: i32,
+}
+
+impl<'a> DecoderForOnePassage<'a> {
+    /// Port of `new DecoderForOnePassage(JitPassageDecoder, AddrCtx, int)`.
+    pub fn new(
+        decoder: &'a crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder,
+        seed: AddrCtx,
+        max_ops: i32,
+    ) -> Self {
+        Self { decoder, seed, max_ops }
+    }
+
+    /// Port of `DecoderForOnePassage.decodePassage()`.
+    pub fn decode_passage(&mut self) {
+        unimplemented!("DecoderForOnePassage not yet ported")
+    }
+
+    /// Port of `DecoderForOnePassage.finish()`.
+    pub fn finish(self) -> JitPassage {
+        unimplemented!("DecoderForOnePassage not yet ported")
     }
 }
 
