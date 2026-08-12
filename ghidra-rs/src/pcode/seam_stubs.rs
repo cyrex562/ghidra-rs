@@ -14,7 +14,7 @@ use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
-use crate::pcode::emu::jit::var::JitVar;
+use crate::pcode::emu::jit::var::{JitVal, JitVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -1165,42 +1165,6 @@ impl<MR, N> ObjDef<MR, N> {
     }
 }
 
-/// Placeholder for the unported Java type `JitVal`, referenced by `JitBinOp`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait JitVal: Send + Sync {
-    fn size(&self) -> i32;
-    fn add_use(&self, op: &dyn JitOp, position: i32);
-    fn remove_use(&self, op: &dyn JitOp, position: i32);
-
-    /// Whether this value is a `JitInputVar`, i.e., an input to the passage.
-    ///
-    /// Grown (see `STUBS.tsv`) to stand in for Java's `instanceof JitInputVar` check in
-    /// `JitPhiOp.hasInputOption()`, since `JitInputVar` is not a downcast target here. Defaulted
-    /// to `false` so existing `impl JitVal for Foo` blocks keep compiling; only
-    /// [`JitInputVar`] overrides it.
-    fn is_input_var(&self) -> bool {
-        false
-    }
-
-    /// Double-dispatch hook standing in for Java's `switch (v) { case JitConstVal ... }` in
-    /// `JitOpVisitor.visitVal`.
-    ///
-    /// Grown (see `STUBS.tsv`) for
-    /// [`JitOpVisitor`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor): a
-    /// sealed-interface `switch` has no Rust equivalent over a `dyn` trait, so each concrete
-    /// `JitVal` overrides this to call back into its matching `JitOpVisitor::visit_*` method.
-    /// Defaulted so existing `impl JitVal for Foo` blocks keep compiling; the default mirrors
-    /// Java's unreachable `default -> throw new AssertionError()` arm.
-    fn accept_val(
-        &self,
-        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
-    ) {
-        let _ = visitor;
-        panic!("AssertionError: unrecognized JitVal");
-    }
-}
-
 /// Placeholder for the unported Java type `JitOutVar`, referenced by `JitDefOp`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
@@ -1961,14 +1925,33 @@ impl JitOp for JitNopOp {
 }
 
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.var.JitConstVal`, referenced by
-/// [`JitOpVisitor::visit_const_val`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_const_val).
-/// No fields: nothing in this crate yet inspects a constant value's contents. Replace with the
-/// real port (including the `BigInteger` value) when `JitConstVal.java` is ported.
-pub struct JitConstVal;
+/// [`JitOpVisitor::visit_const_val`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_const_val)
+/// and [`JitVal::constant`](crate::pcode::emu::jit::var::jit_val::constant).
+///
+/// Grown (see `STUBS.tsv`) with the `size`/`value` fields for `JitVal.constant(int, BigInteger)`:
+/// `BigInteger` is stood in for by `i128` since no arbitrary-precision integer type exists in this
+/// crate yet. `to_string`/`value` accessors and the rest of the real class body remain unported.
+/// Replace with the real port when `JitConstVal.java` is ported.
+pub struct JitConstVal {
+    size: i32,
+    value: i128,
+}
+
+impl JitConstVal {
+    /// Port of `new JitConstVal(int, BigInteger)`.
+    pub fn new(size: i32, value: i128) -> Self {
+        Self { size, value }
+    }
+
+    /// Port of `JitConstVal.value()`.
+    pub fn value(&self) -> i128 {
+        self.value
+    }
+}
 
 impl JitVal for JitConstVal {
     fn size(&self) -> i32 {
-        0
+        self.size
     }
 
     fn add_use(&self, _op: &dyn JitOp, _position: i32) {}

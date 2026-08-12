@@ -376,7 +376,7 @@ mod tests {
     fn jit_memory_out_var_add_use_is_prohibited() {
         // Java: JitMemoryOutVar.addUse unconditionally throws AssertionError, since these
         // variables are never used by downstream p-code ops.
-        use crate::pcode::seam_stubs::JitVal;
+        use crate::pcode::emu::jit::var::JitVal;
 
         let v = make_var(4, 0x1000, 4);
         struct FakeOp;

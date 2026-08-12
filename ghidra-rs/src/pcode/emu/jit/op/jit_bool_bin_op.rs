@@ -41,10 +41,10 @@ mod tests {
     struct TestOp;
 
     impl JitBinOp for TestOp {
-        fn l(&self) -> Box<dyn crate::pcode::seam_stubs::JitVal> {
+        fn l(&self) -> Box<dyn crate::pcode::emu::jit::var::JitVal> {
             unimplemented!()
         }
-        fn r(&self) -> Box<dyn crate::pcode::seam_stubs::JitVal> {
+        fn r(&self) -> Box<dyn crate::pcode::emu::jit::var::JitVal> {
             unimplemented!()
         }
         fn l_type(&self) -> JitTypeBehavior {

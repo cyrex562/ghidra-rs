@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use crate::pcode::seam_stubs::JitVal;
+use crate::pcode::emu::jit::var::jit_val::JitVal;
 use crate::program::model::address::AddressSpace;
 
 /// A p-code variable use-def node.

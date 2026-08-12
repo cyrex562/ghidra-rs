@@ -5,7 +5,8 @@
 use std::sync::Arc;
 
 use crate::pcode::exec::pcode_userop_library::PcodeUseropDefinition;
-use crate::pcode::seam_stubs::{JitOp, JitTypeBehavior, JitVal, MiniDFState};
+use crate::pcode::emu::jit::var::JitVal;
+use crate::pcode::seam_stubs::{JitOp, JitTypeBehavior, MiniDFState};
 
 /// A use-def node for a `PcodeOp::CALLOTHER`.
 ///

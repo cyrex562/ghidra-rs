@@ -3,12 +3,12 @@
 //! Port of `ghidra.pcode.emu.jit.analysis.JitOpVisitor`.
 
 use crate::pcode::emu::jit::op::JitPhiOp;
-use crate::pcode::emu::jit::var::{JitDirectMemoryVar, JitVar};
+use crate::pcode::emu::jit::var::{JitDirectMemoryVar, JitVal, JitVar};
 use crate::pcode::seam_stubs::{
     JitBranchIndOp, JitBranchOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherMissingOp,
     JitCallOtherOp, JitCatenateOp, JitConstVal, JitFailVal, JitIndirectMemoryVar, JitInputVar,
     JitLoadOp, JitMissingVar, JitNopOp, JitOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp,
-    JitUnimplementedOp, JitVal,
+    JitUnimplementedOp,
 };
 use crate::pcode::seam_stubs::{JitBinOp, JitUnOp};
 
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn visit_val_dispatches_const_val() {
         let mut visitor = RecordingVisitor::default();
-        visitor.visit_val(&JitConstVal as &dyn JitVal);
+        visitor.visit_val(&JitConstVal::new(0, 0) as &dyn JitVal);
 
         assert_eq!(visitor.const_vals.lock().unwrap().len(), 1);
     }
@@ -283,6 +283,6 @@ mod tests {
 
         let mut visitor = NoOpVisitor;
         visitor.visit_op(&phi as &dyn JitOp);
-        visitor.visit_val(&JitConstVal as &dyn JitVal);
+        visitor.visit_val(&JitConstVal::new(0, 0) as &dyn JitVal);
     }
 }
