@@ -1348,6 +1348,81 @@ impl BlockFlow {
     }
 }
 
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitControlFlowModel`,
+/// referenced by
+/// [`JitVarScopeModel`](crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel),
+/// which is constructed from one and walks its blocks and their flows. Java's class performs the
+/// whole basic-block analysis of a passage -- splitting the op sequence into [`JitBlock`]s and
+/// wiring them with `IntBranch`es -- which is far beyond a stub; this models only the *result*:
+/// the block list and the flow graph over it, which is all the scope analysis reads.
+///
+/// The `flowsFrom`/`flowsTo` accessors live here rather than on [`JitBlock`] (where Java puts
+/// them) because this crate's `JitBlock` is deliberately identity-only -- see that type's doc.
+/// Java keys both maps by the `IntBranch` producing the flow; nothing here looks up a flow by its
+/// branch, so these are plain lists (Java's call sites take `.values()`).
+///
+/// Note [`JitDataFlowModel::flows_to`] carries the same "inward flows of a block" question for
+/// [`JitDataFlowBlockAnalyzer`], which has no control-flow model to ask. Both are stand-ins for
+/// the one real `JitBlock.flowsTo()` and collapse into it when `JitControlFlowModel.java` is
+/// ported.
+#[derive(Default)]
+pub struct JitControlFlowModel {
+    blocks: Vec<JitBlock>,
+    flows_from: HashMap<JitBlock, Vec<BlockFlow>>,
+    flows_to: HashMap<JitBlock, Vec<BlockFlow>>,
+    language: Option<Arc<dyn Language>>,
+}
+
+impl JitControlFlowModel {
+    /// Build a model over the given blocks, deriving each block's inward and outward flow lists
+    /// from `flows`. Stands in for Java's constructor, which computes both from the passage.
+    pub fn new(blocks: Vec<JitBlock>, flows: impl IntoIterator<Item = BlockFlow>) -> Self {
+        let mut flows_from: HashMap<JitBlock, Vec<BlockFlow>> = HashMap::new();
+        let mut flows_to: HashMap<JitBlock, Vec<BlockFlow>> = HashMap::new();
+        for flow in flows {
+            if let Some(from) = flow.from {
+                flows_from.entry(from).or_default().push(flow);
+            }
+            flows_to.entry(flow.to).or_default().push(flow);
+        }
+        Self { blocks, flows_from, flows_to, language: None }
+    }
+
+    /// Attach the passage's language, used only by
+    /// [`JitVarScopeModel::dump_result`](crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel::dump_result)
+    /// to name live varnodes. See [`Self::get_register_name`].
+    pub fn with_language(mut self, language: Arc<dyn Language>) -> Self {
+        self.language = Some(language);
+        self
+    }
+
+    /// Port of `JitControlFlowModel.getBlocks()`.
+    pub fn get_blocks(&self) -> &[JitBlock] {
+        &self.blocks
+    }
+
+    /// Stand-in for `JitBlock.flowsFrom()`: the flows leaving `block`. See the type-level doc.
+    pub fn flows_from(&self, block: JitBlock) -> &[BlockFlow] {
+        self.flows_from.get(&block).map_or(&[], Vec::as_slice)
+    }
+
+    /// Stand-in for `JitBlock.flowsTo()`: the flows entering `block`. See the type-level doc.
+    pub fn flows_to(&self, block: JitBlock) -> &[BlockFlow] {
+        self.flows_to.get(&block).map_or(&[], Vec::as_slice)
+    }
+
+    /// Stand-in for `block.getLanguage().getRegister(address, size).getName()`, the only use any
+    /// call site makes of a block's language. Returns `None` when no language is attached or no
+    /// register covers exactly that location, matching Java's null return.
+    pub fn get_register_name(&self, block: JitBlock, address: &Address, size: i32) -> Option<String> {
+        let _ = block; // Java reads the language off the block; every block shares the passage's.
+        let language = self.language.as_ref()?;
+        let register = language.get_register_at(address, size)?;
+        let name = register.borrow().name().to_owned();
+        Some(name)
+    }
+}
+
 /// Placeholder for the unported Java type `ghidra.pcode.emu.jit.var.JitInputVar`, referenced by
 /// [`JitPhiOp::add_input_option`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp::add_input_option).
 /// Java's class extends `AbstractJitVal` (not yet ported, so use tracking is a no-op here, matching
@@ -2662,6 +2737,16 @@ pub trait JitDataFlowModel: Send + Sync {
     fn get_or_create_analyzer(&self, block: JitBlock) -> Arc<JitDataFlowBlockAnalyzer> {
         let _ = block;
         unimplemented!("JitDataFlowModel::get_or_create_analyzer stub")
+    }
+
+    /// Port of `JitDataFlowModel.getAnalyzer(JitBlock)` (`analyzers.get(block)`), used by
+    /// [`JitVarScopeModel`](crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel).
+    ///
+    /// Grown (see `STUBS.tsv`). Defaults to [`Self::get_or_create_analyzer`]: every consumer of
+    /// this method runs after `JitDataFlowModel.analyze()`, by which point each block already has
+    /// an analyzer, so the lookup and the get-or-create coincide.
+    fn get_analyzer(&self, block: JitBlock) -> Arc<JitDataFlowBlockAnalyzer> {
+        self.get_or_create_analyzer(block)
     }
 
     /// Stand-in for `block.flowsTo()`, a method Java puts on the also-unported

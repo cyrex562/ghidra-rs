@@ -656,3 +656,5 @@ ts	stub_class	referenced_by
 2026-08-12T06:00:00.000000+00:00	JitDataFlowUseropLibrary	JitDataFlowBlockAnalyzer
 2026-08-12T06:00:00.000000+00:00	JitDataFlowExecutor	JitDataFlowBlockAnalyzer
 2026-08-12T06:00:00.000000+00:00	JitMissingVar	JitDataFlowBlockAnalyzer
+2026-08-12T07:00:00.000000+00:00	JitControlFlowModel	JitVarScopeModel
+2026-08-12T07:00:00.000000+00:00	JitDataFlowModel	JitVarScopeModel

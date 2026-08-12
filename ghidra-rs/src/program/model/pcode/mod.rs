@@ -389,6 +389,16 @@ impl PartialEq for Varnode {
 
 impl Eq for Varnode {}
 
+/// Counterpart to Java's `Varnode.hashCode()`, which hashes the same address/size pair that
+/// `equals` compares. Needed so varnodes can key hashed collections, as they do in Java (e.g.
+/// `JitVarScopeModel`'s live-varnode sets).
+impl std::hash::Hash for Varnode {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.address.hash(state);
+        self.size.hash(state);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct PcodeOp {
     pub opcode: OpCode,
