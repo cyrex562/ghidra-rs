@@ -2,10 +2,10 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.analysis.JitOpUpwardVisitor`.
 
-use crate::pcode::emu::jit::op::JitPhiOp;
+use crate::pcode::emu::jit::op::{JitPhiOp, JitUnOp};
 use crate::pcode::seam_stubs::{
     JitBinOp, JitBranchIndOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherOp, JitCatenateOp,
-    JitLoadOp, JitOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp, JitUnOp,
+    JitLoadOp, JitOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp,
 };
 
 use super::jit_op_visitor::JitOpVisitor;
@@ -198,8 +198,12 @@ mod tests {
         }
     }
     impl JitUnOp for MockUnOp {
-        fn u(&self) -> Box<dyn JitVal> {
-            Box::new(TagVal(self.0))
+        fn u(&self) -> Arc<dyn JitVal> {
+            Arc::new(TagVal(self.0))
+        }
+
+        fn u_type(&self) -> crate::pcode::seam_stubs::JitTypeBehavior {
+            crate::pcode::seam_stubs::JitTypeBehavior::Integer
         }
     }
 

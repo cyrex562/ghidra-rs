@@ -1224,17 +1224,6 @@ pub trait JitDefOp: JitOp {
     }
 }
 
-/// Placeholder for the unported Java type `JitUnOp`, referenced by `JitFloatUnOp`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait JitUnOp: JitDefOp {
-    fn u(&self) -> Box<dyn JitVal>;
-
-    fn u_type(&self) -> JitTypeBehavior {
-        JitTypeBehavior::Integer
-    }
-}
-
 /// Placeholder for the unported Java type `JitBinOp`, referenced by `JitBoolBinOp`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.

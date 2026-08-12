@@ -2,7 +2,8 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.op.JitIntUnOp`.
 
-use crate::pcode::seam_stubs::{JitTypeBehavior, JitUnOp};
+use crate::pcode::seam_stubs::JitTypeBehavior;
+use super::JitUnOp;
 
 /// A unary p-code operator use-def node with integer types.
 ///
@@ -50,8 +51,12 @@ mod tests {
     }
 
     impl JitUnOp for TestIntUnOp {
-        fn u(&self) -> Box<dyn JitVal> {
+        fn u(&self) -> std::sync::Arc<dyn JitVal> {
             unimplemented!()
+        }
+
+        fn u_type(&self) -> JitTypeBehavior {
+            JitTypeBehavior::Integer
         }
     }
 
