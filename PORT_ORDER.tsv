@@ -1,6 +1,6 @@
 status	mode	depth	fanin	rem	module	path
 DONE	trait	0	105	100	pcode	Ghidra/Debug/Debugger/src/main/java/ghidra/pcode/exec/DebuggerPcodeUtils.java
-TODO	trait	30	92	0	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Misc.java
+PARK	trait	30	92	0	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Misc.java
 TODO	trait	36	8	71	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitOpUpwardVisitor.java
 TODO	trait	40	7	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/InstanceFieldReq.java
 TODO	trait	46	1	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/MpAccessGen.java
