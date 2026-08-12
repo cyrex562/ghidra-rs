@@ -2,6 +2,7 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.var.JitVar`.
 
+use crate::pcode::emu::jit::op::JitOp;
 use std::sync::Arc;
 
 use crate::pcode::emu::jit::var::jit_val::JitVal;
@@ -52,9 +53,9 @@ mod tests {
             8
         }
 
-        fn add_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+        fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
 
-        fn remove_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+        fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
     impl JitVar for TestVar {

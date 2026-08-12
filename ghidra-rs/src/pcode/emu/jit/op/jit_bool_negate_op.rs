@@ -5,7 +5,8 @@
 use std::sync::Arc;
 
 use crate::pcode::emu::jit::var::JitVal;
-use crate::pcode::seam_stubs::{JitDefOp, JitOp, JitOutVar, JitTypeBehavior};
+use crate::pcode::seam_stubs::{JitDefOp, JitOutVar, JitTypeBehavior};
+use crate::pcode::emu::jit::op::JitOp;
 use crate::program::model::pcode::{OpCode, PcodeOp};
 
 use super::{JitBoolUnOp, JitUnOp};

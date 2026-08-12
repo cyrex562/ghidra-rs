@@ -33,6 +33,7 @@
 //!   [`seam_stubs`](crate::pcode::seam_stubs) already has the three write methods this type
 //!   overrides.
 
+use crate::pcode::emu::jit::op::JitOp;
 use crate::pcode::emu::jit::analysis::jit_type::{MpIntJitType, SimpleJitType};
 use crate::pcode::emu::jit::gen::access::access_gen::{lookup_mp, lookup_simple, AnySimpleAccessGen};
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
@@ -381,7 +382,7 @@ mod tests {
 
         let v = make_var(4, 0x1000, 4);
         struct FakeOp;
-        impl crate::pcode::seam_stubs::JitOp for FakeOp {
+        impl JitOp for FakeOp {
             fn type_for(&self, _position: i32) -> crate::pcode::seam_stubs::JitTypeBehavior {
                 unimplemented!()
             }

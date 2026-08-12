@@ -21,7 +21,7 @@ use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{BPrim, TInt, TRef};
-use crate::pcode::emu::jit::op::JitPhiOp;
+use crate::pcode::emu::jit::op::{JitOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
@@ -1207,34 +1207,6 @@ pub trait JitOutVar: JitVal {
     /// blocks -- which model no definition storage at all -- keep compiling.
     fn set_definition_arc(&self, definition: Option<Arc<dyn JitDefOp>>) {
         let _ = definition;
-    }
-}
-
-/// Placeholder for the unported Java type `JitOp`, referenced by `JitBinOp`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait JitOp: Send + Sync {
-    fn type_for(&self, position: i32) -> JitTypeBehavior;
-    fn link(&self);
-    fn unlink(&self);
-
-    /// Double-dispatch hook standing in for Java's `switch (op) { case JitUnOp ... }` in
-    /// `JitOpVisitor.visitOp`.
-    ///
-    /// Grown (see `STUBS.tsv`) for
-    /// [`JitOpVisitor`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor): a
-    /// sealed-interface `switch` has no Rust equivalent over a `dyn` trait, so each concrete
-    /// `JitOp` overrides this to call back into its matching `JitOpVisitor::visit_*` method.
-    /// Defaulted so existing `impl JitOp for Foo` blocks keep compiling; the default mirrors
-    /// Java's unreachable `default -> throw new AssertionError(...)` arm. Leaf types under the
-    /// still-interface-level `JitUnOp`/`JitBinOp` cases have no concrete implementor in this
-    /// crate yet, so they too fall back to this default until one is ported.
-    fn accept(
-        &self,
-        visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,
-    ) {
-        let _ = visitor;
-        panic!("AssertionError: Unrecognized op");
     }
 }
 
@@ -3126,37 +3098,6 @@ impl JitDataFlowState {
     pub fn get_varnodes_written(&self) -> Vec<Varnode> {
         self.varnodes_written.lock().unwrap().clone()
     }
-}
-
-/// Port of `JitOp.unOp(PcodeOp, JitOutVar, JitVal)`: build the use-def node for a unary p-code op.
-///
-/// A free function rather than a trait member because Java declares it `static` on the
-/// [`JitOp`] interface. Only [`OpCode::BoolNegate`] has a ported node type
-/// ([`JitBoolNegateOp`](crate::pcode::emu::jit::op::JitBoolNegateOp)); every other arm of Java's
-/// switch names a class that is not ported yet, so it panics as Java's `default` arm does for an
-/// unrecognized opcode. Extend it as each `JitXxxOp.java` lands.
-pub fn jit_op_un_op(op: &PcodeOp, out: Arc<dyn JitOutVar>, u: Arc<dyn JitVal>) -> Arc<dyn JitDefOp> {
-    match op.opcode {
-        OpCode::BoolNegate => {
-            Arc::new(crate::pcode::emu::jit::op::JitBoolNegateOp::new(op.clone(), out, u))
-        }
-        opcode => panic!("UnsupportedOperationException: Unrecognized un op: {opcode:?}"),
-    }
-}
-
-/// Port of `JitOp.binOp(PcodeOp, JitOutVar, JitVal, JitVal)`: build the use-def node for a binary
-/// p-code op.
-///
-/// See [`jit_op_un_op`]. No binary node type is ported yet, so this always panics; the parameters
-/// are named to match Java's so the arms can be filled in as they land.
-pub fn jit_op_bin_op(
-    op: &PcodeOp,
-    out: Arc<dyn JitOutVar>,
-    l: Arc<dyn JitVal>,
-    r: Arc<dyn JitVal>,
-) -> Arc<dyn JitDefOp> {
-    let (_out, _l, _r) = (out, l, r);
-    panic!("UnsupportedOperationException: Unrecognized bin op: {:?}", op.opcode)
 }
 
 /// Placeholder for the unported Java type `ghidra.pcode.opbehavior.OpBehaviorSubpiece`, referenced

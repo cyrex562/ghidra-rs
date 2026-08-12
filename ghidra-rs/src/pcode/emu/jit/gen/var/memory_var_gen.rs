@@ -180,7 +180,8 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::var::{JitVal, JitVar, JitVarnodeVar};
-    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAnalysisContext, JitOp, MethodVisitor};
+    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAnalysisContext, MethodVisitor};
+use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use std::sync::{Arc, Mutex};
 

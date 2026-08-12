@@ -88,9 +88,8 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::gen::util::types::TRef;
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{
-        Ext, JitBinOp, JitDefOp, JitOp, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen,
-    };
+    use crate::pcode::seam_stubs::{Ext, JitBinOp, JitDefOp, JitOutVar, JitTypeBehavior, MethodVisitor, OpGen, };
+use crate::pcode::emu::jit::op::JitOp;
     use std::sync::Arc;
 
     struct TestFloatBinOp;

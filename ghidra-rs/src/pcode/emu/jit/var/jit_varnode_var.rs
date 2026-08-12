@@ -2,6 +2,7 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.var.JitVarnodeVar`.
 
+use crate::pcode::emu::jit::op::JitOp;
 use crate::pcode::emu::jit::var::JitVar;
 use crate::program::model::pcode::Varnode;
 
@@ -34,9 +35,9 @@ mod tests {
             self.varnode.get_size()
         }
 
-        fn add_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+        fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
 
-        fn remove_use(&self, _op: &dyn crate::pcode::seam_stubs::JitOp, _position: i32) {}
+        fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
     impl JitVar for TestVarnodeVar {

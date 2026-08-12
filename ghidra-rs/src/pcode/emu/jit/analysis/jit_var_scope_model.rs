@@ -422,9 +422,8 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
     use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
     use crate::pcode::emu::jit::op::JitPhiOp;
-    use crate::pcode::seam_stubs::{
-        BlockFlow, JitAnalysisContext, JitDataFlowUseropLibrary, JitLocalOutVar, JitOp, JitOutVar,
-    };
+    use crate::pcode::seam_stubs::{BlockFlow, JitAnalysisContext, JitDataFlowUseropLibrary, JitLocalOutVar, JitOutVar, };
+use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
     use std::sync::atomic::{AtomicI32, Ordering};

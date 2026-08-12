@@ -40,7 +40,7 @@ impl OpGen<JitCBranchOp> for CBranchOpGen {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::JitOp;
+    use crate::pcode::emu::jit::op::JitOp;
 
     fn assert_is_op_gen<T: JitOp>(_gen: &impl OpGen<T>) {}
 

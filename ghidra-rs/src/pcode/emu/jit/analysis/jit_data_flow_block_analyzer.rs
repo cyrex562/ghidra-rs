@@ -170,7 +170,8 @@ impl JitDataFlowBlockAnalyzer {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::var::jit_var::JitVar;
-    use crate::pcode::seam_stubs::{JitConstVal, JitLocalOutVar, JitOp, JitOutVar};
+    use crate::pcode::seam_stubs::{JitConstVal, JitLocalOutVar, JitOutVar};
+use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
     use std::collections::HashMap;

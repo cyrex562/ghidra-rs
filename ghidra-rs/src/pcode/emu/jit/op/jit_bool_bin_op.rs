@@ -4,6 +4,7 @@
 //! (integer) types, as defined by the Ghidra emulator. All operands and results are typed as
 //! integers according to JitTypeBehavior.
 
+use crate::pcode::emu::jit::op::JitOp;
 use crate::pcode::seam_stubs::{JitBinOp, JitTypeBehavior};
 
 /// A binary p-code operator use-def node with boolean (integer) types.
@@ -61,7 +62,7 @@ mod tests {
         }
     }
 
-    impl crate::pcode::seam_stubs::JitOp for TestOp {
+    impl JitOp for TestOp {
         fn type_for(&self, _position: i32) -> JitTypeBehavior {
             JitTypeBehavior::Integer
         }

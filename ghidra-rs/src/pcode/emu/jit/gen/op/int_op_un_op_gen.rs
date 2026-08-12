@@ -96,7 +96,8 @@ pub trait IntOpUnOpGen<T: JitUnOp>: UnOpGen<T> {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitDefOp, JitOp, JitOutVar, JitTypeBehavior, MethodVisitor};
+    use crate::pcode::seam_stubs::{JitDefOp, JitOutVar, JitTypeBehavior, MethodVisitor};
+use crate::pcode::emu::jit::op::JitOp;
     use std::sync::Arc;
 
     struct TestUnOp;
