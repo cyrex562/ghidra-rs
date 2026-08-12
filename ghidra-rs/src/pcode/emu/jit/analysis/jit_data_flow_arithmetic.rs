@@ -5,11 +5,12 @@
 use std::sync::Arc;
 
 use crate::pcode::emu::jit::op::{jit_op_bin_op, jit_op_un_op, JitDefOp, JitOp};
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::var::{jit_val, JitVal};
 use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::seam_stubs::{
-    JitAnalysisContext, JitCatenateOp, JitDataFlowModel, JitLoadOp, JitOutVar,
+    JitAnalysisContext, JitCatenateOp, JitDataFlowModel, JitLoadOp,
     JitStoreOp, JitSynthSubPieceOp, OpBehaviorSubpiece,
 };
 use crate::pcode::utils::{big_integer_to_bytes, bytes_to_big_integer};
@@ -190,7 +191,7 @@ impl JitDataFlowArithmetic {
             cat.unlink();
             let mut new_parts = cat.parts().to_vec();
             self.remove_offset_from_right(&mut new_parts, offset);
-            self.remove_from_left_to_size(&mut new_parts, out.size());
+            self.remove_from_left_to_size(&mut new_parts, out.varnode().get_size());
             assert!(!new_parts.is_empty());
             if new_parts.len() == 1 {
                 // Context should already be notified

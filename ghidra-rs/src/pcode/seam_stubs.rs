@@ -22,7 +22,7 @@ use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{BPrim, TInt, TRef};
 use crate::pcode::emu::jit::op::{JitDefOp, JitOp, JitPhiOp};
-use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
+use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar, JitOutVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -1173,44 +1173,6 @@ impl<MR, N> ObjDef<MR, N> {
     }
 }
 
-/// Placeholder for the unported Java type `JitOutVar`, referenced by `JitDefOp`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-///
-/// Grown (see `STUBS.tsv`) for `JitPhiOp`, the first real (non-test-mock) implementor: Java's
-/// `setDefinition`/`definition` are nullable (`JitDefOp definition`), so `set_definition` takes
-/// `Option<&dyn JitDefOp>` rather than a bare reference, and `definition()` returns
-/// `Option<Arc<dyn JitDefOp>>` -- `Arc` rather than `Box` because the defining op's identity must
-/// be comparable against a live `&self` elsewhere (see `JitPhiOp::unlink`'s port of
-/// `out().definition() == this`), which a freshly-boxed copy could never satisfy.
-///
-/// Grown (see `STUBS.tsv`) with the [`JitVal`] supertrait for
-/// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
-/// which returns generated output variables where a `JitVal` is expected (e.g.
-/// `dfm.notifyOp(..).out()` as the result of an arithmetic op). This matches Java, where
-/// `JitOutVar extends JitVarnodeVar extends JitVar extends JitVal`; only the `JitVal` link is
-/// modeled here, since no call site yet needs an out var's `id()`/`space()`.
-pub trait JitOutVar: JitVal {
-    fn set_definition(&self, definition: Option<&dyn JitDefOp>);
-    fn definition(&self) -> Option<Arc<dyn JitDefOp>>;
-    fn varnode(&self) -> Varnode;
-
-    /// The retaining form of [`Self::set_definition`].
-    ///
-    /// Grown (see `STUBS.tsv`) for
-    /// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
-    /// which builds op nodes whose outputs must later report them back through
-    /// [`Self::definition`]. Java does this wiring in `AbstractJitDefOp.link()`, as
-    /// `out.setDefinition(this)`; `link(&self)` here cannot produce the `Arc<Self>` an out var
-    /// has to keep, so the shared handle is passed in explicitly at the construction site (see
-    /// [`JitDataFlowModel::notify_def_op`]). Defaults to a no-op so existing `impl JitOutVar`
-    /// blocks -- which model no definition storage at all -- keep compiling.
-    fn set_definition_arc(&self, definition: Option<Arc<dyn JitDefOp>>) {
-        let _ = definition;
-    }
-}
-
-
 /// Placeholder for the unported Java type `JitBinOp`, referenced by `JitBoolBinOp`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
@@ -1501,10 +1463,6 @@ impl JitOutVar for JitLocalOutVar {
     fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
         self.definition.lock().unwrap().clone()
     }
-
-    fn varnode(&self) -> Varnode {
-        self.varnode.clone()
-    }
 }
 
 impl crate::pcode::emu::jit::var::JitVar for JitLocalOutVar {
@@ -1582,10 +1540,6 @@ impl JitOutVar for JitMemoryOutVar {
     /// Port of `AbstractJitOutVar.definition()`.
     fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
         self.definition.lock().unwrap().clone()
-    }
-
-    fn varnode(&self) -> Varnode {
-        self.varnode.clone()
     }
 }
 

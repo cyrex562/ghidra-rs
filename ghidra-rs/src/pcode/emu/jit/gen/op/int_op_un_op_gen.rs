@@ -25,6 +25,7 @@
 //!   [`IntOpBinOpGen`](super::int_op_bin_op_gen::IntOpBinOpGen)'s omitted `genRun`.
 
 use crate::pcode::emu::jit::analysis::jit_type::{IntJitType, LongJitType, MpIntJitType};
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::gen::op::un_op_gen::UnOpGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
@@ -97,7 +98,7 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior, MethodVisitor};
+    use crate::pcode::seam_stubs::{JitTypeBehavior, MethodVisitor};
     use std::sync::Arc;
 
     struct TestUnOp;

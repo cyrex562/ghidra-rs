@@ -3,6 +3,7 @@
 //! Port of `ghidra.pcode.emu.jit.gen.op.UnOpGen`.
 
 use crate::pcode::seam_stubs::{Ext, OpGen};
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::op::jit_un_op::JitUnOp;
 
 /// An extension that provides conveniences and common implementations for unary p-code
@@ -31,7 +32,7 @@ pub trait UnOpGen<T: JitUnOp>: OpGen<T> {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
-    use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior};
+    use crate::pcode::seam_stubs::{JitTypeBehavior};
     use std::sync::Arc;
 
     struct TestUnOp;

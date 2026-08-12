@@ -5,8 +5,9 @@
 use std::sync::{Arc, Mutex};
 
 use crate::pcode::emu::jit::op::{JitDefOp, JitOp, JitSyntheticOp};
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::var::JitVal;
-use crate::pcode::seam_stubs::{BlockFlow, JitBlock, JitInputVar, JitOutVar, JitTypeBehavior};
+use crate::pcode::seam_stubs::{BlockFlow, JitBlock, JitInputVar, JitTypeBehavior};
 
 
 /// The synthetic use-def node for phi nodes.
@@ -194,6 +195,25 @@ mod tests {
         fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
+
+    impl crate::pcode::emu::jit::var::JitVar for MockOutVar {
+        fn id(&self) -> i32 {
+            0
+        }
+        fn space(&self) -> Arc<AddressSpace> {
+            Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0))
+        }
+    }
+
+    impl crate::pcode::emu::jit::var::JitVarnodeVar for MockOutVar {
+        fn varnode(&self) -> crate::program::model::pcode::Varnode {
+            use crate::program::model::pcode::Varnode;
+            let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
+            let addr = Address::new(Arc::new(space), 0);
+            Varnode::new(addr, 8)
+        }
+    }
+
     impl JitOutVar for MockOutVar {
         fn set_definition(&self, definition: Option<&dyn JitDefOp>) {
             self.set_definition_calls.lock().unwrap().push(definition.is_some());
@@ -201,10 +221,6 @@ mod tests {
 
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
             self.definition.lock().unwrap().clone()
-        }
-
-        fn varnode(&self) -> Varnode {
-            self.varnode.clone()
         }
     }
 

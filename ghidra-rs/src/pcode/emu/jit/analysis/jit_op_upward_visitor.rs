@@ -3,7 +3,8 @@
 //! Port of `ghidra.pcode.emu.jit.analysis.JitOpUpwardVisitor`.
 
 use crate::pcode::emu::jit::op::{JitPhiOp, JitUnOp};
-use crate::pcode::seam_stubs::{JitBinOp, JitBranchIndOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherOp, JitCatenateOp, JitLoadOp, JitOutVar, JitStoreOp, JitSynthSubPieceOp, };
+use crate::pcode::emu::jit::var::JitOutVar;
+use crate::pcode::seam_stubs::{JitBinOp, JitBranchIndOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherOp, JitCatenateOp, JitLoadOp, JitStoreOp, JitSynthSubPieceOp, };
 use crate::pcode::emu::jit::op::JitOp;
 
 use super::jit_op_visitor::JitOpVisitor;
@@ -320,9 +321,6 @@ mod tests {
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
             None
         }
-        fn varnode(&self) -> Varnode {
-            self.0.clone()
-        }
     }
 
     // Java: `JitOpUpwardVisitor.visitPhiOp` visits every value in `options().values()`; here,
@@ -382,9 +380,6 @@ mod tests {
             fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
             fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
                 Some(Arc::clone(&self.0))
-            }
-            fn varnode(&self) -> Varnode {
-                unimplemented!()
             }
         }
 

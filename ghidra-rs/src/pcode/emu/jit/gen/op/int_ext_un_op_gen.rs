@@ -17,6 +17,7 @@
 //!   implementors provide nothing beyond the [`UnOpGen`] bound itself.
 
 use crate::pcode::emu::jit::gen::op::un_op_gen::UnOpGen;
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::op::jit_un_op::JitUnOp;
 
 /// An extension for unary integer extension operators.
@@ -34,7 +35,7 @@ pub trait IntExtUnOpGen<T: JitUnOp>: UnOpGen<T> {}
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
-    use crate::pcode::seam_stubs::{Ext, JitOutVar, JitTypeBehavior, OpGen};
+    use crate::pcode::seam_stubs::{Ext, JitTypeBehavior, OpGen};
     use std::sync::Arc;
 
     struct TestUnOp;

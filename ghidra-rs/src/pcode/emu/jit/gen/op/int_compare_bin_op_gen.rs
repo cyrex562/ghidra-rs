@@ -43,6 +43,7 @@
 //!   [`FloatConvertUnOpGen::gen`](super::float_convert_un_op_gen::FloatConvertUnOpGen::gen).
 
 use crate::pcode::emu::jit::analysis::jit_type::{IntJitType, MpIntJitType};
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::gen::op::int_pred_bin_op_gen::IntPredBinOpGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Dead, Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::lbl::{Lbl, LblEm};
@@ -277,7 +278,7 @@ mod tests {
     use crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen;
     use crate::pcode::emu::jit::op::{JitDefOp, JitIntBinOp, JitIntTestOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitOutVar, JitTypeBehavior, MethodVisitor, OpGen};
+    use crate::pcode::seam_stubs::{JitTypeBehavior, MethodVisitor, OpGen};
     use std::sync::Arc;
 
     struct TestIntTestOp;

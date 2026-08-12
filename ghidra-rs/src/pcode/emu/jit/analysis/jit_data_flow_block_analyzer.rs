@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
+use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::op::{JitDefOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
@@ -170,7 +171,7 @@ impl JitDataFlowBlockAnalyzer {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::var::jit_var::JitVar;
-    use crate::pcode::seam_stubs::{JitConstVal, JitLocalOutVar, JitOutVar};
+    use crate::pcode::seam_stubs::{JitConstVal, JitLocalOutVar};
 use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
