@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
+use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
 use crate::pcode::emu::jit::analysis::jit_type::{AnyJitType, IntJitType, LongJitType, MpIntJitType};
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
@@ -2201,6 +2202,34 @@ pub trait JitCodeGenerator: Send + Sync {
     /// this method, keep compiling.
     fn get_analysis_context(&self) -> JitAnalysisContext {
         unimplemented!("JitCodeGenerator::get_analysis_context stub")
+    }
+
+    /// Get the allocation model for the current analysis.
+    ///
+    /// Port of `JitCodeGenerator.getAllocationModel()`, referenced by
+    /// [`LocalVarGen`](crate::pcode::emu::jit::gen::var::local_var_gen::LocalVarGen). Defaulted
+    /// (rather than required) so the existing marker implementors of this trait, which predate
+    /// this method, keep compiling.
+    fn get_allocation_model(&self) -> Box<dyn JitAllocationModel> {
+        unimplemented!("JitCodeGenerator::get_allocation_model stub")
+    }
+}
+
+/// Placeholder for the unported Java type `JitAllocationModel`
+/// (`ghidra.pcode.emu.jit.analysis.JitAllocationModel`), referenced by
+/// [`LocalVarGen`](crate::pcode::emu::jit::gen::var::local_var_gen::LocalVarGen) through
+/// [`JitCodeGenerator::get_allocation_model`]. Java's class tracks the complete allocation plan
+/// (which varnodes get which JVM locals, and by what strategy); only the one member
+/// `LocalVarGen::get_handler` needs -- looking up the handler for a given value -- is modeled
+/// here. The default panics: [`VarHandler`]'s `gen_load_*` methods require `Self: Sized` (see
+/// that trait's module docs), so no real allocation model can be plugged in here until either
+/// `JitAllocationModel` itself is ported (with a way to recover the concrete handler type per
+/// value) or `VarHandler` grows a dyn-safe path.
+pub trait JitAllocationModel: Send + Sync {
+    /// Port of `JitAllocationModel.getHandler(JitVal)`.
+    fn get_handler(&self, v: &dyn JitVal) -> Box<dyn VarHandler> {
+        let _ = v;
+        unimplemented!("JitAllocationModel::get_handler stub")
     }
 }
 
