@@ -28,7 +28,7 @@ DONE	trait	28	15	5	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 DONE	trait	31	6	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/StaticFieldReq.java
 DONE	trait	28	3	14	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/CBranchOpGen.java
 DONE	trait	30	2	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubMemoryVarGen.java
-TODO	trait	30	2	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubLocalVarGen.java
+DONE	trait	30	2	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/SubLocalVarGen.java
 TODO	trait	27	11	35	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/VarGen.java
 TODO	trait	26	14	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/JvmLocal.java
 TODO	trait	26	3	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubVarHandler.java
