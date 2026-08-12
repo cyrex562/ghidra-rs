@@ -14,7 +14,8 @@ use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
 use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
 use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
 use crate::pcode::emu::jit::analysis::jit_type::{
-    AnyJitType, AnySimpleJitType, IntJitType, JitType, LongJitType, MpIntJitType, SimpleJitType,
+    AnyJitType, AnySimpleJitType, DoubleJitType, FloatJitType, IntJitType, JitType, LongJitType,
+    MpFloatJitType, MpIntJitType, SimpleJitType,
 };
 use crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel;
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
@@ -889,16 +890,26 @@ impl PcodeTraceDataAccess for DefaultPcodeTraceThreadAccess {
 ///
 /// The real Java type is an enum of four behaviors -- `ANY`, `INTEGER`, `FLOAT`, and `COPY` --
 /// each with a `type(int)` and a `resolve(JitType)`, plus the static `compare` and `forJavaType`.
-/// `JitType` itself only ever reaches for `INTEGER.type(size)`, so that is the only variant and
-/// the only method modeled here. Replace with the real port when `JitTypeBehavior.java` is ported.
+/// Only the variants and members this crate's ports reach for are modeled here; `resolve` and
+/// `forJavaType` are still missing. Replace with the real port when `JitTypeBehavior.java` is
+/// ported.
 ///
-/// Grown (see `STUBS.tsv`) with the `Copy` variant that [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp)
-/// and `JitCopyOp` (not yet ported) report: no type requirement of their own, but an implication
-/// that the output shares the inputs' interpretation. Unlike `Integer`/`Float`, `Copy.type(int)`
-/// throws `AssertionError` in Java, since a copy has no type of its own to compute -- modeled here
-/// by [`type_of`](Self::type_of) panicking for that variant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Grown (see `STUBS.tsv`) with:
+/// - the `Copy` variant that [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp) and
+///   `JitCopyOp` report: no type requirement of their own, but an implication that the output
+///   shares the inputs' interpretation. Unlike `Integer`/`Float`, `Copy.type(int)` throws
+///   `AssertionError` in Java, since a copy has no type of its own to compute -- modeled here by
+///   [`type_of`](Self::type_of) panicking for that variant;
+/// - the `Any` variant and [`compare`](Self::compare), for
+///   [`JitTypeModel`](crate::pcode::emu::jit::analysis::jit_type_model::JitTypeModel), whose
+///   voting starts every value at `ANY` and breaks ties by this ordering.
+///
+/// The variants are declared in Java's constant order, so the derived [`Ord`] reproduces the
+/// `ordinal()` comparison [`compare`](Self::compare) is defined in terms of.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum JitTypeBehavior {
+    /// No type requirement or interpretation.
+    Any,
     /// The bits are interpreted as an integer.
     Integer,
     /// The bits are interpreted as a float.
@@ -910,21 +921,37 @@ pub enum JitTypeBehavior {
 impl JitTypeBehavior {
     /// Apply this behavior to a value of the given size to determine its type.
     ///
-    /// Port of `JitTypeBehavior.INTEGER.type(int)`.
+    /// Port of `JitTypeBehavior.type(int)`. As in Java, [`Any`](Self::Any) defaults to integers.
     ///
     /// # Panics
     ///
     /// If `self` is [`JitTypeBehavior::Copy`], matching Java's `COPY.type(int)`.
     pub fn type_of(&self, size: i32) -> AnyJitType {
-        if matches!(self, JitTypeBehavior::Copy) {
-            panic!("AssertionError: JitTypeBehavior::Copy has no type");
+        match self {
+            Self::Copy => panic!("AssertionError: JitTypeBehavior::Copy has no type"),
+            Self::Float => match size {
+                4 => AnyJitType::Float(FloatJitType::F4),
+                8 => AnyJitType::Double(DoubleJitType::F8),
+                _ => AnyJitType::MpFloat(MpFloatJitType::for_size(size)),
+            },
+            // If no type is specified, we default to ints.
+            Self::Any | Self::Integer => {
+                debug_assert!(size > 0);
+                match size {
+                    1..=4 => AnyJitType::Int(IntJitType::for_size(size)),
+                    5..=8 => AnyJitType::Long(LongJitType::for_size(size)),
+                    _ => AnyJitType::MpInt(MpIntJitType::for_size(size)),
+                }
+            }
         }
-        debug_assert!(size > 0);
-        match size {
-            1..=4 => AnyJitType::Int(IntJitType::for_size(size)),
-            5..=8 => AnyJitType::Long(LongJitType::for_size(size)),
-            _ => AnyJitType::MpInt(MpIntJitType::for_size(size)),
-        }
+    }
+
+    /// Compare two behaviors by preference. The behavior declared first is preferred.
+    ///
+    /// Port of the static `JitTypeBehavior.compare(JitTypeBehavior, JitTypeBehavior)`, whose
+    /// comparator-style `int` becomes an [`Ordering`](std::cmp::Ordering).
+    pub fn compare(b1: JitTypeBehavior, b2: JitTypeBehavior) -> std::cmp::Ordering {
+        b1.cmp(&b2)
     }
 }
 
@@ -2858,6 +2885,18 @@ pub trait JitDataFlowModel: Send + Sync {
     fn generate_direct_memory_var(&self, vn: &Varnode) -> Arc<dyn JitVal> {
         let _ = vn;
         unimplemented!("JitDataFlowModel::generate_direct_memory_var stub")
+    }
+
+    /// Port of `JitDataFlowModel.allValues()`: every value (variable or constant) in the use-def
+    /// graph.
+    ///
+    /// Grown (see `STUBS.tsv`) for
+    /// [`JitTypeModel`](crate::pcode::emu::jit::analysis::jit_type_model::JitTypeModel), which
+    /// seeds its voting queue with it. Java's `Set<JitVal>` is a `Vec` here: the type model only
+    /// iterates it, and the elements are already distinct by identity. See
+    /// [`Self::get_arithmetic`] for why this defaults to `unimplemented!`.
+    fn all_values(&self) -> Vec<Arc<dyn JitVal>> {
+        unimplemented!("JitDataFlowModel::all_values stub")
     }
 }
 

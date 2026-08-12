@@ -64,6 +64,14 @@ impl JitOp for JitBoolNegateOp {
     fn link(&self) {}
 
     fn unlink(&self) {}
+
+    fn as_def_op(&self) -> Option<&dyn JitDefOp> {
+        Some(self)
+    }
+
+    fn inputs(&self) -> Vec<Arc<dyn JitVal>> {
+        vec![Arc::clone(&self.u)]
+    }
 }
 
 impl JitDefOp for JitBoolNegateOp {
@@ -160,7 +168,7 @@ mod tests {
             0
         }
         fn space(&self) -> Arc<AddressSpace> {
-            Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0))
+            AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0)
         }
     }
 
@@ -168,7 +176,7 @@ mod tests {
         fn varnode(&self) -> crate::program::model::pcode::Varnode {
             use crate::program::model::pcode::Varnode;
             let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
-            let addr = Address::new(Arc::new(space), 0);
+            let addr = Address::new(space, 0);
             Varnode::new(addr, 8)
         }
     }

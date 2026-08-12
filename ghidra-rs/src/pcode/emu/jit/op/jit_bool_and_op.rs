@@ -118,6 +118,14 @@ impl JitOp for JitBoolAndOp {
     fn link(&self) {}
 
     fn unlink(&self) {}
+
+    fn as_def_op(&self) -> Option<&dyn JitDefOp> {
+        Some(self)
+    }
+
+    fn inputs(&self) -> Vec<Arc<dyn JitVal>> {
+        vec![Arc::clone(&self.l), Arc::clone(&self.r)]
+    }
 }
 
 impl JitDefOp for JitBoolAndOp {
@@ -160,7 +168,7 @@ mod tests {
 
     #[test]
     fn bool_and_op_has_fields() {
-        let space = Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space.clone(), 0);
         let seqnum = SequenceNumber::new(addr, 0);
         let op = PcodeOp::new(OpCode::BoolAnd, seqnum, vec![], None);
@@ -176,7 +184,7 @@ mod tests {
 
     #[test]
     fn bool_and_op_implements_jit_bool_bin_op() {
-        let space = Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space.clone(), 0);
         let seqnum = SequenceNumber::new(addr, 0);
         let op = PcodeOp::new(OpCode::BoolAnd, seqnum, vec![], None);
@@ -196,7 +204,7 @@ mod tests {
 
     #[test]
     fn bool_and_op_type_methods_return_integer() {
-        let space = Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space.clone(), 0);
         let seqnum = SequenceNumber::new(addr, 0);
         let op = PcodeOp::new(OpCode::BoolAnd, seqnum, vec![], None);
@@ -214,7 +222,7 @@ mod tests {
 
     #[test]
     fn bool_and_op_l_type_bool_returns_integer() {
-        let space = Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space.clone(), 0);
         let seqnum = SequenceNumber::new(addr, 0);
         let op = PcodeOp::new(OpCode::BoolAnd, seqnum, vec![], None);
@@ -230,7 +238,7 @@ mod tests {
 
     #[test]
     fn bool_and_op_r_type_bool_returns_integer() {
-        let space = Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space.clone(), 0);
         let seqnum = SequenceNumber::new(addr, 0);
         let op = PcodeOp::new(OpCode::BoolAnd, seqnum, vec![], None);
@@ -246,7 +254,7 @@ mod tests {
 
     #[test]
     fn bool_and_op_type_bool_returns_integer() {
-        let space = Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space.clone(), 0);
         let seqnum = SequenceNumber::new(addr, 0);
         let op = PcodeOp::new(OpCode::BoolAnd, seqnum, vec![], None);
@@ -275,14 +283,14 @@ mod tests {
             0
         }
         fn space(&self) -> Arc<AddressSpace> {
-            Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0))
+            AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0)
         }
     }
 
     impl crate::pcode::emu::jit::var::JitVarnodeVar for MockOutVar {
         fn varnode(&self) -> crate::program::model::pcode::Varnode {
             use crate::program::model::pcode::Varnode;
-            let space = Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0));
+            let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
             let addr = Address::new(space, 0);
             Varnode::new(addr, 1)
         }
