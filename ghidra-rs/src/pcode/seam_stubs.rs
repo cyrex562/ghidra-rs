@@ -20,7 +20,7 @@ use crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel;
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
-use crate::pcode::emu::jit::gen::util::types::{BPrim, TRef};
+use crate::pcode::emu::jit::gen::util::types::{BPrim, TInt, TRef};
 use crate::pcode::emu::jit::op::JitPhiOp;
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
@@ -3273,4 +3273,302 @@ pub trait MpToStackConv: Send + Sync {
         ext: Ext,
     ) -> Emitter<Ent<N, TT>>;
 }
+
+/// Placeholder for the unported Java record `MpIntLocalOpnd`
+/// (`ghidra.pcode.emu.jit.gen.opnd.MpIntLocalOpnd`), referenced by
+/// [`AlignedMpIntHandler`](crate::pcode::emu::jit::alloc::aligned_mp_int_handler::AlignedMpIntHandler).
+///
+/// Java's record is `MpIntLocalOpnd(MpIntJitType type, String name,
+/// List<? extends SimpleOpnd<TInt, IntJitType>> legsLE)`. The `legsLE` member is *not* carried
+/// here, for the same reason [`JvmLocal`] omits its own `opnd`: every way to build a
+/// [`SimpleOpnd`](crate::pcode::emu::jit::gen::opnd::simple_opnd::SimpleOpnd) value goes through
+/// `SimpleOpnd.of`/`SimpleOpnd.ofIntReadOnly`, which dispatch to `IntLocalOpnd`/`LongLocalOpnd`/
+/// `FloatLocalOpnd`/`DoubleLocalOpnd`/`IntReadOnlyLocalOpnd` -- none of which are ported -- and
+/// `SimpleOpnd` is not object-safe (its `read`/`write_direct` are generic over the stack shape),
+/// so the legs cannot even be held as trait objects. Callers that need the *number* of legs, or a
+/// leg's p-code type, read them off [`type_`](Self::type_) instead, which is equivalent by
+/// construction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MpIntLocalOpnd {
+    /// The p-code type. Port of `MpIntLocalOpnd.type()`.
+    pub type_: MpIntJitType,
+    /// A name (prefix) to use for generated temporary legs. Port of `MpIntLocalOpnd.name()`.
+    pub name: String,
+}
+
+impl MpIntLocalOpnd {
+    /// Create a multi-precision integer operand of the given type and name.
+    ///
+    /// Port of `MpIntLocalOpnd.of(MpIntJitType, String, List)`, minus the `legsLE` argument this
+    /// port does not carry (see the [type docs](Self)).
+    pub fn of(type_: MpIntJitType, name: impl Into<String>) -> Self {
+        Self { type_, name: name.into() }
+    }
+}
+
+impl Opnd<MpIntJitType> for MpIntLocalOpnd {}
+
+/// Placeholder for the unported Java static `Opnd.MpIntToMpInt.INSTANCE.convertOpndToOpnd`
+/// (`ghidra.pcode.emu.jit.gen.opnd.Opnd`), referenced by
+/// [`AlignedMpIntHandler`](crate::pcode::emu::jit::alloc::aligned_mp_int_handler::AlignedMpIntHandler)'s
+/// `genLoadToOpnd`. The real conversion reads the source operand's legs and writes converted legs
+/// into a freshly declared `MpIntLocalOpnd`; the marker-only [`Opnd`] stub exposes no legs, so
+/// this only preserves the type-level stack-shape plumbing -- the stack is untouched -- and hands
+/// back a stand-in [`StubMpOpnd`], mirroring [`convert_to_opnd`].
+pub fn convert_opnd_to_opnd<N: Next>(
+    em: Emitter<N>,
+    from: &dyn Opnd<MpIntJitType>,
+    to: MpIntJitType,
+    ext: Ext,
+    scope: &dyn Scope,
+) -> OpndEm<MpIntJitType, N> {
+    let _ = (from, to, ext, scope);
+    OpndEm::new(Box::new(StubMpOpnd), em)
+}
+
+/// Placeholder for the unported Java static `Opnd.MpIntToMpInt.INSTANCE.convertOpndToArray`
+/// (`ghidra.pcode.emu.jit.gen.opnd.Opnd`), referenced by
+/// [`AlignedMpIntHandler`](crate::pcode::emu::jit::alloc::aligned_mp_int_handler::AlignedMpIntHandler)'s
+/// `genLoadToArray`. See [`convert_opnd_to_opnd`] for why this only preserves stack shape.
+pub fn convert_opnd_to_array<N: Next>(
+    em: Emitter<N>,
+    from: &dyn Opnd<MpIntJitType>,
+    to: MpIntJitType,
+    ext: Ext,
+    scope: &dyn Scope,
+    slack: i32,
+) -> Emitter<Ent<N, TRef>> {
+    let _ = (from, to, ext, scope, slack);
+    em.recast()
+}
+
+/// Emit the body shared by every unported-handler placeholder's [`VarHandler`] generator methods.
+///
+/// Each placeholder below stands in for a Java handler whose generators emit real JVM bytecode via
+/// `Op`/`Opnd`, neither of which is ported. Rather than silently returning a stack-shape recast --
+/// which would read as "this generates correct (if empty) code" -- they panic, so a caller that
+/// actually reaches one gets pointed at the missing port.
+macro_rules! unported_handler_var_handler_impl {
+    ($ty:ident, $java:literal, $variant:path) => {
+        impl VarHandler for $ty {
+            fn vn(&self) -> Varnode {
+                self.vn.clone()
+            }
+
+            fn type_(&self) -> AnyJitType {
+                $variant(self.type_.clone())
+            }
+
+            fn gen_load_to_stack<TT, TJT, N>(
+                &self,
+                _em: Emitter<N>,
+                _gen: &dyn JitCodeGenerator,
+                _type_: TJT,
+                _ext: Ext,
+            ) -> Emitter<Ent<N, TT>>
+            where
+                TT: BPrim,
+                TJT: SimpleJitType<B = TT>,
+                N: Next,
+            {
+                unimplemented!(concat!($java, "::genLoadToStack is not ported yet"))
+            }
+
+            fn gen_load_to_opnd<N: Next>(
+                &self,
+                _em: Emitter<N>,
+                _gen: &dyn JitCodeGenerator,
+                _type_: MpIntJitType,
+                _ext: Ext,
+                _scope: &dyn Scope,
+            ) -> OpndEm<MpIntJitType, N> {
+                unimplemented!(concat!($java, "::genLoadToOpnd is not ported yet"))
+            }
+
+            fn gen_load_leg_to_stack<N: Next>(
+                &self,
+                _em: Emitter<N>,
+                _gen: &dyn JitCodeGenerator,
+                _type_: MpIntJitType,
+                _leg: i32,
+                _ext: Ext,
+            ) -> Emitter<Ent<N, TInt>> {
+                unimplemented!(concat!($java, "::genLoadLegToStack is not ported yet"))
+            }
+
+            fn gen_load_to_array<N: Next>(
+                &self,
+                _em: Emitter<N>,
+                _gen: &dyn JitCodeGenerator,
+                _type_: MpIntJitType,
+                _ext: Ext,
+                _scope: &dyn Scope,
+                _slack: i32,
+            ) -> Emitter<Ent<N, TRef>> {
+                unimplemented!(concat!($java, "::genLoadToArray is not ported yet"))
+            }
+
+            fn gen_load_to_bool<N: Next>(
+                &self,
+                _em: Emitter<N>,
+                _gen: &dyn JitCodeGenerator,
+            ) -> Emitter<Ent<N, TInt>> {
+                unimplemented!(concat!($java, "::genLoadToBool is not ported yet"))
+            }
+
+            fn gen_store_from_stack<FT, FJT, N1>(
+                &self,
+                _em: Emitter<Ent<N1, FT>>,
+                _gen: &dyn JitCodeGenerator,
+                _type_: FJT,
+                _ext: Ext,
+                _scope: &dyn Scope,
+            ) -> Emitter<N1>
+            where
+                FT: BPrim,
+                FJT: SimpleJitType<B = FT>,
+                N1: Next,
+            {
+                unimplemented!(concat!($java, "::genStoreFromStack is not ported yet"))
+            }
+
+            fn gen_store_from_opnd<N: Next>(
+                &self,
+                _em: Emitter<N>,
+                _gen: &dyn JitCodeGenerator,
+                _opnd: &dyn Opnd<MpIntJitType>,
+                _ext: Ext,
+                _scope: &dyn Scope,
+            ) -> Emitter<N> {
+                unimplemented!(concat!($java, "::genStoreFromOpnd is not ported yet"))
+            }
+
+            fn gen_store_from_array<N1: Next>(
+                &self,
+                _em: Emitter<Ent<N1, TRef>>,
+                _gen: &dyn JitCodeGenerator,
+                _type_: MpIntJitType,
+                _ext: Ext,
+                _scope: &dyn Scope,
+            ) -> Emitter<N1> {
+                unimplemented!(concat!($java, "::genStoreFromArray is not ported yet"))
+            }
+
+            fn subpiece(
+                &self,
+                _endian: Endian,
+                _byte_offset: i32,
+                _max_byte_size: i32,
+            ) -> Box<dyn VarHandler> {
+                unimplemented!(concat!($java, "::subpiece is not ported yet"))
+            }
+        }
+    };
+}
+
+/// Placeholder for the unported Java record `IntVarAlloc`
+/// (`ghidra.pcode.emu.jit.alloc.IntVarAlloc`): the handler for a p-code variable allocated in one
+/// JVM `int`. Referenced by
+/// [`sub_handler`](crate::pcode::emu::jit::alloc::aligned_mp_int_handler::sub_handler), which sits
+/// on a dependency cycle with it.
+///
+/// Java's record is `IntVarAlloc(JvmLocal<TInt, IntJitType> local, IntJitType type)`; `vn()` comes
+/// from `SimpleVarHandler`, i.e., `local.vn()`. Both members are carried, so `vn()`/`type_()`/
+/// `name()` are real; the generators are not (see
+/// [`unported_handler_var_handler_impl`]).
+#[derive(Debug, Clone)]
+pub struct IntVarAlloc {
+    /// The JVM local. Port of `IntVarAlloc.local()`.
+    pub local: JvmLocal,
+    /// The p-code type. Port of `IntVarAlloc.type()`.
+    pub type_: IntJitType,
+    /// The complete varnode, i.e., `local.vn()`, which is what `SimpleVarHandler.vn()` returns.
+    pub vn: Varnode,
+}
+
+impl IntVarAlloc {
+    /// Port of the canonical record constructor `new IntVarAlloc(local, type)`.
+    pub fn new(local: JvmLocal, type_: IntJitType) -> Self {
+        let vn = local.vn.clone();
+        Self { local, type_, vn }
+    }
+}
+
+unported_handler_var_handler_impl!(IntVarAlloc, "IntVarAlloc", AnyJitType::Int);
+
+/// Placeholder for the unported Java record `IntInIntHandler`
+/// (`ghidra.pcode.emu.jit.alloc.IntInIntHandler`): the handler for an `int` p-code variable stored
+/// in part of a JVM `int`. Referenced by
+/// [`sub_handler`](crate::pcode::emu::jit::alloc::aligned_mp_int_handler::sub_handler), which sits
+/// on a dependency cycle with it.
+///
+/// Java's record is `IntInIntHandler(JvmLocal<TInt, IntJitType> local, IntJitType type, Varnode vn,
+/// int byteShift)`, whose compact constructor calls `SubVarHandler.assertShiftFits`; this
+/// placeholder keeps that check by calling the already-ported
+/// [`assert_shift_fits`](crate::pcode::emu::jit::alloc::sub_var_handler::assert_shift_fits).
+#[derive(Debug, Clone)]
+pub struct IntInIntHandler {
+    /// The containing JVM local. Port of `IntInIntHandler.local()`.
+    pub local: JvmLocal,
+    /// The p-code type of the sub variable. Port of `IntInIntHandler.type()`.
+    pub type_: IntJitType,
+    /// The sub variable's varnode. Port of `IntInIntHandler.vn()`.
+    pub vn: Varnode,
+    /// The number of unused bytes to the right of the sub variable. Port of
+    /// `IntInIntHandler.byteShift()`.
+    pub byte_shift: i32,
+}
+
+impl IntInIntHandler {
+    /// Port of the canonical record constructor `new IntInIntHandler(local, type, vn, byteShift)`,
+    /// including its compact constructor's `assertShiftFits`.
+    pub fn new(local: JvmLocal, type_: IntJitType, vn: Varnode, byte_shift: i32) -> Self {
+        crate::pcode::emu::jit::alloc::sub_var_handler::assert_shift_fits(
+            byte_shift,
+            type_.erase_simple(),
+            &local,
+        );
+        Self { local, type_, vn, byte_shift }
+    }
+}
+
+unported_handler_var_handler_impl!(IntInIntHandler, "IntInIntHandler", AnyJitType::Int);
+
+/// Placeholder for the unported Java record `ShiftedMpIntHandler`
+/// (`ghidra.pcode.emu.jit.alloc.ShiftedMpIntHandler`): the handler for a multi-precision integer
+/// whose legs are *not* aligned to the legs of the JVM locals holding it. Referenced by
+/// [`sub_handler`](crate::pcode::emu::jit::alloc::aligned_mp_int_handler::sub_handler), which sits
+/// on a dependency cycle with it.
+///
+/// Java's record is `ShiftedMpIntHandler(List<JvmLocal<TInt, IntJitType>> parts, MpIntJitType type,
+/// Varnode vn, int byteShift)`, whose compact constructor asserts `0 < byteShift < 4` and
+/// `parts.size() > 1`; both are kept here as debug assertions, matching how
+/// [`assert_shift_fits`](crate::pcode::emu::jit::alloc::sub_var_handler::assert_shift_fits) models
+/// a Java `assert`.
+#[derive(Debug, Clone)]
+pub struct ShiftedMpIntHandler {
+    /// The JVM locals holding the value, in little-endian order. Port of
+    /// `ShiftedMpIntHandler.parts()`.
+    pub parts: Vec<JvmLocal>,
+    /// The p-code type of the full variable. Port of `ShiftedMpIntHandler.type()`.
+    pub type_: MpIntJitType,
+    /// The complete varnode. Port of `ShiftedMpIntHandler.vn()`.
+    pub vn: Varnode,
+    /// The number of bytes to shift right when loading the value. Port of
+    /// `ShiftedMpIntHandler.byteShift()`.
+    pub byte_shift: i32,
+}
+
+impl ShiftedMpIntHandler {
+    /// Port of the canonical record constructor
+    /// `new ShiftedMpIntHandler(parts, type, vn, byteShift)`, including its compact constructor's
+    /// assertions.
+    pub fn new(parts: Vec<JvmLocal>, type_: MpIntJitType, vn: Varnode, byte_shift: i32) -> Self {
+        debug_assert!(byte_shift > 0 && byte_shift < 4);
+        debug_assert!(parts.len() > 1);
+        Self { parts, type_, vn, byte_shift }
+    }
+}
+
+unported_handler_var_handler_impl!(ShiftedMpIntHandler, "ShiftedMpIntHandler", AnyJitType::MpInt);
 
