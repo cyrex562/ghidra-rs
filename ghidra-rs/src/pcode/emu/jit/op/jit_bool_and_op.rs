@@ -4,59 +4,13 @@
 
 use std::sync::Arc;
 
-use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
+use crate::pcode::emu::jit::op::{JitBinOp, JitDefOp, JitOp};
 use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::var::JitVal;
 use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-use crate::pcode::seam_stubs::{JitBinOp, JitConstVal, JitMissingVar};
 use crate::program::model::pcode::{OpCode, PcodeOp};
 
 use super::{JitBoolBinOp};
-
-/// Wrapper to convert Arc<dyn JitVal> to Box<dyn JitVal> for JitBinOp trait.
-struct JitValWrapper(Arc<dyn JitVal>);
-
-impl JitVal for JitValWrapper {
-    fn size(&self) -> i32 {
-        self.0.size()
-    }
-
-    fn uses(&self) -> Vec<crate::pcode::emu::jit::var::ValUse> {
-        self.0.uses()
-    }
-
-    fn add_use(&self, op: &dyn JitOp, position: i32) {
-        self.0.add_use(op, position)
-    }
-
-    fn remove_use(&self, op: &dyn JitOp, position: i32) {
-        self.0.remove_use(op, position)
-    }
-
-    fn is_input_var(&self) -> bool {
-        self.0.is_input_var()
-    }
-
-    fn as_const_val(&self) -> Option<&JitConstVal> {
-        self.0.as_const_val()
-    }
-
-    fn as_varnode_var(&self) -> Option<&dyn crate::pcode::emu::jit::var::JitVarnodeVar> {
-        self.0.as_varnode_var()
-    }
-
-    fn as_out_var(&self) -> Option<&dyn crate::pcode::emu::jit::var::JitOutVar> {
-        self.0.as_out_var()
-    }
-
-    fn as_missing_var(&self) -> Option<&JitMissingVar> {
-        self.0.as_missing_var()
-    }
-
-    fn accept_val(&self, visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor) {
-        self.0.accept_val(visitor)
-    }
-}
 
 /// A use-def node for the [`PcodeOp::BOOL_AND`] p-code operation.
 ///
@@ -140,12 +94,12 @@ impl JitDefOp for JitBoolAndOp {
 }
 
 impl JitBinOp for JitBoolAndOp {
-    fn l(&self) -> Box<dyn JitVal> {
-        Box::new(JitValWrapper(Arc::clone(&self.l)))
+    fn l(&self) -> Arc<dyn JitVal> {
+        Arc::clone(&self.l)
     }
 
-    fn r(&self) -> Box<dyn JitVal> {
-        Box::new(JitValWrapper(Arc::clone(&self.r)))
+    fn r(&self) -> Arc<dyn JitVal> {
+        Arc::clone(&self.r)
     }
 
     fn l_type(&self) -> JitTypeBehavior {

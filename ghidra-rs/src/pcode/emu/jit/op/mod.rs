@@ -1,3 +1,4 @@
+pub mod jit_bin_op;
 pub mod jit_bool_and_op;
 pub mod jit_bool_bin_op;
 pub mod jit_bool_negate_op;
@@ -15,6 +16,7 @@ pub mod jit_phi_op;
 pub mod jit_synthetic_op;
 pub mod jit_un_op;
 
+pub use jit_bin_op::JitBinOp;
 pub use jit_bool_and_op::JitBoolAndOp;
 pub use jit_bool_bin_op::JitBoolBinOp;
 pub use jit_bool_negate_op::JitBoolNegateOp;

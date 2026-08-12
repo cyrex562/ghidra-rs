@@ -37,7 +37,8 @@ use crate::pcode::emu::jit::gen::op::int_op_bin_op_gen::IntOpBinOpGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::TRef;
-use crate::pcode::seam_stubs::{JitBinOp, JitCodeGenerator, MpIntLocalOpnd, Scope};
+use crate::pcode::emu::jit::op::JitBinOp;
+use crate::pcode::seam_stubs::{JitCodeGenerator, MpIntLocalOpnd, Scope};
 
 /// An extension for bitwise binary operators.
 ///
@@ -177,11 +178,11 @@ mod tests {
     }
 
     impl JitBinOp for TestBinOp {
-        fn l(&self) -> Box<dyn JitVal> {
-            Box::new(MockVal)
+        fn l(&self) -> Arc<dyn JitVal> {
+            Arc::new(MockVal)
         }
-        fn r(&self) -> Box<dyn JitVal> {
-            Box::new(MockVal)
+        fn r(&self) -> Arc<dyn JitVal> {
+            Arc::new(MockVal)
         }
         fn l_type(&self) -> JitTypeBehavior {
             JitTypeBehavior::Integer

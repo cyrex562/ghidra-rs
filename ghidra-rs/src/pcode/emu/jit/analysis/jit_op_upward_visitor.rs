@@ -2,9 +2,9 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.analysis.JitOpUpwardVisitor`.
 
-use crate::pcode::emu::jit::op::{JitPhiOp, JitUnOp};
+use crate::pcode::emu::jit::op::{JitBinOp, JitPhiOp, JitUnOp};
 use crate::pcode::emu::jit::var::JitOutVar;
-use crate::pcode::seam_stubs::{JitBinOp, JitBranchIndOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherOp, JitCatenateOp, JitLoadOp, JitStoreOp, JitSynthSubPieceOp, };
+use crate::pcode::seam_stubs::{JitBranchIndOp, JitCBranchOp, JitCallOtherDefOp, JitCallOtherOp, JitCatenateOp, JitLoadOp, JitStoreOp, JitSynthSubPieceOp, };
 use crate::pcode::emu::jit::op::JitOp;
 
 use super::jit_op_visitor::JitOpVisitor;
@@ -222,11 +222,11 @@ mod tests {
         }
     }
     impl JitBinOp for MockBinOp {
-        fn l(&self) -> Box<dyn JitVal> {
-            Box::new(TagVal(self.0))
+        fn l(&self) -> Arc<dyn JitVal> {
+            Arc::new(TagVal(self.0))
         }
-        fn r(&self) -> Box<dyn JitVal> {
-            Box::new(TagVal(self.1))
+        fn r(&self) -> Arc<dyn JitVal> {
+            Arc::new(TagVal(self.1))
         }
         fn l_type(&self) -> JitTypeBehavior {
             JitTypeBehavior::Integer
