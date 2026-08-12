@@ -10960,7 +10960,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/JitCo
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/StaticFieldReq.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/AccessGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/DoubleAccessGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/ExportsLegAccessGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/ExportsLegAccessGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/FloatAccessGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/IntAccessGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/LongAccessGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
