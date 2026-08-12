@@ -36,7 +36,7 @@ pub trait SubLocalVarGen<V: JitVarnodeVar>: LocalVarGen<V> {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::var::JitDirectMemoryVar;
-    use crate::pcode::seam_stubs::VarGen;
+    use crate::pcode::emu::jit::gen::var::var_gen::VarGen;
 
     struct TestSubLocalVarGen {
         byte_offset: i32,

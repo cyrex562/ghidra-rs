@@ -43,7 +43,7 @@ use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, OpndEm, Scope};
 /// The generator for local variable access.
 ///
 /// Port of `ghidra.pcode.emu.jit.gen.var.LocalVarGen<V>`. See the [module docs](self).
-pub trait LocalVarGen<V: JitVarnodeVar>: crate::pcode::seam_stubs::VarGen<V> {
+pub trait LocalVarGen<V: JitVarnodeVar>: crate::pcode::emu::jit::gen::var::var_gen::VarGen<V> {
     /// Get the handler for a given p-code variable.
     ///
     /// This is made to be overridden for the implementation of subpiece handlers.
@@ -170,7 +170,8 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_type::AnyJitType;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{JitAllocationModel, MethodVisitor, VarGen};
+    use crate::pcode::emu::jit::gen::var::var_gen::VarGen;
+    use crate::pcode::seam_stubs::{JitAllocationModel, MethodVisitor};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
     use crate::program::model::pcode::Varnode;

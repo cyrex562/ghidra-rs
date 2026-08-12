@@ -8,7 +8,7 @@
 //!   `genMpDelegationToStaticMethod`, is dropped in favor of a non-generic `Local<TRef>` and `&dyn
 //!   JitCodeGenerator`, matching the convention set by
 //!   [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen) and
-//!   [`VarGen`](crate::pcode::seam_stubs::VarGen).
+//!   [`VarGen`](crate::pcode::emu::jit::gen::var::var_gen::VarGen).
 //! - `genMpDelegationToStaticMethod`'s real bytecode emission depends on the not-yet-ported `Op`
 //!   (JVM opcode helper namespace), `Methods`, and `GenConsts` (method descriptor constants). This
 //!   port keeps the one piece of real, testable logic -- the number of `int` legs the mp-int type

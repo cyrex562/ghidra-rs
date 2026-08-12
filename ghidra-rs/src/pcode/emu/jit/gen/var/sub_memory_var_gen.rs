@@ -35,7 +35,7 @@ pub trait SubMemoryVarGen<V: JitVarnodeVar>: MemoryVarGen<V> {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::var::JitDirectMemoryVar;
-    use crate::pcode::seam_stubs::VarGen;
+    use crate::pcode::emu::jit::gen::var::var_gen::VarGen;
 
     struct TestSubMemoryVarGen {
         byte_offset: i32,

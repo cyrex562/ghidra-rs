@@ -12,13 +12,19 @@ use std::sync::{Arc, Mutex, OnceLock};
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
 use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
 use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
-use crate::pcode::emu::jit::analysis::jit_type::{AnyJitType, IntJitType, LongJitType, MpIntJitType};
+use crate::pcode::emu::jit::analysis::jit_type::{
+    AnyJitType, AnySimpleJitType, IntJitType, JitType, LongJitType, MpIntJitType,
+};
+use crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel;
 use crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Ent, Emitter, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
-use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
+use crate::pcode::emu::jit::gen::util::types::TRef;
+use crate::pcode::emu::jit::gen::var::var_gen::{
+    gen_read_val_direct_to_stack, gen_write_val_direct_from_stack,
+};
 use crate::pcode::emu::jit::op::JitPhiOp;
-use crate::pcode::emu::jit::var::{JitVal, JitVar, JitVarnodeVar};
+use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -2621,6 +2627,17 @@ pub trait JitCodeGenerator: Send + Sync {
     fn get_allocation_model(&self) -> Box<dyn JitAllocationModel> {
         unimplemented!("JitCodeGenerator::get_allocation_model stub")
     }
+
+    /// Get the variable scope (liveness) model for the current analysis.
+    ///
+    /// Port of `JitCodeGenerator.getVariableScopeModel()`, referenced by
+    /// [`compute_block_transition`](crate::pcode::emu::jit::gen::var::var_gen::compute_block_transition).
+    /// Unlike its neighbors here, the model itself *is* ported, so this returns the real type.
+    /// Defaulted (rather than required) so the existing marker implementors of this trait, which
+    /// predate this method, keep compiling.
+    fn get_variable_scope_model(&self) -> Arc<JitVarScopeModel> {
+        unimplemented!("JitCodeGenerator::get_variable_scope_model stub")
+    }
 }
 
 /// Placeholder for the unported Java type `JitAllocationModel`
@@ -2638,6 +2655,18 @@ pub trait JitAllocationModel: Send + Sync {
     fn get_handler(&self, v: &dyn JitVal) -> Box<dyn VarHandler> {
         let _ = v;
         unimplemented!("JitAllocationModel::get_handler stub")
+    }
+
+    /// Get every JVM local allocated within the given varnode's extent.
+    ///
+    /// Port of `JitAllocationModel.localsForVn(Varnode)`, referenced by
+    /// [`gen_birth`](crate::pcode::emu::jit::gen::var::var_gen::gen_birth)/
+    /// [`gen_retire`](crate::pcode::emu::jit::gen::var::var_gen::gen_retire). Java returns the
+    /// values of a sorted-map submap, i.e. the locals in address order; a [`Vec`] carries the
+    /// same guarantee.
+    fn locals_for_vn(&self, vn: &Varnode) -> Vec<JvmLocal> {
+        let _ = vn;
+        unimplemented!("JitAllocationModel::locals_for_vn stub")
     }
 }
 
@@ -3179,131 +3208,91 @@ impl MpAccessGen for MpIntAccessGen {
     }
 }
 
-/// Placeholder for the unported Java type `VarGen` (`ghidra.pcode.emu.jit.gen.var.VarGen`),
-/// referenced by [`MemoryVarGen`](crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen)
-/// and [`DirectMemoryVarGen`](crate::pcode::emu::jit::gen::var::direct_memory_var_gen::DirectMemoryVarGen)
-/// to break the dependency cycle that file sits on (`MemoryVarGen` is a forward reference from
-/// `VarGen`'s own package).
+/// Placeholder for the unported Java type `JvmLocal` (`ghidra.pcode.emu.jit.alloc.JvmLocal`),
+/// referenced by [`gen_birth`](crate::pcode::emu::jit::gen::var::var_gen::gen_birth) and
+/// [`gen_retire`](crate::pcode::emu::jit::gen::var::var_gen::gen_retire) through
+/// [`JitAllocationModel::locals_for_vn`].
 ///
-/// Generated stub: covers the six methods `MemoryVarGen`'s defaults implement (Java's `ValGen<V>`
-/// abstract methods, inherited unchanged by `VarGen<V> extends ValGen<V>`), plus the three
-/// `genWriteFromStack`/`genWriteFromOpnd`/`genWriteFromArray` methods `VarGen<V>` itself declares
-/// abstract, which `DirectMemoryVarGen` overrides with panicking defaults. Java's `ValGen` also
-/// declares `subpiece`; neither `MemoryVarGen` nor `DirectMemoryVarGen` calls or overrides it, so
-/// it remains omitted per the "only the methods this type needs" stubbing rule -- a concrete
-/// implementor ported later (e.g. `WholeDirectMemoryVarGen`) will need to grow this stub with it.
+/// Java's record is `JvmLocal<T, JT>(Local<T> local, JT type, Varnode vn, SimpleOpnd<T, JT> opnd)`.
+/// `SimpleOpnd` is not ported, and the `<T, JT>` pair only exists to keep the wrapped `Local` and
+/// operand in step with the p-code type, so this stub carries the erased type
+/// ([`AnySimpleJitType`]) and the varnode -- the two members the birth/retire path actually reads.
 ///
-/// Java's `<THIS extends JitCompiledPassage>` type parameter, repeated on every method, is
-/// dropped in favor of a non-generic `Local<TRef>` and `&dyn JitCodeGenerator`, matching the
-/// convention set by [`MpAccessGen`].
-pub trait VarGen<V: JitVar>: Send + Sync {
-    /// Port of the inherited `ValGen.genValInit`.
-    fn gen_val_init<N: Next>(
+/// `gen_birth_code`/`gen_retire_code` keep Java's real control flow -- read the varnode from the
+/// state into the local, and write the local back into the state, respectively -- but the operand
+/// half of each (`opnd.writeDirect`/`opnd.read`, which is what makes the local itself change)
+/// is stubbed via [`Emitter::recast`] until `SimpleOpnd` is ported. The state half is real: it
+/// goes through the same `AccessGen` the generated bytecode would.
+#[derive(Debug, Clone)]
+pub struct JvmLocal {
+    /// The p-code type of this local, erased over Java's `<T, JT>` pair.
+    pub type_: AnySimpleJitType,
+    /// The varnode whose value this local holds.
+    pub vn: Varnode,
+}
+
+impl JvmLocal {
+    /// Create a [`JvmLocal`] for the given type and varnode.
+    ///
+    /// Port of `JvmLocal.of(Local, JT, Varnode)`, minus the `Local`/`SimpleOpnd` members this stub
+    /// does not carry.
+    pub fn of(type_: AnySimpleJitType, vn: Varnode) -> Self {
+        Self { type_, vn }
+    }
+
+    /// Emit bytecode to bring this varnode into scope, copying its value from the state into the
+    /// local variable.
+    ///
+    /// Port of `JvmLocal.genBirthCode`. See the type-level doc on what is stubbed.
+    pub fn gen_birth_code<N: Next>(
         &self,
         em: Emitter<N>,
         local_this: &Local<TRef>,
         gen: &dyn JitCodeGenerator,
-        v: &V,
-    ) -> Emitter<N>;
+    ) -> Emitter<N> {
+        match self.type_ {
+            AnySimpleJitType::Int(t) => {
+                gen_read_val_direct_to_stack(em, local_this, gen, t, &self.vn).recast()
+            }
+            AnySimpleJitType::Long(t) => {
+                gen_read_val_direct_to_stack(em, local_this, gen, t, &self.vn).recast()
+            }
+            AnySimpleJitType::Float(_) | AnySimpleJitType::Double(_) => {
+                unimplemented!("JvmLocal::gen_birth_code: no SimpleAccessGen for float types yet")
+            }
+        }
+    }
 
-    /// Port of the inherited `ValGen.genReadToStack`.
-    fn gen_read_to_stack<JT, N>(
+    /// Emit bytecode to take this varnode out of scope, copying its value from the local variable
+    /// into the state.
+    ///
+    /// Port of `JvmLocal.genRetireCode`. See the type-level doc on what is stubbed.
+    pub fn gen_retire_code<N: Next>(
         &self,
         em: Emitter<N>,
         local_this: &Local<TRef>,
         gen: &dyn JitCodeGenerator,
-        v: &V,
-        type_: JT,
-        ext: Ext,
-    ) -> Emitter<Ent<N, JT::B>>
-    where
-        JT: crate::pcode::emu::jit::analysis::jit_type::SimpleJitType,
-        N: Next;
+    ) -> Emitter<N> {
+        match self.type_ {
+            AnySimpleJitType::Int(t) => {
+                gen_write_val_direct_from_stack(em.recast(), local_this, gen, t, &self.vn)
+            }
+            AnySimpleJitType::Long(t) => {
+                gen_write_val_direct_from_stack(em.recast(), local_this, gen, t, &self.vn)
+            }
+            AnySimpleJitType::Float(_) | AnySimpleJitType::Double(_) => {
+                unimplemented!("JvmLocal::gen_retire_code: no SimpleAccessGen for float types yet")
+            }
+        }
+    }
 
-    /// Port of the inherited `ValGen.genReadToOpnd`.
-    fn gen_read_to_opnd<N: Next>(
-        &self,
-        em: Emitter<N>,
-        local_this: &Local<TRef>,
-        gen: &dyn JitCodeGenerator,
-        v: &V,
-        type_: MpIntJitType,
-        ext: Ext,
-        scope: &dyn Scope,
-    ) -> OpndEm<MpIntJitType, N>;
-
-    /// Port of the inherited `ValGen.genReadLegToStack`.
-    fn gen_read_leg_to_stack<N: Next>(
-        &self,
-        em: Emitter<N>,
-        local_this: &Local<TRef>,
-        gen: &dyn JitCodeGenerator,
-        v: &V,
-        type_: MpIntJitType,
-        leg: i32,
-        ext: Ext,
-    ) -> Emitter<Ent<N, TInt>>;
-
-    /// Port of the inherited `ValGen.genReadToArray`.
-    #[allow(clippy::too_many_arguments)]
-    fn gen_read_to_array<N: Next>(
-        &self,
-        em: Emitter<N>,
-        local_this: &Local<TRef>,
-        gen: &dyn JitCodeGenerator,
-        v: &V,
-        type_: MpIntJitType,
-        ext: Ext,
-        scope: &dyn Scope,
-        slack: i32,
-    ) -> Emitter<Ent<N, TRef>>;
-
-    /// Port of the inherited `ValGen.genReadToBool`.
-    fn gen_read_to_bool<N: Next>(
-        &self,
-        em: Emitter<N>,
-        local_this: &Local<TRef>,
-        gen: &dyn JitCodeGenerator,
-        v: &V,
-    ) -> Emitter<Ent<N, TInt>>;
-
-    /// Port of `VarGen.genWriteFromStack`.
-    fn gen_write_from_stack<JT, N1>(
-        &self,
-        em: Emitter<Ent<N1, JT::B>>,
-        local_this: &Local<TRef>,
-        gen: &dyn JitCodeGenerator,
-        v: &V,
-        type_: JT,
-        ext: Ext,
-        scope: &dyn Scope,
-    ) -> Emitter<N1>
-    where
-        JT: crate::pcode::emu::jit::analysis::jit_type::SimpleJitType,
-        N1: Next;
-
-    /// Port of `VarGen.genWriteFromOpnd`.
-    fn gen_write_from_opnd<N: Next>(
-        &self,
-        em: Emitter<N>,
-        local_this: &Local<TRef>,
-        gen: &dyn JitCodeGenerator,
-        v: &V,
-        opnd: &dyn Opnd<MpIntJitType>,
-        ext: Ext,
-        scope: &dyn Scope,
-    ) -> Emitter<N>;
-
-    /// Port of `VarGen.genWriteFromArray`.
-    fn gen_write_from_array<N1: Next>(
-        &self,
-        em: Emitter<Ent<N1, TRef>>,
-        local_this: &Local<TRef>,
-        gen: &dyn JitCodeGenerator,
-        v: &V,
-        type_: MpIntJitType,
-        ext: Ext,
-        scope: &dyn Scope,
-    ) -> Emitter<N1>;
+    /// The maximum address that would be occupied by the full primitive type.
+    ///
+    /// Port of `JvmLocal.maxPrimAddr()`.
+    pub fn max_prim_addr(&self) -> Address {
+        self.vn.get_address().add(self.type_.ext_simple().size() as i64 - 1).expect(
+            "JvmLocal::max_prim_addr: address overflow",
+        )
+    }
 }
 
