@@ -49,7 +49,7 @@ DONE	trait	24	4	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 DONE	trait	24	6	11	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntCompareBinOpGen.java
 DONE	trait	24	3	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntShiftBinOpGen.java
 DONE	trait	24	2	10	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntCountUnOpGen.java
-TODO	trait	21	31	72	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitOp.java
+DONE	trait	21	31	72	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitOp.java
 TODO	trait	20	23	3	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitDefOp.java
 TODO	trait	19	73	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/var/JitOutVar.java
 TODO	trait	18	15	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/op/JitBoolAndOp.java
