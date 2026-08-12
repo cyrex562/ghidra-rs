@@ -33,10 +33,11 @@
 
 use crate::pcode::emu::jit::analysis::jit_type::IntJitType;
 use crate::pcode::emu::jit::gen::access::exports_leg_access_gen::ExportsLegAccessGen;
+use crate::pcode::emu::jit::gen::access::method_access_gen::MethodAccessGen;
 use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
-use crate::pcode::seam_stubs::{AccessGen, JitCodeGenerator, MethodAccessGen};
+use crate::pcode::seam_stubs::{AccessGen, JitCodeGenerator};
 use crate::program::model::address::AddressSpace;
 use crate::program::model::lang::Endian;
 
