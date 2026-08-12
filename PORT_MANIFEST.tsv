@@ -10968,7 +10968,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/acces
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/MpAccessGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/MpIntAccessGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/access/SimpleAccessGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen access 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/BinOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/BinOpGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/BoolAndOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/BoolNegateOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/BoolOrOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 

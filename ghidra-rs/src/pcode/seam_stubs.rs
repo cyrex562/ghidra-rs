@@ -1280,6 +1280,13 @@ pub trait JitBinOp: JitDefOp {
     fn r_type(&self) -> JitTypeBehavior;
 }
 
+/// Placeholder for the unported Java type `OpGen`, referenced by
+/// [`BinOpGen`](crate::pcode::emu::jit::gen::op::bin_op_gen::BinOpGen).
+/// Generated stub: only a shape hint. Java's `OpGen<T extends JitOp>` also declares an abstract
+/// `genRun` and a static `lookup`, but `BinOpGen`'s default methods call neither, so this is a
+/// marker bound only. Replace with the real port (including `lookup`/`genRun`) when available.
+pub trait OpGen<T: JitOp>: Send + Sync {}
+
 /// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitDataFlowState.MiniDFState`,
 /// referenced by [`JitCallOtherOpIf`](crate::pcode::emu::jit::op::jit_call_other_op_if::JitCallOtherOpIf).
 ///
