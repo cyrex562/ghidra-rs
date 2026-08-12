@@ -2161,3 +2161,15 @@ impl PcodeArithmetic<Option<AddressSet>> for AddressesReadPcodeArithmetic {
     }
 }
 
+/// Placeholder for the unported Java type `JitCodeGenerator`, referenced by `InstanceFieldReq`.
+/// Generated stub: only a shape hint. This type is passed through to implementors of
+/// `InstanceFieldReq` without calling its methods in the type itself, so no methods are exposed.
+/// Replace with the real port when available.
+pub trait JitCodeGenerator: Send + Sync {}
+
+/// Placeholder for the unported Java type `JitCompiledPassage`, referenced by `InstanceFieldReq`.
+/// Generated stub: only a shape hint. This type is used as a bound on the generic type parameter
+/// in methods of `InstanceFieldReq` without calling its methods in the type itself, so no methods
+/// are exposed. Replace with the real port when available.
+pub trait JitCompiledPassage: Send + Sync {}
+

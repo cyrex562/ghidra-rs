@@ -619,3 +619,5 @@ ts	stub_class	referenced_by
 2026-08-12T02:00:00.500000+00:00	JitSynthSubPieceOp	JitOpUpwardVisitor
 2026-08-12T02:00:00.600000+00:00	JitCBranchOp	JitOpUpwardVisitor
 2026-08-12T02:00:00.700000+00:00	JitBranchIndOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.800000+00:00	JitCodeGenerator	InstanceFieldReq
+2026-08-12T02:00:00.900000+00:00	JitCompiledPassage	InstanceFieldReq
