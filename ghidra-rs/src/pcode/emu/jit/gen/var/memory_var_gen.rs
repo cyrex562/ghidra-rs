@@ -380,6 +380,53 @@ mod tests {
         ) -> Emitter<Ent<N, TInt>> {
             MemoryVarGen::gen_read_to_bool(self, em, local_this, gen, v)
         }
+
+        // Java: MemoryVarGen does not override VarGen's abstract genWriteFromStack /
+        // genWriteFromOpnd / genWriteFromArray -- only DirectMemoryVarGen (and other concrete
+        // var-gens, not yet ported) provide real bodies. This test double for MemoryVarGen alone
+        // has no real behavior to exercise here.
+        fn gen_write_from_stack<JT, N1>(
+            &self,
+            _em: Emitter<Ent<N1, JT::B>>,
+            _local_this: &Local<TRef>,
+            _gen: &dyn JitCodeGenerator,
+            _v: &TestVarnodeVar,
+            _type_: JT,
+            _ext: Ext,
+            _scope: &dyn Scope,
+        ) -> Emitter<N1>
+        where
+            JT: SimpleJitType,
+            N1: Next,
+        {
+            unimplemented!("TestMemoryVarGen does not exercise genWriteFromStack")
+        }
+
+        fn gen_write_from_opnd<N: Next>(
+            &self,
+            _em: Emitter<N>,
+            _local_this: &Local<TRef>,
+            _gen: &dyn JitCodeGenerator,
+            _v: &TestVarnodeVar,
+            _opnd: &dyn crate::pcode::seam_stubs::Opnd<MpIntJitType>,
+            _ext: Ext,
+            _scope: &dyn Scope,
+        ) -> Emitter<N> {
+            unimplemented!("TestMemoryVarGen does not exercise genWriteFromOpnd")
+        }
+
+        fn gen_write_from_array<N1: Next>(
+            &self,
+            _em: Emitter<Ent<N1, TRef>>,
+            _local_this: &Local<TRef>,
+            _gen: &dyn JitCodeGenerator,
+            _v: &TestVarnodeVar,
+            _type_: MpIntJitType,
+            _ext: Ext,
+            _scope: &dyn Scope,
+        ) -> Emitter<N1> {
+            unimplemented!("TestMemoryVarGen does not exercise genWriteFromArray")
+        }
     }
 
     impl MemoryVarGen<TestVarnodeVar> for TestMemoryVarGen {}

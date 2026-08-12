@@ -2424,16 +2424,17 @@ impl MpAccessGen for MpIntAccessGen {
 
 /// Placeholder for the unported Java type `VarGen` (`ghidra.pcode.emu.jit.gen.var.VarGen`),
 /// referenced by [`MemoryVarGen`](crate::pcode::emu::jit::gen::var::memory_var_gen::MemoryVarGen)
+/// and [`DirectMemoryVarGen`](crate::pcode::emu::jit::gen::var::direct_memory_var_gen::DirectMemoryVarGen)
 /// to break the dependency cycle that file sits on (`MemoryVarGen` is a forward reference from
 /// `VarGen`'s own package).
 ///
-/// Generated stub: minimal, covering only the six methods `MemoryVarGen`'s defaults implement --
-/// the abstract methods Java's `ValGen<V>` declares and `VarGen<V> extends ValGen<V>` inherits
-/// unchanged. Java's `VarGen<V>` also declares `genWriteFromStack`/`genWriteFromOpnd`/
-/// `genWriteFromArray` (its own abstract methods) and inherits `subpiece` from `ValGen`;
-/// `MemoryVarGen` neither calls nor overrides any of those, so they are omitted here per the
-/// "only the methods this type needs" stubbing rule -- a concrete implementor ported later (e.g.
-/// `WholeDirectMemoryVarGen`) will need to grow this stub with them.
+/// Generated stub: covers the six methods `MemoryVarGen`'s defaults implement (Java's `ValGen<V>`
+/// abstract methods, inherited unchanged by `VarGen<V> extends ValGen<V>`), plus the three
+/// `genWriteFromStack`/`genWriteFromOpnd`/`genWriteFromArray` methods `VarGen<V>` itself declares
+/// abstract, which `DirectMemoryVarGen` overrides with panicking defaults. Java's `ValGen` also
+/// declares `subpiece`; neither `MemoryVarGen` nor `DirectMemoryVarGen` calls or overrides it, so
+/// it remains omitted per the "only the methods this type needs" stubbing rule -- a concrete
+/// implementor ported later (e.g. `WholeDirectMemoryVarGen`) will need to grow this stub with it.
 ///
 /// Java's `<THIS extends JitCompiledPassage>` type parameter, repeated on every method, is
 /// dropped in favor of a non-generic `Local<TRef>` and `&dyn JitCodeGenerator`, matching the
@@ -2508,5 +2509,44 @@ pub trait VarGen<V: JitVar>: Send + Sync {
         gen: &dyn JitCodeGenerator,
         v: &V,
     ) -> Emitter<Ent<N, TInt>>;
+
+    /// Port of `VarGen.genWriteFromStack`.
+    fn gen_write_from_stack<JT, N1>(
+        &self,
+        em: Emitter<Ent<N1, JT::B>>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+        type_: JT,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> Emitter<N1>
+    where
+        JT: crate::pcode::emu::jit::analysis::jit_type::SimpleJitType,
+        N1: Next;
+
+    /// Port of `VarGen.genWriteFromOpnd`.
+    fn gen_write_from_opnd<N: Next>(
+        &self,
+        em: Emitter<N>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+        opnd: &dyn Opnd<MpIntJitType>,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> Emitter<N>;
+
+    /// Port of `VarGen.genWriteFromArray`.
+    fn gen_write_from_array<N1: Next>(
+        &self,
+        em: Emitter<Ent<N1, TRef>>,
+        local_this: &Local<TRef>,
+        gen: &dyn JitCodeGenerator,
+        v: &V,
+        type_: MpIntJitType,
+        ext: Ext,
+        scope: &dyn Scope,
+    ) -> Emitter<N1>;
 }
 
