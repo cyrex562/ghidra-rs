@@ -25,7 +25,8 @@ use super::{JitBoolNegateOp, JitDefOp};
 /// `typeFor(int)`, `link()`, and `unlink()`. Every concrete node already ported in this crate
 /// implements `op()`/`canBeRemoved()`/`inputs()` as an ad hoc *inherent* method instead of a
 /// trait member, because their Java return shapes vary in ways one object-safe trait signature
-/// can't unify -- e.g.
+/// can't unify -- `inputs()` has since been grown onto the trait as well (defaulted; see below),
+/// for the callers that only hold a `dyn JitOp` -- e.g.
 /// [`JitPhiOp::inputs`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp::inputs) returns
 /// `Vec<Arc<dyn JitVal>>` (a dynamic option list), while [`JitBoolNegateOp::op`] returns a
 /// `&PcodeOp` reference rather than an owned value. Only `typeFor`/`link`/`unlink` -- plus
@@ -56,6 +57,32 @@ pub trait JitOp: Send + Sync {
     ///
     /// Port of `unlink()`.
     fn unlink(&self);
+
+    /// The input operand use-def nodes.
+    ///
+    /// Port of `inputs()`.
+    ///
+    /// Grown (see `STUBS.tsv`) for
+    /// [`JitTypeModel`](crate::pcode::emu::jit::analysis::jit_type_model::JitTypeModel), which
+    /// tallies the votes of a copy's or phi's inputs through `dyn JitOp` and so cannot reach the
+    /// inherent `inputs()` each implementor carries (see this trait's docs). Defaulted to no
+    /// inputs so those implementors keep compiling; an implementor whose operands take
+    /// [`JitTypeBehavior::Copy`] -- the only ones the type model consults -- must override it, as
+    /// [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp) does.
+    fn inputs(&self) -> Vec<Arc<dyn JitVal>> {
+        Vec::new()
+    }
+
+    /// This op as a [`JitDefOp`], if it is one.
+    ///
+    /// Grown (see `STUBS.tsv`) to stand in for Java's `use.op() instanceof JitDefOp def` in
+    /// [`JitTypeModel`](crate::pcode::emu::jit::analysis::jit_type_model::JitTypeModel), in the
+    /// same style as [`JitVal::as_out_var`](crate::pcode::emu::jit::var::JitVal::as_out_var):
+    /// `dyn JitOp` carries no downcast facility, so the check becomes a defaulted query that only
+    /// def ops override.
+    fn as_def_op(&self) -> Option<&dyn JitDefOp> {
+        None
+    }
 
     /// Double-dispatch hook standing in for Java's `switch (op) { case JitUnOp ... }` in
     /// `JitOpVisitor.visitOp`.
@@ -155,7 +182,7 @@ mod tests {
             0
         }
         fn space(&self) -> Arc<AddressSpace> {
-            Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0))
+            AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0)
         }
     }
 
@@ -163,7 +190,7 @@ mod tests {
         fn varnode(&self) -> crate::program::model::pcode::Varnode {
             use crate::program::model::pcode::Varnode;
             let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
-            let addr = Address::new(Arc::new(space), 0);
+            let addr = Address::new(space, 0);
             Varnode::new(addr, 8)
         }
     }

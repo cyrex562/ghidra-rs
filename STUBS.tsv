@@ -662,3 +662,6 @@ ts	stub_class	referenced_by
 2026-08-12T07:09:07.265814+00:00	IntZExtOpGen	CopyOpGen
 2026-08-12T07:09:07.266008+00:00	JitCopyOp	CopyOpGen
 2026-08-12T08:02:41.227524+00:00	JitCodeGenerator	IntShiftBinOpGen
+2026-08-12T09:32:41.713885+00:00	JitTypeBehavior	JitTypeModel
+2026-08-12T09:32:41.713885+00:00	JitDataFlowModel	JitTypeModel
+2026-08-12T09:32:41.713885+00:00	JitOp	JitTypeModel

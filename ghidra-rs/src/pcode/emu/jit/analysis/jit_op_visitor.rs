@@ -143,7 +143,8 @@ pub trait JitOpVisitor: Send + Sync {
 mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::JitDefOp;
-    use crate::pcode::seam_stubs::{JitBlock, JitOutVar as JitOutVarStub};
+    use crate::pcode::emu::jit::var::JitOutVar as JitOutVarStub;
+    use crate::pcode::seam_stubs::JitBlock;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::Varnode;
     use std::sync::{Arc, Mutex};
@@ -166,15 +167,27 @@ mod tests {
         fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
 
+    impl JitVar for MockOutVar {
+        fn id(&self) -> i32 {
+            0
+        }
+
+        fn space(&self) -> Arc<AddressSpace> {
+            self.varnode.get_address().space().clone()
+        }
+    }
+
+    impl crate::pcode::emu::jit::var::JitVarnodeVar for MockOutVar {
+        fn varnode(&self) -> Varnode {
+            self.varnode.clone()
+        }
+    }
+
     impl JitOutVarStub for MockOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
 
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
             None
-        }
-
-        fn varnode(&self) -> Varnode {
-            self.varnode.clone()
         }
     }
 
@@ -237,7 +250,7 @@ mod tests {
     // `visitVar` to `visitDirectMemoryVar`.
     #[test]
     fn visit_val_dispatches_direct_memory_var_through_var_chain() {
-        let space = Arc::new(AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let dm_var = JitDirectMemoryVar::new(7, varnode(&space, 0x2000, 4));
 
         let mut visitor = RecordingVisitor::default();
@@ -258,7 +271,7 @@ mod tests {
     // routes straight to `visit_input_var` rather than through `visit_var`.
     #[test]
     fn visit_val_dispatches_input_var() {
-        let space = Arc::new(AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         let input_var = JitInputVar::new(varnode(&space, 0x3000, 4));
 
         let mut visitor = RecordingVisitor::default();

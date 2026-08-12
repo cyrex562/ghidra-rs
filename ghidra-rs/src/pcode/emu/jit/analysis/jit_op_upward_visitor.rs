@@ -316,6 +316,19 @@ mod tests {
         fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
         fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
     }
+    impl crate::pcode::emu::jit::var::JitVar for StubOutVar {
+        fn id(&self) -> i32 {
+            0
+        }
+        fn space(&self) -> Arc<AddressSpace> {
+            self.0.get_address().space().clone()
+        }
+    }
+    impl crate::pcode::emu::jit::var::JitVarnodeVar for StubOutVar {
+        fn varnode(&self) -> Varnode {
+            self.0.clone()
+        }
+    }
     impl JitOutVar for StubOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
@@ -375,6 +388,25 @@ mod tests {
             }
             fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
             fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+        }
+        impl crate::pcode::emu::jit::var::JitVar for DefOutVar {
+            fn id(&self) -> i32 {
+                0
+            }
+            fn space(&self) -> Arc<AddressSpace> {
+                AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0)
+            }
+        }
+        impl crate::pcode::emu::jit::var::JitVarnodeVar for DefOutVar {
+            fn varnode(&self) -> Varnode {
+                Varnode::new(
+                    Address::new(
+                        crate::pcode::emu::jit::var::JitVar::space(self),
+                        0,
+                    ),
+                    4,
+                )
+            }
         }
         impl JitOutVar for DefOutVar {
             fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}

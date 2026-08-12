@@ -103,6 +103,18 @@ impl JitPhiOp {
 }
 
 impl JitOp for JitPhiOp {
+    /// The trait-level view of the inherent [`JitPhiOp::inputs`], for callers holding only a
+    /// `dyn JitOp` -- notably
+    /// [`JitTypeModel`](crate::pcode::emu::jit::analysis::jit_type_model::JitTypeModel), which
+    /// runs a sub-contest among a phi's options.
+    fn inputs(&self) -> Vec<Arc<dyn JitVal>> {
+        JitPhiOp::inputs(self)
+    }
+
+    fn as_def_op(&self) -> Option<&dyn JitDefOp> {
+        Some(self)
+    }
+
     /// Port of `typeFor(int)`.
     fn type_for(&self, position: i32) -> JitTypeBehavior {
         let len = self.options.lock().unwrap().len() as i32;
@@ -201,7 +213,7 @@ mod tests {
             0
         }
         fn space(&self) -> Arc<AddressSpace> {
-            Arc::new(AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0))
+            AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0)
         }
     }
 
@@ -209,7 +221,7 @@ mod tests {
         fn varnode(&self) -> crate::program::model::pcode::Varnode {
             use crate::program::model::pcode::Varnode;
             let space = AddressSpace::new("test", 64, 1, AddressSpaceType::Ram, 0);
-            let addr = Address::new(Arc::new(space), 0);
+            let addr = Address::new(space, 0);
             Varnode::new(addr, 8)
         }
     }
