@@ -185,6 +185,16 @@ mod tests {
         }
     }
 
+    impl JitVal for MockOutVar {
+        fn size(&self) -> i32 {
+            self.varnode.get_size()
+        }
+
+        fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+
+        fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+    }
+
     impl JitOutVar for MockOutVar {
         fn set_definition(&self, definition: Option<&dyn JitDefOp>) {
             self.set_definition_calls.lock().unwrap().push(definition.is_some());

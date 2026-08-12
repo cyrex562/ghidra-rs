@@ -47,7 +47,8 @@ use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
 use crate::pcode::emu::jit::var::JitVarnodeVar;
-use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, JitDataFlowArithmetic, OpndEm, Scope, VarGen};
+use crate::pcode::emu::jit::analysis::JitDataFlowArithmetic;
+use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, OpndEm, Scope, VarGen};
 use crate::program::model::lang::Endian;
 use crate::program::model::pcode::Varnode;
 

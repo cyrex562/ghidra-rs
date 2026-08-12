@@ -628,7 +628,6 @@ ts	stub_class	referenced_by
 2026-08-11T00:00:00.200000+00:00	MpIntAccessGen	AccessGen
 2026-08-12T05:00:00.000000+00:00	VarGen	MemoryVarGen
 2026-08-12T05:00:00.100000+00:00	JitAnalysisContext	MemoryVarGen
-2026-08-12T05:00:00.200000+00:00	JitDataFlowArithmetic	MemoryVarGen
 2026-08-12T05:00:00.300000+00:00	StubMpOpnd	MemoryVarGen
 2026-08-12T05:00:00.400000+00:00	JitCodeGenerator	MemoryVarGen
 2026-08-12T05:00:00.500000+00:00	MpIntAccessGen	MemoryVarGen
@@ -638,3 +637,16 @@ ts	stub_class	referenced_by
 2026-08-12T05:40:00.000000+00:00	JitInputVar	InputVarGen
 2026-08-12T05:50:00.000000+00:00	JitLocalOutVar	LocalOutVarGen
 2026-08-12T03:35:03.646518+00:00	JitMemoryOutVar	MemoryOutVarGen
+2026-08-12T05:40:00.000000+00:00	JitDataFlowModel	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	OpBehaviorSubpiece	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	jit_op_un_op	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	jit_op_bin_op	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitOutVar	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitDefOp	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitSynthSubPieceOp	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitCatenateOp	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitStoreOp	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitLoadOp	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitLocalOutVar	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitMemoryOutVar	JitDataFlowArithmetic
+2026-08-12T05:40:00.000000+00:00	JitVal	JitDataFlowArithmetic

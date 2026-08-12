@@ -43,6 +43,10 @@ impl JitVal for JitDirectMemoryVar {
 
     fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
 
+    fn as_varnode_var(&self) -> Option<&dyn JitVarnodeVar> {
+        Some(self)
+    }
+
     fn accept_val(
         &self,
         visitor: &mut dyn crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor,

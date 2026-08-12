@@ -50,8 +50,8 @@ pub trait JitOpUpwardVisitor: JitOpVisitor {
     where
         Self: Sized,
     {
-        self.visit_val(store_op.offset());
-        self.visit_val(store_op.value());
+        self.visit_val(store_op.offset().as_ref());
+        self.visit_val(store_op.value().as_ref());
     }
 
     /// Port of `visitLoadOp`: visit the offset operand.
@@ -59,7 +59,7 @@ pub trait JitOpUpwardVisitor: JitOpVisitor {
     where
         Self: Sized,
     {
-        self.visit_val(load_op.offset());
+        self.visit_val(load_op.offset().as_ref());
     }
 
     /// Port of `visitCallOtherOp`: visit each argument.
@@ -107,7 +107,7 @@ pub trait JitOpUpwardVisitor: JitOpVisitor {
     where
         Self: Sized,
     {
-        self.visit_val(piece_op.v());
+        self.visit_val(piece_op.v().as_ref());
     }
 
     /// Port of `visitCBranchOp`: visit the condition operand.
@@ -146,7 +146,7 @@ mod tests {
     use crate::pcode::emu::jit::var::JitVal;
     use crate::pcode::seam_stubs::{JitBlock, JitDefOp, JitTypeBehavior};
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
-    use crate::program::model::pcode::Varnode;
+    use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber, Varnode};
     use std::sync::{Arc, Mutex};
 
     /// A [`JitVal`] that reports a caller-chosen `size()`, used purely as an identifying tag so
@@ -260,7 +260,18 @@ mod tests {
     // Java: `JitOpUpwardVisitor.visitStoreOp` visits `offset()` then `value()`.
     #[test]
     fn visit_store_op_visits_offset_then_value() {
-        let store_op = JitStoreOp::new(Box::new(TagVal(1)), Box::new(TagVal(2)));
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+        let store_op = JitStoreOp::new(
+            PcodeOp::new(
+                OpCode::Store,
+                SequenceNumber::new(Address::new(Arc::clone(&space), 0), 0),
+                vec![],
+                None,
+            ),
+            (*space).clone(),
+            Arc::new(TagVal(1)),
+            Arc::new(TagVal(2)),
+        );
         let mut visitor = RecordingVisitor::default();
 
         <RecordingVisitor as JitOpUpwardVisitor>::visit_store_op(&mut visitor, &store_op);
@@ -283,7 +294,9 @@ mod tests {
     // Java: `JitOpUpwardVisitor.visitCatenateOp` visits every element of `parts()`, in order.
     #[test]
     fn visit_catenate_op_visits_each_part_in_order() {
-        let cat_op = JitCatenateOp::new(vec![Box::new(TagVal(5)), Box::new(TagVal(6))]);
+        let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
+        let out: Arc<dyn JitOutVar> = Arc::new(StubOutVar(varnode(&space, 0x1000, 2)));
+        let cat_op = JitCatenateOp::new(out, vec![Arc::new(TagVal(5)), Arc::new(TagVal(6))]);
         let mut visitor = RecordingVisitor::default();
 
         <RecordingVisitor as JitOpUpwardVisitor>::visit_catenate_op(&mut visitor, &cat_op);
@@ -296,6 +309,13 @@ mod tests {
     }
 
     struct StubOutVar(Varnode);
+    impl JitVal for StubOutVar {
+        fn size(&self) -> i32 {
+            self.0.get_size()
+        }
+        fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+        fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+    }
     impl JitOutVar for StubOutVar {
         fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
         fn definition(&self) -> Option<Arc<dyn JitDefOp>> {
@@ -352,6 +372,13 @@ mod tests {
         let phi: Arc<dyn JitDefOp> = Arc::new(JitPhiOp::new(JitBlock::new(), phi_out));
 
         struct DefOutVar(Arc<dyn JitDefOp>);
+        impl JitVal for DefOutVar {
+            fn size(&self) -> i32 {
+                0
+            }
+            fn add_use(&self, _op: &dyn JitOp, _position: i32) {}
+            fn remove_use(&self, _op: &dyn JitOp, _position: i32) {}
+        }
         impl JitOutVar for DefOutVar {
             fn set_definition(&self, _definition: Option<&dyn JitDefOp>) {}
             fn definition(&self) -> Option<Arc<dyn JitDefOp>> {

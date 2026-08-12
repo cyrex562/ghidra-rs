@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use crate::pcode::seam_stubs::{JitConstVal, JitOp, JitTypeBehavior};
+use crate::pcode::seam_stubs::{JitConstVal, JitOp, JitOutVar, JitTypeBehavior};
 
 /// The use of a value node by an operator node.
 ///
@@ -78,6 +78,28 @@ pub trait JitVal: Send + Sync {
     /// overrides it.
     fn is_input_var(&self) -> bool {
         false
+    }
+
+    /// This value as a [`JitConstVal`], if it is one.
+    ///
+    /// Grown (see `STUBS.tsv`) to stand in for Java's `instanceof JitConstVal` checks in
+    /// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic)'s
+    /// `subpiece` and `toConcrete`, in the same style as [`is_input_var`](Self::is_input_var):
+    /// `dyn JitVal` carries no downcast facility, so each check becomes a defaulted query that
+    /// only the matching type overrides.
+    fn as_const_val(&self) -> Option<&JitConstVal> {
+        None
+    }
+
+    /// This value as a [`JitVarnodeVar`](crate::pcode::emu::jit::var::JitVarnodeVar), if it is
+    /// one. See [`as_const_val`](Self::as_const_val).
+    fn as_varnode_var(&self) -> Option<&dyn crate::pcode::emu::jit::var::JitVarnodeVar> {
+        None
+    }
+
+    /// This value as a [`JitOutVar`], if it is one. See [`as_const_val`](Self::as_const_val).
+    fn as_out_var(&self) -> Option<&dyn JitOutVar> {
+        None
     }
 
     /// Double-dispatch hook standing in for Java's `switch (v) { case JitConstVal ... }` in
