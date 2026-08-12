@@ -9,6 +9,7 @@ pub mod int_bitwise_bin_op_gen;
 pub mod int_ext_un_op_gen;
 pub mod int_op_bin_op_gen;
 pub mod int_op_un_op_gen;
+pub mod int_pred_bin_op_gen;
 pub mod un_op_gen;
 
 pub use bin_op_gen::{BinOpGen, TakeOut};
@@ -22,4 +23,5 @@ pub use int_bitwise_bin_op_gen::IntBitwiseBinOpGen;
 pub use int_ext_un_op_gen::IntExtUnOpGen;
 pub use int_op_bin_op_gen::IntOpBinOpGen;
 pub use int_op_un_op_gen::IntOpUnOpGen;
+pub use int_pred_bin_op_gen::IntPredBinOpGen;
 pub use un_op_gen::UnOpGen;

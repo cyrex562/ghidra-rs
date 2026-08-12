@@ -11021,7 +11021,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/In
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntOpBinOpGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntOpUnOpGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntOrOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntPredBinOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntPredBinOpGen.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntRemOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntRightOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/op/IntSBorrowOpGen.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen op 
