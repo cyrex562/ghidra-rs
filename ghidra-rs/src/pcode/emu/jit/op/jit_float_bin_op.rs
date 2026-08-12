@@ -2,7 +2,8 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.op.JitFloatBinOp`.
 
-use crate::pcode::seam_stubs::{JitBinOp, JitTypeBehavior};
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+use crate::pcode::seam_stubs::JitBinOp;
 
 /// A binary p-code operator use-def node with floating-point types.
 ///

@@ -63,7 +63,8 @@ use std::sync::Arc;
 
 use crate::pcode::emu::jit::analysis::jit_type::AnyJitType;
 use crate::pcode::emu::jit::var::{JitOutVar, JitVal};
-use crate::pcode::seam_stubs::{JitDataFlowModel, JitTypeBehavior};
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+use crate::pcode::seam_stubs::JitDataFlowModel;
 
 /// The identity of a value node, i.e. the address of the node itself.
 ///

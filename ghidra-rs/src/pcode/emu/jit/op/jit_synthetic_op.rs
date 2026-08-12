@@ -25,7 +25,7 @@ pub trait JitSyntheticOp: JitOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pcode::seam_stubs::JitTypeBehavior;
+    use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
     use std::panic;
 
     struct TestSyntheticOp;

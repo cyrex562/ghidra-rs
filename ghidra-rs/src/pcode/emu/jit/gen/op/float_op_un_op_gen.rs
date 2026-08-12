@@ -84,7 +84,8 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::types::TRef;
     use crate::pcode::emu::jit::op::{JitDefOp, JitOp};
     use crate::pcode::emu::jit::var::JitVal;
-    use crate::pcode::seam_stubs::{Ext, JitTypeBehavior, MethodVisitor, OpGen};
+    use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+    use crate::pcode::seam_stubs::{Ext, MethodVisitor, OpGen};
     use std::sync::Arc;
 
     struct TestFloatUnOp;

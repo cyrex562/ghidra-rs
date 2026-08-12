@@ -2,7 +2,7 @@
 //!
 //! Port of `ghidra.pcode.emu.jit.op.JitIntUnOp`.
 
-use crate::pcode::seam_stubs::JitTypeBehavior;
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
 use super::JitUnOp;
 
 /// A unary p-code operator use-def node with integer types.

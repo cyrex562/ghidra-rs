@@ -6,7 +6,8 @@ use std::sync::Arc;
 
 use crate::pcode::emu::jit::op::JitOp;
 use crate::pcode::emu::jit::var::JitOutVar;
-use crate::pcode::seam_stubs::{JitCatenateOp, JitSynthSubPieceOp, JitTypeBehavior};
+use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+use crate::pcode::seam_stubs::{JitCatenateOp, JitSynthSubPieceOp};
 
 /// A p-code operator use-def node with an output.
 ///
