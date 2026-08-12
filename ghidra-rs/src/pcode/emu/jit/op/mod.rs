@@ -1,4 +1,5 @@
 pub mod jit_bool_bin_op;
+pub mod jit_bool_un_op;
 pub mod jit_call_other_op_if;
 pub mod jit_float_bin_op;
 pub mod jit_float_test_op;
@@ -11,6 +12,7 @@ pub mod jit_synthetic_op;
 pub mod jit_un_op;
 
 pub use jit_bool_bin_op::JitBoolBinOp;
+pub use jit_bool_un_op::JitBoolUnOp;
 pub use jit_call_other_op_if::JitCallOtherOpIf;
 pub use jit_float_bin_op::JitFloatBinOp;
 pub use jit_float_test_op::JitFloatTestOp;
