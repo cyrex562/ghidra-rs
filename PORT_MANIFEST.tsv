@@ -10932,7 +10932,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowModel.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowUseropLibrary.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitOpUpwardVisitor.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitOpUpwardVisitor.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitOpUseModel.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitOpVisitor.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitType.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 

@@ -1388,9 +1388,32 @@ impl JitVal for JitInputVar {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitStoreOp`, referenced by
 /// [`JitOpVisitor::visit_store_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_store_op).
-/// No fields: nothing in this crate yet inspects a store op's contents. Replace with the real
-/// port when `JitStoreOp.java` is ported.
-pub struct JitStoreOp;
+///
+/// Grown (see `STUBS.tsv`) with the `offset`/`value` record components for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits both. `link`/`unlink`/`type_for` remain unimplemented since nothing needs them yet.
+pub struct JitStoreOp {
+    offset: Box<dyn JitVal>,
+    value: Box<dyn JitVal>,
+}
+
+impl JitStoreOp {
+    /// Port of `new JitStoreOp(PcodeOp, AddressSpace, JitVal, JitVal)`, restricted to the
+    /// `offset`/`value` components this crate currently needs.
+    pub fn new(offset: Box<dyn JitVal>, value: Box<dyn JitVal>) -> Self {
+        Self { offset, value }
+    }
+
+    /// Port of the record accessor `offset()`.
+    pub fn offset(&self) -> &dyn JitVal {
+        self.offset.as_ref()
+    }
+
+    /// Port of the record accessor `value()`.
+    pub fn value(&self) -> &dyn JitVal {
+        self.value.as_ref()
+    }
+}
 
 impl JitOp for JitStoreOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
@@ -1411,9 +1434,26 @@ impl JitOp for JitStoreOp {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitLoadOp`, referenced by
 /// [`JitOpVisitor::visit_load_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_load_op).
-/// No fields: nothing in this crate yet inspects a load op's contents. Replace with the real
-/// port when `JitLoadOp.java` is ported.
-pub struct JitLoadOp;
+///
+/// Grown (see `STUBS.tsv`) with the `offset` record component for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits it. `link`/`unlink`/`type_for` remain unimplemented since nothing needs them yet.
+pub struct JitLoadOp {
+    offset: Box<dyn JitVal>,
+}
+
+impl JitLoadOp {
+    /// Port of `new JitLoadOp(PcodeOp, JitOutVar, AddressSpace, JitVal)`, restricted to the
+    /// `offset` component this crate currently needs.
+    pub fn new(offset: Box<dyn JitVal>) -> Self {
+        Self { offset }
+    }
+
+    /// Port of the record accessor `offset()`.
+    pub fn offset(&self) -> &dyn JitVal {
+        self.offset.as_ref()
+    }
+}
 
 impl JitOp for JitLoadOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
@@ -1434,9 +1474,27 @@ impl JitOp for JitLoadOp {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCallOtherOp`, referenced
 /// by [`JitOpVisitor::visit_call_other_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_call_other_op).
-/// No fields: nothing in this crate yet inspects a call-other op's contents. Replace with the
-/// real port when `JitCallOtherOp.java` is ported.
-pub struct JitCallOtherOp;
+///
+/// Grown (see `STUBS.tsv`) with the `args` record component for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits each argument. `link`/`unlink`/`type_for` remain unimplemented since nothing
+/// needs them yet.
+pub struct JitCallOtherOp {
+    args: Vec<Box<dyn JitVal>>,
+}
+
+impl JitCallOtherOp {
+    /// Port of `new JitCallOtherOp(PcodeOp, PcodeUseropDefinition, List, List, MiniDFState)`,
+    /// restricted to the `args` component this crate currently needs.
+    pub fn new(args: Vec<Box<dyn JitVal>>) -> Self {
+        Self { args }
+    }
+
+    /// Port of the record accessor `args()`.
+    pub fn args(&self) -> &[Box<dyn JitVal>] {
+        &self.args
+    }
+}
 
 impl JitOp for JitCallOtherOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
@@ -1457,9 +1515,28 @@ impl JitOp for JitCallOtherOp {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCallOtherDefOp`,
 /// referenced by [`JitOpVisitor::visit_call_other_def_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_call_other_def_op).
-/// No fields: nothing in this crate yet inspects a call-other-def op's contents. Replace with
-/// the real port when `JitCallOtherDefOp.java` is ported.
-pub struct JitCallOtherDefOp;
+///
+/// Grown (see `STUBS.tsv`) with the `args` record component for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits each argument. `link`/`unlink`/`type_for` remain unimplemented since nothing
+/// needs them yet.
+pub struct JitCallOtherDefOp {
+    args: Vec<Box<dyn JitVal>>,
+}
+
+impl JitCallOtherDefOp {
+    /// Port of `new JitCallOtherDefOp(PcodeOp, JitOutVar, JitTypeBehavior,
+    /// PcodeUseropDefinition, List, List, MiniDFState)`, restricted to the `args` component this
+    /// crate currently needs.
+    pub fn new(args: Vec<Box<dyn JitVal>>) -> Self {
+        Self { args }
+    }
+
+    /// Port of the record accessor `args()`.
+    pub fn args(&self) -> &[Box<dyn JitVal>] {
+        &self.args
+    }
+}
 
 impl JitOp for JitCallOtherDefOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
@@ -1503,9 +1580,27 @@ impl JitOp for JitCallOtherMissingOp {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCatenateOp`, referenced
 /// by [`JitOpVisitor::visit_catenate_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_catenate_op).
-/// No fields: nothing in this crate yet inspects a catenate op's contents. Replace with the real
-/// port when `JitCatenateOp.java` is ported.
-pub struct JitCatenateOp;
+///
+/// Grown (see `STUBS.tsv`) with the `parts` record component for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits each part. `link`/`unlink`/`type_for` remain unimplemented since nothing needs
+/// them yet.
+pub struct JitCatenateOp {
+    parts: Vec<Box<dyn JitVal>>,
+}
+
+impl JitCatenateOp {
+    /// Port of `new JitCatenateOp(JitOutVar, List)`, restricted to the `parts` component this
+    /// crate currently needs.
+    pub fn new(parts: Vec<Box<dyn JitVal>>) -> Self {
+        Self { parts }
+    }
+
+    /// Port of the record accessor `parts()`.
+    pub fn parts(&self) -> &[Box<dyn JitVal>] {
+        &self.parts
+    }
+}
 
 impl JitOp for JitCatenateOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
@@ -1526,9 +1621,27 @@ impl JitOp for JitCatenateOp {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitSynthSubPieceOp`,
 /// referenced by [`JitOpVisitor::visit_sub_piece_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_sub_piece_op).
-/// No fields: nothing in this crate yet inspects a sub-piece op's contents. Replace with the
-/// real port when `JitSynthSubPieceOp.java` is ported.
-pub struct JitSynthSubPieceOp;
+///
+/// Grown (see `STUBS.tsv`) with the `v` record component for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits it. `out`/`offset`/`link`/`unlink`/`type_for` remain unimplemented since nothing
+/// needs them yet.
+pub struct JitSynthSubPieceOp {
+    v: Box<dyn JitVal>,
+}
+
+impl JitSynthSubPieceOp {
+    /// Port of `new JitSynthSubPieceOp(JitOutVar, int, JitVal)`, restricted to the `v` component
+    /// this crate currently needs.
+    pub fn new(v: Box<dyn JitVal>) -> Self {
+        Self { v }
+    }
+
+    /// Port of the record accessor `v()`.
+    pub fn v(&self) -> &dyn JitVal {
+        self.v.as_ref()
+    }
+}
 
 impl JitOp for JitSynthSubPieceOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
@@ -1572,9 +1685,27 @@ impl JitOp for JitBranchOp {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitCBranchOp`, referenced
 /// by [`JitOpVisitor::visit_c_branch_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_c_branch_op).
-/// No fields: nothing in this crate yet inspects a conditional-branch op's contents. Replace
-/// with the real port when `JitCBranchOp.java` is ported.
-pub struct JitCBranchOp;
+///
+/// Grown (see `STUBS.tsv`) with the `cond` record component for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits it. `op`/`branch`/`link`/`unlink`/`type_for` remain unimplemented since nothing
+/// needs them yet.
+pub struct JitCBranchOp {
+    cond: Box<dyn JitVal>,
+}
+
+impl JitCBranchOp {
+    /// Port of `new JitCBranchOp(PcodeOp, RBranch, JitVal)`, restricted to the `cond` component
+    /// this crate currently needs.
+    pub fn new(cond: Box<dyn JitVal>) -> Self {
+        Self { cond }
+    }
+
+    /// Port of the record accessor `cond()`.
+    pub fn cond(&self) -> &dyn JitVal {
+        self.cond.as_ref()
+    }
+}
 
 impl JitOp for JitCBranchOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
@@ -1595,9 +1726,27 @@ impl JitOp for JitCBranchOp {
 
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.op.JitBranchIndOp`, referenced
 /// by [`JitOpVisitor::visit_branch_ind_op`](crate::pcode::emu::jit::analysis::jit_op_visitor::JitOpVisitor::visit_branch_ind_op).
-/// No fields: nothing in this crate yet inspects an indirect-branch op's contents. Replace with
-/// the real port when `JitBranchIndOp.java` is ported.
-pub struct JitBranchIndOp;
+///
+/// Grown (see `STUBS.tsv`) with the `target` record component for
+/// [`JitOpUpwardVisitor`](crate::pcode::emu::jit::analysis::jit_op_upward_visitor::JitOpUpwardVisitor),
+/// which visits it. `op`/`branch`/`link`/`unlink`/`type_for` remain unimplemented since nothing
+/// needs them yet.
+pub struct JitBranchIndOp {
+    target: Box<dyn JitVal>,
+}
+
+impl JitBranchIndOp {
+    /// Port of `new JitBranchIndOp(PcodeOp, JitVal, RIndBranch)`, restricted to the `target`
+    /// component this crate currently needs.
+    pub fn new(target: Box<dyn JitVal>) -> Self {
+        Self { target }
+    }
+
+    /// Port of the record accessor `target()`.
+    pub fn target(&self) -> &dyn JitVal {
+        self.target.as_ref()
+    }
+}
 
 impl JitOp for JitBranchIndOp {
     fn type_for(&self, _position: i32) -> JitTypeBehavior {
