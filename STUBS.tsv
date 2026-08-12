@@ -611,3 +611,11 @@ ts	stub_class	referenced_by
 2026-08-11T12:00:00.200000+00:00	AddressesReadPcodeArithmetic	DebuggerPcodeUtils
 2026-08-11T12:00:00.300000+00:00	ValueLocation	DebuggerPcodeUtils
 2026-08-11T12:00:00.400000+00:00	BytesPcodeArithmetic	DebuggerPcodeUtils
+2026-08-12T02:00:00.000000+00:00	JitStoreOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.100000+00:00	JitLoadOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.200000+00:00	JitCallOtherOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.300000+00:00	JitCallOtherDefOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.400000+00:00	JitCatenateOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.500000+00:00	JitSynthSubPieceOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.600000+00:00	JitCBranchOp	JitOpUpwardVisitor
+2026-08-12T02:00:00.700000+00:00	JitBranchIndOp	JitOpUpwardVisitor
