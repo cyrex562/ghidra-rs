@@ -663,3 +663,4 @@ ts	stub_class	referenced_by
 2026-08-12T10:00:00.000000+00:00	IntVarAlloc	AlignedMpIntHandler
 2026-08-12T10:00:00.000000+00:00	IntInIntHandler	AlignedMpIntHandler
 2026-08-12T10:00:00.000000+00:00	ShiftedMpIntHandler	AlignedMpIntHandler
+2026-08-12T11:00:00.000000+00:00	JitCodeGenerator	IntBitwiseBinOpGen
