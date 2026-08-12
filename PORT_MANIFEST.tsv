@@ -10921,7 +10921,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/NoH
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/ShiftedMpIntHandler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SimpleVarHandler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubInLongHandler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubVarHandler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubVarHandler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/VarHandler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitAllocationModel.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitAnalysisContext.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
