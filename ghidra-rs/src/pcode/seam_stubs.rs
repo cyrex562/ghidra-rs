@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use crate::pcode::emu::jit::analysis::jit_type::{
-    AnyJitType, IntJitType, LongJitType, MpIntJitType,
+    AnyJitType, IntJitType, JitType, LongJitType, MpIntJitType,
 };
 use crate::pcode::emu::jit::gen::util::emitter::{Bot, Emitter, Next};
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
@@ -2172,4 +2172,57 @@ pub trait JitCodeGenerator: Send + Sync {}
 /// in methods of `InstanceFieldReq` without calling its methods in the type itself, so no methods
 /// are exposed. Replace with the real port when available.
 pub trait JitCompiledPassage: Send + Sync {}
+
+/// Placeholder for the unported Java type `AccessGen<JT>`, referenced by
+/// [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen), which extends
+/// `AccessGen<MpIntJitType>`. In Java, `AccessGen`'s only abstract-looking members
+/// (`lookup`/`lookupSimple`/`lookupMp`/`genReadToBool`) are all `static`, so it contributes no
+/// instance methods for an implementor to satisfy; this stub is therefore a marker only. Replace
+/// with the real port (as a module of free functions, per this crate's convention for Java
+/// namespace interfaces) when available.
+pub trait AccessGen<JT: JitType>: Send + Sync {}
+
+/// Placeholder for the unported Java type `Opnd<T>`, referenced by
+/// [`MpAccessGen`](crate::pcode::emu::jit::gen::access::mp_access_gen::MpAccessGen). Generated
+/// stub: only a shape hint. `MpAccessGen` only passes an `Opnd<MpIntJitType>` through
+/// (`genWriteFromOpnd`), so no methods are exposed yet. Replace with the real port -- `type()`,
+/// `name()`, and `legsLE()` -- when available.
+pub trait Opnd<T>: Send + Sync {}
+
+/// Placeholder for the unported Java nested record `Opnd.OpndEm<T, N>`: an operand paired with the
+/// emitter after reading it. Mirrors the already-ported
+/// [`SimpleOpndEm`](crate::pcode::emu::jit::gen::opnd::SimpleOpndEm), but keeps the operand boxed
+/// since [`Opnd`] is known only as a trait object until the real port narrows it.
+pub struct OpndEm<T, N> {
+    /// The operand.
+    pub opnd: Box<dyn Opnd<T>>,
+    /// The emitter after writing the operand's read.
+    pub em: Emitter<N>,
+}
+
+impl<T, N> OpndEm<T, N> {
+    /// Port of the canonical record constructor `new OpndEm<>(opnd, em)`.
+    pub fn new(opnd: Box<dyn Opnd<T>>, em: Emitter<N>) -> Self {
+        Self { opnd, em }
+    }
+}
+
+/// Placeholder for the unported Java nested enum `Opnd.Ext`: the kind of extension to apply when
+/// converting between operand types.
+///
+/// Port of `ghidra.pcode.emu.jit.gen.opnd.Opnd.Ext`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ext {
+    /// Zero extension.
+    Zero,
+    /// Sign extension.
+    Sign,
+}
+
+impl Ext {
+    /// Port of `Ext.forSigned(boolean)`.
+    pub fn for_signed(signed: bool) -> Self {
+        if signed { Ext::Sign } else { Ext::Zero }
+    }
+}
 
