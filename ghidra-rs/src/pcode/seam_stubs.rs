@@ -3620,3 +3620,49 @@ impl ShiftedMpIntHandler {
 
 unported_handler_var_handler_impl!(ShiftedMpIntHandler, "ShiftedMpIntHandler", AnyJitType::MpInt);
 
+/// Placeholder for the unported Java type `IntZExtOpGen`, referenced by `CopyOpGen`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait IntZExtOpGen: Send + Sync {
+    fn is_signed(&self) -> bool;
+}
+
+/// Placeholder for the unported Java type `JitCopyOp`, referenced by `CopyOpGen`.
+/// Port of `ghidra.pcode.emu.jit.op.JitCopyOp` (record type).
+pub struct JitCopyOp {
+    u: std::sync::Arc<dyn crate::pcode::emu::jit::var::JitVal>,
+}
+
+impl JitCopyOp {
+    /// Port of the canonical record constructor.
+    pub fn new(u: std::sync::Arc<dyn crate::pcode::emu::jit::var::JitVal>) -> Self {
+        Self { u }
+    }
+}
+
+impl JitOp for JitCopyOp {
+    fn type_for(&self, _position: i32) -> JitTypeBehavior {
+        JitTypeBehavior::Integer
+    }
+
+    fn link(&self) {}
+
+    fn unlink(&self) {}
+}
+
+impl JitDefOp for JitCopyOp {
+    fn out(&self) -> std::sync::Arc<dyn JitOutVar> {
+        unimplemented!()
+    }
+}
+
+impl crate::pcode::emu::jit::op::jit_un_op::JitUnOp for JitCopyOp {
+    fn u(&self) -> std::sync::Arc<dyn crate::pcode::emu::jit::var::JitVal> {
+        self.u.clone()
+    }
+
+    fn u_type(&self) -> JitTypeBehavior {
+        JitTypeBehavior::Integer
+    }
+}
+

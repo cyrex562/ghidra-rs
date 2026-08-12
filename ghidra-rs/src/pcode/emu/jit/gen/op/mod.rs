@@ -1,5 +1,6 @@
 pub mod bin_op_gen;
 pub mod c_branch_op_gen;
+pub mod copy_op_gen;
 pub mod int_bitwise_bin_op_gen;
 pub mod int_ext_un_op_gen;
 pub mod int_op_bin_op_gen;
@@ -8,6 +9,7 @@ pub mod un_op_gen;
 
 pub use bin_op_gen::{BinOpGen, TakeOut};
 pub use c_branch_op_gen::CBranchOpGen;
+pub use copy_op_gen::CopyOpGen;
 pub use int_bitwise_bin_op_gen::IntBitwiseBinOpGen;
 pub use int_ext_un_op_gen::IntExtUnOpGen;
 pub use int_op_bin_op_gen::IntOpBinOpGen;
