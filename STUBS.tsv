@@ -701,3 +701,4 @@ ts	stub_class	referenced_by
 2026-08-13T07:00:00.100000+00:00	RichProduct	CompId
 2026-08-13T07:10:00.100000+00:00	RichHeaderRecord	RichTable
 2026-08-13T07:10:00.200000+00:00	PERichTableDataType	RichTable
+2026-08-13T07:04:16.713411+00:00	NewGuid	GuidUtil
