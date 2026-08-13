@@ -1,6 +1,7 @@
 pub mod character_iterator;
 pub mod datatype;
 pub mod demangle_exception;
+pub mod demangled_type;
 pub mod demangler;
 pub mod demangler_options;
 pub mod gnu;
