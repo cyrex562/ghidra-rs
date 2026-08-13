@@ -10940,7 +10940,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitTypeModel.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitVarScopeModel.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecodedStride.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderExecutor.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderExecutor.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOnePassage.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOneStride.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderUseropLibrary.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 

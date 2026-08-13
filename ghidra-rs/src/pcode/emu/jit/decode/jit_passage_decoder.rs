@@ -144,6 +144,32 @@ impl JitPassageDecoder {
     pub(crate) fn thread_get_inject(&self, address: &Address) -> Option<PcodeProgram> {
         self.thread.get_inject(address)
     }
+
+    /// Port of `decoder.thread.getLanguage()`, as accessed directly by `DecoderExecutor` (a
+    /// package-private field access in Java). Read off the thread's [`InstructionDecoder`], which
+    /// is where the thread itself gets it.
+    pub(crate) fn thread_get_language(&self) -> Arc<dyn crate::program::model::lang::language::Language> {
+        self.decoder.lock().expect("decoder mutex poisoned").get_language()
+    }
+
+    /// Port of `decoder.contextreg`, as accessed directly by `DecoderExecutor` (a package-private
+    /// field access in Java).
+    pub(crate) fn contextreg(&self) -> &RegisterRef {
+        &self.contextreg
+    }
+
+    /// Port of `decoder.defaultContext`, as accessed directly by `DecoderExecutor` (a
+    /// package-private field access in Java).
+    pub(crate) fn default_context(&self) -> Option<&Arc<dyn ProgramContext>> {
+        self.default_context.as_ref()
+    }
+
+    /// Port of `decoder.library`, as accessed directly by `DecoderExecutor` (a package-private
+    /// field access in Java, reached via `DecoderForOnePassage.library()`, which returns exactly
+    /// this object).
+    pub(crate) fn library(&self) -> &DecoderUseropLibrary {
+        &self.library
+    }
 }
 
 #[cfg(test)]
