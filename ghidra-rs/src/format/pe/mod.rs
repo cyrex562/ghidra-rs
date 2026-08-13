@@ -17,3 +17,4 @@ pub mod pe_markupable;
 pub mod rich_header;
 pub mod rich_table;
 pub mod section_flags;
+pub mod image_runtime_function_entries;
