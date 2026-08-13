@@ -1,3 +1,4 @@
+pub mod entry_table_bundle;
 pub mod imported_name_table;
 pub mod invalid_windows_header_exception;
 pub mod length_string_ordinal_set;
@@ -12,6 +13,7 @@ pub mod resident_name_table;
 pub mod resource_name;
 pub mod segment;
 
+pub use entry_table_bundle::EntryTableBundle;
 pub use imported_name_table::ImportedNameTable;
 pub use invalid_windows_header_exception::InvalidWindowsHeaderException;
 pub use length_string_ordinal_set::LengthStringOrdinalSet;

@@ -249,3 +249,70 @@ impl SegmentRelocation {
         self.offset
     }
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.ne.EntryPoint`, referenced by
+/// [`EntryTableBundle`](crate::format::ne::entry_table_bundle::EntryTableBundle) before the real
+/// class is ported. `EntryPoint` is a concrete Java class (not an interface), so it is modeled
+/// here as a concrete struct rather than a trait object, consistent with [`SegmentRelocation`]
+/// above. The Java constructor takes a back-reference to the owning `EntryTableBundle` solely to
+/// query `isMoveable()`, which is fixed by the time any `EntryPoint` is constructed; this stub
+/// takes that flag directly instead of an owning back-reference, avoiding an ownership cycle with
+/// `EntryTableBundle`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EntryPoint {
+    flagword: i8,
+    instruction: i16,
+    segment: i8,
+    offset: i16,
+    is_moveable: bool,
+}
+
+impl EntryPoint {
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        is_moveable: bool,
+    ) -> std::io::Result<Self> {
+        let flagword = reader.read_next_byte()? as i8;
+
+        let mut instruction = 0i16;
+        let mut segment = 0i8;
+        if is_moveable {
+            instruction = reader.read_next_short()?;
+            segment = reader.read_next_byte()? as i8;
+        }
+
+        let offset = reader.read_next_short()?;
+
+        Ok(EntryPoint {
+            flagword,
+            instruction,
+            segment,
+            offset,
+            is_moveable,
+        })
+    }
+
+    pub fn get_flagword(&self) -> i8 {
+        self.flagword
+    }
+
+    /// # Panics
+    /// Panics if this entry point is not moveable, mirroring the Java
+    /// `RuntimeException("Entry point is not moveable!")`.
+    pub fn get_instruction(&self) -> i16 {
+        assert!(self.is_moveable, "Entry point is not moveable!");
+        self.instruction
+    }
+
+    /// # Panics
+    /// Panics if this entry point is not moveable, mirroring the Java
+    /// `RuntimeException("Entry point is not moveable!")`.
+    pub fn get_segment(&self) -> i8 {
+        assert!(self.is_moveable, "Entry point is not moveable!");
+        self.segment
+    }
+
+    pub fn get_offset(&self) -> i16 {
+        self.offset
+    }
+}
