@@ -3167,6 +3167,33 @@ impl FieldForArrDirect {
 /// are exposed. Replace with the real port when available.
 pub trait JitCompiledPassage: Send + Sync {}
 
+/// Placeholder for the unported nested Java type `JitCompiledPassage.EntryPointPrototype`,
+/// referenced by
+/// [`JitCompiledPassageClass::get_block_entries`](crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass::get_block_entries)
+/// as the value type of the map it builds from the passage's entry list. The real class also
+/// caches a bound `EntryPoint` per thread (`createInstance`), but that cache and its `EntryPoint`
+/// companion belong to the (also unported) enclosing `JitCompiledPassage`, so this stub carries
+/// only the two identity fields `get_block_entries` sets: the owning class and the target block
+/// id. Replace with the real port when `JitCompiledPassage.java` lands.
+#[derive(Clone)]
+pub struct EntryPointPrototype {
+    /// The compiled passage class this prototype belongs to. Port of
+    /// `EntryPointPrototype.cls`.
+    pub cls: crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass,
+    /// The block at which to enter the passage. Port of `EntryPointPrototype.blockId`.
+    pub block_id: i32,
+}
+
+impl EntryPointPrototype {
+    /// Port of `new EntryPointPrototype(JitCompiledPassageClass, int)`.
+    pub fn new(
+        cls: crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass,
+        block_id: i32,
+    ) -> Self {
+        Self { cls, block_id }
+    }
+}
+
 /// Placeholder for the unported Java enum `ghidra.pcode.emu.jit.gen.access.FloatAccessGen`,
 /// referenced by
 /// [`AccessGen::lookup`/`AccessGen::lookup_simple`](crate::pcode::emu::jit::gen::access::access_gen).
