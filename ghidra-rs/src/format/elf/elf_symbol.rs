@@ -523,6 +523,18 @@ mod tests {
         fn get_name_as_string(&self) -> String {
             self.0.to_string()
         }
+        fn get_elf_header(&self) -> std::sync::Arc<dyn ElfHeader> {
+            std::sync::Arc::new(MockHeader { is32: true, section_names: Vec::new() })
+        }
+        fn get_address(&self) -> i64 {
+            0
+        }
+        fn get_flags(&self) -> i64 {
+            0
+        }
+        fn get_logical_size(&self) -> i64 {
+            0
+        }
     }
 
     struct MockHeader {
@@ -533,6 +545,9 @@ mod tests {
     impl ElfHeader for MockHeader {
         fn is32_bit(&self) -> bool {
             self.is32
+        }
+        fn is_relocatable(&self) -> bool {
+            false
         }
         fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
             self.section_names

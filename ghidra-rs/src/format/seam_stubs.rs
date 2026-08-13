@@ -1037,19 +1037,73 @@ impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for MemoryByteProv
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfSectionHeader`, referenced by
-/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) before the real class is
-/// ported. Only the accessor a section symbol needs to name itself.
+/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) and by
+/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter) before the real
+/// class is ported. Only the accessors those two need.
 pub trait ElfSectionHeader: Send + Sync {
     fn get_name_as_string(&self) -> String;
+
+    /// `ElfSectionHeader.getElfHeader()` -- the header this section belongs to.
+    fn get_elf_header(&self) -> std::sync::Arc<dyn ElfHeader>;
+
+    /// `ElfSectionHeader.getAddress()` -- `sh_addr`, the address of the section in memory, or 0
+    /// if the section is not loaded.
+    fn get_address(&self) -> i64;
+
+    /// `ElfSectionHeader.getFlags()` -- the `sh_flags` bit set (`SHF_*`).
+    fn get_flags(&self) -> i64;
+
+    /// `ElfSectionHeader.getLogicalSize()` -- the uncompressed size of the section's data, which
+    /// differs from `sh_size` only for a `SHF_COMPRESSED` section.
+    fn get_logical_size(&self) -> i64;
+
+    /// `ElfSectionHeader.isExecutable()`, whose Java body is exactly this flag test.
+    fn is_executable(&self) -> bool {
+        (self.get_flags() & crate::format::elf::elf_section_header_constants::SHF_EXECINSTR as i64)
+            != 0
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfProgramHeader`, referenced by
+/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter) before the real
+/// class is ported. Only the segment members the load adapter reads.
+pub trait ElfProgramHeader: Send + Sync {
+    /// `ElfProgramHeader.getFlags()` -- the `p_flags` bit set (`PF_*`).
+    fn get_flags(&self) -> i32;
+
+    /// `ElfProgramHeader.getVirtualAddress()` -- `p_vaddr`, as an addressable word offset.
+    fn get_virtual_address(&self) -> i64;
+
+    /// `ElfProgramHeader.getFileSize()` -- `p_filesz`, the number of bytes backing this segment
+    /// in the file.
+    fn get_file_size(&self) -> i64;
+
+    /// `ElfProgramHeader.getMemorySize()` -- `p_memsz`, the segment's size in memory.
+    fn get_memory_size(&self) -> i64;
+
+    /// `ElfProgramHeader.isExecute()`, whose Java body is exactly this flag test.
+    fn is_execute(&self) -> bool {
+        (self.get_flags() & crate::format::elf::elf_program_header_constants::PF_X as i32) != 0
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfHeader`, referenced by
-/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) before the real class is
-/// ported. Only the two members the symbol entry parse needs: the 32/64-bit discriminator that
-/// selects the `Elf32_Sym`/`Elf64_Sym` field order, and the section list used to name a
-/// `STT_SECTION` symbol.
+/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) and by
+/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter) before the real
+/// class is ported: the 32/64-bit discriminator that selects the `Elf32_Sym`/`Elf64_Sym` field
+/// order, the section list used to name a `STT_SECTION` symbol, and the `e_type` predicate the
+/// load adapter needs.
 pub trait ElfHeader: Send + Sync {
     fn is32_bit(&self) -> bool;
+
+    /// `ElfHeader.is64Bit()`. `EI_CLASS` admits only the two widths, so this is the negation of
+    /// [`is32_bit`](Self::is32_bit).
+    fn is64_bit(&self) -> bool {
+        !self.is32_bit()
+    }
+
+    /// `ElfHeader.isRelocatable()` -- true for an `ET_REL` object file.
+    fn is_relocatable(&self) -> bool;
 
     fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>>;
 
@@ -1058,16 +1112,63 @@ pub trait ElfHeader: Send + Sync {
     ///
     /// Java never returns null here (an unrecognized machine still gets the default adapter), but
     /// this stub has no adapter registry to fall back on, so the default answers `None`.
-    fn get_load_adapter(&self) -> Option<std::sync::Arc<dyn ElfLoadAdapter>> {
+    fn get_load_adapter(
+        &self,
+    ) -> Option<crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter> {
         None
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.elf.extend.ElfLoadAdapter`, referenced by
-/// [`ElfRelocationContextBase::get_load_adapter`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_load_adapter)
-/// before the real class is ported. The relocation context only ever hands the adapter back to its
-/// caller, so no members are needed yet.
-pub trait ElfLoadAdapter: Send + Sync {}
+/// Placeholder for `ghidra.app.util.bin.format.MemoryLoadable`, referenced by
+/// [`ElfLoadAdapter::get_filtered_load_input_stream`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::get_filtered_load_input_stream)
+/// before the real interface is ported. The adapter only ever passes the loadable through, so no
+/// members are needed yet; the real interface is implemented by `ElfSectionHeader` and
+/// `ElfProgramHeader`.
+pub trait MemoryLoadable: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfDynamicType`, referenced by
+/// [`ElfLoadAdapter::add_dynamic_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_dynamic_types)
+/// before the real class is ported. Only used as the value type of the extension type map.
+pub trait ElfDynamicType: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfProgramHeaderType`, referenced by
+/// [`ElfLoadAdapter::add_program_header_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_program_header_types)
+/// before the real class is ported. Only used as the value type of the extension type map.
+pub trait ElfProgramHeaderType: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfSectionHeaderType`, referenced by
+/// [`ElfLoadAdapter::add_section_header_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_section_header_types)
+/// before the real class is ported. Only used as the value type of the extension type map.
+pub trait ElfSectionHeaderType: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfDefaultGotPltMarkup`, referenced by
+/// [`ElfLoadAdapter::process_got_plt`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::process_got_plt)
+/// before the real class is ported.
+///
+/// Unlike the other stubs in this file this one is a struct rather than a trait, because the load
+/// adapter *constructs* it (`new ElfDefaultGotPltMarkup(elfLoadHelper)`) rather than receiving
+/// one. The real class walks the dynamic table and marks up the GOT/PLT; the placeholder retains
+/// nothing and does nothing, so the default `processGotPlt` is currently a no-op rather than
+/// producing fabricated markup.
+pub struct ElfDefaultGotPltMarkup;
+
+impl ElfDefaultGotPltMarkup {
+    /// `new ElfDefaultGotPltMarkup(ElfLoadHelper)`. The real class retains the helper; this
+    /// placeholder performs no markup and so stores nothing.
+    pub fn new(elf_load_helper: &dyn ElfLoadHelper) -> Self {
+        let _ = elf_load_helper;
+        ElfDefaultGotPltMarkup
+    }
+
+    /// `ElfDefaultGotPltMarkup.process(TaskMonitor)`. Answers the monitor's cancellation state --
+    /// the one part of the real behaviour that can be honoured without the markup itself.
+    pub fn process(
+        &self,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> Result<(), crate::util::exception::CancelledException> {
+        monitor.check_cancelled()
+    }
+}
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfStringTable`, referenced by
 /// [`ElfSymbol::init_symbol_name`](crate::format::elf::elf_symbol::ElfSymbol::init_symbol_name)

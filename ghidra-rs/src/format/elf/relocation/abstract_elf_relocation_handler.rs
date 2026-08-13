@@ -424,6 +424,9 @@ mod tests {
         fn is32_bit(&self) -> bool {
             true
         }
+        fn is_relocatable(&self) -> bool {
+            false
+        }
         fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
             Vec::new()
         }
