@@ -1035,3 +1035,43 @@ impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for MemoryByteProv
         ))
     }
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfSectionHeader`, referenced by
+/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) before the real class is
+/// ported. Only the accessor a section symbol needs to name itself.
+pub trait ElfSectionHeader: Send + Sync {
+    fn get_name_as_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfHeader`, referenced by
+/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) before the real class is
+/// ported. Only the two members the symbol entry parse needs: the 32/64-bit discriminator that
+/// selects the `Elf32_Sym`/`Elf64_Sym` field order, and the section list used to name a
+/// `STT_SECTION` symbol.
+pub trait ElfHeader: Send + Sync {
+    fn is32_bit(&self) -> bool;
+
+    fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfStringTable`, referenced by
+/// [`ElfSymbol::init_symbol_name`](crate::format::elf::elf_symbol::ElfSymbol::init_symbol_name)
+/// before the real class is ported.
+pub trait ElfStringTable: Send + Sync {
+    fn read_string(
+        &self,
+        reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
+        string_offset: i64,
+    ) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfSymbolTable`, referenced by
+/// [`ElfSymbol::get_extended_section_header_index`](crate::format::elf::elf_symbol::ElfSymbol::get_extended_section_header_index)
+/// before the real class is ported. Only the `SHT_SYMTAB_SHNDX` lookup that resolves an
+/// `SHN_XINDEX` section index.
+pub trait ElfSymbolTable: Send + Sync {
+    fn get_extended_section_index(
+        &self,
+        sym: &crate::format::elf::elf_symbol::ElfSymbol,
+    ) -> i32;
+}

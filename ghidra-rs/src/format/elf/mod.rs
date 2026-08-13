@@ -3,6 +3,7 @@ pub mod elf_exception;
 pub mod elf_file_section;
 pub mod elf_program_header_constants;
 pub mod elf_section_header_constants;
+pub mod elf_symbol;
 pub mod extend;
 pub mod gnu_constants;
 pub mod info;
