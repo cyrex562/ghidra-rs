@@ -316,3 +316,231 @@ impl EntryPoint {
         self.offset
     }
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.ne.Resource`, referenced by
+/// [`ResourceType`] before the real class is ported. `Resource` is a concrete Java class (with
+/// subclasses elsewhere in the tree, but none of them change how many bytes the constructor
+/// consumes), so it is modeled here as a concrete struct rather than a trait object, consistent
+/// with [`SegmentRelocation`] and [`EntryPoint`] above. The Java constructor takes a
+/// back-reference to the owning `ResourceTable` solely to resolve the alignment shift count (for
+/// `getFileOffsetShifted`/`getFileLengthShifted`); that value is already known by the time any
+/// `Resource` is constructed, so this stub takes it directly instead of an owning back-reference,
+/// avoiding an ownership cycle with `ResourceTable`. `getBytes`/`toString` additionally need the
+/// owning table's resource names and reader, which aren't available yet at construction time and
+/// aren't called by anything in the crate, so they're omitted here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Resource {
+    file_offset: i16,
+    file_length: i16,
+    flagword: i16,
+    resource_id: i16,
+    handle: i16,
+    usage: i16,
+    alignment_shift_count: i16,
+}
+
+impl Resource {
+    /// The resource is not fixed.
+    pub const FLAG_MOVEABLE: i16 = 0x0010;
+    /// The resource can be shared.
+    pub const FLAG_PURE: i16 = 0x0020;
+    /// The resource is preloaded.
+    pub const FLAG_PRELOAD: i16 = 0x0040;
+
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        alignment_shift_count: i16,
+    ) -> std::io::Result<Self> {
+        let file_offset = reader.read_next_short()?;
+        let file_length = reader.read_next_short()?;
+        let flagword = reader.read_next_short()?;
+        let resource_id = reader.read_next_short()?;
+        let handle = reader.read_next_short()?;
+        let usage = reader.read_next_short()?;
+
+        Ok(Resource {
+            file_offset,
+            file_length,
+            flagword,
+            resource_id,
+            handle,
+            usage,
+            alignment_shift_count,
+        })
+    }
+
+    pub fn get_file_offset(&self) -> i16 {
+        self.file_offset
+    }
+
+    pub fn get_file_length(&self) -> i16 {
+        self.file_length
+    }
+
+    pub fn get_flagword(&self) -> i16 {
+        self.flagword
+    }
+
+    pub fn get_resource_id(&self) -> i16 {
+        self.resource_id
+    }
+
+    pub fn get_handle(&self) -> i16 {
+        self.handle
+    }
+
+    pub fn get_usage(&self) -> i16 {
+        self.usage
+    }
+
+    pub fn is_moveable(&self) -> bool {
+        (self.flagword & Self::FLAG_MOVEABLE) != 0
+    }
+
+    pub fn is_pure(&self) -> bool {
+        (self.flagword & Self::FLAG_PURE) != 0
+    }
+
+    pub fn is_preload(&self) -> bool {
+        (self.flagword & Self::FLAG_PRELOAD) != 0
+    }
+
+    /// `this.getFileOffset() << rt.getAlignmentShiftCount()`, both operands widened as unsigned
+    /// 16-bit values before shifting, mirroring `Short.toUnsignedInt`.
+    pub fn get_file_offset_shifted(&self) -> i32 {
+        let shift = (self.alignment_shift_count as u16) as u32;
+        ((self.file_offset as u16) as i32).wrapping_shl(shift)
+    }
+
+    /// `this.getFileLength() << rt.getAlignmentShiftCount()`, both operands widened as unsigned
+    /// 16-bit values before shifting, mirroring `Short.toUnsignedInt`.
+    pub fn get_file_length_shifted(&self) -> i32 {
+        let shift = (self.alignment_shift_count as u16) as u32;
+        ((self.file_length as u16) as i32).wrapping_shl(shift)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.ne.ResourceType`, referenced by
+/// [`ResourceTable`](crate::format::ne::resource_table::ResourceTable) before the real class is
+/// ported. `ResourceType` is a concrete Java class (not an interface), so it is modeled here as a
+/// concrete struct rather than a trait object, consistent with [`SegmentRelocation`] and
+/// [`EntryPoint`] above. The Java constructor takes a back-reference to the owning
+/// `ResourceTable` solely to forward it into each `Resource` it constructs; this stub takes the
+/// alignment shift count directly instead (see [`Resource`] above), avoiding an ownership cycle
+/// with `ResourceTable`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceType {
+    type_id: i16,
+    count: i16,
+    reserved: i32,
+    resources: Vec<Resource>,
+}
+
+impl ResourceType {
+    //0x00 is not defined...?
+    /// Constant indicating cursor resource type.
+    pub const RT_CURSOR: i16 = 0x01;
+    /// Constant indicating bitmap resource type.
+    pub const RT_BITMAP: i16 = 0x02;
+    /// Constant indicating icon resource type.
+    pub const RT_ICON: i16 = 0x03;
+    /// Constant indicating menu resource type.
+    pub const RT_MENU: i16 = 0x04;
+    /// Constant indicating dialog resource type.
+    pub const RT_DIALOG: i16 = 0x05;
+    /// Constant indicating string resource type.
+    pub const RT_STRING: i16 = 0x06;
+    /// Constant indicating font directory resource type.
+    pub const RT_FONTDIR: i16 = 0x07;
+    /// Constant indicating font resource type.
+    pub const RT_FONT: i16 = 0x08;
+    /// Constant indicating an accelerator resource type.
+    pub const RT_ACCELERATOR: i16 = 0x09;
+    /// Constant indicating RC data resource type.
+    pub const RT_RCDATA: i16 = 0x0a;
+    /// Constant indicating message table resource type.
+    pub const RT_MESSAGETABLE: i16 = 0x0b;
+    /// Constant indicating cursor group resource type.
+    pub const RT_GROUP_CURSOR: i16 = 0x0c;
+    //0x0d is not defined...?
+    /// Constant indicating icon group resource type.
+    pub const RT_GROUP_ICON: i16 = 0x0e;
+    //0x0f is not defined...?
+    /// Constant indicating version resource type.
+    pub const RT_VERSION: i16 = 0x10;
+
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        alignment_shift_count: i16,
+    ) -> std::io::Result<Self> {
+        let type_id = reader.read_next_short()?;
+        if type_id == 0 {
+            // not a valid resource type...
+            return Ok(ResourceType {
+                type_id,
+                count: 0,
+                reserved: 0,
+                resources: Vec::new(),
+            });
+        }
+
+        let count = reader.read_next_short()?;
+        let reserved = reader.read_next_int()?;
+
+        let count_int = (count as u16) as usize;
+        let mut resources = Vec::with_capacity(count_int);
+        for _ in 0..count_int {
+            resources.push(Resource::new(reader, alignment_shift_count)?);
+        }
+
+        Ok(ResourceType {
+            type_id,
+            count,
+            reserved,
+            resources,
+        })
+    }
+
+    pub fn get_type_id(&self) -> i16 {
+        self.type_id
+    }
+
+    pub fn get_count(&self) -> i16 {
+        self.count
+    }
+
+    pub fn get_reserved(&self) -> i32 {
+        self.reserved
+    }
+
+    pub fn get_resources(&self) -> &[Resource] {
+        &self.resources
+    }
+}
+
+impl std::fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if (self.type_id & 0x8000u16 as i16) == 0 {
+            return write!(f, "UnknownResourceType_{}", self.type_id);
+        }
+        let idx = self.type_id & 0x7fff;
+        let name = match idx {
+            Self::RT_CURSOR => "Cursor",
+            Self::RT_BITMAP => "Bitmap",
+            Self::RT_ICON => "Icon",
+            Self::RT_MENU => "Menu",
+            Self::RT_DIALOG => "Dialog Box",
+            Self::RT_STRING => "String Table",
+            Self::RT_FONTDIR => "Font Directory",
+            Self::RT_FONT => "Font",
+            Self::RT_ACCELERATOR => "Accelerator Table",
+            Self::RT_RCDATA => "Resource Data",
+            Self::RT_MESSAGETABLE => "Message Table",
+            Self::RT_GROUP_CURSOR => "Cursor Directory",
+            Self::RT_GROUP_ICON => "Icon Directory",
+            Self::RT_VERSION => "Version Information",
+            _ => return write!(f, "Unknown_{}", idx),
+        };
+        f.write_str(name)
+    }
+}

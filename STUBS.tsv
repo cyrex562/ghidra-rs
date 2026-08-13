@@ -692,3 +692,5 @@ ts	stub_class	referenced_by
 2026-08-13T05:53:59.926781+00:00	MessageLog	PeMarkupable
 2026-08-13T06:01:48.424060+00:00	SegmentRelocation	Segment
 2026-08-13T00:00:00.000000+00:00	EntryPoint	EntryTableBundle
+2026-08-13T06:13:18.847704+00:00	Resource	ResourceTable
+2026-08-13T06:13:18.848545+00:00	ResourceType	ResourceTable
