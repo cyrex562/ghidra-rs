@@ -1052,7 +1052,22 @@ pub trait ElfHeader: Send + Sync {
     fn is32_bit(&self) -> bool;
 
     fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>>;
+
+    /// Placeholder for `ElfHeader.getLoadAdapter()`, needed by
+    /// [`ElfRelocationContextBase::get_load_adapter`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_load_adapter).
+    ///
+    /// Java never returns null here (an unrecognized machine still gets the default adapter), but
+    /// this stub has no adapter registry to fall back on, so the default answers `None`.
+    fn get_load_adapter(&self) -> Option<std::sync::Arc<dyn ElfLoadAdapter>> {
+        None
+    }
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.extend.ElfLoadAdapter`, referenced by
+/// [`ElfRelocationContextBase::get_load_adapter`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_load_adapter)
+/// before the real class is ported. The relocation context only ever hands the adapter back to its
+/// caller, so no members are needed yet.
+pub trait ElfLoadAdapter: Send + Sync {}
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfStringTable`, referenced by
 /// [`ElfSymbol::init_symbol_name`](crate::format::elf::elf_symbol::ElfSymbol::init_symbol_name)
@@ -1074,4 +1089,179 @@ pub trait ElfSymbolTable: Send + Sync {
         &self,
         sym: &crate::format::elf::elf_symbol::ElfSymbol,
     ) -> i32;
+
+    /// Placeholder for `ElfSymbolTable.getSymbol(int)`, needed by
+    /// [`ElfRelocationContextBase::get_symbol`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_symbol).
+    /// `None` stands in for Java's `null` return on an out-of-range index.
+    fn get_symbol(&self, symbol_index: i32) -> Option<crate::format::elf::elf_symbol::ElfSymbol> {
+        let _ = symbol_index;
+        None
+    }
+
+    /// Placeholder for `ElfSymbolTable.getSymbolName(int)`, needed by
+    /// [`ElfRelocationContextBase::get_symbol_name`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_symbol_name).
+    /// `None` stands in for Java's `null` return on an out-of-range index.
+    fn get_symbol_name(&self, symbol_index: i32) -> Option<String> {
+        let _ = symbol_index;
+        None
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfLoadHelper`, referenced by
+/// [`ElfRelocationContextBase`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase)
+/// before `ElfProgramBuilder` (its only implementation) is ported. Only the members the
+/// relocation context needs.
+pub trait ElfLoadHelper: Send + Sync {
+    /// `ElfLoadHelper.getProgram()`.
+    fn get_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
+
+    /// `ElfLoadHelper.getElfHeader()`.
+    fn get_elf_header(&self) -> std::sync::Arc<dyn ElfHeader>;
+
+    /// `ElfLoadHelper.getLog()`.
+    fn get_log(&self) -> std::sync::Arc<dyn MessageLog>;
+
+    /// `ElfLoadHelper.log(String)`.
+    fn log(&self, msg: &str);
+
+    /// `ElfLoadHelper.log(Throwable)`.
+    fn log_exception(&self, t: &dyn std::error::Error);
+
+    /// `ElfLoadHelper.getImageBaseWordAdjustmentOffset()`.
+    fn get_image_base_word_adjustment_offset(&self) -> i64;
+
+    /// `ElfLoadHelper.getGOTValue()`, whose Java return type is the nullable `Long`.
+    fn get_got_value(&self) -> Option<i64>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocation`, referenced by
+/// [`ElfRelocationContext::process_relocation`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::process_relocation)
+/// before the real class is ported. Only the two entry fields the dispatch reads.
+pub trait ElfRelocation: Send + Sync {
+    /// `ElfRelocation.getSymbolIndex()` -- the symbol table index encoded in `r_info`.
+    fn get_symbol_index(&self) -> i32;
+
+    /// `ElfRelocation.getType()` -- the relocation type ID encoded in `r_info`.
+    fn get_type(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocationTable`, referenced by
+/// [`ElfRelocationContext::start_relocation_table_processing`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::start_relocation_table_processing)
+/// before the real class is ported. Only the two members the relocation context needs.
+pub trait ElfRelocationTable: Send + Sync {
+    /// `ElfRelocationTable.hasAddendRelocations()` -- true for `RELA`-style tables, whose entries
+    /// carry their own addend.
+    fn has_addend_relocations(&self) -> bool;
+
+    /// `ElfRelocationTable.getAssociatedSymbolTable()`, which is `null` (here `None`) when the
+    /// table has no associated symbol table.
+    fn get_associated_symbol_table(&self) -> Option<std::sync::Arc<dyn ElfSymbolTable>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.relocation.ElfRelocationHandler`, referenced by
+/// [`ElfRelocationContext`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext)
+/// before the abstract handler and its ~20 architecture-specific subclasses are ported. Only the
+/// members the relocation context dispatches to.
+pub trait ElfRelocationHandler: Send + Sync {
+    /// `ElfRelocationHandler.getRelrRelocationType()`; 0 means RELR is unsupported.
+    fn get_relr_relocation_type(&self) -> i32 {
+        0
+    }
+
+    /// `ElfRelocationHandler.createRelocationContext(...)`, which returns `null` (here `None`)
+    /// unless the handler defines a custom context.
+    fn create_relocation_context(
+        &self,
+        load_helper: std::sync::Arc<dyn ElfLoadHelper>,
+        symbol_map: std::sync::Arc<
+            std::collections::HashMap<
+                crate::format::elf::elf_symbol::ElfSymbol,
+                crate::program::model::address::Address,
+            >,
+        >,
+    ) -> Option<
+        Box<dyn crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext>,
+    > {
+        let _ = (load_helper, symbol_map);
+        None
+    }
+
+    /// `ElfRelocationHandler.relocate(...)` -- the architecture-specific fixup.
+    fn relocate(
+        &self,
+        context: &dyn crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext,
+        relocation: &dyn ElfRelocation,
+        relocation_address: &crate::program::model::address::Address,
+    ) -> Result<
+        crate::program::model::reloc::RelocationResult,
+        crate::format::elf::relocation::elf_relocation_context::RelocationProcessingError,
+    >;
+
+    /// `ElfRelocationHandler.markAsError(Program, Address, int, String, int, String, MessageLog)`.
+    /// Argument order follows the Java overload (symbol *name* before symbol *index*).
+    fn mark_as_error(
+        &self,
+        program: &dyn crate::program::model::listing::program::Program,
+        relocation_address: &crate::program::model::address::Address,
+        type_id: i32,
+        symbol_name: Option<&str>,
+        symbol_index: i32,
+        msg: &str,
+        log: &dyn MessageLog,
+    );
+
+    /// `ElfRelocationHandler.markAsWarning(Program, Address, int, String, int, String, MessageLog)`.
+    fn mark_as_warning(
+        &self,
+        program: &dyn crate::program::model::listing::program::Program,
+        relocation_address: &crate::program::model::address::Address,
+        type_id: i32,
+        symbol_name: Option<&str>,
+        symbol_index: i32,
+        msg: &str,
+        log: &dyn MessageLog,
+    );
+}
+
+/// Placeholders for the `ElfRelocationHandler` *static* markup helpers. They are free functions
+/// rather than [`ElfRelocationHandler`] methods because the relocation context calls them
+/// precisely when it has no handler instance.
+///
+/// Both bottom out in `ElfRelocationHandler.markupErrorOrWarning`, which drives the program's
+/// `BookmarkManager`; that is not ported yet, so these currently only forward the message to the
+/// import log (and, for `bookmarkNoHandlerError`, do nothing at all -- Java deliberately passes a
+/// `null` log there so the failure is bookmarked but not logged).
+pub mod elf_relocation_handler {
+    use super::MessageLog;
+    use crate::program::model::address::Address;
+    use crate::program::model::listing::program::Program;
+
+    /// `ElfRelocationHandler.bookmarkNoHandlerError(Program, Address, int, int, String)`.
+    pub fn bookmark_no_handler_error(
+        program: &dyn Program,
+        relocation_address: &Address,
+        type_id: i32,
+        symbol_index: i32,
+        symbol_name: Option<&str>,
+    ) {
+        let _ = (program, relocation_address, type_id, symbol_index, symbol_name);
+    }
+
+    /// `ElfRelocationHandler.markAsError(Program, Address, int, int, String, String, MessageLog)`
+    /// -- the static overload, which takes the symbol *index* before the symbol *name*.
+    pub fn mark_as_error(
+        program: &dyn Program,
+        relocation_address: &Address,
+        type_id: i32,
+        symbol_index: i32,
+        symbol_name: Option<&str>,
+        msg: &str,
+        log: &dyn MessageLog,
+    ) {
+        let _ = (program, type_id, symbol_index);
+        log.append_msg(&format!(
+            "Elf Relocation Error - {msg} at {relocation_address}{}",
+            symbol_name.map(|n| format!(" ({n})")).unwrap_or_default()
+        ));
+    }
 }
