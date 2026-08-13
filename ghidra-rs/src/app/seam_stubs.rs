@@ -1429,6 +1429,28 @@ pub trait DecompilerPanel: Send + Sync {}
 /// Placeholder trait for `ghidra.app.decompiler.component.margin.DecompilerMarginProvider`.
 pub trait DecompilerMarginProvider: Send + Sync {}
 
+/// Placeholder for `generic.theme.GColor`, referenced by
+/// [`search_constants`](crate::app::util::search_constants) before the real class is ported.
+/// Only the constructor is modeled here. GColor is a Java class (not an interface), so this is
+/// a concrete type, not a trait object. Uses OnceCell for lazy initialization of String fields
+/// to maintain const-compatibility in constant contexts.
+#[derive(Clone, Debug)]
+pub struct GColor {
+    id: &'static str,
+}
+
+impl GColor {
+    /// Create a new GColor with the given theme ID.
+    pub const fn new(id: &'static str) -> Self {
+        GColor { id }
+    }
+
+    /// Get the theme ID for this color.
+    pub const fn get_id(&self) -> &'static str {
+        self.id
+    }
+}
+
 /// Placeholder for `ghidra.app.util.datatype.microsoft.NewGuid`, referenced by
 /// [`guid_util`](crate::app::util::datatype::microsoft::guid_util) before the real class is
 /// ported. `NewGuid` sits on a dependency cycle with `GuidUtil` -- it reads `GuidUtil.GuidType`
