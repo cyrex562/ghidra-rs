@@ -804,6 +804,114 @@ pub trait Dimension<P: HyperPoint, B: HyperBox<P>>: Send + Sync {
     fn encloses(&self, outer: &B, inner: &B) -> bool;
 }
 
+/// Placeholder for `docking.widgets.table.TableRowMapper`, needed by
+/// [`crate::util::table::program_location_table_row_mapper::ProgramLocationTableRowMapper`].
+///
+/// The real class also carries reflection-derived `getSourceType`/`getDestinationType`
+/// accessors that recover `ROW_TYPE`/`EXPECTED_ROW_TYPE` at runtime, and is generic over a third
+/// `DATA_SOURCE` type parameter; the only in-repo subclass ported so far
+/// (`ProgramLocationTableRowMapper`) always instantiates `DATA_SOURCE` as `Program`, so that
+/// parameter is fixed here rather than kept generic (an unbounded `dyn Program` type argument
+/// would otherwise force every `map` call site to hand over a `'static` reference, which real
+/// callers -- who only ever have a short-lived borrow -- can't do).
+pub trait TableRowMapper<ROW_TYPE, EXPECTED_ROW_TYPE>: Send + Sync {
+    /// Maps a row object of `ROW_TYPE` to the type expected by the destination table's dynamic
+    /// columns, mirroring `TableRowMapper.map(ROW_TYPE, DATA_SOURCE, ServiceProvider)`.
+    fn map(
+        &self,
+        row_object: &ROW_TYPE,
+        data: &dyn crate::program::model::listing::program::Program,
+        service_provider: &dyn crate::framework::plugintool::service_provider::ServiceProvider,
+    ) -> EXPECTED_ROW_TYPE;
+}
+
+/// Placeholder for `docking.widgets.table.DynamicTableColumn`, needed by
+/// [`crate::util::table::program_location_table_row_mapper::ProgramLocationTableRowMapper`].
+///
+/// The real class carries the full column contract (name, width, renderer, editor, settings
+/// definitions, ...) and a `DATA_SOURCE` type parameter fixed to `Program` here for the same
+/// reason as [`TableRowMapper`] above; the only thing this crate's one caller needs from it is a
+/// way to recover a `ProgramLocationTableColumn` view when the concrete column happens to also be
+/// one, mirroring the Java method's `instanceof ProgramLocationTableColumn<?, ?>` check.
+pub trait DynamicTableColumn<ROW_TYPE, COLUMN_TYPE>: Send + Sync {
+    /// Returns this column as a `ProgramLocationTableColumn`, if it is also one. Defaults to
+    /// `None`; overridden by columns that also implement
+    /// [`ProgramLocationTableColumn`](crate::util::table::field::program_location_table_column::ProgramLocationTableColumn).
+    fn as_program_location_table_column(
+        &self,
+    ) -> Option<
+        &dyn crate::util::table::field::program_location_table_column::ProgramLocationTableColumn<
+            ROW_TYPE,
+            COLUMN_TYPE,
+        >,
+    > {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.util.table.MappedProgramLocationTableColumn`, needed by
+/// [`crate::util::table::program_location_table_row_mapper::ProgramLocationTableRowMapper`]'s
+/// default `create_mapped_table_column`.
+///
+/// The real class also supports a custom unique-identifier constructor and prefers a row object
+/// that already *is* a `ProgramLocation` over remapping it (`getProgramLocation`'s `rowObject
+/// instanceof ProgramLocation` fast path); neither is needed to satisfy this crate's only caller,
+/// so only the always-remap path is implemented here.
+pub struct MappedProgramLocationTableColumn<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE> {
+    pub mapper: std::sync::Arc<
+        dyn crate::util::table::program_location_table_row_mapper::ProgramLocationTableRowMapper<
+            ROW_TYPE,
+            EXPECTED_ROW_TYPE,
+        >,
+    >,
+    pub table_column: Box<dyn DynamicTableColumn<EXPECTED_ROW_TYPE, COLUMN_TYPE>>,
+}
+
+impl<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE>
+    crate::util::table::field::program_based_dynamic_table_column::ProgramBasedDynamicTableColumn
+    for MappedProgramLocationTableColumn<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE>
+{
+}
+
+impl<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE>
+    crate::util::table::field::program_location_table_column::ProgramLocationTableColumn<
+        ROW_TYPE,
+        COLUMN_TYPE,
+    > for MappedProgramLocationTableColumn<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE>
+{
+    fn get_program_location(
+        &self,
+        row_object: &ROW_TYPE,
+        settings: &dyn crate::docking::settings::settings::Settings,
+        program: &dyn crate::program::model::listing::program::Program,
+        service_provider: &dyn crate::framework::plugintool::service_provider::ServiceProvider,
+    ) -> Box<dyn crate::program::util::program_location::ProgramLocation> {
+        let mapped = self.mapper.map(row_object, program, service_provider);
+        let program_column = self
+            .table_column
+            .as_program_location_table_column()
+            .expect(
+                "MappedProgramLocationTableColumn is only constructed from a ProgramLocationTableColumn",
+            );
+        program_column.get_program_location(&mapped, settings, program, service_provider)
+    }
+}
+
+impl<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE> DynamicTableColumn<ROW_TYPE, COLUMN_TYPE>
+    for MappedProgramLocationTableColumn<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE>
+{
+    fn as_program_location_table_column(
+        &self,
+    ) -> Option<
+        &dyn crate::util::table::field::program_location_table_column::ProgramLocationTableColumn<
+            ROW_TYPE,
+            COLUMN_TYPE,
+        >,
+    > {
+        Some(self)
+    }
+}
+
 /// Placeholder for `ghidra.util.NumericUtilities`, referenced by
 /// [`PrettyBytes`](crate::pcode::exec::debugger_pcode_utils::PrettyBytes) before the real class is
 /// ported. Java's version is a final class of statics, so this is a unit struct with associated
