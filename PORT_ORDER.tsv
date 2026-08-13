@@ -19,7 +19,7 @@ DONE	trait	1	21	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/em
 DONE	trait	3	21	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramBasedDynamicTableColumn.java
 DONE	trait	2	32	2	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramLocationTableColumn.java
 DONE	trait	0	90	87	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/ProgramLocationTableRowMapper.java
-TODO	trait	5	60	1	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangler.java
+DONE	trait	5	60	1	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangler.java
 TODO	trait	2	59	4	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledType.java
 TODO	trait	1	78	2	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangled.java
 TODO	trait	0	85	22	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledObject.java
