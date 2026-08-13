@@ -27,7 +27,7 @@ DONE	trait	1	32	1	generic	Ghidra/Framework/Generic/src/main/java/generic/lsh/vec
 DONE	trait	4	30	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PeMarkupable.java
 DONE	trait	9	5	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Segment.java
 DONE	trait	8	3	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/EntryTableBundle.java
-TODO	trait	9	5	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceTable.java
+DONE	trait	9	5	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceTable.java
 TODO	trait	8	5	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Resource.java
 TODO	trait	6	5	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/WindowsHeader.java
 TODO	trait	9	6	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/CompId.java
