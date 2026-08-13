@@ -48,7 +48,7 @@ DONE	trait	19	46	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/Option
 DONE	trait	19	59	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/SearchConstants.java
 DONE	trait	22	9	19	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/info/ElfInfoItem.java
 DONE	trait	33	55	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfSymbol.java
-TODO	trait	40	25	37	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/ElfRelocationContext.java
+DONE	trait	40	25	37	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/ElfRelocationContext.java
 TODO	trait	39	24	30	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/AbstractElfRelocationHandler.java
 TODO	trait	36	7	30	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/extend/ElfLoadAdapter.java
 TODO	trait	33	35	73	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ElfLoaderOptionsFactory.java
