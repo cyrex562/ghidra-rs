@@ -172,6 +172,10 @@ pub trait NTHeader: Send + Sync {
     fn get_optional_header(&self) -> Box<dyn OptionalHeader>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
     fn rva_to_pointer(&self, rva: i32) -> i32;
+    /// Mirrors the `rvaToPointer(long)` overload (distinct from `rva_to_pointer` above, which
+    /// mirrors `rvaToPointer(int)`); used by [`PEx64UnwindInfo::read_unwind_info`](crate::format::pe::pex64_unwind_info::PEx64UnwindInfo::read_unwind_info)
+    /// to follow chained unwind info, where the offset is a Java `long`. Returns -1 if not valid.
+    fn rva_to_pointer_long(&self, rva: i64) -> i64;
     fn check_pointer(&self, ptr: i64) -> bool;
     fn check_rva(&self, rva: i64) -> bool;
     fn va_to_pointer(&self, va: i32) -> i32;
@@ -861,6 +865,54 @@ impl PERichTableDataType {
 }
 
 impl crate::program::model::data::data_type::DataType for PERichTableDataType {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.PEx64UnwindInfoDataType`, referenced by
+/// [`PEx64UnwindInfo::to_data_type`](crate::format::pe::pex64_unwind_info::PEx64UnwindInfo)
+/// before the real (`DynamicDataType`-derived) class is ported. `PEx64UnwindInfoDataType` is a
+/// concrete Java class (not an interface), so it is modeled here as a concrete struct.
+/// `PEx64UnwindInfo` only ever returns the shared `INSTANCE` opaquely, so no members are needed
+/// yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PEx64UnwindInfoDataType;
+
+impl PEx64UnwindInfoDataType {
+    /// Mirrors the Java `PEx64UnwindInfoDataType.INSTANCE` static field.
+    pub fn instance() -> Self {
+        PEx64UnwindInfoDataType
+    }
+}
+
+impl crate::program::model::data::data_type::DataType for PEx64UnwindInfoDataType {}
+
+/// Placeholder for the nested record `ImageRuntimeFunctionEntries_X86.ImageRuntimeFunctionEntry_X86`,
+/// referenced by [`PEx64UnwindInfo::read_unwind_info`](crate::format::pe::pex64_unwind_info::PEx64UnwindInfo::read_unwind_info)
+/// when following a chained `UNWIND_INFO`. `ImageRuntimeFunctionEntries_X86` (the enclosing class)
+/// is a concrete Java class, so this nested record is modeled here as a concrete struct with only
+/// the fields `PEx64UnwindInfo` constructs; `markup`/`to_data_type` will be added when
+/// `ImageRuntimeFunctionEntries_X86` itself is ported.
+#[derive(Debug, Clone)]
+pub struct ImageRuntimeFunctionEntryX86 {
+    pub begin_address: u64,
+    pub end_address: u64,
+    pub unwind_info_address_or_data: u64,
+    pub unwind_info: Option<Box<crate::format::pe::pex64_unwind_info::PEx64UnwindInfo>>,
+}
+
+impl ImageRuntimeFunctionEntryX86 {
+    pub fn new(
+        begin_address: u64,
+        end_address: u64,
+        unwind_info_address_or_data: u64,
+        unwind_info: crate::format::pe::pex64_unwind_info::PEx64UnwindInfo,
+    ) -> Self {
+        ImageRuntimeFunctionEntryX86 {
+            begin_address,
+            end_address,
+            unwind_info_address_or_data,
+            unwind_info: Some(Box::new(unwind_info)),
+        }
+    }
+}
 
 /// Placeholder for the unported Java type `PdbInfoCodeView`, referenced by `PdbInfo`.
 /// Only defines the instance methods needed by PdbInfo. The static factory methods

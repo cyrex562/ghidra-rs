@@ -242,6 +242,9 @@ mod tests {
         fn rva_to_pointer(&self, rva: i32) -> i32 {
             rva
         }
+        fn rva_to_pointer_long(&self, rva: i64) -> i64 {
+            rva
+        }
         fn check_pointer(&self, _ptr: i64) -> bool {
             true
         }
