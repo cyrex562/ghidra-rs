@@ -5,4 +5,5 @@ pub mod elf_program_header_constants;
 pub mod elf_section_header_constants;
 pub mod extend;
 pub mod gnu_constants;
+pub mod info;
 pub mod relocation;
