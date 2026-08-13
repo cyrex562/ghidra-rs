@@ -11,6 +11,7 @@ pub mod relocation_internal_ref;
 pub mod relocation_os_fixup;
 pub mod resident_name_table;
 pub mod resource_name;
+pub mod resource_table;
 pub mod segment;
 
 pub use entry_table_bundle::EntryTableBundle;
@@ -26,4 +27,5 @@ pub use relocation_internal_ref::RelocationInternalRef;
 pub use relocation_os_fixup::RelocationOSFixup;
 pub use resident_name_table::ResidentNameTable;
 pub use resource_name::ResourceName;
+pub use resource_table::ResourceTable;
 pub use segment::Segment;
