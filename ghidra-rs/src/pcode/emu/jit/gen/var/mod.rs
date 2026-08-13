@@ -6,6 +6,7 @@ pub mod memory_out_var_gen;
 pub mod memory_var_gen;
 pub mod sub_local_var_gen;
 pub mod sub_memory_var_gen;
+pub mod val_gen;
 pub mod var_gen;
 
 pub use direct_memory_var_gen::DirectMemoryVarGen;
@@ -16,4 +17,5 @@ pub use memory_out_var_gen::MemoryOutVarGen;
 pub use memory_var_gen::MemoryVarGen;
 pub use sub_local_var_gen::SubLocalVarGen;
 pub use sub_memory_var_gen::SubMemoryVarGen;
+pub use val_gen::ValGen;
 pub use var_gen::VarGen;
