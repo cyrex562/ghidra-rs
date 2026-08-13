@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
+use crate::pcode::emu::jit::jit_configuration::JitConfiguration;
 
 use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
@@ -3839,43 +3840,6 @@ impl std::hash::Hash for AddrCtx {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.bi_ctx.hash(state);
         self.address.hash(state);
-    }
-}
-
-/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.JitConfiguration`, the
-/// configuration held by [`JitCompiler`] and read back through
-/// [`JitPcodeEmulator::get_configuration`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator::get_configuration).
-/// The record's six components are carried faithfully as public fields; its `Opt`-set constructors
-/// are left to the real port. Replace with the real port when `JitConfiguration.java` lands.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct JitConfiguration {
-    /// Port of `JitConfiguration.maxPassageInstructions()`.
-    pub max_passage_instructions: i32,
-    /// Port of `JitConfiguration.maxPassageOps()`, the op budget
-    /// [`JitPcodeEmulator::get_entry_prototype`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator::get_entry_prototype)
-    /// halves on each `MethodTooLargeException`.
-    pub max_passage_ops: i32,
-    /// Port of `JitConfiguration.maxPassageStrides()`.
-    pub max_passage_strides: i32,
-    /// Port of `JitConfiguration.removeUnusedOperations()`.
-    pub remove_unused_operations: bool,
-    /// Port of `JitConfiguration.emitCounters()`.
-    pub emit_counters: bool,
-    /// Port of `JitConfiguration.logStackTraces()`.
-    pub log_stack_traces: bool,
-}
-
-/// Port of the no-arg `JitConfiguration()`, i.e. `this(1000, 5000, 10, true, true, false)`.
-impl Default for JitConfiguration {
-    fn default() -> Self {
-        Self {
-            max_passage_instructions: 1000,
-            max_passage_ops: 5000,
-            max_passage_strides: 10,
-            remove_unused_operations: true,
-            emit_counters: true,
-            log_stack_traces: false,
-        }
     }
 }
 

@@ -93,9 +93,10 @@ use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::exec::pcode_state_callbacks::NONE;
 use crate::pcode::exec::pcode_userop_library::{nil, PcodeUseropLibrary};
+use crate::pcode::emu::jit::jit_configuration::JitConfiguration;
 use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
 use crate::pcode::seam_stubs::{
-    AddrCtx, BytesPcodeArithmetic, EntryPointPrototype, JitCompiler, JitConfiguration,
+    AddrCtx, BytesPcodeArithmetic, EntryPointPrototype, JitCompiler,
     JitDefaultBytesPcodeExecutorState,
 };
 use crate::program::model::address::{Address, AddressRange};
