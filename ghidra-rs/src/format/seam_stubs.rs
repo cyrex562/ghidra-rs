@@ -1224,15 +1224,18 @@ pub trait ElfRelocationHandler: Send + Sync {
 }
 
 /// Placeholders for the `ElfRelocationHandler` *static* markup helpers. They are free functions
-/// rather than [`ElfRelocationHandler`] methods because the relocation context calls them
-/// precisely when it has no handler instance.
+/// rather than [`ElfRelocationHandler`] methods because the relocation context (and
+/// [`AbstractElfRelocationHandlerBase`](crate::format::elf::relocation::abstract_elf_relocation_handler::AbstractElfRelocationHandlerBase),
+/// which inherits them from `ElfRelocationHandler` in Java) calls them without a handler
+/// instance in hand.
 ///
-/// Both bottom out in `ElfRelocationHandler.markupErrorOrWarning`, which drives the program's
-/// `BookmarkManager`; that is not ported yet, so these currently only forward the message to the
-/// import log (and, for `bookmarkNoHandlerError`, do nothing at all -- Java deliberately passes a
-/// `null` log there so the failure is bookmarked but not logged).
+/// [`markup_error_or_warning`] drives the program's `BookmarkManager`, which is not ported yet,
+/// so it currently only forwards the message to the import log (and, for
+/// `bookmarkNoHandlerError`, does nothing at all -- Java deliberately passes a `null` log there so
+/// the failure is bookmarked but not logged).
 pub mod elf_relocation_handler {
     use super::MessageLog;
+    use crate::format::elf::elf_symbol::FORMATTED_NO_NAME;
     use crate::program::model::address::Address;
     use crate::program::model::listing::program::Program;
 
@@ -1247,6 +1250,42 @@ pub mod elf_relocation_handler {
         let _ = (program, relocation_address, type_id, symbol_index, symbol_name);
     }
 
+    /// `ElfRelocationHandler.getDefaultRelocationTypeDetail(int)`. Used when no
+    /// [`ElfRelocationType`](crate::format::elf::relocation::elf_relocation_type::ElfRelocationType)
+    /// value was resolved for `typeId`, so the name it would have supplied is unavailable.
+    pub fn get_default_relocation_type_detail(type_id: i32) -> String {
+        format!("Type = {} (0x{:x})", type_id as u32, type_id as u32)
+    }
+
+    /// `ElfRelocationHandler.markupErrorOrWarning(Program, String, String, Address, String, int,
+    /// String, String, MessageLog)`.
+    ///
+    /// `bookmark_type` is accepted (and ignored) to keep the signature faithful to Java; the
+    /// bookmark itself cannot be realized until `Program::get_bookmark_manager` exists.
+    pub fn markup_error_or_warning(
+        program: &dyn Program,
+        main_msg: &str,
+        tail_msg: Option<&str>,
+        relocation_address: &Address,
+        reloc_type_detail: &str,
+        symbol_index: i32,
+        symbol_name: Option<&str>,
+        bookmark_type: &str,
+        log: Option<&dyn MessageLog>,
+    ) {
+        let _ = (program, bookmark_type, symbol_index);
+        let tail = tail_msg
+            .filter(|s| !s.is_empty())
+            .map(|s| format!(" - {s}"))
+            .unwrap_or_default();
+        let symbol_name = symbol_name.filter(|s| !s.is_empty()).unwrap_or(FORMATTED_NO_NAME);
+        if let Some(log) = log {
+            log.append_msg(&format!(
+                "{main_msg}: {reloc_type_detail} at {relocation_address} (Symbol = {symbol_name}){tail}"
+            ));
+        }
+    }
+
     /// `ElfRelocationHandler.markAsError(Program, Address, int, int, String, String, MessageLog)`
     /// -- the static overload, which takes the symbol *index* before the symbol *name*.
     pub fn mark_as_error(
@@ -1258,10 +1297,29 @@ pub mod elf_relocation_handler {
         msg: &str,
         log: &dyn MessageLog,
     ) {
-        let _ = (program, type_id, symbol_index);
-        log.append_msg(&format!(
-            "Elf Relocation Error - {msg} at {relocation_address}{}",
-            symbol_name.map(|n| format!(" ({n})")).unwrap_or_default()
-        ));
+        markup_error_or_warning(
+            program,
+            "Elf Relocation Error",
+            Some(msg),
+            relocation_address,
+            &get_default_relocation_type_detail(type_id),
+            symbol_index,
+            symbol_name,
+            crate::program::model::listing::bookmark_type::ERROR,
+            Some(log),
+        );
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.elf.ElfSymbolNameUtils`, referenced by
+/// [`AbstractElfRelocationHandlerBase`](crate::format::elf::relocation::abstract_elf_relocation_handler::AbstractElfRelocationHandlerBase)
+/// before the real class -- and the `SymbolUtilities.replaceInvalidChars` engine it delegates to
+/// -- are ported. Only the entry point the abstract handler needs.
+pub mod elf_symbol_name_utils {
+    /// `ElfSymbolNameUtils.replaceInvalidChars(String)`. The real implementation escapes control
+    /// characters, DEL, and spaces via `SymbolUtilities.replaceInvalidChars`; until that lands
+    /// this is the identity function (the "already valid" case Java's javadoc calls out).
+    pub fn replace_invalid_chars(name: &str) -> String {
+        name.to_string()
     }
 }
