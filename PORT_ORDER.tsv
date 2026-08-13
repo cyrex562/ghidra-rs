@@ -50,7 +50,7 @@ DONE	trait	22	9	19	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	33	55	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfSymbol.java
 DONE	trait	40	25	37	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/ElfRelocationContext.java
 DONE	trait	39	24	30	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/relocation/AbstractElfRelocationHandler.java
-TODO	trait	36	7	30	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/extend/ElfLoadAdapter.java
+DONE	trait	36	7	30	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/extend/ElfLoadAdapter.java
 TODO	trait	33	35	73	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ElfLoaderOptionsFactory.java
 TODO	trait	32	59	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfLoadHelper.java
 TODO	trait	31	9	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/MemoryLoadable.java
