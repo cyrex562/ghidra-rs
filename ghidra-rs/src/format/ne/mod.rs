@@ -13,6 +13,7 @@ pub mod resident_name_table;
 pub mod resource_name;
 pub mod resource_table;
 pub mod segment;
+pub mod windows_header;
 
 pub use entry_table_bundle::EntryTableBundle;
 pub use imported_name_table::ImportedNameTable;
@@ -29,3 +30,4 @@ pub use resident_name_table::ResidentNameTable;
 pub use resource_name::ResourceName;
 pub use resource_table::ResourceTable;
 pub use segment::Segment;
+pub use windows_header::WindowsHeader;
