@@ -56,7 +56,8 @@ use crate::pcode::emu::jit::gen::util::emitter::{Emitter, Ent, Next};
 use crate::pcode::emu::jit::gen::util::local::Local;
 use crate::pcode::emu::jit::gen::util::types::{TInt, TRef};
 use crate::pcode::emu::jit::var::{JitVar, JitVarnodeVar};
-use crate::pcode::seam_stubs::{Ext, JitBlock, JitCodeGenerator, Opnd, OpndEm, Scope};
+use crate::pcode::emu::jit::analysis::jit_control_flow_model::JitBlock;
+use crate::pcode::seam_stubs::{Ext, JitCodeGenerator, Opnd, OpndEm, Scope};
 use crate::program::model::pcode::Varnode;
 
 /// Mirrors `GenConsts.BLOCK_SIZE` (`SemisparseByteArray.BLOCK_SIZE`).
@@ -441,7 +442,8 @@ mod tests {
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::op::JitPhiOp;
     use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
-    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitControlFlowModel, JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, MethodVisitor, };
+    use crate::pcode::emu::jit::analysis::jit_control_flow_model::JitControlFlowModel;
+    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, MethodVisitor, };
 use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;

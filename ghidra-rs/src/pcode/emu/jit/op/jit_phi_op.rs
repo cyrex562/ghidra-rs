@@ -8,7 +8,8 @@ use crate::pcode::emu::jit::op::{JitDefOp, JitOp, JitSyntheticOp};
 use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::var::JitVal;
 use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-use crate::pcode::seam_stubs::{BlockFlow, JitBlock, JitInputVar};
+use crate::pcode::emu::jit::analysis::jit_control_flow_model::{BlockFlow, JitBlock};
+use crate::pcode::seam_stubs::JitInputVar;
 
 
 /// The synthetic use-def node for phi nodes.

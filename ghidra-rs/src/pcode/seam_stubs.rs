@@ -13,6 +13,7 @@ use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
 
 use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
+use crate::pcode::emu::jit::analysis::jit_control_flow_model::{BlockFlow, JitBlock};
 use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
 use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
 use crate::pcode::emu::jit::analysis::jit_type::{
@@ -1187,211 +1188,6 @@ pub struct MiniDFState;
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait JitMemoryVar: Send + Sync {
     // (no public methods parsed from the Java source)
-}
-
-/// Placeholder for the unported Java type
-/// `ghidra.pcode.emu.jit.analysis.JitControlFlowModel.JitBlock`, referenced by
-/// [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp). Java's class extends
-/// `PcodeProgram` and carries the passage's basic-block analysis; `JitPhiOp` only stores which
-/// block produced it and uses it to build a [`BlockFlow`], so this stub models reference identity
-/// alone -- as [`Label`] already does for ASM's `Label`. Replace with the real port when
-/// `JitControlFlowModel.java` is ported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct JitBlock {
-    id: u64,
-}
-
-impl JitBlock {
-    /// A block distinct from every other, standing in for Java reference identity.
-    pub fn new() -> Self {
-        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
-        Self { id: NEXT_ID.fetch_add(1, Ordering::Relaxed) }
-    }
-
-    /// Port of the inherited `PcodeProgram.getCode()`: the ops in this block.
-    ///
-    /// Grown (see `STUBS.tsv`) for
-    /// [`DecoderExecutor`](crate::pcode::emu::jit::decode::decoder_executor::DecoderExecutor),
-    /// which walks the blocks a [`BlockSplitter`] produced. Only the real port can populate a
-    /// block, so this -- like every accessor below -- panics; a caller can only reach it through
-    /// [`BlockSplitter::split_blocks`], which panics first.
-    pub fn get_code(&self) -> &[PcodeOp] {
-        unimplemented!("JitBlock not yet ported")
-    }
-
-    /// Port of `JitBlock.branchesFrom()`: the internal branches leaving this block. Java's element
-    /// type is `IntBranch`; every branch a `DecoderExecutor` hands the splitter (and every
-    /// fall-through the splitter synthesizes for it) is an [`SIntBranch`], so this narrows to that
-    /// -- which also discharges the `default -> throw new AssertionError()` arm Java needs.
-    pub fn branches_from(&self) -> Vec<SIntBranch> {
-        unimplemented!("JitBlock not yet ported")
-    }
-
-    /// Port of `JitBlock.branchesOut()`: the non-internal branches leaving this block. Java's
-    /// element type is `Branch`; see [`branches_from`](Self::branches_from) for why this narrows
-    /// to [`SBranch`].
-    pub fn branches_out(&self) -> Vec<SBranch> {
-        unimplemented!("JitBlock not yet ported")
-    }
-
-    /// Port of `JitBlock.flowsFrom()` (Java's call sites take `.values()`). Note
-    /// [`JitControlFlowModel::flows_from`] carries the same question for blocks that came from a
-    /// control-flow model rather than a bare splitter; see that type's doc.
-    pub fn flows_from(&self) -> Vec<BlockFlow> {
-        unimplemented!("JitBlock not yet ported")
-    }
-
-    /// Port of the inherited `PcodeProgram.getUseropName(int)`.
-    pub fn get_userop_name(&self, _userop: i32) -> Option<String> {
-        unimplemented!("JitBlock not yet ported")
-    }
-}
-
-/// Placeholder for the unported Java type
-/// `ghidra.pcode.emu.jit.analysis.JitControlFlowModel.BlockSplitter`, referenced by
-/// [`DecoderExecutor::check_fallthrough_and_accumulate`](crate::pcode::emu::jit::decode::decoder_executor::DecoderExecutor::check_fallthrough_and_accumulate),
-/// which borrows it to run a miniature control-flow analysis over a single instruction step. Real
-/// class splits a [`PcodeProgram`] into [`JitBlock`]s at every branch source and target -- the core
-/// of `JitControlFlowModel`, far beyond a stub -- so [`split_blocks`](Self::split_blocks) panics if
-/// actually invoked. Replace with the real port when `JitControlFlowModel.java` lands.
-///
-/// Java's `newFallthroughIntBranch` is an abstract method the client overrides (`DecoderExecutor`
-/// subclasses the splitter anonymously to return an [`SIntBranch`]); Rust has no subclass override,
-/// so it is supplied to the constructor instead.
-pub struct BlockSplitter {
-    #[allow(dead_code)]
-    program: PcodeProgram,
-    #[allow(dead_code)]
-    new_fallthrough_int_branch: fn(&PcodeOp, &PcodeOp) -> SIntBranch,
-    #[allow(dead_code)]
-    branches: Vec<SBranch>,
-}
-
-impl BlockSplitter {
-    /// Port of `new BlockSplitter(PcodeProgram)`, plus the `newFallthroughIntBranch` override. No
-    /// analysis is performed here: the client must call [`add_branches`](Self::add_branches) and
-    /// then [`split_blocks`](Self::split_blocks).
-    pub fn new(
-        program: PcodeProgram,
-        new_fallthrough_int_branch: fn(&PcodeOp, &PcodeOp) -> SIntBranch,
-    ) -> Self {
-        Self { program, new_fallthrough_int_branch, branches: Vec::new() }
-    }
-
-    /// Port of `BlockSplitter.addBranches(Collection)`: notify the splitter of the given branches
-    /// before analysis.
-    pub fn add_branches(&mut self, branches: impl IntoIterator<Item = SBranch>) {
-        self.branches.extend(branches);
-    }
-
-    /// Port of `BlockSplitter.splitBlocks()`: the blocks, keyed by their first op, in program
-    /// order. Java's `SequencedMap` becomes an ordered `Vec` of pairs, since the only lookups the
-    /// caller makes are "first" and "last".
-    pub fn split_blocks(&mut self) -> Vec<(PcodeOp, JitBlock)> {
-        unimplemented!("BlockSplitter not yet ported")
-    }
-}
-
-impl Default for JitBlock {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Placeholder for the unported Java type
-/// `ghidra.pcode.emu.jit.analysis.JitControlFlowModel.BlockFlow`, referenced by
-/// [`JitPhiOp`](crate::pcode::emu::jit::op::jit_phi_op::JitPhiOp). Java's record also carries an
-/// `IntBranch` (the p-code branch op that produced the flow), not yet ported and not needed by any
-/// current call site -- `JitPhiOp` only builds flows via [`BlockFlow::entry`]. Replace with the
-/// real port (including `branch`) when `JitControlFlowModel.java` is ported.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct BlockFlow {
-    /// The source block, or `None` for a flow entering the passage from outside.
-    pub from: Option<JitBlock>,
-    /// The destination block.
-    pub to: JitBlock,
-}
-
-impl BlockFlow {
-    /// Port of `BlockFlow.entry(JitBlock)`: a flow representing passage entry into `to`.
-    pub fn entry(to: JitBlock) -> Self {
-        Self { from: None, to }
-    }
-}
-
-/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitControlFlowModel`,
-/// referenced by
-/// [`JitVarScopeModel`](crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel),
-/// which is constructed from one and walks its blocks and their flows. Java's class performs the
-/// whole basic-block analysis of a passage -- splitting the op sequence into [`JitBlock`]s and
-/// wiring them with `IntBranch`es -- which is far beyond a stub; this models only the *result*:
-/// the block list and the flow graph over it, which is all the scope analysis reads.
-///
-/// The `flowsFrom`/`flowsTo` accessors live here rather than on [`JitBlock`] (where Java puts
-/// them) because this crate's `JitBlock` is deliberately identity-only -- see that type's doc.
-/// Java keys both maps by the `IntBranch` producing the flow; nothing here looks up a flow by its
-/// branch, so these are plain lists (Java's call sites take `.values()`).
-///
-/// Note [`JitDataFlowModel::flows_to`] carries the same "inward flows of a block" question for
-/// [`JitDataFlowBlockAnalyzer`], which has no control-flow model to ask. Both are stand-ins for
-/// the one real `JitBlock.flowsTo()` and collapse into it when `JitControlFlowModel.java` is
-/// ported.
-#[derive(Default)]
-pub struct JitControlFlowModel {
-    blocks: Vec<JitBlock>,
-    flows_from: HashMap<JitBlock, Vec<BlockFlow>>,
-    flows_to: HashMap<JitBlock, Vec<BlockFlow>>,
-    language: Option<Arc<dyn Language>>,
-}
-
-impl JitControlFlowModel {
-    /// Build a model over the given blocks, deriving each block's inward and outward flow lists
-    /// from `flows`. Stands in for Java's constructor, which computes both from the passage.
-    pub fn new(blocks: Vec<JitBlock>, flows: impl IntoIterator<Item = BlockFlow>) -> Self {
-        let mut flows_from: HashMap<JitBlock, Vec<BlockFlow>> = HashMap::new();
-        let mut flows_to: HashMap<JitBlock, Vec<BlockFlow>> = HashMap::new();
-        for flow in flows {
-            if let Some(from) = flow.from {
-                flows_from.entry(from).or_default().push(flow);
-            }
-            flows_to.entry(flow.to).or_default().push(flow);
-        }
-        Self { blocks, flows_from, flows_to, language: None }
-    }
-
-    /// Attach the passage's language, used only by
-    /// [`JitVarScopeModel::dump_result`](crate::pcode::emu::jit::analysis::jit_var_scope_model::JitVarScopeModel::dump_result)
-    /// to name live varnodes. See [`Self::get_register_name`].
-    pub fn with_language(mut self, language: Arc<dyn Language>) -> Self {
-        self.language = Some(language);
-        self
-    }
-
-    /// Port of `JitControlFlowModel.getBlocks()`.
-    pub fn get_blocks(&self) -> &[JitBlock] {
-        &self.blocks
-    }
-
-    /// Stand-in for `JitBlock.flowsFrom()`: the flows leaving `block`. See the type-level doc.
-    pub fn flows_from(&self, block: JitBlock) -> &[BlockFlow] {
-        self.flows_from.get(&block).map_or(&[], Vec::as_slice)
-    }
-
-    /// Stand-in for `JitBlock.flowsTo()`: the flows entering `block`. See the type-level doc.
-    pub fn flows_to(&self, block: JitBlock) -> &[BlockFlow] {
-        self.flows_to.get(&block).map_or(&[], Vec::as_slice)
-    }
-
-    /// Stand-in for `block.getLanguage().getRegister(address, size).getName()`, the only use any
-    /// call site makes of a block's language. Returns `None` when no language is attached or no
-    /// register covers exactly that location, matching Java's null return.
-    pub fn get_register_name(&self, block: JitBlock, address: &Address, size: i32) -> Option<String> {
-        let _ = block; // Java reads the language off the block; every block shares the passage's.
-        let language = self.language.as_ref()?;
-        let register = language.get_register_at(address, size)?;
-        let name = register.borrow().name().to_owned();
-        Some(name)
-    }
 }
 
 /// Placeholder for the unported Java type `ghidra.pcode.emu.jit.var.JitInputVar`, referenced by
@@ -2799,8 +2595,8 @@ pub trait JitAllocationModel: Send + Sync {
 /// Grown (see `STUBS.tsv`) with `entry_blocks` for
 /// [`JitDataFlowBlockAnalyzer`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer),
 /// which computes `isEntry` from `context.getOpEntry(block.first()) != null`. Java's `getOpEntry`
-/// takes a `PcodeOp` looked up via the also-identity-only [`JitBlock`] (see that type's doc for
-/// why it carries no op list), so this collapses the `block.first()` + `getOpEntry()` chain into
+/// takes a `PcodeOp` looked up via the identity-only [`JitBlock`] (see that type's doc for why it
+/// carries no op list of its own), so this collapses the `block.first()` + `getOpEntry()` chain into
 /// one query -- "is `block` a passage entry" -- directly against a set of known entry blocks.
 /// No longer `Copy` (a `HashSet` isn't), but every existing call site already constructs a fresh
 /// context rather than copying one.
@@ -2898,13 +2694,15 @@ pub trait JitDataFlowModel: Send + Sync {
         self.get_or_create_analyzer(block)
     }
 
-    /// Stand-in for `block.flowsTo()`, a method Java puts on the also-unported
-    /// `JitControlFlowModel.JitBlock` -- which this crate's [`JitBlock`] cannot carry, being
-    /// deliberately identity-only (see that type's doc). Relocated here since `JitDataFlowModel`
-    /// is the nearest already-stubbed type with a plausible view of the control-flow graph (real
-    /// Java's `JitDataFlowModel` holds the `JitControlFlowModel` that backs this data). Defaults
-    /// to no known inward flows, the conservative/honest answer until
-    /// `JitControlFlowModel.java` is ported.
+    /// Stand-in for `block.flowsTo()`, a method Java puts on `JitControlFlowModel.JitBlock` --
+    /// which this crate's [`JitBlock`] cannot carry, being deliberately identity-only (see that
+    /// type's doc; the flows live in
+    /// [`BlockTable`](crate::pcode::emu::jit::analysis::BlockTable)). Relocated here since
+    /// `JitDataFlowModel` is the nearest already-stubbed type with a view of the control-flow
+    /// graph: real Java's `JitDataFlowModel` holds the
+    /// [`JitControlFlowModel`](crate::pcode::emu::jit::analysis::JitControlFlowModel) that backs
+    /// this data, and this collapses into `cfm.flows_to(block)` once `JitDataFlowModel.java` is
+    /// ported. Defaults to no known inward flows.
     fn flows_to(&self, block: JitBlock) -> Vec<BlockFlow> {
         let _ = block;
         Vec::new()
@@ -3830,6 +3628,29 @@ pub struct JitPassage {
 }
 
 impl JitPassage {
+    /// Check if the given op has fall-through.
+    ///
+    /// Port of the static `JitPassage.hasFallthrough(PcodeOp)`. Grown (see `STUBS.tsv`) for
+    /// [`BlockSplitter`](crate::pcode::emu::jit::analysis::BlockSplitter), which asks it of each
+    /// block's last op to decide whether to synthesize a fall-through branch.
+    ///
+    /// Java answers `true` for a `NopPcodeOp` before consulting the opcode, because a synthetic nop
+    /// carries the `UNIMPLEMENTED` opcode but does fall through. This crate builds nops as plain
+    /// [`PcodeOp`]s (see [`nop_pcode_op`]), so there is nothing to distinguish one from a genuinely
+    /// unimplemented instruction, and a nop reports no fall-through here. That resolves once
+    /// `JitPassage`'s op hierarchy is ported.
+    pub fn has_fallthrough(op: &PcodeOp) -> bool {
+        !matches!(
+            op.opcode,
+            OpCode::Branch
+                | OpCode::BranchInd
+                | OpCode::Call
+                | OpCode::CallInd
+                | OpCode::Return
+                | OpCode::Unimplemented
+        )
+    }
+
     /// Port of the static factory `JitPassage.decodeError(Language, Address, RegisterValue,
     /// String)`: build the "instruction" standing in for a decode failure at `address`.
     pub fn decode_error(
@@ -4369,6 +4190,7 @@ impl RExtBranch {
 /// Port of the nested `ghidra.pcode.emu.jit.JitPassage.SExtBranch` record: an [`RExtBranch`] as
 /// analyzed during one instruction step, i.e. before its intra-instruction [`Reachability`] is
 /// known. See [`RExtBranch`] for the type both nest under in Java.
+#[derive(Clone)]
 pub struct SExtBranch {
     /// The op performing the branch. Port of `SExtBranch.from()`.
     pub from: PcodeOp,
@@ -4391,6 +4213,7 @@ impl SExtBranch {
 
 /// Port of the nested `ghidra.pcode.emu.jit.JitPassage.SIntBranch` record: a branch to another
 /// p-code op in the same passage, as analyzed during one instruction step.
+#[derive(Clone)]
 pub struct SIntBranch {
     /// The op performing the branch. Port of `SIntBranch.from()`.
     pub from: PcodeOp,
@@ -4428,6 +4251,7 @@ pub struct RIntBranch {
 
 /// Port of the nested `ghidra.pcode.emu.jit.JitPassage.SIndBranch` record: a branch to a dynamic
 /// address, as analyzed during one instruction step.
+#[derive(Clone)]
 pub struct SIndBranch {
     /// The op performing the branch. Port of `SIndBranch.from()`.
     pub from: PcodeOp,
@@ -4466,6 +4290,7 @@ pub struct RIndBranch {
 ///
 /// Unlike its siblings, this record needs no reachability upgrade: it implements both `SBranch` and
 /// `PBranch` in Java, so it passes into the passage unchanged.
+#[derive(Clone)]
 pub struct ErrBranch {
     /// The op that would raise the error. Port of `ErrBranch.from()`.
     pub from: PcodeOp,
@@ -4486,6 +4311,7 @@ impl ErrBranch {
 /// Java's sealed-by-convention interface hierarchy becomes an enum, since every consumer switches
 /// over the concrete record types anyway. Enumerating them here also discharges Java's
 /// `default -> throw new AssertionError()` arms.
+#[derive(Clone)]
 pub enum SBranch {
     /// An [`SIntBranch`].
     Int(SIntBranch),

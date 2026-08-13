@@ -145,7 +145,7 @@ mod tests {
     use crate::pcode::emu::jit::op::JitDefOp;
     use crate::pcode::emu::jit::var::JitVal;
     use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-    use crate::pcode::seam_stubs::JitBlock;
+    use crate::pcode::emu::jit::analysis::jit_control_flow_model::JitBlock;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber, Varnode};
     use std::sync::{Arc, Mutex};
@@ -350,8 +350,8 @@ mod tests {
             block,
             out,
             vec![
-                (crate::pcode::seam_stubs::BlockFlow::entry(block), val1),
-                (crate::pcode::seam_stubs::BlockFlow::entry(block), val2),
+                (crate::pcode::emu::jit::analysis::jit_control_flow_model::BlockFlow::entry(block), val1),
+                (crate::pcode::emu::jit::analysis::jit_control_flow_model::BlockFlow::entry(block), val2),
             ],
         );
         let mut visitor = RecordingVisitor::default();

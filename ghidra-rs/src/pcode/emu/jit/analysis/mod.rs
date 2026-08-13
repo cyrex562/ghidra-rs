@@ -1,3 +1,4 @@
+pub mod jit_control_flow_model;
 pub mod jit_data_flow_arithmetic;
 pub mod jit_data_flow_block_analyzer;
 pub mod jit_op_upward_visitor;
@@ -7,6 +8,10 @@ pub mod jit_type_behavior;
 pub mod jit_type_model;
 pub mod jit_var_scope_model;
 
+pub use jit_control_flow_model::{
+    BlockFlow, BlockSplitter, BlockTable, BranchRef, JitBlock, JitBlockData, JitControlFlowModel,
+    UnterminatedFlowException,
+};
 pub use jit_data_flow_arithmetic::JitDataFlowArithmetic;
 pub use jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
 pub use jit_type_model::JitTypeModel;

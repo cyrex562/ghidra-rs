@@ -5,7 +5,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
-use crate::pcode::seam_stubs::{JitBlock, JitControlFlowModel, JitDataFlowModel};
+use crate::pcode::emu::jit::analysis::jit_control_flow_model::{JitBlock, JitControlFlowModel};
+use crate::pcode::seam_stubs::JitDataFlowModel;
 use crate::pcode::emu::jit::var::JitOutVar;
 use crate::program::model::address::Address;
 use crate::program::model::pcode::Varnode;
@@ -423,7 +424,8 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic;
     use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
     use crate::pcode::emu::jit::op::JitPhiOp;
-    use crate::pcode::seam_stubs::{BlockFlow, JitAnalysisContext, JitDataFlowUseropLibrary, JitLocalOutVar, };
+    use crate::pcode::emu::jit::analysis::jit_control_flow_model::BlockFlow;
+    use crate::pcode::seam_stubs::{JitAnalysisContext, JitDataFlowUseropLibrary, JitLocalOutVar, };
 use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
@@ -628,10 +630,10 @@ use crate::pcode::emu::jit::op::JitOp;
         let cfm = Arc::new(JitControlFlowModel::new(
             vec![head, work, err, exit],
             [
-                BlockFlow { from: Some(head), to: err },
-                BlockFlow { from: Some(head), to: work },
-                BlockFlow { from: Some(err), to: exit },
-                BlockFlow { from: Some(work), to: exit },
+                BlockFlow { from: Some(head), to: err, branch: None },
+                BlockFlow { from: Some(head), to: work, branch: None },
+                BlockFlow { from: Some(err), to: exit, branch: None },
+                BlockFlow { from: Some(work), to: exit, branch: None },
             ],
         ));
         let model = JitVarScopeModel::new(cfm, Arc::clone(&dfm) as Arc<dyn JitDataFlowModel>);
@@ -688,7 +690,7 @@ use crate::pcode::emu::jit::op::JitOp;
 
         let cfm = Arc::new(JitControlFlowModel::new(
             vec![a, b],
-            [BlockFlow { from: Some(a), to: b }, BlockFlow { from: Some(b), to: a }],
+            [BlockFlow { from: Some(a), to: b, branch: None }, BlockFlow { from: Some(b), to: a, branch: None }],
         ));
         let model = JitVarScopeModel::new(cfm, Arc::clone(&dfm) as Arc<dyn JitDataFlowModel>);
 
@@ -717,8 +719,8 @@ use crate::pcode::emu::jit::op::JitOp;
         let cfm = Arc::new(JitControlFlowModel::new(
             vec![first, middle, last],
             [
-                BlockFlow { from: Some(first), to: middle },
-                BlockFlow { from: Some(middle), to: last },
+                BlockFlow { from: Some(first), to: middle, branch: None },
+                BlockFlow { from: Some(middle), to: last, branch: None },
             ],
         ));
         let model = JitVarScopeModel::new(cfm, Arc::clone(&dfm) as Arc<dyn JitDataFlowModel>);
