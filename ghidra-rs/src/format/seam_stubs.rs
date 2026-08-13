@@ -4,6 +4,7 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
+use crate::format::pe::rich::ms_product_type::MsProductType;
 
 /// Placeholder for `ghidra.app.util.datatype.microsoft.GUID`, referenced by
 /// [`PdbByteReader::parse_guid`](crate::format::pdb2::pdbreader::pdb_byte_reader::PdbByteReader::parse_guid)
@@ -785,4 +786,21 @@ impl EntryTable {
     pub fn get_bundles(&self) -> &[crate::format::ne::entry_table_bundle::EntryTableBundle] {
         &self.bundles
     }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.rich.RichProduct`, referenced by
+/// [`CompId::product_description`](crate::format::pe::rich::comp_id::CompId::product_description)
+/// before the real class is ported.
+pub trait RichProduct: Send + Sync {
+    fn get_product_version(&self) -> String;
+    fn get_product_type(&self) -> MsProductType;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.rich.RichHeaderUtils`, referenced by
+/// [`CompId::product_description`](crate::format::pe::rich::comp_id::CompId::product_description)
+/// before the real class is ported. `RichHeaderUtils` is a concrete Java class (not an
+/// interface), so it is modeled here as a trait that returns the product information.
+pub trait RichHeaderUtils: Send + Sync {
+    fn get_product(&self, id: i32) -> Option<Box<dyn RichProduct>>;
 }
