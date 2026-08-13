@@ -46,8 +46,9 @@ use crate::trace::database::listing::db_trace_defined_units_view::DBTraceDefined
 use crate::trace::model::lifespan::Lifespan;
 use crate::trace::model::trace_address_snap_range::TraceAddressSnapRange;
 use crate::trace::model::thread::TraceThread;
+use crate::trace::database::guest::db_trace_guest_platform::DBTraceGuestPlatform;
 use crate::trace::seam_stubs::{
-    DBTrace, DBTraceCodeUnitsView, DBTraceDataView, DBTraceDefinedDataView, DBTraceGuestPlatform,
+    DBTrace, DBTraceCodeUnitsView, DBTraceDataView, DBTraceDefinedDataView,
     DBTraceInstructionsView, DBTraceUndefinedDataView,
 };
 use crate::util::exception::CancelledException;
@@ -151,7 +152,7 @@ pub trait DBTraceCodeSpace: Send + Sync {
         &self,
         _span: Lifespan,
         _range: &AddressRange,
-        _guest: &dyn DBTraceGuestPlatform,
+        _guest: &DBTraceGuestPlatform,
         _monitor: &dyn TaskMonitor,
     ) -> Result<(), CancelledException> {
         unimplemented!("DBTraceCodeSpace::clear_platform not overridden")

@@ -7,6 +7,7 @@ use crate::trace::model::guest::trace_guest_platform::TraceGuestPlatform;
 use crate::trace::model::guest::trace_platform::TracePlatform;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
+use std::sync::Arc;
 
 /// A range of mapped memory from guest platform to host platform.
 ///
@@ -48,6 +49,67 @@ pub trait TraceGuestPlatformMappedRange {
     /// `TraceGuestPlatformMappedRange.delete(TaskMonitor)`, whose checked
     /// `CancelledException` becomes an `Err`.
     fn delete(&self, monitor: &dyn TaskMonitor) -> Result<(), CancelledException>;
+}
+
+/// A shared handle to a mapped range, which is itself a [`TraceGuestPlatformMappedRange`].
+///
+/// Java hands the *same* `DBTraceGuestPlatformMappedRange` instance to its two owning maps and to
+/// the caller of `addMappedRange`. Rust cannot copy a `Box<dyn TraceGuestPlatformMappedRange>` out
+/// of a stored one, so
+/// [`DBTraceGuestPlatform`](crate::trace::database::guest::db_trace_guest_platform::DBTraceGuestPlatform)
+/// stores the range as an `Arc` and returns it wrapped in this delegating handle -- preserving
+/// Java's aliasing (all three refer to one range) where a deep copy would not.
+pub struct SharedMappedRange(Arc<dyn TraceGuestPlatformMappedRange + Send + Sync>);
+
+impl SharedMappedRange {
+    /// Wrap a shared mapped range so it can be handed out as an owned
+    /// [`TraceGuestPlatformMappedRange`].
+    pub fn new(range: Arc<dyn TraceGuestPlatformMappedRange + Send + Sync>) -> Self {
+        Self(range)
+    }
+
+    /// The underlying shared range.
+    pub fn inner(&self) -> &Arc<dyn TraceGuestPlatformMappedRange + Send + Sync> {
+        &self.0
+    }
+}
+
+impl TraceGuestPlatformMappedRange for SharedMappedRange {
+    fn get_host_platform(&self) -> Box<dyn TracePlatform> {
+        self.0.get_host_platform()
+    }
+
+    fn get_host_range(&self) -> AddressRange {
+        self.0.get_host_range()
+    }
+
+    fn get_guest_platform(&self) -> Box<dyn TraceGuestPlatform> {
+        self.0.get_guest_platform()
+    }
+
+    fn get_guest_range(&self) -> AddressRange {
+        self.0.get_guest_range()
+    }
+
+    fn map_host_to_guest(&self, host_address: Address) -> Option<Address> {
+        self.0.map_host_to_guest(host_address)
+    }
+
+    fn map_host_to_guest_range(&self, host_range: &AddressRange) -> Option<AddressRange> {
+        self.0.map_host_to_guest_range(host_range)
+    }
+
+    fn map_guest_to_host(&self, guest_address: Address) -> Option<Address> {
+        self.0.map_guest_to_host(guest_address)
+    }
+
+    fn map_guest_to_host_range(&self, guest_range: &AddressRange) -> Option<AddressRange> {
+        self.0.map_guest_to_host_range(guest_range)
+    }
+
+    fn delete(&self, monitor: &dyn TaskMonitor) -> Result<(), CancelledException> {
+        self.0.delete(monitor)
+    }
 }
 
 #[cfg(test)]
