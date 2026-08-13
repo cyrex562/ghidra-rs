@@ -18,9 +18,11 @@ use crate::trace::model::trace::Trace;
 pub trait ToolOptions {}
 
 /// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
-/// [`Analyzer`](crate::app::services::Analyzer) before the real class is ported. `Analyzer` only
-/// ever passes this type through as a parameter, so no members are needed yet.
-pub trait MessageLog {}
+/// [`Analyzer`](crate::app::services::Analyzer) and
+/// [`SourceLanguageSpecExtension`](crate::app::util::sourcelanguage::source_language_spec_extension::SourceLanguageSpecExtension)
+/// before the real class is ported. These callers only ever pass this type through as a
+/// parameter, so no members are needed yet.
+pub trait MessageLog: Send + Sync {}
 
 /// Placeholder for `ghidra.features.base.codecompare.model.FunctionComparisonModel`, referenced
 /// by [`FunctionComparisonService`](crate::app::services::FunctionComparisonService) before the
