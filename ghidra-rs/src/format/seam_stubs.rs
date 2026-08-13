@@ -544,3 +544,245 @@ impl std::fmt::Display for ResourceType {
         f.write_str(name)
     }
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.ne.InformationBlock`, referenced by
+/// [`WindowsHeader`](crate::format::ne::windows_header::WindowsHeader) before the real class is
+/// ported. `InformationBlock` is a concrete Java class, so it is modeled as a concrete struct.
+/// Only the constructor and the offset/count accessors `WindowsHeader`'s constructor needs to
+/// locate the other NE tables are exposed; the many flag/display-string getters on the real class
+/// are left for the real port.
+pub struct InformationBlock {
+    segment_table_offset: i16,
+    segment_count: i16,
+    segment_alignment_shift_count: i16,
+    resource_table_offset: i16,
+    resident_name_table_offset: i16,
+    module_reference_table_offset: i16,
+    module_reference_table_count: i16,
+    imported_names_table_offset: i16,
+    entry_table_offset: i16,
+    entry_table_size: i16,
+    non_resident_name_table_offset: i32,
+    non_resident_name_table_size: i16,
+}
+
+impl InformationBlock {
+    /// The magic number for Windows NE files ('NE'), mirroring
+    /// `WindowsHeader.IMAGE_NE_SIGNATURE`.
+    const IMAGE_NE_SIGNATURE: i16 = 0x454E;
+
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        index: u64,
+    ) -> std::io::Result<Self> {
+        let old_index = reader.get_pointer_index();
+        reader.set_pointer_index(index);
+
+        let ne_magic = reader.read_next_short()?;
+        if ne_magic != Self::IMAGE_NE_SIGNATURE {
+            reader.set_pointer_index(old_index);
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                crate::format::ne::invalid_windows_header_exception::InvalidWindowsHeaderException::new(
+                    "Not a valid Windows NE header",
+                ),
+            ));
+        }
+
+        let _ne_ver = reader.read_next_byte()?;
+        let _ne_rev = reader.read_next_byte()?;
+        let ne_enttab = reader.read_next_short()?;
+        let ne_cbenttab = reader.read_next_short()?;
+        let _ne_crc = reader.read_next_int()?;
+        let _ne_flags_prog = reader.read_next_byte()?;
+        let _ne_flags_app = reader.read_next_byte()?;
+        let _ne_autodata = reader.read_next_short()?;
+        let _ne_heap = reader.read_next_short()?;
+        let _ne_stack = reader.read_next_short()?;
+        let _ne_csip = reader.read_next_int()?;
+        let _ne_sssp = reader.read_next_int()?;
+        let ne_cseg = reader.read_next_short()?;
+        let ne_cmod = reader.read_next_short()?;
+        let ne_cbnrestab = reader.read_next_short()?;
+        let ne_segtab = reader.read_next_short()?;
+        let ne_rsrctab = reader.read_next_short()?;
+        let ne_restab = reader.read_next_short()?;
+        let ne_modtab = reader.read_next_short()?;
+        let ne_imptab = reader.read_next_short()?;
+        let ne_nrestab = reader.read_next_int()?;
+        let _ne_cmovent = reader.read_next_short()?;
+        let ne_align = reader.read_next_short()?;
+        let _ne_cres = reader.read_next_short()?;
+        let _ne_exetyp = reader.read_next_byte()?;
+        let _ne_flagsothers = reader.read_next_byte()?;
+        let _ne_pretthunks = reader.read_next_short()?;
+        let _ne_psegrefbytes = reader.read_next_short()?;
+        let _ne_swaparea = reader.read_next_short()?;
+        let _ne_expver = reader.read_next_short()?;
+
+        reader.set_pointer_index(old_index);
+
+        Ok(InformationBlock {
+            segment_table_offset: ne_segtab,
+            segment_count: ne_cseg,
+            segment_alignment_shift_count: ne_align,
+            resource_table_offset: ne_rsrctab,
+            resident_name_table_offset: ne_restab,
+            module_reference_table_offset: ne_modtab,
+            module_reference_table_count: ne_cmod,
+            imported_names_table_offset: ne_imptab,
+            entry_table_offset: ne_enttab,
+            entry_table_size: ne_cbenttab,
+            non_resident_name_table_offset: ne_nrestab,
+            non_resident_name_table_size: ne_cbnrestab,
+        })
+    }
+
+    /// Index to the start of the segment table, relative to the beginning of the NE header.
+    pub fn get_segment_table_offset(&self) -> i16 {
+        self.segment_table_offset
+    }
+
+    /// Number of segments in the segment table.
+    pub fn get_segment_count(&self) -> i16 {
+        self.segment_count
+    }
+
+    /// Shift count used to align the logical sector.
+    pub fn get_segment_alignment_shift_count(&self) -> i16 {
+        self.segment_alignment_shift_count
+    }
+
+    /// Index to the start of the resource table, relative to the beginning of the NE header.
+    pub fn get_resource_table_offset(&self) -> i16 {
+        self.resource_table_offset
+    }
+
+    /// Index to the start of the resident name table, relative to the beginning of the NE
+    /// header.
+    pub fn get_resident_name_table_offset(&self) -> i16 {
+        self.resident_name_table_offset
+    }
+
+    /// Index to the start of the module reference table, relative to the beginning of the NE
+    /// header.
+    pub fn get_module_reference_table_offset(&self) -> i16 {
+        self.module_reference_table_offset
+    }
+
+    /// Number of entries in the module reference table.
+    pub fn get_module_reference_table_count(&self) -> i16 {
+        self.module_reference_table_count
+    }
+
+    /// Index to the start of the imported names table, relative to the beginning of the NE
+    /// header.
+    pub fn get_imported_names_table_offset(&self) -> i16 {
+        self.imported_names_table_offset
+    }
+
+    /// Index to the start of the entry table, relative to the beginning of the NE header.
+    pub fn get_entry_table_offset(&self) -> i16 {
+        self.entry_table_offset
+    }
+
+    /// Number of bytes in the entry table.
+    pub fn get_entry_table_size(&self) -> i16 {
+        self.entry_table_size
+    }
+
+    /// Index to the start of the non-resident name table, relative to the beginning of the file.
+    pub fn get_non_resident_name_table_offset(&self) -> i32 {
+        self.non_resident_name_table_offset
+    }
+
+    /// Number of bytes in the non-resident name table.
+    pub fn get_non_resident_name_table_size(&self) -> i16 {
+        self.non_resident_name_table_size
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.ne.SegmentTable`, referenced by
+/// [`WindowsHeader`](crate::format::ne::windows_header::WindowsHeader) before the real class is
+/// ported. `SegmentTable` is a concrete Java class, so it is modeled as a concrete struct wrapping
+/// the already-ported [`Segment`](crate::format::ne::segment::Segment). The real class also
+/// consults a `SegmentedAddressSpace` to assign each segment's starting address segment number
+/// when `baseAddr` is non-null; that address-space bookkeeping is left for the real port, so this
+/// stub always assigns sequential segment numbers starting from `base_addr`'s segment (or 0).
+pub struct SegmentTable {
+    segments: Vec<crate::format::ne::segment::Segment>,
+}
+
+impl SegmentTable {
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        base_addr: Option<&crate::program::model::address::segmented_address::SegmentedAddress>,
+        index: u64,
+        segment_count: i16,
+        shift_align_count: i16,
+    ) -> std::io::Result<Self> {
+        let old_index = reader.get_pointer_index();
+        reader.set_pointer_index(index);
+
+        let shift_align_value = (1i32 << (shift_align_count as u32)) as i16;
+        let segment_count_usize = (segment_count as u16) as usize;
+        let mut cur_segment = base_addr.map(|addr| addr.segment() as i32).unwrap_or(0);
+
+        let mut segments = Vec::with_capacity(segment_count_usize);
+        for _ in 0..segment_count_usize {
+            segments.push(crate::format::ne::segment::Segment::new(
+                reader,
+                shift_align_value,
+                cur_segment,
+            )?);
+            cur_segment += 1;
+        }
+
+        reader.set_pointer_index(old_index);
+
+        Ok(SegmentTable { segments })
+    }
+
+    /// Returns the segments defined in this segment table.
+    pub fn get_segments(&self) -> &[crate::format::ne::segment::Segment] {
+        &self.segments
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.ne.EntryTable`, referenced by
+/// [`WindowsHeader`](crate::format::ne::windows_header::WindowsHeader) before the real class is
+/// ported. `EntryTable` is a concrete Java class, so it is modeled as a concrete struct wrapping
+/// the already-ported
+/// [`EntryTableBundle`](crate::format::ne::entry_table_bundle::EntryTableBundle).
+pub struct EntryTable {
+    bundles: Vec<crate::format::ne::entry_table_bundle::EntryTableBundle>,
+}
+
+impl EntryTable {
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        index: u64,
+        _byte_count: i16,
+    ) -> std::io::Result<Self> {
+        let old_index = reader.get_pointer_index();
+        reader.set_pointer_index(index);
+
+        let mut bundles = Vec::new();
+        loop {
+            let bundle = crate::format::ne::entry_table_bundle::EntryTableBundle::new(reader)?;
+            if bundle.get_count() == 0 {
+                break;
+            }
+            bundles.push(bundle);
+        }
+
+        reader.set_pointer_index(old_index);
+
+        Ok(EntryTable { bundles })
+    }
+
+    /// Returns the entry table bundles in this entry table.
+    pub fn get_bundles(&self) -> &[crate::format::ne::entry_table_bundle::EntryTableBundle] {
+        &self.bundles
+    }
+}

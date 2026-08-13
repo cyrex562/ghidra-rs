@@ -694,3 +694,6 @@ ts	stub_class	referenced_by
 2026-08-13T00:00:00.000000+00:00	EntryPoint	EntryTableBundle
 2026-08-13T06:13:18.847704+00:00	Resource	ResourceTable
 2026-08-13T06:13:18.848545+00:00	ResourceType	ResourceTable
+2026-08-13T06:20:46.841129+00:00	EntryTable	WindowsHeader
+2026-08-13T06:20:46.842285+00:00	InformationBlock	WindowsHeader
+2026-08-13T06:20:46.844863+00:00	SegmentTable	WindowsHeader
