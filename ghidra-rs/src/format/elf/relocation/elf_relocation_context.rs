@@ -36,9 +36,10 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::format::elf::elf_symbol::ElfSymbol;
+use crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter;
 use crate::format::seam_stubs::{
-    elf_relocation_handler, ElfHeader, ElfLoadAdapter, ElfLoadHelper, ElfRelocation,
-    ElfRelocationHandler, ElfRelocationTable, ElfSymbolTable, MessageLog,
+    elf_relocation_handler, ElfHeader, ElfLoadHelper, ElfRelocation, ElfRelocationHandler,
+    ElfRelocationTable, ElfSymbolTable, MessageLog,
 };
 use crate::program::model::address::Address;
 use crate::program::model::listing::program::Program;
@@ -206,7 +207,7 @@ impl ElfRelocationContextBase {
     ///
     /// Java's `ElfHeader.getLoadAdapter()` never returns null; the unported `ElfHeader` seam has no
     /// adapter registry to fall back on, so this can currently answer `None`.
-    pub fn get_load_adapter(&self) -> Option<Arc<dyn ElfLoadAdapter>> {
+    pub fn get_load_adapter(&self) -> Option<ElfLoadAdapter> {
         self.get_elf_header().get_load_adapter()
     }
 
@@ -571,6 +572,9 @@ mod tests {
     impl ElfHeader for MockElfHeader {
         fn is32_bit(&self) -> bool {
             true
+        }
+        fn is_relocatable(&self) -> bool {
+            false
         }
         fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>> {
             Vec::new()

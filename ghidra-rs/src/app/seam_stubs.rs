@@ -1549,3 +1549,15 @@ impl ReferenceUtils {
         }
     }
 }
+
+/// Placeholder for the image-base defaults of `ghidra.app.util.opinion.ElfLoaderOptionsFactory`,
+/// referenced by
+/// [`ElfLoadAdapter::get_default_image_base`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::get_default_image_base)
+/// before the real options factory is ported. Only the two constants that method reads.
+pub mod elf_loader_options_factory {
+    /// `ElfLoaderOptionsFactory.IMAGE32_BASE_DEFAULT`.
+    pub const IMAGE32_BASE_DEFAULT: i64 = 0x0001_0000;
+
+    /// `ElfLoaderOptionsFactory.IMAGE64_BASE_DEFAULT`.
+    pub const IMAGE64_BASE_DEFAULT: i64 = 0x0010_0000;
+}
