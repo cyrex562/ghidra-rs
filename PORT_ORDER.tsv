@@ -37,7 +37,7 @@ DONE	trait	7	8	53	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/datatyp
 DONE	trait	4	7	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pdb/PdbInfo.java
 DONE	trait	11	27	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries.java
 DONE	trait	13	26	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PEx64UnwindInfo.java
-TODO	trait	15	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageDataArchive.java
+DONE	trait	15	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageDataArchive.java
 TODO	trait	15	6	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageSpecExtension.java
 TODO	trait	18	12	100	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/guest/DBTraceGuestPlatform.java
 TODO	trait	22	4	26	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceDataArrayElementComponent.java
