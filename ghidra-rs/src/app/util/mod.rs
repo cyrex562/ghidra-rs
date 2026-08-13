@@ -33,3 +33,4 @@ pub mod viewer;
 pub mod xml;
 pub mod processor_info;
 pub mod program_drop_provider;
+pub mod search_constants;
