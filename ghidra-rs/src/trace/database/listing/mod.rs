@@ -5,6 +5,7 @@ pub mod abstract_single_db_trace_code_units_view;
 pub mod db_trace_code_space;
 pub mod db_trace_data;
 pub mod db_trace_data_adapter;
+pub mod db_trace_data_array_element_component;
 pub mod db_trace_defined_units_view;
 pub mod internal_trace_base_defined_units_view;
 pub mod internal_trace_defined_data_view;
@@ -16,6 +17,7 @@ pub use abstract_single_db_trace_code_units_view::AbstractSingleDBTraceCodeUnits
 pub use db_trace_code_space::DBTraceCodeSpace;
 pub use db_trace_data::DBTraceData;
 pub use db_trace_data_adapter::DBTraceDataAdapter;
+pub use db_trace_data_array_element_component::DBTraceDataArrayElementComponent;
 pub use db_trace_defined_units_view::DBTraceDefinedUnitsView;
 pub use internal_trace_base_defined_units_view::InternalTraceBaseDefinedUnitsView;
 pub use internal_trace_defined_data_view::InternalTraceDefinedDataView;
