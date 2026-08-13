@@ -37,12 +37,13 @@ use std::sync::Arc;
 use crate::app::util::opinion::elf_loader_options_factory::{
     IMAGE32_BASE_DEFAULT, IMAGE64_BASE_DEFAULT,
 };
+use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::elf::elf_program_header_constants::{PF_R, PF_W, PF_X};
 use crate::format::elf::elf_section_header_constants::{SHF_ALLOC, SHF_EXECINSTR, SHF_WRITE};
 use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::seam_stubs::{
-    ElfDefaultGotPltMarkup, ElfDynamicType, ElfHeader, ElfLoadHelper, ElfProgramHeader,
-    ElfProgramHeaderType, ElfRelocation, ElfSectionHeader, ElfSectionHeaderType, MemoryLoadable,
+    ElfDefaultGotPltMarkup, ElfDynamicType, ElfHeader, ElfProgramHeader, ElfProgramHeaderType,
+    ElfRelocation, ElfSectionHeader, ElfSectionHeaderType, MemoryLoadable,
 };
 use crate::program::model::address::{Address, AddressSpace};
 use crate::util::exception::{CancelledException, NoValueException};
@@ -593,6 +594,19 @@ mod tests {
         fn get_program(&self) -> Arc<dyn Program> {
             self.program.clone()
         }
+        fn get_option_bool(&self, _option_name: &str, default_value: bool) -> bool {
+            default_value
+        }
+        fn get_option_string(
+            &self,
+            _option_name: &str,
+            default_value: std::option::Option<String>,
+        ) -> std::option::Option<String> {
+            default_value
+        }
+        fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
+            default_value
+        }
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             self.header.clone()
         }
@@ -601,11 +615,90 @@ mod tests {
         }
         fn log(&self, _msg: &str) {}
         fn log_exception(&self, _t: &dyn std::error::Error) {}
+        fn mark_as_code(&self, _address: Address) {}
+        fn create_one_byte_function(
+            &self,
+            _name: std::option::Option<&str>,
+            _address: Address,
+            _is_entry: bool,
+        ) -> Arc<dyn crate::program::model::listing::function::Function> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn create_external_function_linkage(
+            &self,
+            _name: &str,
+            _function_addr: Address,
+            _indirect_pointer_addr: std::option::Option<Address>,
+        ) -> std::option::Option<Arc<dyn crate::program::model::listing::function::Function>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn create_undefined_data(
+            &self,
+            _address: Address,
+            _length: i32,
+        ) -> std::option::Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn create_data(
+            &self,
+            _address: Address,
+            _dt: Box<dyn crate::program::model::data::data_type::DataType>,
+        ) -> std::option::Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn set_elf_symbol_address(&self, _elf_symbol: &ElfSymbol, _address: std::option::Option<Address>) {}
+        fn get_elf_symbol_address(&self, _elf_symbol: &ElfSymbol) -> std::option::Option<Address> {
+            None
+        }
+        fn create_symbol(
+            &self,
+            _addr: Address,
+            _name: &str,
+            _is_primary: bool,
+            _pin_absolute: bool,
+            _namespace: std::option::Option<
+                Arc<dyn crate::program::model::symbol::namespace::Namespace>,
+            >,
+        ) -> Result<
+            Arc<dyn crate::program::model::symbol::Symbol>,
+            crate::util::exception::InvalidInputException,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+        fn find_load_address(
+            &self,
+            _section: &dyn MemoryLoadable,
+            _byte_offset_within_section: i64,
+        ) -> std::option::Option<Address> {
+            None
+        }
+        fn get_default_address(&self, _addressable_word_offset: i64) -> Address {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_image_base_word_adjustment_offset(&self) -> i64 {
             self.image_base_word_adjustment
         }
         fn get_got_value(&self) -> Option<i64> {
             None
+        }
+        fn allocate_linkage_block(
+            &self,
+            _alignment: i32,
+            _size: i32,
+            _purpose: &str,
+        ) -> std::option::Option<crate::program::model::address::range::AddressRange> {
+            None
+        }
+        fn get_original_value(
+            &self,
+            _addr: Address,
+            _sign_extend: bool,
+        ) -> Result<i64, crate::program::model::mem::memory_access_exception::MemoryAccessException>
+        {
+            unimplemented!("not exercised by these tests")
+        }
+        fn add_artificial_reloc_table_entry(&self, _address: Address, _length: i32) -> bool {
+            false
         }
     }
 
