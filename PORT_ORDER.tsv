@@ -39,7 +39,7 @@ DONE	trait	11	27	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	13	26	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PEx64UnwindInfo.java
 DONE	trait	15	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageDataArchive.java
 DONE	trait	15	6	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageSpecExtension.java
-TODO	trait	18	12	100	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/guest/DBTraceGuestPlatform.java
+DONE	trait	18	12	100	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/guest/DBTraceGuestPlatform.java
 TODO	trait	22	4	26	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceDataArrayElementComponent.java
 TODO	trait	22	5	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/locationreferences/GenericDataTypeLocationDescriptor.java
 TODO	trait	20	24	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractProgramLocationTableColumn.java
