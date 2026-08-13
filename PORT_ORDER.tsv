@@ -12,7 +12,7 @@ DONE	trait	12	13	87	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/
 DONE	trait	8	18	43	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeThread.java
 DONE	trait	7	16	1	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitConfiguration.java
 DONE	trait	6	15	20	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitCompiler.java
-TODO	trait	5	20	13	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitAnalysisContext.java
+DONE	trait	5	20	13	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitAnalysisContext.java
 TODO	trait	3	12	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitDefaultBytesPcodeExecutorState.java
 TODO	trait	2	10	28	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitBytesPcodeExecutorStatePiece.java
 TODO	trait	1	21	2	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitBytesPcodeExecutorState.java
