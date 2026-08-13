@@ -5,7 +5,7 @@ DONE	trait	14	3	30	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/e
 PARK	trait	13	14	96	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowUseropLibrary.java
 DONE	trait	13	5	14	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/tgt/JitCompiledPassageClass.java
 DONE	trait	12	13	42	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeEmulator.java
-TODO	trait	11	17	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitControlFlowModel.java
+DONE	trait	11	17	18	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitControlFlowModel.java
 TODO	trait	10	26	83	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowModel.java
 TODO	trait	16	92	0	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/util/Misc.java
 TODO	trait	12	13	87	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/var/ValGen.java
