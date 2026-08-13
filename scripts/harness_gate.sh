@@ -61,7 +61,15 @@ run_test_gate() {
   fi
   if printf '%s' "$tout" | grep -q 'test result: FAILED'; then
     local failed
-    failed=$(printf '%s\n' "$tout" | awk '/^failures:$/{f=1;next} /^test result:/{f=0} f && /^ +[A-Za-z_]/{gsub(/^ +/,"");print}' | sort -u)
+    # Cargo prints TWO `failures:` blocks: the per-test stdout dumps first, then the name
+    # list. Capturing from the first one swept in the panic text -- `panic message: "not
+    # implemented: ..."` and `expected substring: "..."` were both recorded as test NAMES on
+    # 2026-08-13. Restrict to name-shaped tokens: a Rust test path has no whitespace and no
+    # quotes, so the panic prose cannot survive this filter.
+    failed=$(printf '%s\n' "$tout" \
+      | awk '/^failures:$/{f=1;next} /^test result:/{f=0} f && /^ +[A-Za-z_]/{gsub(/^ +/,"");print}' \
+      | grep -E '^[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z0-9_]+)+$' \
+      | sort -u)
     if gate_failures_are_known_flaky "$label" "$failed"; then
       echo "test gate OK: ${label} (suite failure confined to known-flaky tests, port is not the cause)"
       return 0
@@ -111,9 +119,15 @@ gate_failures_are_known_flaky() {
     # time -- which is how the first draft of this check waved through a known flake and
     # parked the port anyway. A single test re-runs in about a second against the already
     # built binary, so 8 is cheap.
+    # `cargo test --exact <not-a-test>` runs NOTHING and exits 0, so a bad name read as a
+    # pass -- proof of nondeterminism from a string that never named a test. The first hit
+    # parked (right answer, wrong reason); every later one would have been waved through as
+    # "confined to known-flaky tests" while the suite was genuinely red. Require a test to
+    # have actually run and passed.
     pass_seen=0
     for _ in $(seq "$GATE_FLAKE_TRIES"); do
-      if timeout "$t" cargo test --lib -- --exact "$name" >/dev/null 2>&1; then pass_seen=1; break; fi
+      if timeout "$t" cargo test --lib -- --exact "$name" 2>/dev/null \
+           | grep -qE '^test result: ok\. [1-9][0-9]* passed'; then pass_seen=1; break; fi
     done
 
     # Never passes in isolation: a deterministic failure, whatever the registry says. A
