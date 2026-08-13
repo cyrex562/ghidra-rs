@@ -3886,6 +3886,19 @@ impl PartialEq for AddrCtx {
 
 impl Eq for AddrCtx {}
 
+/// Port of `AddrCtx.toString()`: `"AddrCtx[ctx=%s,addr=%s]".formatted(rvCtx, address)`. `rvCtx` is
+/// an `Option<Arc<dyn RegisterValue>>` and the stub trait doesn't require `Display` of its
+/// implementors, so the context prints as `bi_ctx`, the value `rvCtx` was reduced to -- or as
+/// `null`, matching Java's rendering of a null `rvCtx`, when there is none.
+impl std::fmt::Display for AddrCtx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.rv_ctx {
+            Some(_) => write!(f, "AddrCtx[ctx={},addr={}]", self.bi_ctx, self.address),
+            None => write!(f, "AddrCtx[ctx=null,addr={}]", self.address),
+        }
+    }
+}
+
 /// Port of `AddrCtx.hashCode()`: `Objects.hash(biCtx, address)`.
 impl std::hash::Hash for AddrCtx {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -3903,8 +3916,17 @@ impl std::hash::Hash for AddrCtx {
 /// owned outright because Java hands the very same `InstructionDecoder` object to both the thread
 /// and the passage decoder, and later mutates it through either reference. Replace with the real
 /// port when `JitPcodeThread.java` lands.
+///
+/// Java has exactly one constructor, `JitPcodeThread(String, JitPcodeEmulator)`, which builds the
+/// decoder and library itself (via the unported `SleighInstructionDecoder`). This stub therefore
+/// offers two: [`new`](Self::new), taking the pieces [`JitPassageDecoder`] reads, and
+/// [`named`](Self::named), standing in for the real constructor as called from
+/// [`JitPcodeEmulator::create_thread`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator).
+/// `decoder` is consequently optional: a thread made by `named` has none until
+/// `SleighInstructionDecoder` is ported.
 pub struct JitPcodeThread {
-    decoder: Arc<Mutex<dyn InstructionDecoder>>,
+    name: String,
+    decoder: Option<Arc<Mutex<dyn InstructionDecoder>>>,
     default_context: Option<Arc<dyn ProgramContext>>,
     userop_library: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
 }
@@ -3916,12 +3938,42 @@ impl JitPcodeThread {
         default_context: Option<Arc<dyn ProgramContext>>,
         userop_library: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
     ) -> Self {
-        Self { decoder, default_context, userop_library }
+        Self {
+            name: String::new(),
+            decoder: Some(decoder),
+            default_context,
+            userop_library,
+        }
+    }
+
+    /// Stands in for `new JitPcodeThread(String, JitPcodeEmulator)`. The machine back-reference is
+    /// dropped (nothing this stub models reads it), and, with `SleighInstructionDecoder` unported,
+    /// so is the decoder the real constructor would build from the machine's language.
+    pub fn named(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            decoder: None,
+            default_context: None,
+            userop_library: Arc::new(crate::pcode::exec::pcode_userop_library::nil()),
+        }
+    }
+
+    /// Port of the inherited `PcodeThread.getName()`.
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     /// Port of `JitPcodeThread.getDecoder()`.
+    ///
+    /// # Panics
+    ///
+    /// If this thread was built by [`named`](Self::named), which has no decoder to hand back.
     pub fn get_decoder(&self) -> Arc<Mutex<dyn InstructionDecoder>> {
-        Arc::clone(&self.decoder)
+        Arc::clone(
+            self.decoder
+                .as_ref()
+                .expect("SleighInstructionDecoder is not ported, so a named thread has no decoder"),
+        )
     }
 
     /// Port of `JitPcodeThread.getDefaultContext()`.
@@ -3950,6 +4002,207 @@ impl JitPcodeThread {
         None
     }
 }
+
+/// Java reaches this through `JitPcodeThread extends BytesPcodeThread ... implements
+/// PcodeThread<byte[]>`; here it is what
+/// [`JitPcodeEmulator::create_thread`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator)
+/// must return, exactly as [`BytesPcodeThread`](crate::pcode::emu::bytes_pcode_thread) does for
+/// `PcodeEmulator`.
+impl ErasedPcodeThread for JitPcodeThread {}
+
+/// Placeholder for the unported Java record `ghidra.pcode.emu.jit.JitConfiguration`, the
+/// configuration held by [`JitCompiler`] and read back through
+/// [`JitPcodeEmulator::get_configuration`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator::get_configuration).
+/// The record's six components are carried faithfully as public fields; its `Opt`-set constructors
+/// are left to the real port. Replace with the real port when `JitConfiguration.java` lands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct JitConfiguration {
+    /// Port of `JitConfiguration.maxPassageInstructions()`.
+    pub max_passage_instructions: i32,
+    /// Port of `JitConfiguration.maxPassageOps()`, the op budget
+    /// [`JitPcodeEmulator::get_entry_prototype`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator::get_entry_prototype)
+    /// halves on each `MethodTooLargeException`.
+    pub max_passage_ops: i32,
+    /// Port of `JitConfiguration.maxPassageStrides()`.
+    pub max_passage_strides: i32,
+    /// Port of `JitConfiguration.removeUnusedOperations()`.
+    pub remove_unused_operations: bool,
+    /// Port of `JitConfiguration.emitCounters()`.
+    pub emit_counters: bool,
+    /// Port of `JitConfiguration.logStackTraces()`.
+    pub log_stack_traces: bool,
+}
+
+/// Port of the no-arg `JitConfiguration()`, i.e. `this(1000, 5000, 10, true, true, false)`.
+impl Default for JitConfiguration {
+    fn default() -> Self {
+        Self {
+            max_passage_instructions: 1000,
+            max_passage_ops: 5000,
+            max_passage_strides: 10,
+            remove_unused_operations: true,
+            emit_counters: true,
+            log_stack_traces: false,
+        }
+    }
+}
+
+/// Placeholder for ASM's `org.objectweb.asm.MethodTooLargeException`, raised when a generated
+/// method exceeds the JVM's 64KiB code limit. Its only role here is to be the error
+/// [`JitCompiler::compile_passage`] reports so that
+/// [`JitPcodeEmulator`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator)'s backoff
+/// loop can retry with half the op budget, so it carries no payload; ASM's `methodName`,
+/// `descriptor`, and `codeSize` are not consulted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MethodTooLargeException;
+
+impl std::fmt::Display for MethodTooLargeException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Method too large")
+    }
+}
+
+impl std::error::Error for MethodTooLargeException {}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.JitCompiler`, the translator
+/// [`JitPcodeEmulator`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator) owns. The
+/// real class walks a decoded [`JitPassage`] through the whole analysis and code-generation
+/// pipeline and emits a JVM classfile; there is no bytecode emitter to run here yet, so
+/// [`compile_passage`](Self::compile_passage) panics, in the same spirit as
+/// [`BytesPcodeArithmetic`]. The configuration it holds is real, since the emulator reads it back
+/// on every translation. Replace with the real port when `JitCompiler.java` lands.
+pub struct JitCompiler {
+    config: JitConfiguration,
+}
+
+impl JitCompiler {
+    /// Port of `new JitCompiler(JitConfiguration)`.
+    pub fn new(config: JitConfiguration) -> Self {
+        Self { config }
+    }
+
+    /// Port of `JitCompiler.getConfiguration()`.
+    pub fn get_configuration(&self) -> &JitConfiguration {
+        &self.config
+    }
+
+    /// Port of `JitCompiler.compilePassage(Lookup, JitPassage)`.
+    ///
+    /// The `Lookup` argument is dropped: it exists only to define the generated classfile as a
+    /// hidden class, which this crate has no JVM to do -- see
+    /// [`JitCompiledPassageClass`](crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass)'s own
+    /// deviation notes. Java's thrown `MethodTooLargeException` becomes an `Err`, since that is the
+    /// one failure the caller handles rather than propagates.
+    ///
+    /// # Panics
+    ///
+    /// Always: the translator itself is not ported.
+    pub fn compile_passage(
+        &self,
+        _passage: JitPassage,
+    ) -> Result<crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass, MethodTooLargeException>
+    {
+        unimplemented!("JitCompiler not yet ported")
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.JitDefaultBytesPcodeExecutorState`,
+/// the state
+/// [`JitPcodeEmulator`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator) creates for
+/// both its shared and its per-thread states. The real class is a `DefaultPcodeExecutorState`
+/// wrapping a `JitBytesPcodeExecutorStatePiece`, whose per-address-space
+/// `JitBytesPcodeExecutorStateSpace`s the generated code pre-fetches directly; none of that is
+/// ported, so, exactly as with [`BytesPcodeExecutorState`], only the language is retained and every
+/// operation needing real storage panics.
+pub struct JitDefaultBytesPcodeExecutorState {
+    language: Arc<SleighLanguage>,
+}
+
+impl JitDefaultBytesPcodeExecutorState {
+    /// Placeholder for `new JitDefaultBytesPcodeExecutorState(Language, PcodeStateCallbacks)`. As
+    /// with [`BytesPcodeExecutorState::new`], the callbacks aren't retained: without real
+    /// per-address-space storage to read or write, there is nothing to forward them to.
+    pub fn new<C: PcodeStateCallbacks>(language: Arc<SleighLanguage>, _cb: C) -> Self {
+        Self { language }
+    }
+
+    /// The language this state was created for. Java gets at it through the wrapped piece.
+    pub fn language(&self) -> &Arc<SleighLanguage> {
+        &self.language
+    }
+}
+
+impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for JitDefaultBytesPcodeExecutorState {
+    fn get_language(&self) -> Box<dyn Language> {
+        unimplemented!("JitDefaultBytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_address_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+    }
+
+    fn get_arithmetic(&self) -> Arc<dyn PcodeArithmetic<Vec<u8>>> {
+        BytesPcodeArithmetic::for_sleigh_language(&self.language)
+    }
+
+    fn stream_pieces(&self) -> Vec<&dyn ErasedPcodeExecutorStatePiece> {
+        vec![]
+    }
+
+    fn set_var_abstract(
+        &mut self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _quantize: bool,
+        _val: &Vec<u8>,
+    ) {
+        unimplemented!("JitDefaultBytesPcodeExecutorState not yet ported")
+    }
+
+    fn set_var_internal_abstract(
+        &mut self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _val: &Vec<u8>,
+    ) {
+        unimplemented!("JitDefaultBytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_var_abstract(
+        &self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _quantize: bool,
+        _reason: Reason,
+    ) -> Vec<u8> {
+        unimplemented!("JitDefaultBytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_var_internal_abstract(
+        &self,
+        _space: &Arc<AddressSpace>,
+        _offset: &Vec<u8>,
+        _size: i32,
+        _reason: Reason,
+    ) -> Vec<u8> {
+        unimplemented!("JitDefaultBytesPcodeExecutorState not yet ported")
+    }
+
+    fn get_register_values(&self) -> Vec<(RegisterRef, Vec<u8>)> {
+        vec![]
+    }
+
+    fn get_concrete_buffer(&self, _address: &Address, _purpose: Purpose) -> Box<dyn MemBuffer> {
+        unimplemented!("JitDefaultBytesPcodeExecutorState not yet ported")
+    }
+
+    fn clear(&mut self) {}
+}
+
+impl PcodeExecutorState<Vec<u8>> for JitDefaultBytesPcodeExecutorState {}
 
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderForOnePassage`,
 /// referenced by

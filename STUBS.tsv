@@ -678,3 +678,7 @@ ts	stub_class	referenced_by
 2026-08-13T01:36:15.038109+00:00	ErrBranch	DecoderExecutor
 2026-08-13T01:36:15.038109+00:00	PBranch	DecoderExecutor
 2026-08-13T02:20:00.000000+00:00	EntryPointPrototype	JitCompiledPassageClass
+2026-08-13T02:24:22.568498+00:00	JitCompiler	JitPcodeEmulator
+2026-08-13T02:24:22.568584+00:00	JitConfiguration	JitPcodeEmulator
+2026-08-13T02:24:22.568691+00:00	JitDefaultBytesPcodeExecutorState	JitPcodeEmulator
+2026-08-13T02:24:22.568800+00:00	MethodTooLargeException	JitPcodeEmulator
