@@ -542,6 +542,27 @@ pub trait MdComplexTypeLike {
 /// also carries the three constructors and `isInvalidMangledName()`.
 pub trait MdExceptionLike: std::fmt::Debug + std::fmt::Display {}
 
+/// Placeholder for `ghidra.app.util.demangler.DemangledObject`, needed by
+/// [`crate::demangler::demangler::Demangler`]'s default methods.
+///
+/// Only the mangled-context accessor pair those default methods touch
+/// (`getMangledContext`/`setMangledContext`) are declared here; the real port also carries the
+/// full const/volatile/name/namespace state and the apply-to-program rendering surface.
+pub trait DemangledObject: Send + Sync {
+    /// Returns the mangled context previously set on this object, if any.
+    ///
+    /// Mirrors `DemangledObject.getMangledContext()`.
+    fn get_mangled_context(&self) -> Option<crate::demangler::mangled_context::MangledContext>;
+
+    /// Sets the mangled context on this object.
+    ///
+    /// Mirrors `DemangledObject.setMangledContext(MangledContext)`.
+    fn set_mangled_context(
+        &self,
+        mangled_context: crate::demangler::mangled_context::MangledContext,
+    );
+}
+
 /// Placeholder for `mdemangler.object.MDMangObjectParser`, needed by
 /// [`crate::demangler::md_mang_genericize::MdMangGenericize::demangle`].
 ///
