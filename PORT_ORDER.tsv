@@ -29,7 +29,7 @@ DONE	trait	9	5	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/f
 DONE	trait	8	3	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/EntryTableBundle.java
 DONE	trait	9	5	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceTable.java
 DONE	trait	8	5	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Resource.java
-TODO	trait	6	5	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/WindowsHeader.java
+DONE	trait	6	5	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/WindowsHeader.java
 TODO	trait	9	6	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/rich/CompId.java
 TODO	trait	6	27	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/RichTable.java
 TODO	trait	5	28	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/RichHeader.java
