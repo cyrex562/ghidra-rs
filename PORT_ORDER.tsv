@@ -43,7 +43,7 @@ DONE	trait	18	12	100	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/gh
 DONE	trait	22	4	26	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceDataArrayElementComponent.java
 DONE	trait	22	5	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/locationreferences/GenericDataTypeLocationDescriptor.java
 DONE	trait	20	24	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractProgramLocationTableColumn.java
-TODO	trait	19	47	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionListener.java
+DONE	trait	19	47	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionListener.java
 TODO	trait	19	46	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionValidator.java
 TODO	trait	19	59	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/SearchConstants.java
 TODO	trait	22	9	19	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/info/ElfInfoItem.java
