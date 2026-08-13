@@ -21,7 +21,7 @@ DONE	trait	2	32	2	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/fiel
 DONE	trait	0	90	87	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/ProgramLocationTableRowMapper.java
 DONE	trait	5	60	1	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangler.java
 DONE	trait	2	59	4	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledType.java
-TODO	trait	1	78	2	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangled.java
+DONE	trait	1	78	2	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/Demangled.java
 TODO	trait	0	85	22	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledObject.java
 TODO	trait	1	32	1	generic	Ghidra/Framework/Generic/src/main/java/generic/lsh/vector/LSHVector.java
 TODO	trait	4	30	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PeMarkupable.java
