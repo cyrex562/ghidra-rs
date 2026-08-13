@@ -6,6 +6,7 @@ pub mod function_inline_settings_definition;
 pub mod function_no_return_settings_definition;
 pub mod function_thunk_settings_definition;
 pub mod memory_offset_settings_definition;
+pub mod program_based_dynamic_table_column;
 
 pub use address_range_endpoint_settings_definition::AddressRangeEndpointSettingsDefinition;
 pub use byte_count_settings_definition::ByteCountSettingsDefinition;
@@ -15,3 +16,4 @@ pub use function_inline_settings_definition::FunctionInlineSettingsDefinition;
 pub use function_no_return_settings_definition::FunctionNoReturnSettingsDefinition;
 pub use function_thunk_settings_definition::FunctionThunkSettingsDefinition;
 pub use memory_offset_settings_definition::MemoryOffsetSettingsDefinition;
+pub use program_based_dynamic_table_column::ProgramBasedDynamicTableColumn;

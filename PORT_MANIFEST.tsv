@@ -5428,7 +5428,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/NamespaceTab
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/OffcutReferenceCountToAddressTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/OutgoingReferenceEndpoint.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/PreviewTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramBasedDynamicTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramBasedDynamicTableColumn.java	DONE	orig_src Ghidra Features Base src main java ghidra util table field
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramBasedDynamicTableColumnExtensionPoint.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramLocationTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/ProgramLocationTableColumnExtensionPoint.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
