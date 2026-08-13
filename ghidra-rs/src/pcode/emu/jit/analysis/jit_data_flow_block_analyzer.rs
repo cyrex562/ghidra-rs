@@ -10,9 +10,10 @@ use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::op::{JitDefOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
+use crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext;
 use crate::pcode::emu::jit::analysis::jit_control_flow_model::{BlockFlow, JitBlock};
 use crate::pcode::seam_stubs::{
-    JitAnalysisContext, JitDataFlowExecutor, JitDataFlowModel, JitDataFlowState,
+    JitDataFlowExecutor, JitDataFlowModel, JitDataFlowState,
     JitDataFlowUseropLibrary,
 };
 use crate::program::model::lang::register::Register;
@@ -225,7 +226,7 @@ use crate::pcode::emu::jit::op::JitOp;
         }
 
         fn get_arithmetic(&self) -> JitDataFlowArithmetic {
-            let context = JitAnalysisContext::new(Endian::Little);
+            let context = JitAnalysisContext::for_endian(Endian::Little);
             JitDataFlowArithmetic::new(&context, Arc::new(NoopDfm) as Arc<dyn JitDataFlowModel>)
         }
 
@@ -259,7 +260,7 @@ use crate::pcode::emu::jit::op::JitOp;
     fn get_var_with_no_definition_synthesizes_a_phi_output() {
         let dfm = Arc::new(MockDfm::default());
         let block = JitBlock::new();
-        let context = JitAnalysisContext::new(Endian::Little);
+        let context = JitAnalysisContext::for_endian(Endian::Little);
         let analyzer =
             JitDataFlowBlockAnalyzer::new(context, Arc::clone(&dfm) as Arc<dyn JitDataFlowModel>, block);
 
@@ -284,7 +285,7 @@ use crate::pcode::emu::jit::op::JitOp;
     #[test]
     fn get_var_on_constant_space_returns_the_encoded_constant() {
         let dfm = Arc::new(MockDfm::default());
-        let context = JitAnalysisContext::new(Endian::Little);
+        let context = JitAnalysisContext::for_endian(Endian::Little);
         let analyzer = JitDataFlowBlockAnalyzer::new(
             context,
             Arc::clone(&dfm) as Arc<dyn JitDataFlowModel>,
@@ -305,7 +306,7 @@ use crate::pcode::emu::jit::op::JitOp;
     #[test]
     fn writes_are_reflected_in_varnodes_written_and_output() {
         let dfm = Arc::new(MockDfm::default());
-        let context = JitAnalysisContext::new(Endian::Little);
+        let context = JitAnalysisContext::for_endian(Endian::Little);
         let block = JitBlock::new();
         let analyzer =
             JitDataFlowBlockAnalyzer::new(context, Arc::clone(&dfm) as Arc<dyn JitDataFlowModel>, block);
@@ -348,7 +349,7 @@ use crate::pcode::emu::jit::op::JitOp;
     #[test]
     fn fill_phi_from_deps_pulls_a_defined_value_from_a_predecessor_block() {
         let dfm = Arc::new(MockDfm::default());
-        let context = JitAnalysisContext::new(Endian::Little);
+        let context = JitAnalysisContext::for_endian(Endian::Little);
         let space = space();
         let vn = varnode(&space, 0x4000, 4);
 

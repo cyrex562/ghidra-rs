@@ -180,7 +180,8 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::var::{JitVal, JitVar, JitVarnodeVar};
-    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAnalysisContext, MethodVisitor};
+    use crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext;
+    use crate::pcode::seam_stubs::{FieldForArrDirect, MethodVisitor};
 use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use std::sync::{Arc, Mutex};
@@ -207,7 +208,7 @@ use crate::pcode::emu::jit::op::JitOp;
         }
 
         fn get_analysis_context(&self) -> JitAnalysisContext {
-            JitAnalysisContext::new(self.endian)
+            JitAnalysisContext::for_endian(self.endian)
         }
     }
 

@@ -443,7 +443,8 @@ mod tests {
     use crate::pcode::emu::jit::op::JitPhiOp;
     use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
     use crate::pcode::emu::jit::analysis::jit_control_flow_model::JitControlFlowModel;
-    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAllocationModel, JitAnalysisContext, JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, MethodVisitor, };
+    use crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext;
+    use crate::pcode::seam_stubs::{FieldForArrDirect, JitAllocationModel, JitDataFlowModel, JitDataFlowUseropLibrary, JitLocalOutVar, MethodVisitor, };
 use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
@@ -510,7 +511,7 @@ use crate::pcode::emu::jit::op::JitOp;
         }
 
         fn get_analysis_context(&self) -> JitAnalysisContext {
-            JitAnalysisContext::new(self.endian)
+            JitAnalysisContext::for_endian(self.endian)
         }
 
         fn get_allocation_model(&self) -> Box<dyn JitAllocationModel> {
@@ -561,7 +562,7 @@ use crate::pcode::emu::jit::op::JitOp;
         }
 
         fn get_arithmetic(&self) -> JitDataFlowArithmetic {
-            let context = JitAnalysisContext::new(Endian::Little);
+            let context = JitAnalysisContext::for_endian(Endian::Little);
             JitDataFlowArithmetic::new(&context, Arc::new(NoopDfm) as Arc<dyn JitDataFlowModel>)
         }
 
@@ -581,7 +582,7 @@ use crate::pcode::emu::jit::op::JitOp;
     }
 
     fn register_block(dfm: &Arc<MockDfm>, block: JitBlock, accessed: &[Varnode]) {
-        let context = JitAnalysisContext::new(Endian::Little);
+        let context = JitAnalysisContext::for_endian(Endian::Little);
         let analyzer = Arc::new(JitDataFlowBlockAnalyzer::new(
             context,
             Arc::clone(dfm) as Arc<dyn JitDataFlowModel>,

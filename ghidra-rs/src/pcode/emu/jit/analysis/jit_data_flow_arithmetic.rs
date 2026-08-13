@@ -7,10 +7,11 @@ use std::sync::Arc;
 use crate::pcode::emu::jit::op::{jit_op_bin_op, jit_op_un_op, JitDefOp, JitOp};
 use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::var::{jit_val, JitVal};
+use crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext;
 use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::seam_stubs::{
-    JitAnalysisContext, JitCatenateOp, JitDataFlowModel, JitLoadOp,
+    JitCatenateOp, JitDataFlowModel, JitLoadOp,
     JitStoreOp, JitSynthSubPieceOp, OpBehaviorSubpiece,
 };
 use crate::pcode::utils::{big_integer_to_bytes, bytes_to_big_integer};
@@ -554,7 +555,7 @@ mod tests {
 
     fn arithmetic(endian: Endian) -> (JitDataFlowArithmetic, Arc<RecordingModel>) {
         let dfm = Arc::new(RecordingModel::default());
-        let context = JitAnalysisContext::new(endian);
+        let context = JitAnalysisContext::for_endian(endian);
         (JitDataFlowArithmetic::new(&context, Arc::clone(&dfm) as Arc<dyn JitDataFlowModel>), dfm)
     }
 

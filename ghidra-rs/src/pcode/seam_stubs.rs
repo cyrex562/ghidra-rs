@@ -4,13 +4,12 @@
 //! replaced (or grown into a supertrait/struct of) the real port once that Java class is ported.
 //! See `STUBS.tsv` for provenance.
 
-use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
+use crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext;
 use crate::pcode::emu::jit::analysis::jit_type_behavior::JitTypeBehavior;
-use crate::pcode::emu::jit::jit_configuration::JitConfiguration;
 
 use crate::pcode::emu::jit::alloc::jvm_local::JvmLocal;
 use crate::pcode::emu::jit::alloc::var_handler::VarHandler;
@@ -2632,48 +2631,6 @@ pub trait JitAllocationModel: Send + Sync {
     }
 }
 
-/// Placeholder for the unported Java type `JitAnalysisContext`
-/// (`ghidra.pcode.emu.jit.analysis.JitAnalysisContext`), referenced by
-/// [`JitCodeGenerator::get_analysis_context`]. Java's class also carries the data-flow, type, and
-/// scope models built during passage analysis; only the members downstream code currently needs
-/// are modeled here.
-///
-/// Grown (see `STUBS.tsv`) with `entry_blocks` for
-/// [`JitDataFlowBlockAnalyzer`](crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer),
-/// which computes `isEntry` from `context.getOpEntry(block.first()) != null`. Java's `getOpEntry`
-/// takes a `PcodeOp` looked up via the identity-only [`JitBlock`] (see that type's doc for why it
-/// carries no op list of its own), so this collapses the `block.first()` + `getOpEntry()` chain into
-/// one query -- "is `block` a passage entry" -- directly against a set of known entry blocks.
-/// No longer `Copy` (a `HashSet` isn't), but every existing call site already constructs a fresh
-/// context rather than copying one.
-#[derive(Debug, Clone)]
-pub struct JitAnalysisContext {
-    endian: Endian,
-    entry_blocks: HashSet<JitBlock>,
-}
-
-impl JitAnalysisContext {
-    /// Construct a context for the given endianness, with no known entry blocks.
-    pub fn new(endian: Endian) -> Self {
-        Self { endian, entry_blocks: HashSet::new() }
-    }
-
-    /// Construct a context for the given endianness and set of passage-entry blocks.
-    pub fn with_entry_blocks(endian: Endian, entry_blocks: HashSet<JitBlock>) -> Self {
-        Self { endian, entry_blocks }
-    }
-
-    /// Port of `JitAnalysisContext.getEndian()`.
-    pub fn get_endian(&self) -> Endian {
-        self.endian
-    }
-
-    /// Stand-in for `getOpEntry(block.first()) != null`. See the type-level doc.
-    pub fn is_block_entry(&self, block: JitBlock) -> bool {
-        self.entry_blocks.contains(&block)
-    }
-}
-
 /// Placeholder for the unported Java type `ghidra.pcode.emu.jit.analysis.JitDataFlowModel`,
 /// referenced by
 /// [`JitDataFlowArithmetic`](crate::pcode::emu::jit::analysis::jit_data_flow_arithmetic::JitDataFlowArithmetic),
@@ -3738,11 +3695,31 @@ impl PseudoInstruction for DecodeErrorInstruction {
 /// `JitPassageDecoder` itself references directly: the nested [`AddrCtx`] address-context pair and
 /// the [`decode_error`](Self::decode_error) factory. Replace with the real port (and drop this
 /// placeholder) when `JitPassage.java` lands.
+///
+/// Grown (see `STUBS.tsv`) with an optional `language` for
+/// [`JitAnalysisContext`](crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext),
+/// whose real constructor reads `passage.getLanguage()`. `None` (via [`Self::placeholder`]) for
+/// every current caller, since nothing yet builds a `JitPassage` outside a panicking stub path;
+/// `Some` (via [`Self::for_language`]) once a caller actually has one.
+#[derive(Clone)]
 pub struct JitPassage {
-    _private: (),
+    language: Option<Arc<SleighLanguage>>,
 }
 
 impl JitPassage {
+    /// A `JitPassage` carrying only the given language, for callers (such as
+    /// [`JitAnalysisContext`](crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext))
+    /// that need `getLanguage()` to answer before the rest of this type is ported.
+    pub fn for_language(language: Arc<SleighLanguage>) -> Self {
+        Self { language: Some(language) }
+    }
+
+    /// A `JitPassage` carrying no data at all, for callers that need *a* passage value but never
+    /// read anything back out of it.
+    pub fn placeholder() -> Self {
+        Self { language: None }
+    }
+
     /// Check if the given op has fall-through.
     ///
     /// Port of the static `JitPassage.hasFallthrough(PcodeOp)`. Grown (see `STUBS.tsv`) for
@@ -3775,6 +3752,28 @@ impl JitPassage {
         message: impl Into<String>,
     ) -> DecodeErrorInstruction {
         DecodeErrorInstruction::new(language, address, ctx, message)
+    }
+
+    /// Port of `JitPassage.getLanguage()`. Panics if built via [`Self::placeholder`]; every current
+    /// caller instead builds via [`Self::for_language`]. See the type-level doc.
+    pub fn get_language(&self) -> Arc<SleighLanguage> {
+        self.language
+            .clone()
+            .expect("JitPassage::get_language: placeholder built without a language")
+    }
+
+    /// Port of `JitPassage.getOpEntry(PcodeOp)`: the address-context pair at which `op`'s
+    /// instruction begins, or the passage's own entry if `op` opens the passage. Not yet ported --
+    /// real answer depends on the decoded op/instruction data this stub does not carry.
+    pub fn get_op_entry(&self, _op: &PcodeOp) -> AddrCtx {
+        unimplemented!("JitPassage::get_op_entry not yet ported")
+    }
+
+    /// Port of `JitPassage.getErrorMessage(PcodeOp)`: the message of the decode error `op`
+    /// represents. Not yet ported -- real answer depends on the decoded error-instruction data this
+    /// stub does not carry.
+    pub fn get_error_message(&self, _op: &PcodeOp) -> String {
+        unimplemented!("JitPassage::get_error_message not yet ported")
     }
 }
 
