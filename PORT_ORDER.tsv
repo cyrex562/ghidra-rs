@@ -1,7 +1,7 @@
 status	mode	depth	fanin	rem	module	path
 DONE	trait	16	4	4	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOneStride.java
 DONE	trait	15	3	76	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderExecutor.java
-TODO	trait	14	3	30	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderUseropLibrary.java
+DONE	trait	14	3	30	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderUseropLibrary.java
 TODO	trait	13	14	96	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowUseropLibrary.java
 TODO	trait	13	5	14	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/tgt/JitCompiledPassageClass.java
 TODO	trait	12	13	42	pcode	Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeEmulator.java
