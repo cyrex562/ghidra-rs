@@ -730,3 +730,7 @@ ts	stub_class	referenced_by
 2026-08-13T09:25:12.000000+00:00	ElfDefaultGotPltMarkup	ElfLoadAdapter
 2026-08-13T09:25:12.000000+00:00	ElfLoaderOptionsFactory	ElfLoadAdapter
 2026-08-13T09:25:12.000000+00:00	Option	ElfLoadAdapter
+2026-08-13T09:57:08.000000+00:00	OptionUtils	ElfLoaderOptionsFactory
+2026-08-13T09:57:08.000000+00:00	LoadSpec	ElfLoaderOptionsFactory
+2026-08-13T09:57:08.000000+00:00	ElfHeader	ElfLoaderOptionsFactory
+2026-08-13T09:57:08.000000+00:00	Option	ElfLoaderOptionsFactory
