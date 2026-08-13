@@ -993,6 +993,10 @@ pub struct MethodVisitor {
     code_started: bool,
     last_visited: Option<Label>,
     local_variables: Vec<(String, String, Label, Label, i32)>,
+    try_catch_blocks: Vec<(Label, Label, Label, String)>,
+    line_numbers: Vec<(i32, Label)>,
+    maxs: Option<(i32, i32)>,
+    ended: bool,
 }
 
 impl MethodVisitor {
@@ -1036,6 +1040,46 @@ impl MethodVisitor {
     /// Every local variable declaration recorded so far.
     pub fn local_variables(&self) -> &[(String, String, Label, Label, i32)] {
         &self.local_variables
+    }
+
+    /// Stands in for `visitTryCatchBlock(start, end, handler, type)`.
+    pub fn visit_try_catch_block(&mut self, start: Label, end: Label, handler: Label, ty: &str) {
+        self.try_catch_blocks.push((start, end, handler, ty.to_string()));
+    }
+
+    /// Every `try`-`catch` block recorded so far.
+    pub fn try_catch_blocks(&self) -> &[(Label, Label, Label, String)] {
+        &self.try_catch_blocks
+    }
+
+    /// Stands in for `visitLineNumber(line, start)`.
+    pub fn visit_line_number(&mut self, line: i32, start: Label) {
+        self.line_numbers.push((line, start));
+    }
+
+    /// Every line-number entry recorded so far.
+    pub fn line_numbers(&self) -> &[(i32, Label)] {
+        &self.line_numbers
+    }
+
+    /// Stands in for `visitMaxs(maxStack, maxLocals)`.
+    pub fn visit_maxs(&mut self, max_stack: i32, max_locals: i32) {
+        self.maxs = Some((max_stack, max_locals));
+    }
+
+    /// The arguments most recently passed to [`visit_maxs`](Self::visit_maxs), if any.
+    pub fn maxs(&self) -> Option<(i32, i32)> {
+        self.maxs
+    }
+
+    /// Stands in for `visitEnd()`.
+    pub fn visit_end(&mut self) {
+        self.ended = true;
+    }
+
+    /// Whether [`visit_end`](Self::visit_end) has been called.
+    pub fn ended(&self) -> bool {
+        self.ended
     }
 }
 
