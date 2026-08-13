@@ -20,6 +20,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
+use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::seam_stubs::{
     AddrCtx, DecodePcodeExecutionException, DecoderForOnePassage, DecoderUseropLibrary, JitPassage,
     JitPcodeThread, PseudoInstruction, RegisterValue,
@@ -32,9 +33,6 @@ use crate::program::model::listing::program_context::ProgramContext;
 ///
 /// Port of `ghidra.pcode.emu.jit.decode.JitPassageDecoder`.
 pub struct JitPassageDecoder {
-    // Only read by `decode_instruction`/`thread`/tests today; `DecoderForOnePassage`, its other
-    // real-world reader, is not yet ported. See `seam_stubs::DecoderForOnePassage`.
-    #[allow(dead_code)]
     thread: JitPcodeThread,
     decoder: Arc<Mutex<dyn InstructionDecoder>>,
     #[allow(dead_code)]
@@ -133,6 +131,18 @@ impl JitPassageDecoder {
                 Err(other) => Err(other),
             },
         }
+    }
+
+    /// Port of `decoder.thread.hasEntry(AddrCtx)`, as accessed directly by `DecoderForOneStride`
+    /// (a package-private field access in Java).
+    pub(crate) fn thread_has_entry(&self, at: &AddrCtx) -> bool {
+        self.thread.has_entry(at)
+    }
+
+    /// Port of `decoder.thread.getInject(Address)`, as accessed directly by `DecoderForOneStride`
+    /// (a package-private field access in Java).
+    pub(crate) fn thread_get_inject(&self, address: &Address) -> Option<PcodeProgram> {
+        self.thread.get_inject(address)
     }
 }
 

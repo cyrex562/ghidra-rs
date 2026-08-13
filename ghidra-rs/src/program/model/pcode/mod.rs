@@ -399,7 +399,7 @@ impl std::hash::Hash for Varnode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PcodeOp {
     pub opcode: OpCode,
     pub seqnum: SequenceNumber,

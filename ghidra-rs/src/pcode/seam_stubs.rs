@@ -55,7 +55,7 @@ use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
 use crate::program::model::listing::program_context::ProgramContext;
 use crate::program::model::mem::mem_buffer::MemBuffer;
-use crate::program::model::pcode::{OpCode, PcodeOp, Varnode};
+use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber, Varnode};
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
 use std::collections::HashMap;
 
@@ -3729,6 +3729,24 @@ impl AddrCtx {
     }
 }
 
+/// Port of `AddrCtx.equals(Object)`: compares `biCtx` and `address` only, ignoring `rvCtx` (the
+/// `RegisterValue` the context was derived from -- `biCtx` already captures its value).
+impl PartialEq for AddrCtx {
+    fn eq(&self, other: &Self) -> bool {
+        self.bi_ctx == other.bi_ctx && self.address == other.address
+    }
+}
+
+impl Eq for AddrCtx {}
+
+/// Port of `AddrCtx.hashCode()`: `Objects.hash(biCtx, address)`.
+impl std::hash::Hash for AddrCtx {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.bi_ctx.hash(state);
+        self.address.hash(state);
+    }
+}
+
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderUseropLibrary`,
 /// referenced by
 /// [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder),
@@ -3787,12 +3805,31 @@ impl JitPcodeThread {
     pub fn get_userop_library(&self) -> Arc<dyn PcodeUseropLibrary<Vec<u8>>> {
         Arc::clone(&self.userop_library)
     }
+
+    /// Port of `PcodeThread.hasEntry(AddrCtx)`, referenced by
+    /// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride).
+    /// Real method checks the emulator's cache of already-translated entry points; this stub has
+    /// no such cache, so it always reports no known entries.
+    pub(crate) fn has_entry(&self, _at: &AddrCtx) -> bool {
+        false
+    }
+
+    /// Port of `PcodeMachine.getInject(Address)` (accessed via the thread), referenced by
+    /// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride).
+    /// Real method looks up a user inject registered at `address`; this stub has no inject map,
+    /// so it always reports none.
+    pub(crate) fn get_inject(&self, _address: &Address) -> Option<PcodeProgram> {
+        None
+    }
 }
 
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderForOnePassage`,
 /// referenced by
-/// [`JitPassageDecoder::decode_passage`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder::decode_passage).
-/// Real class implements the whole fetch-decode-translate seed-queue algorithm described on
+/// [`JitPassageDecoder::decode_passage`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder::decode_passage)
+/// and by
+/// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride),
+/// which reads/writes `otherBranches` and `firstOps` directly (they're package-private fields in
+/// Java). Real class implements the whole fetch-decode-translate seed-queue algorithm described on
 /// `JitPassageDecoder`'s docs -- far beyond a stub -- so
 /// [`decode_passage`](Self::decode_passage)/[`finish`](Self::finish) panic if actually invoked.
 /// Replace with the real port when `DecoderForOnePassage.java` lands.
@@ -3803,6 +3840,11 @@ pub struct DecoderForOnePassage<'a> {
     seed: AddrCtx,
     #[allow(dead_code)]
     max_ops: i32,
+    /// Port of `DecoderForOnePassage.otherBranches` (`Map<PcodeOp, PBranch>`), narrowed to
+    /// `RExtBranch` since that's the only variant `DecoderForOneStride` inserts.
+    pub(crate) other_branches: HashMap<PcodeOp, RExtBranch>,
+    /// Port of `DecoderForOnePassage.firstOps` (`Map<AddrCtx, PcodeOp>`).
+    pub(crate) first_ops: HashMap<AddrCtx, PcodeOp>,
 }
 
 impl<'a> DecoderForOnePassage<'a> {
@@ -3812,7 +3854,13 @@ impl<'a> DecoderForOnePassage<'a> {
         seed: AddrCtx,
         max_ops: i32,
     ) -> Self {
-        Self { decoder, seed, max_ops }
+        Self {
+            decoder,
+            seed,
+            max_ops,
+            other_branches: HashMap::new(),
+            first_ops: HashMap::new(),
+        }
     }
 
     /// Port of `DecoderForOnePassage.decodePassage()`.
@@ -3823,6 +3871,151 @@ impl<'a> DecoderForOnePassage<'a> {
     /// Port of `DecoderForOnePassage.finish()`.
     pub fn finish(self) -> JitPassage {
         unimplemented!("DecoderForOnePassage not yet ported")
+    }
+}
+
+/// Port of the nested `ghidra.pcode.emu.jit.JitPassage.Reachability` enum: describes how a block
+/// is reachable wrt. dynamic (userop-driven) context modifications within an instruction step.
+/// Referenced by
+/// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride),
+/// which only matches on the three variants; `combine`/`canReachWithoutCtxMod` belong to the
+/// still-unported `DecoderExecutor.checkFallthroughAndAccumulate` analysis, so they're omitted
+/// here. Replace with the real port when `JitPassage.java` lands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reachability {
+    /// Port of `Reachability.WITHOUT_CTXMOD`.
+    WithoutCtxmod,
+    /// Port of `Reachability.MAYBE_CTXMOD`.
+    MaybeCtxmod,
+    /// Port of `Reachability.WITH_CTXMOD`.
+    WithCtxmod,
+}
+
+/// Port of the nested `ghidra.pcode.emu.jit.JitPassage.RExtBranch` record: an [`ExtBranch`] (a
+/// branch to an address-context pair outside the current step) as added to the passage, i.e. with
+/// its intra-instruction [`Reachability`] resolved. Modelled as a free-standing type here since
+/// Rust has no static nested class; see [`JitPassage`] for the type it nests under in Java.
+pub struct RExtBranch {
+    /// The op performing the branch. Port of `RExtBranch.from()`.
+    pub from: PcodeOp,
+    /// The target address-context pair. Port of `RExtBranch.to()`.
+    pub to: AddrCtx,
+    /// The intra-instruction reachability. Port of `RExtBranch.reach()`.
+    pub reach: Reachability,
+}
+
+impl RExtBranch {
+    /// Port of `new RExtBranch(PcodeOp, AddrCtx, Reachability)`.
+    pub fn new(from: PcodeOp, to: AddrCtx, reach: Reachability) -> Self {
+        Self { from, to, reach }
+    }
+}
+
+/// Port of the nested `ghidra.pcode.emu.jit.JitPassage.ExitPcodeOp` class's `exit` factory: a
+/// synthetic unconditional-branch op used to exit a translated passage at `at`. `ExitPcodeOp`
+/// itself adds no state or behavior beyond its constructor, so it isn't modelled as a distinct
+/// Rust type -- this just builds the equivalent [`PcodeOp`] directly. Port of `ExitPcodeOp.exit`.
+pub fn exit_pcode_op(at: &AddrCtx) -> PcodeOp {
+    PcodeOp::new(
+        OpCode::Branch,
+        SequenceNumber::new(at.address.clone(), 0),
+        vec![Varnode::new(at.address.clone(), 0)],
+        None,
+    )
+}
+
+/// Port of `ExitPcodeOp.cond`: a synthetic conditional-branch op used where the decoder can't
+/// statically resolve whether a context-modifying path was taken. See [`exit_pcode_op`].
+pub fn cond_pcode_op(at: &AddrCtx) -> PcodeOp {
+    PcodeOp::new(
+        OpCode::CBranch,
+        SequenceNumber::new(at.address.clone(), 0),
+        vec![Varnode::new(at.address.clone(), 0)],
+        None,
+    )
+}
+
+/// Port of the nested `ghidra.pcode.emu.jit.JitPassage.NopPcodeOp` class's constructor: a
+/// synthetic no-op used to hold a bookkeeping position (e.g. an instruction, or inject, that
+/// emits no p-code). Like [`exit_pcode_op`], `NopPcodeOp` adds no state beyond its constructor,
+/// so this just builds the equivalent [`PcodeOp`] directly. Port of `new NopPcodeOp(AddrCtx, int)`.
+pub fn nop_pcode_op(at: &AddrCtx, seq: i32) -> PcodeOp {
+    PcodeOp::new(OpCode::Unimplemented, SequenceNumber::new(at.address.clone(), seq), Vec::new(), None)
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.jit.decode.DecodedStride`, referenced
+/// by
+/// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride),
+/// which builds and returns it. Java declares `instructions` as `List<Instruction>`, but the only
+/// instructions `DecoderForOneStride` actually has on hand are the `PseudoInstruction`s it decodes
+/// (`PseudoInstruction` doesn't yet implement the ported `Instruction` trait), so this stub uses
+/// that instead. Replace with the real port (and the `Instruction` list) when `DecodedStride.java`
+/// lands and `PseudoInstruction` is a real port.
+pub struct DecodedStride {
+    /// The address-context pair that seeded this stride. Port of `DecodedStride.start()`.
+    pub start: AddrCtx,
+    /// The instructions in decode order. Port of `DecodedStride.instructions()`.
+    pub instructions: Vec<Box<dyn PseudoInstruction>>,
+    /// The p-code ops in decode/emit order. Port of `DecodedStride.ops()`.
+    pub ops: Vec<PcodeOp>,
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderExecutor`,
+/// referenced by
+/// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride),
+/// which constructs one per instruction step. Real class is a full `PcodeExecutor<Object>` that
+/// interprets an instruction's (or inject's) p-code to collect branch targets and control-flow
+/// effects -- far beyond a stub -- so [`execute`](Self::execute),
+/// [`check_fallthrough_and_accumulate`](Self::check_fallthrough_and_accumulate), and
+/// [`take_target_context`](Self::take_target_context) panic if actually invoked.
+/// [`decode_instruction`](Self::decode_instruction) is real: it only needs the already-ported
+/// [`JitPassageDecoder::decode_instruction`]. Stores `decoder` (rather than the whole
+/// `DecoderForOneStride`, as Java's constructor does) to avoid a module cycle between this stub
+/// and the `decode` module -- see the port's cycle note. Replace with the real port when
+/// `DecoderExecutor.java` lands.
+///
+/// [`JitPassageDecoder::decode_instruction`]: crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder::decode_instruction
+pub struct DecoderExecutor<'a> {
+    decoder: &'a crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder,
+    at: AddrCtx,
+    /// Port of `DecoderExecutor.opsForThisStep`.
+    pub(crate) ops_for_this_step: Vec<PcodeOp>,
+}
+
+impl<'a> DecoderExecutor<'a> {
+    /// Port of `new DecoderExecutor(DecoderForOneStride, AddrCtx)`.
+    pub fn new(
+        decoder: &'a crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder,
+        at: AddrCtx,
+    ) -> Self {
+        Self { decoder, at, ops_for_this_step: Vec::new() }
+    }
+
+    /// Port of `DecoderExecutor.decodeInstruction()`.
+    pub fn decode_instruction(&mut self) -> Box<dyn PseudoInstruction> {
+        self.decoder
+            .decode_instruction(&self.at.address, self.at.rv_ctx.as_deref())
+            .unwrap_or_else(|err| panic!("DecoderExecutor::decode_instruction: {err}"))
+    }
+
+    /// Port of `DecoderExecutor.execute(PcodeProgram)`.
+    pub fn execute(&mut self, _program: &PcodeProgram) {
+        unimplemented!("DecoderExecutor not yet ported")
+    }
+
+    /// Port of `DecoderExecutor.checkFallthroughAndAccumulate(PcodeProgram)`.
+    pub fn check_fallthrough_and_accumulate(&mut self, _from: &PcodeProgram) -> Option<Reachability> {
+        unimplemented!("DecoderExecutor not yet ported")
+    }
+
+    /// Port of `DecoderExecutor.takeTargetContext(Address)`.
+    pub fn take_target_context(&self, _target: &Address) -> AddrCtx {
+        unimplemented!("DecoderExecutor not yet ported")
+    }
+
+    /// Port of `DecoderExecutor.getAdvancedAddress()`.
+    pub fn get_advanced_address(&self) -> Address {
+        unimplemented!("DecoderExecutor not yet ported")
     }
 }
 
