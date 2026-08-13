@@ -32,11 +32,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride;
+use crate::pcode::emu::jit::decode::decoder_userop_library::DecoderUseropLibrary;
 use crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_program::PcodeProgram;
 use crate::pcode::seam_stubs::{
-    exit_pcode_op, nop_pcode_op, AddrCtx, BlockSplitter, DecoderUseropLibrary, ErrBranch, JitBlock,
+    exit_pcode_op, nop_pcode_op, AddrCtx, BlockSplitter, ErrBranch, JitBlock,
     PBranch, PseudoInstruction, Reachability, RegisterValue, SBranch, SExtBranch, SIndBranch,
     SIntBranch,
 };

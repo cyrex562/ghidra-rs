@@ -662,7 +662,6 @@ ts	stub_class	referenced_by
 2026-08-12T09:32:41.713885+00:00	JitOp	JitTypeModel
 2026-08-12T10:08:50.449345+00:00	DecodePcodeExecutionException	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	JitPassage	JitPassageDecoder
-2026-08-12T10:08:50.449345+00:00	DecoderUseropLibrary	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	JitPcodeThread	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	DecoderForOnePassage	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	RegisterValue	JitPassageDecoder

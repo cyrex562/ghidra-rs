@@ -10943,7 +10943,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/De
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderExecutor.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOnePassage.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderForOneStride.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderUseropLibrary.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/DecoderUseropLibrary.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/decode/JitPassageDecoder.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit decode
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/ExceptionHandler.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/gen/FieldForArrDirect.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit gen 

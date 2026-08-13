@@ -27,6 +27,7 @@ use crate::pcode::emu::jit::gen::util::types::{BPrim, TInt, TRef};
 use crate::pcode::emu::jit::op::{JitDefOp, JitOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar, JitOutVar};
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
+use crate::pcode::emu::jit::decode::decoder_userop_library::DecoderUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
@@ -3863,40 +3864,6 @@ impl std::hash::Hash for AddrCtx {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.bi_ctx.hash(state);
         self.address.hash(state);
-    }
-}
-
-/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderUseropLibrary`,
-/// referenced by
-/// [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder),
-/// which only constructs and stores one. Real class wraps the emulator's userop library to
-/// override `emu_exec_decoded`/`emu_skip_decoded` and to inline p-code userops during decode; none
-/// of that is exercised by `JitPassageDecoder` itself, so this keeps just the wrapped library.
-/// Replace with the real port when `DecoderUseropLibrary.java` lands.
-pub struct DecoderUseropLibrary {
-    rt_lib: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
-}
-
-impl DecoderUseropLibrary {
-    /// Port of `new DecoderUseropLibrary(PcodeUseropLibrary<byte[]>)`.
-    pub fn new(rt_lib: Arc<dyn PcodeUseropLibrary<Vec<u8>>>) -> Self {
-        Self { rt_lib }
-    }
-
-    /// Look up a userop by name.
-    ///
-    /// Stands in for `library().getUserops().get(name)` on the real library, whose entries are
-    /// `WrappedUseropDefinition`s. Every attribute
-    /// [`DecoderExecutor`](crate::pcode::emu::jit::decode::decoder_executor::DecoderExecutor) reads
-    /// off an entry (`modifiesContext`, `canInlinePcode`) the wrapper simply delegates to the
-    /// wrapped runtime userop, so this returns that userop directly and skips the wrapper. What the
-    /// wrapper does *not* delegate -- re-typing `execute` from `byte[]` to `Object` -- is exactly
-    /// the part `DecoderExecutor::execute_callother` cannot reach yet; see it for details.
-    pub(crate) fn get_userop(
-        &self,
-        name: &str,
-    ) -> Option<Arc<dyn PcodeUseropDefinition<Vec<u8>>>> {
-        self.rt_lib.get_userops().get(name).cloned()
     }
 }
 
