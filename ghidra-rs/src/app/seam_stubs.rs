@@ -6,6 +6,11 @@
 use crate::app::decompiler::{
     ClangLine, ClangNode, ClangTokenBase, ClangTokenGroup, DecompiledFunction,
 };
+use crate::program::model::data::array::Array;
+use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::pointer::Pointer;
+use crate::program::model::data::typedef::TypeDef;
+use crate::program::util::program_location::ProgramLocation;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::target::path::KeyPath;
 use crate::trace::model::thread::TraceThread;
@@ -1420,5 +1425,69 @@ impl NewGuid {
             return true;
         }
         (clock_seq_hi & 0xF0) == 0x40 && (variant & 0xC0) == 0x80
+    }
+}
+
+/// Placeholder for
+/// `ghidra.app.plugin.core.navigation.locationreferences.DataTypeLocationDescriptor`, referenced
+/// by
+/// [`GenericDataTypeLocationDescriptorBase`](crate::app::plugin::core::navigation::locationreferences::generic_data_type_location_descriptor::GenericDataTypeLocationDescriptorBase)
+/// before the real class (and its own abstract parent `LocationDescriptor`) is ported. Only the
+/// one accessor that `GenericDataTypeLocationDescriptor` overrides is modeled here. No `Send +
+/// Sync` bound: implementors hold a `Box<dyn DataType>`, and `DataType` itself is not `Send +
+/// Sync` (see `program::model::data::data_type`).
+pub trait DataTypeLocationDescriptor {
+    fn get_type_name(&self) -> String;
+}
+
+/// Placeholder for
+/// `ghidra.app.plugin.core.navigation.locationreferences.GenericDataTypeProgramLocation`,
+/// referenced by
+/// [`GenericDataTypeLocationDescriptorBase`](crate::app::plugin::core::navigation::locationreferences::generic_data_type_location_descriptor::GenericDataTypeLocationDescriptorBase)
+/// before the real class is ported. Java's `GenericDataTypeProgramLocation extends
+/// ProgramLocation`, so this stub carries that supertrait too. No `Send + Sync` bound: a real
+/// implementor holds the `DataType` field directly (Java: `private final DataType dataType`), and
+/// `DataType` itself is not `Send + Sync`.
+pub trait GenericDataTypeProgramLocation: ProgramLocation {
+    fn get_data_type(&self) -> Box<dyn DataType>;
+}
+
+/// Placeholder for `ghidra.app.plugin.core.navigation.locationreferences.ReferenceUtils`, a
+/// `final` static-method-only utility class. Only `getBaseDataType(DataType)` is ported here --
+/// the one member
+/// [`GenericDataTypeLocationDescriptorBase`](crate::app::plugin::core::navigation::locationreferences::generic_data_type_location_descriptor::GenericDataTypeLocationDescriptorBase)
+/// needs -- since it depends only on the already-ported [`DataType`]/[`Array`]/[`Pointer`]/
+/// [`TypeDef`] traits; the reference-search/highlight helpers on the real class remain unported.
+pub struct ReferenceUtils;
+
+impl ReferenceUtils {
+    /// Port of `ReferenceUtils.getBaseDataType(DataType)`, which forwards to the 2-arg overload
+    /// with `includeTypedefs = false`.
+    pub fn get_base_data_type(data_type: Box<dyn DataType>) -> Box<dyn DataType> {
+        Self::get_base_data_type_impl(data_type, false)
+    }
+
+    /// Port of `ReferenceUtils.getBaseDataType(DataType, boolean)`.
+    fn get_base_data_type_impl(
+        data_type: Box<dyn DataType>,
+        include_typedefs: bool,
+    ) -> Box<dyn DataType> {
+        let mut current = data_type;
+        loop {
+            let next: Option<Box<dyn DataType>> = if let Some(array) = current.as_array() {
+                Some(array.get_data_type())
+            } else if let Some(pointer) = current.as_pointer() {
+                pointer.get_data_type()
+            } else if include_typedefs {
+                current.as_typedef().map(|type_def| type_def.get_base_data_type())
+            } else {
+                None
+            };
+
+            match next {
+                Some(inner) => current = inner,
+                None => return current,
+            }
+        }
     }
 }
