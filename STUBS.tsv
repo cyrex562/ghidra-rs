@@ -706,3 +706,6 @@ ts	stub_class	referenced_by
 2026-08-13T07:20:00.000000+00:00	PEx64UnwindInfoDataType	PEx64UnwindInfo
 2026-08-13T07:20:00.100000+00:00	ImageRuntimeFunctionEntryX86	PEx64UnwindInfo
 2026-08-13T07:27:41.921271+00:00	MessageLog	SourceLanguageDataArchive
+2026-08-13T07:58:49.859211+00:00	DataTypeLocationDescriptor	GenericDataTypeLocationDescriptor
+2026-08-13T07:58:49.859370+00:00	GenericDataTypeProgramLocation	GenericDataTypeLocationDescriptor
+2026-08-13T07:58:49.860962+00:00	ReferenceUtils	GenericDataTypeLocationDescriptor
