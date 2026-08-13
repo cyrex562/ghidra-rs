@@ -825,6 +825,14 @@ pub trait TableRowMapper<ROW_TYPE, EXPECTED_ROW_TYPE>: Send + Sync {
     ) -> EXPECTED_ROW_TYPE;
 }
 
+/// Placeholder for `ghidra.util.table.field.AbstractProgramBasedDynamicTableColumn`, needed by
+/// [`crate::util::table::field::abstract_program_location_table_column::AbstractProgramLocationTableColumn`].
+///
+/// The real class is an abstract base class that specializes `AbstractDynamicTableColumn` with
+/// `Program` as the data source type. It carries constructor overloads for `uniqueID`; since
+/// this trait carries no data, those are left to the real port. Only the marker role is needed here.
+pub trait AbstractProgramBasedDynamicTableColumn: Send + Sync {}
+
 /// Placeholder for `docking.widgets.table.DynamicTableColumn`, needed by
 /// [`crate::util::table::program_location_table_row_mapper::ProgramLocationTableRowMapper`].
 ///

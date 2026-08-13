@@ -1,3 +1,4 @@
+pub mod abstract_program_location_table_column;
 pub mod address_range_endpoint_settings_definition;
 pub mod byte_count_settings_definition;
 pub mod code_unit_count_settings_definition;
@@ -9,6 +10,7 @@ pub mod memory_offset_settings_definition;
 pub mod program_based_dynamic_table_column;
 pub mod program_location_table_column;
 
+pub use abstract_program_location_table_column::AbstractProgramLocationTableColumn;
 pub use address_range_endpoint_settings_definition::AddressRangeEndpointSettingsDefinition;
 pub use byte_count_settings_definition::ByteCountSettingsDefinition;
 pub use code_unit_count_settings_definition::CodeUnitCountSettingsDefinition;

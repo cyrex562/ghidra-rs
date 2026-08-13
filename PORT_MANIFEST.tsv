@@ -5385,7 +5385,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/TableModelLoader.j
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/actions/MakeProgramSelectionAction.java	TODO	orig_src Ghidra Features Base src main java ghidra util table actions 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/column/AbstractGhidraColumnRenderer.java	TODO	orig_src Ghidra Features Base src main java ghidra util table column 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractProgramBasedDynamicTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractProgramLocationTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractProgramLocationTableColumn.java	DONE	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractReferenceBytesTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AbstractReferencePreviewTableColumn.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/util/table/field/AddressBasedLocation.java	TODO	orig_src Ghidra Features Base src main java ghidra util table field 
