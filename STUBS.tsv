@@ -684,3 +684,4 @@ ts	stub_class	referenced_by
 2026-08-13T05:11:09.974899+00:00	TableRowMapper	ProgramLocationTableRowMapper
 2026-08-13T05:11:09.974899+00:00	DynamicTableColumn	ProgramLocationTableRowMapper
 2026-08-13T05:11:09.974899+00:00	MappedProgramLocationTableColumn	ProgramLocationTableRowMapper
+2026-08-13T05:12:48.081585+00:00	DemangledObject	Demangler
