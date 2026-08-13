@@ -61,4 +61,15 @@ pub trait Memory: Send + Sync {
     fn has_file_bytes(&self) -> bool {
         false
     }
+
+    /// Get the memory block with the given name, or `None` if no block has that name.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`ElfInfoItem::read_item_from_section`](crate::format::elf::info::elf_info_item::read_item_from_section)'s
+    /// port of `Memory.getBlock(String)`, used to locate a named section before reading an ELF
+    /// info item out of it.
+    fn get_block_by_name(&self, name: &str) -> Option<Arc<dyn MemoryBlock>> {
+        let _ = name;
+        None
+    }
 }

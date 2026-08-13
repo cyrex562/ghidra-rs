@@ -931,3 +931,107 @@ pub trait PdbInfoDotNet: Send + Sync {
     fn serialize_to_options(&self, options: &dyn crate::framework::options::options::Options);
     fn to_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
 }
+
+/// Placeholder for `ghidra.app.util.bin.MemoryByteProvider`, referenced by
+/// [`read_item_from_block`](crate::format::elf::info::elf_info_item::read_item_from_block) before
+/// the real class is ported. Only `createMemoryBlockByteProvider` and the `getName`/`getMemory`
+/// accessors that `ElfInfoItem` needs are modeled; unlike the auto-generated stub shape, this is
+/// backed by the crate's real [`ByteProvider`](crate::filesystem::ghidra::g_binary_reader::ByteProvider)
+/// trait (rather than a disconnected placeholder trait) so it can actually back a `BinaryReader`.
+pub struct MemoryByteProvider {
+    memory: std::sync::Arc<dyn crate::program::model::mem::Memory>,
+    block_name: String,
+    start: crate::program::model::address::Address,
+    length: u64,
+}
+
+impl MemoryByteProvider {
+    /// Mirrors `MemoryByteProvider.createMemoryBlockByteProvider(Memory, MemoryBlock)`.
+    pub fn create_memory_block_byte_provider(
+        memory: std::sync::Arc<dyn crate::program::model::mem::Memory>,
+        block: &dyn crate::program::model::mem::MemoryBlock,
+    ) -> Self {
+        MemoryByteProvider {
+            memory,
+            block_name: block.get_name().to_string(),
+            start: block.get_start(),
+            length: block.get_size(),
+        }
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.block_name
+    }
+
+    pub fn get_memory(&self) -> &std::sync::Arc<dyn crate::program::model::mem::Memory> {
+        &self.memory
+    }
+}
+
+impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for MemoryByteProvider {
+    fn length(&mut self) -> std::io::Result<u64> {
+        Ok(self.length)
+    }
+
+    fn is_valid_index(&mut self, index: u64) -> bool {
+        index < self.length
+    }
+
+    fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
+        if index >= self.length {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!("Index {index} out of bounds for section '{}'", self.block_name),
+            ));
+        }
+        let addr = self
+            .start
+            .add(index as i64)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+        self.memory
+            .get_byte(&addr)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+    }
+
+    fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
+        let end = index
+            .checked_add(length as u64)
+            .filter(|&end| end <= self.length);
+        if end.is_none() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!(
+                    "Range [{index}, {index}+{length}) out of bounds for section '{}'",
+                    self.block_name
+                ),
+            ));
+        }
+        let addr = self
+            .start
+            .add(index as i64)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+        let mut buf = vec![0u8; length];
+        let n_read = self.memory.get_bytes(&addr, &mut buf);
+        if n_read != length {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!("Short read at index {index} in section '{}'", self.block_name),
+            ));
+        }
+        Ok(buf)
+    }
+
+    fn write_byte(&mut self, _index: u64, _value: u8) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "MemoryByteProvider does not support writes",
+        ))
+    }
+
+    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "MemoryByteProvider does not support writes",
+        ))
+    }
+}
