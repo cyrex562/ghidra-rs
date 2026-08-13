@@ -563,65 +563,6 @@ pub trait DemangledObject: Send + Sync {
     );
 }
 
-/// Placeholder for `ghidra.app.util.demangler.Demangled`, needed by
-/// [`crate::demangler::demangled_type::DemangledType`], which implements it.
-///
-/// A unifying top-level interface for all `DemangledObject`s and `DemangledType`s. Genuinely
-/// polymorphic (24 concrete implementations in the original), so this stays a trait-object seam
-/// even once fully ported; do not collapse it to a concrete type. `setMangledContext`/
-/// `getMangledContext` are Java `default` methods (currently no-op / `null`), modeled here as
-/// default methods for the same reason, using the real
-/// [`MangledContext`](crate::demangler::mangled_context::MangledContext) port directly rather than
-/// a placeholder (unlike the depctx-generated suggestion, `MangledContext` is not a trait).
-/// `set_name`/`set_namespace` take `&mut self`, not the generator's default `&self`, since every
-/// implementor mutates owned state to satisfy them.
-pub trait Demangled: Send + Sync {
-    /// Mirrors `Demangled.setMangledContext(MangledContext)`. Defaults to a no-op, mirroring the
-    /// Java interface's current empty default implementation.
-    fn set_mangled_context(
-        &mut self,
-        mangled_context: crate::demangler::mangled_context::MangledContext,
-    ) {
-        let _ = mangled_context;
-    }
-
-    /// Mirrors `Demangled.getMangledContext()`. Defaults to `None`, mirroring the Java
-    /// interface's current `null`-returning default implementation.
-    fn get_mangled_context(&self) -> Option<crate::demangler::mangled_context::MangledContext> {
-        None
-    }
-
-    /// Mirrors `Demangled.getMangledString()`.
-    fn get_mangled_string(&self) -> String;
-
-    /// Mirrors `Demangled.getOriginalDemangled()`.
-    fn get_original_demangled(&self) -> String;
-
-    /// Mirrors `Demangled.getName()`.
-    fn get_name(&self) -> String;
-
-    /// Mirrors `Demangled.setName(String)`.
-    fn set_name(&mut self, name: &str);
-
-    /// Mirrors `Demangled.getDemangledName()`.
-    fn get_demangled_name(&self) -> String;
-
-    /// Mirrors `Demangled.getNamespace()`.
-    fn get_namespace(&self) -> Option<&dyn Demangled>;
-
-    /// Mirrors `Demangled.setNamespace(Demangled)`.
-    fn set_namespace(&mut self, namespace: Option<Box<dyn Demangled>>);
-
-    /// Mirrors `Demangled.getNamespaceString()`.
-    fn get_namespace_string(&self) -> String;
-
-    /// Mirrors `Demangled.getNamespaceName()`.
-    fn get_namespace_name(&self) -> String;
-
-    /// Mirrors `Demangled.getSignature()`.
-    fn get_signature(&self) -> String;
-}
-
 /// Placeholder for `ghidra.app.util.demangler.DemangledTemplate`, needed by
 /// [`crate::demangler::demangled_type::DemangledType`].
 ///

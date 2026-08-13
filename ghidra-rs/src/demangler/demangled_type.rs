@@ -2,7 +2,8 @@
 //!
 //! Port of `ghidra.app.util.demangler.DemangledType`.
 
-use crate::demangler::seam_stubs::{strip_superfluous_signature_spaces, Demangled, DemangledTemplate};
+use crate::demangler::demangled::Demangled;
+use crate::demangler::seam_stubs::{strip_superfluous_signature_spaces, DemangledTemplate};
 use crate::program::model::symbol::namespace::DELIMITER;
 
 /// Represents a demangled string. This class is really just a placeholder for demangled
