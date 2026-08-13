@@ -712,3 +712,7 @@ ts	stub_class	referenced_by
 2026-08-13T08:14:16.597957+00:00	AbstractProgramBasedDynamicTableColumn	AbstractProgramLocationTableColumn
 2026-08-13T08:19:01.563148+00:00	Option	OptionListener
 2026-08-13T08:46:27.043624+00:00	MemoryByteProvider	ElfInfoItem
+2026-08-13T08:47:45.517380+00:00	ElfHeader	ElfSymbol
+2026-08-13T08:47:45.518061+00:00	ElfSectionHeader	ElfSymbol
+2026-08-13T08:47:45.518262+00:00	ElfStringTable	ElfSymbol
+2026-08-13T08:47:45.518672+00:00	ElfSymbolTable	ElfSymbol
