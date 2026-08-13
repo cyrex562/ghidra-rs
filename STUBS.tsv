@@ -680,3 +680,4 @@ ts	stub_class	referenced_by
 2026-08-12T00:00:00.000000+00:00	MethodVisitor	Misc
 2026-08-12T00:00:00+00:00	EntryPoint	JitPcodeThread
 2026-08-12T00:00:00+00:00	JitThreadBytesPcodeExecutorState	JitPcodeThread
+2026-08-13T04:30:00.000000+00:00	JitPassage	JitAnalysisContext

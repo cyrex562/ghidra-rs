@@ -425,7 +425,8 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_data_flow_block_analyzer::JitDataFlowBlockAnalyzer;
     use crate::pcode::emu::jit::op::JitPhiOp;
     use crate::pcode::emu::jit::analysis::jit_control_flow_model::BlockFlow;
-    use crate::pcode::seam_stubs::{JitAnalysisContext, JitDataFlowUseropLibrary, JitLocalOutVar, };
+    use crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext;
+    use crate::pcode::seam_stubs::{JitDataFlowUseropLibrary, JitLocalOutVar, };
 use crate::pcode::emu::jit::op::JitOp;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::lang::endian::Endian;
@@ -474,7 +475,7 @@ use crate::pcode::emu::jit::op::JitOp;
         }
 
         fn get_arithmetic(&self) -> JitDataFlowArithmetic {
-            let context = JitAnalysisContext::new(Endian::Little);
+            let context = JitAnalysisContext::for_endian(Endian::Little);
             JitDataFlowArithmetic::new(&context, Arc::new(NoopDfm) as Arc<dyn JitDataFlowModel>)
         }
 
@@ -500,7 +501,7 @@ use crate::pcode::emu::jit::op::JitOp;
     /// missing-var-to-phi substitution -- records it as written. `JitVarScopeModel` unions the two
     /// catalogs anyway, so a single list of accessed varnodes drives its whole input.
     fn register_block(dfm: &Arc<MockDfm>, block: JitBlock, accessed: &[Varnode]) {
-        let context = JitAnalysisContext::new(Endian::Little);
+        let context = JitAnalysisContext::for_endian(Endian::Little);
         let analyzer = Arc::new(JitDataFlowBlockAnalyzer::new(
             context,
             Arc::clone(dfm) as Arc<dyn JitDataFlowModel>,

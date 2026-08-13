@@ -94,8 +94,9 @@ mod tests {
     use crate::pcode::emu::jit::analysis::jit_type::IntJitType;
     use crate::pcode::emu::jit::gen::util::emitter::Bot;
     use crate::pcode::emu::jit::gen::var::var_gen::VarGen;
+    use crate::pcode::emu::jit::analysis::jit_analysis_context::JitAnalysisContext;
     use crate::pcode::seam_stubs::{
-        FieldForArrDirect, JitAnalysisContext, MethodVisitor, OpndEm, StubMpOpnd,
+        FieldForArrDirect, MethodVisitor, OpndEm, StubMpOpnd,
     };
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::Endian;
@@ -105,7 +106,7 @@ mod tests {
 
     impl JitCodeGenerator for MockCodeGenerator {
         fn get_analysis_context(&self) -> JitAnalysisContext {
-            JitAnalysisContext::new(Endian::Little)
+            JitAnalysisContext::for_endian(Endian::Little)
         }
 
         fn request_field_for_arr_direct(

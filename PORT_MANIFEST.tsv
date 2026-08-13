@@ -10924,7 +10924,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/Sub
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/SubVarHandler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/VarHandler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitAllocationModel.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitAnalysisContext.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitAnalysisContext.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitControlFlowModel.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowArithmetic.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/analysis/JitDataFlowBlockAnalyzer.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit analysis
