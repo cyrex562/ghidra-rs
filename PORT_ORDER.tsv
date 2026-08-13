@@ -35,7 +35,7 @@ DONE	trait	6	27	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/
 DONE	trait	5	28	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/RichHeader.java
 DONE	trait	7	8	53	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/datatype/microsoft/GuidUtil.java
 DONE	trait	4	7	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pdb/PdbInfo.java
-TODO	trait	11	27	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries.java
+DONE	trait	11	27	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ImageRuntimeFunctionEntries.java
 TODO	trait	13	26	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/PEx64UnwindInfo.java
 TODO	trait	15	3	1	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageDataArchive.java
 TODO	trait	15	6	2	app	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/app/util/sourcelanguage/SourceLanguageSpecExtension.java
