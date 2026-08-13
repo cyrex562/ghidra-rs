@@ -681,3 +681,6 @@ ts	stub_class	referenced_by
 2026-08-12T00:00:00+00:00	EntryPoint	JitPcodeThread
 2026-08-12T00:00:00+00:00	JitThreadBytesPcodeExecutorState	JitPcodeThread
 2026-08-13T04:30:00.000000+00:00	JitPassage	JitAnalysisContext
+2026-08-13T05:11:09.974899+00:00	TableRowMapper	ProgramLocationTableRowMapper
+2026-08-13T05:11:09.974899+00:00	DynamicTableColumn	ProgramLocationTableRowMapper
+2026-08-13T05:11:09.974899+00:00	MappedProgramLocationTableColumn	ProgramLocationTableRowMapper
