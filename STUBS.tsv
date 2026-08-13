@@ -659,7 +659,6 @@ ts	stub_class	referenced_by
 2026-08-12T09:32:41.713885+00:00	JitOp	JitTypeModel
 2026-08-12T10:08:50.449345+00:00	DecodePcodeExecutionException	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	JitPassage	JitPassageDecoder
-2026-08-12T10:08:50.449345+00:00	JitPcodeThread	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	DecoderForOnePassage	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	RegisterValue	JitPassageDecoder
 2026-08-13T01:15:04.853356+00:00	Reachability	DecoderForOneStride
@@ -680,3 +679,5 @@ ts	stub_class	referenced_by
 2026-08-13T02:24:22.568800+00:00	MethodTooLargeException	JitPcodeEmulator
 2026-08-13T03:10:00.000000+00:00	JitPassage	JitControlFlowModel
 2026-08-12T00:00:00.000000+00:00	MethodVisitor	Misc
+2026-08-12T00:00:00+00:00	EntryPoint	JitPcodeThread
+2026-08-12T00:00:00+00:00	JitThreadBytesPcodeExecutorState	JitPcodeThread

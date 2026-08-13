@@ -28,7 +28,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::pcode::seam_stubs::{AddrCtx, EntryPointPrototype, JitCompiledPassage, JitPcodeThread};
+use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
+use crate::pcode::seam_stubs::{AddrCtx, EntryPointPrototype, JitCompiledPassage};
 
 /// A compiled passage class: the generated constructor for binding a passage to a thread, plus
 /// its block-indexed entry targets.

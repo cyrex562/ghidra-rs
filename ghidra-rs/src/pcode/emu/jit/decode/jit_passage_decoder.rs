@@ -22,9 +22,10 @@ use std::sync::{Arc, Mutex};
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 use crate::pcode::emu::jit::decode::decoder_userop_library::DecoderUseropLibrary;
 use crate::pcode::exec::pcode_program::PcodeProgram;
+use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
 use crate::pcode::seam_stubs::{
-    AddrCtx, DecodePcodeExecutionException, DecoderForOnePassage, JitPassage,
-    JitPcodeThread, PseudoInstruction, RegisterValue,
+    AddrCtx, DecodePcodeExecutionException, DecoderForOnePassage, JitPassage, PseudoInstruction,
+    RegisterValue,
 };
 use crate::program::model::address::Address;
 use crate::program::model::lang::register::{Register, RegisterRef};

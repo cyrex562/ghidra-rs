@@ -907,7 +907,7 @@ mod tests {
     use crate::pcode::exec::pcode_userop_library::{
         ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap,
     };
-    use crate::pcode::seam_stubs::JitPcodeThread;
+    use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::{SequenceNumber, Varnode};
     use std::sync::Mutex;

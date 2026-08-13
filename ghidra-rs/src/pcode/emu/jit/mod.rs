@@ -4,6 +4,7 @@ pub mod decode;
 pub mod gen;
 pub mod jit_jvm_type_utils;
 pub mod jit_pcode_emulator;
+pub mod jit_pcode_thread;
 pub mod op;
 pub mod var;
 
