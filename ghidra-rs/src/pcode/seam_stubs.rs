@@ -3845,7 +3845,8 @@ impl std::hash::Hash for AddrCtx {
 
 /// Placeholder for ASM's `org.objectweb.asm.MethodTooLargeException`, raised when a generated
 /// method exceeds the JVM's 64KiB code limit. Its only role here is to be the error
-/// [`JitCompiler::compile_passage`] reports so that
+/// [`JitCompiler::compile_passage`](crate::pcode::emu::jit::jit_compiler::JitCompiler::compile_passage)
+/// reports so that
 /// [`JitPcodeEmulator`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator)'s backoff
 /// loop can retry with half the op budget, so it carries no payload; ASM's `methodName`,
 /// `descriptor`, and `codeSize` are not consulted.
@@ -3859,48 +3860,6 @@ impl std::fmt::Display for MethodTooLargeException {
 }
 
 impl std::error::Error for MethodTooLargeException {}
-
-/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.JitCompiler`, the translator
-/// [`JitPcodeEmulator`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator) owns. The
-/// real class walks a decoded [`JitPassage`] through the whole analysis and code-generation
-/// pipeline and emits a JVM classfile; there is no bytecode emitter to run here yet, so
-/// [`compile_passage`](Self::compile_passage) panics, in the same spirit as
-/// [`BytesPcodeArithmetic`]. The configuration it holds is real, since the emulator reads it back
-/// on every translation. Replace with the real port when `JitCompiler.java` lands.
-pub struct JitCompiler {
-    config: JitConfiguration,
-}
-
-impl JitCompiler {
-    /// Port of `new JitCompiler(JitConfiguration)`.
-    pub fn new(config: JitConfiguration) -> Self {
-        Self { config }
-    }
-
-    /// Port of `JitCompiler.getConfiguration()`.
-    pub fn get_configuration(&self) -> &JitConfiguration {
-        &self.config
-    }
-
-    /// Port of `JitCompiler.compilePassage(Lookup, JitPassage)`.
-    ///
-    /// The `Lookup` argument is dropped: it exists only to define the generated classfile as a
-    /// hidden class, which this crate has no JVM to do -- see
-    /// [`JitCompiledPassageClass`](crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass)'s own
-    /// deviation notes. Java's thrown `MethodTooLargeException` becomes an `Err`, since that is the
-    /// one failure the caller handles rather than propagates.
-    ///
-    /// # Panics
-    ///
-    /// Always: the translator itself is not ported.
-    pub fn compile_passage(
-        &self,
-        _passage: JitPassage,
-    ) -> Result<crate::pcode::emu::jit::gen::tgt::JitCompiledPassageClass, MethodTooLargeException>
-    {
-        unimplemented!("JitCompiler not yet ported")
-    }
-}
 
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.JitDefaultBytesPcodeExecutorState`,
 /// the state
