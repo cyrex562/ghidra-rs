@@ -16,6 +16,7 @@ pub mod navigation;
 pub mod opinion;
 pub mod option_exception;
 pub mod option_listener;
+pub mod option_validator;
 pub mod pcode;
 pub mod pcode_inject;
 pub mod pdb;

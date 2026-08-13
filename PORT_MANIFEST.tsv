@@ -3622,7 +3622,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/Option.java	TODO	ori
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionException.java	DONE	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionUtils.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionValidator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionValidator.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionsDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/OptionsEditorPanel.java	TODO	orig_src Ghidra Features Base src main java ghidra app util 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/Permissions.java	DONE	orig_src Ghidra Features Base src main java ghidra app util
