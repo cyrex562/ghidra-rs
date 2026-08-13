@@ -34,7 +34,7 @@ use std::collections::HashMap;
 use std::io::Read;
 use std::sync::Arc;
 
-use crate::app::seam_stubs::elf_loader_options_factory::{
+use crate::app::util::opinion::elf_loader_options_factory::{
     IMAGE32_BASE_DEFAULT, IMAGE64_BASE_DEFAULT,
 };
 use crate::format::elf::elf_program_header_constants::{PF_R, PF_W, PF_X};

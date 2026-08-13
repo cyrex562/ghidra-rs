@@ -954,4 +954,19 @@ impl NumericUtilities {
         }
         sb
     }
+
+    /// Port of `NumericUtilities.parseHexLong(String)`, needed by
+    /// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory).
+    /// Treated as hex regardless of an optional `0x`/`0X` prefix, parsed as an up-to-64-bit
+    /// unsigned magnitude and reinterpreted as a signed `i64` -- matching `parseHelper(s, true,
+    /// BigInteger::longValue, MAX_UNSIGNED_LONG)`, whose `BigInteger.longValue()` truncates to the
+    /// low 64 bits the same way an `as i64` bit-reinterpretation does.
+    pub fn parse_hex_long(s: &str) -> Result<i64, std::num::ParseIntError> {
+        let trimmed = s.trim();
+        let digits = trimmed
+            .strip_prefix("0x")
+            .or_else(|| trimmed.strip_prefix("0X"))
+            .unwrap_or(trimmed);
+        u64::from_str_radix(digits, 16).map(|v| v as i64)
+    }
 }

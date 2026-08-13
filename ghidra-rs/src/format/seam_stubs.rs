@@ -1088,11 +1088,12 @@ pub trait ElfProgramHeader: Send + Sync {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfHeader`, referenced by
-/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse) and by
-/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter) before the real
-/// class is ported: the 32/64-bit discriminator that selects the `Elf32_Sym`/`Elf64_Sym` field
-/// order, the section list used to name a `STT_SECTION` symbol, and the `e_type` predicate the
-/// load adapter needs.
+/// [`ElfSymbol::parse`](crate::format::elf::elf_symbol::ElfSymbol::parse),
+/// [`ElfLoadAdapter`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter), and
+/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) before
+/// the real class is ported: the 32/64-bit discriminator that selects the `Elf32_Sym`/`Elf64_Sym`
+/// field order, the section list used to name a `STT_SECTION` symbol, the `e_type` predicate the
+/// load adapter needs, and the image-base fields `elf_loader_options_factory` reads.
 pub trait ElfHeader: Send + Sync {
     fn is32_bit(&self) -> bool;
 
@@ -1104,6 +1105,26 @@ pub trait ElfHeader: Send + Sync {
 
     /// `ElfHeader.isRelocatable()` -- true for an `ET_REL` object file.
     fn is_relocatable(&self) -> bool;
+
+    /// `ElfHeader.isSharedObject()` -- true for an `ET_DYN` shared object. Defaults to `false`
+    /// so the pre-existing mock implementors elsewhere (none of which exercise this predicate)
+    /// keep compiling unchanged.
+    fn is_shared_object(&self) -> bool {
+        false
+    }
+
+    /// `ElfHeader.findImageBase()` -- the image base recorded/derived from the file, or `0` if
+    /// none could be determined. Defaults to `0`, matching "no image base found", for the same
+    /// reason as [`is_shared_object`](Self::is_shared_object).
+    fn find_image_base(&self) -> i64 {
+        0
+    }
+
+    /// `ElfHeader.getImageBase()` -- the image base as currently set on this header. Defaults to
+    /// `0` for the same reason as [`is_shared_object`](Self::is_shared_object).
+    fn get_image_base(&self) -> i64 {
+        0
+    }
 
     fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>>;
 

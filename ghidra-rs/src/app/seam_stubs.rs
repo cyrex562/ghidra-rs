@@ -371,38 +371,288 @@ pub trait ByteProviderLike {
     fn get_name(&self) -> StdOption<String>;
 }
 
-/// Placeholder for `ghidra.app.util.Option.Builder`, referenced by
-/// [`Option`](crate::app::seam_stubs::Option) before the real class is ported. This is a
-/// builder pattern for creating Option objects with various configurations.
-pub trait Builder: Send + Sync {}
+/// Placeholder for `ghidra.app.util.AbstractOptionBuilder`, referenced by
+/// [`Option`](crate::app::seam_stubs::Option) before the real class is ported. Java's version is
+/// generic over the option's value type (`AbstractOptionBuilder<ValueType, OptionType>`); since a
+/// `dyn Builder` cannot itself be generic, [`value`](Self::value) instead takes a type-erased
+/// `Box<dyn Any + Send + Sync>`, downcast by the implementor to whichever concrete value type it
+/// builds. Only the three chained calls
+/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) makes
+/// (`.value(..).commandLineArgument(..).build()`) are modeled; Java's `group`/`description`/
+/// `stateKey`/`hidden` setters are left out.
+pub trait Builder: Send + Sync {
+    /// Mirrors `AbstractOptionBuilder.value(ValueType)`.
+    fn value(self: Box<Self>, value: Box<dyn std::any::Any + Send + Sync>) -> Box<dyn Builder>;
+
+    /// Mirrors `AbstractOptionBuilder.commandLineArgument(String)`.
+    fn command_line_argument(self: Box<Self>, arg: String) -> Box<dyn Builder>;
+
+    /// Mirrors `AbstractOptionBuilder.build()`.
+    fn build(self: Box<Self>) -> Box<dyn Option>;
+}
 
 /// Placeholder for `ghidra.app.util.Option`, referenced by
-/// [`OptionListener`](crate::app::util::option_listener::OptionListener) and
-/// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
+/// [`OptionListener`](crate::app::util::option_listener::OptionListener),
+/// [`Loader`](crate::app::util::opinion::loader::Loader), and
+/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) before
+/// the real class is ported. Only [`get_name`](Self::get_name) and [`get_value`](Self::get_value)
+/// are required; every other member defaults (mirroring the "Target" stub convention elsewhere in
+/// this file) since no current caller exercises them, which also keeps the eight `Option.newX`
+/// static factories -- modeled as the free functions [`new_boolean`]/[`new_string`]/
+/// [`new_integer`] below, since Rust has no static trait methods to hang them on -- from needing
+/// an `Option` instance to call through.
 pub trait Option: Send + Sync {
-    fn new_boolean(&self, name: &str) -> Box<dyn Builder>;
-    fn new_string(&self, name: &str) -> Box<dyn Builder>;
-    fn new_integer(&self, name: &str) -> Box<dyn Builder>;
-    fn new_hex_long(&self, name: &str) -> Box<dyn Builder>;
-    fn new_address(&self, name: &str) -> Box<dyn Builder>;
-    fn new_address_space(&self, name: &str) -> Box<dyn Builder>;
-    fn new_domain_file(&self, name: &str) -> Box<dyn Builder>;
-    fn new_domain_folder(&self, name: &str) -> Box<dyn Builder>;
-    fn set_option_listener(&self, listener: &dyn OptionListener);
-    fn get_custom_editor_component(&self, address_factory_service: &dyn AddressFactoryService) -> Box<dyn crate::docking::seam_stubs::Component>;
-    fn get_value_class(&self) -> Box<dyn Class>;
-    fn get_group(&self) -> String;
+    /// Mirrors `Option.getName()`.
     fn get_name(&self) -> String;
+
+    /// Mirrors `Option.getValue()`.
     fn get_value(&self) -> Box<dyn std::any::Any>;
-    fn set_value(&self, object: &dyn std::any::Any) -> std::io::Result<()>;
-    fn parse_and_set_value_by_type(&self, str: &str, address_factory: &dyn crate::program::model::address::AddressFactory) -> bool;
-    fn get_arg(&self) -> String;
-    fn get_state_key(&self) -> String;
-    fn get_state(&self) -> Box<dyn crate::framework::seam_stubs::SaveState>;
-    fn is_hidden(&self) -> bool;
-    fn get_description(&self) -> String;
-    fn to_string(&self) -> String;
-    fn copy(&self) -> Box<dyn Option>;
+
+    fn set_option_listener(&self, listener: &dyn OptionListener) {
+        let _ = listener;
+        unimplemented!("Option::set_option_listener placeholder not overridden")
+    }
+
+    fn get_custom_editor_component(
+        &self,
+        address_factory_service: &dyn AddressFactoryService,
+    ) -> Box<dyn crate::docking::seam_stubs::Component> {
+        let _ = address_factory_service;
+        unimplemented!("Option::get_custom_editor_component placeholder not overridden")
+    }
+
+    fn get_value_class(&self) -> Box<dyn Class> {
+        unimplemented!("Option::get_value_class placeholder not overridden")
+    }
+
+    fn get_group(&self) -> String {
+        unimplemented!("Option::get_group placeholder not overridden")
+    }
+
+    fn set_value(&self, object: &dyn std::any::Any) -> std::io::Result<()> {
+        let _ = object;
+        unimplemented!("Option::set_value placeholder not overridden")
+    }
+
+    fn parse_and_set_value_by_type(
+        &self,
+        str: &str,
+        address_factory: &dyn crate::program::model::address::AddressFactory,
+    ) -> bool {
+        let _ = (str, address_factory);
+        false
+    }
+
+    /// Mirrors `Option.getArg()`.
+    fn get_arg(&self) -> String {
+        String::new()
+    }
+
+    fn get_state_key(&self) -> String {
+        unimplemented!("Option::get_state_key placeholder not overridden")
+    }
+
+    fn get_state(&self) -> Box<dyn crate::framework::seam_stubs::SaveState> {
+        unimplemented!("Option::get_state placeholder not overridden")
+    }
+
+    fn is_hidden(&self) -> bool {
+        false
+    }
+
+    fn get_description(&self) -> String {
+        String::new()
+    }
+
+    fn to_string(&self) -> String {
+        self.get_name()
+    }
+
+    fn copy(&self) -> Box<dyn Option> {
+        unimplemented!("Option::copy placeholder not overridden")
+    }
+}
+
+/// The concrete value carried by a [`SimpleOption`]/[`SimpleOptionBuilder`]. Only the three value
+/// types `Option.newBoolean`/`newString`/`newInteger` build
+/// (`ghidra.app.util.importer.options.BooleanOption`/`StringOption`/`IntegerOption`) are modeled.
+enum SimpleOptionValue {
+    Bool(bool),
+    Str(String),
+    Int(i32),
+}
+
+/// Minimal constructible implementor of [`Option`], standing in for the
+/// `BooleanOption`/`StringOption`/`IntegerOption` subclasses of `ghidra.app.util.Option` before
+/// those (and their shared `AbstractOption` superclass) are ported. Built via
+/// [`new_boolean`]/[`new_string`]/[`new_integer`] and [`SimpleOptionBuilder`]; holds only the
+/// state that builder chain actually sets.
+struct SimpleOption {
+    name: String,
+    value: SimpleOptionValue,
+    command_line_argument: std::option::Option<String>,
+}
+
+impl Option for SimpleOption {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_value(&self) -> Box<dyn std::any::Any> {
+        match &self.value {
+            SimpleOptionValue::Bool(v) => Box::new(*v),
+            SimpleOptionValue::Str(v) => Box::new(v.clone()),
+            SimpleOptionValue::Int(v) => Box::new(*v),
+        }
+    }
+
+    fn get_arg(&self) -> String {
+        self.command_line_argument.clone().unwrap_or_default()
+    }
+}
+
+/// Builder for [`SimpleOption`]; see that type's docs. Returned (as `Box<dyn Builder>`) by
+/// [`new_boolean`]/[`new_string`]/[`new_integer`].
+struct SimpleOptionBuilder {
+    name: String,
+    value: std::option::Option<SimpleOptionValue>,
+    command_line_argument: std::option::Option<String>,
+}
+
+impl Builder for SimpleOptionBuilder {
+    fn value(mut self: Box<Self>, value: Box<dyn std::any::Any + Send + Sync>) -> Box<dyn Builder> {
+        let value = match value.downcast::<bool>() {
+            Ok(v) => {
+                self.value = Some(SimpleOptionValue::Bool(*v));
+                return self;
+            }
+            Err(value) => value,
+        };
+        let value = match value.downcast::<String>() {
+            Ok(v) => {
+                self.value = Some(SimpleOptionValue::Str(*v));
+                return self;
+            }
+            Err(value) => value,
+        };
+        match value.downcast::<i32>() {
+            Ok(v) => self.value = Some(SimpleOptionValue::Int(*v)),
+            Err(_) => panic!("SimpleOptionBuilder::value: unsupported option value type"),
+        }
+        self
+    }
+
+    fn command_line_argument(mut self: Box<Self>, arg: String) -> Box<dyn Builder> {
+        self.command_line_argument = Some(arg);
+        self
+    }
+
+    fn build(self: Box<Self>) -> Box<dyn Option> {
+        Box::new(SimpleOption {
+            name: self.name,
+            value: self.value.expect("Option value must be set via .value(..) before .build()"),
+            command_line_argument: self.command_line_argument,
+        })
+    }
+}
+
+/// Mirrors the static factory `Option.newBoolean(String)`.
+pub fn new_boolean(name: &str) -> Box<dyn Builder> {
+    Box::new(SimpleOptionBuilder { name: name.to_string(), value: None, command_line_argument: None })
+}
+
+/// Mirrors the static factory `Option.newString(String)`.
+pub fn new_string(name: &str) -> Box<dyn Builder> {
+    Box::new(SimpleOptionBuilder { name: name.to_string(), value: None, command_line_argument: None })
+}
+
+/// Mirrors the static factory `Option.newInteger(String)`.
+pub fn new_integer(name: &str) -> Box<dyn Builder> {
+    Box::new(SimpleOptionBuilder { name: name.to_string(), value: None, command_line_argument: None })
+}
+
+/// Placeholder for `ghidra.app.util.OptionUtils`, referenced by
+/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) before
+/// the real class is ported. Java's version is a final class of statics, so this is a plain
+/// module of free functions rather than a trait. `getOption`'s generic `<T> T getOption(String,
+/// List<Option>, T)` becomes three type-specialized functions (`get_bool_option`/
+/// `get_string_option`/`get_int_option`) since Rust has no unchecked-cast equivalent to reuse
+/// across value types; each returns `default_value` both when the name is absent AND when a
+/// same-named option holds a differently-typed value (Java's unchecked cast would instead throw
+/// `ClassCastException` on a type mismatch, but every option list this module actually sees is
+/// built by [`elf_loader_options_factory`] itself with matching types, so that path is never
+/// exercised in practice).
+pub mod option_utils {
+    use super::Option;
+
+    /// Mirrors `OptionUtils.containsOption(String, List<Option>)`.
+    pub fn contains_option(option_name: &str, options: &[Box<dyn Option>]) -> bool {
+        options.iter().any(|o| o.get_name() == option_name)
+    }
+
+    /// Mirrors `OptionUtils.getOption(String, List<Option>, T)` specialized to `bool`.
+    pub fn get_bool_option(option_name: &str, options: &[Box<dyn Option>], default_value: bool) -> bool {
+        options
+            .iter()
+            .find(|o| o.get_name() == option_name)
+            .and_then(|o| o.get_value().downcast_ref::<bool>().copied())
+            .unwrap_or(default_value)
+    }
+
+    /// Mirrors `OptionUtils.getOption(String, List<Option>, T)` specialized to a nullable
+    /// `String` (Java's `(String) null` default).
+    pub fn get_string_option(
+        option_name: &str,
+        options: &[Box<dyn Option>],
+        default_value: std::option::Option<String>,
+    ) -> std::option::Option<String> {
+        options
+            .iter()
+            .find(|o| o.get_name() == option_name)
+            .and_then(|o| o.get_value().downcast_ref::<String>().cloned())
+            .or(default_value)
+    }
+
+    /// Mirrors `OptionUtils.getOption(String, List<Option>, T)` specialized to `i32`.
+    pub fn get_int_option(option_name: &str, options: &[Box<dyn Option>], default_value: i32) -> i32 {
+        options
+            .iter()
+            .find(|o| o.get_name() == option_name)
+            .and_then(|o| o.get_value().downcast_ref::<i32>().copied())
+            .unwrap_or(default_value)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.LoadSpec`, referenced by
+/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) before
+/// the real class is ported. Java's version additionally carries a `Loader`, a desired image
+/// base, `isPreferred`, and `requiresLanguageCompilerSpec`; only the `LanguageCompilerSpecPair`
+/// this caller reads is modeled, and (unlike Java's nullable field) it is required here since an
+/// ELF `LoadSpec` always carries one.
+pub struct LoadSpec {
+    pub language_compiler_spec: crate::program::seam_stubs::LanguageCompilerSpecPair,
+}
+
+impl LoadSpec {
+    pub fn new(language_compiler_spec: crate::program::seam_stubs::LanguageCompilerSpecPair) -> Self {
+        Self { language_compiler_spec }
+    }
+
+    /// Mirrors `loadSpec.getLanguageCompilerSpec().getLanguage()`. Java resolves the language via
+    /// the `DefaultLanguageService` singleton; that singleton accessor was dropped when
+    /// `DefaultLanguageService` was ported (see its module docs), so the equivalent
+    /// `LanguageService` is supplied explicitly here, mirroring the substitution already
+    /// established in
+    /// [`resolve_language_by_id`](crate::program::model::data::program_architecture_translator::resolve_language_by_id).
+    pub fn get_language(
+        &self,
+        language_service: &dyn crate::program::model::lang::language_service::LanguageService,
+    ) -> Result<
+        Box<dyn crate::program::model::lang::language::Language>,
+        crate::program::seam_stubs::LanguageNotFoundException,
+    > {
+        language_service.get_language(self.language_compiler_spec.get_language_id())
+    }
 }
 
 /// Placeholder for `ghidra.app.util.Option`, referenced by
@@ -1550,14 +1800,3 @@ impl ReferenceUtils {
     }
 }
 
-/// Placeholder for the image-base defaults of `ghidra.app.util.opinion.ElfLoaderOptionsFactory`,
-/// referenced by
-/// [`ElfLoadAdapter::get_default_image_base`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::get_default_image_base)
-/// before the real options factory is ported. Only the two constants that method reads.
-pub mod elf_loader_options_factory {
-    /// `ElfLoaderOptionsFactory.IMAGE32_BASE_DEFAULT`.
-    pub const IMAGE32_BASE_DEFAULT: i64 = 0x0001_0000;
-
-    /// `ElfLoaderOptionsFactory.IMAGE64_BASE_DEFAULT`.
-    pub const IMAGE64_BASE_DEFAULT: i64 = 0x0010_0000;
-}
