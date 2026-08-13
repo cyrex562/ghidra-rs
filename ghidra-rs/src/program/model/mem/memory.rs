@@ -21,6 +21,18 @@ pub trait Memory: Send + Sync {
         None
     }
 
+    /// True if the given address lies within one of this memory's blocks.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DemangledObject`](crate::demangler::demangled_object::DemangledObject)'s port of
+    /// `applyPlateCommentOnly`, which skips symbols outside program memory. Stands in for
+    /// `Memory.contains(Address)`, which Java inherits from `AddressSetView`; this port's
+    /// [`Memory`] has no such supertrait, so containment is answered from
+    /// [`get_block`](Self::get_block).
+    fn contains(&self, addr: &Address) -> bool {
+        self.get_block(addr).is_some()
+    }
+
     /// Get the program this memory belongs to, if any.
     ///
     /// Grown (defaulted, so existing implementors keep compiling) for

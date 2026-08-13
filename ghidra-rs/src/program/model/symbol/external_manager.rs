@@ -197,6 +197,24 @@ pub trait ExternalManager: Send + Sync {
     /// Returns the external location associated with the given external symbol, or `None`.
     fn get_external_location(&self, symbol: Arc<dyn Symbol>) -> Option<Arc<dyn ExternalLocation>>;
 
+    /// Mutable counterpart of [`get_external_location`](Self::get_external_location).
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DemangledObject`](crate::demangler::demangled_object::DemangledObject)'s port of
+    /// `updateExternalSymbol`, which renames the located external symbol through
+    /// [`ExternalLocation::set_name`] and so needs `&mut`, where the `Arc`-returning lookup above
+    /// only permits reads. Java needs no such split: `getExternalLocation(Symbol)` hands back a
+    /// freely mutable reference.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected.
+    fn get_external_location_mut(
+        &mut self,
+        symbol: Arc<dyn Symbol>,
+    ) -> Option<&mut dyn ExternalLocation> {
+        let _ = symbol;
+        None
+    }
+
     /// Determines if the indicated external library name is being managed (exists).
     fn contains(&self, library_name: &str) -> bool;
 

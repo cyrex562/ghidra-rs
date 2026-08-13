@@ -1,6 +1,6 @@
 use crate::program::model::address::Address;
 use crate::program::model::listing::{Function, Variable};
-use crate::util::exception::InvalidInputException;
+use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use std::io;
 use std::sync::Arc;
 
@@ -179,6 +179,16 @@ pub trait Symbol: Send + Sync {
     }
 }
 
+/// Error produced by [`SymbolTable::get_or_create_name_space`], mirroring the two checked
+/// exceptions `SymbolTable.getOrCreateNameSpace` declares.
+#[derive(thiserror::Error, Debug, PartialEq)]
+pub enum GetOrCreateNamespaceError {
+    #[error(transparent)]
+    Duplicate(#[from] DuplicateNameException),
+    #[error(transparent)]
+    InvalidInput(#[from] InvalidInputException),
+}
+
 pub trait SymbolTable: Send + Sync {
     fn create_label(
         &mut self,
@@ -195,6 +205,44 @@ pub trait SymbolTable: Send + Sync {
     fn get_global_symbol(&self, name: &str, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
         let symbols = self.get_symbols(addr)?;
         Ok(symbols.into_iter().find(|s| s.get_name() == name))
+    }
+
+    /// Get, or create if absent, the namespace named `name` inside `parent`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DemangledObject`](crate::demangler::demangled_object::DemangledObject)'s port of
+    /// `createNamespace`. Stands in for
+    /// `SymbolTable.getOrCreateNameSpace(Namespace, String, SourceType)`.
+    ///
+    /// Defaults to rejecting the request (as [`Namespace::set_parent_namespace`] does), so a
+    /// symbol table that has not implemented namespace creation cannot silently report a
+    /// namespace it did not create. `createNamespace` treats that as the error case it already
+    /// handles: it logs and returns the partial namespace built so far.
+    fn get_or_create_name_space(
+        &mut self,
+        parent: Arc<dyn Namespace>,
+        name: &str,
+        source: SourceType,
+    ) -> Result<Arc<dyn Namespace>, GetOrCreateNamespaceError> {
+        let _ = (parent, name, source);
+        Err(GetOrCreateNamespaceError::InvalidInput(InvalidInputException::with_message(
+            "namespace creation is not supported by this symbol table",
+        )))
+    }
+
+    /// Make the symbol with the given ID the primary symbol at its address, returning whether
+    /// the promotion was permitted.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DemangledObject`](crate::demangler::demangled_object::DemangledObject)'s port of
+    /// `applyDemangledName`. Stands in for `Symbol.setPrimary()`, keyed by ID like the
+    /// neighbouring [`set_symbol_pinned`](Self::set_symbol_pinned), since an `Arc<dyn Symbol>`
+    /// handed out by this trait cannot be mutated through.
+    ///
+    /// Defaults to `false` (not permitted) so existing implementors are unaffected.
+    fn set_primary_symbol(&mut self, symbol_id: i64) -> io::Result<bool> {
+        let _ = symbol_id;
+        Ok(false)
     }
 
     /// Set the pinned status of a symbol by its ID.

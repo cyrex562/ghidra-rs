@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::demangler::demangle_exception::DemangledException;
 use crate::demangler::demangler_options::DemanglerOptions;
 use crate::demangler::mangled_context::MangledContext;
-use crate::demangler::seam_stubs::DemangledObject;
+use crate::demangler::demangled_object::DemangledObject;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
 use crate::util::classfinder::extension_point::ExtensionPoint;
@@ -39,7 +39,7 @@ pub trait Demangler: ExtensionPoint {
     ) -> Result<Option<Box<dyn DemangledObject>>, DemangledException> {
         let mangled_context = self.create_mangled_context(mangled, None, None, None);
         let demangled_object = self.demangle(&mangled_context)?;
-        if let Some(obj) = demangled_object {
+        if let Some(mut obj) = demangled_object {
             if obj.get_mangled_context().is_none() {
                 obj.set_mangled_context(mangled_context.clone());
             }
@@ -59,7 +59,7 @@ pub trait Demangler: ExtensionPoint {
         let mangled_context =
             self.create_mangled_context(mangled, Some(options.clone()), None, None);
         let demangled_object = self.demangle(&mangled_context)?;
-        if let Some(obj) = demangled_object {
+        if let Some(mut obj) = demangled_object {
             if obj.get_mangled_context().is_none() {
                 obj.set_mangled_context(mangled_context.clone());
             }
@@ -93,6 +93,7 @@ pub trait Demangler: ExtensionPoint {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::demangler::demangled_object::tests::TestDemangledObject;
     use crate::framework::model::DomainObject;
     use std::sync::Mutex;
 
@@ -107,20 +108,6 @@ mod tests {
 
         fn get_language_id(&self) -> String {
             "mock_language".to_string()
-        }
-    }
-
-    struct MockDemangledObject {
-        mangled_context: Mutex<Option<MangledContext>>,
-    }
-
-    impl DemangledObject for MockDemangledObject {
-        fn get_mangled_context(&self) -> Option<MangledContext> {
-            self.mangled_context.lock().unwrap().clone()
-        }
-
-        fn set_mangled_context(&self, mangled_context: MangledContext) {
-            *self.mangled_context.lock().unwrap() = Some(mangled_context);
         }
     }
 
@@ -147,7 +134,7 @@ mod tests {
             if !context.mangled().starts_with("_Z") {
                 return Err(DemangledException::from_invalid_mangled_name(true));
             }
-            Ok(Some(Box::new(MockDemangledObject { mangled_context: Mutex::new(None) })))
+            Ok(Some(Box::new(TestDemangledObject::new(context.mangled(), None, "foo"))))
         }
     }
 

@@ -4,6 +4,7 @@
 use crate::demangler::naming::md_qualification::MdQualification;
 use crate::demangler::naming::md_qualified_name::MdQualifiedName;
 use crate::demangler::object::md_object_cpp::MdObjectCpp;
+use crate::program::model::symbol::{Namespace, DELIMITER};
 
 /// Placeholder for `mdemangler.MDMang`, needed by
 /// [`crate::demangler::datatype::md_data_type::MdDataType`].
@@ -542,27 +543,6 @@ pub trait MdComplexTypeLike {
 /// also carries the three constructors and `isInvalidMangledName()`.
 pub trait MdExceptionLike: std::fmt::Debug + std::fmt::Display {}
 
-/// Placeholder for `ghidra.app.util.demangler.DemangledObject`, needed by
-/// [`crate::demangler::demangler::Demangler`]'s default methods.
-///
-/// Only the mangled-context accessor pair those default methods touch
-/// (`getMangledContext`/`setMangledContext`) are declared here; the real port also carries the
-/// full const/volatile/name/namespace state and the apply-to-program rendering surface.
-pub trait DemangledObject: Send + Sync {
-    /// Returns the mangled context previously set on this object, if any.
-    ///
-    /// Mirrors `DemangledObject.getMangledContext()`.
-    fn get_mangled_context(&self) -> Option<crate::demangler::mangled_context::MangledContext>;
-
-    /// Sets the mangled context on this object.
-    ///
-    /// Mirrors `DemangledObject.setMangledContext(MangledContext)`.
-    fn set_mangled_context(
-        &self,
-        mangled_context: crate::demangler::mangled_context::MangledContext,
-    );
-}
-
 /// Placeholder for `ghidra.app.util.demangler.DemangledTemplate`, needed by
 /// [`crate::demangler::demangled_type::DemangledType`].
 ///
@@ -628,6 +608,27 @@ fn leading_parameter_space_pattern() -> &'static regex::Regex {
 fn trailing_parameter_space_pattern() -> &'static regex::Regex {
     static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     RE.get_or_init(|| regex::Regex::new(r"([(,]) ").unwrap())
+}
+
+/// Placeholder for `ghidra.app.util.NamespaceUtils.getNamespaceQualifiedName`, needed by
+/// [`crate::demangler::demangled_object::DemangledObjectBase::create_namespace`].
+///
+/// `NamespaceUtils` is a concrete class of static utility methods, not an interface, so this is a
+/// plain free function rather than a trait (the same treatment as
+/// [`strip_superfluous_signature_spaces`] above); the rest of `NamespaceUtils` is not modeled
+/// since nothing ported yet needs it.
+///
+/// Renders `symbol_name` prefixed by `namespace`'s full path, e.g. `Foo::Bar::baz`. The
+/// original's third parameter, `excludeLibraryName`, is not modeled: its only caller here always
+/// passes `false`, and the `true` branch needs the unported `getNamespacePathWithoutLibrary`.
+pub fn namespace_qualified_name(namespace: &dyn Namespace, symbol_name: &str) -> String {
+    let mut s = String::new();
+    if !namespace.is_global() {
+        s.push_str(&namespace.get_name_with_path(true));
+        s.push_str(DELIMITER);
+    }
+    s.push_str(symbol_name);
+    s
 }
 
 #[cfg(test)]
