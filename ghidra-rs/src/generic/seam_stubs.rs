@@ -235,3 +235,15 @@ mod semisparse_byte_array_tests {
         assert_eq!(out, [0, 0]);
     }
 }
+
+/// Placeholder for `generic.lsh.vector.VectorCompare`, referenced by [`crate::generic::lsh::vector::lsh_vector::LSHVector`].
+///
+/// The real Java interface declares two methods: `fillOut()` and `toString()`.
+/// This placeholder is only the shape hint; replace with the real port when available.
+pub trait VectorCompare: Send + Sync {
+    /// Placeholder for `VectorCompare.fillOut()`.
+    fn fill_out(&self);
+
+    /// Placeholder for `VectorCompare.toString()`.
+    fn to_string(&self) -> String;
+}

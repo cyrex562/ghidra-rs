@@ -687,3 +687,4 @@ ts	stub_class	referenced_by
 2026-08-13T05:27:58.359525+00:00	DemangledTemplate	DemangledType
 2026-08-13T05:27:58.359525+00:00	DemanglerUtil	DemangledType
 2026-08-13T05:45:45.066188+00:00	NamespaceUtils	DemangledObject
+2026-08-13T12:00:00.000000+00:00	VectorCompare	LSHVector
