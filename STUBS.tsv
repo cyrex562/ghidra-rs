@@ -699,6 +699,5 @@ ts	stub_class	referenced_by
 2026-08-13T06:20:46.844863+00:00	SegmentTable	WindowsHeader
 2026-08-13T07:00:00.000000+00:00	RichHeaderUtils	CompId
 2026-08-13T07:00:00.100000+00:00	RichProduct	CompId
-2026-08-13T07:10:00.000000+00:00	RichHeader	RichTable
 2026-08-13T07:10:00.100000+00:00	RichHeaderRecord	RichTable
 2026-08-13T07:10:00.200000+00:00	PERichTableDataType	RichTable

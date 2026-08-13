@@ -805,23 +805,6 @@ pub trait RichHeaderUtils: Send + Sync {
     fn get_product(&self, id: i32) -> Option<Box<dyn RichProduct>>;
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pe.RichHeader`, referenced by
-/// [`RichTable`](crate::format::pe::rich_table::RichTable) before the real class is ported.
-/// `RichHeader` and `RichTable` sit in the same Java package and reference each other
-/// (`RichHeader` constructs a `RichTable`; `RichTable` reads `RichHeader`'s signature constants
-/// in its parser and `toString`), so this stub breaks that cycle. `RichHeader` is a concrete
-/// Java class, so it is modeled as a concrete (uninstantiable) type exposing only the constants
-/// `RichTable` needs.
-pub struct RichHeader;
-
-impl RichHeader {
-    /// "Rich"
-    pub const IMAGE_RICH_SIGNATURE: i32 = 0x68636952;
-    /// "DanS"
-    pub const IMAGE_DANS_SIGNATURE: i32 = 0x536E6144;
-    pub const NAME: &'static str = "IMAGE_RICH_HEADER";
-}
-
 /// Placeholder for `ghidra.app.util.bin.format.pe.rich.RichHeaderRecord`, referenced by
 /// [`RichTable`](crate::format::pe::rich_table::RichTable) before the real class is ported.
 /// `RichHeaderRecord` is a concrete Java class (not an interface), so it is modeled here as a
@@ -876,3 +859,5 @@ impl PERichTableDataType {
         PERichTableDataType
     }
 }
+
+impl crate::program::model::data::data_type::DataType for PERichTableDataType {}
