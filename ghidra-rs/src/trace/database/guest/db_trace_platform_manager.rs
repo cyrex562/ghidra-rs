@@ -1,11 +1,18 @@
 //! Port of `ghidra.trace.database.guest.DBTracePlatformManager`.
 
+use std::sync::Arc;
+
+use crate::program::model::address::Address;
 use crate::program::model::lang::Language;
 use crate::trace::database::db_trace_manager::DBTraceManager;
+use crate::trace::database::guest::db_trace_guest_platform::DBTraceGuestPlatform;
 use crate::trace::database::guest::internal_trace_platform::InternalTracePlatform;
+use crate::trace::model::guest::trace_guest_platform_mapped_range::TraceGuestPlatformMappedRange;
 use crate::trace::model::guest::trace_platform_manager::TracePlatformManager;
 use crate::trace::seam_stubs::{DBTrace, DBTraceGuestLanguage};
 use crate::trace::model::guest::trace_platform::TracePlatform;
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
 
 /// The trace database's platform manager: the host platform, plus any registered guest platforms
 /// (alternate languages/compiler specs used to disassemble regions of the trace).
@@ -25,10 +32,17 @@ use crate::trace::model::guest::trace_platform::TracePlatform;
 ///
 /// The constructor and its private, DB-record-backed table machinery
 /// (`loadLanguages`/`loadPlatforms`/`loadPlatformMappings`/`doAddGuestPlatform`/
-/// `deleteGuestPlatform`/`computeNextRegisterMin`/`getPlatformKeyForCompiler`/`getCompilerByKey`,
-/// each keyed off a `DBCachedObjectStore` per table) are implementation details private to the
-/// concrete class, not part of its cross-package API contract, and `DBCachedObjectStore` itself
-/// is not yet ported -- so none of that is represented here.
+/// `getPlatformKeyForCompiler`/`getCompilerByKey`, each keyed off a `DBCachedObjectStore` per
+/// table) are implementation details private to the concrete class, not part of its cross-package
+/// API contract, and `DBCachedObjectStore` itself is not yet ported -- so none of that is
+/// represented here.
+///
+/// The trailing five methods were added when
+/// [`DBTraceGuestPlatform`] was ported: they are exactly the package-private members that
+/// same-package sibling reaches through its `manager` field (the `baseLanguage` field,
+/// `computeNextRegisterMin()`, `deleteGuestPlatform(..)`, and the `rangeMappingStore`'s
+/// create/delete). Each defaults to panicking, so the existing implementors keep compiling
+/// unchanged.
 pub trait DBTracePlatformManager: DBTraceManager + TracePlatformManager {
     /// The trace this manager belongs to. Mirrors the `trace` field.
     fn trace(&self) -> Box<dyn DBTrace>;
@@ -67,6 +81,59 @@ pub trait DBTracePlatformManager: DBTraceManager + TracePlatformManager {
     /// Panics (mirroring the Java method's `IllegalArgumentException`) if `platform` does not
     /// belong to this trace, or has been deleted.
     fn assert_mine(&self, platform: &dyn TracePlatform) -> Box<dyn InternalTracePlatform>;
+
+    /// The trace's base (host) language. Mirrors the `baseLanguage` field, read by
+    /// [`DBTraceGuestPlatform`]'s `getLanguage()` for a platform that has no guest-language
+    /// entry.
+    fn base_language(&self) -> Box<dyn Language> {
+        unimplemented!("DBTracePlatformManager::base_language not overridden")
+    }
+
+    /// The lowest host register address not claimed by *any* platform's register mapping, or
+    /// `None` if host register space is exhausted. Mirrors the package-private
+    /// `computeNextRegisterMin()`, which takes the maximum of every guest platform's own
+    /// [`DBTraceGuestPlatform::compute_next_register_min`].
+    fn compute_next_register_min(&self) -> Option<Address> {
+        unimplemented!("DBTracePlatformManager::compute_next_register_min not overridden")
+    }
+
+    /// Create and persist a mapped range placing `guest`'s `guest_start` at the host's
+    /// `host_start` for `length` bytes.
+    ///
+    /// Mirrors `rangeMappingStore.create()` followed by `mappedRange.set(hostStart, guest,
+    /// guestStart, length)` in `DBTraceGuestPlatform.addMappedRange`. The store itself
+    /// (`DBCachedObjectStore<DBTraceGuestPlatformMappedRange>`) is unported, so the two steps are
+    /// exposed as this one factory seam rather than as the store.
+    fn create_mapped_range(
+        &self,
+        host_start: &Address,
+        guest: &DBTraceGuestPlatform,
+        guest_start: &Address,
+        length: i64,
+    ) -> Arc<dyn TraceGuestPlatformMappedRange + Send + Sync> {
+        let _ = (host_start, guest, guest_start, length);
+        unimplemented!("DBTracePlatformManager::create_mapped_range not overridden")
+    }
+
+    /// Drop a mapped range's row. Mirrors `rangeMappingStore.delete(range)` in
+    /// `DBTraceGuestPlatform.deleteMappedRange`.
+    fn delete_mapped_range(&self, range: &Arc<dyn TraceGuestPlatformMappedRange + Send + Sync>) {
+        let _ = range;
+        unimplemented!("DBTracePlatformManager::delete_mapped_range not overridden")
+    }
+
+    /// Remove `platform`, along with every mapping and code unit that belongs to it. Mirrors the
+    /// package-private `deleteGuestPlatform(DBTraceGuestPlatform, TaskMonitor)`, which
+    /// [`TraceGuestPlatform::delete`](crate::trace::model::guest::trace_guest_platform::TraceGuestPlatform::delete)
+    /// delegates to.
+    fn delete_guest_platform(
+        &self,
+        platform: &DBTraceGuestPlatform,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), CancelledException> {
+        let _ = (platform, monitor);
+        unimplemented!("DBTracePlatformManager::delete_guest_platform not overridden")
+    }
 }
 
 #[cfg(test)]

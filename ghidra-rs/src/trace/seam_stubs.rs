@@ -1135,8 +1135,43 @@ pub trait TraceAddressSnapRangeQuery: Send + Sync {}
 /// referenced by
 /// [`InternalTracePlatform`](crate::trace::database::guest::internal_trace_platform::InternalTracePlatform)
 /// before the real port is available. `InternalTracePlatform` only ever passes this type around
-/// opaquely (as `getLanguageEntry()`'s return); no members are needed yet.
-pub trait DBTraceGuestLanguage: Send + Sync {}
+/// opaquely (as `getLanguageEntry()`'s return).
+///
+/// Grown for
+/// [`DBTraceGuestPlatform`](crate::trace::database::guest::db_trace_guest_platform::DBTraceGuestPlatform),
+/// which is the Java class this one is nested in and the only caller of its members: `set(..)`
+/// reads the entry's row key to fill the platform's `langKey` column, and `getLanguage()` reads
+/// the resolved `Language` back out. Both default to panicking so the existing marker
+/// implementors keep compiling unchanged.
+pub trait DBTraceGuestLanguage: Send + Sync {
+    /// Mirrors the row key inherited from `DBAnnotatedObject.getKey()`, which
+    /// `DBTraceGuestPlatform.set(CompilerSpec)` narrows to an `int` for its `langKey` column.
+    fn get_key(&self) -> i64 {
+        unimplemented!("DBTraceGuestLanguage::get_key placeholder not overridden")
+    }
+
+    /// Mirrors `DBTraceGuestLanguage.getLanguage()`: the `Language` resolved from the row's
+    /// `LanguageID` (and version-checked) by `fresh(boolean)`.
+    fn get_language(&self) -> Box<dyn Language> {
+        unimplemented!("DBTraceGuestLanguage::get_language placeholder not overridden")
+    }
+}
+
+/// A shared handle to a language entry, which is itself a [`DBTraceGuestLanguage`].
+///
+/// Lets
+/// [`DBTraceGuestPlatform`](crate::trace::database::guest::db_trace_guest_platform::DBTraceGuestPlatform)
+/// keep its `languageEntry` field and still hand the *same* entry out from
+/// `getLanguageEntry()`, which returns by value; Java aliases one instance across both.
+impl DBTraceGuestLanguage for Arc<dyn DBTraceGuestLanguage> {
+    fn get_key(&self) -> i64 {
+        (**self).get_key()
+    }
+
+    fn get_language(&self) -> Box<dyn Language> {
+        (**self).get_language()
+    }
+}
 
 /// Placeholder for the nested
 /// `ghidra.trace.database.data.DBTraceDataSettingsAdapter.DBTraceSettingsEntry`, referenced by
@@ -1375,6 +1410,21 @@ pub trait DBTrace: Send + Sync {
         panic!("database error: {e}")
     }
 
+    /// This trace, widened to the [`Trace`](crate::trace::model::trace::Trace) interface it
+    /// implements.
+    ///
+    /// Java's `DBTrace` *is a* `Trace`, but making that a Rust supertrait would force every
+    /// existing marker implementor of this placeholder to supply the whole `Trace` surface. As
+    /// with
+    /// [`DBTraceCodeUnitAdapter::trace_change_manager`] -- which stands in for the same covariant
+    /// `getTrace()` relationship from the other side -- the widening is exposed as its own
+    /// accessor instead. Used by
+    /// [`DBTraceGuestPlatform::get_trace`](crate::trace::database::guest::db_trace_guest_platform::DBTraceGuestPlatform),
+    /// whose Java body is just `return manager.trace;`.
+    fn as_trace(&self) -> Box<dyn crate::trace::model::trace::Trace> {
+        unimplemented!("DBTrace::as_trace placeholder not overridden")
+    }
+
     /// Mirrors `DBTrace.setChanged(TraceChangeRecord)`.
     fn set_changed(&self, event: &TraceChangeRecord) {
         let _ = event;
@@ -1448,13 +1498,6 @@ pub trait DBTraceUndefinedDataView: Send + Sync {
     /// `DBTraceCodeSpace.invalidateCache()`.
     fn invalidate_cache(&self);
 }
-
-/// Placeholder for `ghidra.trace.database.guest.DBTraceGuestPlatform`, referenced by
-/// [`DBTraceCodeSpace`](crate::trace::database::listing::db_trace_code_space::DBTraceCodeSpace)
-/// before the real port is available. `DBTraceCodeSpace.clearPlatform(...)` only ever compares
-/// this type for reference equality (`instruction.platform != guest`) and passes it through
-/// opaquely; no members are needed yet.
-pub trait DBTraceGuestPlatform: Send + Sync {}
 
 /// Placeholder for `ghidra.trace.database.DBTraceUtils`, referenced by
 /// [`AbstractBaseDBTraceCodeUnitsMemoryView`](crate::trace::database::listing::abstract_base_db_trace_code_units_memory_view::AbstractBaseDBTraceCodeUnitsMemoryView)
