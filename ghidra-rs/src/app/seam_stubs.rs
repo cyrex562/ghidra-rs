@@ -6,6 +6,8 @@
 use crate::app::decompiler::{
     ClangLine, ClangNode, ClangTokenBase, ClangTokenGroup, DecompiledFunction,
 };
+use crate::app::util::address_factory_service::AddressFactoryService;
+use crate::app::util::option_listener::OptionListener;
 use crate::program::model::data::array::Array;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
@@ -15,6 +17,7 @@ use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::target::path::KeyPath;
 use crate::trace::model::thread::TraceThread;
 use crate::trace::model::trace::Trace;
+use std::option::Option as StdOption;
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
@@ -113,14 +116,14 @@ pub trait Target {
     /// Get the path of the object the target currently has focused, if any.
     ///
     /// Mirrors `Target.getFocus()`, whose `null` return becomes `None`.
-    fn get_focus(&self) -> Option<KeyPath> {
+    fn get_focus(&self) -> StdOption<KeyPath> {
         unimplemented!("Target::get_focus placeholder not overridden")
     }
 
     /// Find the thread containing the object at the given path.
     ///
     /// Mirrors `Target.getThreadForSuccessor(KeyPath)`.
-    fn get_thread_for_successor(&self, path: &KeyPath) -> Option<Box<dyn TraceThread>> {
+    fn get_thread_for_successor(&self, path: &KeyPath) -> StdOption<Box<dyn TraceThread>> {
         let _ = path;
         unimplemented!("Target::get_thread_for_successor placeholder not overridden")
     }
@@ -128,7 +131,7 @@ pub trait Target {
     /// Find the stack frame containing the object at the given path.
     ///
     /// Mirrors `Target.getStackFrameForSuccessor(KeyPath)`.
-    fn get_stack_frame_for_successor(&self, path: &KeyPath) -> Option<Box<dyn TraceStackFrame>> {
+    fn get_stack_frame_for_successor(&self, path: &KeyPath) -> StdOption<Box<dyn TraceStackFrame>> {
         let _ = path;
         unimplemented!("Target::get_stack_frame_for_successor placeholder not overridden")
     }
@@ -278,7 +281,7 @@ pub trait RunResult: Send {
     fn schedule(&self) -> &dyn TraceSchedule;
 
     /// Stands in for `RunResult.error()`.
-    fn error(&self) -> Option<&(dyn std::error::Error + Send + Sync)>;
+    fn error(&self) -> StdOption<&(dyn std::error::Error + Send + Sync)>;
 }
 
 /// Placeholder for `ghidra.app.services.GoToOverrideService`, referenced by
@@ -362,16 +365,49 @@ pub trait TreePath {}
 /// other members are needed yet.
 pub trait ByteProviderLike {
     /// Stands in for `ByteProvider.getFSRL()`.
-    fn get_fsrl(&self) -> Option<Box<dyn crate::filesystem::gfilesystem::fsrl::Fsrl>>;
+    fn get_fsrl(&self) -> StdOption<Box<dyn crate::filesystem::gfilesystem::fsrl::Fsrl>>;
 
     /// Stands in for `ByteProvider.getName()`.
-    fn get_name(&self) -> Option<String>;
+    fn get_name(&self) -> StdOption<String>;
+}
+
+/// Placeholder for `ghidra.app.util.Option.Builder`, referenced by
+/// [`Option`](crate::app::seam_stubs::Option) before the real class is ported. This is a
+/// builder pattern for creating Option objects with various configurations.
+pub trait Builder: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.Option`, referenced by
+/// [`OptionListener`](crate::app::util::option_listener::OptionListener) and
+/// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
+pub trait Option: Send + Sync {
+    fn new_boolean(&self, name: &str) -> Box<dyn Builder>;
+    fn new_string(&self, name: &str) -> Box<dyn Builder>;
+    fn new_integer(&self, name: &str) -> Box<dyn Builder>;
+    fn new_hex_long(&self, name: &str) -> Box<dyn Builder>;
+    fn new_address(&self, name: &str) -> Box<dyn Builder>;
+    fn new_address_space(&self, name: &str) -> Box<dyn Builder>;
+    fn new_domain_file(&self, name: &str) -> Box<dyn Builder>;
+    fn new_domain_folder(&self, name: &str) -> Box<dyn Builder>;
+    fn set_option_listener(&self, listener: &dyn OptionListener);
+    fn get_custom_editor_component(&self, address_factory_service: &dyn AddressFactoryService) -> Box<dyn crate::docking::seam_stubs::Component>;
+    fn get_value_class(&self) -> Box<dyn Class>;
+    fn get_group(&self) -> String;
+    fn get_name(&self) -> String;
+    fn get_value(&self) -> Box<dyn std::any::Any>;
+    fn set_value(&self, object: &dyn std::any::Any) -> std::io::Result<()>;
+    fn parse_and_set_value_by_type(&self, str: &str, address_factory: &dyn crate::program::model::address::AddressFactory) -> bool;
+    fn get_arg(&self) -> String;
+    fn get_state_key(&self) -> String;
+    fn get_state(&self) -> Box<dyn crate::framework::seam_stubs::SaveState>;
+    fn is_hidden(&self) -> bool;
+    fn get_description(&self) -> String;
+    fn to_string(&self) -> String;
+    fn copy(&self) -> Box<dyn Option>;
 }
 
 /// Placeholder for `ghidra.app.util.Option`, referenced by
 /// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
-/// `Loader` only ever passes lists of this type through as a parameter/return value, so no
-/// members are needed yet.
+/// `Loader` only ever passes lists of this type through as a parameter/return value.
 pub trait OptionLike {}
 
 /// Placeholder for `ghidra.app.util.opinion.LoadSpec`, referenced by
@@ -441,13 +477,13 @@ pub trait ConstructState: Send + Sync {
     /// Stands in for `ConstructState.getConstructor()`.
     fn constructor(
         &self,
-    ) -> Option<std::sync::Arc<crate::program::model::lang::sleigh::constructor::Constructor>>;
+    ) -> StdOption<std::sync::Arc<crate::program::model::lang::sleigh::constructor::Constructor>>;
 
     /// Stands in for `ConstructState.getSubState(int)`.
     fn sub_state(&self, index: i32) -> std::sync::Arc<dyn ConstructState>;
 
     /// Stands in for `ConstructState.getParent()`.
-    fn parent(&self) -> Option<std::sync::Arc<dyn ConstructState>>;
+    fn parent(&self) -> StdOption<std::sync::Arc<dyn ConstructState>>;
 }
 
 /// Placeholder for `ghidra.app.plugin.languages.sleigh.SleighConstructorTraversal`, referenced by
@@ -767,7 +803,7 @@ pub trait AssemblyNumericSymbols {
     fn choose(
         &self,
         name: &str,
-        space: Option<&crate::program::model::address::AddressSpace>,
+        space: StdOption<&crate::program::model::address::AddressSpace>,
     ) -> std::collections::BTreeSet<i64>;
 
     /// Suggest up to `max` label names having the given prefix, optionally scoped to an address
@@ -777,7 +813,7 @@ pub trait AssemblyNumericSymbols {
     fn get_suggestions(
         &self,
         got: &str,
-        space: Option<&crate::program::model::address::AddressSpace>,
+        space: StdOption<&crate::program::model::address::AddressSpace>,
         max: usize,
     ) -> Vec<String>;
 }
@@ -1012,7 +1048,7 @@ pub struct DataTypeReference;
 /// `getDisplayText`, ...) for that class's own future port.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct FieldMatcher {
-    pub field_name: Option<String>,
+    pub field_name: StdOption<String>,
 }
 
 impl FieldMatcher {
@@ -1474,7 +1510,7 @@ impl ReferenceUtils {
     ) -> Box<dyn DataType> {
         let mut current = data_type;
         loop {
-            let next: Option<Box<dyn DataType>> = if let Some(array) = current.as_array() {
+            let next: StdOption<Box<dyn DataType>> = if let Some(array) = current.as_array() {
                 Some(array.get_data_type())
             } else if let Some(pointer) = current.as_pointer() {
                 pointer.get_data_type()
