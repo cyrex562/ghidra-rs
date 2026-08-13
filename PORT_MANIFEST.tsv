@@ -4172,7 +4172,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Resour
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceStringTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/ResourceType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Segment.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/Segment.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/SegmentRelocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/SegmentTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/ne/WindowsHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format ne 

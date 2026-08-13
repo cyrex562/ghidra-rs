@@ -208,3 +208,44 @@ pub trait Throwable: Send + Sync {}
 /// Placeholder for Java `Class`, referenced by
 /// [`MessageLog`] before the real class is ported.
 pub trait Class: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.ne.SegmentRelocation`, referenced by
+/// [`Segment`](crate::format::ne::segment::Segment) before the real class is ported.
+/// `SegmentRelocation` is a concrete Java class (not an interface), so it is modeled here as a
+/// concrete struct rather than a trait object. Models the reader-driven constructor and the
+/// `offset` accessor that `Segment` needs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SegmentRelocation {
+    segment: i32,
+    r#type: i8,
+    flagbyte: i8,
+    offset: i16,
+    target_segment: i16,
+    target_offset: i16,
+}
+
+impl SegmentRelocation {
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        segment: i32,
+    ) -> std::io::Result<Self> {
+        let r#type = reader.read_next_byte()? as i8;
+        let flagbyte = reader.read_next_byte()? as i8;
+        let offset = reader.read_next_short()?;
+        let target_segment = reader.read_next_short()?;
+        let target_offset = reader.read_next_short()?;
+
+        Ok(SegmentRelocation {
+            segment,
+            r#type,
+            flagbyte,
+            offset,
+            target_segment,
+            target_offset,
+        })
+    }
+
+    pub fn get_offset(&self) -> i16 {
+        self.offset
+    }
+}
