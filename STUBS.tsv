@@ -666,3 +666,7 @@ ts	stub_class	referenced_by
 2026-08-12T10:08:50.449345+00:00	JitPcodeThread	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	DecoderForOnePassage	JitPassageDecoder
 2026-08-12T10:08:50.449345+00:00	RegisterValue	JitPassageDecoder
+2026-08-13T01:15:04.853356+00:00	Reachability	DecoderForOneStride
+2026-08-13T01:15:04.853356+00:00	RExtBranch	DecoderForOneStride
+2026-08-13T01:15:04.853356+00:00	DecodedStride	DecoderForOneStride
+2026-08-13T01:15:04.853356+00:00	DecoderExecutor	DecoderForOneStride
