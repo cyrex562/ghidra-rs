@@ -10905,7 +10905,7 @@ orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitConfig
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitDefaultBytesPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitJvmTypeUtils.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPassage.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
-orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeEmulator.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
+orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeEmulator.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitPcodeThread.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/JitThreadBytesPcodeExecutorState.java	TODO	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit 
 orig_src/Ghidra/Framework/Emulation/src/main/java/ghidra/pcode/emu/jit/alloc/AlignedMpIntHandler.java	DONE	orig_src Ghidra Framework Emulation src main java ghidra pcode emu jit alloc 
