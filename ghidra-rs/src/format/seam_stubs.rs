@@ -3,6 +3,7 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
 use crate::format::pe::rich::ms_product_type::MsProductType;
 
@@ -1227,33 +1228,6 @@ pub trait ElfSymbolTable: Send + Sync {
         let _ = symbol_index;
         None
     }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.elf.ElfLoadHelper`, referenced by
-/// [`ElfRelocationContextBase`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase)
-/// before `ElfProgramBuilder` (its only implementation) is ported. Only the members the
-/// relocation context needs.
-pub trait ElfLoadHelper: Send + Sync {
-    /// `ElfLoadHelper.getProgram()`.
-    fn get_program(&self) -> std::sync::Arc<dyn crate::program::model::listing::program::Program>;
-
-    /// `ElfLoadHelper.getElfHeader()`.
-    fn get_elf_header(&self) -> std::sync::Arc<dyn ElfHeader>;
-
-    /// `ElfLoadHelper.getLog()`.
-    fn get_log(&self) -> std::sync::Arc<dyn MessageLog>;
-
-    /// `ElfLoadHelper.log(String)`.
-    fn log(&self, msg: &str);
-
-    /// `ElfLoadHelper.log(Throwable)`.
-    fn log_exception(&self, t: &dyn std::error::Error);
-
-    /// `ElfLoadHelper.getImageBaseWordAdjustmentOffset()`.
-    fn get_image_base_word_adjustment_offset(&self) -> i64;
-
-    /// `ElfLoadHelper.getGOTValue()`, whose Java return type is the nullable `Long`.
-    fn get_got_value(&self) -> Option<i64>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocation`, referenced by

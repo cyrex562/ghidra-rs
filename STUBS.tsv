@@ -716,7 +716,6 @@ ts	stub_class	referenced_by
 2026-08-13T08:47:45.518061+00:00	ElfSectionHeader	ElfSymbol
 2026-08-13T08:47:45.518262+00:00	ElfStringTable	ElfSymbol
 2026-08-13T08:47:45.518672+00:00	ElfSymbolTable	ElfSymbol
-2026-08-13T09:08:55.722517+00:00	ElfLoadHelper	ElfRelocationContext
 2026-08-13T09:08:55.722518+00:00	ElfRelocation	ElfRelocationContext
 2026-08-13T09:08:55.722519+00:00	ElfRelocationTable	ElfRelocationContext
 2026-08-13T09:08:55.722520+00:00	ElfRelocationHandler	ElfRelocationContext

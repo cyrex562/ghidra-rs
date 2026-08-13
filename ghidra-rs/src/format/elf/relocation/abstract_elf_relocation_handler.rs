@@ -346,8 +346,9 @@ mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
 
+    use crate::format::elf::elf_load_helper::ElfLoadHelper;
     use crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase;
-    use crate::format::seam_stubs::{Class, ElfHeader, ElfLoadHelper, ElfSectionHeader, Throwable};
+    use crate::format::seam_stubs::{Class, ElfHeader, ElfSectionHeader, Throwable};
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::reloc::RelocationStatus;
 
@@ -440,6 +441,19 @@ mod tests {
         fn get_program(&self) -> Arc<dyn Program> {
             Arc::new(MockProgram)
         }
+        fn get_option_bool(&self, _option_name: &str, default_value: bool) -> bool {
+            default_value
+        }
+        fn get_option_string(
+            &self,
+            _option_name: &str,
+            default_value: Option<String>,
+        ) -> Option<String> {
+            default_value
+        }
+        fn get_option_i32(&self, _option_name: &str, default_value: i32) -> i32 {
+            default_value
+        }
         fn get_elf_header(&self) -> Arc<dyn ElfHeader> {
             Arc::new(MockElfHeader)
         }
@@ -448,11 +462,88 @@ mod tests {
         }
         fn log(&self, _msg: &str) {}
         fn log_exception(&self, _t: &dyn std::error::Error) {}
+        fn mark_as_code(&self, _address: Address) {}
+        fn create_one_byte_function(
+            &self,
+            _name: Option<&str>,
+            _address: Address,
+            _is_entry: bool,
+        ) -> Arc<dyn crate::program::model::listing::function::Function> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn create_external_function_linkage(
+            &self,
+            _name: &str,
+            _function_addr: Address,
+            _indirect_pointer_addr: Option<Address>,
+        ) -> Option<Arc<dyn crate::program::model::listing::function::Function>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn create_undefined_data(
+            &self,
+            _address: Address,
+            _length: i32,
+        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn create_data(
+            &self,
+            _address: Address,
+            _dt: Box<dyn crate::program::model::data::data_type::DataType>,
+        ) -> Option<Arc<dyn crate::program::model::listing::data::Data>> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn set_elf_symbol_address(&self, _elf_symbol: &ElfSymbol, _address: Option<Address>) {}
+        fn get_elf_symbol_address(&self, _elf_symbol: &ElfSymbol) -> Option<Address> {
+            None
+        }
+        fn create_symbol(
+            &self,
+            _addr: Address,
+            _name: &str,
+            _is_primary: bool,
+            _pin_absolute: bool,
+            _namespace: Option<Arc<dyn crate::program::model::symbol::namespace::Namespace>>,
+        ) -> Result<
+            Arc<dyn crate::program::model::symbol::Symbol>,
+            crate::util::exception::InvalidInputException,
+        > {
+            unimplemented!("not exercised by these tests")
+        }
+        fn find_load_address(
+            &self,
+            _section: &dyn crate::format::seam_stubs::MemoryLoadable,
+            _byte_offset_within_section: i64,
+        ) -> Option<Address> {
+            None
+        }
+        fn get_default_address(&self, _addressable_word_offset: i64) -> Address {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_image_base_word_adjustment_offset(&self) -> i64 {
             0
         }
         fn get_got_value(&self) -> Option<i64> {
             None
+        }
+        fn allocate_linkage_block(
+            &self,
+            _alignment: i32,
+            _size: i32,
+            _purpose: &str,
+        ) -> Option<crate::program::model::address::range::AddressRange> {
+            None
+        }
+        fn get_original_value(
+            &self,
+            _addr: Address,
+            _sign_extend: bool,
+        ) -> Result<i64, crate::program::model::mem::memory_access_exception::MemoryAccessException>
+        {
+            unimplemented!("not exercised by these tests")
+        }
+        fn add_artificial_reloc_table_entry(&self, _address: Address, _length: i32) -> bool {
+            false
         }
     }
 
