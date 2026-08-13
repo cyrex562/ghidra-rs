@@ -710,3 +710,4 @@ ts	stub_class	referenced_by
 2026-08-13T07:58:49.859370+00:00	GenericDataTypeProgramLocation	GenericDataTypeLocationDescriptor
 2026-08-13T07:58:49.860962+00:00	ReferenceUtils	GenericDataTypeLocationDescriptor
 2026-08-13T08:14:16.597957+00:00	AbstractProgramBasedDynamicTableColumn	AbstractProgramLocationTableColumn
+2026-08-13T08:19:01.563148+00:00	Option	OptionListener
