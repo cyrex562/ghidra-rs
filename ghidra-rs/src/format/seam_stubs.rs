@@ -160,3 +160,51 @@ pub trait C13SectionIteratorLike {
     fn has_next(&self) -> bool;
     fn next(&mut self) -> Option<Box<dyn C13SectionLike>>;
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.NTHeader`, referenced by
+/// [`PeMarkupable`](crate::format::pe::pe_markupable::PeMarkupable) before the real class
+/// is ported. Models only the methods needed for PE markup operations.
+pub trait NTHeader: Send + Sync {
+    fn get_name(&self) -> String;
+    fn is_rva_resoltion_section_aligned(&self) -> bool;
+    fn get_file_header(&self) -> Box<dyn FileHeader>;
+    fn get_optional_header(&self) -> Box<dyn OptionalHeader>;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+    fn rva_to_pointer(&self, rva: i32) -> i32;
+    fn check_pointer(&self, ptr: i64) -> bool;
+    fn check_rva(&self, rva: i64) -> bool;
+    fn va_to_pointer(&self, va: i32) -> i32;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.FileHeader`, referenced by
+/// [`NTHeader`] before the real class is ported.
+pub trait FileHeader: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.OptionalHeader`, referenced by
+/// [`NTHeader`] before the real class is ported.
+pub trait OptionalHeader: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
+/// [`PeMarkupable`](crate::format::pe::pe_markupable::PeMarkupable) before the real class
+/// is ported. Models only the methods needed for PE markup operations.
+pub trait MessageLog: Send + Sync {
+    fn copy_from(&self, log: &dyn MessageLog);
+    fn append_msg(&self, message: &str);
+    fn append_exception(&self, t: &dyn Throwable);
+    fn error(&self, originator: &str, message: &str);
+    fn has_messages(&self) -> bool;
+    fn clear(&self);
+    fn set_status(&self, status: &str);
+    fn clear_status(&self);
+    fn get_status(&self) -> String;
+    fn to_string(&self) -> String;
+    fn write(&self, owner: &dyn Class, message_header: &str);
+}
+
+/// Placeholder for Java `Throwable`, referenced by
+/// [`MessageLog`] before the real class is ported.
+pub trait Throwable: Send + Sync {}
+
+/// Placeholder for Java `Class`, referenced by
+/// [`MessageLog`] before the real class is ported.
+pub trait Class: Send + Sync {}

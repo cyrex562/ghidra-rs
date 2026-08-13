@@ -13,4 +13,5 @@ pub mod machine_name;
 pub mod offset_validator;
 pub mod optional_header_rom;
 pub mod pe_subsystem;
+pub mod pe_markupable;
 pub mod section_flags;
