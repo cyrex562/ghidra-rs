@@ -721,3 +721,5 @@ ts	stub_class	referenced_by
 2026-08-13T09:08:55.722518+00:00	ElfRelocation	ElfRelocationContext
 2026-08-13T09:08:55.722519+00:00	ElfRelocationTable	ElfRelocationContext
 2026-08-13T09:08:55.722520+00:00	ElfRelocationHandler	ElfRelocationContext
+2026-08-13T09:10:14.379491+00:00	ElfSymbolNameUtils	AbstractElfRelocationHandler
+2026-08-13T09:10:14.379491+00:00	ElfRelocationHandler	AbstractElfRelocationHandler
