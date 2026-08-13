@@ -36,10 +36,10 @@ use crate::pcode::emu::jit::decode::decoder_userop_library::DecoderUseropLibrary
 use crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder;
 use crate::pcode::exec::pcode_frame::PcodeFrame;
 use crate::pcode::exec::pcode_program::PcodeProgram;
+use crate::pcode::emu::jit::analysis::jit_control_flow_model::{BlockSplitter, BlockTable, JitBlock};
 use crate::pcode::seam_stubs::{
-    exit_pcode_op, nop_pcode_op, AddrCtx, BlockSplitter, ErrBranch, JitBlock,
-    PBranch, PseudoInstruction, Reachability, RegisterValue, SBranch, SExtBranch, SIndBranch,
-    SIntBranch,
+    exit_pcode_op, nop_pcode_op, AddrCtx, ErrBranch, PBranch, PseudoInstruction, Reachability,
+    RegisterValue, SBranch, SExtBranch, SIndBranch, SIntBranch,
 };
 use crate::program::model::address::{Address, AddressSpaceType};
 use crate::program::model::lang::disassembler_context::DisassemblerContext;
@@ -614,8 +614,9 @@ impl<'d> DecoderExecutor<'d> {
     ///
     /// # Panics
     ///
-    /// Once past the empty-step shortcut: [`BlockSplitter`] is a placeholder, so the analysis
-    /// itself is not yet runnable. See its docs.
+    /// If the split leaves the final block with fall through
+    /// ([`UnterminatedFlowException`](crate::pcode::emu::jit::analysis::UnterminatedFlowException)),
+    /// which the appended probe op precludes.
     pub fn check_fallthrough_and_accumulate(
         &mut self,
         from: &PcodeProgram,
@@ -634,36 +635,36 @@ impl<'d> DecoderExecutor<'d> {
         let mut splitter = BlockSplitter::new(program, |from, to| {
             SIntBranch::new(from.clone(), to.clone(), true)
         });
-        // Java hands the live list over; the branches are not `Clone`, and this executor is done
-        // with them either way, so they are moved out.
+        // Java hands the live list over, and this executor is done with them either way, so they
+        // are moved out.
         splitter.add_branches(std::mem::take(&mut self.branches_for_this_step));
-        let blocks = splitter.split_blocks();
-        let entry = blocks.first().expect("a non-empty step splits into at least one block").1;
-        let exit = blocks.last().expect("a non-empty step splits into at least one block").1;
+        let blocks = splitter.split_blocks().expect("the probe op terminates the final block");
+        let entry = *blocks.blocks().first().expect("a non-empty step splits into at least one block");
+        let exit = *blocks.blocks().last().expect("a non-empty step splits into at least one block");
 
         let mut reachable: HashMap<JitBlock, Reachability> = HashMap::new();
-        self.collect_reachable(&mut reachable, entry, Reachability::WithoutCtxmod, stride);
+        self.collect_reachable(&mut reachable, &blocks, entry, Reachability::WithoutCtxmod, stride);
 
-        for (_first_op, block) in &blocks {
-            let Some(reach) = reachable.get(block).copied() else {
+        for (block, data) in blocks.into_blocks() {
+            let Some(reach) = reachable.get(&block).copied() else {
                 continue;
             };
-            for op in block.get_code() {
+            for op in data.code() {
                 if *op != probe_op {
                     stride.ops_for_stride.push(op.clone());
                 }
             }
-            for branch in block.branches_from() {
+            for branch in data.branches_from() {
                 if !branch.is_fall {
                     let from = branch.from.clone();
-                    stride.passage.internal_branches.insert(from, branch.with_reach(reach));
+                    stride.passage.internal_branches.insert(from, branch.clone().with_reach(reach));
                 }
             }
-            for branch in block.branches_out() {
+            for branch in data.branches_out() {
                 if branch.from() == &probe_op {
                     continue;
                 }
-                match branch {
+                match branch.clone() {
                     SBranch::Ext(eb) => stride.passage.flow_to(eb.with_reach(reach)),
                     SBranch::Ind(ib) => {
                         let from = ib.from.clone();
@@ -685,17 +686,21 @@ impl<'d> DecoderExecutor<'d> {
 
     /// Check whether any op in the block calls a userop that may modify the decode context.
     ///
-    /// Port of `DecoderExecutor.blockModifiesContext(JitBlock)`.
+    /// Port of `DecoderExecutor.blockModifiesContext(JitBlock)`; `blocks` holds the block's ops and
+    /// userop names, which Java reads off the block itself (see
+    /// [`BlockTable`](crate::pcode::emu::jit::analysis::BlockTable)).
     fn block_modifies_context(
         &self,
-        block: &JitBlock,
+        blocks: &BlockTable,
+        block: JitBlock,
         stride: &DecoderForOneStride<'_, '_>,
     ) -> bool {
-        for op in block.get_code() {
+        let data = blocks.block(block);
+        for op in data.code() {
             if op.opcode != OpCode::CallOther {
                 continue;
             }
-            let Some(name) = block.get_userop_name(self.get_callother_op_number(op)) else {
+            let Some(name) = data.get_userop_name(self.get_callother_op_number(op)) else {
                 continue;
             };
             let Some(userop) = stride.passage.library().get_userop(&name) else {
@@ -728,6 +733,7 @@ impl<'d> DecoderExecutor<'d> {
     ///
     /// # Arguments
     /// * `into` - a mutable map for collecting reachable blocks
+    /// * `blocks` - the split blocks, which hold each block's ops and flows
     /// * `cur` - the source block, or an intermediate during recursion
     /// * `how` - the computed reachability of the source block; use
     ///   [`Reachability::WithoutCtxmod`] for the seed
@@ -737,13 +743,14 @@ impl<'d> DecoderExecutor<'d> {
     fn collect_reachable(
         &self,
         into: &mut HashMap<JitBlock, Reachability>,
+        blocks: &BlockTable,
         cur: JitBlock,
         how: Reachability,
         stride: &DecoderForOneStride<'_, '_>,
     ) {
         let cur_how = into.get(&cur).copied();
 
-        let how = if self.block_modifies_context(&cur, stride) {
+        let how = if self.block_modifies_context(blocks, cur, stride) {
             // Not combine. If we're MAYBE here, we still become WITH_CTX.
             Reachability::WithCtxmod
         } else {
@@ -755,8 +762,8 @@ impl<'d> DecoderExecutor<'d> {
         }
         into.insert(cur, how);
 
-        for flow in cur.flows_from() {
-            self.collect_reachable(into, flow.to, how, stride);
+        for flow in blocks.block(cur).flows_from() {
+            self.collect_reachable(into, blocks, flow.to, how, stride);
         }
     }
 

@@ -143,7 +143,7 @@ mod tests {
     use super::*;
     use crate::pcode::emu::jit::op::JitDefOp;
     use crate::pcode::emu::jit::var::JitOutVar as JitOutVarStub;
-    use crate::pcode::seam_stubs::JitBlock;
+    use crate::pcode::emu::jit::analysis::jit_control_flow_model::JitBlock;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::pcode::Varnode;
     use std::sync::{Arc, Mutex};

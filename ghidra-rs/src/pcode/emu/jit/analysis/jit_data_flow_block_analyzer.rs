@@ -10,9 +10,10 @@ use crate::pcode::emu::jit::var::JitOutVar;
 use crate::pcode::emu::jit::op::{JitDefOp, JitPhiOp};
 use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar};
 use crate::pcode::exec::pcode_executor_state_piece::Reason;
+use crate::pcode::emu::jit::analysis::jit_control_flow_model::{BlockFlow, JitBlock};
 use crate::pcode::seam_stubs::{
-    BlockFlow, JitAnalysisContext, JitBlock, JitDataFlowExecutor, JitDataFlowModel,
-    JitDataFlowState, JitDataFlowUseropLibrary,
+    JitAnalysisContext, JitDataFlowExecutor, JitDataFlowModel, JitDataFlowState,
+    JitDataFlowUseropLibrary,
 };
 use crate::program::model::lang::register::Register;
 use crate::program::model::pcode::Varnode;
@@ -363,7 +364,7 @@ use crate::pcode::emu::jit::op::JitOp;
         analyzer_b.state.set_var(&vn, Arc::clone(&b_val));
         dfm.analyzers.lock().unwrap().insert(block_b, Arc::clone(&analyzer_b));
 
-        let flow = BlockFlow { from: Some(block_b), to: block_a };
+        let flow = BlockFlow { from: Some(block_b), to: block_a, branch: None };
         dfm.flows.lock().unwrap().insert(block_a, vec![flow]);
 
         let analyzer_a =
