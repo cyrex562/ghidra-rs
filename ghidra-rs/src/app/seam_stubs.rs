@@ -1385,3 +1385,38 @@ pub trait DecompilerPanel: Send + Sync {}
 
 /// Placeholder trait for `ghidra.app.decompiler.component.margin.DecompilerMarginProvider`.
 pub trait DecompilerMarginProvider: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.datatype.microsoft.NewGuid`, referenced by
+/// [`guid_util`](crate::app::util::datatype::microsoft::guid_util) before the real class is
+/// ported. `NewGuid` sits on a dependency cycle with `GuidUtil` -- it reads `GuidUtil.GuidType`
+/// and looks names up through `GuidUtil.getKnownGuid` -- so only the one static that `GuidUtil`
+/// calls is modeled here. `NewGuid`'s own state (its decoded words, name, version and archive
+/// type, and its `toString`/`equals`) belongs to that class's future port.
+pub struct NewGuid;
+
+impl NewGuid {
+    /// Stands in for the static `NewGuid.isOKForGUID(byte[], int)`: true when the 16 bytes at
+    /// `offset` are a plausible GUID -- either the fixed Microsoft OLE range (`..00 C0 .. 46`),
+    /// or a version 1-2 or version 4 GUID whose variant field is the RFC 4122 `10xxxxxx`.
+    ///
+    /// Java's own comment on this method is "not really sure what's going on here"; the three
+    /// checks are reproduced literally. Java's bytes are signed, but each of its comparisons
+    /// works out to the unsigned test written here.
+    pub fn is_ok_for_guid(bytes: &[u8], offset: usize) -> bool {
+        /// `NewGuid.size`, the width of a GUID in bytes.
+        const SIZE: usize = 16;
+
+        if bytes.len() < offset + SIZE {
+            return false;
+        }
+        let clock_seq_hi = bytes[offset + 7];
+        let variant = bytes[offset + 8];
+        if clock_seq_hi == 0x00 && variant == 0xC0 && bytes[offset + 15] == 0x46 {
+            return true;
+        }
+        if (0x10..=0x12).contains(&clock_seq_hi) && (variant & 0xC0) == 0x80 {
+            return true;
+        }
+        (clock_seq_hi & 0xF0) == 0x40 && (variant & 0xC0) == 0x80
+    }
+}
