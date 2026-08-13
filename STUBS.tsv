@@ -677,3 +677,4 @@ ts	stub_class	referenced_by
 2026-08-13T01:36:15.038109+00:00	RIndBranch	DecoderExecutor
 2026-08-13T01:36:15.038109+00:00	ErrBranch	DecoderExecutor
 2026-08-13T01:36:15.038109+00:00	PBranch	DecoderExecutor
+2026-08-13T02:20:00.000000+00:00	EntryPointPrototype	JitCompiledPassageClass
