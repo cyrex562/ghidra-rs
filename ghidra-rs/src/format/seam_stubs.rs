@@ -804,3 +804,75 @@ pub trait RichProduct: Send + Sync {
 pub trait RichHeaderUtils: Send + Sync {
     fn get_product(&self, id: i32) -> Option<Box<dyn RichProduct>>;
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.RichHeader`, referenced by
+/// [`RichTable`](crate::format::pe::rich_table::RichTable) before the real class is ported.
+/// `RichHeader` and `RichTable` sit in the same Java package and reference each other
+/// (`RichHeader` constructs a `RichTable`; `RichTable` reads `RichHeader`'s signature constants
+/// in its parser and `toString`), so this stub breaks that cycle. `RichHeader` is a concrete
+/// Java class, so it is modeled as a concrete (uninstantiable) type exposing only the constants
+/// `RichTable` needs.
+pub struct RichHeader;
+
+impl RichHeader {
+    /// "Rich"
+    pub const IMAGE_RICH_SIGNATURE: i32 = 0x68636952;
+    /// "DanS"
+    pub const IMAGE_DANS_SIGNATURE: i32 = 0x536E6144;
+    pub const NAME: &'static str = "IMAGE_RICH_HEADER";
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.rich.RichHeaderRecord`, referenced by
+/// [`RichTable`](crate::format::pe::rich_table::RichTable) before the real class is ported.
+/// `RichHeaderRecord` is a concrete Java class (not an interface), so it is modeled here as a
+/// concrete struct wrapping the already-ported
+/// [`CompId`](crate::format::pe::rich::comp_id::CompId), consistent with the other concrete-class
+/// stubs above.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RichHeaderRecord {
+    record_index: i32,
+    comp_id: crate::format::pe::rich::comp_id::CompId,
+    count: i32,
+}
+
+impl RichHeaderRecord {
+    pub fn new(record_index: i32, compid: i32, count: i32) -> Self {
+        RichHeaderRecord {
+            record_index,
+            comp_id: crate::format::pe::rich::comp_id::CompId::new(compid),
+            count,
+        }
+    }
+
+    pub fn get_index(&self) -> i32 {
+        self.record_index
+    }
+
+    pub fn get_comp_id(&self) -> crate::format::pe::rich::comp_id::CompId {
+        self.comp_id
+    }
+
+    pub fn get_object_count(&self) -> i32 {
+        self.count
+    }
+}
+
+impl std::fmt::Display for RichHeaderRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:x} Count: {}", self.comp_id.value(), self.count)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.rich.PERichTableDataType`, referenced by
+/// [`RichTable::to_data_type`](crate::format::pe::rich_table::RichTable::to_data_type) before the
+/// real class is ported. `PERichTableDataType` is a concrete Java class (not an interface), so it
+/// is modeled here as a concrete struct. `RichTable` only ever constructs and returns this type
+/// opaquely, so no members are needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PERichTableDataType;
+
+impl PERichTableDataType {
+    pub fn new() -> Self {
+        PERichTableDataType
+    }
+}
