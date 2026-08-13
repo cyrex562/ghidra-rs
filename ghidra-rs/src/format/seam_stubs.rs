@@ -861,3 +861,21 @@ impl PERichTableDataType {
 }
 
 impl crate::program::model::data::data_type::DataType for PERichTableDataType {}
+
+/// Placeholder for the unported Java type `PdbInfoCodeView`, referenced by `PdbInfo`.
+/// Only defines the instance methods needed by PdbInfo. The static factory methods
+/// (is_match, read) will be part of the concrete implementation.
+pub trait PdbInfoCodeView: Send + Sync {
+    fn is_valid(&self) -> bool;
+    fn serialize_to_options(&self, options: &dyn crate::framework::options::options::Options);
+    fn to_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+}
+
+/// Placeholder for the unported Java type `PdbInfoDotNet`, referenced by `PdbInfo`.
+/// Only defines the instance methods needed by PdbInfo. The static factory methods
+/// (is_match, read) will be part of the concrete implementation.
+pub trait PdbInfoDotNet: Send + Sync {
+    fn is_valid(&self) -> bool;
+    fn serialize_to_options(&self, options: &dyn crate::framework::options::options::Options);
+    fn to_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+}

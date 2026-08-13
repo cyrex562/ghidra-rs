@@ -702,3 +702,5 @@ ts	stub_class	referenced_by
 2026-08-13T07:10:00.100000+00:00	RichHeaderRecord	RichTable
 2026-08-13T07:10:00.200000+00:00	PERichTableDataType	RichTable
 2026-08-13T07:04:16.713411+00:00	NewGuid	GuidUtil
+2026-08-13T07:05:54.910955+00:00	PdbInfoCodeView	PdbInfo
+2026-08-13T07:05:54.911201+00:00	PdbInfoDotNet	PdbInfo
