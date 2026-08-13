@@ -30,6 +30,7 @@ use crate::pcode::emu::jit::var::{JitVal, JitVarnodeVar, JitOutVar};
 use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 use crate::pcode::emu::jit::decode::decoder_userop_library::DecoderUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
+use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
@@ -3003,11 +3004,23 @@ impl FieldForArrDirect {
     }
 }
 
-/// Placeholder for the unported Java type `JitCompiledPassage`, referenced by `InstanceFieldReq`.
-/// Generated stub: only a shape hint. This type is used as a bound on the generic type parameter
-/// in methods of `InstanceFieldReq` without calling its methods in the type itself, so no methods
-/// are exposed. Replace with the real port when available.
-pub trait JitCompiledPassage: Send + Sync {}
+/// Placeholder for the unported Java type `JitCompiledPassage`, referenced by `InstanceFieldReq`
+/// and by [`EntryPoint`]. Generated stub: only a shape hint. Implementations are generated
+/// classfiles, so the one method declared here -- the generated `run(int)` that
+/// [`EntryPoint::run`] invokes -- has no body to port and panics by default.
+pub trait JitCompiledPassage: Send + Sync {
+    /// Run the compiled passage of code, entering at the given block.
+    ///
+    /// Placeholder for `JitCompiledPassage.run(int)`. Except during testing, this is ordinarily
+    /// called by [`EntryPoint::run`]. It returns the next entry point, at which execution left this
+    /// passage, and throws `SuspendedPcodeExecutionException` when
+    /// [`JitPcodeThread::count`](crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread::count)
+    /// interrupts it.
+    fn run(&self, block_id: i32) -> Result<EntryPoint, SuspendedPcodeExecutionException> {
+        let _ = block_id;
+        unimplemented!("JitCompiledPassage implementations are generated code; not yet ported")
+    }
+}
 
 /// Placeholder for the unported nested Java type `JitCompiledPassage.EntryPointPrototype`,
 /// referenced by
@@ -3033,6 +3046,63 @@ impl EntryPointPrototype {
         block_id: i32,
     ) -> Self {
         Self { cls, block_id }
+    }
+
+    /// Create the entry point for the given thread, by instantiating this prototype's compiled
+    /// passage class for it.
+    ///
+    /// Placeholder for `EntryPointPrototype.createInstance(JitPcodeThread)`, called from
+    /// [`JitPcodeThread::get_entry`](crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread::get_entry).
+    /// Java also memoizes the result in a per-thread map on the prototype; that cache is dropped
+    /// here, since the calling thread caches the same entry point by `AddrCtx` itself. Keying a map
+    /// by thread would additionally need an identity for
+    /// [`JitPcodeThread`](crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread), which is a
+    /// value here, not a reference.
+    pub fn create_instance(
+        &self,
+        thread: &crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread,
+    ) -> EntryPoint {
+        EntryPoint::new(self.clone(), Arc::from(self.cls.create_instance(thread)), self.block_id)
+    }
+}
+
+/// Placeholder for the unported nested Java record `JitCompiledPassage.EntryPoint`, the translated
+/// passage instantiated for one thread together with the index of the block at which to enter it.
+/// Produced by [`EntryPointPrototype::create_instance`] and cached by
+/// [`JitPcodeThread`](crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread), whose execution
+/// loop drives it. Its own body is fully ported -- [`run`](Self::run) is a one-line delegation --
+/// but it belongs to the unported enclosing `JitCompiledPassage`, whose generated `run(int)` it
+/// calls. Replace with the real port when `JitCompiledPassage.java` lands.
+#[derive(Clone)]
+pub struct EntryPoint {
+    /// The entry point prototype (passage class and blockId without bound thread). Port of
+    /// `EntryPoint.prototype`.
+    pub prototype: EntryPointPrototype,
+    /// The compiled passage, instantiated for the bound thread. Port of `EntryPoint.passage`,
+    /// shared rather than owned because a thread's code cache and its caller both hold the entry.
+    pub passage: Arc<dyn JitCompiledPassage>,
+    /// An index identifying the block at the target address and contextreg value of this entry
+    /// point. Port of `EntryPoint.blockId`.
+    pub block_id: i32,
+}
+
+impl EntryPoint {
+    /// Port of the record constructor `new EntryPoint(EntryPointPrototype, JitCompiledPassage,
+    /// int)`.
+    pub fn new(
+        prototype: EntryPointPrototype,
+        passage: Arc<dyn JitCompiledPassage>,
+        block_id: i32,
+    ) -> Self {
+        Self { prototype, passage, block_id }
+    }
+
+    /// Start/resume execution of the bound thread at this entry point.
+    ///
+    /// Port of `EntryPoint.run()`, i.e. `passage.run(blockId)`. Java's thrown
+    /// `SuspendedPcodeExecutionException` is an `Err` here.
+    pub fn run(&self) -> Result<EntryPoint, SuspendedPcodeExecutionException> {
+        self.passage.run(self.block_id)
     }
 }
 
@@ -3772,109 +3842,6 @@ impl std::hash::Hash for AddrCtx {
     }
 }
 
-/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.JitPcodeThread`, referenced by
-/// [`JitPassageDecoder`](crate::pcode::emu::jit::decode::jit_passage_decoder::JitPassageDecoder),
-/// with which it sits on a dependency cycle (the real `JitPcodeThread.getEntryPrototype` takes a
-/// `JitPassageDecoder`). Real class extends `BytesPcodeThread` and drives the whole JIT
-/// fetch-decode-translate-execute loop; this stub exposes only the three getters
-/// `JitPassageDecoder`'s constructor calls. `decoder` is shared (`Arc<Mutex<_>>`) rather than
-/// owned outright because Java hands the very same `InstructionDecoder` object to both the thread
-/// and the passage decoder, and later mutates it through either reference. Replace with the real
-/// port when `JitPcodeThread.java` lands.
-///
-/// Java has exactly one constructor, `JitPcodeThread(String, JitPcodeEmulator)`, which builds the
-/// decoder and library itself (via the unported `SleighInstructionDecoder`). This stub therefore
-/// offers two: [`new`](Self::new), taking the pieces [`JitPassageDecoder`] reads, and
-/// [`named`](Self::named), standing in for the real constructor as called from
-/// [`JitPcodeEmulator::create_thread`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator).
-/// `decoder` is consequently optional: a thread made by `named` has none until
-/// `SleighInstructionDecoder` is ported.
-pub struct JitPcodeThread {
-    name: String,
-    decoder: Option<Arc<Mutex<dyn InstructionDecoder>>>,
-    default_context: Option<Arc<dyn ProgramContext>>,
-    userop_library: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
-}
-
-impl JitPcodeThread {
-    /// Construct a thread stub from its decoder, default context, and userop library.
-    pub fn new(
-        decoder: Arc<Mutex<dyn InstructionDecoder>>,
-        default_context: Option<Arc<dyn ProgramContext>>,
-        userop_library: Arc<dyn PcodeUseropLibrary<Vec<u8>>>,
-    ) -> Self {
-        Self {
-            name: String::new(),
-            decoder: Some(decoder),
-            default_context,
-            userop_library,
-        }
-    }
-
-    /// Stands in for `new JitPcodeThread(String, JitPcodeEmulator)`. The machine back-reference is
-    /// dropped (nothing this stub models reads it), and, with `SleighInstructionDecoder` unported,
-    /// so is the decoder the real constructor would build from the machine's language.
-    pub fn named(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            decoder: None,
-            default_context: None,
-            userop_library: Arc::new(crate::pcode::exec::pcode_userop_library::nil()),
-        }
-    }
-
-    /// Port of the inherited `PcodeThread.getName()`.
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    /// Port of `JitPcodeThread.getDecoder()`.
-    ///
-    /// # Panics
-    ///
-    /// If this thread was built by [`named`](Self::named), which has no decoder to hand back.
-    pub fn get_decoder(&self) -> Arc<Mutex<dyn InstructionDecoder>> {
-        Arc::clone(
-            self.decoder
-                .as_ref()
-                .expect("SleighInstructionDecoder is not ported, so a named thread has no decoder"),
-        )
-    }
-
-    /// Port of `JitPcodeThread.getDefaultContext()`.
-    pub fn get_default_context(&self) -> Option<Arc<dyn ProgramContext>> {
-        self.default_context.clone()
-    }
-
-    /// Port of the inherited `PcodeThread.getUseropLibrary()`.
-    pub fn get_userop_library(&self) -> Arc<dyn PcodeUseropLibrary<Vec<u8>>> {
-        Arc::clone(&self.userop_library)
-    }
-
-    /// Port of `PcodeThread.hasEntry(AddrCtx)`, referenced by
-    /// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride).
-    /// Real method checks the emulator's cache of already-translated entry points; this stub has
-    /// no such cache, so it always reports no known entries.
-    pub(crate) fn has_entry(&self, _at: &AddrCtx) -> bool {
-        false
-    }
-
-    /// Port of `PcodeMachine.getInject(Address)` (accessed via the thread), referenced by
-    /// [`DecoderForOneStride`](crate::pcode::emu::jit::decode::decoder_for_one_stride::DecoderForOneStride).
-    /// Real method looks up a user inject registered at `address`; this stub has no inject map,
-    /// so it always reports none.
-    pub(crate) fn get_inject(&self, _address: &Address) -> Option<PcodeProgram> {
-        None
-    }
-}
-
-/// Java reaches this through `JitPcodeThread extends BytesPcodeThread ... implements
-/// PcodeThread<byte[]>`; here it is what
-/// [`JitPcodeEmulator::create_thread`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator)
-/// must return, exactly as [`BytesPcodeThread`](crate::pcode::emu::bytes_pcode_thread) does for
-/// `PcodeEmulator`.
-impl ErasedPcodeThread for JitPcodeThread {}
-
 /// Placeholder for the unported Java record `ghidra.pcode.emu.jit.JitConfiguration`, the
 /// configuration held by [`JitCompiler`] and read back through
 /// [`JitPcodeEmulator::get_configuration`](crate::pcode::emu::jit::jit_pcode_emulator::JitPcodeEmulator::get_configuration).
@@ -4068,6 +4035,43 @@ impl PcodeExecutorStatePiece<Vec<u8>, Vec<u8>> for JitDefaultBytesPcodeExecutorS
 }
 
 impl PcodeExecutorState<Vec<u8>> for JitDefaultBytesPcodeExecutorState {}
+
+/// Placeholder for the unported Java class `ghidra.pcode.emu.jit.JitThreadBytesPcodeExecutorState`,
+/// the state
+/// [`JitPcodeThread::create_thread_state`](crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread::create_thread_state)
+/// multiplexes for a thread. Java `extends ThreadPcodeExecutorState<byte[]>`, narrowing both halves
+/// to [`JitDefaultBytesPcodeExecutorState`], which is exactly what this stub wraps. Its remaining
+/// method, `getForSpace(AddressSpace)`, routes to the local or shared half by whether the space is
+/// thread-local; it needs `JitBytesPcodeExecutorStateSpace`, which is not ported, so it is left to
+/// the real port.
+pub struct JitThreadBytesPcodeExecutorState {
+    inner: ThreadPcodeExecutorState<
+        Vec<u8>,
+        JitDefaultBytesPcodeExecutorState,
+        JitDefaultBytesPcodeExecutorState,
+    >,
+}
+
+impl JitThreadBytesPcodeExecutorState {
+    /// Placeholder for `new JitThreadBytesPcodeExecutorState(JitDefaultBytesPcodeExecutorState,
+    /// JitDefaultBytesPcodeExecutorState)`, whose body is `super(sharedState, localState)`.
+    pub fn new(
+        shared_state: JitDefaultBytesPcodeExecutorState,
+        local_state: JitDefaultBytesPcodeExecutorState,
+    ) -> Self {
+        Self { inner: ThreadPcodeExecutorState::new(shared_state, local_state) }
+    }
+
+    /// Placeholder for `getSharedState()`, narrowed from the superclass's.
+    pub fn get_shared_state(&self) -> &JitDefaultBytesPcodeExecutorState {
+        self.inner.get_shared_state()
+    }
+
+    /// Placeholder for `getLocalState()`, narrowed from the superclass's.
+    pub fn get_local_state(&self) -> &JitDefaultBytesPcodeExecutorState {
+        self.inner.get_local_state()
+    }
+}
 
 /// Placeholder for the unported Java class `ghidra.pcode.emu.jit.decode.DecoderForOnePassage`,
 /// referenced by

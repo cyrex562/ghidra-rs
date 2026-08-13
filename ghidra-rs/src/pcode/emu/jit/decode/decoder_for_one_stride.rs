@@ -228,7 +228,8 @@ mod tests {
     use super::*;
     use crate::pcode::emu::instruction_decoder::InstructionDecoder;
     use crate::pcode::exec::pcode_userop_library::{ErasedPcodeUseropLibrary, PcodeUseropLibrary, UseropMap};
-    use crate::pcode::seam_stubs::{JitPcodeThread, RegisterValue};
+    use crate::pcode::emu::jit::jit_pcode_thread::JitPcodeThread;
+    use crate::pcode::seam_stubs::RegisterValue;
     use crate::program::model::address::{Address, AddressSpace, AddressSpaceType};
     use crate::program::model::lang::language::Language;
     use std::sync::{Arc, Mutex};
