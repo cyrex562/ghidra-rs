@@ -205,10 +205,10 @@ where
 /// [`MemBuffer`] requires `Send + Sync`; consequently it reads bytes directly rather than through
 /// [`BytesPcodeExecutorStateSpace::read`], so it triggers no uninitialized-read callback or
 /// warning (uninitialized offsets simply read as zero, as they always do at the storage level).
-struct StateMemBuffer {
-    address: Address,
-    source: Option<crate::generic::seam_stubs::SemisparseByteArray>,
-    big_endian: bool,
+pub(crate) struct StateMemBuffer {
+    pub(crate) address: Address,
+    pub(crate) source: Option<crate::generic::seam_stubs::SemisparseByteArray>,
+    pub(crate) big_endian: bool,
 }
 
 impl MemBuffer for StateMemBuffer {
