@@ -1,6 +1,6 @@
 status	mode	depth	fanin	rem	module	path
 DONE	trait	22	4	26	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/database/listing/DBTraceDataCompositeFieldComponent.java
-TODO	trait	31	9	0	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/MemoryLoadable.java
+DONE	trait	31	9	0	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/MemoryLoadable.java
 TODO	trait	28	50	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/ElfCompressedSectionHeader.java
 TODO	trait	34	4	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCOFFSymbolTable.java
 TODO	trait	33	4	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCOFFSymbolsHeader.java
