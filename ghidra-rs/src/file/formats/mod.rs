@@ -15,4 +15,5 @@ pub mod squashfs;
 pub mod tar;
 pub mod xar;
 pub mod yaffs2;
+pub mod zip;
 pub mod zlib;
