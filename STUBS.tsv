@@ -839,5 +839,8 @@ ts	stub_class	referenced_by
 2026-08-14T09:00:00.000002+00:00	FileSetEntryCommand	MachoFileSetFileSystem
 2026-08-14T09:00:00.000003+00:00	MachoFileSetEntry	MachoFileSetFileSystem
 2026-08-14T09:00:00.000004+00:00	ExtractedMacho	MachoFileSetFileSystem
-2026-08-14T09:00:00.000005+00:00	MachoFileSetExtractor	MachoFileSetFileSystem
 2026-08-14T09:00:00.000006+00:00	MessageLog	MachoFileSetFileSystem
+2026-08-14T09:10:00.000000+00:00	MachHeader	MachoFileSetExtractor
+2026-08-14T09:10:00.000001+00:00	SegmentCommand	MachoFileSetExtractor
+2026-08-14T09:10:00.000002+00:00	ExtractedMacho	MachoFileSetExtractor
+2026-08-14T09:10:00.000003+00:00	ByteArrayProvider	MachoFileSetExtractor

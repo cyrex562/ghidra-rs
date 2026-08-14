@@ -843,6 +843,33 @@ pub struct SegmentCommand {
 }
 
 impl SegmentCommand {
+    /// Full-field constructor, needed by [`macho_file_set_extractor::extract_segment`](
+    /// super::formats::ios::fileset::macho_file_set_extractor::extract_segment)'s tests to build
+    /// a segment with a real name/offsets/protections rather than the load-address/size-only
+    /// shape [`new`](Self::new) provides.
+    #[allow(clippy::too_many_arguments)]
+    pub fn full(
+        segment_name: impl Into<String>,
+        vm_address: i64,
+        vm_size: i64,
+        file_offset: i64,
+        file_size: i64,
+        max_protection: i32,
+        init_protection: i32,
+        flags: i32,
+    ) -> Self {
+        SegmentCommand {
+            vm_address,
+            vm_size,
+            segment_name: segment_name.into(),
+            file_offset,
+            file_size,
+            max_protection,
+            init_protection,
+            flags,
+        }
+    }
+
     /// Mirrors the load-address/size-only construction used by `DyldCacheFileSystem`. The
     /// remaining fields (unused by that caller) default to empty/zero.
     pub fn new(vm_address: i64, vm_size: i64) -> Self {
@@ -900,11 +927,82 @@ impl SegmentCommand {
 
     /// Mirrors the static `size(int magic)`: the on-disk size of a segment load command (with no
     /// sections), which differs between 32- and 64-bit Mach-O.
-    pub fn size(magic: i32) -> i32 {
-        const MH_MAGIC_64: i32 = 0xfeedfacfu32 as i32;
-        const MH_CIGAM_64: i32 = 0xcffaedfeu32 as i32;
-        if magic == MH_MAGIC_64 || magic == MH_CIGAM_64 { 0x48 } else { 0x38 }
+    pub fn size(magic: u32) -> Result<i32, MachException> {
+        if !crate::format::macho::mach_constants::is_magic(magic) {
+            return Err(MachException::new(format!("Invalid magic: 0x{magic:x}")));
+        }
+        let is64bit = magic == crate::format::macho::mach_constants::MH_MAGIC_64
+            || magic == crate::format::macho::mach_constants::MH_CIGAM_64;
+        Ok(if is64bit { 0x48 } else { 0x38 })
     }
+
+    /// Mirrors the static `create(int, String, long, long, long, long, int, int, int)`: builds
+    /// the raw bytes of a `LC_SEGMENT`/`LC_SEGMENT_64` load command for the given fields.
+    pub fn create(
+        magic: u32,
+        name: &str,
+        vm_addr: i64,
+        vm_size: i64,
+        file_offset: i64,
+        file_size: i64,
+        max_prot: i32,
+        init_prot: i32,
+        flags: i32,
+    ) -> Result<Vec<u8>, MachException> {
+        if name.len() > 16 {
+            return Err(MachException::new(format!("Segment name cannot exceed 16 bytes: {name}")));
+        }
+        let big_endian = magic == crate::format::macho::mach_constants::MH_MAGIC;
+        let is64bit = magic == crate::format::macho::mach_constants::MH_MAGIC_64
+            || magic == crate::format::macho::mach_constants::MH_CIGAM_64;
+
+        let mut bytes = vec![0u8; Self::size(magic)? as usize];
+        let total_len = bytes.len() as i32;
+        let lc_type = if is64bit {
+            crate::format::macho::commands::load_command_types::LC_SEGMENT_64
+        } else {
+            crate::format::macho::commands::load_command_types::LC_SEGMENT
+        };
+        put_i32_endian(&mut bytes, 0x00, lc_type as i32, big_endian);
+        put_i32_endian(&mut bytes, 0x04, total_len, big_endian);
+        let name_bytes = name.as_bytes();
+        bytes[0x08..0x08 + name_bytes.len()].copy_from_slice(name_bytes);
+        if is64bit {
+            put_i64_endian(&mut bytes, 0x18, vm_addr, big_endian);
+            put_i64_endian(&mut bytes, 0x20, vm_size, big_endian);
+            put_i64_endian(&mut bytes, 0x28, file_offset, big_endian);
+            put_i64_endian(&mut bytes, 0x30, file_size, big_endian);
+            put_i32_endian(&mut bytes, 0x38, max_prot, big_endian);
+            put_i32_endian(&mut bytes, 0x3c, init_prot, big_endian);
+            put_i32_endian(&mut bytes, 0x40, 0, big_endian);
+            put_i32_endian(&mut bytes, 0x44, flags, big_endian);
+        } else {
+            put_i32_endian(&mut bytes, 0x18, vm_addr as i32, big_endian);
+            put_i32_endian(&mut bytes, 0x1c, vm_size as i32, big_endian);
+            put_i32_endian(&mut bytes, 0x20, file_offset as i32, big_endian);
+            put_i32_endian(&mut bytes, 0x24, file_size as i32, big_endian);
+            put_i32_endian(&mut bytes, 0x28, max_prot, big_endian);
+            put_i32_endian(&mut bytes, 0x2c, init_prot, big_endian);
+            put_i32_endian(&mut bytes, 0x30, 0, big_endian);
+            put_i32_endian(&mut bytes, 0x34, flags, big_endian);
+        }
+        Ok(bytes)
+    }
+}
+
+/// Writes `value`'s bytes into `bytes[offset..offset + 4]` in the given endianness. Shared by
+/// [`MachHeader::create`] and [`SegmentCommand::create`], which both mirror Java's
+/// `DataConverter.getInstance(magic == MachConstants.MH_MAGIC)` convention.
+fn put_i32_endian(bytes: &mut [u8], offset: usize, value: i32, big_endian: bool) {
+    let b = if big_endian { value.to_be_bytes() } else { value.to_le_bytes() };
+    bytes[offset..offset + 4].copy_from_slice(&b);
+}
+
+/// Writes `value`'s bytes into `bytes[offset..offset + 8]` in the given endianness. See
+/// [`put_i32_endian`].
+fn put_i64_endian(bytes: &mut [u8], offset: usize, value: i64, big_endian: bool) {
+    let b = if big_endian { value.to_be_bytes() } else { value.to_le_bytes() };
+    bytes[offset..offset + 8].copy_from_slice(&b);
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.MachHeader`, referenced by
@@ -937,6 +1035,45 @@ impl MachHeader {
     /// segments.
     pub fn parse_segments(&self) -> io::Result<Vec<SegmentCommand>> {
         Ok(Vec::new())
+    }
+
+    /// Mirrors `getAllSegments()`. Not yet implemented (see type docs): always reports no
+    /// segments, since the load-command table is not parsed.
+    pub fn get_all_segments(&self) -> Vec<SegmentCommand> {
+        Vec::new()
+    }
+
+    /// Mirrors the static `create(int, int, int, int, int, int, int, int)`: builds the raw bytes
+    /// of a Mach-O header for the given fields.
+    pub fn create(
+        magic: u32,
+        cpu_type: i32,
+        cpu_sub_type: i32,
+        file_type: i32,
+        n_cmds: i32,
+        size_of_cmds: i32,
+        flags: i32,
+        reserved: i32,
+    ) -> Result<Vec<u8>, MachException> {
+        if !crate::format::macho::mach_constants::is_magic(magic) {
+            return Err(MachException::new(format!("Invalid magic: 0x{magic:x}")));
+        }
+        let big_endian = magic == crate::format::macho::mach_constants::MH_MAGIC;
+        let is64bit = magic == crate::format::macho::mach_constants::MH_MAGIC_64
+            || magic == crate::format::macho::mach_constants::MH_CIGAM_64;
+
+        let mut bytes = vec![0u8; if is64bit { 0x20 } else { 0x1c }];
+        put_i32_endian(&mut bytes, 0x00, magic as i32, big_endian);
+        put_i32_endian(&mut bytes, 0x04, cpu_type, big_endian);
+        put_i32_endian(&mut bytes, 0x08, cpu_sub_type, big_endian);
+        put_i32_endian(&mut bytes, 0x0c, file_type, big_endian);
+        put_i32_endian(&mut bytes, 0x10, n_cmds, big_endian);
+        put_i32_endian(&mut bytes, 0x14, size_of_cmds, big_endian);
+        put_i32_endian(&mut bytes, 0x18, flags, big_endian);
+        if is64bit {
+            put_i32_endian(&mut bytes, 0x1c, reserved, big_endian);
+        }
+        Ok(bytes)
     }
 
     /// Mirrors `parse()`, restricted to what can be determined without a real load-command
@@ -1061,15 +1198,59 @@ impl MachoFileSetEntry {
 }
 
 /// Placeholder for `ghidra.file.formats.ios.ExtractedMacho`, referenced by
-/// `MachoFileSetFileSystem::mount`.
+/// `MachoFileSetFileSystem::mount` and
+/// [`macho_file_set_extractor::extract_file_set_entry`](super::formats::ios::fileset::macho_file_set_extractor::extract_file_set_entry).
 ///
-/// Concrete stub: Java class, not interface. Only the static `toBytes` utility THIS type needs
-/// is included, implemented faithfully (little-endian encoding of a 4- or 8-byte value); the
-/// real class additionally packs a Mach-O's segments down and produces a `ByteProvider` for the
-/// packed result, neither of which is ported yet. Replace with the real port when available.
-pub struct ExtractedMacho;
+/// Concrete stub: Java class, not interface. The real class repacks a Mach-O's segments --
+/// including rebuilding a trimmed `__LINKEDIT` segment from the symbol/dynamic symbol tables --
+/// and fixes up every load command's file offsets to match; both steps walk
+/// `MachHeader.getLoadCommands()`, which this crate's [`MachHeader`] stub does not model yet (see
+/// its docs). Until that lands, [`pack`](Self::pack) degrades to concatenating whatever
+/// [`MachHeader::get_all_segments`] reports (empty today, so just the footer), with no
+/// load-command fixups applied -- the same "empty until real load-command parsing lands"
+/// degradation `MachoFileSetFileSystem::mount` already relies on. `providerOffset`/`monitor` are
+/// constructor params in Java but are only ever used inside `pack()`, so this stub takes them as
+/// [`pack`](Self::pack) arguments instead of storing them. Replace with the real port when
+/// available.
+pub struct ExtractedMacho {
+    provider: Rc<RefCell<dyn ByteProvider>>,
+    header: MachHeader,
+    footer: Vec<u8>,
+    packed: Vec<u8>,
+}
 
 impl ExtractedMacho {
+    /// Mirrors `ExtractedMacho(ByteProvider, long, MachHeader, byte[], TaskMonitor)` (see type
+    /// docs for why `providerOffset`/`monitor` aren't constructor params here).
+    pub fn new(provider: Rc<RefCell<dyn ByteProvider>>, header: MachHeader, footer: &[u8]) -> Self {
+        ExtractedMacho { provider, header, footer: footer.to_vec(), packed: Vec::new() }
+    }
+
+    /// Mirrors `pack()` (see type docs for what is and isn't ported yet).
+    pub fn pack(&mut self, monitor: &dyn TaskMonitor) -> io::Result<()> {
+        let mut packed = Vec::new();
+        for segment in self.header.get_all_segments() {
+            monitor
+                .check_cancelled()
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+            let len = self.provider.borrow_mut().length()? as i64;
+            let available = (len - segment.file_offset()).max(0);
+            let segment_size = segment.file_size().min(available);
+            let bytes =
+                self.provider.borrow_mut().read_bytes(segment.file_offset() as u64, segment_size as usize)?;
+            packed.extend(bytes);
+        }
+        packed.extend_from_slice(&self.footer);
+        self.packed = packed;
+        Ok(())
+    }
+
+    /// Mirrors `getByteProvider(FSRL)`. Consumes `self` since nothing in this crate constructs an
+    /// `ExtractedMacho` for more than one `pack()` + `get_byte_provider()` round trip.
+    pub fn get_byte_provider(self) -> ByteArrayProvider {
+        ByteArrayProvider::new(self.packed)
+    }
+
     /// Mirrors the static `toBytes(long, int)`.
     pub fn to_bytes(value: i64, size: i32) -> io::Result<Vec<u8>> {
         match size {
@@ -1077,43 +1258,6 @@ impl ExtractedMacho {
             8 => Ok(value.to_le_bytes().to_vec()),
             _ => Err(io::Error::new(io::ErrorKind::InvalidInput, format!("Invalid size: {size}"))),
         }
-    }
-}
-
-/// Placeholder for `ghidra.file.formats.ios.fileset.MachoFileSetExtractor`, referenced by
-/// `MachoFileSetFileSystem::get_byte_provider`.
-///
-/// Concrete stub: Java class, not interface. Extraction depends on Mach-O header/segment
-/// creation (`MachHeader::create`, `SegmentCommand::create`) and packing (`ExtractedMacho.pack`),
-/// none of which is ported yet, so both entry points report "not yet implemented". Replace with
-/// the real port when available (at which point `MachoFileSetExtractor.java` gets its own port
-/// turn).
-pub struct MachoFileSetExtractor;
-
-impl MachoFileSetExtractor {
-    /// Mirrors `extractFileSetEntry(ByteProvider, long, FSRL, TaskMonitor)`. Not yet implemented
-    /// (see type docs).
-    pub fn extract_file_set_entry(
-        _provider: Rc<RefCell<dyn ByteProvider>>,
-        _provider_offset: i64,
-        _fsrl_path: &str,
-        _monitor: &dyn TaskMonitor,
-    ) -> io::Result<Box<dyn ByteProvider>> {
-        Err(io::Error::new(
-            io::ErrorKind::Unsupported,
-            "MachoFileSetExtractor.extract_file_set_entry not yet ported",
-        ))
-    }
-
-    /// Mirrors `extractSegment(ByteProvider, SegmentCommand, FSRL, TaskMonitor)`. Not yet
-    /// implemented (see type docs).
-    pub fn extract_segment(
-        _provider: Rc<RefCell<dyn ByteProvider>>,
-        _segment: &SegmentCommand,
-        _fsrl_path: &str,
-        _monitor: &dyn TaskMonitor,
-    ) -> io::Result<Box<dyn ByteProvider>> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "MachoFileSetExtractor.extract_segment not yet ported"))
     }
 }
 
