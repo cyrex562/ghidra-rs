@@ -57,7 +57,7 @@ DONE	trait	40	4	88	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 DONE	trait	39	2	8	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/fileset/MachoFileSetExtractor.java
 DONE	trait	48	5	31	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/attributes/AttributeFactory.java
 DONE	trait	45	4	3	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/ArrayMethods.java
-TODO	trait	43	5	3	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/attributes/AnnotationElementValue.java
+DONE	trait	43	5	3	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/attributes/AnnotationElementValue.java
 TODO	trait	42	4	3	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/attributes/AnnotationDefaultAttribute.java
 TODO	trait	39	5	29	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/ClassFileAnalysisState.java
 TODO	trait	38	32	41	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/opinion/JavaLoader.java
