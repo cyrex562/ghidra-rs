@@ -8,6 +8,7 @@ pub mod address_match;
 pub mod bulk_pattern_searcher;
 pub mod match_action;
 pub mod post_rule;
+pub mod pattern_factory;
 
 pub use byte_pattern::BytePattern;
 pub use byte_sequence::ByteSequence;
@@ -19,3 +20,4 @@ pub use address_match::AddressMatch;
 pub use bulk_pattern_searcher::BulkPatternSearcher;
 pub use match_action::MatchAction;
 pub use post_rule::PostRule;
+pub use pattern_factory::PatternFactory;
