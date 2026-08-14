@@ -1746,6 +1746,15 @@ pub trait FlatProgramAPI: Send + Sync {
 
     /// `FlatProgramAPI.setPlateComment(Address, String)`.
     fn set_plate_comment(&self, address: &crate::program::model::address::Address, comment: &str) -> bool;
+
+    /// `FlatProgramAPI.getCurrentProgram()`, needed by
+    /// [`DyldChainedFixupsCommand::markup_raw_binary`](crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand::markup_raw_binary)
+    /// to resolve the file-offset-relative address of the chained-fixups header data. Grown
+    /// (defaulted to `None`, so existing implementors keep compiling) alongside the other
+    /// `FlatProgramAPI` members above.
+    fn get_current_program(&self) -> Option<std::sync::Arc<dyn crate::program::model::listing::Program>> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.program.model.listing.Program`, referenced by
@@ -1840,4 +1849,365 @@ pub trait MemoryBlockUtils: Send + Sync {
         log: &dyn MessageLog,
     ) -> std::io::Result<crate::program::model::address::Address>;
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.LinkEditDataCommand`, referenced by
+/// [`DyldChainedFixupsCommand`](crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand)
+/// before the real class is ported. `LinkEditDataCommand` is a concrete Java class (not an
+/// interface) that itself extends `LoadCommand`, so it is modeled here as a concrete struct
+/// wrapping the already-ported [`LoadCommandBase`](crate::format::macho::commands::load_command::LoadCommandBase)
+/// plus the `dataoff`/`datasize` fields -- the only state the one in-repo consumer needs. Java's
+/// `markup`/`markupRawBinary`/`toDataType` all resolve the *overridden* `getCommandName()` through
+/// virtual dispatch once a subclass like `DyldChainedFixupsCommand` is involved, so those methods
+/// are intentionally not duplicated here: the consumer flattens the inherited
+/// `LoadCommand` -> `LinkEditDataCommand` behaviour into its own `LoadCommand` impl instead, using
+/// only the state this placeholder exposes.
+pub struct LinkEditDataCommand {
+    base: crate::format::macho::commands::load_command::LoadCommandBase,
+    dataoff: i64,
+    datasize: i64,
+}
+
+impl LinkEditDataCommand {
+    /// `LinkEditDataCommand(BinaryReader, BinaryReader)`.
+    pub fn new(
+        load_command_reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        data_reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let base = crate::format::macho::commands::load_command::LoadCommandBase::new(
+            load_command_reader,
+        )?;
+        let dataoff = load_command_reader.read_next_unsigned_int()? as i64;
+        let datasize = load_command_reader.read_next_unsigned_int()? as i64;
+        data_reader.set_pointer_index(dataoff as u64);
+        Ok(LinkEditDataCommand { base, dataoff, datasize })
+    }
+
+    /// Accessor to the shared `LoadCommand` state, mirroring how [`LoadCommand`](crate::format::macho::commands::load_command::LoadCommand)
+    /// implementors expose their own [`LoadCommandBase`](crate::format::macho::commands::load_command::LoadCommandBase).
+    pub fn base(&self) -> &crate::format::macho::commands::load_command::LoadCommandBase {
+        &self.base
+    }
+
+    /// `LinkEditDataCommand.getLinkerDataOffset()`.
+    pub fn dataoff(&self) -> i64 {
+        self.dataoff
+    }
+
+    /// `LinkEditDataCommand.getLinkerDataSize()`.
+    pub fn datasize(&self) -> i64 {
+        self.datasize
+    }
+
+    /// `LinkEditDataCommand.toDataType()`. The real Java body builds a `cmd`/`cmdsize`/`dataoff`/
+    /// `datasize` `linkedit_data_command` structure using the (virtual) `getCommandName()`; since
+    /// this placeholder cannot know the most-derived command name, and
+    /// [`StructureDataType`](crate::program::model::data::structure_data_type::StructureDataType)
+    /// has no concrete Rust constructor yet, it stands in with an opaque placeholder
+    /// [`DataType`](crate::program::model::data::data_type::DataType).
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Ok(Box::new(LinkEditDataCommandDataType))
+    }
+}
+
+/// Placeholder [`DataType`](crate::program::model::data::data_type::DataType) returned by
+/// [`LinkEditDataCommand::to_data_type`]. Concrete Java class, not an interface; modeled as an
+/// opaque marker like [`PERichTableDataType`] above, consistent with the other not-yet-ported
+/// `toDataType()` results in this file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct LinkEditDataCommandDataType;
+
+impl crate::program::model::data::data_type::DataType for LinkEditDataCommandDataType {}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedFixupHeader`,
+/// referenced by [`DyldChainedFixupsCommand`](crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand)
+/// before the real class is ported. `DyldChainedFixupHeader` is a concrete Java class (not an
+/// interface), so it is modeled here as a concrete struct. The numeric header fields and the
+/// nested [`DyldChainedStartsInImage`] are parsed faithfully; `chainedImports` cannot be, since
+/// `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedImports` (already referenced
+/// elsewhere in this crate as the trait [`DyldChainedImports`]) has no concrete Rust implementor
+/// yet to construct one from -- it is left `None` until one exists.
+pub struct DyldChainedFixupHeader {
+    fixups_version: i64,
+    starts_offset: i64,
+    imports_offset: i64,
+    symbols_offset: i64,
+    imports_count: i64,
+    imports_format: i32,
+    symbols_format: i32,
+    chained_starts_in_image: DyldChainedStartsInImage,
+    chained_imports: Option<Box<dyn DyldChainedImports>>,
+}
+
+impl DyldChainedFixupHeader {
+    /// `DyldChainedFixupHeader(BinaryReader)`.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let ptr_index = reader.get_pointer_index();
+
+        let fixups_version = reader.read_next_unsigned_int()? as i64;
+        let starts_offset = reader.read_next_unsigned_int()? as i64;
+        let imports_offset = reader.read_next_unsigned_int()? as i64;
+        let symbols_offset = reader.read_next_unsigned_int()? as i64;
+        let imports_count = reader.read_next_unsigned_int()? as i64;
+        let imports_format = reader.read_next_int()?;
+        let symbols_format = reader.read_next_int()?;
+
+        reader.set_pointer_index((ptr_index as i64 + starts_offset) as u64);
+        let chained_starts_in_image = DyldChainedStartsInImage::new(reader)?;
+
+        // `chainedImports = new DyldChainedImports(reader, this)` /
+        // `chainedImports.initSymbols(reader, this)` are not reproduced here: `DyldChainedImports`
+        // has no concrete Rust implementor yet (see the struct doc above).
+        Ok(DyldChainedFixupHeader {
+            fixups_version,
+            starts_offset,
+            imports_offset,
+            symbols_offset,
+            imports_count,
+            imports_format,
+            symbols_format,
+            chained_starts_in_image,
+            chained_imports: None,
+        })
+    }
+
+    /// `DyldChainedFixupHeader.toDataType()`. See [`LinkEditDataCommand::to_data_type`] for why
+    /// this is an opaque placeholder rather than a real `dyld_chained_fixups_header` layout.
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Ok(Box::new(DyldChainedFixupHeaderDataType))
+    }
+
+    /// `DyldChainedFixupHeader.markup(Program, Address, MachHeader, TaskMonitor, MessageLog)`.
+    /// The real body marks up the nested starts-in-image structure and the imports/symbols
+    /// tables; since `chained_imports` is always `None` here (see the struct doc above) and the
+    /// starts-in-image markup itself needs the not-yet-ported `DataUtilities.createData` plumbing
+    /// this placeholder doesn't have a `Program` handle to drive, this is a documented no-op.
+    pub fn markup(
+        &self,
+        _program: &mut dyn crate::program::model::listing::Program,
+        _address: &crate::program::model::address::Address,
+        _header: &dyn MachHeader,
+        _monitor: &dyn crate::util::task::TaskMonitor,
+        _log: &dyn MessageLog,
+    ) -> Result<(), crate::util::exception::CancelledException> {
+        Ok(())
+    }
+
+    /// `DyldChainedFixupHeader.getFixupsVersion()`.
+    pub fn get_fixups_version(&self) -> i64 {
+        self.fixups_version
+    }
+
+    /// `DyldChainedFixupHeader.getStartsOffset()`.
+    pub fn get_starts_offset(&self) -> i64 {
+        self.starts_offset
+    }
+
+    /// `DyldChainedFixupHeader.getImportsOffset()`.
+    pub fn get_imports_offset(&self) -> i64 {
+        self.imports_offset
+    }
+
+    /// `DyldChainedFixupHeader.getSymbolsOffset()`.
+    pub fn get_symbols_offset(&self) -> i64 {
+        self.symbols_offset
+    }
+
+    /// `DyldChainedFixupHeader.getImportsCount()`.
+    pub fn get_imports_count(&self) -> i64 {
+        self.imports_count
+    }
+
+    /// `DyldChainedFixupHeader.getImportsFormat()`.
+    pub fn get_imports_format(&self) -> i32 {
+        self.imports_format
+    }
+
+    /// `DyldChainedFixupHeader.getSymbolsFormat()`.
+    pub fn get_symbols_format(&self) -> i32 {
+        self.symbols_format
+    }
+
+    /// `DyldChainedFixupHeader.isCompress()`.
+    pub fn is_compress(&self) -> bool {
+        self.symbols_format != 0
+    }
+
+    /// `DyldChainedFixupHeader.getChainedStartsInImage()`.
+    pub fn get_chained_starts_in_image(&self) -> &DyldChainedStartsInImage {
+        &self.chained_starts_in_image
+    }
+
+    /// `DyldChainedFixupHeader.getChainedImports()`.
+    pub fn get_chained_imports(&self) -> Option<&dyn DyldChainedImports> {
+        self.chained_imports.as_deref()
+    }
+}
+
+/// Placeholder [`DataType`](crate::program::model::data::data_type::DataType) returned by
+/// [`DyldChainedFixupHeader::to_data_type`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DyldChainedFixupHeaderDataType;
+
+impl crate::program::model::data::data_type::DataType for DyldChainedFixupHeaderDataType {}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedStartsInImage`,
+/// referenced by [`DyldChainedFixupHeader`] before the real class is ported.
+/// `DyldChainedStartsInImage` is a concrete Java class (not an interface), so it is modeled here
+/// as a concrete struct. Unlike its owner [`DyldChainedFixupHeader`], this type has no forward
+/// references to not-yet-ported classes, so its constructor and accessors are ported faithfully.
+pub struct DyldChainedStartsInImage {
+    seg_count: i32,
+    seg_info_offset: Vec<i32>,
+    chained_starts: Vec<DyldChainedStartsInSegment>,
+}
+
+impl DyldChainedStartsInImage {
+    /// `DyldChainedStartsInImage(BinaryReader)`.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let ptr_index = reader.get_pointer_index();
+
+        let seg_count = reader.read_next_int()?;
+        let seg_info_offset = reader.read_next_int_array(seg_count.max(0) as usize)?;
+
+        let mut chained_starts = Vec::new();
+        for &offset in &seg_info_offset {
+            if offset != 0 {
+                reader.set_pointer_index((ptr_index as i64 + offset as i64) as u64);
+                chained_starts.push(DyldChainedStartsInSegment::new(reader)?);
+            }
+        }
+
+        Ok(DyldChainedStartsInImage { seg_count, seg_info_offset, chained_starts })
+    }
+
+    /// `DyldChainedStartsInImage.toDataType()`. See [`LinkEditDataCommand::to_data_type`] for why
+    /// this is an opaque placeholder rather than a real `dyld_chained_starts_in_image` layout.
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Ok(Box::new(DyldChainedStartsInImageDataType))
+    }
+
+    /// `DyldChainedStartsInImage.getSegCount()`.
+    pub fn get_seg_count(&self) -> i32 {
+        self.seg_count
+    }
+
+    /// `DyldChainedStartsInImage.getSegInfoOffset()`.
+    pub fn get_seg_info_offset(&self) -> &[i32] {
+        &self.seg_info_offset
+    }
+
+    /// `DyldChainedStartsInImage.getChainedStarts()`.
+    pub fn get_chained_starts(&self) -> &[DyldChainedStartsInSegment] {
+        &self.chained_starts
+    }
+}
+
+/// Placeholder [`DataType`](crate::program::model::data::data_type::DataType) returned by
+/// [`DyldChainedStartsInImage::to_data_type`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DyldChainedStartsInImageDataType;
+
+impl crate::program::model::data::data_type::DataType for DyldChainedStartsInImageDataType {}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedStartsInSegment`,
+/// referenced by [`DyldChainedStartsInImage`] before the real class is ported.
+/// `DyldChainedStartsInSegment` is a concrete Java class (not an interface), so it is modeled here
+/// as a concrete struct. Like its owner, this type has no forward references to not-yet-ported
+/// classes, so its constructor and accessors are ported faithfully; only `markup` (currently a
+/// `// TODO?` no-op in the Java source too) is left unimplemented.
+pub struct DyldChainedStartsInSegment {
+    size: i32,
+    page_size: i16,
+    pointer_format: i16,
+    segment_offset: i64,
+    max_valid_pointer: i32,
+    page_count: i16,
+    page_starts: Vec<i16>,
+}
+
+impl DyldChainedStartsInSegment {
+    /// `DyldChainedStartsInSegment(BinaryReader)`.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let size = reader.read_next_int()?;
+        let page_size = reader.read_next_short()?;
+        let pointer_format = reader.read_next_short()?;
+        let segment_offset = reader.read_next_long()?;
+        let max_valid_pointer = reader.read_next_int()?;
+        let page_count = reader.read_next_short()?;
+        let page_starts = reader.read_next_short_array(page_count.max(0) as usize)?;
+
+        Ok(DyldChainedStartsInSegment {
+            size,
+            page_size,
+            pointer_format,
+            segment_offset,
+            max_valid_pointer,
+            page_count,
+            page_starts,
+        })
+    }
+
+    /// `DyldChainedStartsInSegment.toDataType()`. See [`LinkEditDataCommand::to_data_type`] for
+    /// why this is an opaque placeholder rather than a real `dyld_chained_starts_in_segment`
+    /// layout.
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Ok(Box::new(DyldChainedStartsInSegmentDataType))
+    }
+
+    /// `DyldChainedStartsInSegment.getSize()`.
+    pub fn get_size(&self) -> i32 {
+        self.size
+    }
+
+    /// `DyldChainedStartsInSegment.getPageSize()`.
+    pub fn get_page_size(&self) -> i16 {
+        self.page_size
+    }
+
+    /// `DyldChainedStartsInSegment.getPointerFormat()`.
+    pub fn get_pointer_format(&self) -> i16 {
+        self.pointer_format
+    }
+
+    /// `DyldChainedStartsInSegment.getSegmentOffset()`.
+    pub fn get_segment_offset(&self) -> i64 {
+        self.segment_offset
+    }
+
+    /// `DyldChainedStartsInSegment.getMaxValidPointer()`.
+    pub fn get_max_valid_pointer(&self) -> i32 {
+        self.max_valid_pointer
+    }
+
+    /// `DyldChainedStartsInSegment.getPageCount()`.
+    pub fn get_page_count(&self) -> i16 {
+        self.page_count
+    }
+
+    /// `DyldChainedStartsInSegment.getPageStarts()`.
+    pub fn get_page_starts(&self) -> &[i16] {
+        &self.page_starts
+    }
+}
+
+/// Placeholder [`DataType`](crate::program::model::data::data_type::DataType) returned by
+/// [`DyldChainedStartsInSegment::to_data_type`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DyldChainedStartsInSegmentDataType;
+
+impl crate::program::model::data::data_type::DataType for DyldChainedStartsInSegmentDataType {}
 

@@ -780,3 +780,7 @@ ts	stub_class	referenced_by
 2026-08-14T05:14:01.914796Z	DyldChainedImports	DyldChainedFixups
 2026-08-14T05:14:01.914796Z	MachoProgramBuilder	DyldChainedFixups
 2026-08-14T05:14:01.914796Z	MemoryBlockUtils	DyldChainedFixups
+2026-08-14T05:30:12.951584+00:00	LinkEditDataCommand	DyldChainedFixupsCommand
+2026-08-14T05:30:12.951584+00:00	DyldChainedFixupHeader	DyldChainedFixupsCommand
+2026-08-14T05:30:12.951584+00:00	DyldChainedStartsInImage	DyldChainedFixupsCommand
+2026-08-14T05:30:12.951584+00:00	DyldChainedStartsInSegment	DyldChainedFixupsCommand
