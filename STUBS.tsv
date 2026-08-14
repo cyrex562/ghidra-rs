@@ -806,3 +806,7 @@ ts	stub_class	referenced_by
 2026-08-14T06:56:09.636694+00:00	UnixAoutStringTable	UnixAoutProgramLoader
 2026-08-14T06:56:09.636694+00:00	UnixAoutSymbolTable	UnixAoutProgramLoader
 2026-08-14T06:56:09.636694+00:00	MessageLog	UnixAoutProgramLoader
+2026-08-14T07:12:26.772138+00:00	StructConverterUtil	FieldAnnotationsItem
+2026-08-14T07:12:26.772279+00:00	AnnotationSetItem	FieldAnnotationsItem
+2026-08-14T07:12:26.772871+00:00	DexHeader	FieldAnnotationsItem
+2026-08-14T07:12:26.773318+00:00	DexUtil	FieldAnnotationsItem
