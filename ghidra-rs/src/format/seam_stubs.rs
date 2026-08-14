@@ -2211,3 +2211,19 @@ pub struct DyldChainedStartsInSegmentDataType;
 
 impl crate::program::model::data::data_type::DataType for DyldChainedStartsInSegmentDataType {}
 
+/// Placeholder for the unported Java type `ClassSearcher`, referenced by `ElfInfoProducer`.
+/// Generated stub: only a shape hint. The method needed by `ElfInfoProducer` is
+/// `get_elf_info_producer_instances`, which returns trait objects of ElfInfoProducer.
+pub struct ClassSearcher;
+
+impl ClassSearcher {
+    /// Placeholder for `ClassSearcher.getInstances(ElfInfoProducer.class)`.
+    /// Returns instances of ElfInfoProducer that have been discovered via classpath scanning.
+    /// In the Rust port, this is a placeholder that returns an empty list until the real
+    /// discovery mechanism is implemented. When real ElfInfoProducer implementations are
+    /// discovered in the Rust codebase, they should be registered here.
+    pub fn get_elf_info_producer_instances() -> Vec<std::sync::Arc<dyn crate::format::elf::info::elf_info_producer::ElfInfoProducer>> {
+        Vec::new()
+    }
+}
+
