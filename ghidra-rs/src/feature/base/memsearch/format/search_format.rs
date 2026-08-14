@@ -155,9 +155,33 @@ mod tests {
 
     struct TestMatcher {
         valid: bool,
+        base: crate::feature::seam_stubs::UserInputByteMatcherBase,
+    }
+
+    impl crate::feature::base::memsearch::matcher::ByteMatcher<crate::feature::seam_stubs::SearchData>
+        for TestMatcher
+    {
+        fn match_bytes(
+            &self,
+            _bytes: &crate::util::bytesearch::ExtendedByteSequence,
+        ) -> Vec<crate::util::bytesearch::Match<crate::feature::seam_stubs::SearchData>> {
+            Vec::new()
+        }
+
+        fn get_description(&self) -> String {
+            "test matcher".to_string()
+        }
     }
 
     impl UserInputByteMatcher for TestMatcher {
+        fn base(&self) -> &crate::feature::seam_stubs::UserInputByteMatcherBase {
+            &self.base
+        }
+
+        fn get_tool_tip(&self) -> Option<String> {
+            None
+        }
+
         fn is_valid_search(&self) -> bool {
             self.valid
         }
@@ -169,7 +193,10 @@ mod tests {
         }
 
         fn parse(&self, _input: &str, _settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
-            Box::new(TestMatcher { valid: self.valid })
+            Box::new(TestMatcher {
+                valid: self.valid,
+                base: crate::feature::seam_stubs::UserInputByteMatcherBase::new("Test", "", None),
+            })
         }
 
         fn get_tool_tip(&self) -> String {
