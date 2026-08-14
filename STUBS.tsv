@@ -856,3 +856,4 @@ ts	stub_class	referenced_by
 2026-08-14T09:51:38.155189+00:00	ClassFileJava	ClassFileAnalysisState
 2026-08-14T09:51:38.155189+00:00	JavaClassUtil	ClassFileAnalysisState
 2026-08-14T09:51:38.155189+00:00	MethodInfoJava	ClassFileAnalysisState
+2026-08-14T09:52:56.965159+00:00	CodeAttribute	JavaLoader

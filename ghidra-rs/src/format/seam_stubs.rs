@@ -3037,41 +3037,111 @@ impl TransientProgramProperties {
     }
 }
 
+/// Placeholder for `ghidra.javaclass.format.attributes.CodeAttribute`, referenced by
+/// [`MethodInfoJava::get_code_attribute`] and
+/// [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader) before the real class is
+/// ported. `CodeAttribute` is a concrete Java class (not an interface), so it is modeled here as
+/// a concrete struct. `JavaLoader.createMethodMemoryBlocks` only ever reads
+/// `getCodeLength()`/`getCodeOffset()`, so only those two fields (of the `Code_attribute`
+/// structure's `max_stack`/`max_locals`/`code_length`/`code[]`/exception table/attributes) are
+/// modeled; the rest needs `AttributeFactory`'s constant-pool-driven parsing and is left for the
+/// real port.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CodeAttribute {
+    code_length: i32,
+    code_offset: i64,
+}
+
+impl CodeAttribute {
+    pub fn new(code_length: i32, code_offset: i64) -> Self {
+        CodeAttribute { code_length, code_offset }
+    }
+
+    /// `CodeAttribute.getCodeLength()`.
+    pub fn get_code_length(&self) -> i32 {
+        self.code_length
+    }
+
+    /// `CodeAttribute.getCodeOffset()`.
+    pub fn get_code_offset(&self) -> i64 {
+        self.code_offset
+    }
+}
+
 /// Placeholder for `ghidra.javaclass.format.MethodInfoJava`, referenced by
-/// [`ClassFileJava::get_methods`] and
-/// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState)
-/// before the real class is ported. `MethodInfoJava` is a concrete Java class (not an interface),
-/// so it is modeled here as a concrete struct. `ClassFileAnalysisState` only ever stores and
-/// returns these opaquely (keyed by address in its method map), never inspecting a field, so only
-/// the file offset -- the one property that survives into this stub -- is kept; the rest of the
-/// real class (access flags, descriptor, attributes, `toDataType`) needs `AttributeFactory`'s
-/// constant-pool-driven parsing and is left for the real port.
+/// [`ClassFileJava::get_methods`],
+/// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState),
+/// and [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader) before the real class is
+/// ported. `MethodInfoJava` is a concrete Java class (not an interface), so it is modeled here as
+/// a concrete struct. `ClassFileAnalysisState` only ever stored and returned these opaquely (keyed
+/// by address in its method map), so this stub originally kept only the file offset; grown here
+/// with `name_index`/`descriptor_index`/`code_attribute` for `JavaLoader`, which additionally
+/// resolves each method's name and code bytes. The rest of the real class (access flags,
+/// attributes, `toDataType`) still needs `AttributeFactory`'s constant-pool-driven parsing and is
+/// left for the real port.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MethodInfoJava {
     offset: i64,
+    name_index: i32,
+    descriptor_index: i32,
+    code_attribute: Option<CodeAttribute>,
 }
 
 impl MethodInfoJava {
+    /// Constructs a `MethodInfoJava` with only its file offset set, as used by
+    /// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState),
+    /// which never inspects the other fields.
     pub fn new(offset: i64) -> Self {
-        MethodInfoJava { offset }
+        MethodInfoJava { offset, name_index: 0, descriptor_index: 0, code_attribute: None }
+    }
+
+    /// Constructs a `MethodInfoJava` with every field this stub models, as used by
+    /// [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader).
+    pub fn with_details(
+        offset: i64,
+        name_index: i32,
+        descriptor_index: i32,
+        code_attribute: Option<CodeAttribute>,
+    ) -> Self {
+        MethodInfoJava { offset, name_index, descriptor_index, code_attribute }
     }
 
     /// `MethodInfoJava.getOffset()`.
     pub fn get_offset(&self) -> i64 {
         self.offset
     }
+
+    /// `MethodInfoJava.getNameIndex()`.
+    pub fn get_name_index(&self) -> i32 {
+        self.name_index
+    }
+
+    /// `MethodInfoJava.getDescriptorIndex()`.
+    pub fn get_descriptor_index(&self) -> i32 {
+        self.descriptor_index
+    }
+
+    /// `MethodInfoJava.getCodeAttribute()`.
+    pub fn get_code_attribute(&self) -> Option<CodeAttribute> {
+        self.code_attribute
+    }
 }
 
 /// Placeholder for `ghidra.javaclass.format.ClassFileJava`, referenced by
 /// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState)
-/// before the real class is ported. `ClassFileJava` is a concrete Java class (not an interface),
-/// so it is modeled here as a concrete struct. `ClassFileAnalysisState` only ever constructs one
-/// from a reader and walks [`get_methods`](Self::get_methods), so only that surface is modeled;
-/// the real constructor parses the whole class file format (constant pool, fields, attributes),
-/// which needs `AttributeFactory` and the concrete `ConstantPoolInfoJava` variants that aren't
-/// ported yet, so this stub's constructor consumes nothing from `reader` and reports zero
-/// methods, deferring real parsing to the eventual `ClassFileJava` port.
+/// and [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader) before the real class is
+/// ported. `ClassFileJava` is a concrete Java class (not an interface), so it is modeled here as a
+/// concrete struct. Both callers only ever construct one from a reader and walk
+/// [`get_methods`](Self::get_methods) (`JavaLoader` additionally reads
+/// [`get_constant_pool`](Self::get_constant_pool)), so only that surface is modeled; the real
+/// constructor parses the whole class file format (constant pool, fields, attributes), which
+/// needs `AttributeFactory` and the concrete `ConstantPoolInfoJava` variants that aren't ported
+/// yet, so this stub's constructor consumes nothing from `reader` and reports an empty constant
+/// pool and zero methods, deferring real parsing to the eventual `ClassFileJava` port.
 pub struct ClassFileJava {
+    constant_pool: Vec<
+        crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava,
+    >,
     methods: Vec<MethodInfoJava>,
 }
 
@@ -3082,7 +3152,7 @@ impl ClassFileJava {
         reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
     ) -> std::io::Result<Self> {
         let _ = reader;
-        Ok(ClassFileJava { methods: Vec::new() })
+        Ok(ClassFileJava { constant_pool: Vec::new(), methods: Vec::new() })
     }
 
     /// Test-only constructor bypassing byte parsing, used to exercise
@@ -3090,27 +3160,51 @@ impl ClassFileJava {
     /// without a real class file parser.
     #[cfg(test)]
     pub fn from_methods(methods: Vec<MethodInfoJava>) -> Self {
-        ClassFileJava { methods }
+        ClassFileJava { constant_pool: Vec::new(), methods }
+    }
+
+    /// Test-only constructor additionally carrying a constant pool, used to exercise
+    /// [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader) without a real class
+    /// file parser.
+    #[cfg(test)]
+    pub fn from_constant_pool_and_methods(
+        constant_pool: Vec<
+            crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava,
+        >,
+        methods: Vec<MethodInfoJava>,
+    ) -> Self {
+        ClassFileJava { constant_pool, methods }
     }
 
     /// `ClassFileJava.getMethods()`.
     pub fn get_methods(&self) -> &[MethodInfoJava] {
         &self.methods
     }
+
+    /// `ClassFileJava.getConstantPool()`.
+    pub fn get_constant_pool(
+        &self,
+    ) -> &[crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava]
+    {
+        &self.constant_pool
+    }
 }
 
 /// Placeholder for `ghidra.javaclass.format.JavaClassUtil`, referenced by
 /// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState)
-/// before the real class is ported. `JavaClassUtil` is a concrete Java class (not an interface,
-/// and in fact a utility class of only static members), so it is modeled here as a zero-sized
-/// type with an associated function. Only `toLookupAddress` -- the one static method
-/// `ClassFileAnalysisState` calls -- is modeled; `isClassFile` is unused by that caller and left
-/// for the real port.
+/// and [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader) before the real class is
+/// ported. `JavaClassUtil` is a concrete Java class (not an interface, and in fact a utility class
+/// of only static members), so it is modeled here as a zero-sized type with associated
+/// functions/constants. `isClassFile` is unused by either caller and left for the real port.
 pub struct JavaClassUtil;
 
 impl JavaClassUtil {
     /// `JavaClassUtil.LOOKUP_ADDRESS`.
     pub const LOOKUP_ADDRESS: i64 = 0xE0000000;
+
+    /// `JavaClassUtil.METHOD_INDEX_SIZE`: 65536 is the maximum size of the `methods_count` item
+    /// in a class file.
+    pub const METHOD_INDEX_SIZE: u64 = 65536 * 4;
 
     /// `JavaClassUtil.toLookupAddress(Program, int)`. `methodIndex * 4` mirrors Java's 32-bit
     /// (wrapping) int multiplication before the sign-extending widen to `long`.
