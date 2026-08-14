@@ -1,6 +1,7 @@
 pub mod aarch64_elf_relocation_context;
 pub mod aarch64_elf_relocation_type;
 pub mod abstract_elf_relocation_handler;
+pub mod arm_elf_relocation_context;
 pub mod arm_elf_relocation_type;
 pub mod avr8_elf_relocation_type;
 pub mod avr32_elf_relocation_type;
