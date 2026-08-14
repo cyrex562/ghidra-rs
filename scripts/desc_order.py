@@ -126,6 +126,13 @@ def main():
 
     # durable-parked classes (timeouts too big for the nightly loop) -- exclude so they don't
     # re-burn spend nightly; they're worked interactively (see DESCENT_PARKED.tsv).
+    #
+    # `timeout-retry` is NOT durable. It records a turn whose CLI errored and ran to the wall
+    # clock, which is indistinguishable from a size timeout by exit code alone but not by the
+    # turn JSON. Those classes stay in the order and get another attempt; descent_night caps
+    # the retries and escalates to a plain `timeout` row when they run out. Excluding them
+    # here would defeat the whole point -- the class would never come back.
+    RETRYABLE = {"timeout-retry"}
     parked = set()
     pk = os.path.join(REPO, "DESCENT_PARKED.tsv")
     if os.path.exists(pk):
@@ -133,7 +140,7 @@ def main():
             if i == 0:
                 continue
             c = l.rstrip("\n").split("\t")
-            if len(c) >= 3:
+            if len(c) >= 3 and c[1].split(" ")[0] not in RETRYABLE:
                 parked.add(c[2])
 
     def in_scope(f):

@@ -34,6 +34,7 @@ SHAPES_TSV="${SHAPES_TSV:-SHAPES.tsv}"  # Java declaration -> Rust shape, from s
 INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
+TIMEOUT_RETRIES="${TIMEOUT_RETRIES:-2}"   # errored turns retried this many times before a durable park
 CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-1500}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"  # 25min: doomed classes durable-park faster (was 2400/40min)
 TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"   # backstop: verify test crate stays green after merge
 API_RETRIES="${API_RETRIES:-2}"                                     # retry a class on TRANSIENT API failure before aborting the run
@@ -300,15 +301,52 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
     log "API failure on $class after $((API_RETRIES+1)) attempts -- stopping run (not parking)."
     git checkout -f "$INTEGRATION" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1||true; break
   fi
-  # TIMEOUT (rc=124): too big for the nightly loop. DURABLE-park -> record in DESCENT_PARKED (excluded
-  # from future regenerated orders) so it stops re-burning spend nightly; work it interactively later.
+  # TIMEOUT (rc=124). Two different things end here and they want opposite treatment.
+  #
+  # A class genuinely too big for the nightly loop should DURABLE-park: recorded in
+  # DESCENT_PARKED, excluded from every regenerated order, worked interactively later.
+  #
+  # But a turn whose CLI errored also runs to the wall clock, and durable-parking that
+  # permanently drops a class on the strength of a tool failure. MemoryBytePatternSearcher
+  # (172 lines, rem=3) and JitDataFlowUseropLibrary (281) were lost exactly that way; of the
+  # 27 durable timeout-parks, 20 are under 400 lines. The turn JSON tells them apart -- an
+  # errored turn records `"subtype": "error_during_execution"` with `"is_error": true`,
+  # where a turn that simply ran out of time does not.
+  #
+  # A transient park is NOT durable: the row is written with reason `timeout-retry` (which
+  # desc_order does not exclude) and PORT_ORDER is left TODO, so it comes back next run. The
+  # retry is capped, because an error that reliably burns the full CLAUDE_TIMEOUT must not
+  # cost 25 minutes every night forever -- after TIMEOUT_RETRIES attempts it durable-parks.
   if [ "$rc" -eq 124 ]; then
-    log "TIMEOUT on $class (${CLAUDE_TIMEOUT}s) -- durable-park for interactive follow-up."
+    transient=0
+    if [ -s "$jlog" ] && "$PY" - "$jlog" <<'PYEOF' >/dev/null 2>&1
+import json, sys
+d = json.load(open(sys.argv[1]))
+sys.exit(0 if (d.get("is_error") and d.get("subtype") == "error_during_execution") else 1)
+PYEOF
+    then transient=1; fi
+    # `grep -c` already PRINTS 0 when nothing matches, and exits 1 doing it -- so a
+    # `|| echo 0` fallback appends a second zero and $prior becomes "0\n0", which is not an
+    # integer and blows up the comparison below. Take grep's number, default only if the
+    # file is missing entirely.
+    prior=$(grep -cP "\ttimeout-retry\t${next//\//\\/}$" "$DESCENT_PARKED" 2>/dev/null) || true
+    [ -n "$prior" ] || prior=0
     git checkout -f "$INTEGRATION" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1||true
     git clean -fdq >/dev/null 2>&1   # remove the timed-out port's partial untracked files (target/ is ignored)
-    printf '%s\ttimeout\t%s\n' "$(date '+%Y-%m-%dT%H:%M')" "$next" >> "$DESCENT_PARKED"
-    sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
-    git add "$DESCENT_PARKED" "$ORDER" >/dev/null 2>&1; git commit -q -m "descent: durable-park $class (timeout)" >/dev/null 2>&1||true
+    if [ "$transient" = "1" ] && [ "$prior" -lt "$TIMEOUT_RETRIES" ]; then
+      log "TIMEOUT on $class (${CLAUDE_TIMEOUT}s) -- turn ERRORED (attempt $((prior+1))/${TIMEOUT_RETRIES}); retryable park, stays in the order."
+      printf '%s\ttimeout-retry\t%s\n' "$(date '+%Y-%m-%dT%H:%M')" "$next" >> "$DESCENT_PARKED"
+      git add "$DESCENT_PARKED" >/dev/null 2>&1
+      git commit -q -m "descent: retryable-park $class (turn errored, attempt $((prior+1))/${TIMEOUT_RETRIES})" >/dev/null 2>&1||true
+    else
+      why="too big for the nightly loop"
+      [ "$transient" = "1" ] && why="turn errored ${prior} time(s); retries exhausted"
+      log "TIMEOUT on $class (${CLAUDE_TIMEOUT}s) -- durable-park (${why}) for interactive follow-up."
+      printf '%s\ttimeout\t%s\n' "$(date '+%Y-%m-%dT%H:%M')" "$next" >> "$DESCENT_PARKED"
+      sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
+      git add "$DESCENT_PARKED" "$ORDER" >/dev/null 2>&1
+      git commit -q -m "descent: durable-park $class (timeout)" >/dev/null 2>&1||true
+    fi
     parked=$((parked+1)); continue
   fi
   if [ "$status" = "DONE" ] && timeout "$BUILD_TIMEOUT" cargo build --lib --quiet 2>>"$log"; then
