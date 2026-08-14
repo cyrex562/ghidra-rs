@@ -1784,3 +1784,60 @@ pub trait CodeSignatureSuperBlob: Send + Sync {
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedImport`,
+/// referenced by
+/// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups) before
+/// the real class is ported. Only the two accessors chained-fixup resolution needs.
+pub trait DyldChainedImport: Send + Sync {
+    /// `DyldChainedImport.getName()`.
+    fn get_name(&self) -> String;
+    /// `DyldChainedImport.getLibOrdinal()`.
+    fn get_lib_ordinal(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.chained.DyldChainedImports`,
+/// referenced by
+/// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups) before
+/// the real class is ported. Only the ordinal lookup chained-fixup resolution needs.
+pub trait DyldChainedImports: Send + Sync {
+    /// `DyldChainedImports.getChainedImport(int)`.
+    fn get_chained_import(&self, ordinal: i32) -> Box<dyn DyldChainedImport>;
+}
+
+/// Placeholder for `ghidra.app.util.opinion.MachoProgramBuilder`, referenced by
+/// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups) before
+/// the real class is ported. Only the two static helpers chained-pointer fixup needs; modeled as
+/// a trait object (rather than free functions) since the caller must be handed a seam for the
+/// not-yet-ported class.
+pub trait MachoProgramBuilder: Send + Sync {
+    /// `MachoProgramBuilder.createOneByteFunction(Program, String, Address)`.
+    fn create_one_byte_function(
+        &self,
+        program: &mut dyn crate::program::model::listing::Program,
+        name: &str,
+        address: &crate::program::model::address::Address,
+    ) -> Option<Box<dyn crate::program::model::listing::Function>>;
+
+    /// `MachoProgramBuilder.fixupExternalLibrary(Program, List<String>, int, String)`.
+    fn fixup_external_library(
+        &self,
+        program: &mut dyn crate::program::model::listing::Program,
+        library_paths: &[String],
+        library_ordinal: i32,
+        symbol: &str,
+    ) -> std::io::Result<()>;
+}
+
+/// Placeholder for `ghidra.app.util.MemoryBlockUtils`, referenced by
+/// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups) before
+/// the real class is ported. Only the `addExternalBlock` helper chained-pointer fixup needs.
+pub trait MemoryBlockUtils: Send + Sync {
+    /// `MemoryBlockUtils.addExternalBlock(Program, long, MessageLog)`.
+    fn add_external_block(
+        &self,
+        program: &mut dyn crate::program::model::listing::Program,
+        size: i64,
+        log: &dyn MessageLog,
+    ) -> std::io::Result<crate::program::model::address::Address>;
+}
+

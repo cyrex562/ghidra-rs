@@ -776,3 +776,7 @@ ts	stub_class	referenced_by
 2026-08-14T05:00:00.000000+00:00	NList	MachoRelocation
 2026-08-14T05:00:00.000000+00:00	SymbolTableCommand	MachoRelocation
 2026-08-14T05:00:00.000000+00:00	NumericUtilities	MachoRelocation
+2026-08-14T05:14:01.914796Z	DyldChainedImport	DyldChainedFixups
+2026-08-14T05:14:01.914796Z	DyldChainedImports	DyldChainedFixups
+2026-08-14T05:14:01.914796Z	MachoProgramBuilder	DyldChainedFixups
+2026-08-14T05:14:01.914796Z	MemoryBlockUtils	DyldChainedFixups

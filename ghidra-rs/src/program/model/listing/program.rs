@@ -6,6 +6,7 @@ use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
 use crate::program::model::listing::{FunctionManager, Listing, ProgramContext};
 use crate::program::model::mem::Memory;
+use crate::program::model::reloc::relocation_table::RelocationTable;
 use crate::program::model::symbol::{EquateTable, ExternalManager, Namespace, ReferenceManager, SymbolTable};
 use std::sync::Arc;
 
@@ -97,6 +98,16 @@ pub trait Program: DomainObject + Send + Sync {
 
     /// Get the function manager for this program.
     fn get_function_manager(&mut self) -> Option<&mut dyn FunctionManager> {
+        None
+    }
+
+    /// Get the relocation table for this program.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`dyld_chained_fixups::fixup_chained_pointers`](crate::format::macho::commands::chained::dyld_chained_fixups::fixup_chained_pointers)'s
+    /// port of `Program.getRelocationTable()`, which needs it to record each chained-pointer
+    /// fixup's outcome.
+    fn get_relocation_table(&mut self) -> Option<&mut dyn RelocationTable> {
         None
     }
 
