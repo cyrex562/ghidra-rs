@@ -732,3 +732,8 @@ ts	stub_class	referenced_by
 2026-08-13T09:57:08.000000+00:00	LoadSpec	ElfLoaderOptionsFactory
 2026-08-13T09:57:08.000000+00:00	ElfHeader	ElfLoaderOptionsFactory
 2026-08-13T09:57:08.000000+00:00	Option	ElfLoaderOptionsFactory
+2026-08-13T21:20:41.494437+00:00	NTHeader	DebugCOFFSymbolTable
+2026-08-13T21:20:41.495078+00:00	DebugCOFFSymbol	DebugCOFFSymbolTable
+2026-08-13T21:20:41.495359+00:00	DebugCOFFSymbolsHeader	DebugCOFFSymbolTable
+2026-08-13T21:20:41.495640+00:00	DebugCOFFSymbolAux	DebugCOFFSymbol
+2026-08-13T21:20:41.495921+00:00	DebugCOFFLineNumber	DebugCOFFSymbolsHeader

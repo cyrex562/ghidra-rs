@@ -3,6 +3,7 @@ pub mod data_sym32_new;
 pub mod debug_code_view_constants;
 pub mod debug_code_view_symbol_table;
 pub mod debug_coff_line_number;
+pub mod debug_coff_symbol_table;
 pub mod debug_fixup_element;
 pub mod debug_symbol;
 pub mod debug_symbol_selector;

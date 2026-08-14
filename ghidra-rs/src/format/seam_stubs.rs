@@ -166,6 +166,13 @@ pub trait C13SectionIteratorLike {
 /// Placeholder for `ghidra.app.util.bin.format.pe.NTHeader`, referenced by
 /// [`PeMarkupable`](crate::format::pe::pe_markupable::PeMarkupable) before the real class
 /// is ported. Models only the methods needed for PE markup operations.
+/// The maximum sane count for symbols, from `NTHeader.MAX_SANE_COUNT`.
+pub const NT_HEADER_MAX_SANE_COUNT: i32 = 0x10000;
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.NTHeader`, referenced by
+/// [`DebugCOFFSymbolTable`](crate::format::pe::debug::debug_coff_symbol_table::DebugCOFFSymbolTable)
+/// before the real class is ported. `NTHeader` is a concrete Java class (not an interface),
+/// so it is modeled here as a trait object for now until the real port is available.
 pub trait NTHeader: Send + Sync {
     fn get_name(&self) -> String;
     fn is_rva_resoltion_section_aligned(&self) -> bool;
@@ -1411,4 +1418,61 @@ pub mod elf_symbol_name_utils {
     pub fn replace_invalid_chars(name: &str) -> String {
         name.to_string()
     }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbolAux`, referenced by
+/// [`DebugCOFFSymbol`] before the real class is ported.
+pub trait DebugCOFFSymbolAux: Send + Sync {
+    fn to_string(&self) -> String;
+}
+
+/// The size of the `IMAGE_SYMBOL` structure, in bytes.
+pub const DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL: usize = 18;
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbol`, referenced by
+/// [`DebugCOFFSymbolTable`](crate::format::pe::debug::debug_coff_symbol_table::DebugCOFFSymbolTable)
+/// before the real class is ported. Models the methods and constants needed by `DebugCOFFSymbolTable`.
+pub trait DebugCOFFSymbol: Send + Sync {
+    fn get_auxiliary_symbols(&self) -> Vec<Box<dyn DebugCOFFSymbolAux>>;
+    fn get_name(&self) -> String;
+    fn get_value(&self) -> i32;
+    fn get_value_as_string(&self) -> String;
+    fn get_section_number(&self) -> i32;
+    fn get_section_number_as_string(&self) -> String;
+    fn get_type(&self) -> i32;
+    fn get_type_as_string(&self) -> String;
+    fn get_storage_class(&self) -> i32;
+    fn get_storage_class_as_string(&self) -> String;
+    fn get_number_of_aux_symbols(&self) -> i32;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFLineNumber`, referenced by
+/// [`DebugCOFFSymbolsHeader`] before the real class is ported.
+pub trait DebugCOFFLineNumber: Send + Sync {
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbolsHeader`, referenced by
+/// [`DebugCOFFSymbolTable`](crate::format::pe::debug::debug_coff_symbol_table::DebugCOFFSymbolTable)
+/// before the real class is ported. Models only the methods needed by `DebugCOFFSymbolTable`.
+pub trait DebugCOFFSymbolsHeader: Send + Sync {
+    fn get_symbol_table(&self) -> Box<dyn DebugCOFFSymbolTable>;
+    fn get_line_numbers(&self) -> Vec<Box<dyn DebugCOFFLineNumber>>;
+    fn get_number_of_symbols(&self) -> i32;
+    fn get_first_symbol_lva(&self) -> i32;
+    fn get_number_of_linenumbers(&self) -> i32;
+    fn get_first_linenumber_lva(&self) -> i32;
+    fn get_first_byte_of_code_rva(&self) -> i32;
+    fn get_last_byte_of_code_rva(&self) -> i32;
+    fn get_first_byte_of_data_rva(&self) -> i32;
+    fn get_last_byte_of_data_rva(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbolTable`, referenced by
+/// [`DebugCOFFSymbolsHeader`] before the real class is ported.
+pub trait DebugCOFFSymbolTable: Send + Sync {
+    fn get_symbols(&self) -> Vec<Box<dyn DebugCOFFSymbol>>;
+    fn get_string_table_index(&self) -> i32;
 }
