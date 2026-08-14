@@ -1,4 +1,5 @@
 pub mod access_flags;
+pub mod class_def_item;
 pub mod debug_info_opcodes;
 pub(crate) mod debug_info_state_machine_reader;
 pub mod debug_state_machine_op_codes;

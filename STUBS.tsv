@@ -810,3 +810,10 @@ ts	stub_class	referenced_by
 2026-08-14T07:12:26.772279+00:00	AnnotationSetItem	FieldAnnotationsItem
 2026-08-14T07:12:26.772871+00:00	DexHeader	FieldAnnotationsItem
 2026-08-14T07:12:26.773318+00:00	DexUtil	FieldAnnotationsItem
+2026-08-14T00:00:00.000000+00:00	TypeItem	ClassDefItem
+2026-08-14T00:00:00.000000+00:00	TypeList	ClassDefItem
+2026-08-14T00:00:00.000000+00:00	AnnotationsDirectoryItem	ClassDefItem
+2026-08-14T00:00:00.000000+00:00	ClassDataItem	ClassDefItem
+2026-08-14T00:00:00.000000+00:00	EncodedArrayItem	ClassDefItem
+2026-08-14T00:00:00.000000+00:00	DexUtil	ClassDefItem
+2026-08-14T00:00:00.000000+00:00	DexHeader	ClassDefItem
