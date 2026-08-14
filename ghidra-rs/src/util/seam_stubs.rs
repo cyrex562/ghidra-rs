@@ -920,6 +920,84 @@ impl<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE> DynamicTableColumn<ROW_TYPE, COLU
     }
 }
 
+/// Placeholder for `ghidra.util.bytesearch.Pattern`, referenced by [`crate::util::bytesearch::MatchAction`].
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait Pattern: Send + Sync {
+    /// Returns post-rules for this pattern.
+    fn get_post_rules(&self) -> Vec<Box<dyn PostRule>>;
+
+    /// Returns match actions for this pattern.
+    fn get_match_actions(&self) -> Vec<Box<dyn crate::util::bytesearch::MatchAction>>;
+
+    /// Sets match actions for this pattern.
+    fn set_match_actions(&self, actions: &[Box<dyn crate::util::bytesearch::MatchAction>]);
+
+    /// Returns the mark offset.
+    fn get_mark_offset(&self) -> i32;
+
+    /// Restore XML attributes from parser.
+    fn restore_xml_attributes(
+        &self,
+        postrulelist: Vec<Box<dyn PostRule>>,
+        actionlist: Vec<Box<dyn crate::util::bytesearch::MatchAction>>,
+        parser: &dyn XmlPullParser,
+        pfactory: &dyn PatternFactory,
+    ) -> std::io::Result<()>;
+
+    /// Restore from XML. [referenced in target]
+    fn restore_xml(&self, parser: &dyn XmlPullParser, pfactory: &dyn PatternFactory) -> std::io::Result<()>;
+
+    /// Read patterns from file.
+    fn read_patterns(
+        &self,
+        file: &dyn ResourceFile,
+        patlist: Vec<Box<dyn Pattern>>,
+        pfactory: &dyn PatternFactory,
+    ) -> std::io::Result<()>;
+
+    /// Handle XML parsing error.
+    fn error(&self, exception: &dyn SAXParseException) -> std::io::Result<()>;
+
+    /// Handle XML parsing fatal error.
+    fn fatal_error(&self, exception: &dyn SAXParseException) -> std::io::Result<()>;
+
+    /// Handle XML parsing warning.
+    fn warning(&self, exception: &dyn SAXParseException) -> std::io::Result<()>;
+
+    /// Read post-patterns from file.
+    fn read_post_patterns(
+        &self,
+        file: &dyn FileMarker,
+        pattern_list: Vec<Box<dyn Pattern>>,
+        pfactory: &dyn PatternFactory,
+    ) -> std::io::Result<()>;
+
+    /// Check post-rules at offset.
+    fn check_post_rules(&self, offset: i64) -> bool;
+
+    /// Get pre-sequence length.
+    fn get_pre_sequence_length(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.util.bytesearch.PostRule`, referenced by `Pattern`.
+pub trait PostRule: Send + Sync {}
+
+/// Placeholder for `ghidra.util.bytesearch.PatternFactory`, referenced by `Pattern`.
+pub trait PatternFactory: Send + Sync {}
+
+/// Placeholder for `ghidra.xml.XmlPullParser`, referenced by `Pattern` and `MatchAction`.
+pub trait XmlPullParser: Send + Sync {}
+
+/// Placeholder for `java.io.File`, referenced by `Pattern`.
+pub trait FileMarker: Send + Sync {}
+
+/// Placeholder for `ghidra.util.filechooser.ResourceFile`, referenced by `Pattern`.
+pub trait ResourceFile: Send + Sync {}
+
+/// Placeholder for `org.xml.sax.SAXParseException`, referenced by `Pattern`.
+pub trait SAXParseException: Send + Sync {}
+
 /// Placeholder for `ghidra.util.NumericUtilities`, referenced by
 /// [`PrettyBytes`](crate::pcode::exec::debugger_pcode_utils::PrettyBytes) before the real class is
 /// ported. Java's version is a final class of statics, so this is a unit struct with associated
