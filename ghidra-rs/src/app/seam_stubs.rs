@@ -2345,3 +2345,64 @@ pub mod dyld_cache_program_builder {
     }
 }
 
+/// Placeholder for `ghidra.app.util.pcodeInject.PcodeOpEmitter`, referenced by
+/// [`array_methods`](crate::app::util::pcode_inject::array_methods) before the real class is
+/// ported. Java's version accumulates pcode ops for a single injected pcode sequence and exposes a
+/// much larger emit* API; only the four methods `ArrayMethods.getPcodeForMultiANewArray` calls are
+/// modeled. `Send + Sync` so a caller holding a `Box<dyn PcodeOpEmitter>` can itself remain so.
+pub trait PcodeOpEmitter: Send + Sync {
+    /// Stands in for `PcodeOpEmitter.emitPushCat1Value(String)`.
+    fn emit_push_cat1_value(&self, value_name: &str);
+
+    /// Stands in for `PcodeOpEmitter.emitPopCat1Value(String)`.
+    fn emit_pop_cat1_value(&self, dest_name: &str);
+
+    /// Stands in for `PcodeOpEmitter.emitAssignVarnodeFromPcodeOpCall(String, int, String,
+    /// String...)`.
+    fn emit_assign_varnode_from_pcode_op_call(
+        &self,
+        varnode_name: &str,
+        size: i32,
+        pcodeop: &str,
+        args: &[String],
+    );
+
+    /// Stands in for `PcodeOpEmitter.emitVoidPcodeOpCall(String, String...)`.
+    fn emit_void_pcode_op_call(&self, pcodeop: &str, args: &[String]);
+}
+
+/// Placeholder for the two static string fields `ghidra.app.util.pcodeInject.ConstantPoolJava`
+/// exposes (`CPOOL_OP`, `CPOOL_MULTIANEWARRAY`), referenced by
+/// [`array_methods`](crate::app::util::pcode_inject::array_methods) before the real class is
+/// ported. Java's `ConstantPoolJava` is an instantiable class (not a statics holder -- it extends
+/// `ConstantPool` and has a `Program`-taking constructor), but these two `static final String`
+/// fields are the only members `ArrayMethods` touches, so only they are modeled here.
+pub mod constant_pool_java {
+    /// Mirrors `ConstantPoolJava.CPOOL_OP`.
+    pub const CPOOL_OP: &str = "cpool";
+    /// Mirrors `ConstantPoolJava.CPOOL_MULTIANEWARRAY`.
+    pub const CPOOL_MULTIANEWARRAY: &str = "12";
+}
+
+/// Placeholder for `ghidra.javaclass.format.DescriptorDecoder`, referenced by
+/// [`array_methods`](crate::app::util::pcode_inject::array_methods) before the real class is
+/// ported. Java's version is itself a statics holder (private constructor, only `static` methods),
+/// so -- like `array_methods` -- it is modeled as a plain module of free functions rather than a
+/// trait. Only the one static call `ArrayMethods.getArrayBaseType` makes,
+/// `getDataTypeOfDescriptor(String, DataTypeManager)`, is modeled.
+pub mod descriptor_decoder {
+    use crate::program::model::data::data_type::DataType;
+    use crate::program::model::data::data_type_manager::DataTypeManager;
+
+    /// Stands in for `DescriptorDecoder.getDataTypeOfDescriptor(String, DataTypeManager)`.
+    pub fn get_data_type_of_descriptor(
+        descriptor: &str,
+        dt_manager: &dyn DataTypeManager,
+    ) -> Box<dyn DataType> {
+        let _ = (descriptor, dt_manager);
+        unimplemented!(
+            "descriptor_decoder::get_data_type_of_descriptor placeholder not overridden"
+        )
+    }
+}
+

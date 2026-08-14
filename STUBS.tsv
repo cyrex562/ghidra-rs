@@ -846,3 +846,6 @@ ts	stub_class	referenced_by
 2026-08-14T09:10:00.000003+00:00	ByteArrayProvider	MachoFileSetExtractor
 2026-08-14T09:20:00.000000+00:00	AbstractAttributeInfo	AttributeFactory
 2026-08-14T09:20:00.000001+00:00	ConstantPoolUtf8Info	AttributeFactory
+2026-08-14T09:15:09.450580+00:00	ConstantPoolJava	ArrayMethods
+2026-08-14T09:15:09.451232+00:00	PcodeOpEmitter	ArrayMethods
+2026-08-14T09:15:09.452036+00:00	DescriptorDecoder	ArrayMethods

@@ -1,3 +1,4 @@
+pub mod array_methods;
 pub mod java_computational_category;
 pub mod java_invocation_type;
 
