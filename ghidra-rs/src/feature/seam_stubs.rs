@@ -1507,3 +1507,371 @@ impl CheckoutDialog {
         false
     }
 }
+
+/// Placeholder for `ghidra.features.base.memsearch.gui.SearchSettings`, referenced by
+/// [`SearchFormat`](crate::feature::base::memsearch::format::search_format::SearchFormat) before
+/// the real class is ported. `SearchFormat` only ever passes this type through as a parameter, so
+/// no members are needed yet.
+pub trait SearchSettings: Send + Sync {}
+
+/// Placeholder for `ghidra.features.base.memsearch.matcher.UserInputByteMatcher`, referenced by
+/// [`SearchFormat`](crate::feature::base::memsearch::format::search_format::SearchFormat) (whose
+/// `parse` returns one, and whose `is_valid_text` default method calls
+/// [`is_valid_search`](Self::is_valid_search) on the result) before the real class is ported.
+/// Trimmed to the one member `SearchFormat.isValidText` actually reads; see
+/// `UserInputByteMatcher.java` for the type's full public surface. Replace with the real port
+/// when available.
+pub trait UserInputByteMatcher: Send + Sync {
+    fn is_valid_search(&self) -> bool;
+}
+
+/// Placeholder for the unported Java type `HexSearchFormat`, one of
+/// [`SearchFormat`](crate::feature::base::memsearch::format::search_format::SearchFormat)'s six
+/// concrete subclasses, referenced by `SearchFormat.HEX`/`SearchFormat.ALL`. `HexSearchFormat` is
+/// a concrete Java class (not an interface), so this stub is a struct implementing the real
+/// `SearchFormat` trait rather than a `dyn`-dispatched placeholder trait of its own. `parse` and
+/// `convert_text` are the format's actual byte-parsing logic and are left `unimplemented!()`
+/// pending that file's own port; `get_tool_tip`/`get_format_type` mirror the real
+/// `HexSearchFormat.java` since they cost nothing to copy faithfully. Replace with the real port
+/// when `HexSearchFormat.java` is ported.
+pub struct HexSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl HexSearchFormat {
+    /// Java: `HexSearchFormat()`, which calls `super("Hex")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Hex",
+            ),
+        }
+    }
+}
+
+impl Default for HexSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for HexSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("HexSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a sequence of hex numbers, separated by spaces. Enter '.' or '?' for \
+         a wildcard match"
+            .to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("HexSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::Byte
+    }
+}
+
+/// Placeholder for the unported Java type `BinarySearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `BinarySearchFormat.java` is ported.
+pub struct BinarySearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl BinarySearchFormat {
+    /// Java: `BinarySearchFormat()`, which calls `super("Binary")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Binary",
+            ),
+        }
+    }
+}
+
+impl Default for BinarySearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for BinarySearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("BinarySearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a sequence of binary digits. Spaces will start the next byte. Bit \
+         sequences less than 8 bits are padded with 0's to the left. Enter 'x', '.' or '?' for a \
+         wildcard bit"
+            .to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("BinarySearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::Byte
+    }
+}
+
+/// Placeholder for the unported Java type `DecimalSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `DecimalSearchFormat.java` is ported.
+pub struct DecimalSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl DecimalSearchFormat {
+    /// Java: `DecimalSearchFormat()`, which calls `super("Decimal")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Decimal",
+            ),
+        }
+    }
+}
+
+impl Default for DecimalSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for DecimalSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("DecimalSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret values as a sequence of decimal numbers, separated by spaces".to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("DecimalSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::Integer
+    }
+}
+
+/// Placeholder for the unported Java type `StringSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `StringSearchFormat.java` is ported.
+pub struct StringSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl StringSearchFormat {
+    /// Java: `StringSearchFormat()`, which calls `super("String")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "String",
+            ),
+        }
+    }
+}
+
+impl Default for StringSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for StringSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("StringSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a sequence of characters.".to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("StringSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::StringType
+    }
+}
+
+/// Placeholder for the unported Java type `RegExSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Replace with the real port when `RegExSearchFormat.java` is ported.
+pub struct RegExSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+}
+
+impl RegExSearchFormat {
+    /// Java: `RegExSearchFormat()`, which calls `super("Reg Ex")`.
+    pub fn new() -> Self {
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                "Reg Ex",
+            ),
+        }
+    }
+}
+
+impl Default for RegExSearchFormat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for RegExSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("RegExSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        "Interpret value as a regular expression.".to_string()
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("RegExSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::StringType
+    }
+}
+
+/// Placeholder for the unported Java type `FloatSearchFormat`. See [`HexSearchFormat`] for the
+/// trimming rationale. Unlike the other five, Java's `FloatSearchFormat` is constructed twice with
+/// different arguments (`SearchFormat.FLOAT = new FloatSearchFormat("Float", "Floating Point", 4)`
+/// and `SearchFormat.DOUBLE = new FloatSearchFormat("Double", "Floating Point (8)", 8)`), so this
+/// stub keeps the `longName`/`byteSize` fields Java stores for those two call sites even though
+/// nothing here reads them yet (the real port's `getToolTip`/`getValue` do). Replace with the real
+/// port when `FloatSearchFormat.java` is ported.
+pub struct FloatSearchFormat {
+    base: crate::feature::base::memsearch::format::search_format::SearchFormatBase,
+    long_name: String,
+    byte_size: i32,
+}
+
+impl FloatSearchFormat {
+    /// Java: `FloatSearchFormat(String name, String longName, int size)`.
+    pub fn new(name: impl Into<String>, long_name: impl Into<String>, byte_size: i32) -> Self {
+        assert!(byte_size == 4 || byte_size == 8, "Only supports 4 or 8 byte floating point numbers");
+        Self {
+            base: crate::feature::base::memsearch::format::search_format::SearchFormatBase::new(
+                name,
+            ),
+            long_name: long_name.into(),
+            byte_size,
+        }
+    }
+
+    /// Java: `SearchFormat.FLOAT = new FloatSearchFormat("Float", "Floating Point", 4)`.
+    pub fn new_float() -> Self {
+        Self::new("Float", "Floating Point", 4)
+    }
+
+    /// Java: `SearchFormat.DOUBLE = new FloatSearchFormat("Double", "Floating Point (8)", 8)`.
+    pub fn new_double() -> Self {
+        Self::new("Double", "Floating Point (8)", 8)
+    }
+}
+
+impl crate::feature::base::memsearch::format::search_format::SearchFormat for FloatSearchFormat {
+    fn base(&self) -> &crate::feature::base::memsearch::format::search_format::SearchFormatBase {
+        &self.base
+    }
+
+    fn parse(&self, input: &str, settings: &dyn SearchSettings) -> Box<dyn UserInputByteMatcher> {
+        let _ = (input, settings);
+        unimplemented!("FloatSearchFormat::parse is not ported yet")
+    }
+
+    fn get_tool_tip(&self) -> String {
+        format!("Interpret values as a sequence of {} numbers, separated by spaces", self.long_name)
+    }
+
+    fn convert_text(
+        &self,
+        text: &str,
+        old_settings: &dyn SearchSettings,
+        new_settings: &dyn SearchSettings,
+    ) -> String {
+        let _ = (text, old_settings, new_settings);
+        unimplemented!("FloatSearchFormat::convert_text is not ported yet")
+    }
+
+    fn get_format_type(
+        &self,
+    ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
+        let _ = self.byte_size;
+        crate::feature::base::memsearch::format::search_format::SearchFormatType::FloatingPoint
+    }
+}
