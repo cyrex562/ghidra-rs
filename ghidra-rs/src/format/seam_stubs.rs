@@ -1454,20 +1454,11 @@ pub trait DebugCOFFLineNumber: Send + Sync {
     fn to_string(&self) -> String;
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbolsHeader`, referenced by
-/// [`DebugCOFFSymbolTable`](crate::format::pe::debug::debug_coff_symbol_table::DebugCOFFSymbolTable)
-/// before the real class is ported. Models only the methods needed by `DebugCOFFSymbolTable`.
-pub trait DebugCOFFSymbolsHeader: Send + Sync {
-    fn get_symbol_table(&self) -> Box<dyn DebugCOFFSymbolTable>;
-    fn get_line_numbers(&self) -> Vec<Box<dyn DebugCOFFLineNumber>>;
-    fn get_number_of_symbols(&self) -> i32;
-    fn get_first_symbol_lva(&self) -> i32;
-    fn get_number_of_linenumbers(&self) -> i32;
-    fn get_first_linenumber_lva(&self) -> i32;
-    fn get_first_byte_of_code_rva(&self) -> i32;
-    fn get_last_byte_of_code_rva(&self) -> i32;
-    fn get_first_byte_of_data_rva(&self) -> i32;
-    fn get_last_byte_of_data_rva(&self) -> i32;
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugDirectory`, referenced by
+/// [`DebugCOFFSymbolsHeader`](crate::format::pe::debug::debug_coff_symbols_header::DebugCOFFSymbolsHeader)
+/// before the real class is ported. Models only the method needed by `DebugCOFFSymbolsHeader`.
+pub trait DebugDirectory: Send + Sync {
+    fn get_pointer_to_raw_data(&self) -> i32;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCOFFSymbolTable`, referenced by

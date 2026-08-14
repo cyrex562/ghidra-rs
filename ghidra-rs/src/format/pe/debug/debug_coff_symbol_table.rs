@@ -1,10 +1,8 @@
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::{
-    DebugCOFFSymbol, DebugCOFFSymbolsHeader, DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL,
-    NT_HEADER_MAX_SANE_COUNT,
-};
+use crate::format::pe::debug::debug_coff_symbols_header::DebugCOFFSymbolsHeader;
+use crate::format::seam_stubs::{DebugCOFFSymbol, DEBUG_COFF_SYMBOL_IMAGE_SIZEOF_SYMBOL, NT_HEADER_MAX_SANE_COUNT};
 
 /// Represents a COFF Symbol Table.
 ///
@@ -40,7 +38,7 @@ impl DebugCOFFSymbolTable {
     /// Returns an `io::Result::Err` if reading from the reader fails.
     pub fn new(
         _reader: &dyn BinaryReader,
-        coff_header: &dyn DebugCOFFSymbolsHeader,
+        coff_header: &DebugCOFFSymbolsHeader,
         offset: i32,
     ) -> io::Result<Self> {
         let ptr_to_symbol_table = coff_header.get_first_symbol_lva() + offset;
@@ -193,61 +191,47 @@ mod tests {
         }
     }
 
-    struct MockCOFFHeader {
-        number_of_symbols: i32,
-        first_symbol_lva: i32,
+    struct MockDebugDirectory {
+        ptr: i32,
     }
 
-    impl DebugCOFFSymbolsHeader for MockCOFFHeader {
-        fn get_symbol_table(&self) -> Box<dyn crate::format::seam_stubs::DebugCOFFSymbolTable> {
-            panic!("not implemented")
+    impl crate::format::seam_stubs::DebugDirectory for MockDebugDirectory {
+        fn get_pointer_to_raw_data(&self) -> i32 {
+            self.ptr
         }
+    }
 
-        fn get_line_numbers(&self) -> Vec<Box<dyn crate::format::seam_stubs::DebugCOFFLineNumber>> {
-            Vec::new()
+    struct AlwaysValid;
+    impl crate::format::pe::offset_validator::OffsetValidator for AlwaysValid {
+        fn check_pointer(&self, _ptr: u64) -> bool {
+            true
         }
+        fn check_rva(&self, _rva: u64) -> bool {
+            true
+        }
+    }
 
-        fn get_number_of_symbols(&self) -> i32 {
-            self.number_of_symbols
-        }
+    /// Builds a `DebugCOFFSymbolsHeader` with the given `number_of_symbols` /
+    /// `first_symbol_lva`, and all other fields zeroed, by encoding them into the reader's
+    /// backing bytes at offset 0 (mirrors the header's own binary layout).
+    fn mock_header(number_of_symbols: i32, first_symbol_lva: i32) -> (MockReader, DebugCOFFSymbolsHeader) {
+        let mut data = Vec::new();
+        data.extend_from_slice(&(number_of_symbols as u32).to_le_bytes());
+        data.extend_from_slice(&(first_symbol_lva as u32).to_le_bytes());
+        data.extend(std::iter::repeat(0u8).take(6 * 4));
+        data.extend(std::iter::repeat(0u8).take(1000));
 
-        fn get_first_symbol_lva(&self) -> i32 {
-            self.first_symbol_lva
-        }
-
-        fn get_number_of_linenumbers(&self) -> i32 {
-            0
-        }
-
-        fn get_first_linenumber_lva(&self) -> i32 {
-            0
-        }
-
-        fn get_first_byte_of_code_rva(&self) -> i32 {
-            0
-        }
-
-        fn get_last_byte_of_code_rva(&self) -> i32 {
-            0
-        }
-
-        fn get_first_byte_of_data_rva(&self) -> i32 {
-            0
-        }
-
-        fn get_last_byte_of_data_rva(&self) -> i32 {
-            0
-        }
+        let reader = MockReader::new(data, true);
+        let debug_dir = MockDebugDirectory { ptr: 0 };
+        let validator = AlwaysValid;
+        let header = DebugCOFFSymbolsHeader::new(&reader, &debug_dir, &validator)
+            .expect("failed to construct mock header");
+        (reader, header)
     }
 
     #[test]
     fn create_empty_table() {
-        let data = vec![0u8; 1000];
-        let reader = MockReader::new(data, true);
-        let header = MockCOFFHeader {
-            number_of_symbols: 0,
-            first_symbol_lva: 100,
-        };
+        let (reader, header) = mock_header(0, 100);
 
         let table = DebugCOFFSymbolTable::new(&reader, &header, 0).expect("failed to create table");
         assert_eq!(table.symbol_count, 0);
@@ -257,12 +241,7 @@ mod tests {
 
     #[test]
     fn create_table_with_max_sane_count() {
-        let data = vec![0u8; 100000];
-        let reader = MockReader::new(data, true);
-        let header = MockCOFFHeader {
-            number_of_symbols: NT_HEADER_MAX_SANE_COUNT,
-            first_symbol_lva: 100,
-        };
+        let (reader, header) = mock_header(NT_HEADER_MAX_SANE_COUNT, 100);
 
         let table = DebugCOFFSymbolTable::new(&reader, &header, 0).expect("failed to create table");
         assert_eq!(table.symbol_count, NT_HEADER_MAX_SANE_COUNT);
@@ -271,12 +250,7 @@ mod tests {
 
     #[test]
     fn create_table_exceeds_max_sane_count() {
-        let data = vec![0u8; 100000];
-        let reader = MockReader::new(data, true);
-        let header = MockCOFFHeader {
-            number_of_symbols: NT_HEADER_MAX_SANE_COUNT + 1,
-            first_symbol_lva: 100,
-        };
+        let (reader, header) = mock_header(NT_HEADER_MAX_SANE_COUNT + 1, 100);
 
         let table = DebugCOFFSymbolTable::new(&reader, &header, 0).expect("failed to create table");
         assert_eq!(table.symbol_count, NT_HEADER_MAX_SANE_COUNT + 1);
@@ -285,12 +259,7 @@ mod tests {
 
     #[test]
     fn string_table_index_calculation() {
-        let data = vec![0u8; 1000];
-        let reader = MockReader::new(data, true);
-        let header = MockCOFFHeader {
-            number_of_symbols: 5,
-            first_symbol_lva: 100,
-        };
+        let (reader, header) = mock_header(5, 100);
 
         let table = DebugCOFFSymbolTable::new(&reader, &header, 0).expect("failed to create table");
         let string_table_index = table.get_string_table_index();
@@ -299,12 +268,7 @@ mod tests {
 
     #[test]
     fn with_offset() {
-        let data = vec![0u8; 1000];
-        let reader = MockReader::new(data, true);
-        let header = MockCOFFHeader {
-            number_of_symbols: 0,
-            first_symbol_lva: 100,
-        };
+        let (reader, header) = mock_header(0, 100);
 
         let table = DebugCOFFSymbolTable::new(&reader, &header, 200).expect("failed to create table");
         assert_eq!(table.ptr_to_symbol_table, 300); // 100 + 200
