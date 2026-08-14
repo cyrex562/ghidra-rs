@@ -22,6 +22,7 @@ use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
 use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
+use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldChainedFixupsCommand;
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::format::macho::mach_exception::MachException;
@@ -823,20 +824,38 @@ impl DyldCacheMappingAndSlideInfo {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.commands.SegmentCommand`, referenced by
-/// `DyldCacheFileSystem::mount`.
+/// `DyldCacheFileSystem::mount` and `MachoFileSetFileSystem`.
 ///
-/// Concrete stub: Java class, not interface. Only the load address/size THIS type needs are
-/// included; the real class additionally parses section tables, protection flags and file
-/// offsets from a `LC_SEGMENT[_64]` load command. Replace with the real port when available.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Concrete stub: Java class, not interface. Only the fields the current consumers need are
+/// included (address/size for `DyldCacheFileSystem`; name, file range and protection/flags for
+/// `MachoFileSetFileSystem`); the real class additionally parses section tables from a
+/// `LC_SEGMENT[_64]` load command. Replace with the real port when available.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SegmentCommand {
     vm_address: i64,
     vm_size: i64,
+    segment_name: String,
+    file_offset: i64,
+    file_size: i64,
+    max_protection: i32,
+    init_protection: i32,
+    flags: i32,
 }
 
 impl SegmentCommand {
+    /// Mirrors the load-address/size-only construction used by `DyldCacheFileSystem`. The
+    /// remaining fields (unused by that caller) default to empty/zero.
     pub fn new(vm_address: i64, vm_size: i64) -> Self {
-        SegmentCommand { vm_address, vm_size }
+        SegmentCommand {
+            vm_address,
+            vm_size,
+            segment_name: String::new(),
+            file_offset: 0,
+            file_size: 0,
+            max_protection: 0,
+            init_protection: 0,
+            flags: 0,
+        }
     }
 
     /// Mirrors `getVMaddress()`.
@@ -847,6 +866,44 @@ impl SegmentCommand {
     /// Mirrors `getVMsize()`.
     pub fn vm_size(&self) -> i64 {
         self.vm_size
+    }
+
+    /// Mirrors `getSegmentName()`.
+    pub fn segment_name(&self) -> &str {
+        &self.segment_name
+    }
+
+    /// Mirrors `getFileOffset()`.
+    pub fn file_offset(&self) -> i64 {
+        self.file_offset
+    }
+
+    /// Mirrors `getFileSize()`.
+    pub fn file_size(&self) -> i64 {
+        self.file_size
+    }
+
+    /// Mirrors `getMaxProtection()`.
+    pub fn max_protection(&self) -> i32 {
+        self.max_protection
+    }
+
+    /// Mirrors `getInitProtection()`.
+    pub fn init_protection(&self) -> i32 {
+        self.init_protection
+    }
+
+    /// Mirrors `getFlags()`.
+    pub fn flags(&self) -> i32 {
+        self.flags
+    }
+
+    /// Mirrors the static `size(int magic)`: the on-disk size of a segment load command (with no
+    /// sections), which differs between 32- and 64-bit Mach-O.
+    pub fn size(magic: i32) -> i32 {
+        const MH_MAGIC_64: i32 = 0xfeedfacfu32 as i32;
+        const MH_CIGAM_64: i32 = 0xcffaedfeu32 as i32;
+        if magic == MH_MAGIC_64 || magic == MH_CIGAM_64 { 0x48 } else { 0x38 }
     }
 }
 
@@ -859,23 +916,272 @@ impl SegmentCommand {
 /// the real segment table is not yet ported, so `parse_segments` always reports an empty list
 /// until it is. Replace with the real port when available.
 pub struct MachHeader {
-    #[allow(dead_code)]
     provider: Rc<RefCell<dyn ByteProvider>>,
-    #[allow(dead_code)]
     offset: i64,
+    little_endian: bool,
 }
 
 impl MachHeader {
     /// Mirrors `MachHeader(ByteProvider, long, boolean)`, restricted to the `isRelative = false`
     /// case (the only one `SplitDyldCache.getMacho` uses).
     pub fn new(provider: Rc<RefCell<dyn ByteProvider>>, offset: i64) -> Self {
-        MachHeader { provider, offset }
+        MachHeader { provider, offset, little_endian: true }
+    }
+
+    /// Mirrors `MachHeader(ByteProvider)`, i.e. `MachHeader(provider, 0)`.
+    pub fn from_provider(provider: Rc<RefCell<dyn ByteProvider>>) -> Self {
+        MachHeader::new(provider, 0)
     }
 
     /// Mirrors `parseSegments()`. Not yet implemented (see type docs): always reports no
     /// segments.
     pub fn parse_segments(&self) -> io::Result<Vec<SegmentCommand>> {
         Ok(Vec::new())
+    }
+
+    /// Mirrors `parse()`, restricted to what can be determined without a real load-command
+    /// parser: reads and validates the 4-byte magic at [`offset`](Self::offset) so
+    /// [`is_little_endian`](Self::is_little_endian) reports a real answer. Load commands are not
+    /// parsed (see type docs), so [`get_segment`](Self::get_segment),
+    /// [`file_set_entry_commands`](Self::file_set_entry_commands) and
+    /// [`dyld_chained_fixups_commands`](Self::dyld_chained_fixups_commands) always report empty
+    /// until that lands. Replace with the real port when available.
+    pub fn parse(&mut self) -> Result<(), MachException> {
+        const MH_MAGIC: u32 = 0xfeedface;
+        const MH_MAGIC_64: u32 = 0xfeedfacf;
+        const MH_CIGAM: u32 = 0xcefaedfe;
+        const MH_CIGAM_64: u32 = 0xcffaedfe;
+
+        let bytes = self
+            .provider
+            .borrow_mut()
+            .read_bytes(self.offset as u64, 4)
+            .map_err(MachException::from_cause)?;
+        let magic = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+        if magic != MH_MAGIC && magic != MH_MAGIC_64 && magic != MH_CIGAM && magic != MH_CIGAM_64 {
+            return Err(MachException::new(format!("Invalid Mach-O magic: 0x{magic:x}")));
+        }
+        self.little_endian = magic == MH_CIGAM || magic == MH_CIGAM_64;
+        Ok(())
+    }
+
+    /// Mirrors `isLittleEndian()`. Only meaningful after [`parse`](Self::parse) has run; `true`
+    /// beforehand (this stub's default, matching the common case for iOS/arm64e binaries).
+    pub fn is_little_endian(&self) -> bool {
+        self.little_endian
+    }
+
+    /// Mirrors `getSegment(String)`. Not yet implemented (see type docs): always reports no
+    /// matching segment, since the load-command table is not parsed.
+    pub fn get_segment(&self, _segment_name: &str) -> Option<SegmentCommand> {
+        None
+    }
+
+    /// Mirrors `getLoadCommands(FileSetEntryCommand.class)`. Not yet implemented (see type
+    /// docs): always empty.
+    pub fn file_set_entry_commands(&self) -> Vec<FileSetEntryCommand> {
+        Vec::new()
+    }
+
+    /// Mirrors `getLoadCommands(DyldChainedFixupsCommand.class)`. Not yet implemented (see type
+    /// docs): always empty.
+    pub fn dyld_chained_fixups_commands(&self) -> Vec<DyldChainedFixupsCommand> {
+        Vec::new()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.FileSetEntryCommand`, referenced
+/// by `MachoFileSetFileSystem::mount`.
+///
+/// Concrete stub: Java class, not interface. `getFileSetEntryId()`'s `LoadCommandString` return
+/// type is collapsed directly to its resolved `String` (mirroring
+/// `LoadCommandString::get_string()`), since no consumer needs the intermediate type yet.
+/// Replace with the real port when available.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FileSetEntryCommand {
+    v_maddress: i64,
+    file_offset: i64,
+    file_set_entry_id: String,
+}
+
+impl FileSetEntryCommand {
+    pub fn new(v_maddress: i64, file_offset: i64, file_set_entry_id: impl Into<String>) -> Self {
+        FileSetEntryCommand { v_maddress, file_offset, file_set_entry_id: file_set_entry_id.into() }
+    }
+
+    /// Mirrors `getVMaddress()`.
+    pub fn get_v_maddress(&self) -> i64 {
+        self.v_maddress
+    }
+
+    /// Mirrors `getFileOffset()`.
+    pub fn get_file_offset(&self) -> i64 {
+        self.file_offset
+    }
+
+    /// Mirrors `getFileSetEntryId().getString()`.
+    pub fn get_file_set_entry_id(&self) -> &str {
+        &self.file_set_entry_id
+    }
+}
+
+/// Placeholder for `ghidra.file.formats.ios.fileset.MachoFileSetEntry`, referenced by
+/// `MachoFileSetFileSystem`.
+///
+/// Concrete stub: Java record, not interface. Mirrors all three record components (the full
+/// public surface of a record); modeled here rather than in its own file only because
+/// `MachoFileSetEntry.java` has not had its own port turn yet.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct MachoFileSetEntry {
+    id: String,
+    offset: i64,
+    is_branch_segment: bool,
+}
+
+impl MachoFileSetEntry {
+    /// Mirrors the record constructor `MachoFileSetEntry(String, long, boolean)`.
+    pub fn new(id: impl Into<String>, offset: i64, is_branch_segment: bool) -> Self {
+        MachoFileSetEntry { id: id.into(), offset, is_branch_segment }
+    }
+
+    /// Mirrors the record accessor `id()`.
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Mirrors the record accessor `offset()`.
+    pub fn offset(&self) -> i64 {
+        self.offset
+    }
+
+    /// Mirrors the record accessor `isBranchSegment()`.
+    pub fn is_branch_segment(&self) -> bool {
+        self.is_branch_segment
+    }
+}
+
+/// Placeholder for `ghidra.file.formats.ios.ExtractedMacho`, referenced by
+/// `MachoFileSetFileSystem::mount`.
+///
+/// Concrete stub: Java class, not interface. Only the static `toBytes` utility THIS type needs
+/// is included, implemented faithfully (little-endian encoding of a 4- or 8-byte value); the
+/// real class additionally packs a Mach-O's segments down and produces a `ByteProvider` for the
+/// packed result, neither of which is ported yet. Replace with the real port when available.
+pub struct ExtractedMacho;
+
+impl ExtractedMacho {
+    /// Mirrors the static `toBytes(long, int)`.
+    pub fn to_bytes(value: i64, size: i32) -> io::Result<Vec<u8>> {
+        match size {
+            4 => Ok((value as i32).to_le_bytes().to_vec()),
+            8 => Ok(value.to_le_bytes().to_vec()),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidInput, format!("Invalid size: {size}"))),
+        }
+    }
+}
+
+/// Placeholder for `ghidra.file.formats.ios.fileset.MachoFileSetExtractor`, referenced by
+/// `MachoFileSetFileSystem::get_byte_provider`.
+///
+/// Concrete stub: Java class, not interface. Extraction depends on Mach-O header/segment
+/// creation (`MachHeader::create`, `SegmentCommand::create`) and packing (`ExtractedMacho.pack`),
+/// none of which is ported yet, so both entry points report "not yet implemented". Replace with
+/// the real port when available (at which point `MachoFileSetExtractor.java` gets its own port
+/// turn).
+pub struct MachoFileSetExtractor;
+
+impl MachoFileSetExtractor {
+    /// Mirrors `extractFileSetEntry(ByteProvider, long, FSRL, TaskMonitor)`. Not yet implemented
+    /// (see type docs).
+    pub fn extract_file_set_entry(
+        _provider: Rc<RefCell<dyn ByteProvider>>,
+        _provider_offset: i64,
+        _fsrl_path: &str,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<Box<dyn ByteProvider>> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "MachoFileSetExtractor.extract_file_set_entry not yet ported",
+        ))
+    }
+
+    /// Mirrors `extractSegment(ByteProvider, SegmentCommand, FSRL, TaskMonitor)`. Not yet
+    /// implemented (see type docs).
+    pub fn extract_segment(
+        _provider: Rc<RefCell<dyn ByteProvider>>,
+        _segment: &SegmentCommand,
+        _fsrl_path: &str,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<Box<dyn ByteProvider>> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "MachoFileSetExtractor.extract_segment not yet ported"))
+    }
+}
+
+/// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
+/// `MachoFileSetFileSystem::mount` (via `DyldChainedFixupsCommand::get_chained_fixups`).
+///
+/// Concrete stub, per the decided convention (there is nothing to dispatch over): a real, if
+/// minimal, in-memory log rather than an `unimplemented!()` placeholder. Also implements
+/// [`crate::format::seam_stubs::MessageLog`] so it interoperates with already-ported callers
+/// (like `DyldChainedFixupsCommand::get_chained_fixups`) that still take `&dyn MessageLog`
+/// against that older trait-based seam. Replace with the real port when available.
+#[derive(Debug, Default)]
+pub struct MessageLog {
+    messages: std::sync::Mutex<Vec<String>>,
+    status: std::sync::Mutex<Option<String>>,
+}
+
+impl MessageLog {
+    /// Mirrors `new MessageLog()`.
+    pub fn new() -> Self {
+        MessageLog::default()
+    }
+}
+
+impl crate::format::seam_stubs::MessageLog for MessageLog {
+    fn copy_from(&self, _log: &dyn crate::format::seam_stubs::MessageLog) {
+        // Not implemented: the seam trait only exposes `to_string()`, not structured access to
+        // another log's messages, so there is nothing meaningful to copy through it.
+    }
+
+    fn append_msg(&self, message: &str) {
+        self.messages.lock().unwrap().push(message.to_string());
+    }
+
+    fn append_exception(&self, _t: &dyn crate::format::seam_stubs::Throwable) {
+        self.messages.lock().unwrap().push("exception".to_string());
+    }
+
+    fn error(&self, originator: &str, message: &str) {
+        self.messages.lock().unwrap().push(format!("{originator}: {message}"));
+    }
+
+    fn has_messages(&self) -> bool {
+        !self.messages.lock().unwrap().is_empty()
+    }
+
+    fn clear(&self) {
+        self.messages.lock().unwrap().clear();
+    }
+
+    fn set_status(&self, status: &str) {
+        *self.status.lock().unwrap() = Some(status.to_string());
+    }
+
+    fn clear_status(&self) {
+        *self.status.lock().unwrap() = None;
+    }
+
+    fn get_status(&self) -> String {
+        self.status.lock().unwrap().clone().unwrap_or_default()
+    }
+
+    fn to_string(&self) -> String {
+        self.messages.lock().unwrap().join("\n")
+    }
+
+    fn write(&self, _owner: &dyn crate::format::seam_stubs::Class, message_header: &str) {
+        self.messages.lock().unwrap().push(message_header.to_string());
     }
 }
 
