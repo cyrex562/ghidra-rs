@@ -1,6 +1,9 @@
 use std::cell::RefCell;
 use std::io;
+use std::path::PathBuf;
 use std::rc::Rc;
+
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
 
 /// Abstracts seekable, index-addressed byte storage consumed by [`GBinaryReader`].
 ///
@@ -14,6 +17,28 @@ pub trait ByteProvider {
     fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>>;
     fn write_byte(&mut self, index: u64, value: u8) -> io::Result<()>;
     fn write_bytes(&mut self, index: u64, values: &[u8]) -> io::Result<()>;
+
+    /// The [`Fsrl`] this provider's bytes came from, if it has one.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DecompileDebugFormatManager::from_byte_provider`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager::from_byte_provider),
+    /// which prefers a simple local FSRL path over [`get_file`](Self::get_file). Stands in for
+    /// `ByteProvider.getFSRL()`.
+    ///
+    /// Defaults to `None`, which is exactly the `null` Java's default implementation returns.
+    fn get_fsrl(&self) -> Option<&dyn Fsrl> {
+        None
+    }
+
+    /// The local file backing this provider, if it has one.
+    ///
+    /// Grown (defaulted) alongside [`get_fsrl`](Self::get_fsrl) for the same caller. Stands in
+    /// for `ByteProvider.getFile()`, which likewise defaults to `null` -- and which, for a
+    /// provider obtained from the filesystem service, points into the file cache rather than at
+    /// the original path.
+    fn get_file(&self) -> Option<PathBuf> {
+        None
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

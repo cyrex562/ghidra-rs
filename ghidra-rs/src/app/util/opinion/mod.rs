@@ -1,4 +1,5 @@
 pub mod bounded_buffered_reader;
+pub mod decompile_debug_format_manager;
 pub mod def_export_line;
 pub mod dyld_cache_options;
 pub mod elf_loader_options_factory;
