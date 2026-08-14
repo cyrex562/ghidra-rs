@@ -38,6 +38,7 @@ use std::sync::Arc;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter;
+use crate::format::memory_loadable::MemoryLoadable;
 use crate::format::seam_stubs::{
     elf_relocation_handler, ElfHeader, ElfRelocation, ElfRelocationHandler, ElfRelocationTable,
     ElfSymbolTable, MessageLog,
@@ -680,7 +681,7 @@ mod tests {
         }
         fn find_load_address(
             &self,
-            _section: &dyn crate::format::seam_stubs::MemoryLoadable,
+            _section: &dyn MemoryLoadable,
             _byte_offset_within_section: i64,
         ) -> Option<Address> {
             None

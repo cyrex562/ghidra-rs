@@ -23,7 +23,8 @@
 use std::sync::Arc;
 
 use crate::format::elf::elf_symbol::ElfSymbol;
-use crate::format::seam_stubs::{ElfHeader, MemoryLoadable, MessageLog};
+use crate::format::memory_loadable::MemoryLoadable;
+use crate::format::seam_stubs::{ElfHeader, MessageLog};
 use crate::program::model::address::range::AddressRange;
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;

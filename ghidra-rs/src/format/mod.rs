@@ -6,6 +6,7 @@ pub mod javaclass;
 pub mod lx;
 pub mod macho;
 pub mod macos;
+pub mod memory_loadable;
 pub mod ne;
 pub mod objc;
 pub mod omf;
