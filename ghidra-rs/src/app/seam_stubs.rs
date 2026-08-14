@@ -632,18 +632,65 @@ pub mod option_utils {
 }
 
 /// Placeholder for `ghidra.app.util.opinion.LoadSpec`, referenced by
-/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) before
-/// the real class is ported. Java's version additionally carries a `Loader`, a desired image
-/// base, `isPreferred`, and `requiresLanguageCompilerSpec`; only the `LanguageCompilerSpecPair`
-/// this caller reads is modeled, and (unlike Java's nullable field) it is required here since an
-/// ELF `LoadSpec` always carries one.
+/// [`elf_loader_options_factory`](crate::app::util::opinion::elf_loader_options_factory) and
+/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
+/// ported. Java's version additionally carries a `Loader` back-reference; no in-repo caller reads
+/// it back (`getLoader()`), so it is dropped. Grown from the ELF-only placeholder (which modeled
+/// just the `LanguageCompilerSpecPair` field, required rather than nullable, since an ELF
+/// `LoadSpec` always carries one) to also carry `desiredImageBase`, `isPreferred`, and
+/// `requiresLanguageCompilerSpec`, mirroring the field derivation in Java's
+/// `LoadSpec(Loader, long, LanguageCompilerSpecPair, boolean)` constructor, so
+/// `language_compiler_spec` is now nullable (`dyld_cache_loader`'s fallback `LoadSpec` has none).
 pub struct LoadSpec {
-    pub language_compiler_spec: crate::program::seam_stubs::LanguageCompilerSpecPair,
+    /// Mirrors `LoadSpec.getDesiredImageBase()`.
+    pub desired_image_base: i64,
+    /// Mirrors `LoadSpec.getLanguageCompilerSpec()`. `None` when the associated `Loader` doesn't
+    /// use, or wasn't able to determine, a language/compiler.
+    pub language_compiler_spec: StdOption<crate::program::seam_stubs::LanguageCompilerSpecPair>,
+    /// Mirrors `LoadSpec.isPreferred()`.
+    pub preferred: bool,
+    /// Mirrors `LoadSpec.requiresLanguageCompilerSpec()`.
+    pub requires_language_compiler_spec: bool,
 }
 
 impl LoadSpec {
+    /// Port of the field derivation in `LoadSpec(Loader, long, LanguageCompilerSpecPair,
+    /// boolean)`: a "preferred" null language/compiler means the loader doesn't use one; a
+    /// "non-preferred" null language/compiler means the loader does use one but couldn't
+    /// determine it on its own.
+    fn new_full(
+        desired_image_base: i64,
+        language_compiler_spec: StdOption<crate::program::seam_stubs::LanguageCompilerSpecPair>,
+        preferred: bool,
+    ) -> Self {
+        let requires_language_compiler_spec = language_compiler_spec.is_some() || !preferred;
+        Self { desired_image_base, language_compiler_spec, preferred, requires_language_compiler_spec }
+    }
+
+    /// Constructs a [`LoadSpec`] from a manually supplied `LanguageCompilerSpecPair`, as used by
+    /// [`elf_loader_options_factory`]. Equivalent to calling the full Java constructor with
+    /// `imageBase = 0` and `isPreferred = false`, all that caller's [`get_language`](Self::get_language)
+    /// needs.
     pub fn new(language_compiler_spec: crate::program::seam_stubs::LanguageCompilerSpecPair) -> Self {
-        Self { language_compiler_spec }
+        Self::new_full(0, Some(language_compiler_spec), false)
+    }
+
+    /// Port of `LoadSpec(Loader, long, QueryResult)`.
+    pub fn from_query_result(desired_image_base: i64, result: &QueryResult) -> Self {
+        Self::new_full(desired_image_base, Some(result.pair.clone()), result.preferred)
+    }
+
+    /// Port of `LoadSpec(Loader, long, boolean requiresLanguageCompilerSpec)`.
+    pub fn without_language_compiler_spec(
+        desired_image_base: i64,
+        requires_language_compiler_spec: bool,
+    ) -> Self {
+        Self::new_full(desired_image_base, None, !requires_language_compiler_spec)
+    }
+
+    /// Port of `LoadSpec.isComplete()`.
+    pub fn is_complete(&self) -> bool {
+        !self.requires_language_compiler_spec || self.language_compiler_spec.is_some()
     }
 
     /// Mirrors `loadSpec.getLanguageCompilerSpec().getLanguage()`. Java resolves the language via
@@ -652,6 +699,10 @@ impl LoadSpec {
     /// `LanguageService` is supplied explicitly here, mirroring the substitution already
     /// established in
     /// [`resolve_language_by_id`](crate::program::model::data::program_architecture_translator::resolve_language_by_id).
+    ///
+    /// # Panics
+    /// Panics if [`language_compiler_spec`](Self::language_compiler_spec) is `None`; only
+    /// [`elf_loader_options_factory`] calls this, and it always builds a `LoadSpec` with one set.
     pub fn get_language(
         &self,
         language_service: &dyn crate::program::model::lang::language_service::LanguageService,
@@ -659,7 +710,11 @@ impl LoadSpec {
         Box<dyn crate::program::model::lang::language::Language>,
         crate::program::seam_stubs::LanguageNotFoundException,
     > {
-        language_service.get_language(self.language_compiler_spec.get_language_id())
+        let pair = self
+            .language_compiler_spec
+            .as_ref()
+            .expect("LoadSpec::get_language requires a language/compiler spec");
+        language_service.get_language(pair.get_language_id())
     }
 }
 
@@ -2044,6 +2099,178 @@ impl DecompileDebugByteManager {
     pub fn parse<P: XmlPullParser>(&mut self, parser: &mut P, log: &mut XmlMessageLog) {
         let _ = log;
         parser.discard_sub_tree();
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldArchitecture`, referenced by
+/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
+/// ported. Java's version is a concrete class (not an interface) holding a small fixed table of
+/// named `dyld_v1*` signature constants; only the two members `DyldCacheLoader` actually calls --
+/// looking an architecture up by its raw signature string, and reading back its processor name --
+/// are modeled. `cpuType`/`cpuSubType`/`endianness`/`is64bit` are dropped since no in-repo caller
+/// reads them yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DyldArchitecture {
+    signature: &'static str,
+    processor: &'static str,
+}
+
+impl DyldArchitecture {
+    /// Port of `DyldArchitecture.DYLD_V1_SIGNATURE_LEN`.
+    pub const DYLD_V1_SIGNATURE_LEN: usize = 0x10;
+
+    // @formatter:off -- exact signature spacing matters (compared after only leading/trailing
+    // `trim()`), so these are copied verbatim from `DyldArchitecture.ARCHITECTURES`.
+    const ARCHITECTURES: &'static [DyldArchitecture] = &[
+        DyldArchitecture { signature: "dyld_v1    i386", processor: "i386" },
+        DyldArchitecture { signature: "dyld_v1  x86_64", processor: "x86_64" },
+        DyldArchitecture { signature: "dyld_v1 x86_64h", processor: "x86_64" },
+        DyldArchitecture { signature: "dyld_v1     ppc", processor: "rosetta" },
+        DyldArchitecture { signature: "dyld_v1   armv6", processor: "armv6" },
+        DyldArchitecture { signature: "dyld_v1   armv7", processor: "arm7" },
+        DyldArchitecture { signature: "dyld_v1  armv7f", processor: "arm7" },
+        DyldArchitecture { signature: "dyld_v1  armv7s", processor: "arm7" },
+        DyldArchitecture { signature: "dyld_v1  armv7k", processor: "arm7" },
+        DyldArchitecture { signature: "dyld_v1   arm64", processor: "AARCH64" },
+        DyldArchitecture { signature: "dyld_v1  arm64e", processor: "AARCH64" },
+        DyldArchitecture { signature: "dyld_v1arm64_32", processor: "ARM64_32" },
+    ];
+    // @formatter:on
+
+    /// Port of `DyldArchitecture.getArchitecture(String)`.
+    pub fn get_architecture(signature: &str) -> StdOption<DyldArchitecture> {
+        Self::ARCHITECTURES.iter().find(|a| a.signature == signature).copied()
+    }
+
+    /// Port of `DyldArchitecture.getProcessor()`.
+    pub fn get_processor(&self) -> &'static str {
+        self.processor
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheHeader`, referenced by
+/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real (over
+/// 1500-line) class is ported. Java's constructor parses the entire DYLD cache header (magic,
+/// mapping/image offsets, UUIDs, dozens of sub-cache and slide-info fields...); only the 16-byte
+/// magic -- resolved to a [`DyldArchitecture`] the same way `DyldArchitecture.getArchitecture
+/// (ByteProvider)` does -- is parsed here. [`base_address`](Self::base_address) and
+/// [`is_subcache`](Self::is_subcache) are NOT derived from any of the (unparsed) later fields
+/// the real `getBaseAddress()`/`isSubcache()` compute them from, and default to `0`/`false` until
+/// the full port lands.
+#[derive(Debug, Clone)]
+pub struct DyldCacheHeader {
+    /// Port of `DyldCacheHeader.getArchitecture()`.
+    pub architecture: StdOption<DyldArchitecture>,
+    /// Port of `DyldCacheHeader.getBaseAddress()`. Always `0` on this placeholder; see the type
+    /// docs.
+    pub base_address: i64,
+    /// Port of `DyldCacheHeader.isSubcache()`. Always `false` on this placeholder; see the type
+    /// docs.
+    pub is_subcache: bool,
+}
+
+impl DyldCacheHeader {
+    /// Port of the magic-parsing prefix of `DyldCacheHeader(BinaryReader)`.
+    pub fn new(
+        reader: &mut crate::filesystem::ghidra::g_binary_reader::GBinaryReader,
+    ) -> std::io::Result<Self> {
+        let magic = reader.read_next_ascii_string_fixed(Self::MAGIC_LEN)?;
+        Ok(DyldCacheHeader {
+            architecture: DyldArchitecture::get_architecture(magic.trim()),
+            base_address: 0,
+            is_subcache: false,
+        })
+    }
+
+    const MAGIC_LEN: u64 = DyldArchitecture::DYLD_V1_SIGNATURE_LEN as u64;
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils`, referenced by
+/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
+/// ported. Java's version is a final class of statics, so (per this crate's convention for such
+/// classes, e.g. [`option_utils`]) this is a plain module of free functions. Only
+/// `isDyldCache(ByteProvider)` -- the one overload `DyldCacheLoader` calls -- is modeled; the
+/// `Program`-taking overload and the `SplitDyldCache`/image-record helpers are not needed by any
+/// current caller.
+pub mod dyld_cache_utils {
+    use super::DyldArchitecture;
+    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    /// Port of `DyldCacheUtils.isDyldCache(ByteProvider)`.
+    pub fn is_dyld_cache(provider: &Rc<RefCell<dyn ByteProvider>>) -> bool {
+        let bytes =
+            match provider.borrow_mut().read_bytes(0, DyldArchitecture::DYLD_V1_SIGNATURE_LEN) {
+                Ok(bytes) => bytes,
+                Err(_) => return false,
+            };
+        let signature = String::from_utf8_lossy(&bytes);
+        DyldArchitecture::get_architecture(signature.trim()).is_some()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.MemoryBlockUtils`, referenced by
+/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
+/// ported. A different, narrower placeholder for this same Java class already exists as a trait
+/// at [`crate::format::seam_stubs::MemoryBlockUtils`] (added for
+/// [`dyld_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups)'s
+/// `addExternalBlock` call, before this crate settled on modeling final-statics classes as free
+/// functions rather than traits -- see [`option_utils`]); this module is scoped to the one method
+/// `DyldCacheLoader` needs instead of growing that trait, to avoid disturbing its existing caller.
+pub mod memory_block_utils {
+    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::program::database::mem::file_bytes::FileBytes;
+    use crate::program::model::listing::Program;
+    use crate::util::task::TaskMonitor;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    /// Port of `MemoryBlockUtils.createFileBytes(Program, ByteProvider, TaskMonitor)`. Not yet
+    /// implemented (see module docs); the real body reads every byte out of `provider` and hands
+    /// them to the program's file-bytes database, which needs far more infrastructure than this
+    /// placeholder models.
+    pub fn create_file_bytes(
+        program: &mut dyn Program,
+        provider: &Rc<RefCell<dyn ByteProvider>>,
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<Arc<dyn FileBytes>> {
+        let _ = (program, provider, monitor);
+        unimplemented!("memory_block_utils::create_file_bytes placeholder not overridden")
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DyldCacheProgramBuilder`, referenced by
+/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
+/// ported. Java's version drives the entire DYLD cache program build (memory blocks, symbols,
+/// exports, load-command markup, program tree); only the single static entry point
+/// `DyldCacheLoader.load` calls is modeled, and it is not yet implemented (see
+/// [`memory_block_utils::create_file_bytes`]) since the real build needs far more infrastructure
+/// than this placeholder models.
+pub mod dyld_cache_program_builder {
+    use super::MessageLog;
+    use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
+    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::program::database::mem::file_bytes::FileBytes;
+    use crate::program::model::listing::Program;
+    use crate::util::task::TaskMonitor;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    /// Port of `DyldCacheProgramBuilder.buildProgram(Program, ByteProvider, FileBytes,
+    /// DyldCacheOptions, MessageLog, TaskMonitor)`.
+    pub fn build_program(
+        program: &mut dyn Program,
+        provider: &Rc<RefCell<dyn ByteProvider>>,
+        file_bytes: &Arc<dyn FileBytes>,
+        options: DyldCacheOptions,
+        log: &mut dyn MessageLog,
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<()> {
+        let _ = (program, provider, file_bytes, options, log, monitor);
+        unimplemented!("dyld_cache_program_builder::build_program placeholder not overridden")
     }
 }
 
