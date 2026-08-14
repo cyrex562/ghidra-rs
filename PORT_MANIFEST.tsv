@@ -4026,7 +4026,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/com
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/IdentCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkEditDataCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LinkerOptionCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandString.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommandTypes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format macho commands

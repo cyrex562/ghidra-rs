@@ -762,3 +762,6 @@ ts	stub_class	referenced_by
 2026-08-14T04:00:00.000000+00:00	FoundString	FoundStringCallback
 2026-08-14T04:07:22.073932+00:00	Sequence	ByteStreamCharMatcher
 2026-08-14T04:07:22.073932+00:00	AbstractStringDataType	Sequence
+2026-08-14T04:12:03.518087+00:00	MachHeader	LoadCommand
+2026-08-14T04:12:03.518696+00:00	SegmentCommand	LoadCommand
+2026-08-14T04:12:03.522556+00:00	FlatProgramAPI	LoadCommand
