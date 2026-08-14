@@ -14,3 +14,4 @@ pub mod coff_symbol_section_number;
 pub mod coff_symbol_special;
 pub mod coff_symbol_storage_class;
 pub mod coff_symbol_type;
+pub mod relocation;
