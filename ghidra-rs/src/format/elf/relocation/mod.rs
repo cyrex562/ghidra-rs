@@ -14,6 +14,7 @@ pub mod mips_elf_relocation_type;
 pub mod msp430_elf_relocation_type;
 pub mod msp430x_elf_relocation_type;
 pub mod nds32_elf_relocation_type;
+pub mod pic30_elf_relocation_context;
 pub mod pic30_elf_relocation_type;
 pub mod power_pc_elf_relocation_type;
 pub mod power_pc64_elf_relocation_type;
