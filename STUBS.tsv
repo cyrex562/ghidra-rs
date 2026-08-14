@@ -760,3 +760,5 @@ ts	stub_class	referenced_by
 2026-08-14T03:52:26.653310+00:00	UserInputByteMatcher	InvalidByteMatcher
 2026-08-14T04:00:00.000000+00:00	FoundStringDefinedState	FoundString
 2026-08-14T04:00:00.000000+00:00	FoundString	FoundStringCallback
+2026-08-14T04:07:22.073932+00:00	Sequence	ByteStreamCharMatcher
+2026-08-14T04:07:22.073932+00:00	AbstractStringDataType	Sequence
