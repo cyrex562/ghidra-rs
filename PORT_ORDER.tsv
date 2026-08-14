@@ -38,7 +38,7 @@ DONE	trait	31	2	26	format	Ghidra/Processors/AARCH64/src/main/java/ghidra/app/uti
 DONE	trait	31	2	2	format	Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/elf/relocation/ARM_ElfRelocationContext.java
 DONE	trait	31	2	1	format	Ghidra/Processors/PIC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PIC30_ElfRelocationContext.java
 DONE	trait	31	2	38	format	Ghidra/Processors/PowerPC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PowerPC_ElfRelocationContext.java
-TODO	trait	31	2	25	format	Ghidra/Processors/RISCV/src/main/java/ghidra/app/util/bin/format/elf/relocation/RISCV_ElfRelocationContext.java
+DONE	trait	31	2	25	format	Ghidra/Processors/RISCV/src/main/java/ghidra/app/util/bin/format/elf/relocation/RISCV_ElfRelocationContext.java
 TODO	trait	31	2	26	format	Ghidra/Processors/x86/src/main/java/ghidra/app/util/bin/format/elf/relocation/X86_64_ElfRelocationContext.java
 TODO	trait	34	15	6	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/Relocation.java
 TODO	trait	33	4	22	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/LoaderRelocationHeader.java
