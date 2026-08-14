@@ -722,7 +722,6 @@ ts	stub_class	referenced_by
 2026-08-13T09:10:14.379491+00:00	ElfSymbolNameUtils	AbstractElfRelocationHandler
 2026-08-13T09:10:14.379491+00:00	ElfRelocationHandler	AbstractElfRelocationHandler
 2026-08-13T09:25:12.000000+00:00	ElfProgramHeader	ElfLoadAdapter
-2026-08-13T09:25:12.000000+00:00	MemoryLoadable	ElfLoadAdapter
 2026-08-13T09:25:12.000000+00:00	ElfDynamicType	ElfLoadAdapter
 2026-08-13T09:25:12.000000+00:00	ElfProgramHeaderType	ElfLoadAdapter
 2026-08-13T09:25:12.000000+00:00	ElfSectionHeaderType	ElfLoadAdapter

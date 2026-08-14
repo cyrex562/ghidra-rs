@@ -39,6 +39,7 @@ use std::collections::HashMap;
 use crate::format::elf::elf_symbol::ElfSymbol;
 use crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext;
 use crate::format::elf::relocation::elf_relocation_type::ElfRelocationType;
+use crate::format::memory_loadable::MemoryLoadable;
 use crate::format::seam_stubs::{elf_relocation_handler, elf_symbol_name_utils, ElfRelocation, MessageLog};
 use crate::program::model::address::Address;
 use crate::program::model::listing::bookmark_type;
@@ -512,7 +513,7 @@ mod tests {
         }
         fn find_load_address(
             &self,
-            _section: &dyn crate::format::seam_stubs::MemoryLoadable,
+            _section: &dyn MemoryLoadable,
             _byte_offset_within_section: i64,
         ) -> Option<Address> {
             None

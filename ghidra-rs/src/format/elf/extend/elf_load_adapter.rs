@@ -41,9 +41,10 @@ use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::elf::elf_program_header_constants::{PF_R, PF_W, PF_X};
 use crate::format::elf::elf_section_header_constants::{SHF_ALLOC, SHF_EXECINSTR, SHF_WRITE};
 use crate::format::elf::elf_symbol::ElfSymbol;
+use crate::format::memory_loadable::MemoryLoadable;
 use crate::format::seam_stubs::{
     ElfDefaultGotPltMarkup, ElfDynamicType, ElfHeader, ElfProgramHeader, ElfProgramHeaderType,
-    ElfRelocation, ElfSectionHeader, ElfSectionHeaderType, MemoryLoadable,
+    ElfRelocation, ElfSectionHeader, ElfSectionHeaderType,
 };
 use crate::program::model::address::{Address, AddressSpace};
 use crate::util::exception::{CancelledException, NoValueException};
@@ -1296,7 +1297,29 @@ mod tests {
     #[test]
     fn no_byte_filtering_is_applied_by_default() {
         struct AnyLoadable;
-        impl MemoryLoadable for AnyLoadable {}
+        impl MemoryLoadable for AnyLoadable {
+            fn has_filtered_load_input_stream(
+                &self,
+                _elf_load_helper: &dyn ElfLoadHelper,
+                _start: crate::program::model::address::Address,
+            ) -> bool {
+                false
+            }
+
+            fn get_filtered_load_input_stream(
+                &self,
+                _elf_load_helper: &dyn ElfLoadHelper,
+                _start: crate::program::model::address::Address,
+                _data_length: i64,
+                _error_consumer: Option<&(dyn Fn(&str, &dyn std::error::Error) + Send)>,
+            ) -> std::io::Result<Box<dyn Read + Send>> {
+                unimplemented!()
+            }
+
+            fn get_raw_input_stream(&self) -> std::io::Result<Box<dyn Read + Send>> {
+                unimplemented!()
+            }
+        }
 
         let adapter = ElfLoadAdapter::new();
         let helper = MockLoadHelper::new();

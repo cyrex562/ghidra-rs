@@ -1141,13 +1141,6 @@ pub trait ElfHeader: Send + Sync {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.MemoryLoadable`, referenced by
-/// [`ElfLoadAdapter::get_filtered_load_input_stream`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::get_filtered_load_input_stream)
-/// before the real interface is ported. The adapter only ever passes the loadable through, so no
-/// members are needed yet; the real interface is implemented by `ElfSectionHeader` and
-/// `ElfProgramHeader`.
-pub trait MemoryLoadable: Send + Sync {}
-
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfDynamicType`, referenced by
 /// [`ElfLoadAdapter::add_dynamic_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_dynamic_types)
 /// before the real class is ported. Only used as the value type of the extension type map.
