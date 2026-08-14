@@ -693,6 +693,17 @@ impl LoadSpec {
         Self::new_full(0, Some(language_compiler_spec), false)
     }
 
+    /// Port of `LoadSpec(Loader, long, LanguageCompilerSpecPair, boolean)`, as used by
+    /// [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader), which (unlike
+    /// [`new`](Self::new)) needs to mark its language/compiler spec preferred.
+    pub fn with_language_compiler_spec(
+        desired_image_base: i64,
+        language_compiler_spec: crate::program::seam_stubs::LanguageCompilerSpecPair,
+        preferred: bool,
+    ) -> Self {
+        Self::new_full(desired_image_base, Some(language_compiler_spec), preferred)
+    }
+
     /// Port of `LoadSpec(Loader, long, QueryResult)`.
     pub fn from_query_result(desired_image_base: i64, result: &QueryResult) -> Self {
         Self::new_full(desired_image_base, Some(result.pair.clone()), result.preferred)
