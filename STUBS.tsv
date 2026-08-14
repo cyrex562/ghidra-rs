@@ -789,3 +789,4 @@ ts	stub_class	referenced_by
 2026-08-14T05:51:43.292607+00:00	DyldCacheUtils	DyldCacheLoader
 2026-08-14T05:51:43.292607+00:00	MemoryBlockUtils	DyldCacheLoader
 2026-08-14T05:51:43.292607+00:00	DyldCacheProgramBuilder	DyldCacheLoader
+2026-08-14T05:57:28.848750Z	ClassSearcher	ElfInfoProducer
