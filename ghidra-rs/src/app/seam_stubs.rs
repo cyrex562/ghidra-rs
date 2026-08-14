@@ -34,11 +34,29 @@ use std::sync::Arc;
 pub trait ToolOptions {}
 
 /// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
-/// [`Analyzer`](crate::app::services::Analyzer) and
+/// [`Analyzer`](crate::app::services::Analyzer),
 /// [`SourceLanguageSpecExtension`](crate::app::util::sourcelanguage::source_language_spec_extension::SourceLanguageSpecExtension)
-/// before the real class is ported. These callers only ever pass this type through as a
-/// parameter, so no members are needed yet.
-pub trait MessageLog: Send + Sync {}
+/// and
+/// [`UnixAoutProgramLoader`](crate::app::util::opinion::unix_aout_program_loader::UnixAoutProgramLoader)
+/// before the real class is ported. Most callers only pass this type through as a parameter; the
+/// two `appendMsg` overloads the a.out loader records its progress with are modeled here.
+///
+/// Both take `&self`, not `&mut self`: a log is threaded through loaders alongside the objects
+/// they mutate, so implementors buffer their messages behind interior mutability rather than
+/// forcing every holder to take a unique borrow.
+pub trait MessageLog: Send + Sync {
+    /// `MessageLog.appendMsg(String)`. Defaults to discarding the message, so implementors that
+    /// existed before this method did (and that never had a message to record) keep compiling.
+    fn append_msg(&self, message: &str) {
+        let _ = message;
+    }
+
+    /// `MessageLog.appendMsg(String originator, String message)`, which Java renders as
+    /// `originator + ": " + message`.
+    fn append_msg_from(&self, originator: &str, message: &str) {
+        self.append_msg(&format!("{originator}: {message}"));
+    }
+}
 
 /// Placeholder for `ghidra.features.base.codecompare.model.FunctionComparisonModel`, referenced
 /// by [`FunctionComparisonService`](crate::app::services::FunctionComparisonService) before the
@@ -2219,9 +2237,12 @@ pub mod dyld_cache_utils {
 /// functions rather than traits -- see [`option_utils`]); this module is scoped to the one method
 /// `DyldCacheLoader` needs instead of growing that trait, to avoid disturbing its existing caller.
 pub mod memory_block_utils {
+    use super::MessageLog;
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
     use crate::program::database::mem::file_bytes::FileBytes;
+    use crate::program::model::address::{Address, AddressOverflowException};
     use crate::program::model::listing::Program;
+    use crate::program::model::mem::MemoryBlock;
     use crate::util::task::TaskMonitor;
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -2238,6 +2259,56 @@ pub mod memory_block_utils {
     ) -> std::io::Result<Arc<dyn FileBytes>> {
         let _ = (program, provider, monitor);
         unimplemented!("memory_block_utils::create_file_bytes placeholder not overridden")
+    }
+
+    /// Port of `MemoryBlockUtils.createInitializedBlock(Program, boolean isOverlay, String name,
+    /// Address start, FileBytes fileBytes, long offset, long length, String comment, String
+    /// source, boolean r, boolean w, boolean x, MessageLog log)`. `None` stands in for the `null`
+    /// Java returns when the block could not be created (it logs and swallows the reason);
+    /// `AddressOverflowException` is the one failure it propagates. Not yet implemented: the real
+    /// body creates a database-backed block over a file-bytes range.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_initialized_block(
+        program: &mut dyn Program,
+        is_overlay: bool,
+        name: &str,
+        start: &Address,
+        file_bytes: &Arc<dyn FileBytes>,
+        offset: i64,
+        length: i64,
+        comment: Option<&str>,
+        source: Option<&str>,
+        r: bool,
+        w: bool,
+        x: bool,
+        log: &dyn MessageLog,
+    ) -> Result<Option<Box<dyn MemoryBlock>>, AddressOverflowException> {
+        let _ = (program, is_overlay, name, start, file_bytes, offset, length);
+        let _ = (comment, source, r, w, x, log);
+        unimplemented!("memory_block_utils::create_initialized_block placeholder not overridden")
+    }
+
+    /// Port of `MemoryBlockUtils.createUninitializedBlock(Program, boolean isOverlay, String name,
+    /// Address start, long length, String comment, String source, boolean r, boolean w, boolean x,
+    /// MessageLog log)`. `None` stands in for the `null` Java returns when the block could not be
+    /// created. Not yet implemented, as for [`create_initialized_block`].
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_uninitialized_block(
+        program: &mut dyn Program,
+        is_overlay: bool,
+        name: &str,
+        start: &Address,
+        length: i64,
+        comment: Option<&str>,
+        source: Option<&str>,
+        r: bool,
+        w: bool,
+        x: bool,
+        log: &dyn MessageLog,
+    ) -> Option<Box<dyn MemoryBlock>> {
+        let _ = (program, is_overlay, name, start, length);
+        let _ = (comment, source, r, w, x, log);
+        unimplemented!("memory_block_utils::create_uninitialized_block placeholder not overridden")
     }
 }
 
