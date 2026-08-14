@@ -817,3 +817,5 @@ ts	stub_class	referenced_by
 2026-08-14T00:00:00.000000+00:00	EncodedArrayItem	ClassDefItem
 2026-08-14T00:00:00.000000+00:00	DexUtil	ClassDefItem
 2026-08-14T00:00:00.000000+00:00	DexHeader	ClassDefItem
+2026-08-14T07:29:22.125774+00:00	AndroidXmlConvertor	AndroidXmlFileSystem
+2026-08-14T07:29:22.389252+00:00	ByteArrayProvider	AndroidXmlFileSystem

@@ -3,8 +3,14 @@
 //! interface(s) that currently reference it, and is expected to be replaced once the Java class
 //! is ported. See `STUBS.tsv` for provenance.
 
+use std::io;
+use std::path::PathBuf;
+
 use crate::program::model::data::data_type::DataType;
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::util::task::TaskMonitor;
 
 /// Placeholder for the unported Java type `StructConverterUtil`, referenced by `FieldAnnotationsItem`.
 /// Concrete stub: Java class, not interface. Only methods THIS type needs are included.
@@ -181,5 +187,81 @@ pub struct EncodedArrayItem;
 impl EncodedArrayItem {
     pub fn to_data_type(&self) -> std::io::Result<Box<dyn DataType>> {
         unimplemented!("EncodedArrayItem.to_data_type not yet ported")
+    }
+}
+
+/// Placeholder for the unported Java type `AndroidXmlConvertor`, referenced by
+/// `AndroidXmlFileSystem`.
+/// Concrete stub: Java class, not interface. Only the members THIS type needs are included:
+/// the binary-XML magic signature and the `convert` entry point that turns the binary XML
+/// payload into text. Replace with the real port when available.
+pub struct AndroidXmlConvertor;
+
+impl AndroidXmlConvertor {
+    /// Mirrors `AndroidXmlConvertor.ANDROID_BINARY_XML_MAGIC`.
+    pub const ANDROID_BINARY_XML_MAGIC: [u8; 4] = [0x03, 0x00, 0x08, 0x00];
+
+    /// Converts the binary Android XML bytes in `input` to text, appending the result to `out`.
+    ///
+    /// Java distinguishes `IOException` (which callers may recover from) from
+    /// `CancelledException` (monitor cancellation); this stub collapses both into a single
+    /// `io::Result` until the real converter is ported.
+    pub fn convert(_input: &[u8], _out: &mut String, _monitor: &dyn TaskMonitor) -> io::Result<()> {
+        unimplemented!("AndroidXmlConvertor.convert not yet ported")
+    }
+}
+
+/// Placeholder for the unported Java type `ByteArrayProvider`, referenced by
+/// `AndroidXmlFileSystem::get_byte_provider`.
+/// Concrete stub: Java class, not interface. Wraps an in-memory byte array as a
+/// [`ByteProvider`]; only the members THIS type needs are included.
+pub struct ByteArrayProvider {
+    bytes: Vec<u8>,
+}
+
+impl ByteArrayProvider {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        ByteArrayProvider { bytes }
+    }
+}
+
+impl ByteProvider for ByteArrayProvider {
+    fn length(&mut self) -> io::Result<u64> {
+        Ok(self.bytes.len() as u64)
+    }
+
+    fn is_valid_index(&mut self, index: u64) -> bool {
+        (index as usize) < self.bytes.len()
+    }
+
+    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
+        self.bytes.get(index as usize).copied().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::UnexpectedEof, "index out of bounds")
+        })
+    }
+
+    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
+        let start = index as usize;
+        let end = start + length;
+        if end > self.bytes.len() {
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "index out of bounds"));
+        }
+        Ok(self.bytes[start..end].to_vec())
+    }
+
+    fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "ByteArrayProvider is read-only"))
+    }
+
+    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "ByteArrayProvider is read-only"))
+    }
+
+    fn get_fsrl(&self) -> Option<&dyn Fsrl> {
+        None
+    }
+
+    fn get_file(&self) -> Option<PathBuf> {
+        None
     }
 }
