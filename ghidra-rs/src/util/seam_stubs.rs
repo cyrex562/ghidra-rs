@@ -925,7 +925,7 @@ impl<ROW_TYPE, EXPECTED_ROW_TYPE, COLUMN_TYPE> DynamicTableColumn<ROW_TYPE, COLU
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait Pattern: Send + Sync {
     /// Returns post-rules for this pattern.
-    fn get_post_rules(&self) -> Vec<Box<dyn PostRule>>;
+    fn get_post_rules(&self) -> Vec<Box<dyn crate::util::bytesearch::PostRule>>;
 
     /// Returns match actions for this pattern.
     fn get_match_actions(&self) -> Vec<Box<dyn crate::util::bytesearch::MatchAction>>;
@@ -939,7 +939,7 @@ pub trait Pattern: Send + Sync {
     /// Restore XML attributes from parser.
     fn restore_xml_attributes(
         &self,
-        postrulelist: Vec<Box<dyn PostRule>>,
+        postrulelist: Vec<Box<dyn crate::util::bytesearch::PostRule>>,
         actionlist: Vec<Box<dyn crate::util::bytesearch::MatchAction>>,
         parser: &dyn XmlPullParser,
         pfactory: &dyn PatternFactory,
@@ -979,9 +979,6 @@ pub trait Pattern: Send + Sync {
     /// Get pre-sequence length.
     fn get_pre_sequence_length(&self) -> i32;
 }
-
-/// Placeholder for `ghidra.util.bytesearch.PostRule`, referenced by `Pattern`.
-pub trait PostRule: Send + Sync {}
 
 /// Placeholder for `ghidra.util.bytesearch.PatternFactory`, referenced by `Pattern`.
 pub trait PatternFactory: Send + Sync {}
