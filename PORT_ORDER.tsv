@@ -19,7 +19,7 @@ DONE	trait	39	32	9	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearc
 DONE	trait	39	22	27	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/ProgramMemorySearcher.java
 PARK	trait	38	21	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/MemoryBytePatternSearcher.java
 DONE	trait	38	37	8	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/format/SearchFormat.java
-TODO	trait	37	12	3	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/InvalidByteMatcher.java
+DONE	trait	37	12	3	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/InvalidByteMatcher.java
 TODO	trait	38	6	1	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/string/FoundStringCallback.java
 TODO	trait	38	5	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/ascii/ByteStreamCharMatcher.java
 TODO	trait	34	48	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommand.java
