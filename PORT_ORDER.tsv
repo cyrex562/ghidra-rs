@@ -11,7 +11,7 @@ DONE	trait	31	49	45	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opini
 DONE	trait	32	26	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisWorker.java
 DONE	trait	30	32	34	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFormatManager.java
 DONE	trait	36	10	1	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/cmd/BinaryAnalysisCommand.java
-TODO	trait	37	14	0	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/bytesource/AddressableByteSource.java
+DONE	trait	37	14	0	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/bytesource/AddressableByteSource.java
 TODO	trait	40	27	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/MatchAction.java
 TODO	trait	41	26	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PostRule.java
 TODO	trait	40	22	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PatternFactory.java
