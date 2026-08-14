@@ -1003,7 +1003,12 @@ pub trait InjectContext {}
 /// Placeholder for `ghidra.program.model.lang.LanguageCompilerSpecPair`, referenced by
 /// [`ProgramArchitecture`](crate::program::model::lang::program_architecture::ProgramArchitecture)'s
 /// `get_language_compiler_spec_pair` default method, before the real class is ported.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Derives `Hash` (both fields already do) so that
+/// [`QueryResult`](crate::app::seam_stubs::QueryResult) -- which hashes/compares only by this
+/// pair, mirroring `QueryResult.hashCode`/`equals` -- can be stored in a `HashSet`, matching
+/// Java's `Set<QueryResult>`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LanguageCompilerSpecPair {
     language_id: LanguageID,
     compiler_spec_id: CompilerSpecID,
