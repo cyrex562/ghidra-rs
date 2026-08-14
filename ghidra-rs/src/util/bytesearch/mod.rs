@@ -9,6 +9,7 @@ pub mod bulk_pattern_searcher;
 pub mod match_action;
 pub mod post_rule;
 pub mod pattern_factory;
+pub mod program_memory_searcher;
 
 pub use byte_pattern::BytePattern;
 pub use byte_sequence::ByteSequence;
@@ -21,3 +22,4 @@ pub use bulk_pattern_searcher::BulkPatternSearcher;
 pub use match_action::MatchAction;
 pub use post_rule::PostRule;
 pub use pattern_factory::PatternFactory;
+pub use program_memory_searcher::ProgramMemorySearcher;

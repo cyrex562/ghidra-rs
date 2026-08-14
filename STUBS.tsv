@@ -746,3 +746,5 @@ ts	stub_class	referenced_by
 2026-08-14T02:34:47.025042+00:00	DecompileDebugDataTypeManager	DecompileDebugFormatManager
 2026-08-14T02:34:47.025042+00:00	DecompileDebugFunctionManager	DecompileDebugFormatManager
 2026-08-14T02:34:47.025042+00:00	DecompileDebugByteManager	DecompileDebugFormatManager
+2026-08-14T03:16:44.319315113+00:00	ProgramByteSource	ProgramMemorySearcher
+2026-08-14T03:16:44.319315113+00:00	AddressableByteSequence	ProgramMemorySearcher

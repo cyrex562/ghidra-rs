@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::framework::store::lock_exception::LockException;
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
-use crate::program::model::address::Address;
+use crate::program::model::address::{Address, AddressSetView, AddressSetViewAdapter};
 use crate::program::model::listing::Program;
 use crate::program::model::mem::{MemoryAccessException, MemoryBlock, MemoryConflictException};
 use crate::util::exception::CancelledException;
@@ -105,6 +105,34 @@ pub trait Memory: Send + Sync {
         Err(CreateBlockError::IllegalArgument(
             "block creation is not supported by this memory".to_string(),
         ))
+    }
+
+    /// Get all memory blocks that make up this memory.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`ProgramMemorySearcher`](crate::util::bytesearch::program_memory_searcher::ProgramMemorySearcher)'s
+    /// port of `Memory.getBlocks()`, which searches each block independently.
+    fn get_blocks(&self) -> Vec<Arc<dyn MemoryBlock>> {
+        Vec::new()
+    }
+
+    /// Get the set of addresses that comprise the loaded, initialized memory (excludes `OTHER`
+    /// space and any non-loaded overlay blocks).
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`ProgramMemorySearcher`](crate::util::bytesearch::program_memory_searcher::ProgramMemorySearcher)'s
+    /// port of `Memory.getLoadedAndInitializedAddressSet()`.
+    fn get_loaded_and_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(AddressSetViewAdapter::empty())
+    }
+
+    /// Get the set of addresses that comprise all initialized memory.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`ProgramMemorySearcher`](crate::util::bytesearch::program_memory_searcher::ProgramMemorySearcher)'s
+    /// port of `Memory.getAllInitializedAddressSet()`.
+    fn get_all_initialized_address_set(&self) -> Box<dyn AddressSetView> {
+        Box::new(AddressSetViewAdapter::empty())
     }
 
     /// Set the write permission of the block starting at `block_start`.
