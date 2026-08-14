@@ -14,7 +14,7 @@ DONE	trait	36	10	1	framework	Ghidra/Features/Base/src/main/java/ghidra/framework
 DONE	trait	37	14	0	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/bytesource/AddressableByteSource.java
 DONE	trait	40	27	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/MatchAction.java
 DONE	trait	41	26	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PostRule.java
-TODO	trait	40	22	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PatternFactory.java
+DONE	trait	40	22	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/PatternFactory.java
 TODO	trait	39	32	9	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/Pattern.java
 TODO	trait	39	22	27	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/ProgramMemorySearcher.java
 TODO	trait	38	21	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/bytesearch/MemoryBytePatternSearcher.java
