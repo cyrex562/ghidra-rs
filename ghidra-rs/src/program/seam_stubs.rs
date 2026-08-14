@@ -2449,6 +2449,42 @@ impl CodeUnitFormatOptions {
     }
 }
 
+/// Placeholder for `FoundString.DefinedState`, a Java enum.
+/// Generated stub: only the shape needed by FoundString.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FoundStringDefinedState {
+    NotDefined,
+    Defined,
+    PartiallyDefined,
+    Conflicts,
+}
+
+/// Placeholder for the unported Java type `FoundString`, referenced by `FoundStringCallback`.
+/// Java FoundString is a concrete class, so this is ported as a trait boundary for the callback
+/// pattern. Replace with the real port when available.
+pub trait FoundString: Send + Sync {
+    fn get_length(&self) -> i32;
+    fn get_address(&self) -> Address;
+    fn get_end_address(&self) -> Address;
+    fn is_undefined(&self) -> bool;
+    fn is_defined(&self) -> bool;
+    fn is_partially_defined(&self) -> bool;
+    fn conflicts(&self) -> bool;
+    fn get_string(&self, memory: &dyn crate::program::model::mem::Memory) -> String;
+    fn get_data_instance(&self, memory: &dyn crate::program::model::mem::Memory) -> Box<dyn crate::program::model::data::string_data_instance::StringDataInstance>;
+    fn set_defined_state(&self, new_state: FoundStringDefinedState);
+    fn get_defined_state(&self) -> FoundStringDefinedState;
+    fn is_pascall(&self) -> bool;
+    fn get_data_type(&self) -> Box<dyn DataType>;
+    fn set_address(&self, address: Address);
+    fn set_length(&self, length: i32);
+    fn hash_code(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn compare_to(&self, other: &dyn FoundString) -> i32;
+    fn get_string_length(&self, mem: &dyn crate::program::model::mem::Memory) -> i32;
+    fn to_string(&self) -> String;
+}
+
 /// Placeholder for `ghidra.app.util.NamespaceUtils`, referenced by
 /// [`CodeUnitFormat`](crate::program::model::listing::code_unit_format::CodeUnitFormat) before
 /// the real class is ported. Only the one static helper that class needs is modeled here; unlike

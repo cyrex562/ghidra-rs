@@ -758,3 +758,5 @@ ts	stub_class	referenced_by
 2026-08-14T03:43:03.088702+00:00	SearchSettings	SearchFormat
 2026-08-14T03:52:26.653036+00:00	SearchData	InvalidByteMatcher
 2026-08-14T03:52:26.653310+00:00	UserInputByteMatcher	InvalidByteMatcher
+2026-08-14T04:00:00.000000+00:00	FoundStringDefinedState	FoundString
+2026-08-14T04:00:00.000000+00:00	FoundString	FoundStringCallback
