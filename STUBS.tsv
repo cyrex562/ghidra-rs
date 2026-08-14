@@ -770,3 +770,9 @@ ts	stub_class	referenced_by
 2026-08-14T04:20:58.088347+00:00	CodeSignatureSuperBlob	CodeSignatureBlobParser
 2026-08-14T04:20:58.088500+00:00	CodeSignatureBlobIndex	CodeSignatureBlobParser
 2026-08-14T04:20:58.088700+00:00	Program	CodeSignatureBlobParser
+2026-08-14T05:00:00.000000+00:00	MachHeader	MachoRelocation
+2026-08-14T05:00:00.000000+00:00	RelocationInfo	MachoRelocation
+2026-08-14T05:00:00.000000+00:00	Section	MachoRelocation
+2026-08-14T05:00:00.000000+00:00	NList	MachoRelocation
+2026-08-14T05:00:00.000000+00:00	SymbolTableCommand	MachoRelocation
+2026-08-14T05:00:00.000000+00:00	NumericUtilities	MachoRelocation
