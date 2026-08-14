@@ -1185,3 +1185,40 @@ impl ByteSequence for AddressableByteSequence {
         index.checked_add(length).map_or(false, |end| end <= self.length)
     }
 }
+
+/// Placeholder for `ghidra.util.ascii.Sequence`, needed by [`crate::util::ascii::ByteStreamCharMatcher`].
+///
+/// A sequence represents a contiguous range of bytes in a stream, with metadata about
+/// start/end positions and null termination. Only the accessors [`ByteStreamCharMatcher`]
+/// needs are declared here; the real port carries the full sequence representation.
+pub trait Sequence: Send + Sync {
+    /// Returns the start index of this sequence in the byte stream.
+    fn get_start(&self) -> i64;
+
+    /// Returns the end index of this sequence in the byte stream.
+    fn get_end(&self) -> i64;
+
+    /// Returns whether this sequence is null-terminated.
+    fn is_null_terminated(&self) -> bool;
+
+    /// Returns the string data type associated with this sequence.
+    fn get_string_data_type(&self) -> Box<dyn AbstractStringDataType>;
+
+    /// Returns the length of this sequence.
+    fn get_length(&self) -> i32;
+
+    /// Compares this sequence to another object for equality.
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+
+    /// Returns the hash code for this sequence.
+    fn hash_code(&self) -> i32;
+
+    /// Returns a string representation of this sequence.
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.program.model.data.AbstractStringDataType`, needed by [`Sequence`].
+///
+/// Represents metadata about string data types. This is a marker trait until the real port
+/// is available.
+pub trait AbstractStringDataType: Send + Sync {}
