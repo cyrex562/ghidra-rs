@@ -14,3 +14,4 @@ pub mod vdex;
 pub mod verifier;
 pub mod versions;
 pub mod wdex;
+pub mod xml;
