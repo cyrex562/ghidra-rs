@@ -8,7 +8,7 @@ DONE	trait	31	12	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	32	8	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandler.java
 DONE	trait	31	7	24	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationContext.java
 DONE	trait	31	49	45	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/QueryOpinionService.java
-TODO	trait	32	26	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisWorker.java
+DONE	trait	32	26	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisWorker.java
 TODO	trait	30	32	34	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFormatManager.java
 TODO	trait	36	10	1	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/cmd/BinaryAnalysisCommand.java
 TODO	trait	37	14	0	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/bytesource/AddressableByteSource.java
