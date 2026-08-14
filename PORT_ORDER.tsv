@@ -59,7 +59,7 @@ DONE	trait	48	5	31	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/f
 DONE	trait	45	4	3	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/ArrayMethods.java
 DONE	trait	43	5	3	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/attributes/AnnotationElementValue.java
 DONE	trait	42	4	3	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/attributes/AnnotationDefaultAttribute.java
-TODO	trait	39	5	29	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/ClassFileAnalysisState.java
+DONE	trait	39	5	29	format	Ghidra/Processors/JVM/src/main/java/ghidra/javaclass/format/ClassFileAnalysisState.java
 TODO	trait	38	32	41	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/opinion/JavaLoader.java
 TODO	trait	37	7	74	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/importer/LoadSpecChooser.java
 TODO	trait	37	5	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/importer/OptionChooser.java
