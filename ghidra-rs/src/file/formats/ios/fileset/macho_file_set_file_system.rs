@@ -26,9 +26,11 @@
 //! found" until real segment parsing lands, a real `mount()` call against this stub always fails
 //! today with the same error Java would report for a Mach-O file set that has no `__TEXT`
 //! segment -- and will start succeeding the moment the placeholders are replaced, with no change
-//! needed here. [`MachoFileSetExtractor`](crate::file::seam_stubs::MachoFileSetExtractor) is
-//! similarly unported, so [`get_byte_provider`](MachoFileSetFileSystem::get_byte_provider)
-//! always reports "not yet ported" for now.
+//! needed here.
+//! [`get_byte_provider`](MachoFileSetFileSystem::get_byte_provider) calls the now-ported
+//! [`macho_file_set_extractor`], which itself bottoms out in the same unported `MachHeader`
+//! segment parsing, so it degrades the same way (packing down to just the extraction footer)
+//! until that lands.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -36,9 +38,10 @@ use std::fmt;
 use std::io;
 use std::rc::Rc;
 
+use super::macho_file_set_extractor;
 use crate::file::seam_stubs::{
     ExtractedMacho, FileAttributeValue, FileAttributes, FileSystemIndexHelper, MachHeader,
-    MachoFileSetEntry, MachoFileSetExtractor, MessageLog, SegmentCommand,
+    MachoFileSetEntry, MessageLog, SegmentCommand,
 };
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::g_file::GFile;
@@ -306,12 +309,12 @@ impl MachoFileSetFileSystem {
                         format!("Invalid Mach-O header detected: segment {segment_name} not found"),
                     ))
                 })?;
-            return MachoFileSetExtractor::extract_segment(fixed_up, &segment, &fsrl_path, monitor)
+            return macho_file_set_extractor::extract_segment(fixed_up, &segment, &fsrl_path, monitor)
                 .map(Some)
                 .map_err(GetByteProviderError::Io);
         }
 
-        MachoFileSetExtractor::extract_file_set_entry(fixed_up, entry.offset(), &fsrl_path, monitor)
+        macho_file_set_extractor::extract_file_set_entry(fixed_up, entry.offset(), &fsrl_path, monitor)
             .map(Some)
             .map_err(GetByteProviderError::Io)
     }
