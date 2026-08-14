@@ -1537,3 +1537,54 @@ pub trait CoffRelocation: Send + Sync {
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.SegmentCommand`, referenced by
+/// [`LoadCommand`](crate::format::macho::commands::load_command::LoadCommand) before the real
+/// class is ported. Only the accessors `LoadCommand`'s `getContainingSegment`/`fileOffsetToAddress`
+/// need.
+pub trait SegmentCommand: Send + Sync {
+    /// `SegmentCommand.getVMaddress()`.
+    fn get_v_maddress(&self) -> i64;
+    /// `SegmentCommand.getFileOffset()`.
+    fn get_file_offset(&self) -> i64;
+    /// `SegmentCommand.getFileSize()`.
+    fn get_file_size(&self) -> i64;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.MachHeader`, referenced by
+/// [`LoadCommand`](crate::format::macho::commands::load_command::LoadCommand) before the real
+/// class is ported. Only the two segment lookups `LoadCommand`'s `fileOffsetToAddress`/
+/// `getContainingSegment` need.
+pub trait MachHeader: Send + Sync {
+    /// `MachHeader.getSegment(String)`. `None` stands in for Java's `null` return when no segment
+    /// with the given name exists.
+    fn get_segment(&self, segment_name: &str) -> Option<Box<dyn SegmentCommand>>;
+    /// `MachHeader.getAllSegments()`.
+    fn get_all_segments(&self) -> Vec<Box<dyn SegmentCommand>>;
+}
+
+/// Placeholder for `ghidra.program.flatapi.FlatProgramAPI`, referenced by
+/// [`LoadCommand::markup_raw_binary`](crate::format::macho::commands::load_command::LoadCommand::markup_raw_binary)
+/// before the real class is ported. Only the three members that legacy raw-binary markup path
+/// needs (`createFragment`, `createData`, `setPlateComment`); the other ~120 `FlatProgramAPI`
+/// methods are left for the real port.
+pub trait FlatProgramAPI: Send + Sync {
+    /// `FlatProgramAPI.createFragment(ProgramModule, String, Address, long)`.
+    fn create_fragment(
+        &self,
+        module: &mut dyn crate::program::model::listing::program_module::ProgramModule,
+        fragment_name: &str,
+        start: &crate::program::model::address::Address,
+        length: i64,
+    ) -> std::io::Result<Box<dyn crate::program::model::listing::program_fragment::ProgramFragment>>;
+
+    /// `FlatProgramAPI.createData(Address, DataType)`.
+    fn create_data(
+        &self,
+        address: &crate::program::model::address::Address,
+        data_type: Box<dyn crate::program::model::data::data_type::DataType>,
+    ) -> std::io::Result<Box<dyn crate::program::model::listing::data::Data>>;
+
+    /// `FlatProgramAPI.setPlateComment(Address, String)`.
+    fn set_plate_comment(&self, address: &crate::program::model::address::Address, comment: &str) -> bool;
+}
+
