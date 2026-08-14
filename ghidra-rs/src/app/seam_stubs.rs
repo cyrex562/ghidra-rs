@@ -2394,6 +2394,37 @@ pub mod descriptor_decoder {
     use crate::program::model::data::data_type::DataType;
     use crate::program::model::data::data_type_manager::DataTypeManager;
 
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_BYTE`.
+    pub const BASE_TYPE_BYTE: u8 = b'B';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_CHAR`.
+    pub const BASE_TYPE_CHAR: u8 = b'C';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_SHORT`.
+    pub const BASE_TYPE_SHORT: u8 = b'S';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_INT`.
+    pub const BASE_TYPE_INT: u8 = b'I';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_LONG`.
+    pub const BASE_TYPE_LONG: u8 = b'J';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_FLOAT`.
+    pub const BASE_TYPE_FLOAT: u8 = b'F';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_DOUBLE`.
+    pub const BASE_TYPE_DOUBLE: u8 = b'D';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_BOOLEAN`.
+    pub const BASE_TYPE_BOOLEAN: u8 = b'Z';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_STRING`.
+    pub const BASE_TYPE_STRING: u8 = b's';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_VOID`.
+    pub const BASE_TYPE_VOID: u8 = b'V';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_CLASS`.
+    pub const BASE_TYPE_CLASS: u8 = b'c';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_ARRAY`.
+    pub const BASE_TYPE_ARRAY: u8 = b'[';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_REFERENCE`.
+    pub const BASE_TYPE_REFERENCE: u8 = b'L';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_ENUM`.
+    pub const BASE_TYPE_ENUM: u8 = b'e';
+    /// Mirrors `DescriptorDecoder.BASE_TYPE_ANNOTATION`.
+    pub const BASE_TYPE_ANNOTATION: u8 = b'@';
+
     /// Stands in for `DescriptorDecoder.getDataTypeOfDescriptor(String, DataTypeManager)`.
     pub fn get_data_type_of_descriptor(
         descriptor: &str,

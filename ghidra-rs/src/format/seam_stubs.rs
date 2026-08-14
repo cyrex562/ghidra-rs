@@ -2881,3 +2881,42 @@ impl ConstantPoolUtf8Info {
     }
 }
 
+/// Placeholder for `ghidra.javaclass.format.attributes.AnnotationJava`, referenced by
+/// [`AnnotationElementValue`](crate::format::javaclass::attributes::annotation_element_value::AnnotationElementValue)
+/// as a forward reference: `AnnotationJava` is mutually recursive with
+/// `AnnotationElementValue` through the not-yet-ported `AnnotationElementValuePair`
+/// (`AnnotationJava` -> `AnnotationElementValuePair` -> `AnnotationElementValue`). `AnnotationJava`
+/// is a concrete Java class (not an interface), so it is modeled here as a concrete struct. Only
+/// the `type_index`/`number_of_element_value_pairs` header (`u2 type_index; u2
+/// num_element_value_pairs;`) is read; the nested `element_value_pairs` table needs
+/// `AnnotationElementValuePair`, so it is left unparsed (and, since its encoded size cannot be
+/// computed without decoding it, an annotation-tagged `element_value` nested inside another
+/// `element_value` array cannot be read past this header until that type lands).
+pub struct AnnotationJava {
+    type_index: u32,
+    number_of_element_value_pairs: u32,
+}
+
+impl AnnotationJava {
+    /// Reads the `annotation` header, mirroring `AnnotationJava(BinaryReader)`.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let type_index = reader.read_next_unsigned_short()?;
+        let number_of_element_value_pairs = reader.read_next_unsigned_short()?;
+        Ok(AnnotationJava { type_index, number_of_element_value_pairs })
+    }
+
+    /// `AnnotationJava.getTypeIndex()` (already masked to an unsigned 16-bit value, matching the
+    /// Java getter's `& 0xffff`).
+    pub fn get_type_index(&self) -> u32 {
+        self.type_index
+    }
+
+    /// `AnnotationJava.getNumberOfElementValuePairs()` (already masked to an unsigned 16-bit
+    /// value, matching the Java getter's `& 0xffff`).
+    pub fn get_number_of_element_value_pairs(&self) -> u32 {
+        self.number_of_element_value_pairs
+    }
+}
+
