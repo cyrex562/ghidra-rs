@@ -1514,15 +1514,147 @@ impl CheckoutDialog {
 /// no members are needed yet.
 pub trait SearchSettings: Send + Sync {}
 
+/// Placeholder for `ghidra.features.base.memsearch.matcher.SearchData`, the name/input/settings
+/// triple every `UserInputByteMatcher` carries (`SearchData` is itself the `T` that
+/// `UserInputByteMatcher implements ByteMatcher<SearchData>` matches produce). `SearchData` is a
+/// concrete Java class (not an interface), so this stub is a struct rather than the placeholder
+/// trait an auto-generated shape hint would suggest. Trimmed to the accessors
+/// [`UserInputByteMatcherBase`] needs (`hashCode`/`equals` are omitted -- nothing compares two
+/// `SearchData`s yet). Replace with the real port when `SearchData.java` is ported.
+pub struct SearchData {
+    name: String,
+    input: String,
+    settings: Option<Box<dyn SearchSettings>>,
+}
+
+impl SearchData {
+    /// Java: `SearchData(String name, String input, SearchSettings settings)`.
+    pub fn new(
+        name: impl Into<String>,
+        input: impl Into<String>,
+        settings: Option<Box<dyn SearchSettings>>,
+    ) -> Self {
+        Self { name: name.into(), input: input.into(), settings }
+    }
+
+    /// Java: `getName()`.
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    /// Java: `getInput()`.
+    pub fn get_input(&self) -> &str {
+        &self.input
+    }
+
+    /// Java: `getSettings()`.
+    pub fn get_settings(&self) -> Option<&dyn SearchSettings> {
+        self.settings.as_deref()
+    }
+}
+
+/// Placeholder for the shared state of `ghidra.features.base.memsearch.matcher.UserInputByteMatcher`,
+/// the abstract Java base that `InvalidByteMatcher`, `MaskedByteSequenceByteMatcher`, and
+/// `RegExByteMatcher` all extend. Rust has no field inheritance, so this holds the one
+/// `searchData` field the Java class carries; a concrete matcher embeds it and implements
+/// [`UserInputByteMatcher`] for the abstract methods (the same [`SearchFormatBase`]/[`SearchFormat`]
+/// split, for the same reason -- see
+/// [`SearchFormatBase`](crate::feature::base::memsearch::format::search_format::SearchFormatBase)).
+/// Replace with the real port when `UserInputByteMatcher.java` is ported.
+pub struct UserInputByteMatcherBase {
+    search_data: SearchData,
+}
+
+impl UserInputByteMatcherBase {
+    /// Java: `UserInputByteMatcher(String name, String input, SearchSettings settings)`.
+    pub fn new(
+        name: impl Into<String>,
+        input: impl Into<String>,
+        settings: Option<Box<dyn SearchSettings>>,
+    ) -> Self {
+        Self { search_data: SearchData::new(name, input, settings) }
+    }
+
+    /// Java: `getName()`.
+    pub fn get_name(&self) -> &str {
+        self.search_data.get_name()
+    }
+
+    /// Java: `getInput()`.
+    pub fn get_input(&self) -> &str {
+        self.search_data.get_input()
+    }
+
+    /// Java: `getSettings()`.
+    pub fn get_settings(&self) -> Option<&dyn SearchSettings> {
+        self.search_data.get_settings()
+    }
+
+    /// Java: `getSearchData()`.
+    pub fn get_search_data(&self) -> &SearchData {
+        &self.search_data
+    }
+}
+
 /// Placeholder for `ghidra.features.base.memsearch.matcher.UserInputByteMatcher`, referenced by
 /// [`SearchFormat`](crate::feature::base::memsearch::format::search_format::SearchFormat) (whose
 /// `parse` returns one, and whose `is_valid_text` default method calls
-/// [`is_valid_search`](Self::is_valid_search) on the result) before the real class is ported.
-/// Trimmed to the one member `SearchFormat.isValidText` actually reads; see
-/// `UserInputByteMatcher.java` for the type's full public surface. Replace with the real port
-/// when available.
-pub trait UserInputByteMatcher: Send + Sync {
-    fn is_valid_search(&self) -> bool;
+/// [`is_valid_search`](Self::is_valid_search) on the result) and implemented by
+/// [`InvalidByteMatcher`](crate::feature::base::memsearch::matcher::invalid_byte_matcher::InvalidByteMatcher)
+/// before the real class is ported. `UserInputByteMatcher implements ByteMatcher<SearchData>` in
+/// Java, so the already-ported
+/// [`ByteMatcher`](crate::feature::base::memsearch::matcher::ByteMatcher) trait is a supertrait
+/// here rather than being re-declared. `getName`/`getInput`/`getSettings`/`getSearchData`/
+/// `toString` are concrete methods every subclass inherits unchanged, so they are default methods
+/// reading [`base`](Self::base) (mirroring `SearchFormat`'s `get_name`/`to_string`); `hashCode`/
+/// `equals` are omitted, since nothing compares two matchers yet. See `UserInputByteMatcher.java`
+/// for the type's full public surface. Replace with the real port when available.
+pub trait UserInputByteMatcher:
+    crate::feature::base::memsearch::matcher::ByteMatcher<SearchData> + Send + Sync
+{
+    /// The shared state (search data) every user-input matcher carries.
+    fn base(&self) -> &UserInputByteMatcherBase;
+
+    /// Java: `getToolTip()` (abstract). Additional info about this matcher (typically the mask
+    /// bytes); Java's nullable return maps to `None`.
+    fn get_tool_tip(&self) -> Option<String>;
+
+    /// Java: `isValidSearch()`. Returns true if this matcher is valid and can be used to perform a
+    /// search. Defaults to `true`, overridable.
+    fn is_valid_search(&self) -> bool {
+        true
+    }
+
+    /// Java: `isValidInput()`. Returns true if this matcher has valid (but possibly incomplete)
+    /// input text. Defaults to `true`, overridable.
+    fn is_valid_input(&self) -> bool {
+        true
+    }
+
+    /// Java: `getName()`.
+    fn get_name(&self) -> &str {
+        self.base().get_name()
+    }
+
+    /// Java: `getInput()`.
+    fn get_input(&self) -> &str {
+        self.base().get_input()
+    }
+
+    /// Java: `getSettings()`.
+    fn get_settings(&self) -> Option<&dyn SearchSettings> {
+        self.base().get_settings()
+    }
+
+    /// Java: `getSearchData()`.
+    fn get_search_data(&self) -> &SearchData {
+        self.base().get_search_data()
+    }
+
+    /// Java: `toString()`, which returns `searchData.getInput()`.
+    fn to_string(&self) -> String {
+        self.base().get_input().to_string()
+    }
 }
 
 /// Placeholder for the unported Java type `HexSearchFormat`, one of
