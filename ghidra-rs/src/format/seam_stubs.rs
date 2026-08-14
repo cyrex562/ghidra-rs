@@ -1232,18 +1232,25 @@ pub trait ElfSymbolTable: Send + Sync {
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocation`, referenced by
 /// [`ElfRelocationContext::process_relocation`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::process_relocation)
-/// before the real class is ported. Only the two entry fields the dispatch reads.
+/// and by [`RiscvElfRelocationContext::get_hi20_relocation`](crate::format::elf::relocation::riscv_elf_relocation_context::RiscvElfRelocationContext::get_hi20_relocation)
+/// before the real class is ported.
 pub trait ElfRelocation: Send + Sync {
     /// `ElfRelocation.getSymbolIndex()` -- the symbol table index encoded in `r_info`.
     fn get_symbol_index(&self) -> i32;
 
     /// `ElfRelocation.getType()` -- the relocation type ID encoded in `r_info`.
     fn get_type(&self) -> i32;
+
+    /// `ElfRelocation.getOffset()` -- the relocation's target offset (`r_offset`).
+    fn get_offset(&self) -> i64 {
+        0
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocationTable`, referenced by
 /// [`ElfRelocationContext::start_relocation_table_processing`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::start_relocation_table_processing)
-/// before the real class is ported. Only the two members the relocation context needs.
+/// and by [`RiscvElfRelocationContext::get_hi20_relocation`](crate::format::elf::relocation::riscv_elf_relocation_context::RiscvElfRelocationContext::get_hi20_relocation)
+/// before the real class is ported.
 pub trait ElfRelocationTable: Send + Sync {
     /// `ElfRelocationTable.hasAddendRelocations()` -- true for `RELA`-style tables, whose entries
     /// carry their own addend.
@@ -1252,6 +1259,11 @@ pub trait ElfRelocationTable: Send + Sync {
     /// `ElfRelocationTable.getAssociatedSymbolTable()`, which is `null` (here `None`) when the
     /// table has no associated symbol table.
     fn get_associated_symbol_table(&self) -> Option<std::sync::Arc<dyn ElfSymbolTable>>;
+
+    /// `ElfRelocationTable.getRelocations()` -- every relocation entry, in file order.
+    fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
+        Vec::new()
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.relocation.ElfRelocationHandler`, referenced by

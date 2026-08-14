@@ -15132,7 +15132,7 @@ orig_src/Ghidra/Processors/PowerPC/src/test.processors/java/ghidra/test/processo
 orig_src/Ghidra/Processors/PowerPC/src/test/java/ghidra/program/emulation/PpcPcodeUseropLibraryTest.java	TODO	orig_src Ghidra Processors PowerPC src test java ghidra program emulation 
 orig_src/Ghidra/Processors/RISCV/src/main/java/ghidra/app/plugin/core/analysis/RISCVAddressAnalyzer.java	TODO	orig_src Ghidra Processors RISCV src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Processors/RISCV/src/main/java/ghidra/app/util/bin/format/elf/extend/RISCV_ElfExtension.java	TODO	orig_src Ghidra Processors RISCV src main java ghidra app util bin format elf extend 
-orig_src/Ghidra/Processors/RISCV/src/main/java/ghidra/app/util/bin/format/elf/relocation/RISCV_ElfRelocationContext.java	TODO	orig_src Ghidra Processors RISCV src main java ghidra app util bin format elf relocation 
+orig_src/Ghidra/Processors/RISCV/src/main/java/ghidra/app/util/bin/format/elf/relocation/RISCV_ElfRelocationContext.java	DONE	orig_src Ghidra Processors RISCV src main java ghidra app util bin format elf relocation
 orig_src/Ghidra/Processors/RISCV/src/main/java/ghidra/app/util/bin/format/elf/relocation/RISCV_ElfRelocationHandler.java	TODO	orig_src Ghidra Processors RISCV src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/RISCV/src/main/java/ghidra/app/util/bin/format/elf/relocation/RISCV_ElfRelocationType.java	DONE	orig_src Ghidra Processors RISCV src main java ghidra app util bin format elf relocation 
 orig_src/Ghidra/Processors/RISCV/src/main/java/ghidra/program/emulation/RISCVEmulateInstructionStateModifier.java	TODO	orig_src Ghidra Processors RISCV src main java ghidra program emulation 
