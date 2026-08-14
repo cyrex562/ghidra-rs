@@ -4467,7 +4467,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/Expor
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ImportStateCache.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ImportedLibrary.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/ImportedSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/LoaderInfoHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/LoaderInfoHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/LoaderRelocationHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/PackedDataOpcodes.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pef/PefConstants.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pef 
