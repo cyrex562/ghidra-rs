@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod dyld;
 pub mod prelink;
+pub mod relocation;
 pub mod threadcommand;
 pub mod cpu_sub_types;
 pub mod mach_constants;

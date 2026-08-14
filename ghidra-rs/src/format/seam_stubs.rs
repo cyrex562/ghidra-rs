@@ -1560,6 +1560,166 @@ pub trait MachHeader: Send + Sync {
     fn get_segment(&self, segment_name: &str) -> Option<Box<dyn SegmentCommand>>;
     /// `MachHeader.getAllSegments()`.
     fn get_all_segments(&self) -> Vec<Box<dyn SegmentCommand>>;
+
+    /// `MachHeader.getAllSections()`, needed by
+    /// [`MachoRelocation::find_target_section`](crate::format::macho::relocation::macho_relocation::MachoRelocation::find_target_section).
+    ///
+    /// Defaults to empty so existing implementors (e.g. `LoadCommand`'s `MockMachHeader`) are
+    /// unaffected.
+    fn get_all_sections(&self) -> Vec<Section> {
+        Vec::new()
+    }
+
+    /// Stands in for `MachHeader.getFirstLoadCommand(SymbolTableCommand.class)`, narrowed to the
+    /// one load command type [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
+    /// needs -- Rust has no reflection-based generic lookup by `Class`. `None` stands in for
+    /// Java's `null` return when the header has no symbol table command.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected.
+    fn get_symbol_table_command(&self) -> Option<SymbolTableCommand> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.RelocationInfo`, referenced by
+/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
+/// before the real class is ported. Concrete Java class (not an interface); models only the
+/// three accessors `MachoRelocation` needs (`getValue`/`isExternal`/`isScattered`) plus a
+/// `Display` impl standing in for `toString()`, which `MachoRelocation::toString` embeds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct RelocationInfo {
+    value: i32,
+    external: bool,
+    scattered: bool,
+}
+
+impl RelocationInfo {
+    pub fn new(value: i32, external: bool, scattered: bool) -> Self {
+        RelocationInfo { value, external, scattered }
+    }
+
+    /// `RelocationInfo.getValue()`.
+    pub fn get_value(&self) -> i32 {
+        self.value
+    }
+
+    /// `RelocationInfo.isExternal()`.
+    pub fn is_external(&self) -> bool {
+        self.external
+    }
+
+    /// `RelocationInfo.isScattered()`.
+    pub fn is_scattered(&self) -> bool {
+        self.scattered
+    }
+}
+
+impl std::fmt::Display for RelocationInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Value: 0x{:x}, External: {}, Scattered: {}",
+            self.value, self.external, self.scattered
+        )
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.Section`, referenced by
+/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
+/// before the real class is ported. Concrete Java class (not an interface); models only the
+/// accessors `MachoRelocation` needs (`getAddress`/`getSectionName`) plus a `Display` impl
+/// standing in for `toString()`.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Section {
+    address: i64,
+    section_name: String,
+}
+
+impl Section {
+    pub fn new(address: i64, section_name: impl Into<String>) -> Self {
+        Section { address, section_name: section_name.into() }
+    }
+
+    /// `Section.getAddress()`.
+    pub fn get_address(&self) -> i64 {
+        self.address
+    }
+
+    /// `Section.getSectionName()`.
+    pub fn get_section_name(&self) -> &str {
+        &self.section_name
+    }
+}
+
+impl std::fmt::Display for Section {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.section_name)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.NList`, referenced by
+/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
+/// before the real class is ported. Concrete Java class (not an interface); models only the two
+/// accessors `MachoRelocation` needs (`getValue`/`getString`).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct NList {
+    value: i64,
+    string: String,
+}
+
+impl NList {
+    pub fn new(value: i64, string: impl Into<String>) -> Self {
+        NList { value, string: string.into() }
+    }
+
+    /// `NList.getValue()`.
+    pub fn get_value(&self) -> i64 {
+        self.value
+    }
+
+    /// `NList.getString()`.
+    pub fn get_string(&self) -> &str {
+        &self.string
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.SymbolTableCommand`, referenced by
+/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
+/// before the real class is ported. Concrete Java class (not an interface); models only the one
+/// accessor `MachoRelocation` needs (`getSymbolAt`).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SymbolTableCommand {
+    symbols: Vec<NList>,
+}
+
+impl SymbolTableCommand {
+    pub fn new(symbols: Vec<NList>) -> Self {
+        SymbolTableCommand { symbols }
+    }
+
+    /// `SymbolTableCommand.getSymbolAt(int)`. `None` stands in for Java's `null` return on an
+    /// out-of-range index.
+    pub fn get_symbol_at(&self, index: i32) -> Option<&NList> {
+        if index < 0 {
+            return None;
+        }
+        self.symbols.get(index as usize)
+    }
+}
+
+/// Placeholder for `ghidra.util.NumericUtilities`, referenced by
+/// [`MachoRelocation`](crate::format::macho::relocation::macho_relocation::MachoRelocation)
+/// before the real class is ported. `NumericUtilities` is a `private`-constructor static-method
+/// utility class (not an interface), so it is modeled here as a free function rather than a
+/// trait, consistent with [`MachConstants`](crate::format::macho::mach_constants) and other
+/// already-ported static-utility classes. Only `toHexString(long)`, the one overload
+/// `MachoRelocation` needs.
+pub mod numeric_utilities {
+    /// `NumericUtilities.toHexString(long)`: `"0x" + Long.toHexString(value)`, where
+    /// `Long.toHexString` treats `value` as unsigned 64-bit.
+    pub fn to_hex_string(value: i64) -> String {
+        format!("0x{:x}", value as u64)
+    }
 }
 
 /// Placeholder for `ghidra.program.flatapi.FlatProgramAPI`, referenced by
