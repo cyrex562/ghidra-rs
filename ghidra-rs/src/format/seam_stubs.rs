@@ -2239,3 +2239,87 @@ impl ClassSearcher {
     }
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.pef.SectionHeader`, referenced by
+/// [`LoaderInfoHeader`] before the real class is ported. Only the accessor
+/// [`LoaderRelocationHeader`](crate::format::pef::loader_relocation_header::LoaderRelocationHeader)'s
+/// constructor needs: the byte offset (within the whole PEF container) of the section this
+/// header describes.
+pub trait SectionHeader: Send + Sync {
+    /// `SectionHeader.getContainerOffset()`.
+    fn get_container_offset(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pef.LoaderInfoHeader`, referenced by
+/// [`LoaderRelocationHeader`](crate::format::pef::loader_relocation_header::LoaderRelocationHeader)
+/// before the real class is ported. `LoaderInfoHeader` is a concrete Java class (not an
+/// interface), so it is modeled here as a trait object for now. Only the two accessors
+/// `LoaderRelocationHeader`'s constructor reads (to locate the start of the relocation
+/// instruction stream) are included; the full class also owns imported-library/symbol/export
+/// tables and `getRelocations()` (which itself returns a list of
+/// `LoaderRelocationHeader`s -- the cycle edge this stub exists to break), left for the real port.
+pub trait LoaderInfoHeader: Send + Sync {
+    /// `LoaderInfoHeader.getSection()` -- the section this loader info header belongs to.
+    fn get_section(&self) -> Box<dyn SectionHeader>;
+
+    /// `LoaderInfoHeader.getRelocInstrOffset()` -- byte offset (relative to the start of the
+    /// relocations area) of the first relocation instruction.
+    fn get_reloc_instr_offset(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pef.RelocationFactory`, referenced by
+/// [`LoaderRelocationHeader`](crate::format::pef::loader_relocation_header::LoaderRelocationHeader)
+/// before the real class is ported. `RelocationFactory` is a concrete Java class (not an
+/// interface) whose single static method dispatches across ten `Reloc*` relocation-opcode
+/// subclasses (`RelocByIndexGroup`, `RelocBySectDWithSkip`, `RelocIncrPosition`,
+/// `RelocLgByImport`, `RelocLgRepeat`, `RelocLgSetOrBySection`, `RelocSetPosition`,
+/// `RelocSmRepeat`, `RelocUndefinedOpcode`, `RelocValueGroup`), none of which are ported yet, so
+/// this stub cannot yet replicate the real dispatch/match logic. It exists so
+/// `LoaderRelocationHeader`'s constructor compiles and works for the (common) `relocCount == 0`
+/// case, which never calls it.
+pub struct RelocationFactory;
+
+impl RelocationFactory {
+    /// Placeholder for `RelocationFactory.getRelocation(BinaryReader)`.
+    ///
+    /// # Panics
+    /// Always panics: none of the ten `Reloc*` relocation-opcode subclasses this dispatches to
+    /// are ported yet, so there is nothing to construct/match against.
+    pub fn get_relocation(
+        _reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> crate::program::model::reloc::relocation::Relocation {
+        unimplemented!("RelocationFactory.getRelocation: PEF Reloc* opcode subclasses not yet ported")
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.StructConverterUtil`, referenced by `StructConverter`
+/// implementors (e.g.
+/// [`LoaderRelocationHeader`](crate::format::pef::loader_relocation_header::LoaderRelocationHeader))
+/// whose Java `toDataType()` delegates to `StructConverterUtil.toDataType(getClass())`.
+/// `StructConverterUtil` is a concrete Java class (not an interface) that reflects over an
+/// object's private fields to build a `Structure` datatype; reflection has no Rust equivalent, so
+/// this stub instead builds an opaquely-named placeholder `DataType` with the caller-supplied
+/// name and byte length, mirroring the precedent set by `OmfIndex`'s placeholder datatypes
+/// (`format::omf::omf_index`).
+pub struct StructConverterUtilDataType {
+    name: String,
+    length: i32,
+}
+
+impl StructConverterUtilDataType {
+    /// Placeholder for `StructConverterUtil.toDataType(Class)` (called as
+    /// `StructConverterUtil.toDataType(getClass())` from a `StructConverter` implementor).
+    pub fn to_data_type(name: impl Into<String>, length: i32) -> Self {
+        StructConverterUtilDataType { name: name.into(), length }
+    }
+}
+
+impl crate::program::model::data::data_type::DataType for StructConverterUtilDataType {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_length(&self) -> i32 {
+        self.length
+    }
+}
+

@@ -790,3 +790,7 @@ ts	stub_class	referenced_by
 2026-08-14T05:51:43.292607+00:00	MemoryBlockUtils	DyldCacheLoader
 2026-08-14T05:51:43.292607+00:00	DyldCacheProgramBuilder	DyldCacheLoader
 2026-08-14T05:57:28.848750Z	ClassSearcher	ElfInfoProducer
+2026-08-14T06:38:23.904579+00:00	LoaderInfoHeader	LoaderRelocationHeader
+2026-08-14T06:38:23.905322+00:00	RelocationFactory	LoaderRelocationHeader
+2026-08-14T06:38:23.903775+00:00	StructConverterUtil	LoaderRelocationHeader
+2026-08-14T06:38:23.905322+00:00	SectionHeader	LoaderRelocationHeader
