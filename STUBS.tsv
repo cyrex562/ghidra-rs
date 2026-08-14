@@ -765,3 +765,8 @@ ts	stub_class	referenced_by
 2026-08-14T04:12:03.518087+00:00	MachHeader	LoadCommand
 2026-08-14T04:12:03.518696+00:00	SegmentCommand	LoadCommand
 2026-08-14T04:12:03.522556+00:00	FlatProgramAPI	LoadCommand
+2026-08-14T04:20:58.087917+00:00	CodeSignatureCodeDirectory	CodeSignatureBlobParser
+2026-08-14T04:20:58.088126+00:00	CodeSignatureGenericBlob	CodeSignatureBlobParser
+2026-08-14T04:20:58.088347+00:00	CodeSignatureSuperBlob	CodeSignatureBlobParser
+2026-08-14T04:20:58.088500+00:00	CodeSignatureBlobIndex	CodeSignatureBlobParser
+2026-08-14T04:20:58.088700+00:00	Program	CodeSignatureBlobParser

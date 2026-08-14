@@ -1588,3 +1588,39 @@ pub trait FlatProgramAPI: Send + Sync {
     fn set_plate_comment(&self, address: &crate::program::model::address::Address, comment: &str) -> bool;
 }
 
+/// Placeholder for `ghidra.program.model.listing.Program`, referenced by
+/// `CodeSignatureBlobParser`'s stub types before the real class is ported.
+pub trait Program: Send + Sync {
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureBlobIndex`,
+/// referenced by `CodeSignatureSuperBlob` before the real class is ported.
+pub trait CodeSignatureBlobIndex: Send + Sync {
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureGenericBlob`,
+/// referenced by `CodeSignatureBlobParser` before the real class is ported.
+pub trait CodeSignatureGenericBlob: Send + Sync {
+    fn get_magic(&self) -> i32;
+    fn get_length(&self) -> i64;
+    fn markup(&self, program: &dyn Program, address: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureCodeDirectory`,
+/// referenced by `CodeSignatureBlobParser` before the real class is ported.
+pub trait CodeSignatureCodeDirectory: Send + Sync {
+    fn markup(&self, program: &dyn Program, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.codesignature.CodeSignatureSuperBlob`,
+/// referenced by `CodeSignatureBlobParser` before the real class is ported.
+pub trait CodeSignatureSuperBlob: Send + Sync {
+    fn get_count(&self) -> i32;
+    fn get_index_entries(&self) -> Vec<Box<dyn CodeSignatureBlobIndex>>;
+    fn get_index_blobs(&self) -> Vec<Box<dyn CodeSignatureGenericBlob>>;
+    fn markup(&self, program: &dyn Program, addr: &crate::program::model::address::Address, header: &dyn MachHeader, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog) -> std::io::Result<()>;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
