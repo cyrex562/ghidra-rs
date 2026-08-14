@@ -3716,7 +3716,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/arch
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/FirstLinkerMember.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/LongNamesMember.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/archive/SecondLinkerMember.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff archive 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationContext.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff relocation 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationContext.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff relocation
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandler.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format coff relocation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandlerFactory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format coff relocation 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEAggregate.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 

@@ -1,4 +1,5 @@
-use crate::format::seam_stubs::{CoffFileHeader, CoffRelocation, CoffRelocationContext};
+use crate::format::coff::relocation::coff_relocation_context::CoffRelocationContext;
+use crate::format::seam_stubs::{CoffFileHeader, CoffRelocation};
 use crate::program::model::address::Address;
 use crate::program::model::reloc::relocation_result::RelocationResult;
 use crate::util::classfinder::extension_point::ExtensionPoint;
@@ -33,7 +34,7 @@ pub trait CoffRelocationHandler: ExtensionPoint {
         &self,
         address: &Address,
         relocation: &dyn CoffRelocation,
-        relocation_context: &dyn CoffRelocationContext,
+        relocation_context: &mut CoffRelocationContext,
     ) -> Result<RelocationResult, Box<dyn std::error::Error + Send + Sync>>;
 }
 
@@ -84,7 +85,7 @@ mod tests {
             &self,
             _address: &Address,
             _relocation: &dyn CoffRelocation,
-            _relocation_context: &dyn CoffRelocationContext,
+            _relocation_context: &mut CoffRelocationContext,
         ) -> Result<RelocationResult, Box<dyn std::error::Error + Send + Sync>> {
             Ok(RelocationResult::UNSUPPORTED)
         }
