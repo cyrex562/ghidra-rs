@@ -207,6 +207,17 @@ pub trait SymbolTable: Send + Sync {
         Ok(symbols.into_iter().find(|s| s.get_name() == name))
     }
 
+    /// Get all global symbols (i.e. symbols in the global namespace) with the given name,
+    /// across every address. Stands in for `SymbolTable.getGlobalSymbols(String)`.
+    ///
+    /// Defaults to empty so existing implementors are unaffected. Added for
+    /// [`dyld_chained_fixups::get_chained_fixups`](crate::format::macho::commands::chained::dyld_chained_fixups::get_chained_fixups),
+    /// which resolves a bound chain entry's symbol name to its address.
+    fn get_global_symbols(&self, name: &str) -> io::Result<Vec<Arc<dyn Symbol>>> {
+        let _ = name;
+        Ok(Vec::new())
+    }
+
     /// Get, or create if absent, the namespace named `name` inside `parent`.
     ///
     /// Grown (defaulted, so existing implementors keep compiling) for

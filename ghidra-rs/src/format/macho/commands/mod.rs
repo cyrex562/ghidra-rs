@@ -1,3 +1,4 @@
+pub mod chained;
 pub mod codesignature;
 pub mod dyld;
 pub mod dyld_info_command_constants;
