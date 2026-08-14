@@ -2,6 +2,7 @@
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
 use super::async_utils::AsyncExecutor;
+pub use super::bytesearch::PatternFactory;
 use super::database::spatial::hyper::{HyperBox, HyperPoint};
 use super::datastruct::NoSuchIndexException;
 use super::exception::{CancelledException, NoValueException};
@@ -979,9 +980,6 @@ pub trait Pattern: Send + Sync {
     /// Get pre-sequence length.
     fn get_pre_sequence_length(&self) -> i32;
 }
-
-/// Placeholder for `ghidra.util.bytesearch.PatternFactory`, referenced by `Pattern`.
-pub trait PatternFactory: Send + Sync {}
 
 /// Placeholder for `ghidra.xml.XmlPullParser`, referenced by `Pattern` and `MatchAction`.
 pub trait XmlPullParser: Send + Sync {}

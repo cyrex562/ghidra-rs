@@ -1,3 +1,4 @@
+use crate::util::bytesearch::PatternFactory;
 use crate::util::seam_stubs::{Pattern, XmlPullParser};
 
 /// Trait for post match rules that are checked after a match is identified.
@@ -128,7 +129,7 @@ mod tests {
             _postrulelist: Vec<Box<dyn PostRule>>,
             _actionlist: Vec<Box<dyn crate::util::bytesearch::MatchAction>>,
             _parser: &dyn XmlPullParser,
-            _pfactory: &dyn crate::util::seam_stubs::PatternFactory,
+            _pfactory: &dyn PatternFactory,
         ) -> std::io::Result<()> {
             Ok(())
         }
@@ -136,7 +137,7 @@ mod tests {
         fn restore_xml(
             &self,
             _parser: &dyn XmlPullParser,
-            _pfactory: &dyn crate::util::seam_stubs::PatternFactory,
+            _pfactory: &dyn PatternFactory,
         ) -> std::io::Result<()> {
             Ok(())
         }
@@ -145,7 +146,7 @@ mod tests {
             &self,
             _file: &dyn crate::util::seam_stubs::ResourceFile,
             _patlist: Vec<Box<dyn Pattern>>,
-            _pfactory: &dyn crate::util::seam_stubs::PatternFactory,
+            _pfactory: &dyn PatternFactory,
         ) -> std::io::Result<()> {
             Ok(())
         }
@@ -166,7 +167,7 @@ mod tests {
             &self,
             _file: &dyn crate::util::seam_stubs::FileMarker,
             _pattern_list: Vec<Box<dyn Pattern>>,
-            _pfactory: &dyn crate::util::seam_stubs::PatternFactory,
+            _pfactory: &dyn PatternFactory,
         ) -> std::io::Result<()> {
             Ok(())
         }
