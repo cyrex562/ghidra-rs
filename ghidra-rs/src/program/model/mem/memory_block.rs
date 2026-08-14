@@ -2,6 +2,11 @@ use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::mem::{MemoryAccessException, MemoryBlockType, MemoryBlockSourceInfo};
 use std::sync::Arc;
 
+/// Name of the block a loader creates to hold otherwise-unresolved external symbols.
+///
+/// Stands in for `MemoryBlock.EXTERNAL_BLOCK_NAME`.
+pub const EXTERNAL_BLOCK_NAME: &str = "EXTERNAL";
+
 pub trait MemoryBlock: Send + Sync {
     fn get_name(&self) -> &str;
     fn get_start(&self) -> Address;
@@ -50,6 +55,16 @@ pub trait MemoryBlock: Send + Sync {
     /// Returns whether this block is marked as artificial.
     fn is_artificial(&self) -> bool {
         false
+    }
+
+    /// Marks this block as artificial (or not). Stands in for `MemoryBlock.setArtificial(boolean)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`UnixAoutProgramLoader`](crate::app::util::opinion::unix_aout_program_loader::UnixAoutProgramLoader),
+    /// which marks the block it synthesizes for undefined symbols artificial. The default
+    /// discards the request, matching [`is_artificial`](Self::is_artificial)'s constant `false`.
+    fn set_artificial(&mut self, artificial: bool) {
+        let _ = artificial;
     }
 
     /// Returns the type of this memory block.

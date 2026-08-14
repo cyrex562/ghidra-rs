@@ -799,3 +799,10 @@ ts	stub_class	referenced_by
 2026-08-14T06:44:57.537906+00:00	ImportedSymbol	LoaderInfoHeader
 2026-08-14T06:44:57.538919+00:00	SectionHeader	LoaderInfoHeader
 2026-08-14T06:38:23.905322+00:00	SectionHeader	LoaderRelocationHeader
+2026-08-14T06:56:09.636694+00:00	MemoryBlockUtils	UnixAoutProgramLoader
+2026-08-14T06:56:09.636694+00:00	UnixAoutHeader	UnixAoutProgramLoader
+2026-08-14T06:56:09.636694+00:00	UnixAoutRelocation	UnixAoutProgramLoader
+2026-08-14T06:56:09.636694+00:00	UnixAoutRelocationTable	UnixAoutProgramLoader
+2026-08-14T06:56:09.636694+00:00	UnixAoutStringTable	UnixAoutProgramLoader
+2026-08-14T06:56:09.636694+00:00	UnixAoutSymbolTable	UnixAoutProgramLoader
+2026-08-14T06:56:09.636694+00:00	MessageLog	UnixAoutProgramLoader

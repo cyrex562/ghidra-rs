@@ -3,9 +3,15 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
+use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
 use crate::format::pe::rich::ms_product_type::MsProductType;
+use crate::format::unixaout::unix_aout_symbol::UnixAoutSymbol;
+use crate::program::model::address::Address;
+use crate::program::model::listing::Program as ListingProgram;
+use crate::program::model::mem::MemoryBlock;
 
 /// Placeholder for `ghidra.app.util.datatype.microsoft.GUID`, referenced by
 /// [`PdbByteReader::parse_guid`](crate::format::pdb2::pdbreader::pdb_byte_reader::PdbByteReader::parse_guid)
@@ -2511,6 +2517,223 @@ impl crate::program::model::data::data_type::DataType for StructConverterUtilDat
 
     fn get_length(&self) -> i32 {
         self.length
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ghidra.app.util.bin.format.unixaout
+//
+// The a.out header and its three file tables are referenced by
+// [`UnixAoutProgramLoader`](crate::app::util::opinion::unix_aout_program_loader::UnixAoutProgramLoader)
+// before those classes are ported. Each stub below models only the members that loader touches.
+// `UnixAoutSymbol` itself is already ported, so it is used directly rather than stubbed.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for the `UnixAoutHeader.AoutType` enum.
+///
+/// Only [`name`](AoutType::name) is modeled: `UnixAoutProgramLoader.loadAout` logs
+/// `header.getExecutableType().name()`, which for a Java enum is its constant's identifier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AoutType {
+    Omagic,
+    Nmagic,
+    Zmagic,
+    Qmagic,
+    Cmagic,
+    Unknown,
+}
+
+impl AoutType {
+    /// Java `Enum.name()` -- the constant's identifier, which a.out spells in upper case.
+    pub fn name(self) -> &'static str {
+        match self {
+            AoutType::Omagic => "OMAGIC",
+            AoutType::Nmagic => "NMAGIC",
+            AoutType::Zmagic => "ZMAGIC",
+            AoutType::Qmagic => "QMAGIC",
+            AoutType::Cmagic => "CMAGIC",
+            AoutType::Unknown => "UNKNOWN",
+        }
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.unixaout.UnixAoutHeader`, referenced by
+/// [`UnixAoutProgramLoader`](crate::app::util::opinion::unix_aout_program_loader::UnixAoutProgramLoader)
+/// before the real class is ported. Models the section-geometry accessors, the executable type,
+/// the reader the loader builds its tables from, and `markup`.
+///
+/// Not `Send + Sync`: Java's header owns the `BinaryReader` it was parsed from, and this crate's
+/// ported [`GBinaryReader`] holds its provider in an `Rc<RefCell<_>>`.
+pub trait UnixAoutHeader {
+    /// `UnixAoutHeader.getReader()`. Java hands back the single reader the header was parsed
+    /// with; because that reader is a concrete ported type here, implementors return an
+    /// equivalent reader over the same provider instead of a borrow of a stored one. Every
+    /// caller in the loader either re-positions the reader itself (the table constructors) or
+    /// only reaches through it for the provider, so a fresh reader behaves identically.
+    fn get_reader(&self) -> GBinaryReader;
+
+    fn get_executable_type(&self) -> AoutType;
+
+    fn get_text_size(&self) -> i64;
+    fn get_data_size(&self) -> i64;
+    fn get_bss_size(&self) -> i64;
+    fn get_sym_size(&self) -> i64;
+    fn get_str_size(&self) -> i64;
+    fn get_entry_point(&self) -> i64;
+    fn get_text_reloc_size(&self) -> i64;
+    fn get_data_reloc_size(&self) -> i64;
+    fn get_text_offset(&self) -> i64;
+    fn get_data_offset(&self) -> i64;
+    fn get_text_reloc_offset(&self) -> i64;
+    fn get_data_reloc_offset(&self) -> i64;
+    fn get_sym_offset(&self) -> i64;
+    fn get_str_offset(&self) -> i64;
+    fn get_text_addr(&self) -> i64;
+    fn get_data_addr(&self) -> i64;
+    fn get_bss_addr(&self) -> i64;
+
+    /// `UnixAoutHeader.markup(Program, Address)`. Takes `&mut dyn Program` rather than Java's
+    /// `Program`, because the real body reaches `program.getListing()` to create data, and this
+    /// crate's [`Program::get_listing`] requires a mutable borrow.
+    fn markup(
+        &self,
+        program: &mut dyn ListingProgram,
+        header_address: &Address,
+    ) -> std::io::Result<()>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.unixaout.UnixAoutStringTable`.
+pub trait UnixAoutStringTable {
+    /// `UnixAoutStringTable.readString(long)`; `None` stands in for Java's `null` return.
+    fn read_string(&self, string_offset: u64) -> Option<String>;
+
+    /// `UnixAoutStringTable.markup(Program, MemoryBlock)`. See [`UnixAoutHeader::markup`] for why
+    /// `program` is `&mut`.
+    fn markup(
+        &self,
+        program: &mut dyn ListingProgram,
+        block: &dyn MemoryBlock,
+    ) -> std::io::Result<()>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.unixaout.UnixAoutSymbolTable`.
+pub trait UnixAoutSymbolTable {
+    /// `UnixAoutSymbolTable.iterator()` (the class implements `Iterable<UnixAoutSymbol>`).
+    fn iterator(&self) -> Box<dyn Iterator<Item = &UnixAoutSymbol> + '_>;
+
+    /// `UnixAoutSymbolTable.get(int)`. Java indexes a `List` and throws on an out-of-range index;
+    /// the loader only ever calls this after a `symbolNum < size()` guard, so `None` stands in.
+    fn get(&self, symbol_num: usize) -> Option<&UnixAoutSymbol>;
+
+    /// `UnixAoutSymbolTable.size()` -- the number of entries, not a byte count.
+    fn size(&self) -> u64;
+
+    /// `UnixAoutSymbolTable.markup(Program, MemoryBlock)`. See [`UnixAoutHeader::markup`] for why
+    /// `program` is `&mut`.
+    fn markup(
+        &self,
+        program: &mut dyn ListingProgram,
+        block: &dyn MemoryBlock,
+    ) -> std::io::Result<()>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.unixaout.UnixAoutRelocation`, a concrete Java class
+/// whose fields are all public and read directly by
+/// [`UnixAoutProgramLoader::apply_relocations`](crate::app::util::opinion::unix_aout_program_loader::UnixAoutProgramLoader).
+/// Modeled as a struct (not a trait) to match that shape; the bit-field-decoding constructor
+/// belongs to that class's own port and is not reproduced here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct UnixAoutRelocation {
+    pub address: u64,
+    pub symbol_num: u32,
+    pub flags: u8,
+    pub pc_relative_addressing: bool,
+    pub pointer_length: u8,
+    pub r#extern: bool,
+    pub base_relative: bool,
+    pub jmp_table: bool,
+    pub relative: bool,
+    pub copy: bool,
+}
+
+impl UnixAoutRelocation {
+    /// `UnixAoutRelocation.getSymbolName(UnixAoutSymbolTable)`. Implemented rather than stubbed
+    /// because the body is entirely made of members that already exist here, and the loader's
+    /// relocation-table rows carry its result.
+    pub fn get_symbol_name(&self, symtab: Option<&dyn UnixAoutSymbolTable>) -> Option<String> {
+        if self.r#extern {
+            let symtab = symtab?;
+            if u64::from(self.symbol_num) < symtab.size() {
+                return symtab.get(self.symbol_num as usize)?.name.clone();
+            }
+            return None;
+        }
+
+        match self.symbol_num {
+            4 => Some(DOT_TEXT.to_string()),
+            6 => Some(DOT_DATA.to_string()),
+            8 => Some(DOT_BSS.to_string()),
+            _ => None,
+        }
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.unixaout.UnixAoutRelocationTable`.
+pub trait UnixAoutRelocationTable {
+    /// `UnixAoutRelocationTable.iterator()` (the class implements `Iterable<UnixAoutRelocation>`).
+    fn iterator(&self) -> Box<dyn Iterator<Item = &UnixAoutRelocation> + '_>;
+
+    /// `UnixAoutRelocationTable.markup(Program, MemoryBlock)`. See [`UnixAoutHeader::markup`] for
+    /// why `program` is `&mut`.
+    fn markup(
+        &self,
+        program: &mut dyn ListingProgram,
+        block: &dyn MemoryBlock,
+    ) -> std::io::Result<()>;
+}
+
+/// Constructors for the a.out file tables, standing in for the Java classes' own constructors
+/// (`UnixAoutProgramLoader.buildTables` is the only caller). Each reads its table out of the
+/// binary; that parsing belongs to those classes' ports, so these are not implemented yet.
+pub mod unix_aout_tables {
+    use super::{
+        GBinaryReader, UnixAoutRelocationTable, UnixAoutStringTable, UnixAoutSymbolTable,
+    };
+    use crate::app::seam_stubs::MessageLog;
+
+    /// `new UnixAoutStringTable(BinaryReader, long fileOffset, long fileSize)`.
+    pub fn new_string_table(
+        reader: GBinaryReader,
+        file_offset: i64,
+        file_size: i64,
+    ) -> std::io::Result<Box<dyn UnixAoutStringTable>> {
+        let _ = (reader, file_offset, file_size);
+        unimplemented!("unix_aout_tables::new_string_table placeholder not overridden")
+    }
+
+    /// `new UnixAoutSymbolTable(BinaryReader, long fileOffset, long fileSize, UnixAoutStringTable,
+    /// MessageLog)`.
+    pub fn new_symbol_table(
+        reader: GBinaryReader,
+        file_offset: i64,
+        file_size: i64,
+        strtab: Option<&dyn UnixAoutStringTable>,
+        log: &dyn MessageLog,
+    ) -> std::io::Result<Box<dyn UnixAoutSymbolTable>> {
+        let _ = (reader, file_offset, file_size, strtab, log);
+        unimplemented!("unix_aout_tables::new_symbol_table placeholder not overridden")
+    }
+
+    /// `new UnixAoutRelocationTable(BinaryReader, long fileOffset, long fileSize,
+    /// UnixAoutSymbolTable)`.
+    pub fn new_relocation_table(
+        reader: GBinaryReader,
+        file_offset: i64,
+        file_size: i64,
+        symtab: Option<&dyn UnixAoutSymbolTable>,
+    ) -> std::io::Result<Box<dyn UnixAoutRelocationTable>> {
+        let _ = (reader, file_offset, file_size, symtab);
+        unimplemented!("unix_aout_tables::new_relocation_table placeholder not overridden")
     }
 }
 
