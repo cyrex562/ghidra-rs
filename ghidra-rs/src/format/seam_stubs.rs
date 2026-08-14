@@ -2737,3 +2737,147 @@ pub mod unix_aout_tables {
     }
 }
 
+/// Which concrete `attribute_info` subclass
+/// [`AttributeFactory::get`](crate::format::javaclass::attributes::attribute_factory::get) would
+/// have constructed. Stands in for the ~25 still-unported concrete Java classes
+/// (`AnnotationDefaultAttribute`, `BootstrapMethodsAttribute`, `CodeAttribute`,
+/// `ConstantValueAttribute`, `DeprecatedAttribute`, `EnclosingMethodAttribute`,
+/// `ExceptionsAttribute`, `InnerClassesAttribute`, `LineNumberTableAttribute`,
+/// `LocalVariableTableAttribute`, `LocalVariableTypeTableAttribute`, `MethodParametersAttribute`,
+/// `ModuleAttribute`, `ModuleMainClassAttribute`, `ModulePackagesAttribute`, `NestHostAttribute`,
+/// `NestMembersAttribute`, `RuntimeInvisibleAnnotationsAttribute`,
+/// `RuntimeParameterAnnotationsAttribute` (both parameter-annotation variants),
+/// `RuntimeVisibleAnnotationsAttribute`, `SignatureAttribute`, `SourceDebugExtensionAttribute`,
+/// `SourceFileAttribute`, `StackMapTableAttribute`, `SyntheticAttribute`, and
+/// `UnsupportedAttributeInfo`) that `AttributeFactory` dispatches to by attribute name. None of
+/// their attribute-specific fields are needed by `AttributeFactory` itself, so only the
+/// discriminant is modeled here; each variant is expected to be replaced by the real ported type
+/// once that Java class is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttributeInfoKind {
+    AnnotationDefault,
+    BootstrapMethods,
+    Code,
+    ConstantValue,
+    Deprecated,
+    EnclosingMethod,
+    Exceptions,
+    InnerClasses,
+    LineNumberTable,
+    LocalVariableTable,
+    LocalVariableTypeTable,
+    MethodParameters,
+    Module,
+    ModuleMainClass,
+    ModulePackages,
+    NestHost,
+    NestMembers,
+    RuntimeInvisibleAnnotations,
+    RuntimeInvisibleParameterAnnotations,
+    RuntimeVisibleAnnotations,
+    RuntimeVisibleParameterAnnotations,
+    Signature,
+    SourceDebugExtension,
+    SourceFile,
+    StackMapTable,
+    Synthetic,
+    Unsupported,
+}
+
+/// Placeholder for `ghidra.javaclass.format.attributes.AbstractAttributeInfo`, the common base
+/// every JVM class file `attribute_info` structure extends, referenced by
+/// [`AttributeFactory::get`](crate::format::javaclass::attributes::attribute_factory::get) as its
+/// return type before any of the ~25 concrete subclasses are ported. `AbstractAttributeInfo` is a
+/// concrete Java class (not an interface), so it is modeled here as a concrete struct rather than
+/// a trait object. Models only the common 6-byte `attribute_info` header
+/// (`attribute_name_index` + `attribute_length`) that every subclass constructor reads via
+/// `super(reader)`, tagged with [`AttributeInfoKind`] to record which subclass would have been
+/// constructed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AbstractAttributeInfo {
+    offset: u64,
+    attribute_name_index: u32,
+    attribute_length: i32,
+    kind: AttributeInfoKind,
+}
+
+impl AbstractAttributeInfo {
+    /// Reads the common `attribute_info` header (`u2 attribute_name_index; u4 attribute_length;`)
+    /// starting at the reader's current position, mirroring
+    /// `AbstractAttributeInfo(BinaryReader)`. Since no concrete subclass is ported yet to parse
+    /// the attribute-specific `info[attribute_length]` payload that follows, this generic stub
+    /// skips over it directly so the reader ends up correctly positioned at the start of the next
+    /// attribute, matching where a real subclass constructor would have left it.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        kind: AttributeInfoKind,
+    ) -> std::io::Result<Self> {
+        let offset = reader.get_pointer_index();
+        let attribute_name_index = reader.read_next_unsigned_short()?;
+        let attribute_length = reader.read_next_int()?;
+
+        if attribute_length > 0 {
+            let next = reader.get_pointer_index() + attribute_length as u64;
+            reader.set_pointer_index(next);
+        }
+
+        Ok(AbstractAttributeInfo { offset, attribute_name_index, attribute_length, kind })
+    }
+
+    /// `AbstractAttributeInfo.getOffset()`.
+    pub fn get_offset(&self) -> u64 {
+        self.offset
+    }
+
+    /// `AbstractAttributeInfo.getAttributeNameIndex()` (already masked to an unsigned 16-bit
+    /// value, matching the Java getter's `& 0xffff`).
+    pub fn get_attribute_name_index(&self) -> u32 {
+        self.attribute_name_index
+    }
+
+    /// `AbstractAttributeInfo.getAttributeLength()`.
+    pub fn get_attribute_length(&self) -> i32 {
+        self.attribute_length
+    }
+
+    /// Not present on the Java base class; records which concrete subclass this placeholder
+    /// stands in for. See [`AttributeInfoKind`].
+    pub fn kind(&self) -> AttributeInfoKind {
+        self.kind
+    }
+}
+
+/// Placeholder for `ghidra.javaclass.format.constantpool.ConstantPoolUtf8Info`, referenced by
+/// [`AttributeFactory::get`](crate::format::javaclass::attributes::attribute_factory::get) to
+/// resolve an attribute's name. `ConstantPoolUtf8Info` is a concrete Java class extending the
+/// already-ported
+/// [`AbstractConstantPoolInfoJava`](crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava)
+/// (not an interface), so it is modeled here as a concrete struct. `AbstractConstantPoolInfoJava`
+/// was ported without its subclasses' data (only `offset`/`tag`), so this stub re-derives the
+/// UTF-8 string on demand straight from the class file bytes at the entry's offset (`u1 tag; u2
+/// length; u1 bytes[length];`) rather than caching it at constant-pool-build time like the real
+/// class does.
+pub struct ConstantPoolUtf8Info {
+    string: String,
+}
+
+impl ConstantPoolUtf8Info {
+    /// Reads the `length` + `bytes` fields of a `CONSTANT_Utf8_info` entry directly from
+    /// `reader`, given the already-parsed `entry` (whose `offset` points at the entry's `tag`
+    /// byte). Caller must have already verified `entry.get_tag() ==
+    /// constant_pool_tags_java::CONSTANT_UTF8`.
+    pub fn from_entry(
+        reader: &dyn crate::app::util::bin::binary_reader::BinaryReader,
+        entry: &crate::format::javaclass::constantpool::abstract_constant_pool_info_java::AbstractConstantPoolInfoJava,
+    ) -> std::io::Result<Self> {
+        let length = reader.read_unsigned_short(entry.get_offset() + 1)? as usize;
+        let string = reader.read_utf8_string_fixed(entry.get_offset() + 3, length)?;
+        Ok(ConstantPoolUtf8Info { string })
+    }
+
+    /// `ConstantPoolUtf8Info.getString()`.
+    pub fn get_string(&self) -> &str {
+        &self.string
+    }
+}
+
