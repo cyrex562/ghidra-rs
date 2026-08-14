@@ -1525,3 +1525,42 @@ pub trait CoffFileHeader: Send + Sync {
     fn is_valid(&self) -> std::io::Result<bool>;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.CoffRelocation`, referenced by
+/// [`CoffRelocationHandler`](crate::format::coff::relocation::coff_relocation_handler) before the real class is ported.
+pub trait CoffRelocation: Send + Sync {
+    fn sizeof(&self) -> i32;
+    fn get_address(&self) -> i64;
+    fn get_symbol_index(&self) -> i64;
+    fn get_extended_address(&self) -> i16;
+    fn get_type(&self) -> i16;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.relocation.CoffRelocationContext`, referenced by
+/// [`CoffRelocationHandler`](crate::format::coff::relocation::coff_relocation_handler) before the real class is ported.
+pub trait CoffRelocationContext: Send + Sync {
+    fn reset_context(&self, coff_section: &dyn CoffSectionHeader);
+    fn get_program(&self) -> Box<dyn Program>;
+    fn get_section(&self) -> Box<dyn CoffSectionHeader>;
+    fn get_symbol(&self, relocation: &dyn CoffRelocation) -> std::io::Result<Box<dyn Symbol>>;
+    fn get_symbol_address(&self, relocation: &dyn CoffRelocation) -> std::io::Result<crate::program::model::address::Address>;
+    fn compute_context_value_if_absent(&self, key: &str, mapping_function: &dyn Function) -> Box<dyn std::any::Any>;
+    fn put_context_value(&self, key: &str, value: &dyn std::any::Any);
+    fn get_context_value(&self, key: &str) -> Box<dyn std::any::Any>;
+}
+
+/// Placeholder for `ghidra.program.model.listing.Program`, referenced by
+/// [`CoffRelocationContext`] before the real class is ported.
+pub trait Program: Send + Sync {
+}
+
+/// Placeholder for `ghidra.program.model.symbol.Symbol`, referenced by
+/// [`CoffRelocationContext`] before the real class is ported.
+pub trait Symbol: Send + Sync {
+}
+
+/// Placeholder for `java.util.function.Function`, referenced by
+/// [`CoffRelocationContext`] before the real class is ported.
+pub trait Function: Send + Sync {
+}
