@@ -14,17 +14,17 @@
 //!
 //! Java's constructor takes a `LoaderInfoHeader` back-reference to locate the start of this
 //! section's relocation instructions, and constructs each relocation via `RelocationFactory`.
-//! Neither `LoaderInfoHeader` nor `RelocationFactory` are ported yet -- `LoaderInfoHeader` in
-//! particular owns a `getRelocations()` that returns a list of this very type, the cycle edge
-//! that put this type up for porting now -- so both are held as
-//! [`seam_stubs::LoaderInfoHeader`](crate::format::seam_stubs::LoaderInfoHeader) /
-//! [`seam_stubs::RelocationFactory`](crate::format::seam_stubs::RelocationFactory) placeholders.
+//! `LoaderInfoHeader` is now ported (see
+//! [`loader_info_header::LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader));
+//! `RelocationFactory` is not, so it is held as a
+//! [`seam_stubs::RelocationFactory`](crate::format::seam_stubs::RelocationFactory) placeholder.
 
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
-use crate::format::seam_stubs::{LoaderInfoHeader, RelocationFactory, StructConverterUtilDataType};
+use crate::format::pef::loader_info_header::LoaderInfoHeader;
+use crate::format::seam_stubs::{RelocationFactory, StructConverterUtilDataType};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::reloc::relocation::Relocation;
 
@@ -43,15 +43,15 @@ impl LoaderRelocationHeader {
     /// Reads a [`LoaderRelocationHeader`] and its relocation stream from `reader`.
     ///
     /// Port of `LoaderRelocationHeader(BinaryReader, LoaderInfoHeader)`.
-    pub fn new(reader: &mut dyn BinaryReader, loader: &dyn LoaderInfoHeader) -> io::Result<Self> {
+    pub fn new(reader: &mut dyn BinaryReader, loader: &LoaderInfoHeader) -> io::Result<Self> {
         let section_index = reader.read_next_short()?;
         let reserved_a = reader.read_next_short()?;
         let reloc_count = reader.read_next_int()?;
         let first_reloc_offset = reader.read_next_int()?;
 
         let old_index = reader.get_pointer_index();
-        let index_to_relocations = (loader.get_section().get_container_offset()
-            + loader.get_reloc_instr_offset()) as u64;
+        let index_to_relocations = (loader.section().get_container_offset()
+            + loader.reloc_instr_offset()) as u64;
         reader.set_pointer_index(index_to_relocations);
         let end_index = index_to_relocations + (reloc_count as u64) * 2;
 
@@ -204,18 +204,17 @@ mod tests {
         }
     }
 
-    struct MockLoaderInfoHeader {
-        container_offset: i32,
-        reloc_instr_offset: i32,
-    }
-
-    impl LoaderInfoHeader for MockLoaderInfoHeader {
-        fn get_section(&self) -> Box<dyn SectionHeader> {
-            Box::new(MockSectionHeader { container_offset: self.container_offset })
-        }
-        fn get_reloc_instr_offset(&self) -> i32 {
-            self.reloc_instr_offset
-        }
+    /// Builds a real [`LoaderInfoHeader`] fixture with `containerOffset` and `relocInstrOffset`
+    /// both zero and every other field/table empty (the only two fields
+    /// [`LoaderRelocationHeader::new`] reads off of it), via its own independent reader/buffer
+    /// so it doesn't interfere with the surrounding test's `reader`/`bytes`.
+    fn zero_loader_info_header() -> LoaderInfoHeader {
+        // 14 header fields x 4 bytes each, all zero: relocSectionCount=0 (no nested
+        // LoaderRelocationHeaders), exportHashTablePower=0 (one all-zero export hash slot),
+        // exportedSymbolCount=0.
+        let mut reader = MockReader::new(vec![0u8; 56]);
+        let section = Box::new(MockSectionHeader { container_offset: 0 });
+        LoaderInfoHeader::new(&mut reader, section).unwrap()
     }
 
     #[test]
@@ -223,7 +222,7 @@ mod tests {
         // sectionIndex=3, reservedA=0, relocCount=0, firstRelocOffset=0x10.
         let bytes = vec![0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10];
         let mut reader = MockReader::new(bytes);
-        let loader = MockLoaderInfoHeader { container_offset: 0, reloc_instr_offset: 0 };
+        let loader = zero_loader_info_header();
 
         let header = LoaderRelocationHeader::new(&mut reader, &loader).unwrap();
 
@@ -238,7 +237,7 @@ mod tests {
     fn restores_pointer_index_after_reading_relocations() {
         let bytes = vec![0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
         let mut reader = MockReader::new(bytes);
-        let loader = MockLoaderInfoHeader { container_offset: 0, reloc_instr_offset: 0 };
+        let loader = zero_loader_info_header();
 
         LoaderRelocationHeader::new(&mut reader, &loader).unwrap();
 
@@ -251,7 +250,7 @@ mod tests {
     fn to_data_type_reports_fixed_header_length() {
         let bytes = vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
         let mut reader = MockReader::new(bytes);
-        let loader = MockLoaderInfoHeader { container_offset: 0, reloc_instr_offset: 0 };
+        let loader = zero_loader_info_header();
         let header = LoaderRelocationHeader::new(&mut reader, &loader).unwrap();
 
         let dt = header.to_data_type().unwrap();

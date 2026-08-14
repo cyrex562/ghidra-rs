@@ -2240,30 +2240,221 @@ impl ClassSearcher {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pef.SectionHeader`, referenced by
-/// [`LoaderInfoHeader`] before the real class is ported. Only the accessor
-/// [`LoaderRelocationHeader`](crate::format::pef::loader_relocation_header::LoaderRelocationHeader)'s
-/// constructor needs: the byte offset (within the whole PEF container) of the section this
-/// header describes.
+/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) and
+/// [`LoaderRelocationHeader`](crate::format::pef::loader_relocation_header::LoaderRelocationHeader)
+/// before the real class is ported. Only the accessor those constructors need: the byte offset
+/// (within the whole PEF container) of the section this header describes.
 pub trait SectionHeader: Send + Sync {
     /// `SectionHeader.getContainerOffset()`.
     fn get_container_offset(&self) -> i32;
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.pef.LoaderInfoHeader`, referenced by
-/// [`LoaderRelocationHeader`](crate::format::pef::loader_relocation_header::LoaderRelocationHeader)
-/// before the real class is ported. `LoaderInfoHeader` is a concrete Java class (not an
-/// interface), so it is modeled here as a trait object for now. Only the two accessors
-/// `LoaderRelocationHeader`'s constructor reads (to locate the start of the relocation
-/// instruction stream) are included; the full class also owns imported-library/symbol/export
-/// tables and `getRelocations()` (which itself returns a list of
-/// `LoaderRelocationHeader`s -- the cycle edge this stub exists to break), left for the real port.
-pub trait LoaderInfoHeader: Send + Sync {
-    /// `LoaderInfoHeader.getSection()` -- the section this loader info header belongs to.
-    fn get_section(&self) -> Box<dyn SectionHeader>;
+/// Placeholder for `ghidra.app.util.bin.format.pef.ImportedLibrary`, referenced by
+/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
+/// class is ported. Parses the fixed 24-byte header fields (matching `ImportedLibrary`'s
+/// sequential reads) and exposes the two accessors `LoaderInfoHeader::find_library` needs. The
+/// library name (read via an absolute offset into the loader string table, which does not affect
+/// the sequential reader position) is left for the real port.
+pub struct ImportedLibrary {
+    name_offset: i32,
+    old_imp_version: i32,
+    current_version: i32,
+    imported_symbol_count: i32,
+    first_imported_symbol: i32,
+    options: i8,
+    reserved_a: i8,
+    reserved_b: i16,
+}
 
-    /// `LoaderInfoHeader.getRelocInstrOffset()` -- byte offset (relative to the start of the
-    /// relocations area) of the first relocation instruction.
-    fn get_reloc_instr_offset(&self) -> i32;
+impl ImportedLibrary {
+    /// Port of `ImportedLibrary(BinaryReader, LoaderInfoHeader)`, minus the name lookup.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        _loader: &crate::format::pef::loader_info_header::LoaderInfoHeader,
+    ) -> std::io::Result<Self> {
+        Ok(ImportedLibrary {
+            name_offset: reader.read_next_int()?,
+            old_imp_version: reader.read_next_int()?,
+            current_version: reader.read_next_int()?,
+            imported_symbol_count: reader.read_next_int()?,
+            first_imported_symbol: reader.read_next_int()?,
+            options: reader.read_next_byte()? as i8,
+            reserved_a: reader.read_next_byte()? as i8,
+            reserved_b: reader.read_next_short()?,
+        })
+    }
+
+    /// `ImportedLibrary.getNameOffset()`.
+    pub fn name_offset(&self) -> i32 {
+        self.name_offset
+    }
+    /// `ImportedLibrary.getOldImpVersion()`.
+    pub fn old_imp_version(&self) -> i32 {
+        self.old_imp_version
+    }
+    /// `ImportedLibrary.getCurrentVersion()`.
+    pub fn current_version(&self) -> i32 {
+        self.current_version
+    }
+    /// `ImportedLibrary.getImportedSymbolCount()`.
+    pub fn imported_symbol_count(&self) -> i32 {
+        self.imported_symbol_count
+    }
+    /// `ImportedLibrary.getFirstImportedSymbol()`.
+    pub fn first_imported_symbol(&self) -> i32 {
+        self.first_imported_symbol
+    }
+    /// `ImportedLibrary.getOptions()`.
+    pub fn options(&self) -> i8 {
+        self.options
+    }
+    /// `ImportedLibrary.getReservedA()`.
+    pub fn reserved_a(&self) -> i8 {
+        self.reserved_a
+    }
+    /// `ImportedLibrary.getReservedB()`.
+    pub fn reserved_b(&self) -> i16 {
+        self.reserved_b
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pef.ImportedSymbol`, referenced by
+/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
+/// class is ported. Parses the packed 4-byte symbol-class/name-offset word; the symbol name
+/// (read via an absolute offset into the loader string table) is left for the real port.
+pub struct ImportedSymbol {
+    symbol_class: i32,
+    symbol_name_offset: i32,
+}
+
+impl ImportedSymbol {
+    /// Port of `ImportedSymbol(BinaryReader, LoaderInfoHeader)`, minus the name lookup.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        _loader: &crate::format::pef::loader_info_header::LoaderInfoHeader,
+    ) -> std::io::Result<Self> {
+        let value = reader.read_next_int()?;
+        Ok(ImportedSymbol {
+            symbol_class: ((value as u32) >> 24) as i32,
+            symbol_name_offset: value & 0x00ff_ffff,
+        })
+    }
+
+    /// `ImportedSymbol.getSymbolClass()`'s underlying raw class byte (before masking to the low
+    /// nibble that `SymbolClass.get` expects).
+    pub fn symbol_class(&self) -> i32 {
+        self.symbol_class
+    }
+    /// `ImportedSymbol.getSymbolNameOffset()`.
+    pub fn symbol_name_offset(&self) -> i32 {
+        self.symbol_name_offset
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pef.ExportedSymbolHashSlot`, referenced by
+/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
+/// class is ported.
+pub struct ExportedSymbolHashSlot {
+    symbol_count: i32,
+    index_of_first_export_key: i32,
+}
+
+impl ExportedSymbolHashSlot {
+    /// Port of `ExportedSymbolHashSlot(BinaryReader)`.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let count_and_start = reader.read_next_int()?;
+        Ok(ExportedSymbolHashSlot {
+            symbol_count: count_and_start >> 18,
+            index_of_first_export_key: count_and_start & 0x12,
+        })
+    }
+
+    /// `ExportedSymbolHashSlot.getSymbolCount()`.
+    pub fn symbol_count(&self) -> i32 {
+        self.symbol_count
+    }
+    /// `ExportedSymbolHashSlot.getIndexOfFirstExportKey()`.
+    pub fn index_of_first_export_key(&self) -> i32 {
+        self.index_of_first_export_key
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pef.ExportedSymbolKey`, referenced by
+/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
+/// class is ported.
+pub struct ExportedSymbolKey {
+    full_hash_word: i32,
+    name_length: i16,
+    hash_value: i16,
+}
+
+impl ExportedSymbolKey {
+    /// Port of `ExportedSymbolKey(BinaryReader)`.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let value = reader.read_next_int()?;
+        Ok(ExportedSymbolKey {
+            full_hash_word: value,
+            name_length: (value >> 16) as i16,
+            hash_value: (value & 0xffff) as i16,
+        })
+    }
+
+    /// `ExportedSymbolKey.getFullHashWord()`.
+    pub fn full_hash_word(&self) -> i32 {
+        self.full_hash_word
+    }
+    /// `ExportedSymbolKey.getNameLength()`.
+    pub fn name_length(&self) -> i16 {
+        self.name_length
+    }
+    /// `ExportedSymbolKey.getHashValue()`.
+    pub fn hash_value(&self) -> i16 {
+        self.hash_value
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pef.ExportedSymbol`, referenced by
+/// [`LoaderInfoHeader`](crate::format::pef::loader_info_header::LoaderInfoHeader) before the real
+/// class is ported. Parses the fixed 10-byte header fields; the symbol name (read via an
+/// absolute offset into the loader string table, using `key.getNameLength()` as the read length)
+/// is left for the real port.
+pub struct ExportedSymbol {
+    class_and_name: i32,
+    symbol_value: i32,
+    section_index: i16,
+}
+
+impl ExportedSymbol {
+    /// Port of `ExportedSymbol(BinaryReader, LoaderInfoHeader, ExportedSymbolKey)`, minus the
+    /// name lookup.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        _loader: &crate::format::pef::loader_info_header::LoaderInfoHeader,
+        _key: &ExportedSymbolKey,
+    ) -> std::io::Result<Self> {
+        Ok(ExportedSymbol {
+            class_and_name: reader.read_next_int()?,
+            symbol_value: reader.read_next_int()?,
+            section_index: reader.read_next_short()?,
+        })
+    }
+
+    /// `ExportedSymbol.getNameOffset()`.
+    pub fn name_offset(&self) -> i32 {
+        self.class_and_name & 0x00ff_ffff
+    }
+    /// `ExportedSymbol.getSymbolValue()`.
+    pub fn symbol_value(&self) -> i32 {
+        self.symbol_value
+    }
+    /// `ExportedSymbol.getSectionIndex()`.
+    pub fn section_index(&self) -> i16 {
+        self.section_index
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pef.RelocationFactory`, referenced by
