@@ -30,7 +30,7 @@ pub mod version;
 pub use application::{Application, OSFileNotFoundError};
 pub use application_identifier::ApplicationIdentifier;
 pub use application_properties::ApplicationProperties;
-pub use cmd::Command;
+pub use cmd::{BinaryAnalysisCommand, Command};
 pub use data::{
     CheckinHandler, DomainObjectAdapterDB, DomainObjectDBChangeSet, DomainObjectFileListener,
     GhidraToolState, OpenMode,
