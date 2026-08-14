@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5DigestChecksumAlgorithm;
 use crate::program::model::data::data_type::DataType;
@@ -18,7 +18,7 @@ use crate::filesystem::gfilesystem::g_file::GFile;
 use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
-use crate::filesystem::seam_stubs::FileAttributesLike;
+use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
 use crate::util::task::TaskMonitor;
 
 /// Placeholder for the unported Java type `StructConverterUtil`, referenced by `FieldAnnotationsItem`.
@@ -605,5 +605,93 @@ where
     pub fn clear(&mut self) {
         self.entries.clear();
         self.by_file_index.clear();
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.file.formats.sevenzip.SevenZipFileSystemFactory`,
+/// referenced by `ZipFileSystemFactory`.
+///
+/// Concrete stub: Java class, not interface. Only the static native-library check THIS type
+/// needs is included; the real factory's own `create`/probe machinery is ported separately.
+pub struct SevenZipFileSystemFactory;
+
+impl SevenZipFileSystemFactory {
+    /// Mirrors `SevenZipFileSystemFactory.initNativeLibraries()`. The 7-Zip JNI bindings have
+    /// no Rust port, so this conservatively reports "not available", which routes
+    /// `ZipFileSystemFactory::create` to the built-in zip fallback until a real binding lands.
+    pub fn init_native_libraries() -> bool {
+        false
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.file.formats.zip.ZipFileSystem`, referenced
+/// by `ZipFileSystemFactory`.
+///
+/// Concrete stub: Java class, not interface (a thin `SevenZipFileSystem` subclass that changes
+/// only its `@FileSystemInfo` flavor to "zip"/`PRIORITY_HIGH`). Only the members
+/// `ZipFileSystemFactory::create` needs are included here; the real archive-mounting behaviour
+/// belongs to the already-ported `SevenZipFileSystemBase`, whose module doc already anticipates
+/// this type (see `crate::file::formats::sevenzip::seven_zip_file_system`).
+pub struct ZipFileSystem;
+
+impl GFileSystemLike for ZipFileSystem {}
+
+impl ZipFileSystem {
+    /// Mirrors `ZipFileSystem(FSRLRoot, FileSystemService)`. The real port stores both
+    /// (as `SevenZipFileSystemBase` already does); this stub has nowhere to put them yet.
+    pub fn new(_fsrl: &dyn FsrlRootLike, _fs_service: &dyn FileSystemServiceLike) -> Self {
+        ZipFileSystem
+    }
+
+    /// Mirrors the inherited `SevenZipFileSystemBase::mount`. Not yet implemented: wiring this
+    /// up requires an opened 7-Zip archive (see the `InArchive` seam in `seven_zip_file_system`),
+    /// which this stub does not construct.
+    pub fn mount(
+        &mut self,
+        _byte_provider: Box<dyn ByteProvider>,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<()> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "ZipFileSystem.mount not yet ported"))
+    }
+
+    /// Mirrors the inherited `AbstractSinglePayloadFileSystem::close`.
+    pub fn close(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.file.formats.zip.ZipFileSystemBuiltin`,
+/// referenced by `ZipFileSystemFactory`.
+///
+/// Concrete stub: Java class, not interface. Only the members `ZipFileSystemFactory::create`
+/// needs are included; the real port additionally implements listing, byte-provider access and
+/// file attributes via `java.util.zip.ZipFile`.
+pub struct ZipFileSystemBuiltin;
+
+impl GFileSystemLike for ZipFileSystemBuiltin {}
+
+impl ZipFileSystemBuiltin {
+    /// Mirrors `ZipFileSystemBuiltin.TEMPFILE_PREFIX`.
+    pub const TEMPFILE_PREFIX: &'static str = "ghidra_tmp_zipfile";
+
+    /// Mirrors `ZipFileSystemBuiltin(FSRLRoot, FileSystemService)`.
+    pub fn new(_fsrl: &dyn FsrlRootLike, _fs_service: &dyn FileSystemServiceLike) -> Self {
+        ZipFileSystemBuiltin
+    }
+
+    /// Mirrors `mount(File, boolean, TaskMonitor)`. Not yet implemented: reading zip entries
+    /// requires an in-crate zip-archive reader, which does not exist yet.
+    pub fn mount(
+        &mut self,
+        _f: &Path,
+        _delete_file_when_done: bool,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<()> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "ZipFileSystemBuiltin.mount not yet ported"))
+    }
+
+    /// Mirrors `close()`.
+    pub fn close(&mut self) -> io::Result<()> {
+        Ok(())
     }
 }

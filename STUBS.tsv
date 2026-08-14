@@ -823,3 +823,6 @@ ts	stub_class	referenced_by
 2026-08-14T07:39:12.410000+00:00	FileCacheEntry	SevenZipFileSystem
 2026-08-14T07:39:12.420000+00:00	FileCacheEntryBuilder	SevenZipFileSystem
 2026-08-14T07:39:12.430000+00:00	FileSystemIndexHelper	SevenZipFileSystem
+2026-08-14T07:54:18.276608+00:00	SevenZipFileSystemFactory	ZipFileSystemFactory
+2026-08-14T07:54:18.276673+00:00	ZipFileSystem	ZipFileSystemFactory
+2026-08-14T07:54:18.276931+00:00	ZipFileSystemBuiltin	ZipFileSystemFactory
