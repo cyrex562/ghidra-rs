@@ -3,13 +3,22 @@
 //! interface(s) that currently reference it, and is expected to be replaced once the Java class
 //! is ported. See `STUBS.tsv` for provenance.
 
+use std::collections::HashMap;
 use std::io;
 use std::path::PathBuf;
 
+use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5DigestChecksumAlgorithm;
 use crate::program::model::data::data_type::DataType;
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
+use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
 use crate::filesystem::gfilesystem::fsrl::Fsrl;
+use crate::filesystem::gfilesystem::g_file::GFile;
+use crate::filesystem::gfilesystem::g_file_impl::{
+    FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
+};
+use crate::filesystem::seam_stubs::FileAttributesLike;
 use crate::util::task::TaskMonitor;
 
 /// Placeholder for the unported Java type `StructConverterUtil`, referenced by `FieldAnnotationsItem`.
@@ -263,5 +272,338 @@ impl ByteProvider for ByteArrayProvider {
 
     fn get_file(&self) -> Option<PathBuf> {
         None
+    }
+}
+
+/// A value carried by a [`FileAttributes`] entry.
+///
+/// Java's `FileAttributes.add` takes an `Object` whose class is expected to match the
+/// attribute type's `getValueType()`; this enum names the small closed set of value classes
+/// actually used (`String`, `FileType`, `Boolean`, `Long`, and `Date` as epoch millis).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FileAttributeValue {
+    Str(String),
+    FileType(FileType),
+    Boolean(bool),
+    Long(i64),
+    /// A `java.util.Date`, as epoch milliseconds.
+    Date(i64),
+}
+
+impl From<&str> for FileAttributeValue {
+    fn from(s: &str) -> Self {
+        FileAttributeValue::Str(s.to_string())
+    }
+}
+
+impl From<String> for FileAttributeValue {
+    fn from(s: String) -> Self {
+        FileAttributeValue::Str(s)
+    }
+}
+
+impl From<FileType> for FileAttributeValue {
+    fn from(t: FileType) -> Self {
+        FileAttributeValue::FileType(t)
+    }
+}
+
+impl From<bool> for FileAttributeValue {
+    fn from(b: bool) -> Self {
+        FileAttributeValue::Boolean(b)
+    }
+}
+
+impl From<i64> for FileAttributeValue {
+    fn from(v: i64) -> Self {
+        FileAttributeValue::Long(v)
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.formats.gfilesystem.fileinfo.FileAttributes`,
+/// referenced by `SevenZipFileSystem::get_file_attributes`.
+///
+/// Concrete stub: Java class, not interface. Carries the ordered `(type, display name, value)`
+/// triples that `add()` accumulates plus the lookups this type needs. The existing
+/// [`FileAttributesLike`] seam only exposes the single `FILE_TYPE_ATTR` lookup that
+/// `GFileSystem`'s default `getFileType()` needs, which is too narrow for a filesystem that
+/// *populates* attributes, so this stub implements that seam rather than replacing it.
+/// Replace with the real port when available.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FileAttributes {
+    attributes: Vec<(FileAttributeType, String, FileAttributeValue)>,
+}
+
+impl FileAttributes {
+    /// Creates a new, empty instance. Mirrors `new FileAttributes()`.
+    pub fn new() -> Self {
+        FileAttributes::default()
+    }
+
+    /// Adds a typed attribute, labelled with the type's own display name.
+    ///
+    /// Mirrors `add(FileAttributeType, Object)`; as in Java, a `None` value is silently
+    /// skipped rather than stored.
+    pub fn add(&mut self, attribute_type: FileAttributeType, value: Option<FileAttributeValue>) {
+        let display_name = attribute_type.display_name().to_string();
+        self.add_with_display_name(attribute_type, display_name, value);
+    }
+
+    /// Adds a custom-named attribute. Mirrors `add(String, Object)`, which records the value
+    /// under `UNKNOWN_ATTRIBUTE` with `name` as its display label.
+    pub fn add_named(&mut self, name: &str, value: Option<FileAttributeValue>) {
+        self.add_with_display_name(
+            FileAttributeType::UnknownAttribute,
+            name.to_string(),
+            value,
+        );
+    }
+
+    /// Mirrors `add(FileAttributeType, String, Object)`.
+    pub fn add_with_display_name(
+        &mut self,
+        attribute_type: FileAttributeType,
+        display_name: String,
+        value: Option<FileAttributeValue>,
+    ) {
+        if let Some(value) = value {
+            self.attributes.push((attribute_type, display_name, value));
+        }
+    }
+
+    /// The value of the first attribute of `attribute_type`, or `None`. Mirrors `get()`.
+    pub fn get(&self, attribute_type: FileAttributeType) -> Option<&FileAttributeValue> {
+        self.attributes
+            .iter()
+            .find(|(t, _, _)| *t == attribute_type)
+            .map(|(_, _, v)| v)
+    }
+
+    /// The value of the first custom-named attribute labelled `name`, or `None`.
+    pub fn get_named(&self, name: &str) -> Option<&FileAttributeValue> {
+        self.attributes
+            .iter()
+            .find(|(t, n, _)| *t == FileAttributeType::UnknownAttribute && n == name)
+            .map(|(_, _, v)| v)
+    }
+
+    /// `true` if an attribute of `attribute_type` is present. Mirrors `contains()`.
+    pub fn contains(&self, attribute_type: FileAttributeType) -> bool {
+        self.get(attribute_type).is_some()
+    }
+
+    /// All accumulated `(type, display name, value)` triples, in insertion order.
+    /// Mirrors `getAttributes()`.
+    pub fn get_attributes(&self) -> &[(FileAttributeType, String, FileAttributeValue)] {
+        &self.attributes
+    }
+}
+
+impl FileAttributesLike for FileAttributes {
+    fn file_type_attr(&self) -> Option<FileType> {
+        match self.get(FileAttributeType::FileTypeAttr) {
+            Some(FileAttributeValue::FileType(t)) => Some(*t),
+            _ => None,
+        }
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.formats.gfilesystem.FileCache.FileCacheEntry`,
+/// referenced by `SevenZipFileSystem::get_byte_provider`.
+///
+/// Concrete stub: Java inner class, not interface. The real entry is a file on disk in the
+/// cache directory named after its MD5; this stub keeps the bytes in memory, which is enough
+/// for the three members this type needs (`getMD5`, `length`, `asByteProvider`).
+/// Replace with the real port when available.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FileCacheEntry {
+    bytes: Vec<u8>,
+    md5: String,
+}
+
+impl FileCacheEntry {
+    /// The lowercase hex MD5 of the entry's contents. Mirrors `getMD5()`.
+    pub fn get_md5(&self) -> &str {
+        &self.md5
+    }
+
+    /// The entry's size in bytes. Mirrors `length()`.
+    pub fn length(&self) -> i64 {
+        self.bytes.len() as i64
+    }
+
+    /// Exposes the entry's contents as a [`ByteProvider`]. Mirrors `asByteProvider(FSRL)`.
+    ///
+    /// The Java method tags the returned provider with the caller's `FSRL`; [`ByteArrayProvider`]
+    /// carries no FSRL (its `get_fsrl` returns `None`), so that tagging is dropped here until
+    /// the real `FileCache` lands.
+    pub fn as_byte_provider(&self) -> io::Result<Box<dyn ByteProvider>> {
+        Ok(Box::new(ByteArrayProvider::new(self.bytes.clone())))
+    }
+}
+
+/// Placeholder for the unported Java type
+/// `ghidra.formats.gfilesystem.FileCache.FileCacheEntryBuilder`, referenced by
+/// `SevenZipFileSystem`'s extract callback.
+///
+/// Concrete stub: Java inner class, not interface. Accumulates written bytes and hashes them
+/// on [`finish`](Self::finish), mirroring the real builder's streaming MD5.
+/// Replace with the real port when available.
+#[derive(Debug, Default)]
+pub struct FileCacheEntryBuilder {
+    bytes: Vec<u8>,
+}
+
+impl FileCacheEntryBuilder {
+    /// Creates a builder for a payload of roughly `size_hint` bytes (`-1` if unknown).
+    /// Mirrors `FileSystemService.createTempFile(long)`.
+    pub fn new(size_hint: i64) -> Self {
+        FileCacheEntryBuilder {
+            bytes: Vec::with_capacity(if size_hint > 0 { size_hint as usize } else { 0 }),
+        }
+    }
+
+    /// Appends `data` to the entry being built. Mirrors `write(byte[])`.
+    pub fn write(&mut self, data: &[u8]) -> io::Result<()> {
+        self.bytes.extend_from_slice(data);
+        Ok(())
+    }
+
+    /// The number of bytes written so far.
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+
+    /// `true` if nothing has been written yet.
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
+
+    /// Seals the builder into a [`FileCacheEntry`]. Mirrors `finish()`.
+    pub fn finish(self) -> io::Result<FileCacheEntry> {
+        let mut digest = MD5DigestChecksumAlgorithm::new();
+        digest.update_checksum(&self.bytes);
+        let md5 = digest
+            .checksum()
+            .map(|bytes| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>())
+            .unwrap_or_default();
+        Ok(FileCacheEntry { bytes: self.bytes, md5 })
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.formats.gfilesystem.FileSystemIndexHelper`,
+/// referenced by `SevenZipFileSystem` as its `fsIndex` field.
+///
+/// Concrete stub: Java class, not interface. Only the members THIS type needs are included --
+/// the flat index by archive item number plus per-file metadata; the real helper additionally
+/// maintains a directory tree, path lookups, symlink resolution and case-insensitive matching.
+/// Replace with the real port when available.
+pub struct FileSystemIndexHelper<FS, Fsrl, M> {
+    filesystem: FS,
+    root_dir: GFileImpl<FS, Fsrl>,
+    entries: Vec<IndexEntry<FS, Fsrl, M>>,
+    by_file_index: HashMap<i64, usize>,
+}
+
+struct IndexEntry<FS, Fsrl, M> {
+    /// The normalized path this entry was stored under; kept separately so a later
+    /// [`FileSystemIndexHelper::update_fsrl`] cannot break lookups.
+    path: String,
+    file: GFileImpl<FS, Fsrl>,
+    metadata: M,
+}
+
+impl<FS, Fsrl, M> FileSystemIndexHelper<FS, Fsrl, M>
+where
+    FS: Clone + HasFsrlRoot<Fsrl> + FsGetListing<FS, Fsrl> + 'static,
+    Fsrl: GFileFsrlLike + 'static,
+{
+    /// Creates an index rooted at `root_fsrl`. Mirrors
+    /// `FileSystemIndexHelper(GFileSystem, FSRLRoot)`.
+    pub fn new(filesystem: FS, root_fsrl: Fsrl) -> Self {
+        let root_dir = GFileImpl::from_fsrl(filesystem.clone(), None, root_fsrl, true, -1);
+        FileSystemIndexHelper {
+            filesystem,
+            root_dir,
+            entries: Vec::new(),
+            by_file_index: HashMap::new(),
+        }
+    }
+
+    /// Indexes a file at `path`, keyed by the archive's own `file_index`.
+    /// Mirrors `storeFile(String, long, boolean, long, METADATATYPE)`.
+    pub fn store_file(
+        &mut self,
+        path: &str,
+        file_index: i64,
+        is_directory: bool,
+        length: i64,
+        metadata: M,
+    ) -> &GFileImpl<FS, Fsrl> {
+        let file = GFileImpl::from_path_string(
+            self.filesystem.clone(),
+            path,
+            None,
+            is_directory,
+            length,
+        );
+        let stored_path = file.get_path().to_string();
+        self.by_file_index.insert(file_index, self.entries.len());
+        self.entries.push(IndexEntry { path: stored_path, file, metadata });
+        &self.entries[self.entries.len() - 1].file
+    }
+
+    /// Replaces the FSRL of an already-indexed file. Mirrors `updateFSRL(GFile, FSRL)`.
+    pub fn update_fsrl(&mut self, file: &GFileImpl<FS, Fsrl>, new_fsrl: Fsrl) {
+        let path = file.get_path().to_string();
+        if let Some(entry) = self.entries.iter_mut().find(|e| e.path == path) {
+            let is_directory = entry.file.is_directory();
+            let length = entry.file.get_length();
+            entry.file = GFileImpl::from_fsrl(
+                self.filesystem.clone(),
+                None,
+                new_fsrl,
+                is_directory,
+                length,
+            );
+        }
+    }
+}
+
+impl<FS, Fsrl, M> FileSystemIndexHelper<FS, Fsrl, M>
+where
+    FS: FsGetListing<FS, Fsrl>,
+{
+    /// The synthetic root directory. Mirrors `getRootDir()`.
+    pub fn get_root_dir(&self) -> &GFileImpl<FS, Fsrl> {
+        &self.root_dir
+    }
+
+    /// The file stored under archive item number `file_index`, or `None`.
+    /// Mirrors `getFileByIndex(long)`.
+    pub fn get_file_by_index(&self, file_index: i64) -> Option<&GFileImpl<FS, Fsrl>> {
+        self.by_file_index
+            .get(&file_index)
+            .map(|&i| &self.entries[i].file)
+    }
+
+    /// The metadata stored alongside `file`, or `None`. Mirrors `getMetadata(GFile)`.
+    pub fn get_metadata(&self, file: &GFileImpl<FS, Fsrl>) -> Option<&M> {
+        let path = file.get_path();
+        self.entries
+            .iter()
+            .find(|e| e.path == path)
+            .map(|e| &e.metadata)
+    }
+
+    /// Number of indexed files. Mirrors `getFileCount()` (which also counts the root dir).
+    pub fn get_file_count(&self) -> i32 {
+        self.entries.len() as i32 + 1
+    }
+
+    /// Forgets every indexed file, keeping the root directory. Mirrors `clear()`.
+    pub fn clear(&mut self) {
+        self.entries.clear();
+        self.by_file_index.clear();
     }
 }
