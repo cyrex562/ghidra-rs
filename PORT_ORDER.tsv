@@ -34,7 +34,7 @@ DONE	trait	34	2	23	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	33	15	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/DyldChainedFixupsCommand.java
 DONE	trait	30	34	53	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DyldCacheLoader.java
 DONE	trait	31	3	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/elf/info/ElfInfoProducer.java
-TODO	trait	31	2	26	format	Ghidra/Processors/AARCH64/src/main/java/ghidra/app/util/bin/format/elf/relocation/AARCH64_ElfRelocationContext.java
+DONE	trait	31	2	26	format	Ghidra/Processors/AARCH64/src/main/java/ghidra/app/util/bin/format/elf/relocation/AARCH64_ElfRelocationContext.java
 TODO	trait	31	2	2	format	Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/elf/relocation/ARM_ElfRelocationContext.java
 TODO	trait	31	2	1	format	Ghidra/Processors/PIC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PIC30_ElfRelocationContext.java
 TODO	trait	31	2	38	format	Ghidra/Processors/PowerPC/src/main/java/ghidra/app/util/bin/format/elf/relocation/PowerPC_ElfRelocationContext.java
