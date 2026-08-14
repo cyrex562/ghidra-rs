@@ -26,7 +26,7 @@ DONE	trait	34	48	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	trait	34	2	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureBlobParser.java
 DONE	trait	36	7	9	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/relocation/MachoRelocation.java
 DONE	trait	36	2	1	format	Ghidra/Processors/AARCH64/src/main/java/ghidra/app/util/bin/format/macho/relocation/AARCH64_MachoRelocationConstants.java
-TODO	trait	36	2	1	format	Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/macho/relocation/ARM_MachoRelocationConstants.java
+DONE	trait	36	2	1	format	Ghidra/Processors/ARM/src/main/java/ghidra/app/util/bin/format/macho/relocation/ARM_MachoRelocationConstants.java
 TODO	trait	36	2	1	format	Ghidra/Processors/PowerPC/src/main/java/ghidra/app/util/bin/format/macho/relocation/PowerPC_MachoRelocationConstants.java
 TODO	trait	36	2	1	format	Ghidra/Processors/x86/src/main/java/ghidra/app/util/bin/format/macho/relocation/X86_32_MachoRelocationConstants.java
 TODO	trait	36	2	1	format	Ghidra/Processors/x86/src/main/java/ghidra/app/util/bin/format/macho/relocation/X86_64_MachoRelocationConstants.java
