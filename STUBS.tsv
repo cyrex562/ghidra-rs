@@ -844,3 +844,5 @@ ts	stub_class	referenced_by
 2026-08-14T09:10:00.000001+00:00	SegmentCommand	MachoFileSetExtractor
 2026-08-14T09:10:00.000002+00:00	ExtractedMacho	MachoFileSetExtractor
 2026-08-14T09:10:00.000003+00:00	ByteArrayProvider	MachoFileSetExtractor
+2026-08-14T09:20:00.000000+00:00	AbstractAttributeInfo	AttributeFactory
+2026-08-14T09:20:00.000001+00:00	ConstantPoolUtf8Info	AttributeFactory
