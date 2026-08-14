@@ -14943,7 +14943,7 @@ orig_src/Ghidra/Processors/JVM/resources/VarArgsTest.java	TODO	orig_src Ghidra P
 orig_src/Ghidra/Processors/JVM/resources/WideInc.java	TODO	orig_src Ghidra Processors JVM resources 
 orig_src/Ghidra/Processors/JVM/resources/WideTest.java	TODO	orig_src Ghidra Processors JVM resources 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/opinion/JavaLoader.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util opinion 
-orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/ArrayMethods.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
+orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/ArrayMethods.java	DONE	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/ConstantPoolJava.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectGetField.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
 orig_src/Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectGetStatic.java	TODO	orig_src Ghidra Processors JVM src main java ghidra app util pcodeInject 
