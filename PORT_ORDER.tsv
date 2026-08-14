@@ -47,7 +47,7 @@ DONE	trait	31	33	49	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opini
 DONE	trait	45	11	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/FieldAnnotationsItem.java
 DONE	trait	43	12	26	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/ClassDefItem.java
 DONE	trait	39	3	19	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/xml/AndroidXmlFileSystem.java
-TODO	trait	40	4	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipFileSystem.java
+DONE	trait	40	4	18	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/sevenzip/SevenZipFileSystem.java
 TODO	trait	40	2	19	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystemFactory.java
 TODO	trait	39	3	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/zip/ZipFileSystem.java
 TODO	trait	41	5	46	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/ios/dyldcache/DyldCacheFileSystem.java
