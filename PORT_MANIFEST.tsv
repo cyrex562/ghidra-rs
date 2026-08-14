@@ -4738,7 +4738,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/OpinionExcep
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/PeDataType.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/PeLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/PefLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/QueryOpinionService.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/QueryOpinionService.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/QueryOpinionServiceHandler.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/QueryResult.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/SomLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 

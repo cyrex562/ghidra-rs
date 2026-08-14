@@ -739,3 +739,5 @@ ts	stub_class	referenced_by
 2026-08-13T21:20:41.495921+00:00	DebugCOFFLineNumber	DebugCOFFSymbolsHeader
 2026-08-14T01:44:15.272197+00:00	CoffFileHeader	CoffRelocationHandler
 2026-08-14T01:44:15.272363+00:00	CoffRelocation	CoffRelocationHandler
+2026-08-14T02:12:32.79433469+00:00	QueryOpinionServiceHandler	QueryOpinionService
+2026-08-14T02:12:32.79433469+00:00	QueryResult	QueryOpinionService

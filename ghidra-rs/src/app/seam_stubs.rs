@@ -12,11 +12,13 @@ use crate::program::model::data::array::Array;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::typedef::TypeDef;
+use crate::program::seam_stubs::LanguageCompilerSpecPair;
 use crate::program::util::program_location::ProgramLocation;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::target::path::KeyPath;
 use crate::trace::model::thread::TraceThread;
 use crate::trace::model::trace::Trace;
+use std::fmt;
 use std::option::Option as StdOption;
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
@@ -1798,5 +1800,68 @@ impl ReferenceUtils {
             }
         }
     }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.QueryResult`, referenced by
+/// [`query_opinion_service`](crate::app::util::opinion::query_opinion_service) before the real
+/// class is ported. Java's version is a plain immutable value class (two public final fields, a
+/// `toString`, and `equals`/`hashCode` based only on `pair`, deliberately ignoring `preferred`),
+/// so this is a concrete struct rather than a trait, the same way
+/// [`LanguageCompilerSpecPair`] itself was placeholder-ported into `program::seam_stubs`.
+#[derive(Debug, Clone)]
+pub struct QueryResult {
+    /// The language/compiler-spec pair this result names.
+    pub pair: LanguageCompilerSpecPair,
+    /// Whether `pair` was the exact compiler spec asked for, rather than a broader match.
+    pub preferred: bool,
+}
+
+impl QueryResult {
+    /// Port of `QueryResult(LanguageCompilerSpecPair, boolean)`.
+    pub fn new(pair: LanguageCompilerSpecPair, preferred: bool) -> Self {
+        QueryResult { pair, preferred }
+    }
+}
+
+impl fmt::Display for QueryResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "query result: {:?} ({}preferred)",
+            self.pair,
+            if self.preferred { "" } else { "not " }
+        )
+    }
+}
+
+impl PartialEq for QueryResult {
+    /// Mirrors `QueryResult.equals`, which compares only `pair` and deliberately ignores
+    /// `preferred`.
+    fn eq(&self, other: &Self) -> bool {
+        self.pair == other.pair
+    }
+}
+
+impl Eq for QueryResult {}
+
+impl std::hash::Hash for QueryResult {
+    /// Mirrors `QueryResult.hashCode`, which hashes only `pair`.
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.pair.hash(state);
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.QueryOpinionServiceHandler`, referenced by
+/// [`query_opinion_service::initialize`](crate::app::util::opinion::query_opinion_service) as
+/// the forward half of a dependency cycle -- `QueryOpinionServiceHandler.read` calls back into
+/// `QueryOpinionService.addQuery` -- before the real class is ported. Java's version is a final
+/// class of statics (a single `read(XmlPullParser)` method), so this is a plain module of free
+/// functions rather than a trait, the same way `option_utils` above stands in for
+/// `OptionUtils`. The real port additionally needs `ghidra.xml.XmlPullParser`, which is not
+/// ported yet either; until both land, `read` is a no-op, mirroring parsing an `.opinion` file
+/// with no `<constraint>` elements.
+pub mod query_opinion_service_handler {
+    /// Mirrors the static `QueryOpinionServiceHandler.read(XmlPullParser)`.
+    pub fn read() {}
 }
 
