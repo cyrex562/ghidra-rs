@@ -51,8 +51,9 @@ use std::fmt;
 use std::io;
 use std::rc::Rc;
 
+use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::file::seam_stubs::{
-    DyldCacheEntry, DyldCacheExtractor, DyldCacheMappingAndSlideInfo, FileAttributeValue,
+    DyldCacheExtractor, DyldCacheMappingAndSlideInfo, FileAttributeValue,
     FileAttributes, FileSystemIndexHelper, SlideFixupMap, SplitDyldCache, SplitDyldCacheError,
 };
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;

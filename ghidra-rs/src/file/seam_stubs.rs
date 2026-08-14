@@ -12,6 +12,7 @@ use std::rc::Rc;
 use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5DigestChecksumAlgorithm;
 use crate::program::model::data::data_type::DataType;
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
 use crate::filesystem::gfilesystem::fileinfo::file_type::FileType;
@@ -818,73 +819,6 @@ impl DyldCacheMappingAndSlideInfo {
     /// Mirrors `isConstTproData()`.
     pub fn is_const_tpro_data(&self) -> bool {
         self.flags & Self::DYLD_CACHE_MAPPING_CONST_TPRO_DATA != 0
-    }
-}
-
-/// Placeholder for the unported Java record `ghidra.file.formats.ios.dyldcache.DyldCacheEntry`,
-/// referenced by `DyldCacheFileSystem` as the metadata it indexes each file under.
-///
-/// Concrete stub: Java record, not interface. The `rangeSet` component (a Guava
-/// `RangeSet<Long>`) is modeled as a plain list of half-open `[start, end)` windows, one per
-/// `Range.openClosed(lower, upper)` the record was built from; see `dyld_cache_file_system`'s
-/// module docs for why a Guava stand-in was needed at all.
-#[derive(Debug, Clone, PartialEq)]
-pub struct DyldCacheEntry {
-    pub path: String,
-    pub split_cache_index: i32,
-    pub range_set: Vec<(i64, i64)>,
-    pub mapping_info: Option<DyldCacheMappingInfo>,
-    pub mapping_and_slide_info: Option<DyldCacheMappingAndSlideInfo>,
-    pub mapping_index: i32,
-}
-
-impl DyldCacheEntry {
-    pub fn new(
-        path: impl Into<String>,
-        split_cache_index: i32,
-        range_set: Vec<(i64, i64)>,
-        mapping_info: Option<DyldCacheMappingInfo>,
-        mapping_and_slide_info: Option<DyldCacheMappingAndSlideInfo>,
-        mapping_index: i32,
-    ) -> Self {
-        DyldCacheEntry {
-            path: path.into(),
-            split_cache_index,
-            range_set,
-            mapping_info,
-            mapping_and_slide_info,
-            mapping_index,
-        }
-    }
-
-    /// Mirrors the record accessor `path()`.
-    pub fn path(&self) -> &str {
-        &self.path
-    }
-
-    /// Mirrors the record accessor `splitCacheIndex()`.
-    pub fn split_cache_index(&self) -> i32 {
-        self.split_cache_index
-    }
-
-    /// Mirrors the record accessor `rangeSet()`.
-    pub fn range_set(&self) -> &[(i64, i64)] {
-        &self.range_set
-    }
-
-    /// Mirrors the record accessor `mappingInfo()`.
-    pub fn mapping_info(&self) -> Option<&DyldCacheMappingInfo> {
-        self.mapping_info.as_ref()
-    }
-
-    /// Mirrors the record accessor `mappingAndSlideInfo()`.
-    pub fn mapping_and_slide_info(&self) -> Option<&DyldCacheMappingAndSlideInfo> {
-        self.mapping_and_slide_info.as_ref()
-    }
-
-    /// Mirrors the record accessor `mappingIndex()`.
-    pub fn mapping_index(&self) -> i32 {
-        self.mapping_index
     }
 }
 

@@ -828,7 +828,6 @@ ts	stub_class	referenced_by
 2026-08-14T07:54:18.276931+00:00	ZipFileSystemBuiltin	ZipFileSystemFactory
 2026-08-14T08:21:17.454935+00:00	DyldCacheMappingInfo	DyldCacheFileSystem
 2026-08-14T08:21:17.454936+00:00	DyldCacheMappingAndSlideInfo	DyldCacheFileSystem
-2026-08-14T08:21:17.454937+00:00	DyldCacheEntry	DyldCacheFileSystem
 2026-08-14T08:21:17.454938+00:00	SegmentCommand	DyldCacheFileSystem
 2026-08-14T08:21:17.454939+00:00	MachHeader	DyldCacheFileSystem
 2026-08-14T08:21:17.454940+00:00	DyldCacheImageRecord	DyldCacheFileSystem
