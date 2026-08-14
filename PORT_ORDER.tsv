@@ -22,7 +22,7 @@ DONE	trait	38	37	8	feature	Ghidra/Features/Base/src/main/java/ghidra/features/ba
 DONE	trait	37	12	3	feature	Ghidra/Features/Base/src/main/java/ghidra/features/base/memsearch/matcher/InvalidByteMatcher.java
 DONE	trait	38	6	1	program	Ghidra/Features/Base/src/main/java/ghidra/program/util/string/FoundStringCallback.java
 DONE	trait	38	5	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/ascii/ByteStreamCharMatcher.java
-TODO	trait	34	48	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommand.java
+DONE	trait	34	48	11	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/LoadCommand.java
 TODO	trait	34	2	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/commands/codesignature/CodeSignatureBlobParser.java
 TODO	trait	36	7	9	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/macho/relocation/MachoRelocation.java
 TODO	trait	36	2	1	format	Ghidra/Processors/AARCH64/src/main/java/ghidra/app/util/bin/format/macho/relocation/AARCH64_MachoRelocationConstants.java
