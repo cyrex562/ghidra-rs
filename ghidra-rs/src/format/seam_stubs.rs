@@ -1467,3 +1467,61 @@ pub trait DebugCOFFSymbolTable: Send + Sync {
     fn get_symbols(&self) -> Vec<Box<dyn DebugCOFFSymbol>>;
     fn get_string_table_index(&self) -> i32;
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.AoutHeader`, referenced by
+/// [`AoutHeaderFactory`](crate::format::coff::aout_header_factory) before the real class is ported.
+pub trait AoutHeader: Send + Sync {
+    fn get_magic(&self) -> i16;
+    fn get_version_stamp(&self) -> i16;
+    fn get_text_size(&self) -> i32;
+    fn get_initialized_data_size(&self) -> i32;
+    fn get_uninitialized_data_size(&self) -> i32;
+    fn get_entry(&self) -> i32;
+    fn get_text_start(&self) -> i32;
+    fn get_initialized_data_start(&self) -> i32;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.AoutHeaderMIPS`, referenced by
+/// [`AoutHeaderFactory`](crate::format::coff::aout_header_factory) before the real class is ported.
+pub trait AoutHeaderMIPS: AoutHeader + Send + Sync {
+    fn get_uninitialized_data_start(&self) -> i32;
+    fn get_gpr_mask(&self) -> i32;
+    fn get_cpr_mask(&self) -> Vec<i32>;
+    fn get_gp_value(&self) -> i32;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.CoffSectionHeader`, referenced by
+/// [`CoffFileHeader`] before the real class is ported.
+pub trait CoffSectionHeader: Send + Sync {
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.CoffSymbol`, referenced by
+/// [`CoffFileHeader`] before the real class is ported.
+pub trait CoffSymbol: Send + Sync {
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.coff.CoffFileHeader`, referenced by
+/// [`AoutHeaderFactory`](crate::format::coff::aout_header_factory) before the real class is ported.
+pub trait CoffFileHeader: Send + Sync {
+    fn get_magic(&self) -> i16;
+    fn get_section_count(&self) -> i16;
+    fn get_timestamp(&self) -> i32;
+    fn get_symbol_table_pointer(&self) -> i32;
+    fn get_symbol_table_entries(&self) -> i32;
+    fn get_optional_header_size(&self) -> i16;
+    fn get_flags(&self) -> i16;
+    fn get_target_id(&self) -> std::io::Result<i16>;
+    fn get_image_base(&self, is_windows_platform: bool) -> i64;
+    fn get_machine_name(&self) -> String;
+    fn get_machine(&self) -> i16;
+    fn parse_section_headers(&self) -> std::io::Result<()>;
+    fn parse(&self, monitor: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()>;
+    fn get_sections(&self) -> Vec<Box<dyn CoffSectionHeader>>;
+    fn get_symbols(&self) -> Vec<Box<dyn CoffSymbol>>;
+    fn get_symbol_at_index(&self, index: i64) -> Box<dyn CoffSymbol>;
+    fn sizeof(&self) -> i32;
+    fn get_optional_header(&self) -> Box<dyn AoutHeader>;
+    fn is_valid(&self) -> std::io::Result<bool>;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
