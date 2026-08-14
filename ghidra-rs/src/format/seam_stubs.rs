@@ -973,6 +973,50 @@ impl MemoryByteProvider {
         }
     }
 
+    /// Mirrors `new MemoryByteProvider(Memory, AddressSpace)`, referenced by
+    /// [`ClassFileAnalysisState::new`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState::new)
+    /// before the real class is ported. Bytes are relative to the space's minimum address, and
+    /// the provider extends to the highest address of any memory block in the same address space
+    /// (mirroring the private `findAddressSpaceMax` helper); if no block occupies the space, the
+    /// provider is empty.
+    pub fn new(
+        memory: std::sync::Arc<dyn crate::program::model::mem::Memory>,
+        space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+    ) -> Self {
+        let base_address = space.min_address();
+        let max_address = Self::find_address_space_max(memory.as_ref(), &base_address);
+        let length = match &max_address {
+            Some(max) => (max.subtract(&base_address).max(0) as u64).saturating_add(1),
+            None => 0,
+        };
+        MemoryByteProvider {
+            memory,
+            block_name: space.name().to_string(),
+            start: base_address,
+            length,
+        }
+    }
+
+    /// Mirrors the private `MemoryByteProvider.findAddressSpaceMax(Memory, Address)` helper:
+    /// the highest end address, among this memory's blocks that share `min_addr`'s address space
+    /// and end at or after it, or `None` if no such block exists.
+    fn find_address_space_max(
+        memory: &dyn crate::program::model::mem::Memory,
+        min_addr: &crate::program::model::address::Address,
+    ) -> Option<crate::program::model::address::Address> {
+        let mut max_addr: Option<crate::program::model::address::Address> = None;
+        for block in memory.get_blocks() {
+            let end = block.get_end();
+            if !end.same_address_space(min_addr) || end < *min_addr {
+                continue;
+            }
+            if max_addr.as_ref().is_none_or(|current| end >= *current) {
+                max_addr = Some(end);
+            }
+        }
+        max_addr
+    }
+
     pub fn get_name(&self) -> &str {
         &self.block_name
     }
@@ -2917,6 +2961,170 @@ impl AnnotationJava {
     /// value, matching the Java getter's `& 0xffff`).
     pub fn get_number_of_element_value_pairs(&self) -> u32 {
         self.number_of_element_value_pairs
+    }
+}
+
+/// Placeholder for the nested enum `TransientProgramProperties.SCOPE`, referenced by
+/// [`TransientProgramProperties::get_property`] before the real class is ported.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransientPropertyScope {
+    /// Value is released when the program is closed.
+    Program,
+    /// Value is released when the current analysis session is finished.
+    AnalysisSession,
+}
+
+type TransientPropertyKey = (usize, std::any::TypeId);
+
+static TRANSIENT_PROPERTIES: std::sync::OnceLock<
+    std::sync::Mutex<
+        std::collections::HashMap<TransientPropertyKey, std::sync::Arc<dyn std::any::Any + Send + Sync>>,
+    >,
+> = std::sync::OnceLock::new();
+
+fn transient_properties_map() -> &'static std::sync::Mutex<
+    std::collections::HashMap<TransientPropertyKey, std::sync::Arc<dyn std::any::Any + Send + Sync>>,
+> {
+    TRANSIENT_PROPERTIES.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+}
+
+/// Placeholder for `ghidra.app.plugin.core.analysis.TransientProgramProperties`, referenced by
+/// [`ClassFileAnalysisState::get_state`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState::get_state)
+/// before the real class is ported. `TransientProgramProperties` is a concrete Java class (not an
+/// interface), so it is modeled here as a zero-sized type backed by a process-global cache,
+/// consistent with the `OnceLock<Mutex<HashMap<..>>>` pattern used elsewhere in this crate (see
+/// [`ClassTranslator`](crate::util::classfinder::class_translator::ClassTranslator)). Only
+/// `getProperty` is modeled -- the only member `ClassFileAnalysisState.getState` needs -- and its
+/// generic `key`/`clazz` parameters are collapsed into the single type parameter `T`, matching
+/// that call site (which always uses the value's own type as both). The real class additionally
+/// releases `AnalysisSession`-scoped properties when analysis ends and `Program`-scoped
+/// properties when the program closes; neither release path is modeled here, so cached values
+/// live for the process's lifetime.
+pub struct TransientProgramProperties;
+
+impl TransientProgramProperties {
+    /// Mirrors `TransientProgramProperties.getProperty(Program, Object, SCOPE, Class,
+    /// PropertyValueSupplier)`. Returns the cached value for `program`, if present; otherwise
+    /// calls `supplier` to create it, caches it, and returns it.
+    pub fn get_property<T, E>(
+        program: &std::sync::Arc<dyn ListingProgram>,
+        _scope: TransientPropertyScope,
+        supplier: impl FnOnce() -> Result<T, E>,
+    ) -> Result<std::sync::Arc<T>, E>
+    where
+        T: std::any::Any + Send + Sync,
+    {
+        let key: TransientPropertyKey =
+            (std::sync::Arc::as_ptr(program) as *const () as usize, std::any::TypeId::of::<T>());
+
+        {
+            let map = transient_properties_map().lock().unwrap();
+            if let Some(existing) = map.get(&key) {
+                if let Ok(value) = std::sync::Arc::clone(existing).downcast::<T>() {
+                    return Ok(value);
+                }
+            }
+        }
+
+        let value = std::sync::Arc::new(supplier()?);
+        let mut map = transient_properties_map().lock().unwrap();
+        let entry = map
+            .entry(key)
+            .or_insert_with(|| value.clone() as std::sync::Arc<dyn std::any::Any + Send + Sync>);
+        Ok(std::sync::Arc::clone(entry)
+            .downcast::<T>()
+            .expect("TransientProgramProperties: type mismatch for cached property"))
+    }
+}
+
+/// Placeholder for `ghidra.javaclass.format.MethodInfoJava`, referenced by
+/// [`ClassFileJava::get_methods`] and
+/// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState)
+/// before the real class is ported. `MethodInfoJava` is a concrete Java class (not an interface),
+/// so it is modeled here as a concrete struct. `ClassFileAnalysisState` only ever stores and
+/// returns these opaquely (keyed by address in its method map), never inspecting a field, so only
+/// the file offset -- the one property that survives into this stub -- is kept; the rest of the
+/// real class (access flags, descriptor, attributes, `toDataType`) needs `AttributeFactory`'s
+/// constant-pool-driven parsing and is left for the real port.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MethodInfoJava {
+    offset: i64,
+}
+
+impl MethodInfoJava {
+    pub fn new(offset: i64) -> Self {
+        MethodInfoJava { offset }
+    }
+
+    /// `MethodInfoJava.getOffset()`.
+    pub fn get_offset(&self) -> i64 {
+        self.offset
+    }
+}
+
+/// Placeholder for `ghidra.javaclass.format.ClassFileJava`, referenced by
+/// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState)
+/// before the real class is ported. `ClassFileJava` is a concrete Java class (not an interface),
+/// so it is modeled here as a concrete struct. `ClassFileAnalysisState` only ever constructs one
+/// from a reader and walks [`get_methods`](Self::get_methods), so only that surface is modeled;
+/// the real constructor parses the whole class file format (constant pool, fields, attributes),
+/// which needs `AttributeFactory` and the concrete `ConstantPoolInfoJava` variants that aren't
+/// ported yet, so this stub's constructor consumes nothing from `reader` and reports zero
+/// methods, deferring real parsing to the eventual `ClassFileJava` port.
+pub struct ClassFileJava {
+    methods: Vec<MethodInfoJava>,
+}
+
+impl ClassFileJava {
+    /// Mirrors `ClassFileJava(BinaryReader)`. See the type-level doc for why this does not yet
+    /// parse the class file format.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let _ = reader;
+        Ok(ClassFileJava { methods: Vec::new() })
+    }
+
+    /// Test-only constructor bypassing byte parsing, used to exercise
+    /// [`ClassFileAnalysisState::build_method_map`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState)
+    /// without a real class file parser.
+    #[cfg(test)]
+    pub fn from_methods(methods: Vec<MethodInfoJava>) -> Self {
+        ClassFileJava { methods }
+    }
+
+    /// `ClassFileJava.getMethods()`.
+    pub fn get_methods(&self) -> &[MethodInfoJava] {
+        &self.methods
+    }
+}
+
+/// Placeholder for `ghidra.javaclass.format.JavaClassUtil`, referenced by
+/// [`ClassFileAnalysisState`](crate::format::javaclass::class_file_analysis_state::ClassFileAnalysisState)
+/// before the real class is ported. `JavaClassUtil` is a concrete Java class (not an interface,
+/// and in fact a utility class of only static members), so it is modeled here as a zero-sized
+/// type with an associated function. Only `toLookupAddress` -- the one static method
+/// `ClassFileAnalysisState` calls -- is modeled; `isClassFile` is unused by that caller and left
+/// for the real port.
+pub struct JavaClassUtil;
+
+impl JavaClassUtil {
+    /// `JavaClassUtil.LOOKUP_ADDRESS`.
+    pub const LOOKUP_ADDRESS: i64 = 0xE0000000;
+
+    /// `JavaClassUtil.toLookupAddress(Program, int)`. `methodIndex * 4` mirrors Java's 32-bit
+    /// (wrapping) int multiplication before the sign-extending widen to `long`.
+    pub fn to_lookup_address(
+        program: &dyn ListingProgram,
+        method_index: i32,
+    ) -> crate::program::model::address::Address {
+        let address_factory = program
+            .get_address_factory()
+            .expect("JavaClassUtil.toLookupAddress: program has no address factory");
+        let default_address_space = address_factory
+            .get_default_address_space()
+            .expect("JavaClassUtil.toLookupAddress: program has no default address space");
+        default_address_space.address(Self::LOOKUP_ADDRESS + method_index.wrapping_mul(4) as i64)
     }
 }
 
