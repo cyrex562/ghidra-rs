@@ -3,9 +3,11 @@
 //! interface(s) that currently reference it, and is expected to be replaced once the Java class
 //! is ported. See `STUBS.tsv` for provenance.
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5DigestChecksumAlgorithm;
 use crate::program::model::data::data_type::DataType;
@@ -19,6 +21,10 @@ use crate::filesystem::gfilesystem::g_file_impl::{
     FsGetListing, FsrlLike as GFileFsrlLike, GFileImpl, HasFsrlRoot,
 };
 use crate::filesystem::seam_stubs::{FileAttributesLike, FileSystemServiceLike, FsrlRootLike, GFileSystemLike};
+use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
+use crate::format::macho::dyld::dyld_fixup::DyldFixup;
+use crate::format::macho::mach_exception::MachException;
+use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
 /// Placeholder for the unported Java type `StructConverterUtil`, referenced by `FieldAnnotationsItem`.
@@ -587,6 +593,11 @@ where
             .map(|&i| &self.entries[i].file)
     }
 
+    /// The file stored at `path`, or `None`. Mirrors `lookup(String)`.
+    pub fn lookup(&self, path: &str) -> Option<&GFileImpl<FS, Fsrl>> {
+        self.entries.iter().find(|e| e.path == path).map(|e| &e.file)
+    }
+
     /// The metadata stored alongside `file`, or `None`. Mirrors `getMetadata(GFile)`.
     pub fn get_metadata(&self, file: &GFileImpl<FS, Fsrl>) -> Option<&M> {
         let path = file.get_path();
@@ -693,5 +704,482 @@ impl ZipFileSystemBuiltin {
     /// Mirrors `close()`.
     pub fn close(&mut self) -> io::Result<()> {
         Ok(())
+    }
+}
+
+// ─── DYLD cache seam, for `DyldCacheFileSystem` ───────────────────────────────
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheMappingInfo`, referenced by
+/// `DyldCacheFileSystem`.
+///
+/// Concrete stub: Java class, not interface. Only the address/size accessors THIS type needs
+/// are included; the real class additionally parses file offset and protection flags from a
+/// `dyld_cache_mapping_info` structure. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DyldCacheMappingInfo {
+    address: i64,
+    size: i64,
+}
+
+impl DyldCacheMappingInfo {
+    pub fn new(address: i64, size: i64) -> Self {
+        DyldCacheMappingInfo { address, size }
+    }
+
+    /// Mirrors `getAddress()`.
+    pub fn address(&self) -> i64 {
+        self.address
+    }
+
+    /// Mirrors `getSize()`.
+    pub fn size(&self) -> i64 {
+        self.size
+    }
+
+    /// Mirrors `contains(long, boolean)`, restricted to the `isAddr = true` case (the only one
+    /// `DyldCacheUtils.getImageRecords` uses).
+    pub fn contains(&self, addr: i64) -> bool {
+        addr >= self.address && addr < self.address + self.size
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheMappingAndSlideInfo`,
+/// referenced by `DyldCacheFileSystem`.
+///
+/// Concrete stub: Java class, not interface. Only the address/size/flags surface THIS type
+/// needs is included, with the real `DYLD_CACHE_MAPPING_*`/`DYLD_CACHE_*_DATA` flag bit tests
+/// ported faithfully; the real class additionally parses file/slide-info offsets and
+/// protection flags. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DyldCacheMappingAndSlideInfo {
+    address: i64,
+    size: i64,
+    flags: i64,
+}
+
+impl DyldCacheMappingAndSlideInfo {
+    pub const DYLD_CACHE_MAPPING_AUTH_DATA: i64 = 0x1;
+    pub const DYLD_CACHE_MAPPING_DIRTY_DATA: i64 = 0x2;
+    pub const DYLD_CACHE_MAPPING_CONST_DATA: i64 = 0x4;
+    pub const DYLD_CACHE_MAPPING_TEXT_STUBS: i64 = 0x8;
+    pub const DYLD_CACHE_DYNAMIC_CONFIG_DATA: i64 = 0x10;
+    pub const DYLD_CACHE_READ_ONLY_DATA: i64 = 0x20;
+    pub const DYLD_CACHE_MAPPING_CONST_TPRO_DATA: i64 = 0x40;
+
+    pub fn new(address: i64, size: i64, flags: i64) -> Self {
+        DyldCacheMappingAndSlideInfo { address, size, flags }
+    }
+
+    /// Mirrors `getAddress()`.
+    pub fn address(&self) -> i64 {
+        self.address
+    }
+
+    /// Mirrors `getSize()`.
+    pub fn size(&self) -> i64 {
+        self.size
+    }
+
+    /// Mirrors `getFlags()`.
+    pub fn flags(&self) -> i64 {
+        self.flags
+    }
+
+    /// Mirrors `isAuthData()`.
+    pub fn is_auth_data(&self) -> bool {
+        self.flags & Self::DYLD_CACHE_MAPPING_AUTH_DATA != 0
+    }
+
+    /// Mirrors `isDirtyData()`.
+    pub fn is_dirty_data(&self) -> bool {
+        self.flags & Self::DYLD_CACHE_MAPPING_DIRTY_DATA != 0
+    }
+
+    /// Mirrors `isConstData()`.
+    pub fn is_const_data(&self) -> bool {
+        self.flags & Self::DYLD_CACHE_MAPPING_CONST_DATA != 0
+    }
+
+    /// Mirrors `isTextStubs()`.
+    pub fn is_text_stubs(&self) -> bool {
+        self.flags & Self::DYLD_CACHE_MAPPING_TEXT_STUBS != 0
+    }
+
+    /// Mirrors `isConfigData()`.
+    pub fn is_config_data(&self) -> bool {
+        self.flags & Self::DYLD_CACHE_DYNAMIC_CONFIG_DATA != 0
+    }
+
+    /// Mirrors `isReadOnlyData()`.
+    pub fn is_read_only_data(&self) -> bool {
+        self.flags & Self::DYLD_CACHE_READ_ONLY_DATA != 0
+    }
+
+    /// Mirrors `isConstTproData()`.
+    pub fn is_const_tpro_data(&self) -> bool {
+        self.flags & Self::DYLD_CACHE_MAPPING_CONST_TPRO_DATA != 0
+    }
+}
+
+/// Placeholder for the unported Java record `ghidra.file.formats.ios.dyldcache.DyldCacheEntry`,
+/// referenced by `DyldCacheFileSystem` as the metadata it indexes each file under.
+///
+/// Concrete stub: Java record, not interface. The `rangeSet` component (a Guava
+/// `RangeSet<Long>`) is modeled as a plain list of half-open `[start, end)` windows, one per
+/// `Range.openClosed(lower, upper)` the record was built from; see `dyld_cache_file_system`'s
+/// module docs for why a Guava stand-in was needed at all.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DyldCacheEntry {
+    pub path: String,
+    pub split_cache_index: i32,
+    pub range_set: Vec<(i64, i64)>,
+    pub mapping_info: Option<DyldCacheMappingInfo>,
+    pub mapping_and_slide_info: Option<DyldCacheMappingAndSlideInfo>,
+    pub mapping_index: i32,
+}
+
+impl DyldCacheEntry {
+    pub fn new(
+        path: impl Into<String>,
+        split_cache_index: i32,
+        range_set: Vec<(i64, i64)>,
+        mapping_info: Option<DyldCacheMappingInfo>,
+        mapping_and_slide_info: Option<DyldCacheMappingAndSlideInfo>,
+        mapping_index: i32,
+    ) -> Self {
+        DyldCacheEntry {
+            path: path.into(),
+            split_cache_index,
+            range_set,
+            mapping_info,
+            mapping_and_slide_info,
+            mapping_index,
+        }
+    }
+
+    /// Mirrors the record accessor `path()`.
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Mirrors the record accessor `splitCacheIndex()`.
+    pub fn split_cache_index(&self) -> i32 {
+        self.split_cache_index
+    }
+
+    /// Mirrors the record accessor `rangeSet()`.
+    pub fn range_set(&self) -> &[(i64, i64)] {
+        &self.range_set
+    }
+
+    /// Mirrors the record accessor `mappingInfo()`.
+    pub fn mapping_info(&self) -> Option<&DyldCacheMappingInfo> {
+        self.mapping_info.as_ref()
+    }
+
+    /// Mirrors the record accessor `mappingAndSlideInfo()`.
+    pub fn mapping_and_slide_info(&self) -> Option<&DyldCacheMappingAndSlideInfo> {
+        self.mapping_and_slide_info.as_ref()
+    }
+
+    /// Mirrors the record accessor `mappingIndex()`.
+    pub fn mapping_index(&self) -> i32 {
+        self.mapping_index
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.commands.SegmentCommand`, referenced by
+/// `DyldCacheFileSystem::mount`.
+///
+/// Concrete stub: Java class, not interface. Only the load address/size THIS type needs are
+/// included; the real class additionally parses section tables, protection flags and file
+/// offsets from a `LC_SEGMENT[_64]` load command. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SegmentCommand {
+    vm_address: i64,
+    vm_size: i64,
+}
+
+impl SegmentCommand {
+    pub fn new(vm_address: i64, vm_size: i64) -> Self {
+        SegmentCommand { vm_address, vm_size }
+    }
+
+    /// Mirrors `getVMaddress()`.
+    pub fn vm_address(&self) -> i64 {
+        self.vm_address
+    }
+
+    /// Mirrors `getVMsize()`.
+    pub fn vm_size(&self) -> i64 {
+        self.vm_size
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.MachHeader`, referenced by
+/// `DyldCacheFileSystem::mount` via `SplitDyldCache::macho`.
+///
+/// Concrete stub: Java class, not interface. `MachHeader(ByteProvider, long, boolean)`
+/// constructs the header at a byte offset without parsing it (this class's caller invokes
+/// `parseSegments()` directly, never `parse()`); parsing the Mach-O load commands to recover
+/// the real segment table is not yet ported, so `parse_segments` always reports an empty list
+/// until it is. Replace with the real port when available.
+pub struct MachHeader {
+    #[allow(dead_code)]
+    provider: Rc<RefCell<dyn ByteProvider>>,
+    #[allow(dead_code)]
+    offset: i64,
+}
+
+impl MachHeader {
+    /// Mirrors `MachHeader(ByteProvider, long, boolean)`, restricted to the `isRelative = false`
+    /// case (the only one `SplitDyldCache.getMacho` uses).
+    pub fn new(provider: Rc<RefCell<dyn ByteProvider>>, offset: i64) -> Self {
+        MachHeader { provider, offset }
+    }
+
+    /// Mirrors `parseSegments()`. Not yet implemented (see type docs): always reports no
+    /// segments.
+    pub fn parse_segments(&self) -> io::Result<Vec<SegmentCommand>> {
+        Ok(Vec::new())
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils.DyldCacheImageRecord`, referenced by
+/// `DyldCacheFileSystem::mount` via `SplitDyldCache::image_records`.
+///
+/// Concrete stub: Java record, not interface.
+#[derive(Clone)]
+pub struct DyldCacheImageRecord {
+    image: Rc<dyn DyldCacheImage>,
+    split_cache_index: i32,
+}
+
+impl DyldCacheImageRecord {
+    /// Mirrors the record accessor `image()`.
+    pub fn image(&self) -> &dyn DyldCacheImage {
+        self.image.as_ref()
+    }
+
+    /// Mirrors the record accessor `splitCacheIndex()`.
+    pub fn split_cache_index(&self) -> i32 {
+        self.split_cache_index
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheHeader`'s mapping/image
+/// table surface, referenced by `DyldCacheFileSystem::mount` via `SplitDyldCache`.
+///
+/// Scoped narrower than -- and independent of -- the magic/architecture-only placeholder at
+/// [`crate::app::seam_stubs::DyldCacheHeader`] (added for `DyldCacheLoader`'s probe path, which
+/// never needs mapping data): this one wraps that placeholder for identity parsing and adds the
+/// mapping/image tables `DyldCacheFileSystem` reads. Real `DyldCacheHeader` parsing of those
+/// tables is not yet ported, so they are always empty here -- a mounted `DyldCacheFileSystem`
+/// therefore indexes zero files until that parsing lands. Replace with the real port when
+/// available (at which point both placeholders should be retired together).
+pub struct DyldCacheHeader {
+    #[allow(dead_code)]
+    inner: crate::app::seam_stubs::DyldCacheHeader,
+}
+
+impl DyldCacheHeader {
+    /// Mirrors the magic-parsing prefix of `new DyldCacheHeader(BinaryReader)`, called from
+    /// `SplitDyldCache`'s constructor.
+    pub fn parse_from_file(
+        reader: &mut crate::filesystem::ghidra::g_binary_reader::GBinaryReader,
+    ) -> io::Result<Self> {
+        Ok(DyldCacheHeader { inner: crate::app::seam_stubs::DyldCacheHeader::new(reader)? })
+    }
+
+    /// Mirrors `getMappingInfos()`. Not yet implemented (see type docs): always empty.
+    pub fn mapping_infos(&self) -> &[DyldCacheMappingInfo] {
+        &[]
+    }
+
+    /// Mirrors `getCacheMappingAndSlideInfos()`. Not yet implemented (see type docs): always
+    /// empty.
+    pub fn cache_mapping_and_slide_infos(&self) -> &[DyldCacheMappingAndSlideInfo] {
+        &[]
+    }
+
+    /// Mirrors `getImageInfos()`. Not yet implemented (see type docs): always empty.
+    pub fn image_infos(&self) -> &[Rc<dyn DyldCacheImage>] {
+        &[]
+    }
+
+    /// Mirrors `getBaseAddress()`, delegating to the wrapped magic/architecture placeholder.
+    pub fn base_address(&self) -> i64 {
+        self.inner.base_address
+    }
+
+    /// Mirrors `parseLocalSymbolsInfo(boolean, MessageLog, TaskMonitor)`. Not yet implemented
+    /// (see type docs): a no-op.
+    pub fn parse_local_symbols_info(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// The failure modes of [`SplitDyldCache::new`], mirroring Java's `throws IOException,
+/// CancelledException`.
+#[derive(Debug)]
+pub enum SplitDyldCacheError {
+    Io(io::Error),
+    Cancelled(CancelledException),
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils.SplitDyldCache`, referenced by
+/// `DyldCacheFileSystem::mount`.
+///
+/// Concrete stub: Java class, not interface. Only the single-file constructor path
+/// `DyldCacheFileSystem` drives is modeled: the real class additionally locates and validates
+/// sibling ".1", ".2", ".symbols" subcache files alongside the base file via
+/// `FileSystemService`/`GFileSystem` filesystem probing, neither of which this narrow,
+/// `ByteProvider`-only constructor has access to, so this stub always reports a single-file,
+/// non-split cache. Replace with the real port when available.
+pub struct SplitDyldCache {
+    providers: Vec<Rc<RefCell<dyn ByteProvider>>>,
+    headers: Vec<DyldCacheHeader>,
+    names: Vec<String>,
+}
+
+impl SplitDyldCache {
+    /// Mirrors the base-provider-only `SplitDyldCache(ByteProvider, boolean, MessageLog,
+    /// TaskMonitor)` constructor; see the type docs for how this narrows it.
+    pub fn new(
+        base_provider: Rc<RefCell<dyn ByteProvider>>,
+        _should_process_local_symbols: bool,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Self, SplitDyldCacheError> {
+        monitor.check_cancelled().map_err(SplitDyldCacheError::Cancelled)?;
+        let name = base_provider
+            .borrow()
+            .get_file()
+            .and_then(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
+            .unwrap_or_default();
+        monitor.set_message(&format!("Parsing {name} headers..."));
+        let mut reader = crate::filesystem::ghidra::g_binary_reader::GBinaryReader::new(
+            Rc::clone(&base_provider),
+            true,
+        );
+        let header = DyldCacheHeader::parse_from_file(&mut reader).map_err(SplitDyldCacheError::Io)?;
+        Ok(SplitDyldCache { providers: vec![base_provider], headers: vec![header], names: vec![name] })
+    }
+
+    /// Mirrors `getDyldCacheHeader(int)`.
+    pub fn dyld_cache_header(&self, i: usize) -> &DyldCacheHeader {
+        &self.headers[i]
+    }
+
+    /// Mutable counterpart of [`dyld_cache_header`](Self::dyld_cache_header), needed for
+    /// `parseLocalSymbolsInfo`.
+    pub fn dyld_cache_header_mut(&mut self, i: usize) -> &mut DyldCacheHeader {
+        &mut self.headers[i]
+    }
+
+    /// Mirrors `getName(int)`.
+    pub fn name(&self, i: usize) -> &str {
+        &self.names[i]
+    }
+
+    /// Mirrors `size()`.
+    pub fn size(&self) -> usize {
+        self.providers.len()
+    }
+
+    /// Mirrors `getImageRecords()`, i.e. `DyldCacheUtils.getImageRecords(headers)`. Always empty
+    /// while [`DyldCacheHeader::image_infos`]/[`DyldCacheHeader::mapping_infos`] are (see their
+    /// docs), but implemented against the real algorithm so it starts working the moment those
+    /// tables are ported.
+    pub fn image_records(&self) -> Vec<DyldCacheImageRecord> {
+        let mut seen = std::collections::HashSet::new();
+        let mut records = Vec::new();
+        for (split_cache_index, header) in self.headers.iter().enumerate() {
+            for image in header.image_infos() {
+                let addr = image.address();
+                if seen.contains(&addr) {
+                    continue;
+                }
+                for h in &self.headers {
+                    if h.mapping_infos().iter().any(|m| m.contains(addr as i64)) {
+                        records.push(DyldCacheImageRecord {
+                            image: Rc::clone(image),
+                            split_cache_index: split_cache_index as i32,
+                        });
+                        seen.insert(addr);
+                        break;
+                    }
+                }
+            }
+        }
+        records
+    }
+
+    /// Mirrors `getMacho(DyldCacheImageRecord)`.
+    pub fn macho(&self, image_record: &DyldCacheImageRecord) -> Result<MachHeader, MachException> {
+        let i = image_record.split_cache_index as usize;
+        let provider = self.providers.get(i).ok_or_else(|| {
+            MachException::new(format!("No such split cache index: {i}"))
+        })?;
+        let base_address = self.headers.get(i).map(DyldCacheHeader::base_address).unwrap_or(0);
+        let offset = image_record.image.address() as i64 - base_address;
+        Ok(MachHeader::new(Rc::clone(provider), offset))
+    }
+
+    /// Mirrors `close()`: "Assume someone else is responsible for closing the base provider[s]
+    /// that was passed in at construction" -- the base provider (index 0) is owned by
+    /// `DyldCacheFileSystem` and released there; only split-file providers (never populated by
+    /// this single-file stub) would need releasing here.
+    pub fn close(&mut self) {}
+}
+
+/// Placeholder for `ghidra.file.formats.ios.dyldcache.DyldCacheExtractor`, referenced by
+/// `DyldCacheFileSystem::get_byte_provider`.
+///
+/// Concrete stub: Java class, not interface. Extraction depends on Mach-O load-command parsing
+/// ([`MachHeader::parse_segments`]) and DYLD slide-info parsing, neither of which is ported yet
+/// (the `DyldCacheSlideInfo*` classes have no port either), so both extraction entry points
+/// report "not yet implemented" rather than guess at extracted bytes; the slide-fixup collector
+/// reports no fixups, which is a safe (if incomplete) default. Replace with the real port when
+/// available.
+pub struct DyldCacheExtractor;
+
+/// The slide-fixup map type threaded from [`DyldCacheExtractor::get_slide_fixups`] into
+/// [`DyldCacheExtractor::extract_dylib`]/[`extract_mapping`](DyldCacheExtractor::extract_mapping).
+/// Mirrors `Map<DyldCacheMappingInfo, Map<Long, DyldFixup>>`.
+pub type SlideFixupMap = HashMap<DyldCacheMappingInfo, HashMap<i64, DyldFixup>>;
+
+impl DyldCacheExtractor {
+    /// Mirrors `getSlideFixups(SplitDyldCache, TaskMonitor)`. Not yet implemented (see type
+    /// docs): always reports no fixups.
+    pub fn get_slide_fixups(
+        _split_dyld_cache: &SplitDyldCache,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<SlideFixupMap> {
+        Ok(HashMap::new())
+    }
+
+    /// Mirrors `extractDylib(DyldCacheEntry, SplitDyldCache, Map, FSRL, TaskMonitor)`. Not yet
+    /// implemented (see type docs). The `FSRL` Java uses to tag the returned provider's identity
+    /// is dropped, matching how [`ByteArrayProvider`] elsewhere in this file carries no FSRL.
+    pub fn extract_dylib(
+        _entry: &DyldCacheEntry,
+        _split_dyld_cache: &SplitDyldCache,
+        _slide_fixup_map: &SlideFixupMap,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<Box<dyn ByteProvider>> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "DyldCacheExtractor.extract_dylib not yet ported"))
+    }
+
+    /// Mirrors `extractMapping(DyldCacheEntry, String, SplitDyldCache, Map, FSRL, TaskMonitor)`.
+    /// Not yet implemented (see type docs); the `FSRL` parameter is dropped for the same reason
+    /// as [`extract_dylib`](Self::extract_dylib).
+    pub fn extract_mapping(
+        _entry: &DyldCacheEntry,
+        _segment_name: &str,
+        _split_dyld_cache: &SplitDyldCache,
+        _slide_fixup_map: &SlideFixupMap,
+        _monitor: &dyn TaskMonitor,
+    ) -> io::Result<Box<dyn ByteProvider>> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "DyldCacheExtractor.extract_mapping not yet ported"))
     }
 }
