@@ -1,8 +1,14 @@
 use std::sync::Arc;
 
+use thiserror::Error;
+
+use crate::framework::store::lock_exception::LockException;
+use crate::program::model::address::address_overflow_exception::AddressOverflowException;
 use crate::program::model::address::Address;
 use crate::program::model::listing::Program;
-use crate::program::model::mem::{MemoryAccessException, MemoryBlock};
+use crate::program::model::mem::{MemoryAccessException, MemoryBlock, MemoryConflictException};
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
 
 pub trait Memory: Send + Sync {
     fn is_big_endian(&self) -> bool;
@@ -72,4 +78,69 @@ pub trait Memory: Send + Sync {
         let _ = name;
         None
     }
+
+    /// Create an initialized memory block of `size` bytes at `start`, filled with
+    /// `initial_value`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DecompileDebugFormatManager`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager)'s
+    /// port of `parseSymbol`, which backs an unmapped data symbol with a zero-filled block so
+    /// the Listing has bytes to show. Stands in for
+    /// `Memory.createInitializedBlock(String, Address, long, byte, TaskMonitor, boolean)`.
+    ///
+    /// Defaults to refusing the request, so a memory that has not implemented block creation
+    /// cannot silently report a block it did not create -- the same choice
+    /// [`SymbolTable::get_or_create_name_space`](crate::program::model::symbol::SymbolTable::get_or_create_name_space)
+    /// makes.
+    fn create_initialized_block(
+        &mut self,
+        name: &str,
+        start: &Address,
+        size: u64,
+        initial_value: u8,
+        monitor: &dyn TaskMonitor,
+        overlay: bool,
+    ) -> Result<Arc<dyn MemoryBlock>, CreateBlockError> {
+        let _ = (name, start, size, initial_value, monitor, overlay);
+        Err(CreateBlockError::IllegalArgument(
+            "block creation is not supported by this memory".to_string(),
+        ))
+    }
+
+    /// Set the write permission of the block starting at `block_start`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for the same `parseSymbol`
+    /// port, which marks a generated block read-only when the symbol carried the `readonly`
+    /// attribute. Stands in for `MemoryBlock.setWrite(boolean)`, keyed by the block's start
+    /// address like [`SymbolTable::set_primary_symbol`](crate::program::model::symbol::SymbolTable::set_primary_symbol)
+    /// is keyed by ID, since an `Arc<dyn MemoryBlock>` handed out by this trait cannot be
+    /// mutated through.
+    ///
+    /// Defaults to doing nothing, matching a memory that does not model block permissions.
+    fn set_block_write(&mut self, block_start: &Address, write: bool) {
+        let _ = (block_start, write);
+    }
+}
+
+/// The failure modes of [`Memory::create_initialized_block`], collecting the exceptions Java's
+/// `Memory.createInitializedBlock` declares (`LockException`, `MemoryConflictException`,
+/// `AddressOverflowException`, `CancelledException`) plus its unchecked
+/// `IllegalArgumentException`.
+#[derive(Debug, Error)]
+pub enum CreateBlockError {
+    /// The program was not exclusively checked out / the memory could not be locked.
+    #[error(transparent)]
+    Lock(#[from] LockException),
+    /// The new block would overlap an existing one.
+    #[error(transparent)]
+    Conflict(#[from] MemoryConflictException),
+    /// `start + size` runs off the end of the address space.
+    #[error(transparent)]
+    AddressOverflow(#[from] AddressOverflowException),
+    /// The task monitor was cancelled while the block was being filled.
+    #[error(transparent)]
+    Cancelled(#[from] CancelledException),
+    /// The request was rejected outright (Java's `IllegalArgumentException`).
+    #[error("{0}")]
+    IllegalArgument(String),
 }

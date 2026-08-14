@@ -12,14 +12,20 @@ use crate::program::model::data::array::Array;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::typedef::TypeDef;
+use crate::program::model::listing::Program;
+use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::LanguageCompilerSpecPair;
 use crate::program::util::program_location::ProgramLocation;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::target::path::KeyPath;
 use crate::trace::model::thread::TraceThread;
 use crate::trace::model::trace::Trace;
+use crate::util::task::TaskMonitor;
+use crate::util::xml::xml_pull_parser::XmlPullParser;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::option::Option as StdOption;
+use std::sync::Arc;
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
@@ -1863,5 +1869,181 @@ impl std::hash::Hash for QueryResult {
 pub mod query_opinion_service_handler {
     /// Mirrors the static `QueryOpinionServiceHandler.read(XmlPullParser)`.
     pub fn read() {}
+}
+
+/// Placeholder for `ghidra.xml.XmlMessageLog`, referenced by
+/// [`DecompileDebugFormatManager`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager)
+/// before the real class (and the `ghidra.app.util.importer.MessageLog` it extends) is ported.
+/// Java's version is a concrete class, so this is a struct rather than a trait; it implements
+/// the [`MessageLog`] marker stub above to record the `extends MessageLog` relationship.
+///
+/// Java's `XmlMessageLog` keeps the `XmlPullParser` it was handed by `setParser` so that its
+/// one-argument `appendMsg` can prefix the parser's current line number. Holding the parser
+/// here would mean aliasing the same `&mut` parser the caller is pulling elements from, so
+/// `setParser` is dropped and callers pass the line number explicitly to
+/// [`append_msg_at_line`](Self::append_msg_at_line) -- which is what the calling code already
+/// does at every site that cares (`log.appendMsg(parser.getLineNumber(), msg)`).
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct XmlMessageLog {
+    messages: Vec<String>,
+}
+
+impl XmlMessageLog {
+    /// Port of `XmlMessageLog()`.
+    pub fn new() -> Self {
+        XmlMessageLog { messages: Vec::new() }
+    }
+
+    /// Port of `MessageLog.appendMsg(String)`.
+    pub fn append_msg(&mut self, msg: impl Into<String>) {
+        self.messages.push(msg.into());
+    }
+
+    /// Port of `MessageLog.appendMsg(int, String)`, which formats the message as
+    /// `Line #<lineNum> - <msg>`.
+    pub fn append_msg_at_line(&mut self, line_number: i32, msg: impl AsRef<str>) {
+        self.messages.push(format!("Line #{} - {}", line_number, msg.as_ref()));
+    }
+
+    /// Port of `MessageLog.appendException(Throwable)`, which appends the exception's message.
+    pub fn append_exception(&mut self, e: &dyn std::error::Error) {
+        self.messages.push(e.to_string());
+    }
+
+    /// The messages appended so far, standing in for `MessageLog.getMessages()`.
+    pub fn messages(&self) -> &[String] {
+        &self.messages
+    }
+}
+
+impl MessageLog for XmlMessageLog {}
+
+impl fmt::Display for XmlMessageLog {
+    /// Mirrors `MessageLog.toString()`, one message per line.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for message in &self.messages {
+            writeln!(f, "{}", message)?;
+        }
+        Ok(())
+    }
+}
+
+/// Placeholder for the nested record `DecompileDebugXmlLoader.DecompileDebugProgramInfo`,
+/// returned by
+/// [`DecompileDebugFormatManager::get_program_info`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager::get_program_info)
+/// before `DecompileDebugXmlLoader` is ported. `DecompileDebugXmlLoader` is the forward half of
+/// a dependency cycle (the loader drives the format manager, which hands this record back), so
+/// the record is stubbed rather than ported alongside its enclosing class. Java's version is a
+/// `record` of three strings, so this is a plain value struct.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecompileDebugProgramInfo {
+    /// The `offset` attribute of the first `<bytechunk>` element.
+    pub offset: String,
+    /// The compiler-spec half of the `<binaryimage arch=...>` attribute (after the last `:`).
+    pub compiler_string: String,
+    /// The language half of the `<binaryimage arch=...>` attribute (before the last `:`).
+    pub spec_string: String,
+}
+
+impl DecompileDebugProgramInfo {
+    /// Port of the record's canonical constructor.
+    pub fn new(
+        offset: impl Into<String>,
+        compiler_string: impl Into<String>,
+        spec_string: impl Into<String>,
+    ) -> Self {
+        DecompileDebugProgramInfo {
+            offset: offset.into(),
+            compiler_string: compiler_string.into(),
+            spec_string: spec_string.into(),
+        }
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DecompileDebugDataTypeManager`, constructed and
+/// driven by
+/// [`DecompileDebugFormatManager`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager)
+/// before the real class is ported.
+///
+/// Like [`query_opinion_service_handler`], the stubbed parse method is a no-op -- except that it
+/// still discards the element subtree it was handed, because its callers loop while the parser
+/// is positioned on a start element and would otherwise spin forever. It therefore reports no
+/// data type, and the format manager skips creating data for the symbol (see its module docs).
+///
+/// The real class retains the `TaskMonitor`/`Program` it is constructed with; this stub drops
+/// them, so callers keep full access to the program while the manager is alive.
+pub struct DecompileDebugDataTypeManager;
+
+impl DecompileDebugDataTypeManager {
+    /// Port of `DecompileDebugDataTypeManager(TaskMonitor, Program)`.
+    pub fn new(monitor: &dyn TaskMonitor, prog: &mut dyn Program) -> Self {
+        let _ = (monitor, prog);
+        DecompileDebugDataTypeManager
+    }
+
+    /// Stands in for `DataType parseDataTypeTag(XmlPullParser, XmlMessageLog)`; discards the
+    /// type subtree and reports no data type.
+    pub fn parse_data_type_tag<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        log: &mut XmlMessageLog,
+    ) -> StdOption<Box<dyn DataType>> {
+        let _ = log;
+        parser.discard_sub_tree();
+        None
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DecompileDebugFunctionManager`, constructed and
+/// driven by
+/// [`DecompileDebugFormatManager`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager)
+/// before the real class is ported. See [`DecompileDebugDataTypeManager`] for why the stubbed
+/// parse method still discards its subtree.
+pub struct DecompileDebugFunctionManager;
+
+impl DecompileDebugFunctionManager {
+    /// Port of `DecompileDebugFunctionManager(Program, TaskMonitor, DecompileDebugDataTypeManager)`.
+    pub fn new(
+        prog: &mut dyn Program,
+        monitor: &dyn TaskMonitor,
+        data_type_manager: &mut DecompileDebugDataTypeManager,
+    ) -> Self {
+        let _ = (prog, monitor, data_type_manager);
+        DecompileDebugFunctionManager
+    }
+
+    /// Stands in for `void parseFunctionSignature(XmlPullParser, Map<Long, Namespace>,
+    /// XmlMessageLog)`; discards the `<function>` subtree.
+    pub fn parse_function_signature<P: XmlPullParser>(
+        &mut self,
+        parser: &mut P,
+        scope_map: &BTreeMap<i64, Arc<dyn Namespace>>,
+        log: &mut XmlMessageLog,
+    ) {
+        let _ = (scope_map, log);
+        parser.discard_sub_tree();
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DecompileDebugByteManager`, constructed and driven
+/// by
+/// [`DecompileDebugFormatManager`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager)
+/// before the real class is ported. See [`DecompileDebugDataTypeManager`] for why the stubbed
+/// parse method still discards its subtree.
+pub struct DecompileDebugByteManager;
+
+impl DecompileDebugByteManager {
+    /// Port of `DecompileDebugByteManager(TaskMonitor, Program, String)`.
+    pub fn new(monitor: &dyn TaskMonitor, prog: &mut dyn Program, program_name: &str) -> Self {
+        let _ = (monitor, prog, program_name);
+        DecompileDebugByteManager
+    }
+
+    /// Stands in for `void parse(XmlPullParser, XmlMessageLog)`; discards the `<bytechunk>`
+    /// subtree.
+    pub fn parse<P: XmlPullParser>(&mut self, parser: &mut P, log: &mut XmlMessageLog) {
+        let _ = log;
+        parser.discard_sub_tree();
+    }
 }
 

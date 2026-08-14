@@ -4686,7 +4686,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ComLoader.ja
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DbgLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugByteManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugDataTypeManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFormatManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFormatManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFunctionManager.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugXmlLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DefExportLine.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion

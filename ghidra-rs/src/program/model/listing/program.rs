@@ -54,6 +54,17 @@ pub trait Program: DomainObject + Send + Sync {
         None
     }
 
+    /// Get the memory for this program for modification.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DecompileDebugFormatManager`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager),
+    /// which writes string bytes into memory and creates blocks for data symbols. Java has only
+    /// `getMemory()`, because a Java `Memory` reference is mutable through; this port's
+    /// [`get_memory`](Self::get_memory) hands out an `Arc<dyn Memory>`, which is not.
+    fn get_memory_mut(&mut self) -> Option<&mut dyn Memory> {
+        None
+    }
+
     /// The namespace representing this program's global symbol scope. Stands in for
     /// `Program.getGlobalNamespace()`.
     ///
