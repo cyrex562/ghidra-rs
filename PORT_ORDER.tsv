@@ -6,7 +6,7 @@ DONE	trait	34	4	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/
 DONE	trait	33	4	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/debug/DebugCOFFSymbolsHeader.java
 DONE	trait	31	12	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/AoutHeaderFactory.java
 DONE	trait	32	8	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationHandler.java
-TODO	trait	31	7	24	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationContext.java
+DONE	trait	31	7	24	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/coff/relocation/CoffRelocationContext.java
 TODO	trait	31	49	45	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/QueryOpinionService.java
 TODO	trait	32	26	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AnalysisWorker.java
 TODO	trait	30	32	34	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DecompileDebugFormatManager.java
