@@ -4,8 +4,9 @@ use std::sync::Arc;
 
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::format::dwarf::dwarf_register_mappings::DWARFRegisterMappings;
+use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
 use crate::format::seam_stubs::{
-    DWARFCompilationUnit, DWARFExpression, DWARFExpressionException, DWARFExpressionInstruction,
+    DWARFCompilationUnit, DWARFExpressionException, DWARFExpressionInstruction,
     DWARFExpressionOpCode, DWARFProgram, DWARFUtil,
 };
 use crate::program::model::address::AddressSpace;
