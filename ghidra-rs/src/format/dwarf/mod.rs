@@ -3,6 +3,7 @@ pub mod r#macro;
 pub mod sectionprovider;
 pub mod external;
 pub mod expression;
+pub mod funcfixup;
 pub mod line;
 pub mod debug_info_entry;
 pub mod dwarf_accessibility;

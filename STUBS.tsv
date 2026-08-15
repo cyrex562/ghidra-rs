@@ -907,3 +907,5 @@ ts	stub_class	referenced_by
 2026-08-15T05:45:00.000000+00:00	DIEContainer	DebugInfoEntry
 2026-08-15T05:45:00.000000+00:00	DWARFCompilationUnit	DebugInfoEntry
 2026-08-15T05:55:46.605446+00:00	DIEAggregate	DWARFSourceInfo
+2026-08-15T05:57:09.499789+00:00	DWARFFunction	DWARFFunctionFixup
+2026-08-15T05:57:09.500537+00:00	ClassSearcher	DWARFFunctionFixup

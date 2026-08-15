@@ -1222,3 +1222,36 @@ pub trait Sequence: Send + Sync {
 /// Represents metadata about string data types. This is a marker trait until the real port
 /// is available.
 pub trait AbstractStringDataType: Send + Sync {}
+
+/// Placeholder for the unported Java type `ClassSearcher`, referenced by `DWARFFunctionFixup`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ClassSearcher: Send + Sync {
+    fn search(&self, monitor: &dyn super::task::TaskMonitor) -> std::io::Result<()>;
+    fn get_classes(&self, ancestor_class: &dyn Class) -> Vec<Box<dyn Class>>;
+    fn get_instances(&self, c: &dyn Class) -> Vec<Box<dyn ClassInstance>>;
+    fn for_name_safe(&self, name: &str, sup: &dyn Class, loader: &dyn ClassLoader) -> std::io::Result<Box<dyn Class>>;
+    fn add_change_listener(&self, l: &dyn ChangeListener);
+    fn remove_change_listener(&self, l: &dyn ChangeListener);
+    fn get_extension_point_info(&self) -> Vec<Box<dyn ClassFileInfo>>;
+    fn get_loaded(&self) -> Vec<Box<dyn ClassFileInfo>>;
+    fn get_false_positives(&self) -> Vec<Box<dyn ClassFileInfo>>;
+    fn get_extension_point_suffix(&self, class_name: &str) -> String;
+    fn is_class_of_interest(&self, c: &dyn Class) -> bool;
+    fn log_statistics(&self);
+}
+
+/// Placeholder for instances returned by `ClassSearcher.getInstances()`.
+pub trait ClassInstance: Send + Sync {}
+
+/// Placeholder for `ghidra.util.classfinder.Class`, referenced by `ClassSearcher`.
+pub trait Class: Send + Sync {}
+
+/// Placeholder for `ghidra.util.classfinder.ClassLoader`, referenced by `ClassSearcher`.
+pub trait ClassLoader: Send + Sync {}
+
+/// Placeholder for `ghidra.util.classfinder.ChangeListener`, referenced by `ClassSearcher`.
+pub trait ChangeListener: Send + Sync {}
+
+/// Placeholder for `ghidra.util.classfinder.ClassFileInfo`, referenced by `ClassSearcher`.
+pub trait ClassFileInfo: Send + Sync {}
