@@ -2,7 +2,7 @@
 //!
 //! # Departures from the Java class
 //!
-//! * `DWARFCompilationUnit`, `DIEContainer`, `DWARFAbbreviation`, `DWARFTag`, `DWARFAttribute` and
+//! * `DWARFCompilationUnit`, `DIEContainer`, `DWARFAbbreviation`, `DWARFTag` and
 //!   `DWARFMissingAttributeValue` aren't ported yet, so they come from
 //!   [`crate::format::seam_stubs`]. `DebugInfoEntry` sits on a dependency cycle with all of them
 //!   (a container owns DIEs and every DIE reaches back through its compilation unit to that
@@ -28,12 +28,13 @@ use std::sync::{Arc, OnceLock};
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
+use crate::format::dwarf::attribs::dwarf_attribute::DWARFAttribute;
 use crate::format::dwarf::attribs::dwarf_attribute_id::{AttrDef, DWARFAttributeId};
 use crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue;
 use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
 use crate::format::seam_stubs::{
-    DIEContainer, DWARFAbbreviation, DWARFAttribute, DWARFCompilationUnit,
-    DWARFMissingAttributeValue, DWARFProgram, DWARFTag,
+    DIEContainer, DWARFAbbreviation, DWARFCompilationUnit, DWARFMissingAttributeValue,
+    DWARFProgram, DWARFTag,
 };
 
 /// A DWARF Debug Info Entry is a collection of

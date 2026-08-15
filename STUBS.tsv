@@ -902,7 +902,6 @@ ts	stub_class	referenced_by
 2026-08-15T05:20:00.000000+00:00	DWARFIndirectAttribute	DWARFForm
 2026-08-15T05:45:00.000000+00:00	DWARFTag	DebugInfoEntry
 2026-08-15T05:45:00.000000+00:00	DWARFAbbreviation	DebugInfoEntry
-2026-08-15T05:45:00.000000+00:00	DWARFAttribute	DebugInfoEntry
 2026-08-15T05:45:00.000000+00:00	DWARFMissingAttributeValue	DebugInfoEntry
 2026-08-15T05:45:00.000000+00:00	DIEContainer	DebugInfoEntry
 2026-08-15T05:45:00.000000+00:00	DWARFCompilationUnit	DebugInfoEntry
@@ -925,3 +924,4 @@ ts	stub_class	referenced_by
 2026-08-15T07:44:18.812556+00:00	DIEContainer	DWARFUnitHeader
 2026-08-15T07:44:18.813046+00:00	DWARFCompilationUnit	DWARFUnitHeader
 2026-08-15T07:44:18.815133+00:00	DWARFProgram	DWARFUnitHeader
+2026-08-15T09:10:08.164325+00:00	DWARFCompilationUnit	DWARFAttribute
