@@ -15,7 +15,7 @@ DONE	trait	58	11	54	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	trait	58	9	20	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/macro/entry/DWARFMacroInfoEntry.java
 DONE	trait	57	8	5	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/macro/DWARFMacroHeader.java
 DONE	trait	54	10	53	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFFormContext.java
-TODO	trait	53	18	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFForm.java
+DONE	trait	53	18	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFForm.java
 TODO	trait	52	14	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFAttributeId.java
 TODO	trait	51	19	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFAttributeDef.java
 TODO	trait	50	30	19	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DebugInfoEntry.java
