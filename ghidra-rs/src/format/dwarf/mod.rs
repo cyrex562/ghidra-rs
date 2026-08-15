@@ -1,4 +1,5 @@
 pub mod attribs;
+pub mod r#macro;
 pub mod sectionprovider;
 pub mod external;
 pub mod expression;
