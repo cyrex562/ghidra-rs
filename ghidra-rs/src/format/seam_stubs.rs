@@ -3388,10 +3388,15 @@ pub trait DWARFForm: Send + Sync {
     }
 }
 
-/// Placeholder for the unported Java type `DWARFAttributeDef`, referenced by `DWARFAttributeValue`.
-/// Only includes the methods actually needed by `DWARFAttributeValue`.
+/// Placeholder for the unported Java type `DWARFAttributeDef`, referenced by `DWARFAttributeValue`
+/// and `DWARFMacroInfoEntry`. Only includes the methods actually needed by those types.
+///
+/// `get_attribute_form` returns a borrow (rather than an owned `Box<dyn DWARFForm>`) so that
+/// implementors backed by a stored `Box<dyn DWARFForm>` field (e.g. [`DWARFLineContentTypeDef`],
+/// [`crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroOpcodeDef`]) can hand
+/// it out without needing `DWARFForm` to be cloneable.
 pub trait DWARFAttributeDef: Send + Sync {
-    fn get_attribute_form(&self) -> Box<dyn DWARFForm>;
+    fn get_attribute_form(&self) -> &dyn DWARFForm;
 }
 
 /// Placeholder for the unported Java type `DWARFCompilationUnit`, referenced by
@@ -3607,6 +3612,12 @@ impl DWARFLineContentTypeDef {
     }
 }
 
+impl DWARFAttributeDef for DWARFLineContentTypeDef {
+    fn get_attribute_form(&self) -> &dyn DWARFForm {
+        self.attribute_form.as_ref()
+    }
+}
+
 /// A [`DWARFForm`] carrying only the raw `DW_FORM_*` code, used until the real `DWARFForm` enum is
 /// ported. Reading a value through it reports the specific code that isn't handled yet.
 pub struct UnportedDWARFForm {
@@ -3633,12 +3644,15 @@ impl DWARFForm for UnportedDWARFForm {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFFormContext`, referenced by
-/// `DWARFFile::read_v5`. Java models this as a record; it is modeled here as a concrete struct
-/// with public fields, consistent with the crate's convention for record-shaped Java types.
+/// `DWARFFile::read_v5` and `DWARFMacroInfoEntry::read`. Java models this as a generic record
+/// (`DWARFFormContext<E>`, parameterized over the enum type identifying the attribute); `def` is
+/// modeled here as `&'a dyn DWARFAttributeDef` (rather than a concrete `DWARFLineContentTypeDef`)
+/// so both call sites -- `DWARFFile`'s content-type defs and `DWARFMacroInfoEntry`'s opcode defs --
+/// can share this one context type.
 pub struct DWARFFormContext<'r, 'a> {
     pub reader: &'r mut dyn crate::app::util::bin::binary_reader::BinaryReader,
     pub comp_unit: &'a dyn DWARFCompilationUnit,
-    pub def: &'a DWARFLineContentTypeDef,
+    pub def: &'a dyn DWARFAttributeDef,
     pub dwarf_int_size: i32,
 }
 
@@ -3785,4 +3799,211 @@ impl FSUtilities {
         buffer
     }
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.macro.DWARFMacroOpcode`, referenced by
+/// `DWARFMacroInfoEntry`. `DWARFMacroOpcode` is a Java enum (not an interface), so it is modeled
+/// here as a concrete Rust enum carrying the real `DW_MACRO_*` raw opcode and description values,
+/// rather than a trait object. `getOperandForms()` reconstructs each operand on demand as an
+/// [`UnportedDWARFForm`] carrying the real `DW_FORM_*` code, since the full `DWARFForm` enum isn't
+/// ported yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DWARFMacroOpcode {
+    /// Not an official DWARF opcode; represents the entry with opcode 0 that terminates a macro
+    /// unit.
+    MacroUnitTerminator,
+    DwMacroDefine,
+    DwMacroUndef,
+    DwMacroStartFile,
+    DwMacroEndFile,
+    DwMacroDefineStrp,
+    DwMacroUndefStrp,
+    DwMacroImport,
+    DwMacroDefineSup,
+    DwMacroUndefSup,
+    DwMacroImportSup,
+    DwMacroDefineStrx,
+    DwMacroUndefStrx,
+}
+
+impl DWARFMacroOpcode {
+    /// `DWARFForm.DW_FORM_string`, referenced by the operand tables below before the real
+    /// `DWARFForm` enum is ported.
+    const DW_FORM_STRING: u32 = 0x08;
+    const DW_FORM_STRP: u32 = 0x0e;
+    const DW_FORM_UDATA: u32 = 0x0f;
+    const DW_FORM_SEC_OFFSET: u32 = 0x17;
+    const DW_FORM_STRX: u32 = 0x1a;
+    const DW_FORM_STRP_SUP: u32 = 0x1d;
+
+    /// All variants, in Java enum declaration order; used by [`Self::of`].
+    const VALUES: [DWARFMacroOpcode; 13] = [
+        DWARFMacroOpcode::MacroUnitTerminator,
+        DWARFMacroOpcode::DwMacroDefine,
+        DWARFMacroOpcode::DwMacroUndef,
+        DWARFMacroOpcode::DwMacroStartFile,
+        DWARFMacroOpcode::DwMacroEndFile,
+        DWARFMacroOpcode::DwMacroDefineStrp,
+        DWARFMacroOpcode::DwMacroUndefStrp,
+        DWARFMacroOpcode::DwMacroImport,
+        DWARFMacroOpcode::DwMacroDefineSup,
+        DWARFMacroOpcode::DwMacroUndefSup,
+        DWARFMacroOpcode::DwMacroImportSup,
+        DWARFMacroOpcode::DwMacroDefineStrx,
+        DWARFMacroOpcode::DwMacroUndefStrx,
+    ];
+
+    /// Mirrors `DWARFMacroOpcode.getRawOpcode()`.
+    pub fn get_raw_opcode(&self) -> i32 {
+        match self {
+            Self::MacroUnitTerminator => 0,
+            Self::DwMacroDefine => 0x1,
+            Self::DwMacroUndef => 0x2,
+            Self::DwMacroStartFile => 0x3,
+            Self::DwMacroEndFile => 0x4,
+            Self::DwMacroDefineStrp => 0x5,
+            Self::DwMacroUndefStrp => 0x6,
+            Self::DwMacroImport => 0x7,
+            Self::DwMacroDefineSup => 0x8,
+            Self::DwMacroUndefSup => 0x9,
+            Self::DwMacroImportSup => 0xa,
+            Self::DwMacroDefineStrx => 0xb,
+            Self::DwMacroUndefStrx => 0xc,
+        }
+    }
+
+    /// Mirrors `DWARFMacroOpcode.getDescription()`.
+    pub fn get_description(&self) -> String {
+        match self {
+            Self::MacroUnitTerminator => "unknown",
+            Self::DwMacroDefine
+            | Self::DwMacroDefineStrp
+            | Self::DwMacroDefineSup
+            | Self::DwMacroDefineStrx => "#define",
+            Self::DwMacroUndef
+            | Self::DwMacroUndefStrp
+            | Self::DwMacroUndefSup
+            | Self::DwMacroUndefStrx => "#undef",
+            Self::DwMacroStartFile => "startfile",
+            Self::DwMacroEndFile => "endfile",
+            Self::DwMacroImport | Self::DwMacroImportSup => "#include",
+        }
+        .to_string()
+    }
+
+    /// The raw `DW_FORM_*` codes each operand is encoded with, mirroring the Java constructor's
+    /// varargs `operandForms`.
+    fn operand_form_codes(&self) -> &'static [u32] {
+        match self {
+            Self::MacroUnitTerminator | Self::DwMacroEndFile => &[],
+            Self::DwMacroDefine | Self::DwMacroUndef => {
+                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRING]
+            }
+            Self::DwMacroStartFile => &[Self::DW_FORM_UDATA, Self::DW_FORM_UDATA],
+            Self::DwMacroDefineStrp | Self::DwMacroUndefStrp => {
+                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRP]
+            }
+            Self::DwMacroImport | Self::DwMacroImportSup => &[Self::DW_FORM_SEC_OFFSET],
+            Self::DwMacroDefineSup | Self::DwMacroUndefSup => {
+                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRP_SUP]
+            }
+            Self::DwMacroDefineStrx | Self::DwMacroUndefStrx => {
+                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRX]
+            }
+        }
+    }
+
+    /// Mirrors `DWARFMacroOpcode.getOperandForms()`.
+    pub fn get_operand_forms(&self) -> Vec<Box<dyn DWARFForm>> {
+        self.operand_form_codes()
+            .iter()
+            .map(|&form_code| Box::new(UnportedDWARFForm { form_code }) as Box<dyn DWARFForm>)
+            .collect()
+    }
+
+    /// Mirrors `DWARFMacroOpcode.of(int)`: a linear search over the enum's values, returning
+    /// `None` (Java `null`) if no variant matches.
+    pub fn of(opcode_val: i32) -> Option<Self> {
+        Self::VALUES.into_iter().find(|opcode| opcode.get_raw_opcode() == opcode_val)
+    }
+}
+
+/// Placeholder for the nested `DWARFMacroOpcode.Def` (a `DWARFAttributeDef<DWARFMacroOpcode>`),
+/// referenced by `DWARFMacroInfoEntry`. Mirrors the three fields the Java constructor forwards to
+/// `DWARFAttributeDef`'s constructor (`attributeId`, `rawAttributeId`, `attributeForm`); the
+/// fourth (`implicitValue`) is always `-1` ("N/A") for a macro opcode def, so it's omitted here.
+pub struct DWARFMacroOpcodeDef {
+    pub opcode: DWARFMacroOpcode,
+    pub raw_opcode: i32,
+    pub form: Box<dyn DWARFForm>,
+}
+
+impl DWARFMacroOpcodeDef {
+    pub fn new(opcode: DWARFMacroOpcode, raw_opcode: i32, form: Box<dyn DWARFForm>) -> Self {
+        DWARFMacroOpcodeDef { opcode, raw_opcode, form }
+    }
+}
+
+impl DWARFAttributeDef for DWARFMacroOpcodeDef {
+    fn get_attribute_form(&self) -> &dyn DWARFForm {
+        self.form.as_ref()
+    }
+}
+
+/// Placeholder for the unported Java type `DWARFMacroHeader`, referenced by `DWARFMacroInfoEntry`.
+/// `DWARFMacroInfoEntry` and `DWARFMacroHeader` reference each other (a header reads and owns its
+/// entries; each entry keeps a back-reference to its owning header), so this stub breaks that
+/// forward cycle -- only the three accessors `DWARFMacroInfoEntry::read` needs are modeled here.
+/// `DWARFMacroHeader` is a concrete Java class (not an interface); the real port should replace
+/// this trait with that concrete type.
+pub trait DWARFMacroHeader: Send + Sync {
+    /// Mirrors `DWARFMacroHeader.getOpcodeMap()`.
+    fn get_opcode_map(&self) -> std::collections::HashMap<i32, Vec<Box<dyn DWARFForm>>>;
+
+    /// Mirrors `DWARFMacroHeader.getIntSize()`.
+    fn get_int_size(&self) -> i32;
+
+    /// Mirrors `DWARFMacroHeader.getCompilationUnit()`.
+    fn get_compilation_unit(&self) -> Box<dyn DWARFCompilationUnit>;
+}
+
+/// Minimal placeholders for the five unported Java macro-entry subclasses that
+/// `DWARFMacroInfoEntry::to_specialized_form` dispatches to (`DWARFMacroDefine`, `DWARFMacroUndef`,
+/// `DWARFMacroStartFile`, `DWARFMacroEndFile`, `DWARFMacroImport`). Each extends
+/// `DWARFMacroInfoEntry` in Java and is expected to have a copy-constructor that wraps a generic
+/// `DWARFMacroInfoEntry`; these stubs offer exactly that shape (and nothing else) so dispatch
+/// compiles, using the inherited (non-overridden) `to_string`. Replace each with its real port,
+/// which will add the subclass-specific getters and (for `DWARFMacroDefine`/`DWARFMacroStartFile`)
+/// override `to_string`.
+macro_rules! macro_info_entry_placeholder {
+    ($name:ident) => {
+        pub struct $name {
+            base: crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntryBase,
+        }
+
+        impl $name {
+            pub fn new(
+                other: crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntryBase,
+            ) -> Self {
+                $name { base: other }
+            }
+        }
+
+        impl crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntry
+            for $name
+        {
+            fn base(
+                &self,
+            ) -> &crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntryBase
+            {
+                &self.base
+            }
+        }
+    };
+}
+
+macro_info_entry_placeholder!(DWARFMacroDefine);
+macro_info_entry_placeholder!(DWARFMacroUndef);
+macro_info_entry_placeholder!(DWARFMacroStartFile);
+macro_info_entry_placeholder!(DWARFMacroEndFile);
+macro_info_entry_placeholder!(DWARFMacroImport);
 
