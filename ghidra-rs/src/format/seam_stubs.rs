@@ -4,6 +4,7 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
+use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
@@ -3406,6 +3407,13 @@ pub trait DWARFAttributeDef: Send + Sync {
 pub trait DWARFCompilationUnit: Send + Sync {
     fn get_dwarf_version(&self) -> i16;
 
+    /// Mirrors `DWARFCompilationUnit.getIntSize()` (inherited from `DWARFUnitHeader.getIntSize()`),
+    /// referenced by `DWARFFormContext`'s compact constructor. Defaults to 4 (DWARF_32), the
+    /// common case, so test doubles that don't model 64-bit DWARF keep compiling.
+    fn get_int_size(&self) -> i32 {
+        4
+    }
+
     /// Mirrors `DWARFCompilationUnit.getCompileDirectory()`, which returns `null` when the
     /// compilation unit has no `DW_AT_comp_dir`.
     fn get_compile_directory(&self) -> Option<String> {
@@ -3670,19 +3678,6 @@ impl DWARFForm for UnportedDWARFForm {
             ),
         ))
     }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFFormContext`, referenced by
-/// `DWARFFile::read_v5` and `DWARFMacroInfoEntry::read`. Java models this as a generic record
-/// (`DWARFFormContext<E>`, parameterized over the enum type identifying the attribute); `def` is
-/// modeled here as `&'a dyn DWARFAttributeDef` (rather than a concrete `DWARFLineContentTypeDef`)
-/// so both call sites -- `DWARFFile`'s content-type defs and `DWARFMacroInfoEntry`'s opcode defs --
-/// can share this one context type.
-pub struct DWARFFormContext<'r, 'a> {
-    pub reader: &'r mut dyn crate::app::util::bin::binary_reader::BinaryReader,
-    pub comp_unit: &'a dyn DWARFCompilationUnit,
-    pub def: &'a dyn DWARFAttributeDef,
-    pub dwarf_int_size: i32,
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFStringAttribute`, referenced by
