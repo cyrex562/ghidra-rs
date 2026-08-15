@@ -2,12 +2,12 @@
 //!
 //! # Departures from the Java class
 //!
-//! * `DWARFCompilationUnit`, `DIEContainer`, `DWARFAbbreviation`, `DWARFTag` and
-//!   `DWARFMissingAttributeValue` aren't ported yet, so they come from
-//!   [`crate::format::seam_stubs`]. `DebugInfoEntry` sits on a dependency cycle with all of them
-//!   (a container owns DIEs and every DIE reaches back through its compilation unit to that
-//!   container), which the stubs break. The compilation unit and abbreviation are shared by many
-//!   DIEs, so they are held as [`Arc`]s where Java holds plain references.
+//! * `DWARFCompilationUnit`, `DIEContainer`, `DWARFTag` and `DWARFMissingAttributeValue` aren't
+//!   ported yet, so they come from [`crate::format::seam_stubs`]. `DebugInfoEntry` sits on a
+//!   dependency cycle with all of them (a container owns DIEs and every DIE reaches back through
+//!   its compilation unit to that container), which the stubs break. The compilation unit and
+//!   abbreviation are shared by many DIEs, so they are held as [`Arc`]s where Java holds plain
+//!   references.
 //! * Java lazily caches each deserialized attribute value in a mutable `DWARFAttributeValue[]`
 //!   read through a non-mutating getter. Here each slot is a [`OnceLock`], which gives the same
 //!   read-through-`&self` caching. One consequence: where Java returns a fresh
@@ -32,9 +32,9 @@ use crate::format::dwarf::attribs::dwarf_attribute::DWARFAttribute;
 use crate::format::dwarf::attribs::dwarf_attribute_id::{AttrDef, DWARFAttributeId};
 use crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue;
 use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
+use crate::format::dwarf::dwarf_abbreviation::DWARFAbbreviation;
 use crate::format::seam_stubs::{
-    DIEContainer, DWARFAbbreviation, DWARFCompilationUnit, DWARFMissingAttributeValue,
-    DWARFProgram, DWARFTag,
+    DIEContainer, DWARFCompilationUnit, DWARFMissingAttributeValue, DWARFProgram, DWARFTag,
 };
 
 /// A DWARF Debug Info Entry is a collection of

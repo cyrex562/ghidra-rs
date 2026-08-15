@@ -6,6 +6,7 @@
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
+use crate::format::dwarf::dwarf_abbreviation::DWARFAbbreviation;
 use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
 use crate::format::dwarf::external::object_type::ObjectType;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
@@ -3760,74 +3761,18 @@ impl DWARFTag {
     pub fn get_id(&self) -> i32 {
         self.raw_tag_id
     }
+
+    /// Mirrors `DWARFTag.name(int)`. The real enum returns its constant name for a recognized tag
+    /// and falls back to `"DW_TAG_??? %d (0x%x)"` only for `DW_TAG_UNKNOWN`; since this stub has
+    /// no catalog of known tag constants, every tag renders through that fallback format.
+    pub fn name(&self, raw_tag_id: i32) -> String {
+        format!("DW_TAG_??? {0} (0x{0:x})", raw_tag_id)
+    }
 }
 
 impl std::fmt::Display for DWARFTag {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "DW_TAG_0x{:x}", self.raw_tag_id)
-    }
-}
-
-/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.DWARFAbbreviation`, the schema
-/// shared by every DIE that references its abbreviation code. `DWARFAbbreviation` is a concrete
-/// Java class, so it is modeled as a struct; only the state and accessors `DebugInfoEntry` reaches
-/// for are present (the static `read`/`readAbbreviations` parsers are left to the real port).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DWARFAbbreviation {
-    abbreviation_code: i32,
-    tag: DWARFTag,
-    has_children: bool,
-    attributes: Vec<crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef>,
-}
-
-impl DWARFAbbreviation {
-    /// Mirrors `DWARFAbbreviation(int, int, boolean, AttrDef[])`.
-    pub fn new(
-        abbreviation_code: i32,
-        tag_id: i32,
-        has_children: bool,
-        attributes: Vec<crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef>,
-    ) -> Self {
-        DWARFAbbreviation {
-            abbreviation_code,
-            tag: DWARFTag::of(tag_id),
-            has_children,
-            attributes,
-        }
-    }
-
-    /// Mirrors `DWARFAbbreviation.getAbbreviationCode()`.
-    pub fn get_abbreviation_code(&self) -> i32 {
-        self.abbreviation_code
-    }
-
-    /// Mirrors `DWARFAbbreviation.getTag()`.
-    pub fn get_tag(&self) -> DWARFTag {
-        self.tag
-    }
-
-    /// Mirrors `DWARFAbbreviation.hasChildren()`.
-    pub fn has_children(&self) -> bool {
-        self.has_children
-    }
-
-    /// Mirrors `DWARFAbbreviation.getAttributes()`.
-    pub fn get_attributes(&self) -> &[crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef] {
-        &self.attributes
-    }
-
-    /// Mirrors `DWARFAbbreviation.getAttributeCount()`.
-    pub fn get_attribute_count(&self) -> usize {
-        self.attributes.len()
-    }
-
-    /// Mirrors `DWARFAbbreviation.getAttributeAt(int)`, which throws
-    /// `ArrayIndexOutOfBoundsException` for an out-of-range index.
-    pub fn get_attribute_at(
-        &self,
-        index: usize,
-    ) -> Option<crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef> {
-        self.attributes.get(index).copied()
     }
 }
 
