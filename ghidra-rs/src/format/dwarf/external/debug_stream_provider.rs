@@ -1,6 +1,7 @@
 use std::io::{self, Read};
 
-use crate::format::seam_stubs::{DebugInfoProvider, ExternalDebugInfo};
+use crate::format::dwarf::external::debug_info_provider::DebugInfoProvider;
+use crate::format::seam_stubs::ExternalDebugInfo;
 use crate::format::dwarf::external::object_type::ObjectType;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;

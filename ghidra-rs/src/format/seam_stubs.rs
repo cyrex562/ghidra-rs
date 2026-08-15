@@ -4491,9 +4491,6 @@ pub trait AddressSetView: Send + Sync {}
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFVariable`, referenced by `DWARFFunction`.
 pub trait DWARFVariable: Send + Sync {}
 
-/// Placeholder for `ghidra.app.util.bin.format.dwarf.external.DebugInfoProvider`, referenced by `DebugStreamProvider`.
-pub trait DebugInfoProvider: Send + Sync {}
-
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.external.ExternalDebugInfo`, referenced by `DebugStreamProvider`.
 pub trait ExternalDebugInfo: Send + Sync {
     fn from_program(&self, program: &dyn Program) -> Box<dyn ExternalDebugInfo>;
