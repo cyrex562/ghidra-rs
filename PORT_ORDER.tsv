@@ -19,7 +19,7 @@ DONE	trait	53	18	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	52	14	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFAttributeId.java
 DONE	trait	51	19	3	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFAttributeDef.java
 DONE	trait	50	30	19	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DebugInfoEntry.java
-TODO	trait	49	18	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFSourceInfo.java
+DONE	trait	49	18	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFSourceInfo.java
 TODO	trait	49	10	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/funcfixup/DWARFFunctionFixup.java
 TODO	trait	47	8	57	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionEvaluator.java
 TODO	trait	46	10	25	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpression.java
