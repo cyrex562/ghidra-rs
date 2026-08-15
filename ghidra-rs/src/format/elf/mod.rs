@@ -1,5 +1,6 @@
 pub mod elf_compressed_section_header;
 pub mod elf_constants;
+pub mod elf_dynamic;
 pub mod elf_exception;
 pub mod elf_file_section;
 pub mod elf_load_helper;

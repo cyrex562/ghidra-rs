@@ -1196,12 +1196,29 @@ pub trait ElfHeader: Send + Sync {
     ) -> Option<crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter> {
         None
     }
+
+    /// `ElfHeader.getDynamicType(int)` -- looks up the enum-like dynamic type for a `d_tag`
+    /// value, needed by
+    /// [`ElfDynamic::get_tag_type`](crate::format::elf::elf_dynamic::ElfDynamic::get_tag_type).
+    /// Java returns `null` when the type map hasn't been built yet or the tag is unrecognized;
+    /// the stub has no type registry, so the default always answers `None`.
+    fn get_dynamic_type(&self, _type_: i32) -> Option<Box<dyn ElfDynamicType>> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfDynamicType`, referenced by
 /// [`ElfLoadAdapter::add_dynamic_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_dynamic_types)
-/// before the real class is ported. Only used as the value type of the extension type map.
-pub trait ElfDynamicType: Send + Sync {}
+/// and by
+/// [`ElfDynamic`](crate::format::elf::elf_dynamic::ElfDynamic) before the real class is ported.
+/// `value`/`name` stand in for the Java class's public `final` fields of the same name.
+pub trait ElfDynamicType: Send + Sync {
+    /// `ElfDynamicType.value` -- the `d_tag` value this type represents.
+    fn value(&self) -> i32;
+
+    /// `ElfDynamicType.name` -- the type's symbolic name, e.g. `"DT_SYMTAB"`.
+    fn name(&self) -> String;
+}
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfProgramHeaderType`, referenced by
 /// [`ElfLoadAdapter::add_program_header_types`](crate::format::elf::extend::elf_load_adapter::ElfLoadAdapter::add_program_header_types)
