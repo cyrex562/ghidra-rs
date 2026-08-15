@@ -38,7 +38,7 @@ DONE	trait	40	19	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	36	14	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFUnitHeader.java
 PARK	trait	35	38	7	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
 DONE	trait	34	8	5	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFAttribute.java
-TODO	trait	33	20	15	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAbbreviation.java
+DONE	trait	33	20	15	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFAbbreviation.java
 TODO	trait	31	27	25	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DIEAggregate.java
 TODO	trait	35	27	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldMarkupFunction.java
 TODO	trait	33	31	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldContext.java
