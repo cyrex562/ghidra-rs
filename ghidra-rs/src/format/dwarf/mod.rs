@@ -15,6 +15,7 @@ pub mod dwarf_encoding;
 pub mod dwarf_endianity;
 pub mod dwarf_exception;
 pub mod dwarf_identifier_case;
+pub mod dwarf_import_options;
 pub mod dwarf_inline;
 pub mod dwarf_indirect_table_header;
 pub mod dwarf_length_value;
