@@ -5012,3 +5012,47 @@ pub trait DebugInfoProviderRegistry: Send + Sync {
     fn create(&self, name: &str, context: &dyn std::any::Any) -> Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider>;
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.FieldContext`,
+/// referenced by `FieldMarkupFunction` before the real class is ported.
+pub trait FieldContext<T>: Send + Sync {
+    fn get_structure_instance(&self) -> &T;
+    fn get_address(&self) -> Address;
+    fn get_value(&self, expected_type: &dyn std::any::Any) -> std::io::Result<Box<dyn std::any::Any>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.MarkupSession`,
+/// referenced by `FieldMarkupFunction` before the real class is ported.
+pub trait MarkupSession: Send + Sync {
+    fn get_program(&self) -> Box<dyn crate::program::model::listing::Program>;
+    fn get_mapping_context(&self) -> Box<dyn std::any::Any>;
+    fn get_markedup_addresses(&self) -> Box<dyn std::any::Any>;
+    fn markup(&self, obj: &dyn std::any::Any, nested: bool) -> std::io::Result<()>;
+    fn markup_address(&self, addr: Address, dt: &dyn std::any::Any) -> std::io::Result<()>;
+    fn markup_address_if_undefined(&self, addr: Address, dt: &dyn std::any::Any) -> std::io::Result<()>;
+    fn label_structure(&self, obj: &dyn std::any::Any, symbol_name: &str, namespace_name: &str) -> std::io::Result<()>;
+    fn label_address(&self, addr: Address, symbol_name: &str) -> std::io::Result<()>;
+    fn append_comment(
+        &self,
+        field_context: &dyn std::any::Any,
+        comment_type: &dyn std::any::Any,
+        prefix: &str,
+        comment: &str,
+        sep: &str,
+    ) -> std::io::Result<()>;
+    fn markup_structure(&self, structure_context: &dyn std::any::Any, nested: bool) -> std::io::Result<()>;
+    fn markup_array_element_references(
+        &self,
+        array_addr: Address,
+        element_size: i32,
+        target_addrs: Vec<Address>,
+    ) -> std::io::Result<()>;
+    fn create_function_if_missing(
+        &self,
+        name: &str,
+        ns: &dyn std::any::Any,
+        addr: Address,
+    ) -> Box<dyn std::any::Any>;
+    fn add_reference(&self, field_context: &dyn std::any::Any, ref_dest: Address);
+    fn log_warning_at(&self, addr: Address, msg: &str);
+}
+
