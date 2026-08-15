@@ -9,13 +9,13 @@
 //!   [`DWARFAttributeId::VALUES`], mirroring the approach already used by
 //!   [`DWARFForm::of`](crate::format::dwarf::attribs::dwarf_form::DWARFForm::of). It returns
 //!   [`None`] where Java returns `null`.
-//! * The nested `DWARFAttributeId.AttrDef` extends the generic (and still unported)
-//!   `DWARFAttributeDef<E extends Enum<E>>`. Since `AttrDef` is the only instantiation of that
-//!   generic base needed here (`E = DWARFAttributeId`), [`AttrDef`] is ported as a concrete
-//!   struct that inlines the base class's field storage and `read`/`withForm` logic rather than
-//!   modeling the generic base itself; it implements the crate's existing
-//!   [`DWARFAttributeDef`](crate::format::seam_stubs::DWARFAttributeDef) stub trait for the
-//!   behavior other ported code already depends on that trait for (mirroring how
+//! * The nested `DWARFAttributeId.AttrDef` extends
+//!   [`DWARFAttributeDef<E extends Enum<E>>`](crate::format::dwarf::attribs::dwarf_attribute_def),
+//!   specialized to `E = DWARFAttributeId`. [`AttrDef`] wraps a
+//!   [`DWARFAttributeDefBase<DWARFAttributeId>`](crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDefBase)
+//!   for the shared field storage and `read` logic, and implements the crate's
+//!   [`DWARFAttributeDef`](crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef)
+//!   trait for the overridden `getRawAttributeIdDescription`/`withForm` behavior (mirroring how
 //!   [`DWARFLineContentTypeDef`](crate::format::seam_stubs::DWARFLineContentTypeDef) specializes
 //!   the same Java base class for `DWARFLineContentType`).
 
@@ -23,10 +23,9 @@ use std::fmt;
 use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::attribs::dwarf_attribute_class::DWARFAttributeClass;
-use crate::format::dwarf::attribs::dwarf_form::{self, DWARFForm};
-use crate::format::seam_stubs::DWARFAttributeDef;
+use crate::format::dwarf::attribs::dwarf_attribute_def::{DWARFAttributeDef, DWARFAttributeDefBase};
+use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 
 use DWARFAttributeClass::{
     AddrPtr, Address, Block, Constant, ExprLoc, Flag, LinePtr, LocList, LocListsPtr, MacPtr,
@@ -722,14 +721,11 @@ impl fmt::Display for DWARFAttributeId {
 }
 
 /// Represents how a specific DWARF attribute is stored in a DIE record. Mirrors the nested
-/// `DWARFAttributeId.AttrDef`, a concrete specialization (for `E = DWARFAttributeId`) of the
-/// generic, still-unported `DWARFAttributeDef<E extends Enum<E>>`.
+/// `DWARFAttributeId.AttrDef`, a concrete specialization (for `E = DWARFAttributeId`) of
+/// [`DWARFAttributeDefBase`](crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDefBase).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AttrDef {
-    attribute_id: Option<DWARFAttributeId>,
-    raw_attribute_id: i32,
-    attribute_form: DWARFForm,
-    implicit_value: i64,
+    base: DWARFAttributeDefBase<DWARFAttributeId>,
 }
 
 impl AttrDef {
@@ -740,58 +736,34 @@ impl AttrDef {
         attribute_form: DWARFForm,
         implicit_value: i64,
     ) -> Self {
-        AttrDef { attribute_id, raw_attribute_id, attribute_form, implicit_value }
+        AttrDef {
+            base: DWARFAttributeDefBase::new(attribute_id, raw_attribute_id, attribute_form, implicit_value),
+        }
     }
 
     /// Reads an [`AttrDef`] instance from `reader`. Returns `Ok(None)` for an end-of-list marker.
     ///
-    /// Mirrors `DWARFAttributeId.AttrDef.read(BinaryReader)`, inlining the generic
-    /// `DWARFAttributeDef.read(BinaryReader, Function)` logic it delegates to in Java (specialized
-    /// to `DWARFAttributeId::of` as the id mapper), since that generic base class isn't ported yet.
+    /// Mirrors `DWARFAttributeId.AttrDef.read(BinaryReader)`, which delegates to the generic
+    /// `DWARFAttributeDef.read(BinaryReader, Function)` (specialized to `DWARFAttributeId::of` as
+    /// the id mapper).
     pub fn read(reader: &mut dyn BinaryReader) -> io::Result<Option<AttrDef>> {
-        let raw_attribute_id = LEB128Info::unsigned(reader)?.as_u_int32()? as i32;
-        let form_id = LEB128Info::unsigned(reader)?.as_u_int32()? as i32;
-
-        if raw_attribute_id == EOL && form_id == dwarf_form::EOL {
-            // end of attributespec list
-            return Ok(None);
-        }
-
-        let attribute_form = DWARFForm::of(form_id).ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Unknown DWARFForm {form_id} (0x{form_id:x})"),
-            )
-        })?;
-
-        let attribute_id = DWARFAttributeId::of(raw_attribute_id);
-
-        // NOTE: implicit value is a space saving hack built into DWARF. It adds an extra field in
-        // the attributespec that needs to be read now in the .debug_abbr. This is different than
-        // DW_FORM_indirect, which is read from the DIE in .debug_info.
-        let implicit_value = if attribute_form == DWARFForm::DwFormImplicitConst {
-            LEB128Info::signed(reader)?.as_long()
-        } else {
-            0
-        };
-
-        Ok(Some(AttrDef { attribute_id, raw_attribute_id, attribute_form, implicit_value }))
+        Ok(DWARFAttributeDefBase::read(reader, DWARFAttributeId::of)?.map(|base| AttrDef { base }))
     }
 
     /// Get the attribute id of the attribute specification. Mirrors
     /// `DWARFAttributeDef.getAttributeId()`.
     pub fn get_attribute_id(&self) -> Option<DWARFAttributeId> {
-        self.attribute_id
+        self.base.get_attribute_id()
     }
 
     /// Mirrors `DWARFAttributeDef.getRawAttributeId()`.
     pub fn get_raw_attribute_id(&self) -> i32 {
-        self.raw_attribute_id
+        self.base.get_raw_attribute_id()
     }
 
     /// Mirrors `DWARFAttributeDef.getAttributeName()`.
     pub fn get_attribute_name(&self) -> String {
-        match self.attribute_id {
+        match self.base.get_attribute_id() {
             Some(id) => id.name().to_string(),
             None => self.raw_attribute_id_description(),
         }
@@ -799,37 +771,37 @@ impl AttrDef {
 
     /// Mirrors the overridden `AttrDef.getRawAttributeIdDescription()`.
     fn raw_attribute_id_description(&self) -> String {
-        format!("DW_AT_???? {0} (0x{0:x})", self.raw_attribute_id)
+        format!("DW_AT_???? {0} (0x{0:x})", self.base.get_raw_attribute_id())
     }
 
     /// Get the form of the attribute specification. Mirrors `DWARFAttributeDef.getAttributeForm()`.
     pub fn get_attribute_form(&self) -> DWARFForm {
-        self.attribute_form
+        self.base.get_attribute_form()
     }
 
     /// Mirrors `DWARFAttributeDef.isImplicit()`.
     pub fn is_implicit(&self) -> bool {
-        self.attribute_form == DWARFForm::DwFormImplicitConst
+        self.base.is_implicit()
     }
 
     /// Mirrors `DWARFAttributeDef.getImplicitValue()`.
     pub fn get_implicit_value(&self) -> i64 {
-        self.implicit_value
+        self.base.get_implicit_value()
     }
 
     /// Mirrors the overridden `AttrDef.withForm(DWARFForm)`.
     pub fn with_form(&self, new_form: DWARFForm) -> AttrDef {
-        AttrDef { attribute_form: new_form, ..*self }
+        AttrDef { base: self.base.with_form(new_form) }
     }
 }
 
 impl DWARFAttributeDef for AttrDef {
     fn get_attribute_form(&self) -> DWARFForm {
-        self.attribute_form
+        self.base.get_attribute_form()
     }
 
     fn get_implicit_value(&self) -> i64 {
-        self.implicit_value
+        self.base.get_implicit_value()
     }
 
     fn with_form(&self, new_form: DWARFForm) -> Box<dyn DWARFAttributeDef> {

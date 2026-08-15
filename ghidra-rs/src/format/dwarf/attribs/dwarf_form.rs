@@ -663,7 +663,8 @@ mod tests {
     use super::*;
     use crate::app::util::bin::binary_reader::BinaryReader;
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-    use crate::format::seam_stubs::{DIEContainer, DWARFAttributeDef, DWARFCompilationUnit};
+    use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
+    use crate::format::seam_stubs::{DIEContainer, DWARFCompilationUnit};
     use std::cell::RefCell;
     use std::rc::Rc;
 

@@ -1,4 +1,5 @@
-use crate::format::seam_stubs::{DWARFAttributeDef, DWARFCompilationUnit};
+use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
+use crate::format::seam_stubs::DWARFCompilationUnit;
 
 /// Common methods for all DWARF attribute value implementations.
 /// This trait is implemented by various DWARF attribute value types like
