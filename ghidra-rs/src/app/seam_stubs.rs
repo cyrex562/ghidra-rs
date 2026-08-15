@@ -2488,3 +2488,16 @@ pub mod descriptor_decoder {
     }
 }
 
+/// Placeholder for `generic.stl.Pair`, referenced by [`OptionChooser`](crate::app::util::importer::option_chooser::OptionChooser)
+/// before the real class is ported. `OptionChooser` only ever holds this type in a collection
+/// returned by `getArgs()`, so minimal members are needed yet.
+pub trait Pair: Send + Sync {
+    /// Mirrors `Pair.toString()`.
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.importer.ProgramLoader`, referenced by
+/// [`OptionChooser`](crate::app::util::importer::option_chooser::OptionChooser) before the real
+/// class is ported. `OptionChooser` only ever passes this type through as a parameter, so no
+/// members are needed yet.
+pub trait ProgramLoader: Send + Sync {}
