@@ -4281,3 +4281,53 @@ macro_info_entry_placeholder!(DWARFMacroStartFile);
 macro_info_entry_placeholder!(DWARFMacroEndFile);
 macro_info_entry_placeholder!(DWARFMacroImport);
 
+/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.DIEAggregate`, referenced by
+/// `DWARFSourceInfo`. `DIEAggregate` is a concrete Java class (not an interface), so this stub is
+/// a struct rather than a trait object. Only the surface `DWARFSourceInfo` reaches for is
+/// modeled: the declaring source filename, the aggregate/decl parent chain, and lookup of a
+/// numeric attribute value among a DIE's children carrying a given tag.
+pub struct DIEAggregate {
+    pub source_file: Option<String>,
+    pub parent: Option<Box<DIEAggregate>>,
+    pub decl_parent: Option<Box<DIEAggregate>>,
+    pub children_numeric_attrs: Vec<(
+        crate::format::dwarf::attribs::dwarf_attribute_id::DWARFAttributeId,
+        DWARFTag,
+        DWARFNumericAttribute,
+    )>,
+}
+
+impl DIEAggregate {
+    /// Mirrors `DIEAggregate.getSourceFile()`, which returns `null` when this DIEA has no
+    /// `DW_AT_decl_file`.
+    pub fn get_source_file(&self) -> Option<&str> {
+        self.source_file.as_deref()
+    }
+
+    /// Mirrors `DIEAggregate.getParent()`, which returns `null` for the root DIEA.
+    pub fn get_parent(&self) -> Option<&DIEAggregate> {
+        self.parent.as_deref()
+    }
+
+    /// Mirrors `DIEAggregate.getDeclParent()`, which returns `null` when this DIEA has no
+    /// `DW_AT_specification`/`DW_AT_abstract_origin`-style declaration parent.
+    pub fn get_decl_parent(&self) -> Option<&DIEAggregate> {
+        self.decl_parent.as_deref()
+    }
+
+    /// Mirrors `DIEAggregate.findAttributeInChildren(DWARFAttributeId, DWARFTag, Class)`,
+    /// specialized to `DWARFNumericAttribute.class`, which is the only instantiation
+    /// `DWARFSourceInfo` uses. Returns `null` (here `None`) when no child DIE carrying
+    /// `child_tag` has a `DWARFNumericAttribute` value for `attr_id`.
+    pub fn find_attribute_in_children(
+        &self,
+        attr_id: crate::format::dwarf::attribs::dwarf_attribute_id::DWARFAttributeId,
+        child_tag: DWARFTag,
+    ) -> Option<&DWARFNumericAttribute> {
+        self.children_numeric_attrs
+            .iter()
+            .find(|(id, tag, _)| *id == attr_id && *tag == child_tag)
+            .map(|(_, _, value)| value)
+    }
+}
+
