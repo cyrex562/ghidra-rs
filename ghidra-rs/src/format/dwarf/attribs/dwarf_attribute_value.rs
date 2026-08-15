@@ -42,19 +42,12 @@ mod tests {
         }
     }
 
-    struct MockAttributeForm;
-    impl crate::format::seam_stubs::DWARFForm for MockAttributeForm {
-        fn is_class(&self, _class: &dyn std::any::Any) -> bool {
-            false
-        }
-    }
-
     struct MockAttributeDef {
-        form: MockAttributeForm,
+        form: crate::format::dwarf::attribs::dwarf_form::DWARFForm,
     }
     impl DWARFAttributeDef for MockAttributeDef {
-        fn get_attribute_form(&self) -> &dyn crate::format::seam_stubs::DWARFForm {
-            &self.form
+        fn get_attribute_form(&self) -> crate::format::dwarf::attribs::dwarf_form::DWARFForm {
+            self.form
         }
     }
 
@@ -62,7 +55,8 @@ mod tests {
     fn test_attribute_value_trait_can_return_string() {
         let attr = MockAttributeValue;
         let cu = MockCompilationUnit;
-        let def = MockAttributeDef { form: MockAttributeForm };
+        let def =
+            MockAttributeDef { form: crate::format::dwarf::attribs::dwarf_form::DWARFForm::DwFormData4 };
 
         let result = attr.get_value_string(&cu, &def);
         assert_eq!(result, "test_value");

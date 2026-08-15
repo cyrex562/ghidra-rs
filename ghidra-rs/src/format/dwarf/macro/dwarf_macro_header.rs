@@ -5,10 +5,9 @@
 //! * `DWARFCompilationUnit` and `DIEContainer` aren't ported yet, so `cu` is stored as
 //!   `Arc<dyn DWARFCompilationUnit>` (see [`crate::format::seam_stubs`]) and [`Self::get_entries`]
 //!   goes through [`DIEContainer::get_macro_entries`](crate::format::seam_stubs::DIEContainer::get_macro_entries).
-//! * `opcodeMap`'s values are stored as raw `DW_FORM_*` codes (`Vec<u32>`) rather than
-//!   `List<DWARFForm>`, matching how [`DWARFMacroOpcode`] itself represents operand forms until
-//!   the real `DWARFForm` enum is ported; [`Self::get_opcode_map`] reconstructs
-//!   `Box<dyn DWARFForm>` values on demand, same as `DWARFMacroOpcode::get_operand_forms`.
+//! * An opcode's operand form code that no [`DWARFForm`] recognizes is reported as an error while
+//!   reading the per-unit opcode table, rather than deferred to the `NullPointerException` Java
+//!   would raise later when it tries to read a value through the resulting null form.
 //! * The `EMTPY` singleton (an anonymous subclass overriding `getEntries()` to always return an
 //!   empty list, to avoid dereferencing its null `cu`) becomes [`Self::empty`], a header with
 //!   `cu: None`; [`Self::get_entries`] checks for that directly instead of relying on
@@ -22,7 +21,8 @@ use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
 use crate::format::dwarf::line::dwarf_line::DWARFLine;
 use crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntry;
-use crate::format::seam_stubs::{DWARFCompilationUnit, DWARFForm, DWARFMacroOpcode, UnportedDWARFForm};
+use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
+use crate::format::seam_stubs::{DWARFCompilationUnit, DWARFMacroOpcode};
 
 const OFFSET_SIZE_FLAG_MASK: i32 = 0x1;
 const DEBUG_LINE_OFFSET_FLAG_MASK: i32 = 0x2;
@@ -37,7 +37,7 @@ pub struct DWARFMacroHeader {
     debug_line_offset: i64,
     int_size: i32,
     entries_start_offset: u64,
-    opcode_map: HashMap<i32, Vec<u32>>,
+    opcode_map: HashMap<i32, Vec<DWARFForm>>,
     cu: Option<Arc<dyn DWARFCompilationUnit>>,
     line: Option<DWARFLine>,
 }
@@ -55,7 +55,7 @@ impl DWARFMacroHeader {
         entries_start_offset: u64,
         cu: Option<Arc<dyn DWARFCompilationUnit>>,
         line: Option<DWARFLine>,
-        opcode_map: HashMap<i32, Vec<u32>>,
+        opcode_map: HashMap<i32, Vec<DWARFForm>>,
     ) -> Self {
         DWARFMacroHeader {
             start_offset,
@@ -134,14 +134,21 @@ impl DWARFMacroHeader {
     /// Mirrors the private `DWARFMacroHeader.readMacroOpcodeTable(BinaryReader, Map)`.
     ///
     /// TODO: needs testing with actual data emitted from toolchain (matches a Java comment).
-    fn read_macro_opcode_table(reader: &mut dyn BinaryReader, opcode_map: &mut HashMap<i32, Vec<u32>>) -> io::Result<()> {
+    fn read_macro_opcode_table(reader: &mut dyn BinaryReader, opcode_map: &mut HashMap<i32, Vec<DWARFForm>>) -> io::Result<()> {
         let num_opcodes = reader.read_next_unsigned_byte()?;
         for _ in 0..num_opcodes {
             let opcode = reader.read_next_unsigned_byte()? as i32;
             let num_operands = LEB128Info::unsigned(reader)?.as_u_int32()?;
             let mut operand_forms = Vec::with_capacity(num_operands as usize);
             for _ in 0..num_operands {
-                operand_forms.push(reader.read_next_unsigned_byte()? as u32);
+                let form_code = reader.read_next_unsigned_byte()? as i32;
+                let form = DWARFForm::of(form_code).ok_or_else(|| {
+                    io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("Unknown DWARF Form in macro opcode table: {form_code:#x}"),
+                    )
+                })?;
+                operand_forms.push(form);
             }
             opcode_map.insert(opcode, operand_forms);
         }
@@ -209,19 +216,9 @@ impl DWARFMacroHeader {
         )
     }
 
-    /// Mirrors `DWARFMacroHeader.getOpcodeMap()`. Reconstructs each form as an
-    /// [`UnportedDWARFForm`] from its stored raw code, same as `DWARFMacroOpcode::get_operand_forms`.
-    pub fn get_opcode_map(&self) -> HashMap<i32, Vec<Box<dyn DWARFForm>>> {
-        self.opcode_map
-            .iter()
-            .map(|(&raw_opcode, form_codes)| {
-                let forms = form_codes
-                    .iter()
-                    .map(|&form_code| Box::new(UnportedDWARFForm { form_code }) as Box<dyn DWARFForm>)
-                    .collect();
-                (raw_opcode, forms)
-            })
-            .collect()
+    /// Mirrors `DWARFMacroHeader.getOpcodeMap()`.
+    pub fn get_opcode_map(&self) -> HashMap<i32, Vec<DWARFForm>> {
+        self.opcode_map.clone()
     }
 
     /// Mirrors `DWARFMacroHeader.toString()`.

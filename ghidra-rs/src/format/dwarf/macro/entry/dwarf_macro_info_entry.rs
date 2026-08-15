@@ -203,10 +203,9 @@ impl DWARFMacroInfoEntryBase {
         let opcode = self
             .opcode
             .expect("DWARFMacroInfoEntry.operandDef: opcode is null (matches a Java NullPointerException)");
-        let form = opcode
+        let form = *opcode
             .get_operand_forms()
-            .into_iter()
-            .nth(operand_index)
+            .get(operand_index)
             .expect("operand_index out of bounds for this opcode's operand forms");
         DWARFMacroOpcodeDef::new(opcode, self.raw_opcode, form)
     }
@@ -351,10 +350,11 @@ mod tests {
         }
     }
 
-    /// Builds a `DWARFMacroHeader` backed by an explicit `(raw opcode -> operand form codes)`
-    /// table, so a test controls exactly which opcodes are "known" without needing a real
-    /// `DWARFForm` port.
-    fn mock_macro_header(opcodes: Vec<(i32, Vec<u32>)>) -> Arc<DWARFMacroHeader> {
+    /// Builds a `DWARFMacroHeader` backed by an explicit `(raw opcode -> operand forms)` table,
+    /// so a test controls exactly which opcodes are "known".
+    fn mock_macro_header(
+        opcodes: Vec<(i32, Vec<crate::format::dwarf::attribs::dwarf_form::DWARFForm>)>,
+    ) -> Arc<DWARFMacroHeader> {
         Arc::new(DWARFMacroHeader::new(
             0,
             5,
