@@ -868,3 +868,6 @@ ts	stub_class	referenced_by
 2026-08-15T02:51:43.835105+00:00	Option	OptionChooser
 2026-08-15T02:51:43.835873+00:00	ProgramLoader	OptionChooser
 2026-08-15T02:51:44.092964+00:00	Pair	OptionChooser
+2026-08-15T03:16:27.628302+00:00	GhidraTool	ToolManagerImpl
+2026-08-15T03:16:27.628302+00:00	WorkspaceImpl	ToolManagerImpl
+2026-08-15T03:16:27.628302+00:00	ToolConnectionImpl	ToolManagerImpl

@@ -12826,7 +12826,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/Se
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolConnectionImpl.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolExtensionsEnabledState.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolExtensionsStatusManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolManagerImpl.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolManagerImpl.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolServicesImpl.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/WorkspaceImpl.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework project tool 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra/ContentTypeQueryTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework protocol ghidra 
