@@ -42,8 +42,9 @@ use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue;
+use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
 use crate::format::dwarf::r#macro::dwarf_macro_header::DWARFMacroHeader;
-use crate::format::seam_stubs::{self, DWARFAttributeDef, DWARFFormContext, DWARFMacroOpcode, DWARFMacroOpcodeDef};
+use crate::format::seam_stubs::{self, DWARFAttributeDef, DWARFMacroOpcode, DWARFMacroOpcodeDef};
 
 /// The shared state of a DWARF macro info entry, plus every method Java does not override in any
 /// of its subclasses.
