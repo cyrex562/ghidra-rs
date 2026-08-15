@@ -3367,3 +3367,21 @@ impl JavaClassUtil {
     }
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFForm`, referenced by
+/// `DWARFAttributeDef` (which is itself a stub), which is used by `DWARFAttributeValue`.
+pub trait DWARFForm: Send + Sync {
+    fn is_class(&self, class: &dyn std::any::Any) -> bool;
+}
+
+/// Placeholder for the unported Java type `DWARFAttributeDef`, referenced by `DWARFAttributeValue`.
+/// Only includes the methods actually needed by `DWARFAttributeValue`.
+pub trait DWARFAttributeDef: Send + Sync {
+    fn get_attribute_form(&self) -> Box<dyn DWARFForm>;
+}
+
+/// Placeholder for the unported Java type `DWARFCompilationUnit`, referenced by `DWARFAttributeValue`.
+/// Only includes the methods actually needed by `DWARFAttributeValue`.
+pub trait DWARFCompilationUnit: Send + Sync {
+    fn get_dwarf_version(&self) -> i16;
+}
+

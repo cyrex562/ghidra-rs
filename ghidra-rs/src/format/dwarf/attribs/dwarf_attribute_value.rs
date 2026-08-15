@@ -1,0 +1,65 @@
+use crate::format::seam_stubs::{DWARFAttributeDef, DWARFCompilationUnit};
+
+/// Common methods for all DWARF attribute value implementations.
+/// This trait is implemented by various DWARF attribute value types like
+/// DWARFNumericAttribute, DWARFStringAttribute, DWARFBlobAttribute, etc.
+pub trait DWARFAttributeValue: Send + Sync {
+    /// Returns a human-readable string representation of this attribute's value.
+    ///
+    /// # Arguments
+    /// * `cu` - The compilation unit context
+    /// * `def` - The attribute definition providing form and metadata
+    ///
+    /// # Returns
+    /// A string representation of the attribute value suitable for display
+    fn get_value_string(&self, cu: &dyn DWARFCompilationUnit, def: &dyn DWARFAttributeDef) -> String;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct MockAttributeValue;
+    impl DWARFAttributeValue for MockAttributeValue {
+        fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
+            "test_value".to_string()
+        }
+    }
+
+    struct MockCompilationUnit;
+    impl DWARFCompilationUnit for MockCompilationUnit {
+        fn get_dwarf_version(&self) -> i16 {
+            4
+        }
+    }
+
+    struct MockAttributeForm;
+    impl crate::format::seam_stubs::DWARFForm for MockAttributeForm {
+        fn is_class(&self, _class: &dyn std::any::Any) -> bool {
+            false
+        }
+    }
+
+    struct MockAttributeDef;
+    impl DWARFAttributeDef for MockAttributeDef {
+        fn get_attribute_form(&self) -> Box<dyn crate::format::seam_stubs::DWARFForm> {
+            Box::new(MockAttributeForm)
+        }
+    }
+
+    #[test]
+    fn test_attribute_value_trait_can_return_string() {
+        let attr = MockAttributeValue;
+        let cu = MockCompilationUnit;
+        let def = MockAttributeDef;
+
+        let result = attr.get_value_string(&cu, &def);
+        assert_eq!(result, "test_value");
+    }
+
+    #[test]
+    fn test_mock_compilation_unit_dwarf_version() {
+        let cu = MockCompilationUnit;
+        assert_eq!(cu.get_dwarf_version(), 4);
+    }
+}
