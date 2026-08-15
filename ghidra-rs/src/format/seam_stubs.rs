@@ -4507,6 +4507,27 @@ pub trait ExternalDebugInfo: Send + Sync {
     fn to_string(&self) -> String;
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.sectionprovider.DWARFSectionProviderFactory`,
+/// referenced by `DWARFSectionProvider` before the real class is ported.
+/// `DWARFSectionProviderFactory` is a concrete Java class (not an interface), so it is modeled here
+/// as a trait that returns section providers. The real class maintains a registry of factory
+/// functions for creating different section provider implementations.
+pub trait DWARFSectionProviderFactory: Send + Sync {
+    /// Creates a section provider for the given program.
+    ///
+    /// # Arguments
+    /// * `program` - the program to create a section provider for
+    /// * `monitor` - a task monitor for long operations
+    ///
+    /// # Returns
+    /// A new `DWARFSectionProvider` for the given program
+    fn create_section_provider_for(
+        &self,
+        program: &dyn Program,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> Box<dyn crate::format::dwarf::sectionprovider::dwarf_section_provider::DWARFSectionProvider>;
+}
+
 /// Placeholder for `ghidra.program.model.listing.Parameter`, referenced by `DWARFFunction`.
 pub trait Parameter: Send + Sync {}
 
