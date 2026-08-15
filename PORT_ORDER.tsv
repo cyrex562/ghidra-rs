@@ -5,7 +5,7 @@ DONE	trait	31	2	100	format	Ghidra/Processors/MIPS/src/main/java/ghidra/app/util/
 DONE	trait	43	11	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/PrototypesIDItem.java
 DONE	trait	37	7	69	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/importer/LoadSpecChooser.java
 DONE	trait	37	5	3	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/importer/OptionChooser.java
-TODO	trait	37	3	20	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolManagerImpl.java
+DONE	trait	37	3	20	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/project/tool/ToolManagerImpl.java
 TODO	trait	35	7	73	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/project/DefaultProjectManager.java
 TODO	trait	30	31	67	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/XmlLoader.java
 TODO	trait	47	17	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFRegisterMappings.java
