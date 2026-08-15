@@ -3,8 +3,9 @@ use std::io;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::bin::leb128_info::LEB128Info;
+use crate::format::dwarf::line::dwarf_line::DWARFLine;
 use crate::format::seam_stubs::{
-    DWARFCompilationUnit, DWARFFormContext, DWARFLine, DWARFLineContentType, DWARFLineContentTypeDef,
+    DWARFCompilationUnit, DWARFFormContext, DWARFLineContentType, DWARFLineContentTypeDef,
     DWARFStringAttribute, FSUtilities,
 };
 
@@ -387,7 +388,7 @@ mod tests {
 
     #[test]
     fn get_path_name_joins_directory_and_name() {
-        let parent_line = DWARFLine { dirs: vec![DWARFFile::new("src")] };
+        let parent_line = DWARFLine::with_directories(vec![DWARFFile::new("src")]);
         let file = DWARFFile::with_details("main.c", 0, 0, 0, None);
 
         assert_eq!(file.get_path_name(&parent_line), "src/main.c");
@@ -395,7 +396,7 @@ mod tests {
 
     #[test]
     fn get_path_name_falls_back_to_name_when_directory_index_invalid() {
-        let parent_line = DWARFLine { dirs: vec![] };
+        let parent_line = DWARFLine::empty();
         let file = DWARFFile::with_details("main.c", 5, 0, 0, None);
 
         assert_eq!(file.get_path_name(&parent_line), "main.c");
@@ -403,7 +404,7 @@ mod tests {
 
     #[test]
     fn get_path_name_uses_bare_name_when_no_directory() {
-        let parent_line = DWARFLine { dirs: vec![] };
+        let parent_line = DWARFLine::empty();
         let file = DWARFFile::new("main.c");
 
         assert_eq!(file.get_path_name(&parent_line), "main.c");
