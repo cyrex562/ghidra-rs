@@ -4,6 +4,7 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
+use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
@@ -3365,47 +3366,6 @@ impl JavaClassUtil {
             .get_default_address_space()
             .expect("JavaClassUtil.toLookupAddress: program has no default address space");
         default_address_space.address(Self::LOOKUP_ADDRESS + method_index.wrapping_mul(4) as i64)
-    }
-}
-
-/// Placeholder for the unported Java type `DWARFAttributeDef`, referenced by `DWARFAttributeValue`,
-/// `DWARFForm` and `DWARFMacroInfoEntry`. Only includes the methods actually needed by those types.
-pub trait DWARFAttributeDef: Send + Sync {
-    fn get_attribute_form(&self) -> DWARFForm;
-
-    /// Mirrors `DWARFAttributeDef.getImplicitValue()`, referenced by
-    /// `DWARFForm::DwFormImplicitConst`. Java's field is initialized to `-1` ("N/A") for any def
-    /// that isn't a `DW_FORM_implicit_const`, which is what this default returns.
-    fn get_implicit_value(&self) -> i64 {
-        -1
-    }
-
-    /// Mirrors `DWARFAttributeDef.withForm(DWARFForm)`, referenced by `DWARFForm::DwFormIndirect`
-    /// to retarget a def at the form an indirect value forwards to. Java copies the whole def and
-    /// swaps its form; only the form and the implicit value are observable through this trait, so
-    /// the default returns a [`RetargetedAttributeDef`] carrying those two.
-    fn with_form(&self, new_form: DWARFForm) -> Box<dyn DWARFAttributeDef> {
-        Box::new(RetargetedAttributeDef {
-            form: new_form,
-            implicit_value: self.get_implicit_value(),
-        })
-    }
-}
-
-/// The result of [`DWARFAttributeDef::with_form`]: another def, identical to the one it was
-/// derived from as far as this stub's surface goes, but naming a different form.
-pub struct RetargetedAttributeDef {
-    pub form: DWARFForm,
-    pub implicit_value: i64,
-}
-
-impl DWARFAttributeDef for RetargetedAttributeDef {
-    fn get_attribute_form(&self) -> DWARFForm {
-        self.form
-    }
-
-    fn get_implicit_value(&self) -> i64 {
-        self.implicit_value
     }
 }
 

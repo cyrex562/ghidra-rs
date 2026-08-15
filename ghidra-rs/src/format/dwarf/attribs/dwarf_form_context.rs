@@ -8,14 +8,17 @@
 //! own int size, but callers such as `DWARFFile::read_v5` and `DWARFMacroInfoEntryBase::read` may
 //! pass a different size when reading from a section governed by an independent unit header).
 //!
-//! `DWARFCompilationUnit` and `DWARFAttributeDef` are themselves still stubbed in
-//! [`crate::format::seam_stubs`], so this struct borrows them as trait objects rather than the
-//! concrete Java-side types. `dprog` and
-//! `die_container` mirror the two package-private accessor methods Java declares for use by
-//! `DWARFForm`'s enum constants.
+//! `DWARFCompilationUnit` is still stubbed in [`crate::format::seam_stubs`]; `DWARFAttributeDef`
+//! is ported at
+//! [`dwarf_attribute_def`](crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef).
+//! Both are borrowed here as trait objects rather than concrete Java-side types, since a form
+//! context doesn't know which attribute-id enum `E` backs its def. `dprog` and `die_container`
+//! mirror the two package-private accessor methods Java declares for use by `DWARFForm`'s enum
+//! constants.
 
 use crate::app::util::bin::binary_reader::BinaryReader;
-use crate::format::seam_stubs::{DIEContainer, DWARFAttributeDef, DWARFCompilationUnit, DWARFProgram};
+use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
+use crate::format::seam_stubs::{DIEContainer, DWARFCompilationUnit, DWARFProgram};
 
 /// Context given to a `DWARFForm`'s `read_value` method to enable it to create
 /// `DWARFAttributeValue`s.
