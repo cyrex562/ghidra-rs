@@ -3831,55 +3831,6 @@ impl DWARFAbbreviation {
     }
 }
 
-/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.attribs.DWARFAttribute`, the
-/// (def, value) pairing `DebugInfoEntry::find_attribute` / `get_attribute` hand back. A concrete
-/// Java class, so a struct here; it borrows its DIE and value from the DIE that produced it rather
-/// than cloning them (Java shares the same objects by reference).
-pub struct DWARFAttribute<'a> {
-    pub die: &'a crate::format::dwarf::debug_info_entry::DebugInfoEntry,
-    pub def: crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef,
-    pub value: &'a dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue,
-}
-
-impl<'a> DWARFAttribute<'a> {
-    /// Mirrors `DWARFAttribute(DebugInfoEntry, AttrDef, DWARFAttributeValue)`.
-    pub fn new(
-        die: &'a crate::format::dwarf::debug_info_entry::DebugInfoEntry,
-        def: crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef,
-        value: &'a dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue,
-    ) -> Self {
-        DWARFAttribute { die, def, value }
-    }
-
-    /// Mirrors `DWARFAttribute.getAttributeName()`.
-    pub fn get_attribute_name(&self) -> String {
-        self.def.get_attribute_name()
-    }
-
-    /// Mirrors `DWARFAttribute.getAttributeForm()`.
-    pub fn get_attribute_form(&self) -> DWARFForm {
-        self.def.get_attribute_form()
-    }
-
-    /// Mirrors `DWARFAttribute.getValueString()`.
-    pub fn get_value_string(&self) -> String {
-        self.value.get_value_string(self.die.get_compilation_unit(), &self.def)
-    }
-}
-
-impl std::fmt::Display for DWARFAttribute<'_> {
-    /// Mirrors `DWARFAttribute.toString()`: `"%s : %s = %s"`.
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} : {} = {}",
-            self.get_attribute_name(),
-            self.get_attribute_form().name(),
-            self.get_value_string()
-        )
-    }
-}
-
 /// Placeholder for the unported
 /// `ghidra.app.util.bin.format.dwarf.attribs.DWARFMissingAttributeValue`: the value
 /// `DebugInfoEntry::get_attribute_value` substitutes when deserializing an attribute fails.
