@@ -6,6 +6,7 @@
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
+use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
@@ -4726,6 +4727,12 @@ impl DWARFExpressionInstruction {
     pub fn get_offset(&self) -> i32 {
         self.offset
     }
+
+    /// Mirrors `DWARFExpressionInstruction.toGenericForm()`: a copy of this instruction with all
+    /// its operands removed (and, per the Java implementation, its offset reset to 0).
+    pub fn to_generic_form(&self) -> Self {
+        DWARFExpressionInstruction { opcode: self.opcode, offset: 0, operands: Vec::new() }
+    }
 }
 
 impl std::fmt::Display for DWARFExpressionInstruction {
@@ -4736,123 +4743,6 @@ impl std::fmt::Display for DWARFExpressionInstruction {
             write!(f, " [{}]", operands.join(", "))?;
         }
         Ok(())
-    }
-}
-
-/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.expression.DWARFExpression`,
-/// referenced by
-/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
-/// `DWARFExpression` is a concrete Java class, so it is modeled as a struct holding the instruction
-/// list. [`Self::read`] (the binary deserializer) needs `DWARFExpressionInstruction.read`, which is
-/// left to the real port, so it reports itself unsupported; build an expression from already-parsed
-/// instructions with [`Self::of`] until then.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct DWARFExpression {
-    instructions: Vec<DWARFExpressionInstruction>,
-}
-
-impl DWARFExpression {
-    /// Mirrors `DWARFExpression.MAX_SANE_EXPR`.
-    pub const MAX_SANE_EXPR: i32 = 512;
-
-    /// Stands in for the private `DWARFExpression(List<DWARFExpressionInstruction>)` constructor
-    /// that the Java `read` factories call.
-    pub fn of(instructions: Vec<DWARFExpressionInstruction>) -> Self {
-        DWARFExpression { instructions }
-    }
-
-    /// Mirrors `DWARFExpression.read(byte[], DWARFCompilationUnit)`. Deserializing needs the
-    /// unported `DWARFExpressionInstruction.read`, so this stub always fails.
-    pub fn read(
-        _expr_bytes: &[u8],
-        _cu: &dyn DWARFCompilationUnit,
-    ) -> Result<DWARFExpression, DWARFExpressionException> {
-        Err(DWARFExpressionException::new(
-            "DWARFExpression.read is not yet implemented (DWARFExpression has not been ported)",
-        ))
-    }
-
-    /// Mirrors `DWARFExpression.getInstruction(int)`, which throws `IndexOutOfBoundsException` for
-    /// an out of range index.
-    pub fn get_instruction(&self, i: i32) -> Option<&DWARFExpressionInstruction> {
-        usize::try_from(i).ok().and_then(|i| self.instructions.get(i))
-    }
-
-    /// Mirrors `DWARFExpression.getInstructionCount()`.
-    pub fn get_instruction_count(&self) -> i32 {
-        self.instructions.len() as i32
-    }
-
-    /// Mirrors `DWARFExpression.isEmpty()`.
-    pub fn is_empty(&self) -> bool {
-        self.instructions.is_empty()
-    }
-
-    /// Mirrors `DWARFExpression.findInstructionByOffset(long)`: the index of the instruction that
-    /// starts at `offset`, or -1 if there is none.
-    pub fn find_instruction_by_offset(&self, offset: i64) -> i32 {
-        self.instructions
-            .iter()
-            .position(|instr| instr.get_offset() as i64 == offset)
-            .map_or(-1, |i| i as i32)
-    }
-
-    /// Mirrors `DWARFExpression.toString(int, boolean, boolean, DWARFRegisterMappings)`. Operands
-    /// are rendered as signed decimals rather than in the readelf-influenced per-operand-type
-    /// format, which needs the operand types this stub does not model.
-    pub fn to_string_formatted(
-        &self,
-        caret_position: i32,
-        newlines: bool,
-        offsets: bool,
-        reg_mapping: Option<&crate::format::dwarf::dwarf_register_mappings::DWARFRegisterMappings>,
-    ) -> String {
-        use std::fmt::Write;
-
-        let mut sb = String::new();
-        for (instr_index, instr) in self.instructions.iter().enumerate() {
-            if instr_index != 0 {
-                sb.push_str(if newlines { "\n" } else { "; " });
-            }
-            if offsets {
-                let _ = write!(sb, "{instr_index:3} [{:03x}]: ", instr.get_offset());
-            }
-            if caret_position == instr_index as i32 {
-                sb.push_str(" ==> [");
-            }
-            sb.push_str(&instr.opcode.to_string_with_reg_mapping(reg_mapping));
-            for operand_index in 0..instr.get_operand_count() {
-                if operand_index == 0 {
-                    sb.push(':');
-                }
-                let _ = write!(sb, " {}", instr.get_operand_value(operand_index));
-            }
-            if caret_position == instr_index as i32 {
-                sb.push_str(" ] <==");
-            }
-            if matches!(
-                instr.opcode,
-                DWARFExpressionOpCode::DW_OP_bra | DWARFExpressionOpCode::DW_OP_skip
-            ) {
-                let mut dest_offset = instr.get_offset() as i64;
-                if instr.get_operand_count() > 0 {
-                    dest_offset += instr.get_operand_value(0);
-                }
-                let dest_index = self.find_instruction_by_offset(dest_offset);
-                let _ = write!(
-                    sb,
-                    " /* dest index: {dest_index}, offset: {:03x} */",
-                    dest_offset as i32
-                );
-            }
-        }
-        sb
-    }
-}
-
-impl std::fmt::Display for DWARFExpression {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_string_formatted(-1, false, false, None))
     }
 }
 

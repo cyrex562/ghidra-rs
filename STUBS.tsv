@@ -912,7 +912,6 @@ ts	stub_class	referenced_by
 2026-08-15T06:16:57.876874+00:00	DWARFUtil	DWARFExpressionEvaluator
 2026-08-15T06:16:57.876874+00:00	DWARFExpressionOpCode	DWARFExpressionEvaluator
 2026-08-15T06:16:57.876874+00:00	DWARFExpressionInstruction	DWARFExpressionEvaluator
-2026-08-15T06:16:57.876874+00:00	DWARFExpression	DWARFExpressionEvaluator
 2026-08-15T06:16:57.876874+00:00	DWARFExpressionException	DWARFExpressionEvaluator
 2026-08-15T06:16:57.876874+00:00	DWARFExpressionUnsupportedOpException	DWARFExpressionEvaluator
 2026-08-15T06:16:57.876874+00:00	DWARFExpressionTerminalDerefException	DWARFExpressionEvaluator
