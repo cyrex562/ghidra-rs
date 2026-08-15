@@ -43,3 +43,4 @@ ts	reason	path
 2026-08-15T04:19	timeout-retry	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
 2026-08-15T04:44	timeout-retry	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
 2026-08-15T05:10	timeout	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
+2026-08-15T05:56	shape-undecided (R4-annotation)	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldOutput.java

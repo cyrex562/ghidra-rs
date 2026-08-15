@@ -43,7 +43,7 @@ DONE	trait	31	27	25	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	trait	35	27	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldMarkupFunction.java
 DONE	trait	33	31	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldContext.java
 DONE	trait	35	27	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldOutputFunction.java
-TODO	trait	34	28	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldOutput.java
+PARK	trait	34	28	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/FieldOutput.java
 TODO	trait	34	28	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureMarkupFunction.java
 TODO	trait	31	26	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureMarkup.java
 TODO	trait	39	7	36	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoUncommonType.java
