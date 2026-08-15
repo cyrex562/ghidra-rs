@@ -35,6 +35,7 @@ INTEGRATION="${INTEGRATION:-integration}"
 PUSH="${PUSH:-1}"; PUSH_REMOTE="${PUSH_REMOTE:-origin}"
 REGEN="${REGEN:-1}"        # regenerate PORT_ORDER.tsv at start (stale rows reconcile harmlessly, but fresh is better)
 TIMEOUT_RETRIES="${TIMEOUT_RETRIES:-2}"   # errored turns retried this many times before a durable park
+TIMEOUT_RETRY_MAX_TURNS="${TIMEOUT_RETRY_MAX_TURNS:-80}"  # errors past this many turns are complexity, not faults
 CLAUDE_TIMEOUT="${CLAUDE_TIMEOUT:-1500}"; BUILD_TIMEOUT="${BUILD_TIMEOUT:-1800}"  # 25min: doomed classes durable-park faster (was 2400/40min)
 TEST_GATE="${TEST_GATE:-1}"; TEST_TIMEOUT="${TEST_TIMEOUT:-1800}"   # backstop: verify test crate stays green after merge
 API_RETRIES="${API_RETRIES:-2}"                                     # retry a class on TRANSIENT API failure before aborting the run
@@ -318,11 +319,20 @@ If truly impossible, leave ${MANIFEST} unchanged and end with: PORT_RESULT: PARK
   # retry is capped, because an error that reliably burns the full CLAUDE_TIMEOUT must not
   # cost 25 minutes every night forever -- after TIMEOUT_RETRIES attempts it durable-parks.
   if [ "$rc" -eq 124 ]; then
+    # An errored turn is only worth retrying if it errored EARLY. The turn count separates
+    # the two populations cleanly: the errors that happen once and never recur ran 23-43
+    # turns (median for a SUCCESSFUL port is 43), while the ones that recur every single
+    # attempt ran 111-204 -- JitDataFlowUseropLibrary failed four times at 130/135/135/166
+    # turns, DWARFCompilationUnit three times at 169/200/204, each grinding harder than the
+    # last. Past ~80 turns (p90 of successes) an error is the class being too hard for the
+    # loop, not a fault worth re-running, so it durable-parks on the first hit.
     transient=0
-    if [ -s "$jlog" ] && "$PY" - "$jlog" <<'PYEOF' >/dev/null 2>&1
+    if [ -s "$jlog" ] && "$PY" - "$jlog" "$TIMEOUT_RETRY_MAX_TURNS" <<'PYEOF' >/dev/null 2>&1
 import json, sys
 d = json.load(open(sys.argv[1]))
-sys.exit(0 if (d.get("is_error") and d.get("subtype") == "error_during_execution") else 1)
+errored = d.get("is_error") and d.get("subtype") == "error_during_execution"
+early = (d.get("num_turns") or 0) <= int(sys.argv[2])
+sys.exit(0 if (errored and early) else 1)
 PYEOF
     then transient=1; fi
     # `grep -c` already PRINTS 0 when nothing matches, and exits 1 doing it -- so a
@@ -334,9 +344,20 @@ PYEOF
     git checkout -f "$INTEGRATION" >/dev/null 2>&1; git branch -D "$branch" >/dev/null 2>&1||true
     git clean -fdq >/dev/null 2>&1   # remove the timed-out port's partial untracked files (target/ is ignored)
     if [ "$transient" = "1" ] && [ "$prior" -lt "$TIMEOUT_RETRIES" ]; then
-      log "TIMEOUT on $class (${CLAUDE_TIMEOUT}s) -- turn ERRORED (attempt $((prior+1))/${TIMEOUT_RETRIES}); retryable park, stays in the order."
+      log "TIMEOUT on $class (${CLAUDE_TIMEOUT}s) -- turn ERRORED (attempt $((prior+1))/${TIMEOUT_RETRIES}); retry on a LATER run."
       printf '%s\ttimeout-retry\t%s\n' "$(date '+%Y-%m-%dT%H:%M')" "$next" >> "$DESCENT_PARKED"
-      git add "$DESCENT_PARKED" >/dev/null 2>&1
+      # PARK it in the ORDER even though the retry is wanted. The picker takes the first
+      # still-TODO row every iteration, so leaving it TODO means it is picked again on the
+      # very next one: JitDataFlowUseropLibrary ran 21:26 -> 21:51 -> 22:16 and
+      # DWARFCompilationUnit 04:19 -> 04:44 -> 05:10, six failed attempts burning 150 minutes
+      # of a 540-minute window, and the night finished 42 instead of 57. A transient error
+      # deserves another go on another night, not three in a row on this one.
+      #
+      # This does not lose the retry: desc_order rebuilds PORT_ORDER from the dependency
+      # graph and the durable park-list, never from the previous file's statuses, and it does
+      # not exclude `timeout-retry`. So REGEN restores the row as TODO next run.
+      sed -i "s#^TODO\(\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t${ordpath//\//\\/}\)\$#PARK\1#" "$ORDER"
+      git add "$DESCENT_PARKED" "$ORDER" >/dev/null 2>&1
       git commit -q -m "descent: retryable-park $class (turn errored, attempt $((prior+1))/${TIMEOUT_RETRIES})" >/dev/null 2>&1||true
     else
       why="too big for the nightly loop"
