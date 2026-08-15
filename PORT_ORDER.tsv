@@ -33,7 +33,7 @@ DONE	trait	47	12	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	47	7	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugFileStorage.java
 DONE	trait	47	13	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/external/DebugInfoProviderCreatorContext.java
 DONE	trait	43	14	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/DWARFSectionProvider.java
-TODO	trait	42	4	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/BaseSectionProvider.java
+DONE	trait	42	4	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/sectionprovider/BaseSectionProvider.java
 TODO	trait	40	19	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFImportOptions.java
 TODO	trait	36	14	4	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFUnitHeader.java
 TODO	trait	35	38	7	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFCompilationUnit.java
