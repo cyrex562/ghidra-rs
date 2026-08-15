@@ -3406,6 +3406,25 @@ pub trait DWARFCompilationUnit: Send + Sync {
     fn get_die_container(&self) -> Option<&dyn DIEContainer> {
         None
     }
+
+    /// Mirrors `DWARFCompilationUnit.getAbbreviation(int)`, which returns `null` when the
+    /// compilation unit's abbreviation table has no entry for that code. The abbreviation is
+    /// shared by every DIE that uses it, hence the [`Arc`](std::sync::Arc).
+    fn get_abbreviation(&self, _ac: i32) -> Option<std::sync::Arc<DWARFAbbreviation>> {
+        None
+    }
+
+    /// Mirrors `DWARFUnitHeader.getUnitNumber()`, which `DebugInfoEntry::read` only uses to
+    /// describe a bad abbreviation code.
+    fn get_unit_number(&self) -> i32 {
+        0
+    }
+
+    /// Mirrors `DWARFUnitHeader.getStartOffset()`, used alongside `get_unit_number` in the same
+    /// error message.
+    fn get_start_offset(&self) -> u64 {
+        0
+    }
 }
 
 /// Placeholder for the unported Java type `DWARFProgram`, referenced by `DWARFLine`. Only the two
@@ -3504,6 +3523,214 @@ pub trait DIEContainer: Send + Sync {
             std::io::ErrorKind::Unsupported,
             "DIEContainer.getMacroEntries is not yet implemented (DIEContainer has not been ported)",
         ))
+    }
+
+    /// Mirrors `DIEContainer.getReaderForCompUnit(DWARFCompilationUnit)`, used by
+    /// [`DebugInfoEntry::get_attribute_value`](crate::format::dwarf::debug_info_entry::DebugInfoEntry::get_attribute_value)
+    /// to re-read an attribute value on demand. `None` stands in for a container that has no
+    /// `.debug_info` reader.
+    fn get_reader_for_comp_unit(
+        &self,
+        _cu: &dyn DWARFCompilationUnit,
+    ) -> Option<Box<dyn crate::app::util::bin::binary_reader::BinaryReader>> {
+        None
+    }
+
+    /// Mirrors `DIEContainer.getParentOf(int)`, which returns `null` for the root DIE. The
+    /// container owns every DIE, so the DIEs it hands back are borrowed from it.
+    fn get_parent_of(
+        &self,
+        _die_index: i32,
+    ) -> Option<&crate::format::dwarf::debug_info_entry::DebugInfoEntry> {
+        None
+    }
+
+    /// Mirrors `DIEContainer.getParentDepth(int)`, where the root DIE is depth 0.
+    fn get_parent_depth(&self, _die_index: i32) -> i32 {
+        -1
+    }
+
+    /// Mirrors `DIEContainer.getChildrenOf(int)`.
+    fn get_children_of(
+        &self,
+        _die_index: i32,
+    ) -> Vec<&crate::format::dwarf::debug_info_entry::DebugInfoEntry> {
+        Vec::new()
+    }
+
+    /// Mirrors `DIEContainer.getChildCount(int)`.
+    fn get_child_count(&self, _die_index: i32) -> i32 {
+        0
+    }
+
+    /// Mirrors `DIEContainer.getPositionInParent(DebugInfoEntry, Predicate<DWARFTag>)`, which
+    /// returns -1 when the DIE has no parent. The Java predicate is passed each sibling's tag,
+    /// which is `null` for a terminator DIE, hence the [`Option`].
+    fn get_position_in_parent(
+        &self,
+        _die: &crate::format::dwarf::debug_info_entry::DebugInfoEntry,
+        _dw_tag_filter: &dyn Fn(Option<DWARFTag>) -> bool,
+    ) -> i32 {
+        -1
+    }
+}
+
+/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.DWARFTag`, referenced by
+/// `DebugInfoEntry` and `DWARFAbbreviation`. The real type is a Java enum of ~70 named constants
+/// plus `DW_TAG_UNKNOWN`; this stub keeps only the raw tag id, which is all `DebugInfoEntry` needs
+/// (it compares tags for equality and formats their id). Consequently [`fmt::Display`] renders the
+/// raw id rather than the enum constant name Java's `%s` would print.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DWARFTag {
+    raw_tag_id: i32,
+}
+
+impl DWARFTag {
+    /// Mirrors `DWARFTag.of(int)`. Java maps an unrecognized id to `DW_TAG_UNKNOWN`, collapsing
+    /// all unknown ids together; this stub keeps them distinct.
+    pub fn of(tag_id: i32) -> DWARFTag {
+        DWARFTag { raw_tag_id: tag_id }
+    }
+
+    /// Mirrors `DWARFTag.getId()`.
+    pub fn get_id(&self) -> i32 {
+        self.raw_tag_id
+    }
+}
+
+impl std::fmt::Display for DWARFTag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "DW_TAG_0x{:x}", self.raw_tag_id)
+    }
+}
+
+/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.DWARFAbbreviation`, the schema
+/// shared by every DIE that references its abbreviation code. `DWARFAbbreviation` is a concrete
+/// Java class, so it is modeled as a struct; only the state and accessors `DebugInfoEntry` reaches
+/// for are present (the static `read`/`readAbbreviations` parsers are left to the real port).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DWARFAbbreviation {
+    abbreviation_code: i32,
+    tag: DWARFTag,
+    has_children: bool,
+    attributes: Vec<crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef>,
+}
+
+impl DWARFAbbreviation {
+    /// Mirrors `DWARFAbbreviation(int, int, boolean, AttrDef[])`.
+    pub fn new(
+        abbreviation_code: i32,
+        tag_id: i32,
+        has_children: bool,
+        attributes: Vec<crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef>,
+    ) -> Self {
+        DWARFAbbreviation {
+            abbreviation_code,
+            tag: DWARFTag::of(tag_id),
+            has_children,
+            attributes,
+        }
+    }
+
+    /// Mirrors `DWARFAbbreviation.getAbbreviationCode()`.
+    pub fn get_abbreviation_code(&self) -> i32 {
+        self.abbreviation_code
+    }
+
+    /// Mirrors `DWARFAbbreviation.getTag()`.
+    pub fn get_tag(&self) -> DWARFTag {
+        self.tag
+    }
+
+    /// Mirrors `DWARFAbbreviation.hasChildren()`.
+    pub fn has_children(&self) -> bool {
+        self.has_children
+    }
+
+    /// Mirrors `DWARFAbbreviation.getAttributes()`.
+    pub fn get_attributes(&self) -> &[crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef] {
+        &self.attributes
+    }
+
+    /// Mirrors `DWARFAbbreviation.getAttributeCount()`.
+    pub fn get_attribute_count(&self) -> usize {
+        self.attributes.len()
+    }
+
+    /// Mirrors `DWARFAbbreviation.getAttributeAt(int)`, which throws
+    /// `ArrayIndexOutOfBoundsException` for an out-of-range index.
+    pub fn get_attribute_at(
+        &self,
+        index: usize,
+    ) -> Option<crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef> {
+        self.attributes.get(index).copied()
+    }
+}
+
+/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.attribs.DWARFAttribute`, the
+/// (def, value) pairing `DebugInfoEntry::find_attribute` / `get_attribute` hand back. A concrete
+/// Java class, so a struct here; it borrows its DIE and value from the DIE that produced it rather
+/// than cloning them (Java shares the same objects by reference).
+pub struct DWARFAttribute<'a> {
+    pub die: &'a crate::format::dwarf::debug_info_entry::DebugInfoEntry,
+    pub def: crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef,
+    pub value: &'a dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue,
+}
+
+impl<'a> DWARFAttribute<'a> {
+    /// Mirrors `DWARFAttribute(DebugInfoEntry, AttrDef, DWARFAttributeValue)`.
+    pub fn new(
+        die: &'a crate::format::dwarf::debug_info_entry::DebugInfoEntry,
+        def: crate::format::dwarf::attribs::dwarf_attribute_id::AttrDef,
+        value: &'a dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue,
+    ) -> Self {
+        DWARFAttribute { die, def, value }
+    }
+
+    /// Mirrors `DWARFAttribute.getAttributeName()`.
+    pub fn get_attribute_name(&self) -> String {
+        self.def.get_attribute_name()
+    }
+
+    /// Mirrors `DWARFAttribute.getAttributeForm()`.
+    pub fn get_attribute_form(&self) -> DWARFForm {
+        self.def.get_attribute_form()
+    }
+
+    /// Mirrors `DWARFAttribute.getValueString()`.
+    pub fn get_value_string(&self) -> String {
+        self.value.get_value_string(self.die.get_compilation_unit(), &self.def)
+    }
+}
+
+impl std::fmt::Display for DWARFAttribute<'_> {
+    /// Mirrors `DWARFAttribute.toString()`: `"%s : %s = %s"`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} : {} = {}",
+            self.get_attribute_name(),
+            self.get_attribute_form().name(),
+            self.get_value_string()
+        )
+    }
+}
+
+/// Placeholder for the unported
+/// `ghidra.app.util.bin.format.dwarf.attribs.DWARFMissingAttributeValue`: the value
+/// `DebugInfoEntry::get_attribute_value` substitutes when deserializing an attribute fails.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DWARFMissingAttributeValue;
+
+impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue
+    for DWARFMissingAttributeValue
+{
+    fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
+        "<missing>".to_string()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
