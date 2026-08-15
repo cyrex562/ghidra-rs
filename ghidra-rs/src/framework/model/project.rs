@@ -354,15 +354,15 @@ impl ProjectManager for FallbackProjectManager {
         None
     }
 
-    fn get_user_tool_chest(&self) -> Box<dyn StubToolChest> {
-        Box::new(FallbackStubToolChest)
+    fn get_user_tool_chest(&self) -> Box<dyn ToolChest> {
+        Box::new(FallbackToolChest)
     }
 }
 
 /// Trivial fallback for `ghidra.framework.model.ToolChest` as seen through the still-unpromoted
-/// [`seam_stubs::ToolChest`](crate::framework::seam_stubs::ToolChest) marker used by
-/// [`ProjectManager::get_user_tool_chest`] and [`ToolServices::get_tool_chest`], distinct from the
-/// real, already-ported [`ToolChest`] used by [`Project::get_local_tool_chest`].
+/// [`seam_stubs::ToolChest`](crate::framework::seam_stubs::ToolChest) marker still used by
+/// [`ToolServices::get_tool_chest`], distinct from the real, already-ported [`ToolChest`] used by
+/// [`Project::get_local_tool_chest`] and [`ProjectManager::get_user_tool_chest`].
 struct FallbackStubToolChest;
 impl StubToolChest for FallbackStubToolChest {}
 

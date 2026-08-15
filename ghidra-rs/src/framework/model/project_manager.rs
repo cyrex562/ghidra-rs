@@ -6,7 +6,7 @@ use crate::framework::client::{RepositoryAdapter, RepositoryServerAdapter};
 use crate::framework::model::project_locator::ProjectLocator;
 use crate::framework::model::server_info::ServerInfo;
 use crate::framework::model::Project;
-use crate::framework::seam_stubs::ToolChest;
+use crate::framework::model::tool_chest::ToolChest;
 use crate::framework::store::LockException;
 use crate::util::exception::{NotFoundException, NotOwnerException};
 
@@ -124,12 +124,19 @@ pub trait ProjectManager {
     fn get_most_recent_server_info(&self) -> Option<ServerInfo>;
 
     /// Returns the user's ToolChest.
+    ///
+    /// This used to hand back the members-less
+    /// [`seam_stubs::ToolChest`](crate::framework::seam_stubs::ToolChest) placeholder; it now
+    /// hands back the real, ported [`ToolChest`], which
+    /// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) needs
+    /// in order to stock the chest with the default tools.
     fn get_user_tool_chest(&self) -> Box<dyn ToolChest>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::framework::model::{ToolChestChangeListener, ToolTemplate};
 
     struct MockProjectLocator;
     impl ProjectLocator for MockProjectLocator {}
@@ -144,7 +151,39 @@ mod tests {
     impl Project for MockProject {}
 
     struct MockToolChest;
-    impl ToolChest for MockToolChest {}
+    impl ToolChest for MockToolChest {
+        fn get_tool_template(&self, _tool_name: &str) -> Option<Box<dyn ToolTemplate>> {
+            None
+        }
+
+        fn get_tool_templates(&self) -> Vec<Box<dyn ToolTemplate>> {
+            Vec::new()
+        }
+
+        fn add_tool_chest_change_listener(&mut self, _listener: Box<dyn ToolChestChangeListener>) {}
+
+        fn remove_tool_chest_change_listener(
+            &mut self,
+            _listener: Box<dyn ToolChestChangeListener>,
+        ) {
+        }
+
+        fn add_tool_template(&mut self, _template: &mut dyn ToolTemplate) -> bool {
+            false
+        }
+
+        fn remove(&mut self, _tool_name: &str) -> bool {
+            false
+        }
+
+        fn get_tool_count(&self) -> i32 {
+            0
+        }
+
+        fn replace_tool_template(&mut self, _template: &mut dyn ToolTemplate) -> bool {
+            false
+        }
+    }
 
     struct SimpleProjectManager {
         active: Option<()>,

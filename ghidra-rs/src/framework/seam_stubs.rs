@@ -183,6 +183,12 @@ pub const PREFERENCES_PROJECT_DIRECTORY: &str = "ProjectDirectory";
 /// (property-file persistence, plugin paths, etc). Methods take `&self` rather than `&mut self`
 /// since the Java original models a single shared, globally-mutable property store rather than
 /// per-instance state; implementations are expected to back this with interior mutability.
+///
+/// Extended for
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase), which
+/// additionally flushes the store to disk after every list/server-info update
+/// ([`Self::store`]). `store` defaults to "nothing to flush, and that succeeded" so the existing
+/// [`GenericRunInfo`](crate::framework::GenericRunInfo) mock implementors are unaffected.
 pub trait PreferencesLike {
     /// Gets the property with the given name, optionally falling back to the last used
     /// installation's value when `use_historical_value` is true and no current value is set,
@@ -196,6 +202,12 @@ pub trait PreferencesLike {
 
     /// Sets the property value, mirroring `Preferences.setProperty(String, String)`.
     fn set_property(&self, name: &str, value: &str);
+
+    /// Writes the properties out to the preferences file, mirroring `Preferences.store()`;
+    /// returns whether the file was written.
+    fn store(&self) -> bool {
+        true
+    }
 }
 
 /// Placeholder for `ghidra.framework.data.LinkHandler`, referenced by
@@ -1373,4 +1385,283 @@ impl crate::framework::model::ToolConnection for ToolConnectionImpl {
 
 impl crate::framework::model::ToolListener for ToolConnectionImpl {
     fn process_tool_event(&mut self, _tool_event: &crate::framework::plugintool::PluginEvent) {}
+}
+
+/// Placeholder for `ghidra.framework.ToolUtils`, referenced by
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) before the
+/// real (static-method-only) class is ported. Only the five members the project manager calls
+/// while stocking a fresh tool chest are declared; the real port carries the rest of `ToolUtils`'s
+/// static surface (user tool directory listing, tool deletion/renaming, unique-name generation).
+///
+/// Methods take `&self` rather than `&mut self` since the Java original is a static utility over
+/// the (shared, globally mutable) user tool directory. `java.io.File` maps to [`PathBuf`], and
+/// Java's `Set<ToolTemplate>` to a `Vec` since
+/// [`ToolTemplate`](crate::framework::model::ToolTemplate) trait objects are neither hashable nor
+/// comparable here.
+pub trait ToolUtils {
+    /// Gets the tools that this application ships with, mirroring
+    /// `ToolUtils.getDefaultApplicationTools()`.
+    fn get_default_application_tools(&self) -> Vec<Box<dyn crate::framework::model::ToolTemplate>>;
+
+    /// Strips plugins that are no longer available from the given template, mirroring
+    /// `ToolUtils.removeInvalidPlugins(ToolTemplate)`.
+    fn remove_invalid_plugins(&self, template: &dyn crate::framework::model::ToolTemplate);
+
+    /// Writes the tool template to the user's tool directory, mirroring
+    /// `ToolUtils.writeToolTemplate(ToolTemplate)`; returns whether it was written.
+    fn write_tool_template(&self, template: &dyn crate::framework::model::ToolTemplate) -> bool;
+
+    /// Reads a tool template from the given file, mirroring `ToolUtils.readToolTemplate(File)`
+    /// (`None` in place of the Java method's `null` return for an unreadable file).
+    fn read_tool_template(
+        &self,
+        tool_file: &std::path::Path,
+    ) -> Option<Box<dyn crate::framework::model::ToolTemplate>>;
+
+    /// Gets the file the named tool is (or would be) stored in, mirroring
+    /// `ToolUtils.getToolFile(String)` (`None` in place of its `null` return).
+    fn get_tool_file(&self, name: &str) -> Option<PathBuf>;
+}
+
+/// Placeholder for `ghidra.framework.client.ClientUtil`, referenced by
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) before the
+/// real (static-method-only) class is ported. Only the server lookup the project manager performs
+/// is declared; the real port carries authenticator management, connection state, and the
+/// exception/reconnect handling the rest of `ClientUtil` provides.
+pub trait ClientUtil {
+    /// Gets a handle to the Ghidra server at the given address, mirroring
+    /// `ClientUtil.getRepositoryServer(String, int, boolean)`.
+    fn get_repository_server(
+        &self,
+        host: &str,
+        port: i32,
+        force_connect: bool,
+    ) -> Box<dyn crate::framework::client::RepositoryServerAdapter>;
+}
+
+/// Placeholder for `ghidra.framework.main.AppInfo`, referenced by
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) before the
+/// real (static-method-only) class is ported. Only the active-project setter the project manager
+/// calls is declared; the real port also carries the front-end tool accessor, the matching
+/// active-project getter, and application exit.
+pub trait AppInfo {
+    /// Records the project that is now active, mirroring `AppInfo.setActiveProject(Project)`.
+    fn set_active_project(&self, project: &dyn crate::framework::model::Project);
+}
+
+/// Placeholder for `ghidra.framework.data.TransientDataManager`, referenced by
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) before the
+/// real (static-method-only) class is ported. Only the bulk clear performed when a project closes
+/// is declared; the real port carries per-file add/remove, the transient file listing, and
+/// consumer-based release.
+pub trait TransientDataManager {
+    /// Removes all transient domain files, mirroring `TransientDataManager.clearAll()`.
+    fn clear_all(&self);
+}
+
+/// Placeholder for `ghidra.framework.project.DefaultProject`, referenced by
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) before the
+/// real class is ported. `DefaultProject` holds a back-reference to the `DefaultProjectManager`
+/// that created it and calls back into it as it closes, which is the dependency cycle this seam
+/// breaks.
+///
+/// Everything the project manager needs from an open project is already declared by
+/// [`Project`](crate::framework::model::Project) (`restore()`, `getName()`, `close()`), so this
+/// adds no members of its own; it exists as a distinct type because the manager only ever holds
+/// projects it created itself, exactly as the Java field's `DefaultProject` type says.
+pub trait DefaultProject: crate::framework::model::Project {}
+
+/// The two failure modes of `new DefaultProject(DefaultProjectManager, ProjectLocator,
+/// RepositoryAdapter)` (`throws IOException, LockException`), as needed by
+/// [`DefaultProjectFactory::create`].
+#[derive(Debug)]
+pub enum CreateProjectError {
+    /// An I/O error occurred while creating the project's storage.
+    Io(std::io::Error),
+    /// The project's write lock could not be established.
+    Lock(crate::framework::store::LockException),
+}
+
+impl std::fmt::Display for CreateProjectError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Io(e) => write!(f, "{e}"),
+            Self::Lock(e) => write!(f, "{}", e.message()),
+        }
+    }
+}
+
+impl std::error::Error for CreateProjectError {}
+
+/// Construction seam for the [`DefaultProject`] placeholder.
+///
+/// Java's two protected `DefaultProject` constructors (create-new and open-existing) are what
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) calls; a
+/// Rust trait cannot declare a constructor and stay object-safe, so the two constructors become
+/// the two members of this factory. The `DefaultProjectManager` argument each constructor takes is
+/// dropped, mirroring how the [`WorkspaceImpl`] placeholder drops its own manager back-reference.
+pub trait DefaultProjectFactory {
+    /// Creates a new project at the given location, mirroring
+    /// `new DefaultProject(DefaultProjectManager, ProjectLocator, RepositoryAdapter)`. A `None`
+    /// repository means a non-shared project.
+    fn create(
+        &self,
+        project_locator: &dyn crate::framework::model::ProjectLocator,
+        repository: Option<&dyn crate::framework::client::RepositoryAdapter>,
+    ) -> Result<Box<dyn DefaultProject>, CreateProjectError>;
+
+    /// Opens the existing project at the given location, mirroring
+    /// `new DefaultProject(DefaultProjectManager, ProjectLocator, boolean)`.
+    fn open(
+        &self,
+        project_locator: &dyn crate::framework::model::ProjectLocator,
+        reset_owner: bool,
+    ) -> Result<Box<dyn DefaultProject>, crate::framework::model::OpenProjectError>;
+}
+
+/// Placeholder for `ghidra.framework.project.ToolChestImpl`, the tool chest
+/// [`DefaultProjectManagerBase`](crate::framework::project::DefaultProjectManagerBase) creates for
+/// the user, before the real class is ported.
+///
+/// The real class stores whole tool templates as XML under the user's tool directory and notifies
+/// [`ToolChestChangeListener`](crate::framework::model::ToolChestChangeListener)s on every change.
+/// This placeholder keeps only what the project manager's install-default-tools logic reads back
+/// -- which tool names are present, and how many -- so
+/// [`ToolChest::get_tool_template`](crate::framework::model::ToolChest::get_tool_template) hands
+/// back a name-only template, and listeners are accepted but never called.
+#[derive(Default)]
+pub struct ToolChestImpl {
+    tool_names: Vec<String>,
+}
+
+impl ToolChestImpl {
+    /// Creates an empty tool chest, mirroring `new ToolChestImpl()`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// The names of the tools in this chest, in insertion order.
+    pub fn tool_names(&self) -> &[String] {
+        &self.tool_names
+    }
+}
+
+/// The name-only [`ToolTemplate`](crate::framework::model::ToolTemplate) a [`ToolChestImpl`] hands
+/// back, standing in for the XML-backed template of the real class.
+struct NamedToolTemplate {
+    name: String,
+}
+
+impl crate::framework::model::ToolTemplate for NamedToolTemplate {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_path(&self) -> Option<String> {
+        None
+    }
+
+    fn set_name(&mut self, name: &str) {
+        self.name = name.to_string();
+    }
+
+    fn get_icon_url(&self) -> Box<dyn ToolIconURL> {
+        struct Stub;
+        impl ToolIconURL for Stub {}
+        Box::new(Stub)
+    }
+
+    fn get_icon(&self) -> Box<dyn ImageIcon> {
+        struct Stub;
+        impl ImageIcon for Stub {}
+        Box::new(Stub)
+    }
+
+    fn get_supported_data_types(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    fn save_to_xml(&self) -> Box<dyn JdomElement> {
+        Box::new(NullJdomElement)
+    }
+
+    fn restore_from_xml(&mut self, _root: &dyn JdomElement) {}
+
+    fn create_tool(&self, _project: &dyn crate::framework::model::Project) -> Box<dyn PluginTool> {
+        Box::new(NullPluginTool)
+    }
+
+    fn get_tool_element(&self) -> Box<dyn JdomElement> {
+        Box::new(NullJdomElement)
+    }
+}
+
+impl crate::framework::model::ToolChest for ToolChestImpl {
+    fn get_tool_template(
+        &self,
+        tool_name: &str,
+    ) -> Option<Box<dyn crate::framework::model::ToolTemplate>> {
+        self.tool_names.iter().find(|name| *name == tool_name).map(|name| {
+            Box::new(NamedToolTemplate { name: name.clone() })
+                as Box<dyn crate::framework::model::ToolTemplate>
+        })
+    }
+
+    fn get_tool_templates(&self) -> Vec<Box<dyn crate::framework::model::ToolTemplate>> {
+        self.tool_names
+            .iter()
+            .map(|name| {
+                Box::new(NamedToolTemplate { name: name.clone() })
+                    as Box<dyn crate::framework::model::ToolTemplate>
+            })
+            .collect()
+    }
+
+    fn add_tool_chest_change_listener(
+        &mut self,
+        _listener: Box<dyn crate::framework::model::ToolChestChangeListener>,
+    ) {
+    }
+
+    fn remove_tool_chest_change_listener(
+        &mut self,
+        _listener: Box<dyn crate::framework::model::ToolChestChangeListener>,
+    ) {
+    }
+
+    fn add_tool_template(
+        &mut self,
+        template: &mut dyn crate::framework::model::ToolTemplate,
+    ) -> bool {
+        let name = template.get_name();
+        if self.tool_names.contains(&name) {
+            return false;
+        }
+        self.tool_names.push(name);
+        true
+    }
+
+    fn remove(&mut self, tool_name: &str) -> bool {
+        match self.tool_names.iter().position(|name| name == tool_name) {
+            Some(index) => {
+                self.tool_names.remove(index);
+                true
+            }
+            None => false,
+        }
+    }
+
+    fn get_tool_count(&self) -> i32 {
+        self.tool_names.len() as i32
+    }
+
+    fn replace_tool_template(
+        &mut self,
+        template: &mut dyn crate::framework::model::ToolTemplate,
+    ) -> bool {
+        let name = template.get_name();
+        self.remove(&name);
+        self.tool_names.push(name);
+        true
+    }
 }

@@ -871,3 +871,10 @@ ts	stub_class	referenced_by
 2026-08-15T03:16:27.628302+00:00	GhidraTool	ToolManagerImpl
 2026-08-15T03:16:27.628302+00:00	WorkspaceImpl	ToolManagerImpl
 2026-08-15T03:16:27.628302+00:00	ToolConnectionImpl	ToolManagerImpl
+2026-08-15T03:35:49.227645+00:00	ToolUtils	DefaultProjectManager
+2026-08-15T03:35:49.227645+00:00	ClientUtil	DefaultProjectManager
+2026-08-15T03:35:49.227645+00:00	AppInfo	DefaultProjectManager
+2026-08-15T03:35:49.227645+00:00	TransientDataManager	DefaultProjectManager
+2026-08-15T03:35:49.227645+00:00	DefaultProject	DefaultProjectManager
+2026-08-15T03:35:49.227645+00:00	DefaultProjectFactory	DefaultProjectManager
+2026-08-15T03:35:49.227645+00:00	ToolChestImpl	DefaultProjectManager
