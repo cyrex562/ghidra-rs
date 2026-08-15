@@ -3740,7 +3740,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWA
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFImportSummary.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFImporter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFIndirectTable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFIndirectTableHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFIndirectTableHeader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFInline.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFLengthValue.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/DWARFLocation.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf 
