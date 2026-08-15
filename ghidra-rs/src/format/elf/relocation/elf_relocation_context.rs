@@ -191,6 +191,16 @@ impl ElfRelocationContextBase {
         &self.program
     }
 
+    /// Forget the relocation table currently being processed.
+    ///
+    /// This is the whole body of [`ElfRelocationContext::end_relocation_table_processing`]; it is
+    /// exposed separately so a subclass port that overrides that method can still make the
+    /// `super.endRelocationTableProcessing()` call Java's own subclasses make -- the field itself
+    /// is private to this module.
+    pub fn end_relocation_table_processing(&mut self) {
+        self.relocation_table = None;
+    }
+
     pub fn is_big_endian(&self) -> bool {
         self.program
             .get_memory()
@@ -320,7 +330,7 @@ pub trait ElfRelocationContext {
 
     /// Invoked at the end of relocation processing for the current relocation table.
     fn end_relocation_table_processing(&mut self) {
-        self.base_mut().relocation_table = None;
+        self.base_mut().end_relocation_table_processing();
     }
 
     /// Process a relocation from the relocation table which corresponds to this context.

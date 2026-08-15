@@ -859,3 +859,8 @@ ts	stub_class	referenced_by
 2026-08-14T09:52:56.965159+00:00	CodeAttribute	JavaLoader
 2026-08-15T02:16:40.327757+00:00	ElfDynamicType	ElfDynamic
 2026-08-15T02:16:40.329597+00:00	ElfHeader	ElfDynamic
+2026-08-15T02:35:00.000000+00:00	MipsElfRelocationHandler	MIPS_ElfRelocationContext
+2026-08-15T02:35:00.000001+00:00	MipsDeferredRelocation	MIPS_ElfRelocationContext
+2026-08-15T02:35:00.000002+00:00	MIPS_Elf64Relocation	MIPS_ElfRelocationContext
+2026-08-15T02:35:00.000003+00:00	ElfRelocationTable	MIPS_ElfRelocationContext
+2026-08-15T02:35:00.000004+00:00	ElfRelocation	MIPS_ElfRelocationContext

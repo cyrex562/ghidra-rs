@@ -45,6 +45,20 @@ pub trait Program: DomainObject + Send + Sync {
         None
     }
 
+    /// The size, in bytes, of a pointer in this program's default address space.
+    ///
+    /// Stands in for `Program.getDefaultPointerSize()`. Grown (defaulted, so existing
+    /// implementors keep compiling) for
+    /// [`MipsElfRelocationContext`](crate::format::elf::relocation::mips_elf_relocation_context::MipsElfRelocationContext),
+    /// which sizes its fabricated GOT entries by it. Java delegates to the program architecture's
+    /// data organization; the default here derives the same answer from the default address
+    /// space, falling back to 4 when no address factory is available.
+    fn get_default_pointer_size(&self) -> i32 {
+        self.get_address_factory()
+            .and_then(|factory| factory.get_default_address_space())
+            .map_or(4, |space| space.pointer_size())
+    }
+
     /// Get the memory for this program.
     ///
     /// Grown (defaulted, so existing implementors keep compiling) for
