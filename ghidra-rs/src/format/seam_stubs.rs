@@ -3394,10 +3394,149 @@ pub trait DWARFAttributeDef: Send + Sync {
     fn get_attribute_form(&self) -> Box<dyn DWARFForm>;
 }
 
-/// Placeholder for the unported Java type `DWARFCompilationUnit`, referenced by `DWARFAttributeValue`.
-/// Only includes the methods actually needed by `DWARFAttributeValue`.
+/// Placeholder for the unported Java type `DWARFCompilationUnit`, referenced by
+/// `DWARFAttributeValue` and `DWARFLine`. Only includes the methods actually needed by those
+/// types. Everything except `get_dwarf_version` has a stub default so that test doubles which
+/// only model a version number keep compiling; the real port will supply all of them.
 pub trait DWARFCompilationUnit: Send + Sync {
     fn get_dwarf_version(&self) -> i16;
+
+    /// Mirrors `DWARFCompilationUnit.getCompileDirectory()`, which returns `null` when the
+    /// compilation unit has no `DW_AT_comp_dir`.
+    fn get_compile_directory(&self) -> Option<String> {
+        None
+    }
+
+    /// Mirrors `DWARFCompilationUnit.getPointerSize()`.
+    fn get_pointer_size(&self) -> i8 {
+        0
+    }
+
+    /// Mirrors `DWARFCompilationUnit.getProgram()`. The real method never returns `null`; the
+    /// `Option` here only exists so stub implementations that don't model a `DWARFProgram` can
+    /// return `None`.
+    fn get_program(&self) -> Option<&dyn DWARFProgram> {
+        None
+    }
+
+    /// Mirrors `DWARFCompilationUnit.getDIEContainer()`. As with `get_program`, the `Option` is
+    /// only for stub implementations that don't model a container.
+    fn get_die_container(&self) -> Option<&dyn DIEContainer> {
+        None
+    }
+}
+
+/// Placeholder for the unported Java type `DWARFProgram`, referenced by `DWARFLine`. Only the two
+/// members `DWARFLine` reaches for are modeled.
+pub trait DWARFProgram: Send + Sync {
+    /// Mirrors `DWARFProgram.isAddr0Tombstone()`.
+    fn is_addr0_tombstone(&self) -> bool;
+
+    /// Mirrors `DWARFProgram.getImportSummary()`.
+    fn get_import_summary(&self) -> &DWARFImportSummary;
+}
+
+/// Placeholder for the unported Java type `DWARFImportSummary`, referenced by `DWARFLine`. The
+/// Java class is a concrete class whose counters are public mutable `int` fields that callers
+/// increment in place; they are modeled here as atomics so they can be bumped through a shared
+/// reference. Only the two counters `DWARFLine` touches are modeled.
+#[derive(Debug, Default)]
+pub struct DWARFImportSummary {
+    tombstoned_source_line_entry_skipped_count: std::sync::atomic::AtomicI32,
+    bad_source_file_count: std::sync::atomic::AtomicI32,
+}
+
+impl DWARFImportSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Mirrors `summary.tombstonedSourceLineEntrySkippedCount++`.
+    pub fn increment_tombstoned_source_line_entry_skipped_count(&self) {
+        self.tombstoned_source_line_entry_skipped_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    pub fn get_tombstoned_source_line_entry_skipped_count(&self) -> i32 {
+        self.tombstoned_source_line_entry_skipped_count
+            .load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    /// Mirrors `summary.badSourceFileCount++`.
+    pub fn increment_bad_source_file_count(&self) {
+        self.bad_source_file_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    pub fn get_bad_source_file_count(&self) -> i32 {
+        self.bad_source_file_count.load(std::sync::atomic::Ordering::Relaxed)
+    }
+}
+
+/// Placeholder for the unported Java type `DIEContainer`, referenced by `DWARFLine`. Only
+/// `getDebugLineReader` (the single method that call site needs) is modeled.
+pub trait DIEContainer: Send + Sync {
+    /// Mirrors `DIEContainer.getDebugLineReader()`, which returns `null` when the binary has no
+    /// `.debug_line` section.
+    fn get_debug_line_reader(&self) -> Option<Box<dyn crate::app::util::bin::binary_reader::BinaryReader>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.line.DWARFLineProgramExecutor`, referenced by
+/// `DWARFLine::get_line_program_executor`. The real class is a concrete class that steps the DWARF
+/// line-number program, which is a substantial port of its own; this placeholder just captures the
+/// constructor arguments (so callers -- and their tests -- can verify what the line table header
+/// hands the executor) and reports row extraction as unsupported.
+pub struct DWARFLineProgramExecutor {
+    pub reader: Box<dyn crate::app::util::bin::binary_reader::BinaryReader>,
+    pub end_offset: u64,
+    pub pointer_size: i8,
+    pub opcode_base: i32,
+    pub line_base: i32,
+    pub line_range: i32,
+    pub minimum_instruction_length: i32,
+    pub default_is_stmt: bool,
+    pub is_addr0_tombstone: bool,
+}
+
+impl DWARFLineProgramExecutor {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        reader: Box<dyn crate::app::util::bin::binary_reader::BinaryReader>,
+        end_offset: u64,
+        pointer_size: i8,
+        opcode_base: i32,
+        line_base: i32,
+        line_range: i32,
+        minimum_instruction_length: i32,
+        default_is_stmt: bool,
+        is_addr0_tombstone: bool,
+    ) -> Self {
+        DWARFLineProgramExecutor {
+            reader,
+            end_offset,
+            pointer_size,
+            opcode_base,
+            line_base,
+            line_range,
+            minimum_instruction_length,
+            default_is_stmt,
+            is_addr0_tombstone,
+        }
+    }
+
+    /// Mirrors `DWARFLineProgramExecutor.allRows()`. Executing the line-number program isn't
+    /// ported yet, so this reports itself as unsupported rather than silently returning no rows.
+    pub fn all_rows(
+        &mut self,
+    ) -> std::io::Result<Vec<crate::format::dwarf::line::dwarf_line_program_state::DWARFLineProgramState>>
+    {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DWARFLineProgramExecutor.allRows is not yet implemented (DWARFLineProgramExecutor has not been ported)",
+        ))
+    }
+
+    /// Mirrors `DWARFLineProgramExecutor.close()` (the Java class is `Closeable`).
+    pub fn close(&mut self) {}
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.line.DWARFLineContentType`, referenced by
@@ -3441,12 +3580,55 @@ pub struct DWARFLineContentTypeDef {
 }
 
 impl DWARFLineContentTypeDef {
+    /// Mirrors `DWARFLineContentType.Def.read(BinaryReader)`, which reads a content type code and
+    /// a form code, both unsigned LEB128. Java resolves the form code through `DWARFForm.of()`;
+    /// that enum isn't ported, so the code is wrapped in [`UnportedDWARFForm`], which preserves
+    /// the code but can't decode values yet.
+    pub fn read(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    ) -> std::io::Result<Self> {
+        let content_type_code =
+            crate::app::util::bin::leb128_info::LEB128Info::unsigned(reader)?.as_u_int32()?;
+        let form_code =
+            crate::app::util::bin::leb128_info::LEB128Info::unsigned(reader)?.as_u_int32()?;
+
+        Ok(DWARFLineContentTypeDef {
+            attribute_id: DWARFLineContentType::of(content_type_code as i32),
+            attribute_form: Box::new(UnportedDWARFForm { form_code }),
+        })
+    }
+
     pub fn get_attribute_id(&self) -> DWARFLineContentType {
         self.attribute_id
     }
 
     pub fn get_attribute_form(&self) -> &dyn DWARFForm {
         self.attribute_form.as_ref()
+    }
+}
+
+/// A [`DWARFForm`] carrying only the raw `DW_FORM_*` code, used until the real `DWARFForm` enum is
+/// ported. Reading a value through it reports the specific code that isn't handled yet.
+pub struct UnportedDWARFForm {
+    pub form_code: u32,
+}
+
+impl DWARFForm for UnportedDWARFForm {
+    fn is_class(&self, _class: &dyn std::any::Any) -> bool {
+        false
+    }
+
+    fn read_value(
+        &self,
+        _context: &mut DWARFFormContext,
+    ) -> std::io::Result<Box<dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue>> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            format!(
+                "DWARFForm 0x{:x} cannot be read yet (DWARFForm has not been ported)",
+                self.form_code
+            ),
+        ))
     }
 }
 
@@ -3564,32 +3746,6 @@ impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue f
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-}
-
-/// Placeholder for `ghidra.app.util.bin.format.dwarf.line.DWARFLine`, referenced by
-/// `DWARFFile::get_path_name` before the real (much larger, 12-method) class is ported. Only
-/// `get_dir`, the single accessor that call site needs, is modeled. `DWARFLine` is a concrete
-/// Java class, so it is modeled here as a concrete struct. Notably, `get_dir` returns the crate's
-/// real (already-ported) `DWARFFile` type -- `DWARFLine` and `DWARFFile` are mutually referential
-/// in the original Java, and since `DWARFFile` is the type being ported when this stub was
-/// written, there's no need to stub its return type too.
-pub struct DWARFLine {
-    pub dirs: Vec<crate::format::dwarf::line::dwarf_file::DWARFFile>,
-}
-
-impl DWARFLine {
-    /// Mirrors `DWARFLine.getDir(int)`, which throws `IOException` for an out-of-range index.
-    pub fn get_dir(&self, index: i32) -> std::io::Result<&crate::format::dwarf::line::dwarf_file::DWARFFile> {
-        if index < 0 {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("Invalid directory index: {index}"),
-            ));
-        }
-        self.dirs.get(index as usize).ok_or_else(|| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Invalid directory index: {index}"))
-        })
     }
 }
 
