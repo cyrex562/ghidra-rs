@@ -56,6 +56,20 @@ pub trait MessageLog: Send + Sync {
     fn append_msg_from(&self, originator: &str, message: &str) {
         self.append_msg(&format!("{originator}: {message}"));
     }
+
+    /// `MessageLog.copyFrom(MessageLog)`, which appends every message of `other` onto this log.
+    /// Defaults to discarding them, matching [`append_msg`](Self::append_msg)'s default.
+    fn copy_from(&self, other: &dyn MessageLog) {
+        let _ = other;
+    }
+
+    /// `MessageLog.toString()`, the accumulated messages joined by newlines. Defaults to the
+    /// empty string, which is what Java's `toString` returns for a log that recorded nothing --
+    /// the case [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) tests for when
+    /// picking which log to report an import failure from.
+    fn to_display_string(&self) -> String {
+        String::new()
+    }
 }
 
 /// Placeholder for `ghidra.features.base.codecompare.model.FunctionComparisonModel`, referenced
@@ -2501,3 +2515,189 @@ pub trait Pair: Send + Sync {
 /// class is ported. `OptionChooser` only ever passes this type through as a parameter, so no
 /// members are needed yet.
 pub trait ProgramLoader: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.xml.XmlProgramOptions`, referenced by
+/// [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) before the real class is
+/// ported. Java's version is a plain mutable bean of ~24 `boolean` switches plus the
+/// `List<Option>` conversions in [`get_options`](Self::get_options)/[`set_options`](Self::set_options);
+/// `XmlLoader` only ever constructs one, feeds it a caller's options, flips
+/// [`set_add_to_program`](Self::set_add_to_program), and hands it to [`ProgramXmlMgr::read`], so
+/// only that surface is modeled here. The switches themselves are deliberately left out until
+/// the real port brings them in with the reading/writing code that consumes them.
+pub struct XmlProgramOptions {
+    /// Mirrors `XmlProgramOptions.isAddToProgram`, the one switch `XmlLoader` sets directly.
+    add_to_program: bool,
+}
+
+impl XmlProgramOptions {
+    /// Port of `new XmlProgramOptions()`. Java's field initializers make every switch except
+    /// `isAddToProgram` default to true; `isAddToProgram` starts false, which is all this
+    /// placeholder models.
+    pub fn new() -> Self {
+        XmlProgramOptions { add_to_program: false }
+    }
+
+    /// Port of `XmlProgramOptions.isAddToProgram()`.
+    pub fn is_add_to_program(&self) -> bool {
+        self.add_to_program
+    }
+
+    /// Port of `XmlProgramOptions.setAddToProgram(boolean)`.
+    pub fn set_add_to_program(&mut self, add_to_program: bool) {
+        self.add_to_program = add_to_program;
+    }
+
+    /// Port of `XmlProgramOptions.getOptions(boolean isAddToProgram)`. Not yet implemented (see
+    /// the type docs); the real body builds one `Option` per switch.
+    pub fn get_options(&self, is_add_to_program: bool) -> Vec<Box<dyn Option>> {
+        let _ = is_add_to_program;
+        unimplemented!("XmlProgramOptions::get_options placeholder not overridden")
+    }
+
+    /// Port of `XmlProgramOptions.setOptions(List<Option>)`, which throws `OptionException` when
+    /// an option's name or value type is not one it recognizes. Not yet implemented (see the type
+    /// docs); the real body applies each option to its matching switch.
+    pub fn set_options(
+        &mut self,
+        options: &[Box<dyn Option>],
+    ) -> Result<(), crate::app::util::option_exception::OptionException> {
+        let _ = options;
+        unimplemented!("XmlProgramOptions::set_options placeholder not overridden")
+    }
+}
+
+impl Default for XmlProgramOptions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.xml.ProgramXmlMgr`, referenced by
+/// [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) before the real class is
+/// ported. Java's version owns the XML `ByteProvider`/`File` and drives the two dozen `*XmlMgr`
+/// readers/writers over it; only the two constructors and the two reads `XmlLoader` performs are
+/// modeled.
+///
+/// The real port will hold the `ByteProvider` it was constructed from. This placeholder keeps
+/// only the underlying file path, so that it stays `Send + Sync`: `XmlLoader` shares one across
+/// the `AnalysisWorker` it schedules, and this crate's `ByteProvider` handles are
+/// `Rc<RefCell<..>>`, which are not.
+pub struct ProgramXmlMgr {
+    /// The XML file this manager reads, when known.
+    file: StdOption<std::path::PathBuf>,
+}
+
+impl ProgramXmlMgr {
+    /// Port of `ProgramXmlMgr(ByteProvider)`.
+    pub fn from_provider(
+        provider: &std::rc::Rc<
+            std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>,
+        >,
+    ) -> Self {
+        ProgramXmlMgr { file: provider.borrow().get_file() }
+    }
+
+    /// Port of `ProgramXmlMgr(File)`.
+    pub fn from_file(file: std::path::PathBuf) -> Self {
+        ProgramXmlMgr { file: Some(file) }
+    }
+
+    /// The XML file this manager was constructed over, if any. Not a port of a Java member; it
+    /// exposes the one piece of state this placeholder retains.
+    pub fn file(&self) -> StdOption<&std::path::Path> {
+        self.file.as_deref()
+    }
+
+    /// Port of `ProgramXmlMgr.getProgramInfo()`, which parses just the `PROGRAM`/`INFO_SOURCE`/
+    /// `LANGUAGE` tags at the head of the document. `None` mirrors the `null` Java returns for a
+    /// document without those tags. Not yet implemented (see the type docs); the real body needs
+    /// the XML pull parser and the `ProgramInfo` tag handlers.
+    pub fn get_program_info(
+        &self,
+    ) -> std::io::Result<StdOption<crate::app::util::xml::program_info::ProgramInfo>> {
+        unimplemented!("ProgramXmlMgr::get_program_info placeholder not overridden")
+    }
+
+    /// Port of `ProgramXmlMgr.read(Program, TaskMonitor, XmlProgramOptions)`, returning the
+    /// manager's own `MessageLog`. Not yet implemented (see the type docs); the real body runs
+    /// every enabled `*XmlMgr` over the document.
+    pub fn read(
+        &self,
+        program: &dyn Program,
+        monitor: &dyn TaskMonitor,
+        options: &XmlProgramOptions,
+    ) -> std::io::Result<Box<dyn MessageLog>> {
+        let _ = (program, monitor, options);
+        unimplemented!("ProgramXmlMgr::read placeholder not overridden")
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.analysis.AutoAnalysisManager`, referenced by
+/// [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) before the real class is
+/// ported. Java's version has ~67 members; `XmlLoader` only ever schedules a worker on one, so
+/// that is the only method modeled. The two statics it reaches the manager through are the free
+/// functions in [`auto_analysis_manager`].
+pub trait AutoAnalysisManager: Send + Sync {
+    /// Mirrors `AutoAnalysisManager.scheduleWorker(AnalysisWorker, Object, boolean, TaskMonitor)`.
+    /// Java additionally throws `InvocationTargetException`/`InterruptedException`/
+    /// `CancelledException`; only the `IOException` cause `XmlLoader` unwraps out of the first is
+    /// modeled, since the other two are Java threading plumbing.
+    fn schedule_worker(
+        &self,
+        worker: &dyn crate::app::plugin::core::analysis::analysis_worker::AnalysisWorker,
+        worker_context: &dyn std::any::Any,
+        analyze_changes: bool,
+        worker_monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<bool>;
+}
+
+/// The two `AutoAnalysisManager` statics
+/// [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) calls. Java hangs them off the
+/// class itself; Rust has no static trait methods, so -- as with [`memory_block_utils`] -- they
+/// become free functions in a module named for the Java class.
+pub mod auto_analysis_manager {
+    use super::AutoAnalysisManager;
+    use crate::program::model::listing::Program;
+
+    /// Mirrors `AutoAnalysisManager.hasAutoAnalysisManager(Program)`. Not yet implemented; the
+    /// real body consults the static per-program manager registry.
+    pub fn has_auto_analysis_manager(program: &dyn Program) -> bool {
+        let _ = program;
+        unimplemented!("auto_analysis_manager::has_auto_analysis_manager placeholder not overridden")
+    }
+
+    /// Mirrors `AutoAnalysisManager.getAnalysisManager(Program)`, which creates the program's
+    /// manager if it does not have one yet. Not yet implemented, as for
+    /// [`has_auto_analysis_manager`].
+    pub fn get_analysis_manager(program: &dyn Program) -> Box<dyn AutoAnalysisManager> {
+        let _ = program;
+        unimplemented!("auto_analysis_manager::get_analysis_manager placeholder not overridden")
+    }
+}
+
+/// The `AbstractProgramLoader` helper
+/// [`XmlLoader`](crate::app::util::opinion::xml_loader::XmlLoader) inherits and calls. Java's
+/// `AbstractProgramLoader` is the abstract base class every program loader extends; this crate
+/// models loaders as standalone structs (see `XmlLoader`'s and
+/// [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader)'s module docs), so the
+/// inherited helpers become free functions here until the base class itself is ported.
+pub mod abstract_program_loader {
+    use super::MessageLog;
+    use crate::program::model::listing::Program;
+    use crate::util::task::TaskMonitor;
+
+    /// Mirrors the protected `AbstractProgramLoader.createDefaultMemoryBlocks(Program,
+    /// ImporterSettings)`, which lays down the language's default memory-block definitions. Java
+    /// takes the whole `ImporterSettings` record but reads only its log and monitor, so those two
+    /// are passed directly. Not yet implemented (see the module docs).
+    pub fn create_default_memory_blocks(
+        program: &mut dyn Program,
+        log: &dyn MessageLog,
+        monitor: &dyn TaskMonitor,
+    ) {
+        let _ = (program, log, monitor);
+        unimplemented!(
+            "abstract_program_loader::create_default_memory_blocks placeholder not overridden"
+        )
+    }
+}

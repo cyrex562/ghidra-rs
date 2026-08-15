@@ -4744,7 +4744,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/QueryResult.
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/SomLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/UnixAoutLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/UnixAoutProgramLoader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/XmlLoader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/XmlLoader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/parser/FunctionSignatureParser.java	TODO	orig_src Ghidra Features Base src main java ghidra app util parser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/pcode/AttributedStringPcodeFormatter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util pcode 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/pcode/StringPcodeFormatter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util pcode 

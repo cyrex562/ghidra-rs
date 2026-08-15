@@ -878,3 +878,7 @@ ts	stub_class	referenced_by
 2026-08-15T03:35:49.227645+00:00	DefaultProject	DefaultProjectManager
 2026-08-15T03:35:49.227645+00:00	DefaultProjectFactory	DefaultProjectManager
 2026-08-15T03:35:49.227645+00:00	ToolChestImpl	DefaultProjectManager
+2026-08-15T03:50:46.076862+00:00	XmlProgramOptions	XmlLoader
+2026-08-15T03:50:46.076862+00:00	ProgramXmlMgr	XmlLoader
+2026-08-15T03:50:46.076862+00:00	AutoAnalysisManager	XmlLoader
+2026-08-15T03:50:46.076862+00:00	AbstractProgramLoader	XmlLoader
