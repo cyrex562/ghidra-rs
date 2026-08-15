@@ -4953,12 +4953,3 @@ impl std::fmt::Display for DWARFExpressionException {
 
 impl std::error::Error for DWARFExpressionException {}
 
-/// Placeholder for the unported Java type `DWARFAddressListHeader`, referenced by `DWARFIndirectTableHeader`.
-/// Generated stub: only a shape hint. The Java type is a class (not an interface) that will be ported
-/// to a concrete type once available. Replace with the real port when available.
-pub trait DWARFAddressListHeader: Send + Sync {
-    fn read(&self, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader, default_int_size: i32) -> std::io::Result<Box<dyn DWARFAddressListHeader>>;
-    fn get_offset(&self, index: i32, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader) -> std::io::Result<i64>;
-    fn get_address_size(&self) -> i32;
-    fn get_segment_selector_size(&self) -> i32;
-}
