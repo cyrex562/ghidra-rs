@@ -1312,6 +1312,26 @@ pub trait ElfRelocation: Send + Sync {
     fn get_offset(&self) -> i64 {
         0
     }
+
+    /// `ElfRelocation.getRelocationIndex()` -- this relocation's index within its table, needed by
+    /// [`MipsElfRelocationContext::next_relocation_has_same_offset`](crate::format::elf::relocation::mips_elf_relocation_context::MipsElfRelocationContext::next_relocation_has_same_offset).
+    /// The default answers `-1` ("index unknown"), which that lookup already treats as "there is
+    /// no next relocation".
+    fn get_relocation_index(&self) -> i32 {
+        -1
+    }
+
+    /// `MIPS_Elf64Relocation.getSpecialSymbolIndex()` -- the `r_ssym` field of the modified ELF-64
+    /// relocation entry MIPS uses, read by the second slot of a packed MIPS-64 relocation.
+    ///
+    /// Java declares this on the `MIPS_Elf64Relocation` subclass and reaches it by downcasting the
+    /// `ElfRelocation` the context was handed. Rust trait objects cannot be downcast, and the
+    /// relocation arrives through [`ElfRelocationContext::process_relocation_for_symbol`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContext::process_relocation_for_symbol)
+    /// as a `&dyn ElfRelocation`, so the accessor is declared here instead. The default answers
+    /// `0`, the value a non-MIPS-64 entry has no `r_ssym` for.
+    fn get_special_symbol_index(&self) -> i32 {
+        0
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.elf.ElfRelocationTable`, referenced by
@@ -1330,6 +1350,14 @@ pub trait ElfRelocationTable: Send + Sync {
     /// `ElfRelocationTable.getRelocations()` -- every relocation entry, in file order.
     fn get_relocations(&self) -> Vec<Box<dyn ElfRelocation>> {
         Vec::new()
+    }
+
+    /// `ElfRelocationTable.getSectionToBeRelocated()` -- the section these relocations apply to,
+    /// which is `null` (here `None`) for a dynamic relocation table. Needed by
+    /// [`MipsElfRelocationContext`](crate::format::elf::relocation::mips_elf_relocation_context::MipsElfRelocationContext),
+    /// which names its fabricated GOT block after it.
+    fn get_section_to_be_relocated(&self) -> Option<std::sync::Arc<dyn ElfSectionHeader>> {
+        None
     }
 }
 
@@ -1398,6 +1426,103 @@ pub trait ElfRelocationHandler: Send + Sync {
     );
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.elf.relocation.MIPS_ElfRelocationHandler`,
+/// referenced by
+/// [`MipsElfRelocationContext`](crate::format::elf::relocation::mips_elf_relocation_context::MipsElfRelocationContext)
+/// before the handler itself is ported -- the forward edge of the context/handler dependency
+/// cycle.
+///
+/// Java's `MIPS_ElfRelocationContext extends ElfRelocationContext<MIPS_ElfRelocationHandler>`
+/// narrows the inherited `handler` field to this type so it can reach three members the handler
+/// inherits from `AbstractElfRelocationHandler`: `getRelocationType`, `markAsUndefined`, and the
+/// abstract 8-argument `relocate`. The last of those is already declared by the ported
+/// [`AbstractElfRelocationHandler`](crate::format::elf::relocation::abstract_elf_relocation_handler::AbstractElfRelocationHandler),
+/// so this stub inherits it rather than redeclaring it; the other two live on the concrete
+/// [`AbstractElfRelocationHandlerBase`](crate::format::elf::relocation::abstract_elf_relocation_handler::AbstractElfRelocationHandlerBase)
+/// struct in Rust and so have to be declared here.
+pub trait MipsElfRelocationHandler:
+    ElfRelocationHandler
+    + crate::format::elf::relocation::abstract_elf_relocation_handler::AbstractElfRelocationHandler<
+        crate::format::elf::relocation::mips_elf_relocation_type::MipsElfRelocationType,
+    >
+{
+    /// Upcast to the general handler trait, which
+    /// [`ElfRelocationContextBase`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase)
+    /// stores. Implementors write `self`. Stands in for Java's implicit widening of the narrowed
+    /// `handler` field.
+    fn as_elf_relocation_handler(self: std::sync::Arc<Self>) -> std::sync::Arc<dyn ElfRelocationHandler>;
+
+    /// `AbstractElfRelocationHandler.getRelocationType(int)`, narrowed to MIPS. `None` stands in
+    /// for Java's `null` return on an unrecognized type ID.
+    fn get_relocation_type(
+        &self,
+        type_id: i32,
+    ) -> Option<crate::format::elf::relocation::mips_elf_relocation_type::MipsElfRelocationType>;
+
+    /// `AbstractElfRelocationHandler.markAsUndefined(Program, Address, int, String, int,
+    /// MessageLog)`.
+    fn mark_as_undefined(
+        &self,
+        program: &dyn crate::program::model::listing::program::Program,
+        relocation_address: &crate::program::model::address::Address,
+        type_id: i32,
+        symbol_name: Option<&str>,
+        symbol_index: i32,
+        log: &dyn MessageLog,
+    );
+}
+
+/// Placeholder for `MIPS_ElfRelocationHandler.MIPS_DeferredRelocation`, the nested class that
+/// captures a HI16/GOT16 relocation whose processing must wait for the matching LO16 relocation.
+///
+/// The fields are Java's `final` package-private fields, read directly by the handler; they stay
+/// public here for the same reason. `relocAddr`/`elfSymbol` are `Option` because a deferred
+/// relocation may be recorded for the null symbol.
+pub struct MipsDeferredRelocation {
+    /// `relocType` -- the deferred relocation's type.
+    pub reloc_type: crate::format::elf::relocation::mips_elf_relocation_type::MipsElfRelocationType,
+    /// `elfSymbol` -- the symbol the deferred relocation applies to.
+    pub elf_symbol: Option<crate::format::elf::elf_symbol::ElfSymbol>,
+    /// `relocAddr` -- the address the relocation will be applied at.
+    pub reloc_addr: crate::program::model::address::Address,
+    /// `oldValueL` -- the original value read from `relocAddr`.
+    pub old_value: i64,
+    /// `addendL` -- the relocation addend.
+    pub addend: i64,
+    /// `isGpDisp` -- true if the relocation's symbol is `_gp_disp`.
+    pub is_gp_disp: bool,
+}
+
+impl MipsDeferredRelocation {
+    /// `MIPS_DeferredRelocation.markUnprocessed(MIPS_ElfRelocationContext, String)` -- mark a
+    /// deferred relocation that never received its missing dependency as an error.
+    ///
+    /// Java takes the MIPS context but reads only `getProgram()`/`getLog()` off it, both of which
+    /// live on the shared [`ElfRelocationContextBase`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase);
+    /// taking the base directly keeps this placeholder independent of the context port.
+    pub fn mark_unprocessed(
+        &self,
+        context: &crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase,
+        missing_dependency_name: &str,
+    ) {
+        use crate::format::elf::relocation::elf_relocation_type::ElfRelocationType;
+        let symbol_name = self.elf_symbol.as_ref().and_then(|s| s.get_name_as_string());
+        let symbol_index = self
+            .elf_symbol
+            .as_ref()
+            .map_or(-1, |s| s.get_symbol_table_index() as i32);
+        elf_relocation_handler::mark_as_error(
+            context.get_program().as_ref(),
+            &self.reloc_addr,
+            self.reloc_type.type_id(),
+            symbol_index,
+            symbol_name,
+            &format!("Relocation missing required {missing_dependency_name}"),
+            context.get_log().as_ref(),
+        );
+    }
+}
+
 /// Placeholders for the `ElfRelocationHandler` *static* markup helpers. They are free functions
 /// rather than [`ElfRelocationHandler`] methods because the relocation context (and
 /// [`AbstractElfRelocationHandlerBase`](crate::format::elf::relocation::abstract_elf_relocation_handler::AbstractElfRelocationHandlerBase),
@@ -1413,6 +1538,9 @@ pub mod elf_relocation_handler {
     use crate::format::elf::elf_symbol::FORMATTED_NO_NAME;
     use crate::program::model::address::Address;
     use crate::program::model::listing::program::Program;
+
+    /// `ElfRelocationHandler.GOT_BLOCK_NAME` -- the name prefix of a fabricated GOT block.
+    pub const GOT_BLOCK_NAME: &str = "%got";
 
     /// `ElfRelocationHandler.bookmarkNoHandlerError(Program, Address, int, int, String)`.
     pub fn bookmark_no_handler_error(
