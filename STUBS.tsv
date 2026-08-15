@@ -920,3 +920,4 @@ ts	stub_class	referenced_by
 2026-08-15T06:27:51.551274+00:00	DWARFCompilationUnit	DWARFLocationList
 2026-08-15T06:27:51.551446+00:00	DWARFLocation	DWARFLocationList
 2026-08-15T06:59:00.000001+00:00	ExternalDebugInfo	DebugStreamProvider
+2026-08-15T07:15:18+00:00	DebugInfoProviderRegistry	DebugInfoProviderCreatorContext

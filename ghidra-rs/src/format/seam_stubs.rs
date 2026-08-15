@@ -4970,3 +4970,12 @@ impl std::fmt::Display for DWARFExpressionException {
 
 impl std::error::Error for DWARFExpressionException {}
 
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.external.DebugInfoProviderRegistry`,
+/// referenced by `DebugInfoProviderCreatorContext` before the real class is ported.
+pub trait DebugInfoProviderRegistry: Send + Sync {
+    fn get_instance(&self) -> Box<dyn DebugInfoProviderRegistry>;
+    fn register(&self, test_func: &dyn std::any::Any, create_func: &dyn std::any::Any);
+    fn new_context(&self, program: &dyn crate::program::model::listing::Program) -> Box<dyn std::any::Any>;
+    fn create(&self, name: &str, context: &dyn std::any::Any) -> Box<dyn crate::format::dwarf::external::debug_info_provider::DebugInfoProvider>;
+}
+
