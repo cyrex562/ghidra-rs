@@ -178,7 +178,7 @@ impl fmt::Display for DWARFFile {
 mod tests {
     use super::*;
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-    use crate::format::seam_stubs::{DWARFBlobAttribute, DWARFForm, DWARFNumericAttribute};
+    use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -265,45 +265,6 @@ mod tests {
         }
     }
 
-    struct StringForm(String);
-    impl DWARFForm for StringForm {
-        fn is_class(&self, _class: &dyn std::any::Any) -> bool {
-            false
-        }
-        fn read_value(
-            &self,
-            _context: &mut DWARFFormContext,
-        ) -> io::Result<Box<dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue>> {
-            Ok(Box::new(DWARFStringAttribute::new(self.0.clone())))
-        }
-    }
-
-    struct NumericForm(i64);
-    impl DWARFForm for NumericForm {
-        fn is_class(&self, _class: &dyn std::any::Any) -> bool {
-            false
-        }
-        fn read_value(
-            &self,
-            _context: &mut DWARFFormContext,
-        ) -> io::Result<Box<dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue>> {
-            Ok(Box::new(DWARFNumericAttribute::new(self.0)))
-        }
-    }
-
-    struct BlobForm(Vec<u8>);
-    impl DWARFForm for BlobForm {
-        fn is_class(&self, _class: &dyn std::any::Any) -> bool {
-            false
-        }
-        fn read_value(
-            &self,
-            _context: &mut DWARFFormContext,
-        ) -> io::Result<Box<dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue>> {
-            Ok(Box::new(DWARFBlobAttribute::new(self.0.clone())))
-        }
-    }
-
     /// Encodes `name`, then unsigned LEB128 `directory_index`, `modification_time`, `length`,
     /// matching the DWARF v4 line-table file-entry layout that `readV4` parses in the original
     /// Ghidra source.
@@ -341,29 +302,39 @@ mod tests {
 
     #[test]
     fn read_v5_extracts_fields_by_content_type() {
+        use crate::program::model::data::leb128::Leb128;
+
         let defs = vec![
             DWARFLineContentTypeDef {
                 attribute_id: DWARFLineContentType::DwLnctPath,
-                attribute_form: Box::new(StringForm("foo.c".to_string())),
+                attribute_form: DWARFForm::DwFormString,
             },
             DWARFLineContentTypeDef {
                 attribute_id: DWARFLineContentType::DwLnctDirectoryIndex,
-                attribute_form: Box::new(NumericForm(3)),
+                attribute_form: DWARFForm::DwFormUdata,
             },
             DWARFLineContentTypeDef {
                 attribute_id: DWARFLineContentType::DwLnctTimestamp,
-                attribute_form: Box::new(NumericForm(0xdead)),
+                attribute_form: DWARFForm::DwFormUdata,
             },
             DWARFLineContentTypeDef {
                 attribute_id: DWARFLineContentType::DwLnctSize,
-                attribute_form: Box::new(NumericForm(42)),
+                attribute_form: DWARFForm::DwFormData4,
             },
             DWARFLineContentTypeDef {
                 attribute_id: DWARFLineContentType::DwLnctMd5,
-                attribute_form: Box::new(BlobForm(vec![0xAA, 0xBB, 0xCC])),
+                attribute_form: DWARFForm::DwFormData16,
             },
         ];
-        let mut reader = TestReader::new(vec![]);
+
+        let md5 = (0u8..16).collect::<Vec<u8>>();
+        let mut bytes = b"foo.c\0".to_vec();
+        bytes.extend(Leb128::encode(3, false));
+        bytes.extend(Leb128::encode(0xdead, false));
+        bytes.extend(42u32.to_le_bytes());
+        bytes.extend(&md5);
+
+        let mut reader = TestReader::new(bytes);
         let cu = MockCompilationUnit;
 
         let file = DWARFFile::read_v5(&mut reader, &defs, 4, &cu).unwrap();
@@ -372,16 +343,16 @@ mod tests {
         assert_eq!(file.get_directory_index(), 3);
         assert_eq!(file.get_modification_time(), 0xdead);
         assert_eq!(file.length, 42);
-        assert_eq!(file.get_md5(), Some(&[0xAA, 0xBB, 0xCC][..]));
+        assert_eq!(file.get_md5(), Some(&md5[..]));
     }
 
     #[test]
     fn read_v5_errors_when_no_path_def_present() {
         let defs = vec![DWARFLineContentTypeDef {
             attribute_id: DWARFLineContentType::DwLnctDirectoryIndex,
-            attribute_form: Box::new(NumericForm(1)),
+            attribute_form: DWARFForm::DwFormUdata,
         }];
-        let mut reader = TestReader::new(vec![]);
+        let mut reader = TestReader::new(vec![0x01]);
         let cu = MockCompilationUnit;
 
         assert!(DWARFFile::read_v5(&mut reader, &defs, 4, &cu).is_err());

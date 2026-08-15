@@ -1,16 +1,16 @@
 //! Port of `ghidra.app.util.bin.format.dwarf.attribs.DWARFFormContext`.
 //!
 //! Java models this as a `record` (an immutable value type) carrying the four pieces of state a
-//! [`crate::format::seam_stubs::DWARFForm`]'s `readValue` needs to decode one attribute value:
+//! [`DWARFForm`](crate::format::dwarf::attribs::dwarf_form::DWARFForm)'s `read_value` needs to
+//! decode one attribute value:
 //! the stream to read from, the owning compilation unit, the attribute's definition (id + form),
 //! and the size of DWARF-serialized ints in effect for this read (normally the compilation unit's
 //! own int size, but callers such as `DWARFFile::read_v5` and `DWARFMacroInfoEntryBase::read` may
 //! pass a different size when reading from a section governed by an independent unit header).
 //!
 //! `DWARFCompilationUnit` and `DWARFAttributeDef` are themselves still stubbed in
-//! [`crate::format::seam_stubs`] (a forward cycle -- `DWARFForm`, which every real
-//! `DWARFAttributeDef` wraps, is what eventually consumes a `DWARFFormContext`), so this struct
-//! borrows them as trait objects rather than the concrete Java-side types. `dprog` and
+//! [`crate::format::seam_stubs`], so this struct borrows them as trait objects rather than the
+//! concrete Java-side types. `dprog` and
 //! `die_container` mirror the two package-private accessor methods Java declares for use by
 //! `DWARFForm`'s enum constants.
 
@@ -67,6 +67,7 @@ impl<'r, 'a> DWARFFormContext<'r, 'a> {
 mod tests {
     use super::*;
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+    use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
     use std::cell::RefCell;
     use std::io;
     use std::rc::Rc;
@@ -152,19 +153,12 @@ mod tests {
         }
     }
 
-    struct MockForm;
-    impl crate::format::seam_stubs::DWARFForm for MockForm {
-        fn is_class(&self, _class: &dyn std::any::Any) -> bool {
-            false
-        }
-    }
-
     struct MockAttrDef {
-        form: MockForm,
+        form: crate::format::dwarf::attribs::dwarf_form::DWARFForm,
     }
     impl DWARFAttributeDef for MockAttrDef {
-        fn get_attribute_form(&self) -> &dyn crate::format::seam_stubs::DWARFForm {
-            &self.form
+        fn get_attribute_form(&self) -> crate::format::dwarf::attribs::dwarf_form::DWARFForm {
+            self.form
         }
     }
 
@@ -172,7 +166,7 @@ mod tests {
     fn compact_constructor_uses_comp_units_int_size() {
         let mut reader = MockReader::new(vec![]);
         let cu = MockCompUnit { int_size: 8 };
-        let def = MockAttrDef { form: MockForm };
+        let def = MockAttrDef { form: DWARFForm::DwFormData4 };
 
         let ctx = DWARFFormContext::with_comp_unit_int_size(&mut reader, &cu, &def);
 
@@ -183,7 +177,7 @@ mod tests {
     fn full_constructor_can_diverge_from_comp_units_int_size() {
         let mut reader = MockReader::new(vec![]);
         let cu = MockCompUnit { int_size: 4 };
-        let def = MockAttrDef { form: MockForm };
+        let def = MockAttrDef { form: DWARFForm::DwFormData4 };
 
         // The full constructor lets a caller pass an int size that differs from the
         // compilation unit's own -- e.g. a section governed by an independent unit header.
@@ -197,7 +191,7 @@ mod tests {
     fn dprog_and_die_container_default_to_none() {
         let mut reader = MockReader::new(vec![]);
         let cu = MockCompUnit { int_size: 4 };
-        let def = MockAttrDef { form: MockForm };
+        let def = MockAttrDef { form: DWARFForm::DwFormData4 };
         let ctx = DWARFFormContext::new(&mut reader, &cu, &def, 4);
 
         assert!(ctx.dprog().is_none());

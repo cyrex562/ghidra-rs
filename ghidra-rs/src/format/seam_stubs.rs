@@ -4,7 +4,7 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
-use crate::format::dwarf::attribs::dwarf_form_context::DWARFFormContext;
+use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
@@ -3368,36 +3368,45 @@ impl JavaClassUtil {
     }
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFForm`, referenced by
-/// `DWARFAttributeDef` (which is itself a stub), which is used by `DWARFAttributeValue`.
-pub trait DWARFForm: Send + Sync {
-    fn is_class(&self, class: &dyn std::any::Any) -> bool;
+/// Placeholder for the unported Java type `DWARFAttributeDef`, referenced by `DWARFAttributeValue`,
+/// `DWARFForm` and `DWARFMacroInfoEntry`. Only includes the methods actually needed by those types.
+pub trait DWARFAttributeDef: Send + Sync {
+    fn get_attribute_form(&self) -> DWARFForm;
 
-    /// Placeholder for `DWARFForm.readValue(DWARFFormContext)`, referenced by
-    /// `DWARFFile::read_v5`. The real Java enum has ~20 `DW_FORM_*` variants, each dispatching to
-    /// a different binary layout; that decoding logic doesn't exist yet at this stub layer, so
-    /// the default implementation reports it as unsupported. Real implementations (including test
-    /// doubles) should override this to construct the appropriate `DWARFAttributeValue`.
-    fn read_value(
-        &self,
-        _context: &mut DWARFFormContext,
-    ) -> std::io::Result<Box<dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue>> {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "DWARFForm.readValue is not yet implemented (DWARFForm has not been ported)",
-        ))
+    /// Mirrors `DWARFAttributeDef.getImplicitValue()`, referenced by
+    /// `DWARFForm::DwFormImplicitConst`. Java's field is initialized to `-1` ("N/A") for any def
+    /// that isn't a `DW_FORM_implicit_const`, which is what this default returns.
+    fn get_implicit_value(&self) -> i64 {
+        -1
+    }
+
+    /// Mirrors `DWARFAttributeDef.withForm(DWARFForm)`, referenced by `DWARFForm::DwFormIndirect`
+    /// to retarget a def at the form an indirect value forwards to. Java copies the whole def and
+    /// swaps its form; only the form and the implicit value are observable through this trait, so
+    /// the default returns a [`RetargetedAttributeDef`] carrying those two.
+    fn with_form(&self, new_form: DWARFForm) -> Box<dyn DWARFAttributeDef> {
+        Box::new(RetargetedAttributeDef {
+            form: new_form,
+            implicit_value: self.get_implicit_value(),
+        })
     }
 }
 
-/// Placeholder for the unported Java type `DWARFAttributeDef`, referenced by `DWARFAttributeValue`
-/// and `DWARFMacroInfoEntry`. Only includes the methods actually needed by those types.
-///
-/// `get_attribute_form` returns a borrow (rather than an owned `Box<dyn DWARFForm>`) so that
-/// implementors backed by a stored `Box<dyn DWARFForm>` field (e.g. [`DWARFLineContentTypeDef`],
-/// [`crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroOpcodeDef`]) can hand
-/// it out without needing `DWARFForm` to be cloneable.
-pub trait DWARFAttributeDef: Send + Sync {
-    fn get_attribute_form(&self) -> &dyn DWARFForm;
+/// The result of [`DWARFAttributeDef::with_form`]: another def, identical to the one it was
+/// derived from as far as this stub's surface goes, but naming a different form.
+pub struct RetargetedAttributeDef {
+    pub form: DWARFForm,
+    pub implicit_value: i64,
+}
+
+impl DWARFAttributeDef for RetargetedAttributeDef {
+    fn get_attribute_form(&self) -> DWARFForm {
+        self.form
+    }
+
+    fn get_implicit_value(&self) -> i64 {
+        self.implicit_value
+    }
 }
 
 /// Placeholder for the unported Java type `DWARFCompilationUnit`, referenced by
@@ -3505,6 +3514,22 @@ pub trait DIEContainer: Send + Sync {
         Err(std::io::Error::new(
             std::io::ErrorKind::Unsupported,
             "DIEContainer.getLine is not yet implemented (DIEContainer has not been ported)",
+        ))
+    }
+
+    /// Mirrors `DIEContainer.getString(DWARFForm, long, DWARFCompilationUnit)`, referenced by the
+    /// string forms of `DWARFForm::read_value`. `offset` is a `.debug_str`-style byte offset for
+    /// the `DW_FORM_strp*` forms and an index into a string-offsets table for the `DW_FORM_strx*`
+    /// forms; `form` is what tells the container which of the two it is.
+    fn get_string(
+        &self,
+        _form: DWARFForm,
+        _offset: u64,
+        _cu: &dyn DWARFCompilationUnit,
+    ) -> std::io::Result<String> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DIEContainer.getString is not yet implemented (DIEContainer has not been ported)",
         ))
     }
 
@@ -3618,14 +3643,14 @@ impl DWARFLineContentType {
 /// Only the two accessors that call site needs are modeled.
 pub struct DWARFLineContentTypeDef {
     pub attribute_id: DWARFLineContentType,
-    pub attribute_form: Box<dyn DWARFForm>,
+    pub attribute_form: DWARFForm,
 }
 
 impl DWARFLineContentTypeDef {
     /// Mirrors `DWARFLineContentType.Def.read(BinaryReader)`, which reads a content type code and
-    /// a form code, both unsigned LEB128. Java resolves the form code through `DWARFForm.of()`;
-    /// that enum isn't ported, so the code is wrapped in [`UnportedDWARFForm`], which preserves
-    /// the code but can't decode values yet.
+    /// a form code, both unsigned LEB128, resolving the latter through `DWARFForm.of()`. Java
+    /// would go on to throw a `NullPointerException` reading a value through an unrecognized
+    /// form; this reports the unrecognized code instead.
     pub fn read(
         reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
     ) -> std::io::Result<Self> {
@@ -3634,9 +3659,16 @@ impl DWARFLineContentTypeDef {
         let form_code =
             crate::app::util::bin::leb128_info::LEB128Info::unsigned(reader)?.as_u_int32()?;
 
+        let attribute_form = DWARFForm::of(form_code as i32).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Unknown DWARF Form in line content type def: {form_code:#x}"),
+            )
+        })?;
+
         Ok(DWARFLineContentTypeDef {
             attribute_id: DWARFLineContentType::of(content_type_code as i32),
-            attribute_form: Box::new(UnportedDWARFForm { form_code }),
+            attribute_form,
         })
     }
 
@@ -3644,39 +3676,14 @@ impl DWARFLineContentTypeDef {
         self.attribute_id
     }
 
-    pub fn get_attribute_form(&self) -> &dyn DWARFForm {
-        self.attribute_form.as_ref()
+    pub fn get_attribute_form(&self) -> DWARFForm {
+        self.attribute_form
     }
 }
 
 impl DWARFAttributeDef for DWARFLineContentTypeDef {
-    fn get_attribute_form(&self) -> &dyn DWARFForm {
-        self.attribute_form.as_ref()
-    }
-}
-
-/// A [`DWARFForm`] carrying only the raw `DW_FORM_*` code, used until the real `DWARFForm` enum is
-/// ported. Reading a value through it reports the specific code that isn't handled yet.
-pub struct UnportedDWARFForm {
-    pub form_code: u32,
-}
-
-impl DWARFForm for UnportedDWARFForm {
-    fn is_class(&self, _class: &dyn std::any::Any) -> bool {
-        false
-    }
-
-    fn read_value(
-        &self,
-        _context: &mut DWARFFormContext,
-    ) -> std::io::Result<Box<dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue>> {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            format!(
-                "DWARFForm 0x{:x} cannot be read yet (DWARFForm has not been ported)",
-                self.form_code
-            ),
-        ))
+    fn get_attribute_form(&self) -> DWARFForm {
+        self.attribute_form
     }
 }
 
@@ -3708,18 +3715,42 @@ impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue f
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFNumericAttribute`, referenced by
-/// `DWARFFile::read_v5`. `DWARFNumericAttribute` is a concrete Java class implementing
-/// `DWARFAttributeValue`, so it is modeled here as a concrete struct rather than a trait object.
-/// The real class backs its value with a `Scalar` that tracks bit length and signedness
-/// separately; this stub only needs a single numeric value, so `get_value`/`get_unsigned_value`
-/// both read the same stored `i64`.
+/// `DWARFFile::read_v5` and `DWARFForm::read_value`. `DWARFNumericAttribute` is a concrete Java
+/// class implementing `DWARFAttributeValue`, so it is modeled here as a concrete struct rather
+/// than a trait object. The real class backs its value with a `Scalar` that masks the value to
+/// `bit_length` and applies `signed`; this stub records those three alongside the ambiguity flag
+/// but stores the value verbatim, so `get_value`/`get_unsigned_value` both read the same `i64`.
 pub struct DWARFNumericAttribute {
     pub value: i64,
+    pub bit_length: i32,
+    pub signed: bool,
+    pub ambiguous: bool,
 }
 
 impl DWARFNumericAttribute {
+    /// Mirrors `DWARFNumericAttribute(long)`: 64 bits, signed, unambiguous.
     pub fn new(value: i64) -> Self {
-        DWARFNumericAttribute { value }
+        Self::with_ambiguous_signedness(64, value, true, false)
+    }
+
+    /// Mirrors `DWARFNumericAttribute(int, long, boolean)`.
+    pub fn with_bit_length(bit_length: i32, value: i64, signed: bool) -> Self {
+        Self::with_ambiguous_signedness(bit_length, value, signed, false)
+    }
+
+    /// Mirrors `DWARFNumericAttribute(int, long, boolean, boolean)`.
+    pub fn with_ambiguous_signedness(
+        bit_length: i32,
+        value: i64,
+        signed: bool,
+        ambiguous: bool,
+    ) -> Self {
+        DWARFNumericAttribute { value, bit_length, signed, ambiguous }
+    }
+
+    /// Mirrors `DWARFNumericAttribute.isAmbiguousSignedness()`.
+    pub fn is_ambiguous_signedness(&self) -> bool {
+        self.ambiguous
     }
 
     pub fn get_value(&self) -> i64 {
@@ -3747,6 +3778,72 @@ impl DWARFNumericAttribute {
 }
 
 impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue for DWARFNumericAttribute {
+    fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
+        format!("{}", self.value)
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFIndirectAttribute`, referenced
+/// by `DWARFForm::read_value`. The Java class extends `DWARFNumericAttribute` (its value is an
+/// index into a lookup table rather than the final value); Rust has no inheritance, so this stub
+/// repeats the one accessor `DWARFForm` and its callers need instead of embedding the base class.
+pub struct DWARFIndirectAttribute {
+    pub index: i64,
+}
+
+impl DWARFIndirectAttribute {
+    pub fn new(index: i64) -> Self {
+        DWARFIndirectAttribute { index }
+    }
+
+    /// Mirrors `DWARFIndirectAttribute.getIndex()`, which goes through
+    /// `DWARFNumericAttribute.getUnsignedIntExact()` and so rejects out-of-range values.
+    pub fn get_index(&self) -> std::io::Result<i32> {
+        if self.index < 0 || self.index > i32::MAX as i64 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Value out of range for positive java 32 bit unsigned int: {}", self.index),
+            ));
+        }
+        Ok(self.index as i32)
+    }
+}
+
+impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue for DWARFIndirectAttribute {
+    /// The real `getValueString` resolves the index through the DIE container to describe the
+    /// element it points at; that lookup isn't ported, so this falls through to the same plain
+    /// number Java prints when the lookup fails.
+    fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
+        format!("{}", self.index)
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFBooleanAttribute`, referenced by
+/// `DWARFForm::read_value`. `DWARFBooleanAttribute` is a concrete Java class implementing
+/// `DWARFAttributeValue`, so it is modeled here as a concrete struct rather than a trait object.
+pub struct DWARFBooleanAttribute {
+    pub value: bool,
+}
+
+impl DWARFBooleanAttribute {
+    pub fn new(value: bool) -> Self {
+        DWARFBooleanAttribute { value }
+    }
+
+    pub fn get_value(&self) -> bool {
+        self.value
+    }
+}
+
+impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue for DWARFBooleanAttribute {
     fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
         format!("{}", self.value)
     }
@@ -3827,9 +3924,7 @@ impl FSUtilities {
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.macro.DWARFMacroOpcode`, referenced by
 /// `DWARFMacroInfoEntry`. `DWARFMacroOpcode` is a Java enum (not an interface), so it is modeled
 /// here as a concrete Rust enum carrying the real `DW_MACRO_*` raw opcode and description values,
-/// rather than a trait object. `getOperandForms()` reconstructs each operand on demand as an
-/// [`UnportedDWARFForm`] carrying the real `DW_FORM_*` code, since the full `DWARFForm` enum isn't
-/// ported yet.
+/// rather than a trait object.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DWARFMacroOpcode {
     /// Not an official DWARF opcode; represents the entry with opcode 0 that terminates a macro
@@ -3850,15 +3945,6 @@ pub enum DWARFMacroOpcode {
 }
 
 impl DWARFMacroOpcode {
-    /// `DWARFForm.DW_FORM_string`, referenced by the operand tables below before the real
-    /// `DWARFForm` enum is ported.
-    const DW_FORM_STRING: u32 = 0x08;
-    const DW_FORM_STRP: u32 = 0x0e;
-    const DW_FORM_UDATA: u32 = 0x0f;
-    const DW_FORM_SEC_OFFSET: u32 = 0x17;
-    const DW_FORM_STRX: u32 = 0x1a;
-    const DW_FORM_STRP_SUP: u32 = 0x1d;
-
     /// All variants, in Java enum declaration order; used by [`Self::of`].
     const VALUES: [DWARFMacroOpcode; 13] = [
         DWARFMacroOpcode::MacroUnitTerminator,
@@ -3914,34 +4000,19 @@ impl DWARFMacroOpcode {
         .to_string()
     }
 
-    /// The raw `DW_FORM_*` codes each operand is encoded with, mirroring the Java constructor's
-    /// varargs `operandForms`.
-    fn operand_form_codes(&self) -> &'static [u32] {
+    /// Mirrors `DWARFMacroOpcode.getOperandForms()`: the form each of this opcode's operands is
+    /// encoded with, from the Java constructor's varargs `operandForms`.
+    pub fn get_operand_forms(&self) -> &'static [DWARFForm] {
+        use DWARFForm::*;
         match self {
             Self::MacroUnitTerminator | Self::DwMacroEndFile => &[],
-            Self::DwMacroDefine | Self::DwMacroUndef => {
-                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRING]
-            }
-            Self::DwMacroStartFile => &[Self::DW_FORM_UDATA, Self::DW_FORM_UDATA],
-            Self::DwMacroDefineStrp | Self::DwMacroUndefStrp => {
-                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRP]
-            }
-            Self::DwMacroImport | Self::DwMacroImportSup => &[Self::DW_FORM_SEC_OFFSET],
-            Self::DwMacroDefineSup | Self::DwMacroUndefSup => {
-                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRP_SUP]
-            }
-            Self::DwMacroDefineStrx | Self::DwMacroUndefStrx => {
-                &[Self::DW_FORM_UDATA, Self::DW_FORM_STRX]
-            }
+            Self::DwMacroDefine | Self::DwMacroUndef => &[DwFormUdata, DwFormString],
+            Self::DwMacroStartFile => &[DwFormUdata, DwFormUdata],
+            Self::DwMacroDefineStrp | Self::DwMacroUndefStrp => &[DwFormUdata, DwFormStrp],
+            Self::DwMacroImport | Self::DwMacroImportSup => &[DwFormSecOffset],
+            Self::DwMacroDefineSup | Self::DwMacroUndefSup => &[DwFormUdata, DwFormStrpSup],
+            Self::DwMacroDefineStrx | Self::DwMacroUndefStrx => &[DwFormUdata, DwFormStrx],
         }
-    }
-
-    /// Mirrors `DWARFMacroOpcode.getOperandForms()`.
-    pub fn get_operand_forms(&self) -> Vec<Box<dyn DWARFForm>> {
-        self.operand_form_codes()
-            .iter()
-            .map(|&form_code| Box::new(UnportedDWARFForm { form_code }) as Box<dyn DWARFForm>)
-            .collect()
     }
 
     /// Mirrors `DWARFMacroOpcode.of(int)`: a linear search over the enum's values, returning
@@ -3952,10 +4023,11 @@ impl DWARFMacroOpcode {
 
     /// Mirrors `DWARFMacroOpcode.defaultOpcodeOperandMap`, used by `DWARFMacroHeader::read_v5` as
     /// the starting opcode table before an optional per-unit table (if present) overrides it.
-    /// Values are raw `DW_FORM_*` codes rather than `Box<dyn DWARFForm>` (see
-    /// [`Self::operand_form_codes`]) since `DWARFForm` isn't a real port yet.
-    pub fn default_opcode_operand_map() -> std::collections::HashMap<i32, Vec<u32>> {
-        Self::VALUES.iter().map(|opcode| (opcode.get_raw_opcode(), opcode.operand_form_codes().to_vec())).collect()
+    pub fn default_opcode_operand_map() -> std::collections::HashMap<i32, Vec<DWARFForm>> {
+        Self::VALUES
+            .iter()
+            .map(|opcode| (opcode.get_raw_opcode(), opcode.get_operand_forms().to_vec()))
+            .collect()
     }
 }
 
@@ -3966,18 +4038,18 @@ impl DWARFMacroOpcode {
 pub struct DWARFMacroOpcodeDef {
     pub opcode: DWARFMacroOpcode,
     pub raw_opcode: i32,
-    pub form: Box<dyn DWARFForm>,
+    pub form: DWARFForm,
 }
 
 impl DWARFMacroOpcodeDef {
-    pub fn new(opcode: DWARFMacroOpcode, raw_opcode: i32, form: Box<dyn DWARFForm>) -> Self {
+    pub fn new(opcode: DWARFMacroOpcode, raw_opcode: i32, form: DWARFForm) -> Self {
         DWARFMacroOpcodeDef { opcode, raw_opcode, form }
     }
 }
 
 impl DWARFAttributeDef for DWARFMacroOpcodeDef {
-    fn get_attribute_form(&self) -> &dyn DWARFForm {
-        self.form.as_ref()
+    fn get_attribute_form(&self) -> DWARFForm {
+        self.form
     }
 }
 
