@@ -4,7 +4,10 @@
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
 use std::any::Any;
+use std::cell::{Cell, RefCell};
+use std::collections::BTreeSet;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::framework::application_properties::ApplicationProperties;
@@ -432,6 +435,160 @@ pub trait PluginTool {
     /// Notifies all other plugins interested in receiving the given event, mirroring
     /// `PluginTool.firePluginEvent(PluginEvent)`.
     fn fire_plugin_event(&self, _event: crate::framework::plugintool::PluginEvent) {}
+
+    /// The tool's display name: the tool name on its own, or `toolName(instanceName)` when this
+    /// tool is a second-or-later instance of that tool. Mirrors `PluginTool.getName()`, which
+    /// returns the `fullName` recomputed by `putInstanceName`.
+    fn get_name(&self) -> String {
+        let instance_name = self.get_instance_name();
+        if instance_name.is_empty() {
+            self.get_tool_name()
+        } else {
+            format!("{}({})", self.get_tool_name(), instance_name)
+        }
+    }
+
+    /// The generic (instance-independent) name of this tool, mirroring
+    /// `PluginTool.getToolName()`.
+    fn get_tool_name(&self) -> String {
+        String::new()
+    }
+
+    /// Renames the tool, mirroring `PluginTool.setToolName(String)`. Takes `&self` for the same
+    /// reason the service members above do.
+    fn set_tool_name(&self, _name: &str) {}
+
+    /// The one-up suffix distinguishing this tool from other running instances of the same tool
+    /// (empty for the first instance), mirroring `PluginTool.getInstanceName()`.
+    fn get_instance_name(&self) -> String {
+        String::new()
+    }
+
+    /// Assigns this tool's instance suffix, mirroring `PluginTool.putInstanceName(String)`.
+    fn put_instance_name(&self, _instance_name: &str) {}
+
+    /// The names of the events this tool produces, mirroring `PluginTool.getToolEventNames()`.
+    fn get_tool_event_names(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// The names of the events this tool consumes, mirroring
+    /// `PluginTool.getConsumedToolEventNames()`.
+    fn get_consumed_tool_event_names(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Whether the tool's plugin configuration has changed since it was last saved, mirroring
+    /// `PluginTool.hasConfigChanged()`.
+    fn has_config_changed(&self) -> bool {
+        false
+    }
+
+    /// Whether this tool should be saved, mirroring `PluginTool.shouldSave()`.
+    fn should_save(&self) -> bool {
+        false
+    }
+
+    /// Saves this tool's configuration to the tool chest, mirroring `PluginTool.saveTool()`.
+    fn save_tool(&self) {}
+
+    /// Closes the tool, mirroring `PluginTool.close()`.
+    fn close(&self) {}
+
+    /// Stops forwarding tool events to `listener`, mirroring
+    /// `PluginTool.removeToolListener(ToolListener)`.
+    fn remove_tool_listener(&self, _listener: &dyn crate::framework::model::ToolListener) {}
+}
+
+/// Adapts a shared [`PluginTool`] handle to the owned `Box<dyn PluginTool>` that the ported
+/// interfaces ([`Workspace::get_tools`](crate::framework::model::Workspace::get_tools),
+/// [`ToolManager::get_running_tools`](crate::framework::model::ToolManager::get_running_tools),
+/// ...) hand back. Java passes the tool objects themselves around by reference; the ported
+/// signatures return owned boxes, so a manager that keeps its tools alive in an `Arc` wraps them
+/// in this newtype rather than cloning tool state (which would break the identity comparisons
+/// Java relies on). Every member forwards to the shared tool, so the box observes and mutates the
+/// same tool the manager holds.
+pub struct SharedPluginTool(Arc<dyn PluginTool>);
+
+impl SharedPluginTool {
+    /// Wraps a shared tool handle.
+    pub fn new(tool: Arc<dyn PluginTool>) -> Self {
+        Self(tool)
+    }
+
+    /// Returns the shared handle this wrapper forwards to.
+    pub fn handle(&self) -> &Arc<dyn PluginTool> {
+        &self.0
+    }
+}
+
+impl PluginTool for SharedPluginTool {
+    fn get_service(&self, iface: &str) -> Option<Arc<dyn Any + Send + Sync>> {
+        self.0.get_service(iface)
+    }
+
+    fn get_services(&self, iface: &str) -> Vec<Arc<dyn Any + Send + Sync>> {
+        self.0.get_services(iface)
+    }
+
+    fn add_service_listener(
+        &self,
+        listener: Arc<dyn crate::framework::plugintool::util::ServiceListener>,
+    ) {
+        self.0.add_service_listener(listener);
+    }
+
+    fn fire_plugin_event(&self, event: crate::framework::plugintool::PluginEvent) {
+        self.0.fire_plugin_event(event);
+    }
+
+    fn get_name(&self) -> String {
+        self.0.get_name()
+    }
+
+    fn get_tool_name(&self) -> String {
+        self.0.get_tool_name()
+    }
+
+    fn set_tool_name(&self, name: &str) {
+        self.0.set_tool_name(name);
+    }
+
+    fn get_instance_name(&self) -> String {
+        self.0.get_instance_name()
+    }
+
+    fn put_instance_name(&self, instance_name: &str) {
+        self.0.put_instance_name(instance_name);
+    }
+
+    fn get_tool_event_names(&self) -> Vec<String> {
+        self.0.get_tool_event_names()
+    }
+
+    fn get_consumed_tool_event_names(&self) -> Vec<String> {
+        self.0.get_consumed_tool_event_names()
+    }
+
+    fn has_config_changed(&self) -> bool {
+        self.0.has_config_changed()
+    }
+
+    fn should_save(&self) -> bool {
+        self.0.should_save()
+    }
+
+    fn save_tool(&self) {
+        self.0.save_tool();
+    }
+
+    fn close(&self) {
+        self.0.close();
+    }
+
+    fn remove_tool_listener(&self, listener: &dyn crate::framework::model::ToolListener) {
+        self.0.remove_tool_listener(listener);
+    }
 }
 
 /// Inert fallback [`PluginTool`] used by [`PluginLike::tool`]'s default body, mirroring how
@@ -833,4 +990,387 @@ pub trait DBDomainObjectSupport: crate::framework::data::DomainObjectAdapterDB {
     /// Resolves this object's dependent managers and finalizes construction, mirroring
     /// `DBDomainObjectSupport.init()`.
     fn init(&mut self) -> std::io::Result<()>;
+}
+
+/// Placeholder for `ghidra.framework.project.tool.GhidraTool`, referenced by
+/// [`ToolManagerImpl`](crate::framework::project::tool::ToolManagerImpl) (`createEmptyTool()`
+/// launches `new GhidraTool(project, "Untitled")`) before the real class is ported. The real
+/// `GhidraTool` is a full `PluginTool` — plugins, windowing, actions, extension checks; this
+/// placeholder carries only the naming and save state `ToolManagerImpl` observes, so that a
+/// manager can create, name and count empty tools before the real tool exists.
+///
+/// All state is behind [`RefCell`]/[`Cell`] because [`PluginTool`]'s mutating members take
+/// `&self` (see the trait's own note: the real tool is one shared, mutable object).
+pub struct GhidraTool {
+    tool_name: RefCell<String>,
+    instance_name: RefCell<String>,
+    config_changed: Cell<bool>,
+    closed: Cell<bool>,
+    saved: Cell<bool>,
+}
+
+impl GhidraTool {
+    /// Creates an unsaved, open tool with the given generic tool name and no instance suffix.
+    pub fn new(tool_name: impl Into<String>) -> Self {
+        Self {
+            tool_name: RefCell::new(tool_name.into()),
+            instance_name: RefCell::new(String::new()),
+            config_changed: Cell::new(false),
+            closed: Cell::new(false),
+            saved: Cell::new(false),
+        }
+    }
+
+    /// Whether [`PluginTool::close`] has been called on this tool.
+    pub fn is_closed(&self) -> bool {
+        self.closed.get()
+    }
+
+    /// Whether [`PluginTool::save_tool`] has been called on this tool.
+    pub fn was_saved(&self) -> bool {
+        self.saved.get()
+    }
+
+    /// Marks the tool's plugin configuration dirty, standing in for the plugin add/remove that
+    /// sets `configChangedFlag` on the real tool.
+    pub fn set_config_changed(&self, changed: bool) {
+        self.config_changed.set(changed);
+    }
+}
+
+impl PluginTool for GhidraTool {
+    fn get_tool_name(&self) -> String {
+        self.tool_name.borrow().clone()
+    }
+
+    fn set_tool_name(&self, name: &str) {
+        *self.tool_name.borrow_mut() = name.to_string();
+    }
+
+    fn get_instance_name(&self) -> String {
+        self.instance_name.borrow().clone()
+    }
+
+    fn put_instance_name(&self, instance_name: &str) {
+        *self.instance_name.borrow_mut() = instance_name.to_string();
+    }
+
+    fn has_config_changed(&self) -> bool {
+        self.config_changed.get()
+    }
+
+    fn should_save(&self) -> bool {
+        self.config_changed.get()
+    }
+
+    fn save_tool(&self) {
+        self.saved.set(true);
+        self.config_changed.set(false);
+    }
+
+    fn close(&self) {
+        self.closed.set(true);
+    }
+}
+
+/// Placeholder for `ghidra.framework.project.tool.WorkspaceImpl`, referenced by
+/// [`ToolManagerImpl`](crate::framework::project::tool::ToolManagerImpl), which creates,
+/// activates, serializes and disposes the workspaces it manages, before the real class is ported.
+///
+/// The Java class holds a back-reference to its `ToolManagerImpl` and calls up into it
+/// (`setActive`, `closeRunningTool`, `setName` all delegate to the manager). That back-reference is
+/// the dependency cycle this stub exists to break, so it is *not* reproduced: the manager drives
+/// the workspace instead (see [`ToolManagerImpl::set_active_workspace`] and friends), and this
+/// type is a passive record of one workspace's name, visibility and running tools. Consequently
+/// [`Workspace::create_tool`]/[`Workspace::run_tool`] here launch a detached
+/// [`GhidraTool`] that is *not* registered with any manager; the real class routes both through
+/// `ToolManagerImpl`.
+///
+/// [`ToolManagerImpl::set_active_workspace`]: crate::framework::project::tool::ToolManagerImpl::set_active_workspace
+pub struct WorkspaceImpl {
+    name: String,
+    tools: Vec<Arc<dyn PluginTool>>,
+    active: bool,
+}
+
+impl WorkspaceImpl {
+    /// Creates an empty, inactive workspace with the given name.
+    pub fn new(name: impl Into<String>) -> Self {
+        Self { name: name.into(), tools: Vec::new(), active: false }
+    }
+
+    /// The workspace name.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Renames this workspace. Unlike `WorkspaceImpl.setName(String)` this does not check the
+    /// name against the manager's other workspaces; [`ToolManagerImpl::set_workspace_name`] does
+    /// that before calling here.
+    ///
+    /// [`ToolManagerImpl::set_workspace_name`]: crate::framework::project::tool::ToolManagerImpl::set_workspace_name
+    pub fn rename(&mut self, name: impl Into<String>) {
+        self.name = name.into();
+    }
+
+    /// The tools running in this workspace, mirroring `WorkspaceImpl.getTools()` but handing back
+    /// the shared handles instead of owned boxes so callers can compare tool identity.
+    pub fn tools(&self) -> &[Arc<dyn PluginTool>] {
+        &self.tools
+    }
+
+    /// Adds an already-created tool to this workspace's running set.
+    pub fn add_tool(&mut self, tool: Arc<dyn PluginTool>) {
+        self.tools.push(tool);
+    }
+
+    /// Removes a tool from this workspace's running set, returning whether it was there. Mirrors
+    /// the `runningTools.remove(tool)` half of `WorkspaceImpl.closeRunningTool(PluginTool)`; the
+    /// manager-notification half lives in
+    /// [`ToolManagerImpl::close_tool`](crate::framework::project::tool::ToolManagerImpl::close_tool).
+    pub fn remove_tool(&mut self, tool: &Arc<dyn PluginTool>) -> bool {
+        let before = self.tools.len();
+        self.tools.retain(|t| !Arc::ptr_eq(t, tool));
+        self.tools.len() != before
+    }
+
+    /// Shows or hides every tool in this workspace, mirroring `WorkspaceImpl.setVisible(boolean)`.
+    pub fn set_visible(&mut self, state: bool) {
+        self.active = state;
+    }
+
+    /// Whether this workspace is the active (visible) one.
+    pub fn is_visible(&self) -> bool {
+        self.active
+    }
+
+    /// Closes and forgets every running tool, mirroring `WorkspaceImpl.dispose()`.
+    pub fn dispose(&mut self) {
+        for tool in &self.tools {
+            tool.close();
+        }
+        self.tools.clear();
+    }
+
+    /// Writes this workspace as a `WORKSPACE` child of `parent`, mirroring
+    /// `WorkspaceImpl.saveToXml()`. `parent` is only used as the element factory, following the
+    /// [`JdomElement::new_child`] convention.
+    pub fn save_to_xml(&self, parent: &dyn JdomElement) -> Box<dyn JdomElement> {
+        let mut root = parent.new_child("WORKSPACE");
+        root.set_attribute("NAME", &self.name);
+        root.set_attribute("ACTIVE", &self.active.to_string());
+        for tool in &self.tools {
+            let mut elem = root.new_child("RUNNING_TOOL");
+            elem.set_attribute("TOOL_NAME", &tool.get_tool_name());
+            root.add_content(elem);
+        }
+        root
+    }
+
+    /// Reads this workspace's name and active flag back, mirroring
+    /// `WorkspaceImpl.restoreFromXml(Element)`. Restoring the running tools themselves needs the
+    /// real `PluginTool`, so it is left to the real port.
+    pub fn restore_from_xml(&mut self, root: &dyn JdomElement) {
+        if let Some(name) = root.attribute_value("NAME") {
+            self.name = name;
+        }
+        self.active = root
+            .attribute_value("ACTIVE")
+            .is_some_and(|active| active.eq_ignore_ascii_case("true"));
+    }
+}
+
+impl crate::framework::model::Workspace for WorkspaceImpl {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_tools(&self) -> Vec<Box<dyn PluginTool>> {
+        self.tools
+            .iter()
+            .map(|t| Box::new(SharedPluginTool::new(Arc::clone(t))) as Box<dyn PluginTool>)
+            .collect()
+    }
+
+    fn create_tool(&mut self) -> Box<dyn PluginTool> {
+        let tool: Arc<dyn PluginTool> = Arc::new(GhidraTool::new("Untitled"));
+        self.tools.push(Arc::clone(&tool));
+        Box::new(SharedPluginTool::new(tool))
+    }
+
+    fn run_tool(
+        &mut self,
+        template: &dyn crate::framework::model::ToolTemplate,
+    ) -> Box<dyn PluginTool> {
+        let tool: Arc<dyn PluginTool> = Arc::new(GhidraTool::new(template.get_name()));
+        self.tools.push(Arc::clone(&tool));
+        Box::new(SharedPluginTool::new(tool))
+    }
+
+    fn set_name(
+        &mut self,
+        new_name: &str,
+    ) -> Result<(), crate::util::exception::DuplicateNameException> {
+        self.name = new_name.to_string();
+        Ok(())
+    }
+
+    fn set_active(&mut self) {
+        self.set_visible(true);
+    }
+}
+
+/// Placeholder for `ghidra.framework.project.tool.ToolConnectionImpl`, referenced by
+/// [`ToolManagerImpl`](crate::framework::project::tool::ToolManagerImpl), which caches one per
+/// producer/consumer pair, before the real class is ported.
+///
+/// Java hands the very same connection object back out of `ToolManagerImpl.getConnection`, and
+/// the caller then mutates it with `connect`/`disconnect`; the ported
+/// [`ToolManager::get_connection`](crate::framework::model::ToolManager::get_connection) returns
+/// an owned `Box<dyn ToolConnection>` instead, so this type is a cheap handle whose state lives
+/// behind a shared [`Rc`]: cloning it out of the manager's map keeps the caller and the manager
+/// looking at one connection.
+///
+/// [`update_event_list`](ToolConnectionImpl::update_event_list) reproduces the real class's
+/// producer-events ∩ consumer-events rule, since the manager's own `updateConnectMap` depends on
+/// it; the event *delivery* half (`processToolEvent`, registering as the producer's
+/// [`ToolListener`](crate::framework::model::ToolListener)) is left inert for the real port.
+#[derive(Clone)]
+pub struct ToolConnectionImpl {
+    producer: Arc<dyn PluginTool>,
+    consumer: Arc<dyn PluginTool>,
+    state: Rc<RefCell<ToolConnectionState>>,
+}
+
+#[derive(Default)]
+struct ToolConnectionState {
+    events: Vec<String>,
+    connected: BTreeSet<String>,
+    changed: bool,
+}
+
+impl ToolConnectionImpl {
+    /// Creates the connection between `producer` and `consumer`, seeding the event list with the
+    /// events they have in common.
+    pub fn new(producer: Arc<dyn PluginTool>, consumer: Arc<dyn PluginTool>) -> Self {
+        let connection =
+            Self { producer, consumer, state: Rc::new(RefCell::new(ToolConnectionState::default())) };
+        connection.update_event_list();
+        connection
+    }
+
+    /// The shared producer handle (the [`ToolConnection`](crate::framework::model::ToolConnection)
+    /// member can only hand back a borrow).
+    pub fn producer(&self) -> &Arc<dyn PluginTool> {
+        &self.producer
+    }
+
+    /// The shared consumer handle.
+    pub fn consumer(&self) -> &Arc<dyn PluginTool> {
+        &self.consumer
+    }
+
+    /// Recomputes the events this connection covers as the intersection of what the producer
+    /// produces and what the consumer consumes, dropping any connection made for an event that no
+    /// longer applies. Mirrors `ToolConnectionImpl.updateEventList()`.
+    pub fn update_event_list(&self) {
+        let consumed: BTreeSet<String> =
+            self.consumer.get_consumed_tool_event_names().into_iter().collect();
+        let events: Vec<String> = self
+            .producer
+            .get_tool_event_names()
+            .into_iter()
+            .filter(|e| consumed.contains(e))
+            .collect();
+        let mut state = self.state.borrow_mut();
+        state.connected.retain(|e| events.contains(e));
+        state.events = events;
+    }
+
+    /// Whether a connection has been made or broken since the last
+    /// [`clear_changed`](ToolConnectionImpl::clear_changed), mirroring
+    /// `ToolConnectionImpl.hasChanged()`.
+    pub fn has_changed(&self) -> bool {
+        self.state.borrow().changed
+    }
+
+    /// Resets the changed flag, as saving the project does.
+    pub fn clear_changed(&self) {
+        self.state.borrow_mut().changed = false;
+    }
+
+    /// Writes this connection as a `CONNECTION` child of `parent`, mirroring
+    /// `ToolConnectionImpl.saveToXml()`.
+    pub fn save_to_xml(&self, parent: &dyn JdomElement) -> Box<dyn JdomElement> {
+        let mut root = parent.new_child("CONNECTION");
+        root.set_attribute("PRODUCER", &self.producer.get_name());
+        root.set_attribute("CONSUMER", &self.consumer.get_name());
+        for event in &self.state.borrow().connected {
+            let mut elem = root.new_child("EVENT");
+            elem.set_attribute("NAME", event);
+            root.add_content(elem);
+        }
+        root
+    }
+
+    /// Reads the connected event names back, mirroring
+    /// `ToolConnectionImpl.restoreFromXml(Element)`.
+    pub fn restore_from_xml(&self, root: &dyn JdomElement) {
+        let names: Vec<String> = root
+            .children("EVENT")
+            .iter()
+            .filter_map(|child| child.attribute_value("NAME"))
+            .collect();
+        let mut state = self.state.borrow_mut();
+        for name in names {
+            if state.events.contains(&name) {
+                state.connected.insert(name);
+            }
+        }
+        state.changed = false;
+    }
+}
+
+impl crate::framework::model::ToolConnection for ToolConnectionImpl {
+    fn get_producer(&self) -> &dyn PluginTool {
+        self.producer.as_ref()
+    }
+
+    fn get_consumer(&self) -> &dyn PluginTool {
+        self.consumer.as_ref()
+    }
+
+    fn get_events(&self) -> Vec<String> {
+        self.state.borrow().events.clone()
+    }
+
+    fn connect(&mut self, event_name: &str) -> Result<(), String> {
+        let mut state = self.state.borrow_mut();
+        if !state.events.iter().any(|e| e == event_name) {
+            return Err(format!("invalid event name: {event_name}"));
+        }
+        if state.connected.insert(event_name.to_string()) {
+            state.changed = true;
+        }
+        Ok(())
+    }
+
+    fn disconnect(&mut self, event_name: &str) -> Result<(), String> {
+        let mut state = self.state.borrow_mut();
+        if !state.events.iter().any(|e| e == event_name) {
+            return Err(format!("invalid event name: {event_name}"));
+        }
+        if state.connected.remove(event_name) {
+            state.changed = true;
+        }
+        Ok(())
+    }
+
+    fn is_connected(&self, event_name: &str) -> bool {
+        self.state.borrow().connected.contains(event_name)
+    }
+}
+
+impl crate::framework::model::ToolListener for ToolConnectionImpl {
+    fn process_tool_event(&mut self, _tool_event: &crate::framework::plugintool::PluginEvent) {}
 }
