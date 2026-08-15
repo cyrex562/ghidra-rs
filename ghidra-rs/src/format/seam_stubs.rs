@@ -3438,6 +3438,36 @@ pub trait DWARFCompilationUnit: Send + Sync {
     }
 }
 
+/// Placeholder for `DWARFCompilationUnit.readV4(DWARFUnitHeader, BinaryReader)`, the forward
+/// cycle edge from
+/// [`DWARFUnitHeader::read`](crate::format::dwarf::dwarf_unit_header::DWARFUnitHeader::read):
+/// `DWARFCompilationUnit` is `DWARFUnitHeader`'s single subclass and has not been ported yet, so
+/// there is no real implementation to dispatch to. Returns an "unsupported" error until
+/// `DWARFCompilationUnit` is ported and this call site is updated to its real factory method.
+pub fn dwarf_compilation_unit_read_v4(
+    partial: crate::format::dwarf::dwarf_unit_header::DWARFUnitHeader,
+    _reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+) -> std::io::Result<Box<dyn DWARFCompilationUnit>> {
+    let _ = partial;
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "DWARFCompilationUnit.readV4 is not yet implemented (DWARFCompilationUnit has not been ported)",
+    ))
+}
+
+/// Placeholder for `DWARFCompilationUnit.readV5(DWARFUnitHeader, BinaryReader)`, the DWARF5
+/// counterpart of [`dwarf_compilation_unit_read_v4`].
+pub fn dwarf_compilation_unit_read_v5(
+    partial: crate::format::dwarf::dwarf_unit_header::DWARFUnitHeader,
+    _reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+) -> std::io::Result<Box<dyn DWARFCompilationUnit>> {
+    let _ = partial;
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "DWARFCompilationUnit.readV5 is not yet implemented (DWARFCompilationUnit has not been ported)",
+    ))
+}
+
 /// Placeholder for the unported Java type `DWARFProgram`, referenced by `DWARFLine` and
 /// `DWARFExpressionEvaluator`. Only the members those types reach for are modeled. Everything the
 /// evaluator added has a stub default so that existing test doubles keep compiling; the real port
@@ -3479,6 +3509,13 @@ pub trait DWARFProgram: Send + Sync {
     /// the `Option` is only for stub implementations that don't model an address factory.
     fn get_data_address(&self, _offset: i64) -> Option<Address> {
         None
+    }
+
+    /// Mirrors `DWARFProgram.getDefaultIntSize()`, referenced by `DWARFUnitHeader::read`.
+    /// Defaults to 4 (DWARF_32), the common case, so existing test doubles that don't model
+    /// 64-bit DWARF keep compiling.
+    fn get_default_int_size(&self) -> i32 {
+        4
     }
 }
 
@@ -3633,6 +3670,13 @@ pub trait DIEContainer: Send + Sync {
             std::io::ErrorKind::Unsupported,
             "DIEContainer.getAddress is not yet implemented (DIEContainer has not been ported)",
         ))
+    }
+
+    /// Mirrors `DIEContainer.getProgram()`, referenced by `DWARFUnitHeader::read`/`new`. The real
+    /// method never returns `null`; the `Option` here only exists so stub test doubles that don't
+    /// model a `DWARFProgram` can return `None`.
+    fn get_program(&self) -> Option<std::sync::Arc<dyn DWARFProgram>> {
+        None
     }
 }
 
