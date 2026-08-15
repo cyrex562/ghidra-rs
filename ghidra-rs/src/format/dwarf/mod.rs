@@ -6,6 +6,7 @@ pub mod expression;
 pub mod funcfixup;
 pub mod line;
 pub mod debug_info_entry;
+pub mod die_aggregate;
 pub mod dwarf_abbreviation;
 pub mod dwarf_accessibility;
 pub mod name_deduper;

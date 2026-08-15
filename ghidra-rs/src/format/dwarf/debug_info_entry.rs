@@ -267,6 +267,13 @@ impl DebugInfoEntry {
         &*self.compilation_unit
     }
 
+    /// The shared handle to this DIE's compilation unit, for the collaborators that take one by
+    /// value (eg. [`DWARFExpressionEvaluator::new`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator::new)).
+    /// Java has no counterpart: there the compilation unit is a plain reference.
+    pub fn get_compilation_unit_arc(&self) -> Arc<dyn DWARFCompilationUnit> {
+        Arc::clone(&self.compilation_unit)
+    }
+
     /// Mirrors `DebugInfoEntry.getContainer()`.
     pub fn get_container(&self) -> Option<&dyn DIEContainer> {
         self.compilation_unit.get_die_container()

@@ -93,6 +93,13 @@ impl DWARFLine {
         DWARFLine { directories, ..DWARFLine::empty() }
     }
 
+    /// Creates a line table that only knows about the given source files, indexed the way
+    /// `dwarf_version` dictates (1-based before DWARF5, 0-based from DWARF5 on). Used to exercise
+    /// [`Self::get_file`] callers without having to synthesize a whole `.debug_line` header.
+    pub(crate) fn with_files(dwarf_version: i32, files: Vec<DWARFFile>) -> DWARFLine {
+        DWARFLine { dwarf_version, files, ..DWARFLine::empty() }
+    }
+
     /// Reads a line table header (and its directory / file tables) from the stream.
     pub fn read(
         reader: &mut dyn BinaryReader,
