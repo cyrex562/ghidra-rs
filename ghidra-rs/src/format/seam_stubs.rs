@@ -5056,3 +5056,34 @@ pub trait MarkupSession: Send + Sync {
     fn log_warning_at(&self, addr: Address, msg: &str);
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.FieldOutputInfo`,
+/// referenced by `FieldOutputFunction` before the real class is ported.
+pub trait FieldOutputInfo<T>: Send + Sync {
+    fn get_field(&self) -> Box<dyn std::any::Any>;
+    fn get_ordinal(&self) -> i32;
+    fn is_variable_length(&self) -> bool;
+    fn get_output_func(&self) -> Option<Box<dyn std::any::Any>>;
+    fn get_value(&self, struct_instance: &T, expected_type: &dyn std::any::Any) -> std::io::Result<Box<dyn std::any::Any>>;
+    fn set_output_func_class(&self, func_class: &dyn std::any::Any, getter_name: Option<&str>);
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.StructureContext`,
+/// referenced by `FieldOutputFunction` before the real class is ported.
+pub trait StructureContext<T>: Send + Sync {
+    fn get_mapping_info(&self) -> Box<dyn std::any::Any>;
+    fn get_data_type_mapper(&self) -> Box<dyn std::any::Any>;
+    fn get_containing_field_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+    fn get_structure_address(&self) -> Address;
+    fn get_field_address(&self, field_offset: i64) -> Address;
+    fn get_field_location(&self, field_offset: i64) -> i64;
+    fn get_structure_start(&self) -> i64;
+    fn get_structure_end(&self) -> i64;
+    fn get_structure_length(&self) -> i32;
+    fn get_structure_instance(&self) -> &T;
+    fn get_reader(&self) -> Box<dyn std::any::Any>;
+    fn get_field_reader(&self, field_offset: i64) -> Box<dyn std::any::Any>;
+    fn create_field_context(&self, fmi: &dyn std::any::Any, include_reader: bool) -> Box<dyn std::any::Any>;
+    fn get_structure_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::structure::Structure>>;
+    fn to_string(&self) -> String;
+}
+

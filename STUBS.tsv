@@ -928,3 +928,5 @@ ts	stub_class	referenced_by
 2026-08-15T09:52:00.000000+00:00	DWARFRangeList	DIEAggregate
 2026-08-15T09:43:21.802434+00:00	FieldContext	FieldMarkupFunction
 2026-08-15T09:43:21.802434+00:00	MarkupSession	FieldMarkupFunction
+2026-08-15T05:48:00.000000+00:00	FieldOutputInfo	FieldOutputFunction
+2026-08-15T05:48:00.000000+00:00	StructureContext	FieldOutputFunction
