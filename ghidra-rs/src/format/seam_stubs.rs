@@ -4331,3 +4331,55 @@ impl DIEAggregate {
     }
 }
 
+/// Placeholder for the unported Java type `DWARFFunction`, referenced by `DWARFFunctionFixup`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait DWARFFunction: Send + Sync {
+    fn read(&self, diea: &DIEAggregate) -> std::io::Result<Box<dyn DWARFFunction>>;
+    fn get_program(&self) -> Box<dyn DWARFProgram>;
+    fn get_descriptive_name(&self) -> String;
+    fn get_range_list(&self) -> Box<dyn DWARFRangeList>;
+    fn get_calling_convention_name(&self) -> String;
+    fn get_body(&self) -> Box<dyn AddressSetView>;
+    fn get_entry_pc(&self) -> i64;
+    fn get_local_var_by_offset(&self, offset: i64) -> Box<dyn DWARFVariable>;
+    fn is_in_local_var_storage_area(&self, offset: i64) -> bool;
+    fn has_conflict_with_param_storage(&self, dvar: &dyn DWARFVariable) -> std::io::Result<bool>;
+    fn has_conflict_with_existing_local_variable_storage(&self, dvar: &dyn DWARFVariable) -> std::io::Result<bool>;
+    fn get_all_param_names(&self) -> Vec<String>;
+    fn get_all_local_variable_names(&self) -> Vec<String>;
+    fn get_existing_local_variable_names(&self) -> Vec<String>;
+    fn get_non_param_symbol_names(&self) -> Vec<String>;
+    fn get_parameters(&self, include_storage_detail: bool) -> std::io::Result<Vec<Box<dyn Parameter>>>;
+    fn get_parameter_definitions(&self) -> Vec<Box<dyn ParameterDefinition>>;
+    fn commit_local_variable(&self, dvar: &dyn DWARFVariable);
+    fn get_func_body(&self, diea: &DIEAggregate, flatten_disjoint: bool) -> std::io::Result<Box<dyn AddressRange>>;
+    fn get_func_body_ranges(&self, diea: &DIEAggregate) -> std::io::Result<Box<dyn DWARFRangeList>>;
+    fn sync_with_existing_ghidra_function(&self, create_if_missing: bool) -> bool;
+    fn run_fixups(&self);
+    fn update_function_signature(&self);
+    fn as_function_definition(&self, include_cc: bool) -> Box<dyn FunctionDefinition>;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFRangeList`, referenced by `DWARFFunction`.
+pub trait DWARFRangeList: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.address.AddressSetView`, referenced by `DWARFFunction`.
+pub trait AddressSetView: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFVariable`, referenced by `DWARFFunction`.
+pub trait DWARFVariable: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.listing.Parameter`, referenced by `DWARFFunction`.
+pub trait Parameter: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.ParameterDefinition`, referenced by `DWARFFunction`.
+pub trait ParameterDefinition: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.address.AddressRange`, referenced by `DWARFFunction`.
+pub trait AddressRange: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.listing.FunctionDefinition`, referenced by `DWARFFunction`.
+pub trait FunctionDefinition: Send + Sync {}
+
