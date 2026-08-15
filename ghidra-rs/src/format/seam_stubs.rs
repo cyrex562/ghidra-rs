@@ -3427,14 +3427,48 @@ pub trait DWARFCompilationUnit: Send + Sync {
     }
 }
 
-/// Placeholder for the unported Java type `DWARFProgram`, referenced by `DWARFLine`. Only the two
-/// members `DWARFLine` reaches for are modeled.
+/// Placeholder for the unported Java type `DWARFProgram`, referenced by `DWARFLine` and
+/// `DWARFExpressionEvaluator`. Only the members those types reach for are modeled. Everything the
+/// evaluator added has a stub default so that existing test doubles keep compiling; the real port
+/// will supply all of them.
 pub trait DWARFProgram: Send + Sync {
     /// Mirrors `DWARFProgram.isAddr0Tombstone()`.
     fn is_addr0_tombstone(&self) -> bool;
 
     /// Mirrors `DWARFProgram.getImportSummary()`.
     fn get_import_summary(&self) -> &DWARFImportSummary;
+
+    /// Mirrors `DWARFProgram.getRegisterMappings()`, which returns `null` when the language has no
+    /// DWARF register mapping file. The mappings are shared with every evaluator built from this
+    /// program, hence the [`Arc`](std::sync::Arc).
+    fn get_register_mappings(
+        &self,
+    ) -> Option<std::sync::Arc<crate::format::dwarf::dwarf_register_mappings::DWARFRegisterMappings>>
+    {
+        None
+    }
+
+    /// Mirrors `DWARFProgram.getGhidraProgram().getLanguage()`. The real chain never returns
+    /// `null`; the `Option` only exists so stub implementations that don't model a Ghidra program
+    /// can return `None`.
+    fn get_language(&self) -> Option<std::sync::Arc<dyn crate::program::model::lang::language::Language>> {
+        None
+    }
+
+    /// Mirrors `DWARFProgram.getStackSpace()`. As with [`Self::get_language`], the `Option` is only
+    /// for stub implementations that don't model an address factory.
+    fn get_stack_space(
+        &self,
+    ) -> Option<std::sync::Arc<crate::program::model::address::AddressSpace>> {
+        None
+    }
+
+    /// Mirrors `DWARFProgram.getDataAddress(long)`, which applies the program's base address fixup
+    /// to `offset` and resolves it in the default address space. As with [`Self::get_language`],
+    /// the `Option` is only for stub implementations that don't model an address factory.
+    fn get_data_address(&self, _offset: i64) -> Option<Address> {
+        None
+    }
 }
 
 /// Placeholder for the unported Java type `DWARFImportSummary`, referenced by `DWARFLine`. The
@@ -3572,6 +3606,22 @@ pub trait DIEContainer: Send + Sync {
         _dw_tag_filter: &dyn Fn(Option<DWARFTag>) -> bool,
     ) -> i32 {
         -1
+    }
+
+    /// Mirrors `DIEContainer.getAddress(DWARFForm, long, DWARFCompilationUnit)`, which resolves an
+    /// index into the `.debug_addr` table (`DW_FORM_addrx*`) to the address it holds. Referenced by
+    /// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator)
+    /// for `DW_OP_addrx` / `DW_OP_constx`.
+    fn get_address(
+        &self,
+        _form: DWARFForm,
+        _value: i64,
+        _cu: &dyn DWARFCompilationUnit,
+    ) -> std::io::Result<i64> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DIEContainer.getAddress is not yet implemented (DIEContainer has not been ported)",
+        ))
     }
 }
 
@@ -4382,4 +4432,566 @@ pub trait AddressRange: Send + Sync {}
 
 /// Placeholder for `ghidra.program.model.listing.FunctionDefinition`, referenced by `DWARFFunction`.
 pub trait FunctionDefinition: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFUtil`, referenced by
+/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
+/// The Java class is a utility class of only static members, so it is modeled here as a zero-sized
+/// type with associated functions; only the two varnode predicates the evaluator uses are present.
+pub struct DWARFUtil;
+
+impl DWARFUtil {
+    /// Mirrors `DWARFUtil.isStackVarnode(Varnode)`.
+    pub fn is_stack_varnode(varnode: &crate::program::model::pcode::Varnode) -> bool {
+        varnode.get_address().space().space_type()
+            == crate::program::model::address::AddressSpaceType::Stack
+    }
+
+    /// Mirrors `DWARFUtil.isConstVarnode(Varnode)`.
+    pub fn is_const_varnode(varnode: &crate::program::model::pcode::Varnode) -> bool {
+        varnode.get_address().space().space_type()
+            == crate::program::model::address::AddressSpaceType::Constant
+    }
+}
+
+/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.expression.DWARFExpressionOpCode`,
+/// referenced by
+/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
+/// The Java type is an enum whose constants carry both a raw opcode value and the operand types an
+/// instruction of that opcode takes; this stub keeps the opcode values (the evaluator dispatches on
+/// them, and on `lit`/`reg`/`breg` opcode *ranges*) and leaves the operand-type table to the real
+/// port. Variants are spelled exactly as the Java constants so that `{:?}` renders what Java's
+/// `toString()` does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[allow(non_camel_case_types)]
+#[repr(u8)]
+pub enum DWARFExpressionOpCode {
+    /// Special value, not a real DWARF opcode.
+    DW_OP_unknown_opcode = 0,
+    DW_OP_addr = 0x3,
+    DW_OP_deref = 0x6,
+    DW_OP_const1u = 0x8,
+    DW_OP_const1s = 0x9,
+    DW_OP_const2u = 0xa,
+    DW_OP_const2s = 0xb,
+    DW_OP_const4u = 0xc,
+    DW_OP_const4s = 0xd,
+    DW_OP_const8u = 0xe,
+    DW_OP_const8s = 0xf,
+    DW_OP_constu = 0x10,
+    DW_OP_consts = 0x11,
+    DW_OP_dup = 0x12,
+    DW_OP_drop = 0x13,
+    DW_OP_over = 0x14,
+    DW_OP_pick = 0x15,
+    DW_OP_swap = 0x16,
+    DW_OP_rot = 0x17,
+    DW_OP_xderef = 0x18,
+    DW_OP_abs = 0x19,
+    DW_OP_and = 0x1a,
+    DW_OP_div = 0x1b,
+    DW_OP_minus = 0x1c,
+    DW_OP_mod = 0x1d,
+    DW_OP_mul = 0x1e,
+    DW_OP_neg = 0x1f,
+    DW_OP_not = 0x20,
+    DW_OP_or = 0x21,
+    DW_OP_plus = 0x22,
+    DW_OP_plus_uconst = 0x23,
+    DW_OP_shl = 0x24,
+    DW_OP_shr = 0x25,
+    DW_OP_shra = 0x26,
+    DW_OP_xor = 0x27,
+    DW_OP_bra = 0x28,
+    DW_OP_eq = 0x29,
+    DW_OP_ge = 0x2a,
+    DW_OP_gt = 0x2b,
+    DW_OP_le = 0x2c,
+    DW_OP_lt = 0x2d,
+    DW_OP_ne = 0x2e,
+    DW_OP_skip = 0x2f,
+    DW_OP_lit0 = 0x30,
+    DW_OP_lit1 = 0x31,
+    DW_OP_lit2 = 0x32,
+    DW_OP_lit3 = 0x33,
+    DW_OP_lit4 = 0x34,
+    DW_OP_lit5 = 0x35,
+    DW_OP_lit6 = 0x36,
+    DW_OP_lit7 = 0x37,
+    DW_OP_lit8 = 0x38,
+    DW_OP_lit9 = 0x39,
+    DW_OP_lit10 = 0x3a,
+    DW_OP_lit11 = 0x3b,
+    DW_OP_lit12 = 0x3c,
+    DW_OP_lit13 = 0x3d,
+    DW_OP_lit14 = 0x3e,
+    DW_OP_lit15 = 0x3f,
+    DW_OP_lit16 = 0x40,
+    DW_OP_lit17 = 0x41,
+    DW_OP_lit18 = 0x42,
+    DW_OP_lit19 = 0x43,
+    DW_OP_lit20 = 0x44,
+    DW_OP_lit21 = 0x45,
+    DW_OP_lit22 = 0x46,
+    DW_OP_lit23 = 0x47,
+    DW_OP_lit24 = 0x48,
+    DW_OP_lit25 = 0x49,
+    DW_OP_lit26 = 0x4a,
+    DW_OP_lit27 = 0x4b,
+    DW_OP_lit28 = 0x4c,
+    DW_OP_lit29 = 0x4d,
+    DW_OP_lit30 = 0x4e,
+    DW_OP_lit31 = 0x4f,
+    DW_OP_reg0 = 0x50,
+    DW_OP_reg1 = 0x51,
+    DW_OP_reg2 = 0x52,
+    DW_OP_reg3 = 0x53,
+    DW_OP_reg4 = 0x54,
+    DW_OP_reg5 = 0x55,
+    DW_OP_reg6 = 0x56,
+    DW_OP_reg7 = 0x57,
+    DW_OP_reg8 = 0x58,
+    DW_OP_reg9 = 0x59,
+    DW_OP_reg10 = 0x5a,
+    DW_OP_reg11 = 0x5b,
+    DW_OP_reg12 = 0x5c,
+    DW_OP_reg13 = 0x5d,
+    DW_OP_reg14 = 0x5e,
+    DW_OP_reg15 = 0x5f,
+    DW_OP_reg16 = 0x60,
+    DW_OP_reg17 = 0x61,
+    DW_OP_reg18 = 0x62,
+    DW_OP_reg19 = 0x63,
+    DW_OP_reg20 = 0x64,
+    DW_OP_reg21 = 0x65,
+    DW_OP_reg22 = 0x66,
+    DW_OP_reg23 = 0x67,
+    DW_OP_reg24 = 0x68,
+    DW_OP_reg25 = 0x69,
+    DW_OP_reg26 = 0x6a,
+    DW_OP_reg27 = 0x6b,
+    DW_OP_reg28 = 0x6c,
+    DW_OP_reg29 = 0x6d,
+    DW_OP_reg30 = 0x6e,
+    DW_OP_reg31 = 0x6f,
+    DW_OP_breg0 = 0x70,
+    DW_OP_breg1 = 0x71,
+    DW_OP_breg2 = 0x72,
+    DW_OP_breg3 = 0x73,
+    DW_OP_breg4 = 0x74,
+    DW_OP_breg5 = 0x75,
+    DW_OP_breg6 = 0x76,
+    DW_OP_breg7 = 0x77,
+    DW_OP_breg8 = 0x78,
+    DW_OP_breg9 = 0x79,
+    DW_OP_breg10 = 0x7a,
+    DW_OP_breg11 = 0x7b,
+    DW_OP_breg12 = 0x7c,
+    DW_OP_breg13 = 0x7d,
+    DW_OP_breg14 = 0x7e,
+    DW_OP_breg15 = 0x7f,
+    DW_OP_breg16 = 0x80,
+    DW_OP_breg17 = 0x81,
+    DW_OP_breg18 = 0x82,
+    DW_OP_breg19 = 0x83,
+    DW_OP_breg20 = 0x84,
+    DW_OP_breg21 = 0x85,
+    DW_OP_breg22 = 0x86,
+    DW_OP_breg23 = 0x87,
+    DW_OP_breg24 = 0x88,
+    DW_OP_breg25 = 0x89,
+    DW_OP_breg26 = 0x8a,
+    DW_OP_breg27 = 0x8b,
+    DW_OP_breg28 = 0x8c,
+    DW_OP_breg29 = 0x8d,
+    DW_OP_breg30 = 0x8e,
+    DW_OP_breg31 = 0x8f,
+    DW_OP_regx = 0x90,
+    DW_OP_fbreg = 0x91,
+    DW_OP_bregx = 0x92,
+    DW_OP_piece = 0x93,
+    DW_OP_deref_size = 0x94,
+    DW_OP_xderef_size = 0x95,
+    DW_OP_nop = 0x96,
+    DW_OP_push_object_address = 0x97,
+    DW_OP_call2 = 0x98,
+    DW_OP_call4 = 0x99,
+    DW_OP_call_ref = 0x9a,
+    DW_OP_form_tls_address = 0x9b,
+    DW_OP_call_frame_cfa = 0x9c,
+    DW_OP_bit_piece = 0x9d,
+    DW_OP_implicit_value = 0x9e,
+    DW_OP_stack_value = 0x9f,
+    DW_OP_implicit_pointer = 0xa0,
+    DW_OP_addrx = 0xa1,
+    DW_OP_constx = 0xa2,
+    DW_OP_entry_value = 0xa3,
+    DW_OP_const_type = 0xa4,
+    DW_OP_regval_type = 0xa5,
+    DW_OP_deref_type = 0xa6,
+    DW_OP_xderef_type = 0xa7,
+    DW_OP_convert = 0xa8,
+    DW_OP_reinterpret = 0xa9,
+}
+
+impl DWARFExpressionOpCode {
+    /// Mirrors `DWARFExpressionOpCode.getOpCodeValue()`.
+    pub fn get_op_code_value(self) -> u8 {
+        self as u8
+    }
+
+    /// Mirrors `DWARFExpressionOpCode.isInRange(op, lo, hi)`: true if `op`'s raw value is within
+    /// the inclusive `lo..hi` range.
+    pub fn is_in_range(op: Self, lo: Self, hi: Self) -> bool {
+        lo as u8 <= op as u8 && op as u8 <= hi as u8
+    }
+
+    /// Mirrors `DWARFExpressionOpCode.getRelativeOpCodeOffset(baseOp)`: e.g. `DW_OP_reg12` relative
+    /// to `DW_OP_reg0` is 12.
+    pub fn get_relative_op_code_offset(self, base_op: Self) -> i32 {
+        self as i32 - base_op as i32
+    }
+
+    /// Mirrors `DWARFExpressionOpCode.toString(DWARFRegisterMappings)`, which appends the mapped
+    /// Ghidra register name to the `reg`/`breg` opcodes.
+    pub fn to_string_with_reg_mapping(
+        self,
+        reg_mapping: Option<&crate::format::dwarf::dwarf_register_mappings::DWARFRegisterMappings>,
+    ) -> String {
+        use DWARFExpressionOpCode::*;
+        let reg_idx = if Self::is_in_range(self, DW_OP_reg0, DW_OP_reg31) {
+            self.get_relative_op_code_offset(DW_OP_reg0)
+        } else if Self::is_in_range(self, DW_OP_breg0, DW_OP_breg31) {
+            self.get_relative_op_code_offset(DW_OP_breg0)
+        } else {
+            -1
+        };
+        let reg = if reg_idx >= 0 {
+            reg_mapping.and_then(|rm| rm.ghidra_reg(reg_idx))
+        } else {
+            None
+        };
+        match reg {
+            Some(reg) => format!("{self}({})", reg.borrow().name()),
+            None => self.to_string(),
+        }
+    }
+}
+
+impl std::fmt::Display for DWARFExpressionOpCode {
+    /// The variant names are spelled exactly as Java's enum constants, so `{:?}` is Java's
+    /// `toString()`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+/// Placeholder for the unported
+/// `ghidra.app.util.bin.format.dwarf.expression.DWARFExpressionInstruction`, referenced by
+/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
+/// `DWARFExpressionInstruction` is a concrete Java class, so it is modeled as a struct; only the
+/// opcode, operand values and expression-relative offset the evaluator reads are kept. The blob
+/// operand, the operand-type table, the `read` parser and the readelf-style operand formatting are
+/// left to the real port.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DWARFExpressionInstruction {
+    /// Mirrors the `protected final` field the evaluator reads directly as `instr.opcode`.
+    pub opcode: DWARFExpressionOpCode,
+    offset: i32,
+    operands: Vec<i64>,
+}
+
+impl DWARFExpressionInstruction {
+    /// Mirrors `DWARFExpressionInstruction(op, operandTypes, operands, blob, offset)`, minus the
+    /// operand types and blob this stub does not model.
+    pub fn new(opcode: DWARFExpressionOpCode, operands: Vec<i64>, offset: i32) -> Self {
+        DWARFExpressionInstruction { opcode, offset, operands }
+    }
+
+    /// Mirrors `DWARFExpressionInstruction.getOperandValue(int)`, which throws
+    /// `ArrayIndexOutOfBoundsException` for an operand the instruction does not have.
+    ///
+    /// # Panics
+    /// Panics if `opindex` is out of range, as the Java array access does.
+    pub fn get_operand_value(&self, opindex: usize) -> i64 {
+        self.operands[opindex]
+    }
+
+    /// Mirrors `DWARFExpressionInstruction.getOperandCount()`.
+    pub fn get_operand_count(&self) -> usize {
+        self.operands.len()
+    }
+
+    /// Mirrors `DWARFExpressionInstruction.getOffset()`: the byte offset of this instruction from
+    /// the start of the expression.
+    pub fn get_offset(&self) -> i32 {
+        self.offset
+    }
+}
+
+impl std::fmt::Display for DWARFExpressionInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.opcode)?;
+        if !self.operands.is_empty() {
+            let operands: Vec<String> = self.operands.iter().map(|o| o.to_string()).collect();
+            write!(f, " [{}]", operands.join(", "))?;
+        }
+        Ok(())
+    }
+}
+
+/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.expression.DWARFExpression`,
+/// referenced by
+/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
+/// `DWARFExpression` is a concrete Java class, so it is modeled as a struct holding the instruction
+/// list. [`Self::read`] (the binary deserializer) needs `DWARFExpressionInstruction.read`, which is
+/// left to the real port, so it reports itself unsupported; build an expression from already-parsed
+/// instructions with [`Self::of`] until then.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct DWARFExpression {
+    instructions: Vec<DWARFExpressionInstruction>,
+}
+
+impl DWARFExpression {
+    /// Mirrors `DWARFExpression.MAX_SANE_EXPR`.
+    pub const MAX_SANE_EXPR: i32 = 512;
+
+    /// Stands in for the private `DWARFExpression(List<DWARFExpressionInstruction>)` constructor
+    /// that the Java `read` factories call.
+    pub fn of(instructions: Vec<DWARFExpressionInstruction>) -> Self {
+        DWARFExpression { instructions }
+    }
+
+    /// Mirrors `DWARFExpression.read(byte[], DWARFCompilationUnit)`. Deserializing needs the
+    /// unported `DWARFExpressionInstruction.read`, so this stub always fails.
+    pub fn read(
+        _expr_bytes: &[u8],
+        _cu: &dyn DWARFCompilationUnit,
+    ) -> Result<DWARFExpression, DWARFExpressionException> {
+        Err(DWARFExpressionException::new(
+            "DWARFExpression.read is not yet implemented (DWARFExpression has not been ported)",
+        ))
+    }
+
+    /// Mirrors `DWARFExpression.getInstruction(int)`, which throws `IndexOutOfBoundsException` for
+    /// an out of range index.
+    pub fn get_instruction(&self, i: i32) -> Option<&DWARFExpressionInstruction> {
+        usize::try_from(i).ok().and_then(|i| self.instructions.get(i))
+    }
+
+    /// Mirrors `DWARFExpression.getInstructionCount()`.
+    pub fn get_instruction_count(&self) -> i32 {
+        self.instructions.len() as i32
+    }
+
+    /// Mirrors `DWARFExpression.isEmpty()`.
+    pub fn is_empty(&self) -> bool {
+        self.instructions.is_empty()
+    }
+
+    /// Mirrors `DWARFExpression.findInstructionByOffset(long)`: the index of the instruction that
+    /// starts at `offset`, or -1 if there is none.
+    pub fn find_instruction_by_offset(&self, offset: i64) -> i32 {
+        self.instructions
+            .iter()
+            .position(|instr| instr.get_offset() as i64 == offset)
+            .map_or(-1, |i| i as i32)
+    }
+
+    /// Mirrors `DWARFExpression.toString(int, boolean, boolean, DWARFRegisterMappings)`. Operands
+    /// are rendered as signed decimals rather than in the readelf-influenced per-operand-type
+    /// format, which needs the operand types this stub does not model.
+    pub fn to_string_formatted(
+        &self,
+        caret_position: i32,
+        newlines: bool,
+        offsets: bool,
+        reg_mapping: Option<&crate::format::dwarf::dwarf_register_mappings::DWARFRegisterMappings>,
+    ) -> String {
+        use std::fmt::Write;
+
+        let mut sb = String::new();
+        for (instr_index, instr) in self.instructions.iter().enumerate() {
+            if instr_index != 0 {
+                sb.push_str(if newlines { "\n" } else { "; " });
+            }
+            if offsets {
+                let _ = write!(sb, "{instr_index:3} [{:03x}]: ", instr.get_offset());
+            }
+            if caret_position == instr_index as i32 {
+                sb.push_str(" ==> [");
+            }
+            sb.push_str(&instr.opcode.to_string_with_reg_mapping(reg_mapping));
+            for operand_index in 0..instr.get_operand_count() {
+                if operand_index == 0 {
+                    sb.push(':');
+                }
+                let _ = write!(sb, " {}", instr.get_operand_value(operand_index));
+            }
+            if caret_position == instr_index as i32 {
+                sb.push_str(" ] <==");
+            }
+            if matches!(
+                instr.opcode,
+                DWARFExpressionOpCode::DW_OP_bra | DWARFExpressionOpCode::DW_OP_skip
+            ) {
+                let mut dest_offset = instr.get_offset() as i64;
+                if instr.get_operand_count() > 0 {
+                    dest_offset += instr.get_operand_value(0);
+                }
+                let dest_index = self.find_instruction_by_offset(dest_offset);
+                let _ = write!(
+                    sb,
+                    " /* dest index: {dest_index}, offset: {:03x} */",
+                    dest_offset as i32
+                );
+            }
+        }
+        sb
+    }
+}
+
+impl std::fmt::Display for DWARFExpression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string_formatted(-1, false, false, None))
+    }
+}
+
+/// Which of the `DWARFExpressionException` subclasses an error is, along with the extra state that
+/// subclass carries.
+///
+/// Java models these as four classes (`DWARFExpressionException`, its subclass
+/// `DWARFExpressionUnsupportedOpException`, *its* subclass
+/// `DWARFExpressionTerminalDerefException`, and `DWARFExpressionValueException`); Rust has no
+/// exception hierarchy, so they collapse into one error type discriminated by this enum.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DWARFExpressionExceptionKind {
+    /// Plain `DWARFExpressionException`.
+    Generic,
+    /// `DWARFExpressionUnsupportedOpException`: the evaluator does not implement this instruction.
+    UnsupportedOp(DWARFExpressionInstruction),
+    /// `DWARFExpressionTerminalDerefException` (a subclass of the unsupported-op exception): the
+    /// expression ended with a `DW_OP_deref` of the given location, which some callers can still
+    /// make use of.
+    TerminalDeref(DWARFExpressionInstruction, crate::program::model::pcode::Varnode),
+    /// `DWARFExpressionValueException`: the value of the given varnode could not be fetched.
+    Value(crate::program::model::pcode::Varnode),
+}
+
+/// Placeholder for the unported
+/// `ghidra.app.util.bin.format.dwarf.expression.DWARFExpressionException` and its three subclasses,
+/// referenced by
+/// [`DWARFExpressionEvaluator`](crate::format::dwarf::expression::dwarf_expression_evaluator::DWARFExpressionEvaluator).
+/// Carries the expression and the position within it that caused the problem back up the call
+/// chain, exactly as the Java exception does.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DWARFExpressionException {
+    message: String,
+    kind: DWARFExpressionExceptionKind,
+    expr: Option<DWARFExpression>,
+    instr_index: i32,
+}
+
+impl DWARFExpressionException {
+    /// Mirrors `DWARFExpressionException(String)`.
+    pub fn new(message: impl Into<String>) -> Self {
+        DWARFExpressionException {
+            message: message.into(),
+            kind: DWARFExpressionExceptionKind::Generic,
+            expr: None,
+            instr_index: -1,
+        }
+    }
+
+    /// Mirrors `DWARFExpressionUnsupportedOpException(DWARFExpressionInstruction)`.
+    pub fn unsupported_op(instr: DWARFExpressionInstruction) -> Self {
+        DWARFExpressionException {
+            message: format!("Unsupported instruction {instr}"),
+            kind: DWARFExpressionExceptionKind::UnsupportedOp(instr),
+            expr: None,
+            instr_index: -1,
+        }
+    }
+
+    /// Mirrors `DWARFExpressionTerminalDerefException(DWARFExpressionInstruction, Varnode)`, whose
+    /// superclass constructor builds the same "Unsupported instruction" message.
+    pub fn terminal_deref(
+        instr: DWARFExpressionInstruction,
+        varnode: crate::program::model::pcode::Varnode,
+    ) -> Self {
+        DWARFExpressionException {
+            message: format!("Unsupported instruction {instr}"),
+            kind: DWARFExpressionExceptionKind::TerminalDeref(instr, varnode),
+            expr: None,
+            instr_index: -1,
+        }
+    }
+
+    /// Mirrors `DWARFExpressionValueException(Varnode)`.
+    pub fn value(vn: crate::program::model::pcode::Varnode) -> Self {
+        DWARFExpressionException {
+            message: format!("Unable to access value of {vn}"),
+            kind: DWARFExpressionExceptionKind::Value(vn),
+            expr: None,
+            instr_index: -1,
+        }
+    }
+
+    /// Which Java exception class this stands in for.
+    pub fn kind(&self) -> &DWARFExpressionExceptionKind {
+        &self.kind
+    }
+
+    /// Mirrors `DWARFExpressionException.getExpression()`.
+    pub fn get_expression(&self) -> Option<&DWARFExpression> {
+        self.expr.as_ref()
+    }
+
+    /// Mirrors `DWARFExpressionException.setExpression(DWARFExpression)`.
+    pub fn set_expression(&mut self, expr: DWARFExpression) {
+        self.expr = Some(expr);
+    }
+
+    /// Mirrors `DWARFExpressionException.getInstructionIndex()`.
+    pub fn get_instruction_index(&self) -> i32 {
+        self.instr_index
+    }
+
+    /// Mirrors `DWARFExpressionException.setInstructionIndex(int)`.
+    pub fn set_instruction_index(&mut self, instr_index: i32) {
+        self.instr_index = instr_index;
+    }
+
+    /// The `DWARFExpressionUnsupportedOpException`/`DWARFExpressionTerminalDerefException`
+    /// `getInstruction()` accessor.
+    pub fn get_instruction(&self) -> Option<&DWARFExpressionInstruction> {
+        match &self.kind {
+            DWARFExpressionExceptionKind::UnsupportedOp(instr)
+            | DWARFExpressionExceptionKind::TerminalDeref(instr, _) => Some(instr),
+            _ => None,
+        }
+    }
+
+    /// The `DWARFExpressionTerminalDerefException`/`DWARFExpressionValueException` `getVarnode()`
+    /// accessor.
+    pub fn get_varnode(&self) -> Option<&crate::program::model::pcode::Varnode> {
+        match &self.kind {
+            DWARFExpressionExceptionKind::TerminalDeref(_, vn)
+            | DWARFExpressionExceptionKind::Value(vn) => Some(vn),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for DWARFExpressionException {
+    /// Mirrors `DWARFExpressionException.getMessage()`, which appends the expression (if known).
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)?;
+        if let Some(expr) = &self.expr {
+            write!(f, "\n{}", expr.to_string_formatted(self.instr_index, false, false, None))?;
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for DWARFExpressionException {}
 

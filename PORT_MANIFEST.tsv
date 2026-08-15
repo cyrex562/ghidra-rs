@@ -3784,7 +3784,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/att
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFNumericAttribute.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf attribs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/attribs/DWARFStringAttribute.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf attribs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpression.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionEvaluator.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionEvaluator.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionException.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionInstruction.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/dwarf/expression/DWARFExpressionOpCode.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format dwarf expression 
