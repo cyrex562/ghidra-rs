@@ -7,6 +7,7 @@ use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::format::dwarf::expression::dwarf_expression::DWARFExpression;
+use crate::format::dwarf::external::object_type::ObjectType;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::dwarf::dwarf_range::DWARFRange;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
@@ -4489,6 +4490,25 @@ pub trait AddressSetView: Send + Sync {}
 
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFVariable`, referenced by `DWARFFunction`.
 pub trait DWARFVariable: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.external.DebugInfoProvider`, referenced by `DebugStreamProvider`.
+pub trait DebugInfoProvider: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.external.ExternalDebugInfo`, referenced by `DebugStreamProvider`.
+pub trait ExternalDebugInfo: Send + Sync {
+    fn from_program(&self, program: &dyn Program) -> Box<dyn ExternalDebugInfo>;
+    fn for_build_id(&self, build_id: &str) -> Box<dyn ExternalDebugInfo>;
+    fn for_debug_link(&self, debug_link_filename: &str, crc: i32) -> Box<dyn ExternalDebugInfo>;
+    fn has_debug_link(&self) -> bool;
+    fn get_filename(&self) -> String;
+    fn get_crc(&self) -> i32;
+    fn get_build_id(&self) -> String;
+    fn has_build_id(&self) -> bool;
+    fn get_object_type(&self) -> ObjectType;
+    fn get_extra(&self) -> String;
+    fn with_type(&self, new_object_type: ObjectType, new_extra: &str) -> Box<dyn ExternalDebugInfo>;
+    fn to_string(&self) -> String;
+}
 
 /// Placeholder for `ghidra.program.model.listing.Parameter`, referenced by `DWARFFunction`.
 pub trait Parameter: Send + Sync {}
