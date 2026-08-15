@@ -17,14 +17,17 @@
 //!
 //! # Departures from the Java class
 //!
-//! * `DWARFMacroHeader`, `DWARFMacroOpcode`, `DWARFMacroOpcode.Def`, and the five macro-entry
-//!   subclasses [`to_specialized_form`](DWARFMacroInfoEntryBase::to_specialized_form) dispatches to
-//!   aren't ported yet. `DWARFMacroHeader` sits on a genuine forward cycle (a header reads/owns its
-//!   entries; each entry keeps a back-reference to its header), so it's stubbed as a trait in
-//!   [`crate::format::seam_stubs`]; the five subclasses are stubbed there too, each as a minimal
-//!   wrapper offering only the copy-constructor shape `toSpecializedForm` needs. `DWARFMacroOpcode`
-//!   isn't on the cycle, so it's modeled as a real (non-stub) enum with the genuine `DW_MACRO_*`
-//!   raw opcode/description table, in the same module. See `STUBS.tsv`.
+//! * `DWARFMacroOpcode.Def` and the five macro-entry subclasses
+//!   [`to_specialized_form`](DWARFMacroInfoEntryBase::to_specialized_form) dispatches to aren't
+//!   ported yet; the five subclasses are stubbed in [`crate::format::seam_stubs`], each as a
+//!   minimal wrapper offering only the copy-constructor shape `toSpecializedForm` needs.
+//!   `DWARFMacroOpcode` is modeled as a real (non-stub) enum with the genuine `DW_MACRO_*` raw
+//!   opcode/description table, in [`crate::format::seam_stubs`]. `DWARFMacroHeader` is the real
+//!   port at [`crate::format::dwarf::r#macro::dwarf_macro_header::DWARFMacroHeader`]; it and
+//!   `DWARFMacroInfoEntry` reference each other (a header reads/owns its entries; each entry keeps
+//!   a back-reference to its header), which is a genuine forward cycle from `DWARFMacroHeader`'s
+//!   own dependencies (`DWARFCompilationUnit`, `DIEContainer`), not from this pairing itself. See
+//!   `STUBS.tsv`.
 //! * `getOperand`'s `Class<T>` reflection becomes a generic downcast through
 //!   [`DWARFAttributeValue::as_any`].
 //! * The protected `DWARFMacroInfoEntry(DWARFMacroOpcode, DWARFMacroHeader)` constructor builds an
@@ -39,9 +42,8 @@ use std::sync::Arc;
 
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue;
-use crate::format::seam_stubs::{
-    self, DWARFAttributeDef, DWARFFormContext, DWARFMacroHeader, DWARFMacroOpcode, DWARFMacroOpcodeDef,
-};
+use crate::format::dwarf::r#macro::dwarf_macro_header::DWARFMacroHeader;
+use crate::format::seam_stubs::{self, DWARFAttributeDef, DWARFFormContext, DWARFMacroOpcode, DWARFMacroOpcodeDef};
 
 /// The shared state of a DWARF macro info entry, plus every method Java does not override in any
 /// of its subclasses.
@@ -52,14 +54,14 @@ pub struct DWARFMacroInfoEntryBase {
     pub opcode: Option<DWARFMacroOpcode>,
     pub raw_opcode: i32,
     pub operand_values: Vec<Option<Box<dyn DWARFAttributeValue>>>,
-    pub macro_header: Arc<dyn DWARFMacroHeader>,
+    pub macro_header: Arc<DWARFMacroHeader>,
 }
 
 impl DWARFMacroInfoEntryBase {
     /// Mirrors the protected `DWARFMacroInfoEntry(DWARFMacroOpcode, DWARFMacroHeader)`
     /// constructor: builds an entry with an empty (all-`None`) operand array sized to the
     /// opcode's declared operand count, for a subclass constructor to fill in afterwards.
-    pub fn new(opcode: DWARFMacroOpcode, macro_header: Arc<dyn DWARFMacroHeader>) -> Self {
+    pub fn new(opcode: DWARFMacroOpcode, macro_header: Arc<DWARFMacroHeader>) -> Self {
         let raw_opcode = opcode.get_raw_opcode();
         let operand_count = opcode.get_operand_forms().len();
         DWARFMacroInfoEntryBase {
@@ -76,7 +78,7 @@ impl DWARFMacroInfoEntryBase {
         opcode: Option<DWARFMacroOpcode>,
         raw_opcode: i32,
         operand_values: Vec<Box<dyn DWARFAttributeValue>>,
-        macro_header: Arc<dyn DWARFMacroHeader>,
+        macro_header: Arc<DWARFMacroHeader>,
     ) -> Self {
         DWARFMacroInfoEntryBase {
             opcode,
@@ -90,7 +92,7 @@ impl DWARFMacroInfoEntryBase {
     /// end-of-list marker. Mirrors `DWARFMacroInfoEntry.read(BinaryReader, DWARFMacroHeader)`.
     pub fn read(
         reader: &mut dyn BinaryReader,
-        macro_header: Arc<dyn DWARFMacroHeader>,
+        macro_header: Arc<DWARFMacroHeader>,
     ) -> io::Result<Option<Box<dyn DWARFMacroInfoEntry>>> {
         let mut opcode_map = macro_header.get_opcode_map();
 
@@ -261,9 +263,8 @@ impl DWARFMacroInfoEntry for DWARFMacroInfoEntryBase {
 mod tests {
     use super::*;
     use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-    use crate::format::seam_stubs::{DWARFCompilationUnit, DWARFForm, UnportedDWARFForm};
+    use crate::format::seam_stubs::DWARFCompilationUnit;
     use std::cell::RefCell;
-    use std::collections::HashMap;
     use std::rc::Rc;
 
     struct VecProvider(Vec<u8>);
@@ -349,34 +350,21 @@ mod tests {
         }
     }
 
-    /// Minimal `DWARFMacroHeader` backed by an explicit `(raw opcode -> operand form codes)`
+    /// Builds a `DWARFMacroHeader` backed by an explicit `(raw opcode -> operand form codes)`
     /// table, so a test controls exactly which opcodes are "known" without needing a real
     /// `DWARFForm` port.
-    struct MockMacroHeader {
-        opcodes: Vec<(i32, Vec<u32>)>,
-    }
-
-    impl DWARFMacroHeader for MockMacroHeader {
-        fn get_opcode_map(&self) -> HashMap<i32, Vec<Box<dyn DWARFForm>>> {
-            self.opcodes
-                .iter()
-                .map(|(raw, form_codes)| {
-                    let forms = form_codes
-                        .iter()
-                        .map(|&form_code| Box::new(UnportedDWARFForm { form_code }) as Box<dyn DWARFForm>)
-                        .collect();
-                    (*raw, forms)
-                })
-                .collect()
-        }
-
-        fn get_int_size(&self) -> i32 {
-            4
-        }
-
-        fn get_compilation_unit(&self) -> Box<dyn DWARFCompilationUnit> {
-            Box::new(MockCompilationUnit)
-        }
+    fn mock_macro_header(opcodes: Vec<(i32, Vec<u32>)>) -> Arc<DWARFMacroHeader> {
+        Arc::new(DWARFMacroHeader::new(
+            0,
+            5,
+            0,
+            -1,
+            4,
+            0,
+            Some(Arc::new(MockCompilationUnit)),
+            None,
+            opcodes.into_iter().collect(),
+        ))
     }
 
     #[test]
@@ -384,7 +372,7 @@ mod tests {
         // DW_MACRO_end_file's raw opcode is 0x4 and it declares zero operand forms, matching
         // Java's `DW_MACRO_end_file(0x4, "endfile")` enum constant.
         let mut reader = TestReader::new(vec![0x04]);
-        let header: Arc<dyn DWARFMacroHeader> = Arc::new(MockMacroHeader { opcodes: vec![(0x04, vec![])] });
+        let header = mock_macro_header(vec![(0x04, vec![])]);
 
         let entry = DWARFMacroInfoEntryBase::read(&mut reader, header).unwrap().unwrap();
 
@@ -398,7 +386,7 @@ mod tests {
     fn read_returns_none_for_the_unit_terminator() {
         // Mirrors `toSpecializedForm`'s `case MACRO_UNIT_TERMINATOR -> null`.
         let mut reader = TestReader::new(vec![0x00]);
-        let header: Arc<dyn DWARFMacroHeader> = Arc::new(MockMacroHeader { opcodes: vec![(0x00, vec![])] });
+        let header = mock_macro_header(vec![(0x00, vec![])]);
 
         assert!(DWARFMacroInfoEntryBase::read(&mut reader, header).unwrap().is_none());
     }
@@ -406,7 +394,7 @@ mod tests {
     #[test]
     fn read_errors_on_an_opcode_missing_from_the_headers_opcode_map() {
         let mut reader = TestReader::new(vec![0xff]);
-        let header: Arc<dyn DWARFMacroHeader> = Arc::new(MockMacroHeader { opcodes: vec![] });
+        let header = mock_macro_header(vec![]);
 
         let result = DWARFMacroInfoEntryBase::read(&mut reader, header);
         let err = match result {
@@ -420,7 +408,7 @@ mod tests {
     fn get_name_falls_back_to_raw_opcode_when_unrecognized() {
         // A raw opcode registered in the header's opcode map (so `read` wouldn't error) but with
         // no matching `DWARFMacroOpcode` enum constant, mirroring a vendor extension opcode.
-        let header: Arc<dyn DWARFMacroHeader> = Arc::new(MockMacroHeader { opcodes: vec![] });
+        let header = mock_macro_header(vec![]);
         let entry = DWARFMacroInfoEntryBase::with_values(None, 0xe0, vec![], header);
 
         assert_eq!(entry.get_name(), "DW_MACRO_unknown[e0]");

@@ -3477,12 +3477,41 @@ impl DWARFImportSummary {
     }
 }
 
-/// Placeholder for the unported Java type `DIEContainer`, referenced by `DWARFLine`. Only
-/// `getDebugLineReader` (the single method that call site needs) is modeled.
+/// Placeholder for the unported Java type `DIEContainer`, referenced by `DWARFLine` and
+/// `DWARFMacroHeader`. `getLine` and `getMacroEntries` default to reporting themselves
+/// unsupported, so test doubles that only model `getDebugLineReader` (e.g.
+/// [`crate::format::dwarf::line::dwarf_line::tests::MockDIEContainer`]) keep compiling.
 pub trait DIEContainer: Send + Sync {
     /// Mirrors `DIEContainer.getDebugLineReader()`, which returns `null` when the binary has no
     /// `.debug_line` section.
     fn get_debug_line_reader(&self) -> Option<Box<dyn crate::app::util::bin::binary_reader::BinaryReader>>;
+
+    /// Mirrors `DIEContainer.getLine(long, DWARFCompilationUnit, boolean)`, referenced by
+    /// `DWARFMacroHeader::read_v5`.
+    fn get_line(
+        &self,
+        _offset: u64,
+        _cu: &dyn DWARFCompilationUnit,
+        _read_if_missing: bool,
+    ) -> std::io::Result<crate::format::dwarf::line::dwarf_line::DWARFLine> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DIEContainer.getLine is not yet implemented (DIEContainer has not been ported)",
+        ))
+    }
+
+    /// Mirrors `DIEContainer.getMacroEntries(DWARFMacroHeader)`, referenced by
+    /// `DWARFMacroHeader::get_entries`.
+    fn get_macro_entries(
+        &self,
+        _macro_header: std::sync::Arc<crate::format::dwarf::r#macro::dwarf_macro_header::DWARFMacroHeader>,
+    ) -> std::io::Result<Vec<Box<dyn crate::format::dwarf::r#macro::entry::dwarf_macro_info_entry::DWARFMacroInfoEntry>>>
+    {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DIEContainer.getMacroEntries is not yet implemented (DIEContainer has not been ported)",
+        ))
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.dwarf.line.DWARFLineProgramExecutor`, referenced by
@@ -3925,6 +3954,14 @@ impl DWARFMacroOpcode {
     pub fn of(opcode_val: i32) -> Option<Self> {
         Self::VALUES.into_iter().find(|opcode| opcode.get_raw_opcode() == opcode_val)
     }
+
+    /// Mirrors `DWARFMacroOpcode.defaultOpcodeOperandMap`, used by `DWARFMacroHeader::read_v5` as
+    /// the starting opcode table before an optional per-unit table (if present) overrides it.
+    /// Values are raw `DW_FORM_*` codes rather than `Box<dyn DWARFForm>` (see
+    /// [`Self::operand_form_codes`]) since `DWARFForm` isn't a real port yet.
+    pub fn default_opcode_operand_map() -> std::collections::HashMap<i32, Vec<u32>> {
+        Self::VALUES.iter().map(|opcode| (opcode.get_raw_opcode(), opcode.operand_form_codes().to_vec())).collect()
+    }
 }
 
 /// Placeholder for the nested `DWARFMacroOpcode.Def` (a `DWARFAttributeDef<DWARFMacroOpcode>`),
@@ -3947,23 +3984,6 @@ impl DWARFAttributeDef for DWARFMacroOpcodeDef {
     fn get_attribute_form(&self) -> &dyn DWARFForm {
         self.form.as_ref()
     }
-}
-
-/// Placeholder for the unported Java type `DWARFMacroHeader`, referenced by `DWARFMacroInfoEntry`.
-/// `DWARFMacroInfoEntry` and `DWARFMacroHeader` reference each other (a header reads and owns its
-/// entries; each entry keeps a back-reference to its owning header), so this stub breaks that
-/// forward cycle -- only the three accessors `DWARFMacroInfoEntry::read` needs are modeled here.
-/// `DWARFMacroHeader` is a concrete Java class (not an interface); the real port should replace
-/// this trait with that concrete type.
-pub trait DWARFMacroHeader: Send + Sync {
-    /// Mirrors `DWARFMacroHeader.getOpcodeMap()`.
-    fn get_opcode_map(&self) -> std::collections::HashMap<i32, Vec<Box<dyn DWARFForm>>>;
-
-    /// Mirrors `DWARFMacroHeader.getIntSize()`.
-    fn get_int_size(&self) -> i32;
-
-    /// Mirrors `DWARFMacroHeader.getCompilationUnit()`.
-    fn get_compilation_unit(&self) -> Box<dyn DWARFCompilationUnit>;
 }
 
 /// Minimal placeholders for the five unported Java macro-entry subclasses that
