@@ -13,6 +13,11 @@ pub trait DWARFAttributeValue: Send + Sync {
     /// # Returns
     /// A string representation of the attribute value suitable for display
     fn get_value_string(&self, cu: &dyn DWARFCompilationUnit, def: &dyn DWARFAttributeDef) -> String;
+
+    /// Exposes this value as [`std::any::Any`] so callers can downcast to the concrete
+    /// implementation, mirroring the `instanceof` checks Java call sites use to recover a
+    /// specific attribute value's typed accessors (e.g. `DWARFStringAttribute.getValue`).
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 #[cfg(test)]
@@ -23,6 +28,10 @@ mod tests {
     impl DWARFAttributeValue for MockAttributeValue {
         fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
             "test_value".to_string()
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
     }
 
