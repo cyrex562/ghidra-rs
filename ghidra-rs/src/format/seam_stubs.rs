@@ -3371,6 +3371,21 @@ impl JavaClassUtil {
 /// `DWARFAttributeDef` (which is itself a stub), which is used by `DWARFAttributeValue`.
 pub trait DWARFForm: Send + Sync {
     fn is_class(&self, class: &dyn std::any::Any) -> bool;
+
+    /// Placeholder for `DWARFForm.readValue(DWARFFormContext)`, referenced by
+    /// `DWARFFile::read_v5`. The real Java enum has ~20 `DW_FORM_*` variants, each dispatching to
+    /// a different binary layout; that decoding logic doesn't exist yet at this stub layer, so
+    /// the default implementation reports it as unsupported. Real implementations (including test
+    /// doubles) should override this to construct the appropriate `DWARFAttributeValue`.
+    fn read_value(
+        &self,
+        _context: &mut DWARFFormContext,
+    ) -> std::io::Result<Box<dyn crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue>> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DWARFForm.readValue is not yet implemented (DWARFForm has not been ported)",
+        ))
+    }
 }
 
 /// Placeholder for the unported Java type `DWARFAttributeDef`, referenced by `DWARFAttributeValue`.
@@ -3383,5 +3398,235 @@ pub trait DWARFAttributeDef: Send + Sync {
 /// Only includes the methods actually needed by `DWARFAttributeValue`.
 pub trait DWARFCompilationUnit: Send + Sync {
     fn get_dwarf_version(&self) -> i16;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.line.DWARFLineContentType`, referenced by
+/// `DWARFFile::read_v5`. Java models this as an enum (not an interface), so it is modeled here as
+/// a concrete enum, per the crate's convention for enum-shaped Java types.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DWARFLineContentType {
+    DwLnctPath,
+    DwLnctDirectoryIndex,
+    DwLnctTimestamp,
+    DwLnctSize,
+    DwLnctMd5,
+    DwLnctLoUser,
+    DwLnctHiUser,
+    /// Mirrors the Java `DW_LNCT_UNKNOWN(-1)` fallback value that `of()` returns for any id it
+    /// doesn't recognize.
+    DwLnctUnknown,
+}
+
+impl DWARFLineContentType {
+    /// Mirrors `DWARFLineContentType.of(int)`.
+    pub fn of(id: i32) -> Self {
+        match id {
+            0x1 => Self::DwLnctPath,
+            0x2 => Self::DwLnctDirectoryIndex,
+            0x3 => Self::DwLnctTimestamp,
+            0x4 => Self::DwLnctSize,
+            0x5 => Self::DwLnctMd5,
+            0x2000 => Self::DwLnctLoUser,
+            0x3fff => Self::DwLnctHiUser,
+            _ => Self::DwLnctUnknown,
+        }
+    }
+}
+
+/// Placeholder for the nested `DWARFLineContentType.Def`, referenced by `DWARFFile::read_v5`.
+/// Only the two accessors that call site needs are modeled.
+pub struct DWARFLineContentTypeDef {
+    pub attribute_id: DWARFLineContentType,
+    pub attribute_form: Box<dyn DWARFForm>,
+}
+
+impl DWARFLineContentTypeDef {
+    pub fn get_attribute_id(&self) -> DWARFLineContentType {
+        self.attribute_id
+    }
+
+    pub fn get_attribute_form(&self) -> &dyn DWARFForm {
+        self.attribute_form.as_ref()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFFormContext`, referenced by
+/// `DWARFFile::read_v5`. Java models this as a record; it is modeled here as a concrete struct
+/// with public fields, consistent with the crate's convention for record-shaped Java types.
+pub struct DWARFFormContext<'r, 'a> {
+    pub reader: &'r mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+    pub comp_unit: &'a dyn DWARFCompilationUnit,
+    pub def: &'a DWARFLineContentTypeDef,
+    pub dwarf_int_size: i32,
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFStringAttribute`, referenced by
+/// `DWARFFile::read_v5`. `DWARFStringAttribute` is a concrete Java class implementing
+/// `DWARFAttributeValue`, so it is modeled here as a concrete struct rather than a trait object.
+pub struct DWARFStringAttribute {
+    pub value: String,
+}
+
+impl DWARFStringAttribute {
+    pub fn new(value: impl Into<String>) -> Self {
+        DWARFStringAttribute { value: value.into() }
+    }
+
+    pub fn get_value(&self, _cu: &dyn DWARFCompilationUnit) -> String {
+        self.value.clone()
+    }
+}
+
+impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue for DWARFStringAttribute {
+    fn get_value_string(&self, cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
+        format!("\"{}\"", self.get_value(cu))
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFNumericAttribute`, referenced by
+/// `DWARFFile::read_v5`. `DWARFNumericAttribute` is a concrete Java class implementing
+/// `DWARFAttributeValue`, so it is modeled here as a concrete struct rather than a trait object.
+/// The real class backs its value with a `Scalar` that tracks bit length and signedness
+/// separately; this stub only needs a single numeric value, so `get_value`/`get_unsigned_value`
+/// both read the same stored `i64`.
+pub struct DWARFNumericAttribute {
+    pub value: i64,
+}
+
+impl DWARFNumericAttribute {
+    pub fn new(value: i64) -> Self {
+        DWARFNumericAttribute { value }
+    }
+
+    pub fn get_value(&self) -> i64 {
+        self.value
+    }
+
+    pub fn get_unsigned_value(&self) -> i64 {
+        self.value
+    }
+
+    /// Mirrors `DWARFNumericAttribute.getUnsignedIntExact()`, which throws `InvalidDataException`
+    /// for a value outside `0..=Integer.MAX_VALUE`.
+    pub fn get_unsigned_int_exact(&self) -> std::io::Result<i32> {
+        if self.value < 0 || self.value > i32::MAX as i64 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!(
+                    "Value out of range for positive java 32 bit unsigned int: {}",
+                    self.value
+                ),
+            ));
+        }
+        Ok(self.value as i32)
+    }
+}
+
+impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue for DWARFNumericAttribute {
+    fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
+        format!("{}", self.value)
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.attribs.DWARFBlobAttribute`, referenced by
+/// `DWARFFile::read_v5`. `DWARFBlobAttribute` is a concrete Java class implementing
+/// `DWARFAttributeValue`, so it is modeled here as a concrete struct rather than a trait object.
+pub struct DWARFBlobAttribute {
+    pub bytes: Vec<u8>,
+}
+
+impl DWARFBlobAttribute {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        DWARFBlobAttribute { bytes }
+    }
+
+    pub fn get_bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    pub fn get_length(&self) -> i32 {
+        self.bytes.len() as i32
+    }
+}
+
+impl crate::format::dwarf::attribs::dwarf_attribute_value::DWARFAttributeValue for DWARFBlobAttribute {
+    fn get_value_string(&self, _cu: &dyn DWARFCompilationUnit, _def: &dyn DWARFAttributeDef) -> String {
+        format!("[{}]{:02x?}", self.bytes.len(), self.bytes)
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.line.DWARFLine`, referenced by
+/// `DWARFFile::get_path_name` before the real (much larger, 12-method) class is ported. Only
+/// `get_dir`, the single accessor that call site needs, is modeled. `DWARFLine` is a concrete
+/// Java class, so it is modeled here as a concrete struct. Notably, `get_dir` returns the crate's
+/// real (already-ported) `DWARFFile` type -- `DWARFLine` and `DWARFFile` are mutually referential
+/// in the original Java, and since `DWARFFile` is the type being ported when this stub was
+/// written, there's no need to stub its return type too.
+pub struct DWARFLine {
+    pub dirs: Vec<crate::format::dwarf::line::dwarf_file::DWARFFile>,
+}
+
+impl DWARFLine {
+    /// Mirrors `DWARFLine.getDir(int)`, which throws `IOException` for an out-of-range index.
+    pub fn get_dir(&self, index: i32) -> std::io::Result<&crate::format::dwarf::line::dwarf_file::DWARFFile> {
+        if index < 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Invalid directory index: {index}"),
+            ));
+        }
+        self.dirs.get(index as usize).ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("Invalid directory index: {index}"))
+        })
+    }
+}
+
+/// Placeholder for `ghidra.formats.gfilesystem.FSUtilities`, referenced by
+/// `DWARFFile::get_path_name`. `FSUtilities` is a concrete Java class (a utility class of only
+/// static members), so it is modeled here as a zero-sized type with an associated function. Only
+/// `appendPath` (the single static method that call site needs) is modeled.
+pub struct FSUtilities;
+
+impl FSUtilities {
+    /// Mirrors `FSUtilities.appendPath(String...)`, joining non-empty path segments with `/`,
+    /// avoiding a doubled separator when a segment already starts or ends with one. The real
+    /// method returns `null` when every argument is `null`; that case doesn't apply here since
+    /// Rust `&str` arguments can't be null, so this always returns a `String` (possibly empty).
+    pub fn append_path(paths: &[&str]) -> String {
+        let mut buffer = String::new();
+        for &path in paths {
+            if path.is_empty() {
+                continue;
+            }
+
+            let empty_buffer = buffer.is_empty();
+            let buffer_ends_with_slash =
+                !empty_buffer && matches!(buffer.chars().last(), Some('/') | Some('\\'));
+            let path_starts_with_slash = matches!(path.chars().next(), Some('/') | Some('\\'));
+
+            let path = if path_starts_with_slash && buffer_ends_with_slash {
+                &path[1..]
+            } else {
+                path
+            };
+            if !buffer_ends_with_slash && !path_starts_with_slash && !empty_buffer {
+                buffer.push('/');
+            }
+            buffer.push_str(path);
+        }
+        buffer
+    }
 }
 
