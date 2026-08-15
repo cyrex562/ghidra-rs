@@ -3426,6 +3426,14 @@ pub trait DWARFCompilationUnit: Send + Sync {
         None
     }
 
+    /// Mirrors `DWARFCompilationUnit.getLine()`, the line table this compilation unit's
+    /// `DW_AT_stmt_list` points at, referenced by
+    /// [`DIEAggregate::get_source_file`](crate::format::dwarf::die_aggregate::DIEAggregate::get_source_file).
+    /// `None` stands in for a compilation unit with no line table.
+    fn get_line(&self) -> Option<&crate::format::dwarf::line::dwarf_line::DWARFLine> {
+        None
+    }
+
     /// Mirrors `DWARFUnitHeader.getUnitNumber()`, which `DebugInfoEntry::read` only uses to
     /// describe a bad abbreviation code.
     fn get_unit_number(&self) -> i32 {
@@ -3678,6 +3686,61 @@ pub trait DIEContainer: Send + Sync {
     /// model a `DWARFProgram` can return `None`.
     fn get_program(&self) -> Option<std::sync::Arc<dyn DWARFProgram>> {
         None
+    }
+
+    /// Mirrors `DIEContainer.getDIE(DWARFForm, long, DWARFCompilationUnit)`, which resolves a
+    /// reference attribute's raw value to the DIE it points at (`Ok(None)` where Java returns
+    /// `null`). Referenced by
+    /// [`DIEAggregate::create_from_head`](crate::format::dwarf::die_aggregate::DIEAggregate::create_from_head)
+    /// to follow `DW_AT_abstract_origin` / `DW_AT_specification`. The container owns every DIE, so
+    /// the DIE it hands back is borrowed from it.
+    fn get_die(
+        &self,
+        _form: DWARFForm,
+        _raw_offset: i64,
+        _cu: &dyn DWARFCompilationUnit,
+    ) -> std::io::Result<Option<&crate::format::dwarf::debug_info_entry::DebugInfoEntry>> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DIEContainer.getDIE is not yet implemented (DIEContainer has not been ported)",
+        ))
+    }
+
+    /// Mirrors `DIEContainer.getAggregate(DebugInfoEntry)`. The real container caches the
+    /// aggregate it built for each head DIE; with no cache to consult, this builds a fresh one,
+    /// which is what the cache would have held.
+    fn get_aggregate<'a>(
+        &'a self,
+        die: &'a crate::format::dwarf::debug_info_entry::DebugInfoEntry,
+    ) -> crate::format::dwarf::die_aggregate::DIEAggregate<'a> {
+        crate::format::dwarf::die_aggregate::DIEAggregate::create_from_head(die)
+    }
+
+    /// Mirrors `DIEContainer.getLocationList(DIEAggregate, DWARFAttributeId)`, which parses the
+    /// aggregate's location attribute (a single expression, or a `.debug_loc`/`.debug_loclists`
+    /// list) into a [`DWARFLocationList`](crate::format::dwarf::dwarf_location_list::DWARFLocationList).
+    fn get_location_list(
+        &self,
+        _diea: &crate::format::dwarf::die_aggregate::DIEAggregate<'_>,
+        _attr_id: crate::format::dwarf::attribs::dwarf_attribute_id::DWARFAttributeId,
+    ) -> std::io::Result<crate::format::dwarf::dwarf_location_list::DWARFLocationList> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DIEContainer.getLocationList is not yet implemented (DIEContainer has not been ported)",
+        ))
+    }
+
+    /// Mirrors `DIEContainer.getRangeList(DIEAggregate, DWARFAttributeId)`, the `DWARFRangeList`
+    /// counterpart of [`Self::get_location_list`].
+    fn get_range_list(
+        &self,
+        _diea: &crate::format::dwarf::die_aggregate::DIEAggregate<'_>,
+        _attribute: crate::format::dwarf::attribs::dwarf_attribute_id::DWARFAttributeId,
+    ) -> std::io::Result<DWARFRangeList> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DIEContainer.getRangeList is not yet implemented (DIEContainer has not been ported)",
+        ))
     }
 }
 
@@ -4341,64 +4404,14 @@ macro_info_entry_placeholder!(DWARFMacroStartFile);
 macro_info_entry_placeholder!(DWARFMacroEndFile);
 macro_info_entry_placeholder!(DWARFMacroImport);
 
-/// Placeholder for the unported `ghidra.app.util.bin.format.dwarf.DIEAggregate`, referenced by
-/// `DWARFSourceInfo`. `DIEAggregate` is a concrete Java class (not an interface), so this stub is
-/// a struct rather than a trait object. Only the surface `DWARFSourceInfo` reaches for is
-/// modeled: the declaring source filename, the aggregate/decl parent chain, and lookup of a
-/// numeric attribute value among a DIE's children carrying a given tag.
-pub struct DIEAggregate {
-    pub source_file: Option<String>,
-    pub parent: Option<Box<DIEAggregate>>,
-    pub decl_parent: Option<Box<DIEAggregate>>,
-    pub children_numeric_attrs: Vec<(
-        crate::format::dwarf::attribs::dwarf_attribute_id::DWARFAttributeId,
-        DWARFTag,
-        DWARFNumericAttribute,
-    )>,
-}
-
-impl DIEAggregate {
-    /// Mirrors `DIEAggregate.getSourceFile()`, which returns `null` when this DIEA has no
-    /// `DW_AT_decl_file`.
-    pub fn get_source_file(&self) -> Option<&str> {
-        self.source_file.as_deref()
-    }
-
-    /// Mirrors `DIEAggregate.getParent()`, which returns `null` for the root DIEA.
-    pub fn get_parent(&self) -> Option<&DIEAggregate> {
-        self.parent.as_deref()
-    }
-
-    /// Mirrors `DIEAggregate.getDeclParent()`, which returns `null` when this DIEA has no
-    /// `DW_AT_specification`/`DW_AT_abstract_origin`-style declaration parent.
-    pub fn get_decl_parent(&self) -> Option<&DIEAggregate> {
-        self.decl_parent.as_deref()
-    }
-
-    /// Mirrors `DIEAggregate.findAttributeInChildren(DWARFAttributeId, DWARFTag, Class)`,
-    /// specialized to `DWARFNumericAttribute.class`, which is the only instantiation
-    /// `DWARFSourceInfo` uses. Returns `null` (here `None`) when no child DIE carrying
-    /// `child_tag` has a `DWARFNumericAttribute` value for `attr_id`.
-    pub fn find_attribute_in_children(
-        &self,
-        attr_id: crate::format::dwarf::attribs::dwarf_attribute_id::DWARFAttributeId,
-        child_tag: DWARFTag,
-    ) -> Option<&DWARFNumericAttribute> {
-        self.children_numeric_attrs
-            .iter()
-            .find(|(id, tag, _)| *id == attr_id && *tag == child_tag)
-            .map(|(_, _, value)| value)
-    }
-}
-
 /// Placeholder for the unported Java type `DWARFFunction`, referenced by `DWARFFunctionFixup`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait DWARFFunction: Send + Sync {
-    fn read(&self, diea: &DIEAggregate) -> std::io::Result<Box<dyn DWARFFunction>>;
+    fn read(&self, diea: &crate::format::dwarf::die_aggregate::DIEAggregate<'_>) -> std::io::Result<Box<dyn DWARFFunction>>;
     fn get_program(&self) -> Box<dyn DWARFProgram>;
     fn get_descriptive_name(&self) -> String;
-    fn get_range_list(&self) -> Box<dyn DWARFRangeList>;
+    fn get_range_list(&self) -> DWARFRangeList;
     fn get_calling_convention_name(&self) -> String;
     fn get_body(&self) -> Box<dyn AddressSetView>;
     fn get_entry_pc(&self) -> i64;
@@ -4413,8 +4426,8 @@ pub trait DWARFFunction: Send + Sync {
     fn get_parameters(&self, include_storage_detail: bool) -> std::io::Result<Vec<Box<dyn Parameter>>>;
     fn get_parameter_definitions(&self) -> Vec<Box<dyn ParameterDefinition>>;
     fn commit_local_variable(&self, dvar: &dyn DWARFVariable);
-    fn get_func_body(&self, diea: &DIEAggregate, flatten_disjoint: bool) -> std::io::Result<Box<dyn AddressRange>>;
-    fn get_func_body_ranges(&self, diea: &DIEAggregate) -> std::io::Result<Box<dyn DWARFRangeList>>;
+    fn get_func_body(&self, diea: &crate::format::dwarf::die_aggregate::DIEAggregate<'_>, flatten_disjoint: bool) -> std::io::Result<Box<dyn AddressRange>>;
+    fn get_func_body_ranges(&self, diea: &crate::format::dwarf::die_aggregate::DIEAggregate<'_>) -> std::io::Result<DWARFRangeList>;
     fn sync_with_existing_ghidra_function(&self, create_if_missing: bool) -> bool;
     fn run_fixups(&self);
     fn update_function_signature(&self);
@@ -4422,8 +4435,67 @@ pub trait DWARFFunction: Send + Sync {
     fn to_string(&self) -> String;
 }
 
-/// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFRangeList`, referenced by `DWARFFunction`.
-pub trait DWARFRangeList: Send + Sync {}
+/// Placeholder for `ghidra.app.util.bin.format.dwarf.DWARFRangeList`, referenced by
+/// `DWARFFunction` and by
+/// [`DIEAggregate::get_range_list`](crate::format::dwarf::die_aggregate::DIEAggregate::get_range_list).
+/// `DWARFRangeList` is a concrete Java class (not an interface), so it is modeled as a struct
+/// rather than a trait object. The real class also knows how to read itself from `.debug_ranges` /
+/// `.debug_rnglists`; only the accessors over an already-built list are modeled here.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DWARFRangeList {
+    ranges: Vec<DWARFRange>,
+}
+
+impl DWARFRangeList {
+    /// Mirrors `DWARFRangeList(List<DWARFRange>)`.
+    pub fn new(ranges: Vec<DWARFRange>) -> Self {
+        DWARFRangeList { ranges }
+    }
+
+    /// Mirrors `DWARFRangeList.isEmpty()`.
+    pub fn is_empty(&self) -> bool {
+        self.ranges.is_empty()
+    }
+
+    /// Mirrors `DWARFRangeList.get(int)`, which throws `IndexOutOfBoundsException` where this
+    /// returns `None`.
+    pub fn get(&self, index: usize) -> Option<&DWARFRange> {
+        self.ranges.get(index)
+    }
+
+    /// Mirrors `DWARFRangeList.ranges()`.
+    pub fn ranges(&self) -> &[DWARFRange] {
+        &self.ranges
+    }
+
+    /// Mirrors `DWARFRangeList.getListCount()`.
+    pub fn get_list_count(&self) -> usize {
+        self.ranges.len()
+    }
+
+    /// Mirrors `DWARFRangeList.getFirst()`, which returns `null` for an empty list.
+    pub fn get_first(&self) -> Option<&DWARFRange> {
+        self.ranges.first()
+    }
+
+    /// Mirrors `DWARFRangeList.getLast()`, which returns `null` for an empty list.
+    pub fn get_last(&self) -> Option<&DWARFRange> {
+        self.ranges.last()
+    }
+
+    /// Mirrors `DWARFRangeList.getFlattenedRange()`, the span from the first range's start to the
+    /// last range's end, or `null` (here `None`) for an empty list.
+    pub fn get_flattened_range(&self) -> Option<DWARFRange> {
+        Some(DWARFRange::new(self.get_first()?.from(), self.get_last()?.to()))
+    }
+}
+
+impl std::fmt::Display for DWARFRangeList {
+    /// Mirrors `DWARFRangeList.toString()`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "DWARFRangeList [ranges={:?}]", self.ranges)
+    }
+}
 
 /// Placeholder for `ghidra.program.model.address.AddressSetView`, referenced by `DWARFFunction`.
 pub trait AddressSetView: Send + Sync {}
