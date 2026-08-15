@@ -747,6 +747,46 @@ impl LoadSpec {
     }
 }
 
+/// Placeholder for `ghidra.app.util.opinion.LoaderMap`, referenced by
+/// [`LoadSpecChooser`](crate::app::util::importer::load_spec_chooser::LoadSpecChooser) before the
+/// real class is ported. Java's version is a `TreeMap<Loader, Collection<LoadSpec>>` sorted by
+/// [`Loader::compare_to`](crate::app::util::opinion::loader::Loader::compare_to); entries here are
+/// kept sorted the same way on [`insert`](Self::insert) so
+/// [`values`](Self::values) iterates in the same order Java's `TreeMap.values()` would.
+pub struct LoaderMap {
+    entries: Vec<(Box<dyn crate::app::util::opinion::loader::Loader>, Vec<LoadSpec>)>,
+}
+
+impl LoaderMap {
+    /// An empty [`LoaderMap`], mirroring `new LoaderMap()`.
+    pub fn new() -> Self {
+        Self { entries: Vec::new() }
+    }
+
+    /// Associates `loader` with `load_specs`, mirroring `LoaderMap.put(Loader, Collection<LoadSpec>)`.
+    /// Keeps [`entries`](Self::entries) sorted by [`Loader::compare_to`], matching the `TreeMap`
+    /// key ordering the Java class inherits.
+    pub fn insert(
+        &mut self,
+        loader: Box<dyn crate::app::util::opinion::loader::Loader>,
+        load_specs: Vec<LoadSpec>,
+    ) {
+        self.entries.push((loader, load_specs));
+        self.entries.sort_by(|(a, _), (b, _)| a.compare_to(b.as_ref()));
+    }
+
+    /// The `LoadSpec` collections in `Loader` sort order, mirroring `LoaderMap.values()`.
+    pub fn values(&self) -> impl Iterator<Item = &Vec<LoadSpec>> {
+        self.entries.iter().map(|(_, load_specs)| load_specs)
+    }
+}
+
+impl Default for LoaderMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Placeholder for `ghidra.app.util.Option`, referenced by
 /// [`Loader`](crate::app::util::opinion::loader::Loader) before the real class is ported.
 /// `Loader` only ever passes lists of this type through as a parameter/return value.
