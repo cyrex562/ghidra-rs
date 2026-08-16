@@ -171,6 +171,28 @@ impl TypeList {
     }
 }
 
+/// Placeholder for the unported Java type `StringDataItem`, referenced by `StringIDItem`.
+/// Concrete stub: Java class, not interface. Only methods THIS type needs are included.
+/// Replace with the real port when available.
+#[derive(Debug, Clone)]
+pub struct StringDataItem {
+    string: String,
+}
+
+impl StringDataItem {
+    pub fn new(string: String) -> Self {
+        Self { string }
+    }
+
+    pub fn get_string(&self) -> String {
+        self.string.clone()
+    }
+
+    pub fn to_data_type(&self) -> Box<dyn DataType> {
+        unimplemented!("StringDataItem.to_data_type not yet ported")
+    }
+}
+
 /// Placeholder for the unported Java type `AnnotationsDirectoryItem`, referenced by `ClassDefItem`.
 /// Concrete stub: Java class, not interface. Only methods THIS type needs are included.
 /// Replace with the real port when available.

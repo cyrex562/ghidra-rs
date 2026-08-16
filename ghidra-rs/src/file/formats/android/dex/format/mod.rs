@@ -12,4 +12,5 @@ pub mod method_handle_type;
 pub mod modified_utf8;
 pub mod modifiers;
 pub mod prototypes_id_item;
+pub mod string_id_item;
 pub mod value_formats;
