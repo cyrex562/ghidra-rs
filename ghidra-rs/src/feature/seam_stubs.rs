@@ -2881,3 +2881,11 @@ pub trait IDFLookup: Send + Sync {}
 
 /// Placeholder for `VectorCompare` type.
 pub trait VectorCompare: Send + Sync {}
+
+/// Placeholder for the unported Java type `ResponseUpdate`, referenced by `QueryUpdate`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ResponseUpdate: Send + Sync {
+    fn save_xml(&self, fwrite: &dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> std::io::Result<()>;
+}
