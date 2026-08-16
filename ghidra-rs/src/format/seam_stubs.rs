@@ -3,7 +3,9 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
+use crate::util::msg::Msg;
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
 use crate::format::dwarf::dwarf_abbreviation::DWARFAbbreviation;
@@ -215,8 +217,17 @@ pub trait NTHeader: Send + Sync {
 pub trait FileHeader: Send + Sync {}
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.OptionalHeader`, referenced by
-/// [`NTHeader`] before the real class is ported.
-pub trait OptionalHeader: Send + Sync {}
+/// [`NTHeader`] before the real class is ported. Extended with the two accessors
+/// [`DebugDataDirectory`](crate::format::pe::debug_data_directory::DebugDataDirectory) needs
+/// (`getSizeOfImage()`/`getImageBase()`); `getDataDirectories()`/`getNumberOfRvaAndSizes()` are
+/// deliberately not added here since `DataDirectory` is a concrete-leaf-per-subtype seam, not a
+/// trait object -- see
+/// [`DebugDataDirectory::write_bytes`](crate::format::pe::debug_data_directory::DebugDataDirectory::write_bytes)
+/// for how that method avoids needing them.
+pub trait OptionalHeader: Send + Sync {
+    fn get_size_of_image(&self) -> i64;
+    fn get_image_base(&self) -> i64;
+}
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.ImageCor20Header`, referenced by
 /// [`COMDescriptorDataDirectory`](crate::format::pe::com_descriptor_data_directory::COMDescriptorDataDirectory)
@@ -5645,5 +5656,484 @@ pub trait CliStreamMetadata: Send + Sync {
     fn get_table_index_data_type(&self, table: &crate::format::pe::cli::tables::cli_type_table::CliTypeTable) -> Box<dyn crate::program::model::data::data_type::DataType>;
     fn markup(&self, program: &dyn Program, is_binary: bool, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog, nt_header: &dyn NTHeader) -> std::io::Result<()>;
     fn to_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugDirectory`, referenced by
+/// [`DebugDataDirectory`](crate::format::pe::debug_data_directory::DebugDataDirectory) before the
+/// real class is ported. `DebugDirectory` is a concrete Java class (not an interface), so it is
+/// modeled here as a concrete struct rather than a trait object (a separate, minimal `dyn
+/// DebugDirectory` trait already exists above for [`DebugCOFFSymbolsHeader`]'s narrower needs --
+/// this type is unrelated to that one and does not implement it, since nothing here needs that
+/// interop). `to_data_type` always errors, matching the placeholder convention set by
+/// [`ImageCor20Header::to_data_type`] above, since real `StructureDataType` construction needs the
+/// not-yet-implementable [`StructureDataType`](crate::program::model::data::structure_data_type)
+/// trait.
+#[derive(Debug, Clone)]
+pub struct DebugDirectoryEntry {
+    characteristics: i32,
+    time_date_stamp: i32,
+    major_version: i16,
+    minor_version: i16,
+    r#type: i32,
+    size_of_data: i32,
+    address_of_raw_data: i32,
+    pointer_to_raw_data: i32,
+    description: Option<String>,
+    blob_bytes: Option<Vec<u8>>,
+    index: u64,
+}
+
+impl DebugDirectoryEntry {
+    /// Mirrors `DebugDirectory.NAME`.
+    pub const NAME: &'static str = "IMAGE_DEBUG_DIRECTORY";
+    /// Mirrors `DebugDirectory.IMAGE_SIZEOF_DEBUG_DIRECTORY`.
+    pub const IMAGE_SIZEOF_DEBUG_DIRECTORY: i32 = 28;
+
+    /// Port of `DebugDirectory(BinaryReader, long, OffsetValidator)`. Reads by explicit index
+    /// rather than saving/restoring the reader's pointer index around a `setPointerIndex` call,
+    /// since [`BinaryReader`]'s indexed reads don't mutate reader state.
+    pub fn new(
+        reader: &dyn BinaryReader,
+        index: u64,
+        validator: &dyn crate::format::pe::offset_validator::OffsetValidator,
+    ) -> std::io::Result<Self> {
+        let characteristics = reader.read_int(index)?;
+        let time_date_stamp = reader.read_int(index + 4)?;
+        let major_version = reader.read_short(index + 8)?;
+        let minor_version = reader.read_short(index + 10)?;
+        let r#type = reader.read_int(index + 12)?;
+        let mut size_of_data = reader.read_int(index + 16)?;
+        let address_of_raw_data = reader.read_int(index + 20)?;
+        let pointer_to_raw_data = reader.read_int(index + 24)?;
+
+        if !(0..=20).contains(&r#type) || size_of_data < 0 {
+            Msg::error("DebugDirectory", &"Invalid DebugDirectory");
+            return Ok(DebugDirectoryEntry {
+                characteristics,
+                time_date_stamp,
+                major_version,
+                minor_version,
+                r#type,
+                size_of_data: 0,
+                address_of_raw_data,
+                pointer_to_raw_data,
+                description: None,
+                blob_bytes: None,
+                index: 0,
+            });
+        }
+
+        let mut blob_bytes = None;
+        if size_of_data > 0 {
+            // Java sums as `int` (wrapping on overflow) before sign-extending to `long`.
+            let end = (pointer_to_raw_data.wrapping_add(size_of_data).wrapping_sub(1)) as i64 as u64;
+            if !validator.check_pointer(end) {
+                Msg::error(
+                    "DebugDirectory",
+                    &format!("Invalid debug pointerToRawData + sizeOfData: {:#x}", end),
+                );
+                return Ok(DebugDirectoryEntry {
+                    characteristics,
+                    time_date_stamp,
+                    major_version,
+                    minor_version,
+                    r#type,
+                    size_of_data: 0,
+                    address_of_raw_data,
+                    pointer_to_raw_data,
+                    description: None,
+                    blob_bytes: None,
+                    index: 0,
+                });
+            }
+            blob_bytes = Some(
+                reader.read_byte_array(pointer_to_raw_data as i64 as u64, size_of_data as usize)?,
+            );
+        }
+
+        Ok(DebugDirectoryEntry {
+            characteristics,
+            time_date_stamp,
+            major_version,
+            minor_version,
+            r#type,
+            size_of_data,
+            address_of_raw_data,
+            pointer_to_raw_data,
+            description: None,
+            blob_bytes,
+            index,
+        })
+    }
+
+    pub fn get_characteristics(&self) -> i32 {
+        self.characteristics
+    }
+
+    pub fn get_time_date_stamp(&self) -> i32 {
+        self.time_date_stamp
+    }
+
+    pub fn get_major_version(&self) -> i32 {
+        self.major_version as i32
+    }
+
+    pub fn get_minor_version(&self) -> i32 {
+        self.minor_version as i32
+    }
+
+    pub fn get_type(&self) -> i32 {
+        self.r#type
+    }
+
+    pub fn get_size_of_data(&self) -> i32 {
+        self.size_of_data
+    }
+
+    pub fn get_address_of_raw_data(&self) -> i32 {
+        self.address_of_raw_data
+    }
+
+    pub fn get_pointer_to_raw_data(&self) -> i32 {
+        self.pointer_to_raw_data
+    }
+
+    pub fn get_description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+
+    pub fn set_description(&mut self, desc: impl Into<String>) {
+        self.description = Some(desc.into());
+    }
+
+    /// Placeholder for `DebugDirectory.toDataType()`; see the struct-level doc comment.
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DebugDirectoryEntry::to_data_type is not yet ported",
+        ))
+    }
+
+    /// Port of `DebugDirectory.writeHeader(RandomAccessFile, DataConverter)`.
+    pub fn write_header(
+        &self,
+        raf: &mut crate::app::util::bin::ghidra_random_access_file::GhidraRandomAccessFile,
+        dc: &dyn crate::util::data_converter::DataConverter,
+    ) -> std::io::Result<()> {
+        raf.seek(self.index as i64)?;
+        raf.write(&dc.int_to_bytes(self.characteristics))?;
+        raf.write(&dc.int_to_bytes(self.time_date_stamp))?;
+        raf.write(&dc.short_to_bytes(self.major_version))?;
+        raf.write(&dc.short_to_bytes(self.minor_version))?;
+        raf.write(&dc.int_to_bytes(self.r#type))?;
+        raf.write(&dc.int_to_bytes(self.size_of_data))?;
+        raf.write(&dc.int_to_bytes(self.address_of_raw_data))?;
+        raf.write(&dc.int_to_bytes(self.pointer_to_raw_data))?;
+        Ok(())
+    }
+
+    /// Port of `DebugDirectory.toBytes(DataConverter)`.
+    pub fn to_bytes(&self, _dc: &dyn crate::util::data_converter::DataConverter) -> Vec<u8> {
+        self.blob_bytes.clone().unwrap_or_default()
+    }
+
+    /// Port of the package-private `DebugDirectory.updatePointers(int, int)`.
+    pub fn update_pointers(&mut self, offset: i32, post_offset: i32) {
+        Msg::debug(
+            "DebugDirectory",
+            &format!(
+                "{}+{} {}+{}",
+                self.index, offset, self.pointer_to_raw_data, post_offset
+            ),
+        );
+        self.index = (self.index as i64 + offset as i64) as u64;
+        self.pointer_to_raw_data += post_offset;
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugMisc`, referenced by
+/// [`DebugDirectoryParser`] before the real class is ported. `DebugMisc` is a concrete Java class,
+/// so it is modeled here as a concrete struct.
+#[derive(Debug, Clone)]
+pub struct DebugMiscEntry {
+    debug_dir: DebugDirectoryEntry,
+    data_type: i32,
+    length: i32,
+    unicode: bool,
+    reserved: Vec<u8>,
+    actual_data: Option<String>,
+}
+
+impl DebugMiscEntry {
+    const IMAGE_DEBUG_MISC_EXENAME: i32 = 1;
+
+    /// Port of `DebugMisc(BinaryReader, DebugDirectory, OffsetValidator)`.
+    pub fn new(
+        reader: &dyn BinaryReader,
+        debug_dir: DebugDirectoryEntry,
+        validator: &dyn crate::format::pe::offset_validator::OffsetValidator,
+    ) -> std::io::Result<Self> {
+        // Java widens via `Integer.toUnsignedLong`, unlike the sign-extension used elsewhere.
+        let index = debug_dir.pointer_to_raw_data as u32 as u64;
+        if !validator.check_pointer(index) {
+            Msg::error("DebugMisc", &format!("Invalid file index {:x}", index));
+            return Ok(DebugMiscEntry {
+                debug_dir,
+                data_type: 0,
+                length: 0,
+                unicode: false,
+                reserved: Vec::new(),
+                actual_data: None,
+            });
+        }
+
+        let data_type = reader.read_int(index)?;
+        let mut length = reader.read_int(index + 4)?;
+        let unicode = reader.read_byte(index + 8)? == 1;
+        let reserved = reader.read_byte_array(index + 9, 3)?;
+        let data_start = index + 12;
+
+        let actual_data;
+        if length > 0 {
+            actual_data = Some(if unicode {
+                reader.read_unicode_string_fixed(data_start, length as usize)?
+            } else {
+                reader.read_ascii_string(data_start)?
+            });
+        } else if length == 0 && !unicode {
+            let s = reader.read_ascii_string(data_start)?;
+            // NB: should be a multiple of 4 per winnt.h; 13 = len(start of struct) + null.
+            let mut computed = (((s.len() + 13) as f64) / 4.0).ceil() as i32 * 4;
+            if computed > DebugDirectoryEntry::IMAGE_SIZEOF_DEBUG_DIRECTORY {
+                computed = DebugDirectoryEntry::IMAGE_SIZEOF_DEBUG_DIRECTORY;
+            }
+            length = computed;
+            Msg::warn(
+                "DebugMisc",
+                &format!("Zero length structure - defaulting to {:x}", length),
+            );
+            actual_data = Some(s);
+        } else {
+            Msg::error("DebugMisc", &format!("Bad structure length {:x}", length));
+            actual_data = None;
+        }
+
+        Ok(DebugMiscEntry { debug_dir, data_type, length, unicode, reserved, actual_data })
+    }
+
+    pub fn get_data_type(&self) -> i32 {
+        self.data_type
+    }
+
+    pub fn get_length(&self) -> i32 {
+        self.length
+    }
+
+    pub fn is_unicode(&self) -> bool {
+        self.unicode
+    }
+
+    pub fn get_reserved(&self) -> &[u8] {
+        &self.reserved
+    }
+
+    pub fn get_actual_data(&self) -> Option<&str> {
+        self.actual_data.as_deref()
+    }
+
+    pub fn get_debug_directory(&self) -> &DebugDirectoryEntry {
+        &self.debug_dir
+    }
+
+    /// Placeholder for `DebugMisc.toDataType()`; see [`DebugDirectoryEntry::to_data_type`].
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DebugMiscEntry::to_data_type is not yet ported",
+        ))
+    }
+}
+
+impl std::fmt::Display for DebugMiscEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.data_type == Self::IMAGE_DEBUG_MISC_EXENAME {
+            write!(f, "Misc Debug Information: {}", self.actual_data.as_deref().unwrap_or(""))
+        } else {
+            write!(f, "Unknown Misc Debug Information Type: {}", self.data_type)
+        }
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugCodeView`, referenced by
+/// [`DebugDirectoryParser`] before the real class is ported. `DebugCodeView` is a concrete Java
+/// class, so it is modeled here as a concrete struct. `PdbInfoCodeView.isMatch`/`.read` and
+/// `PdbInfoDotNet.isMatch`/`.read` are static factory methods that aren't modeled by the
+/// [`PdbInfoCodeView`]/[`PdbInfoDotNet`] placeholder traits above (only their instance methods
+/// are), so this port never detects PDB info and `get_pdb_info`/`get_dot_net_pdb_info` always
+/// return `None`. `getSymbolTable()`/the
+/// [`DebugCodeViewSymbolTable`](crate::format::pe::debug::debug_code_view_symbol_table::DebugCodeViewSymbolTable)
+/// detection it would need are intentionally not modeled either: nothing in `DebugDataDirectory`
+/// (the only referencer so far) calls it, and `DebugCodeViewSymbolTable` transitively holds
+/// `Box<dyn DebugSymbol>` (via `OMFGlobal`), which isn't `Send + Sync` yet -- embedding it here
+/// would make this struct (and therefore `DebugDataDirectory`, which must stay `Send + Sync` to
+/// implement `PeMarkupable`) not `Send + Sync` either.
+pub struct DebugCodeViewEntry {
+    debug_dir: DebugDirectoryEntry,
+}
+
+impl DebugCodeViewEntry {
+    /// Port of `DebugCodeView(BinaryReader, DebugDirectory, OffsetValidator)`, minus the
+    /// `DebugCodeViewSymbolTable` detection described in the struct-level doc comment.
+    pub fn new(
+        _reader: &dyn BinaryReader,
+        debug_dir: DebugDirectoryEntry,
+        validator: &dyn crate::format::pe::offset_validator::OffsetValidator,
+    ) -> std::io::Result<Self> {
+        let ptr_u64 = debug_dir.pointer_to_raw_data as i64 as u64;
+        if !validator.check_pointer(ptr_u64) {
+            Msg::error("DebugCodeView", &format!("Invalid pointer {:x}", ptr_u64));
+        }
+        Ok(DebugCodeViewEntry { debug_dir })
+    }
+
+    pub fn get_debug_directory(&self) -> &DebugDirectoryEntry {
+        &self.debug_dir
+    }
+
+    /// Always `None`; see the struct-level doc comment.
+    pub fn get_pdb_info(&self) -> Option<&dyn PdbInfoCodeView> {
+        None
+    }
+
+    /// Always `None`; see the struct-level doc comment.
+    pub fn get_dot_net_pdb_info(&self) -> Option<&dyn PdbInfoDotNet> {
+        None
+    }
+
+    /// Placeholder for `DebugCodeView.toDataType()`; see [`DebugDirectoryEntry::to_data_type`].
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "DebugCodeViewEntry::to_data_type is not yet ported",
+        ))
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.debug.DebugDirectoryParser`, referenced by
+/// [`DebugDataDirectory`](crate::format::pe::debug_data_directory::DebugDataDirectory) before the
+/// real class is ported. `DebugDirectoryParser` is a concrete Java class, so it is modeled here as
+/// a concrete struct. Parses the `IMAGE_DEBUG_DIRECTORY` table faithfully and, for the two
+/// sub-formats `DebugDataDirectory` actually consults (MISC, CODEVIEW), parses the associated
+/// record; other recognized debug types (COFF, FIXUP, ...) only get their `description` tagged
+/// (matching what the Java `switch` does for them), since nothing in the currently-ported tree
+/// reads their parsed form yet and eagerly wiring up
+/// [`DebugCOFFSymbolsHeader`](crate::format::pe::debug::debug_coff_symbols_header::DebugCOFFSymbolsHeader)/`DebugFixup`
+/// here would be scope creep for a placeholder.
+pub struct DebugDirectoryParser {
+    debug_format_list: Vec<DebugDirectoryEntry>,
+    misc_debug: Option<DebugMiscEntry>,
+    code_view_debug: Option<DebugCodeViewEntry>,
+}
+
+struct DebugDirectoryParserValidator<'a> {
+    reader: &'a dyn BinaryReader,
+    size_of_image: i64,
+}
+
+impl<'a> crate::format::pe::offset_validator::OffsetValidator for DebugDirectoryParserValidator<'a> {
+    fn check_pointer(&self, ptr: u64) -> bool {
+        ptr > 0 && self.reader.length().map(|len| ptr < len).unwrap_or(false)
+    }
+
+    fn check_rva(&self, rva: u64) -> bool {
+        rva <= (self.size_of_image.max(0) as u64)
+    }
+}
+
+impl DebugDirectoryParser {
+    pub const IMAGE_DEBUG_TYPE_UNKNOWN: i32 = 0;
+    pub const IMAGE_DEBUG_TYPE_COFF: i32 = 1;
+    pub const IMAGE_DEBUG_TYPE_CODEVIEW: i32 = 2;
+    pub const IMAGE_DEBUG_TYPE_FPO: i32 = 3;
+    pub const IMAGE_DEBUG_TYPE_MISC: i32 = 4;
+    pub const IMAGE_DEBUG_TYPE_EXCEPTION: i32 = 5;
+    pub const IMAGE_DEBUG_TYPE_FIXUP: i32 = 6;
+    pub const IMAGE_DEBUG_TYPE_OMAP_TO_SRC: i32 = 7;
+    pub const IMAGE_DEBUG_TYPE_OMAP_FROM_SRC: i32 = 8;
+    pub const IMAGE_DEBUG_TYPE_BORLAND: i32 = 9;
+    pub const IMAGE_DEBUG_TYPE_RESERVED10: i32 = 10;
+    pub const IMAGE_DEBUG_TYPE_CLSID: i32 = 11;
+
+    /// Port of `DebugDirectoryParser(BinaryReader, long, int, long)`.
+    pub fn new(
+        reader: &dyn BinaryReader,
+        ptr: u64,
+        size: i32,
+        size_of_image: i64,
+    ) -> std::io::Result<Self> {
+        let validator = DebugDirectoryParserValidator { reader, size_of_image };
+        let debug_formats_count = (size / DebugDirectoryEntry::IMAGE_SIZEOF_DEBUG_DIRECTORY).max(0);
+
+        let mut debug_format_list = Vec::new();
+        let mut misc_debug = None;
+        let mut code_view_debug = None;
+        let mut ptr = ptr;
+
+        for _ in 0..debug_formats_count {
+            let mut debug_dir = DebugDirectoryEntry::new(reader, ptr, &validator)?;
+            if debug_dir.get_size_of_data() == 0 {
+                break;
+            }
+            ptr += DebugDirectoryEntry::IMAGE_SIZEOF_DEBUG_DIRECTORY as u64;
+
+            match debug_dir.get_type() {
+                Self::IMAGE_DEBUG_TYPE_CLSID => debug_dir.set_description("CLSID"),
+                Self::IMAGE_DEBUG_TYPE_RESERVED10 => debug_dir.set_description("Reserved"),
+                Self::IMAGE_DEBUG_TYPE_BORLAND => debug_dir.set_description("Borland"),
+                Self::IMAGE_DEBUG_TYPE_OMAP_FROM_SRC => debug_dir.set_description("OMAPfromSrc"),
+                Self::IMAGE_DEBUG_TYPE_OMAP_TO_SRC => debug_dir.set_description("OMAPtoSrc"),
+                Self::IMAGE_DEBUG_TYPE_FIXUP => debug_dir.set_description("Fixup"),
+                Self::IMAGE_DEBUG_TYPE_EXCEPTION => debug_dir.set_description("Exception"),
+                Self::IMAGE_DEBUG_TYPE_MISC => {
+                    debug_dir.set_description("Misc");
+                    misc_debug = Some(DebugMiscEntry::new(reader, debug_dir.clone(), &validator)?);
+                }
+                Self::IMAGE_DEBUG_TYPE_FPO => debug_dir.set_description("FPO"),
+                Self::IMAGE_DEBUG_TYPE_CODEVIEW => {
+                    debug_dir.set_description("CodeView");
+                    code_view_debug =
+                        Some(DebugCodeViewEntry::new(reader, debug_dir.clone(), &validator)?);
+                }
+                Self::IMAGE_DEBUG_TYPE_COFF => debug_dir.set_description("COFF"),
+                Self::IMAGE_DEBUG_TYPE_UNKNOWN => debug_dir.set_description("Unknown"),
+                other => debug_dir.set_description(format!("DebugType-{other}")),
+            }
+            debug_format_list.push(debug_dir);
+        }
+
+        Ok(DebugDirectoryParser { debug_format_list, misc_debug, code_view_debug })
+    }
+
+    pub fn get_debug_directories(&self) -> &[DebugDirectoryEntry] {
+        &self.debug_format_list
+    }
+
+    pub fn get_debug_directories_mut(&mut self) -> &mut [DebugDirectoryEntry] {
+        &mut self.debug_format_list
+    }
+
+    pub fn get_debug_misc(&self) -> Option<&DebugMiscEntry> {
+        self.misc_debug.as_ref()
+    }
+
+    pub fn get_debug_code_view(&self) -> Option<&DebugCodeViewEntry> {
+        self.code_view_debug.as_ref()
+    }
 }
 
