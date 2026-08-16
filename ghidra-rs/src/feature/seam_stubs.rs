@@ -2889,3 +2889,11 @@ pub trait ResponseUpdate: Send + Sync {
     fn save_xml(&self, fwrite: &dyn std::io::Write) -> std::io::Result<()>;
     fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> std::io::Result<()>;
 }
+
+/// Placeholder for the unported Java type `ResponseVectorId`, referenced by `QueryVectorId`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ResponseVectorId: Send + Sync {
+    fn save_xml(&self, fwrite: &dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> std::io::Result<()>;
+}
