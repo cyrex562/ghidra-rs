@@ -2775,6 +2775,13 @@ pub trait ResponsePassword: Send + Sync {
     fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
 }
 
+/// Placeholder for `ResponseInsert` type. Response from an insert-request operation.
+pub trait ResponseInsert: Send + Sync {
+    fn merge_results(&self, subresponse: &dyn QueryResponseRecord);
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
 /// Placeholder for `LSHVectorFactory` type. Factory for creating and restoring LSH vectors.
 pub trait LSHVectorFactory: Send + Sync {
     fn build_zero_vector(&self) -> Box<dyn LSHVector>;

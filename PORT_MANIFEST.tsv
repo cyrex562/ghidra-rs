@@ -1748,7 +1748,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/FunctionEntry.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/FunctionStaging.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InsertOptionalValues.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InsertRequest.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InsertRequest.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InstallCategoryRequest.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InstallMetadataRequest.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InstallTagRequest.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
