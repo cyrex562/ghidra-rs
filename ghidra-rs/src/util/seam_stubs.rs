@@ -1263,3 +1263,32 @@ pub trait ChangeListener: Send + Sync {}
 
 /// Placeholder for `ghidra.util.classfinder.ClassFileInfo`, referenced by `ClassSearcher`.
 pub trait ClassFileInfo: Send + Sync {}
+
+/// Placeholder for `ghidra.util.state.ContextState`, needed by
+/// [`crate::util::state::function_analyzer::FunctionAnalyzer`].
+///
+/// The real `ContextState` is a concrete class (not an interface) representing the varnode
+/// state at a point in a function walk, so this is a marker struct rather than a `dyn` trait.
+/// `FunctionAnalyzer` callbacks only ever receive a `ContextState` to pass along to the
+/// implementor's own bookkeeping; the real port carries its full get/store/branch surface.
+pub struct ContextState;
+
+/// Placeholder for `ghidra.util.state.ResultsState`, needed by
+/// [`crate::util::state::function_analyzer::FunctionAnalyzer`].
+///
+/// The real `ResultsState` is a concrete class (not an interface) tracking the previous
+/// `ContextState`s leading up to the current one during a function walk, so this is a marker
+/// struct rather than a `dyn` trait. `FunctionAnalyzer` callbacks only ever receive a
+/// `ResultsState` to pass along to the implementor's own bookkeeping; the real port carries its
+/// full history/query surface.
+pub struct ResultsState;
+
+/// Placeholder for `ghidra.util.state.VarnodeOperation`, needed by
+/// [`crate::util::state::function_analyzer::FunctionAnalyzer`].
+///
+/// The real `VarnodeOperation` is a concrete class extending `Varnode` (not an interface)
+/// representing a computed expression (e.g. stack pointer plus an offset), so this is a marker
+/// struct rather than a `dyn` trait. `FunctionAnalyzer::stack_reference_computed` only ever
+/// receives one to pass along to the implementor's own bookkeeping; the real port carries the
+/// wrapped `PcodeOp` and its input values.
+pub struct VarnodeOperation;
