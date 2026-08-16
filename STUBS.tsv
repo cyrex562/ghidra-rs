@@ -998,7 +998,11 @@ ts	stub_class	referenced_by
 2026-08-16T05:58:54.173912+00:00	GThemeValueMap	ApplicationThemeDefaults
 2026-08-16T05:58:54.174161+00:00	LafType	ApplicationThemeDefaults
 2026-08-16T06:16:47Z	ThemeEvent	ThemeListener
-2026-08-16T06:21:02Z	SwiftDemangler	SwiftNode
 2026-08-16T06:21:02Z	DemangledUnknown	SwiftNode
 2026-08-16T06:41:44Z	SwiftNativeDemangler	SwiftDemangledTree
 2026-08-16T06:41:44Z	SwiftUnsupportedNode	SwiftDemangledTree
+2026-08-16T06:54:21Z	SwiftSourceLanguage	SwiftDemangler
+2026-08-16T06:54:21Z	SwiftDataTypeUtils	SwiftDemangler
+2026-08-16T06:54:21Z	MessageLog	SwiftDemangler
+2026-08-16T06:54:21Z	SwiftTypeMetadata	SwiftDemangler
+2026-08-16T06:54:21Z	DemangledLabel	SwiftDemangler

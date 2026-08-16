@@ -7,7 +7,8 @@ use std::rc::{Rc, Weak};
 
 use crate::demangler::demangle_exception::DemangledException;
 use crate::demangler::demangled::Demangled;
-use crate::demangler::seam_stubs::{DemangledUnknown, SwiftDemangler};
+use crate::demangler::seam_stubs::DemangledUnknown;
+use crate::demangler::swift::swift_demangler::SwiftDemangler;
 use crate::demangler::swift::swift_demangled_node_kind::SwiftDemangledNodeKind;
 
 /// The properties of a [`SwiftNode`].
@@ -84,7 +85,7 @@ pub trait SwiftNode {
     /// return, which several subclasses use for nodes that contribute nothing.
     fn demangle(
         &self,
-        demangler: &dyn SwiftDemangler,
+        demangler: &SwiftDemangler,
     ) -> Result<Option<Box<dyn Demangled>>, DemangledException>;
 }
 
@@ -259,7 +260,7 @@ impl SwiftNodeBase {
     /// nothing, or if demangling the first child failed.
     pub fn demangle_first_child(
         &self,
-        demangler: &dyn SwiftDemangler,
+        demangler: &SwiftDemangler,
     ) -> Result<Box<dyn Demangled>, DemangledException> {
         let children: Vec<Rc<dyn SwiftNode>> = self.children.borrow().clone();
         let mut first = None;
@@ -363,7 +364,7 @@ impl SwiftNode for SwiftNodeBaseNever {
 
     fn demangle(
         &self,
-        _demangler: &dyn SwiftDemangler,
+        _demangler: &SwiftDemangler,
     ) -> Result<Option<Box<dyn Demangled>>, DemangledException> {
         match *self {}
     }
@@ -407,24 +408,12 @@ mod tests {
 
         fn demangle(
             &self,
-            demangler: &dyn SwiftDemangler,
+            demangler: &SwiftDemangler,
         ) -> Result<Option<Box<dyn Demangled>>, DemangledException> {
             if self.base.children().is_empty() {
                 return Ok(Some(Box::new(self.base.unknown())));
             }
             self.base.demangle_first_child(demangler).map(Some)
-        }
-    }
-
-    struct TestDemangler;
-
-    impl SwiftDemangler for TestDemangler {
-        fn get_demangled(
-            &self,
-            _mangled: &str,
-            _options: &crate::demangler::swift::swift_demangler_options::SwiftDemanglerOptions,
-        ) -> Result<Option<Box<dyn Demangled>>, DemangledException> {
-            Ok(None)
         }
     }
 
@@ -542,7 +531,7 @@ mod tests {
 
         let demangled = structure
             .base()
-            .demangle_first_child(&TestDemangler)
+            .demangle_first_child(&SwiftDemangler::new())
             .expect("first child demangles");
 
         // The `Module` child is first, so it -- not `Identifier` -- produced the result.
@@ -554,7 +543,7 @@ mod tests {
     #[test]
     fn demangle_first_child_fails_without_children() {
         let leaf = TestNode::new(SwiftDemangledNodeKind::Identifier, Some("Foo"), None, 0);
-        let error = match leaf.base().demangle_first_child(&TestDemangler) {
+        let error = match leaf.base().demangle_first_child(&SwiftDemangler::new()) {
             Ok(_) => panic!("expected a `No children` failure"),
             Err(error) => error,
         };
