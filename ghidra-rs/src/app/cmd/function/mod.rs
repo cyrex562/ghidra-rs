@@ -1,3 +1,4 @@
+pub mod add_memory_parameter_command;
 pub mod add_parameter_command;
 pub mod create_function_cmd;
 pub mod set_function_name_cmd;
@@ -7,6 +8,7 @@ pub mod set_function_var_args_command;
 pub mod set_return_data_type_cmd;
 pub mod set_variable_comment_cmd;
 
+pub use add_memory_parameter_command::AddMemoryParameterCommand;
 pub use add_parameter_command::{AddParameterCommand, AddParameterCommandBase};
 pub use create_function_cmd::CreateFunctionCmd;
 pub use set_function_name_cmd::SetFunctionNameCmd;
