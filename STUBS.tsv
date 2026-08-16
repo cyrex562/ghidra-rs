@@ -989,3 +989,9 @@ ts	stub_class	referenced_by
 2026-08-16T05:30:00.000000+00:00	MicrosoftDemanglerUtil	MicrosoftDemangler
 2026-08-16T05:30:00.000000+00:00	DemangledDataType	MicrosoftDemangler
 2026-08-16T05:38:41.004463+00:00	GraphDisplayOptions	GraphDisplay
+2026-08-16T05:52:09.326225+00:00	FGVertex	FGEdge
+2026-08-16T05:52:09.326551+00:00	VisualEdge	FGEdge
+2026-08-16T05:52:09.326722+00:00	FlowType	FGEdge
+2026-08-16T05:52:09.326800+00:00	FGController	FGEdge
+2026-08-16T05:52:09.326900+00:00	FunctionGraphVertexAttributes	FGEdge
+2026-08-16T05:52:09.327000+00:00	GroupHistoryInfo	FGEdge

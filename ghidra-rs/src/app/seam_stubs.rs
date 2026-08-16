@@ -3078,3 +3078,70 @@ pub trait CaptureFunctionDataTypesCmd: Send + Sync {
     /// Mirrors `CaptureFunctionDataTypesCmd.taskCompleted()`.
     fn task_completed(&self);
 }
+
+/// Placeholder for the unported Java type `FGController`, referenced by `FGVertex`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait FGController: Send + Sync {}
+
+/// Placeholder for the unported Java type `FunctionGraphVertexAttributes`, referenced by `FGVertex`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait FunctionGraphVertexAttributes: Send + Sync {}
+
+/// Placeholder for the unported Java type `GroupHistoryInfo`, referenced by `FGVertex`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait GroupHistoryInfo: Send + Sync {}
+
+/// Placeholder for the unported Java type `FGVertex`, referenced by `FGEdge`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait FGVertex: Send + Sync {
+    fn clone_vertex(&self, new_controller: &dyn FGController) -> Box<dyn FGVertex>;
+    fn write_settings(&self, settings: &dyn FunctionGraphVertexAttributes);
+    fn read_settings(&self, settings: &dyn FunctionGraphVertexAttributes);
+    fn restore_color(&self, color: &dyn crate::framework::seam_stubs::Color);
+    fn get_user_defined_color(&self) -> Box<dyn crate::framework::seam_stubs::Color>;
+    fn get_vertex_type(&self) -> crate::app::plugin::core::functiongraph::graph::fg_vertex_type::FgVertexType;
+    fn set_vertex_type(&self, vertex_type: crate::app::plugin::core::functiongraph::graph::fg_vertex_type::FgVertexType);
+    fn get_vertex_address(&self) -> Box<crate::program::model::address::Address>;
+    fn is_entry(&self) -> bool;
+    fn get_flow_type(&self) -> Box<dyn crate::program::seam_stubs::FlowType>;
+    fn get_addresses(&self) -> Box<dyn crate::program::model::address::AddressSetView>;
+    fn get_program(&self) -> Box<dyn crate::program::model::listing::Program>;
+    fn get_listing_model(&self, address: &crate::program::model::address::Address) -> Box<dyn crate::app::util::viewer::listingpanel::listing_model::ListingModel>;
+    fn get_default_background_color(&self) -> Box<dyn crate::framework::seam_stubs::Color>;
+    fn get_background_color(&self) -> Box<dyn crate::framework::seam_stubs::Color>;
+    fn get_selection_color(&self) -> Box<dyn crate::framework::seam_stubs::Color>;
+    fn set_background_color(&self, color: &dyn crate::framework::seam_stubs::Color);
+    fn clear_color(&self);
+    fn update_group_association_status(&self, group_info: &dyn GroupHistoryInfo);
+    fn get_group_info(&self) -> Box<dyn GroupHistoryInfo>;
+    fn is_uncollapsed_group_member(&self) -> bool;
+    fn get_title(&self) -> String;
+    fn get_tool_tip_text(&self, event: &dyn crate::docking::seam_stubs::MouseEvent) -> String;
+    fn get_tool_tip_component_for_edge(&self, edge: &dyn std::any::Any) -> Box<dyn std::any::Any>;
+    fn get_tool_tip_component_for_vertex(&self) -> Box<dyn std::any::Any>;
+    fn is_default_background_color(&self) -> bool;
+    fn get_bounds(&self) -> Box<dyn std::any::Any>;
+    fn contains_program_location(&self, location: &dyn crate::program::util::program_location::ProgramLocation) -> bool;
+    fn contains_address(&self, address: &crate::program::model::address::Address) -> bool;
+    fn set_program_location(&self, location: &dyn crate::program::util::program_location::ProgramLocation);
+    fn set_program_selection(&self, selection: &dyn crate::util::seam_stubs::ProgramSelection);
+    fn get_program_selection(&self) -> Box<dyn crate::util::seam_stubs::ProgramSelection>;
+    fn get_text_selection(&self) -> String;
+    fn set_program_highlight(&self, highlight: &dyn crate::util::seam_stubs::ProgramSelection);
+    fn get_program_location(&self) -> Box<dyn crate::program::util::program_location::ProgramLocation>;
+    fn get_cursor_bounds(&self) -> Box<dyn std::any::Any>;
+    fn edit_label(&self, component: &dyn std::any::Any);
+    fn is_header_click(&self, clicked_component: &dyn std::any::Any) -> bool;
+    fn is_full_screen_mode(&self) -> bool;
+    fn set_full_screen_mode(&self, full_screen: bool);
+    fn get_maximized_view_component(&self) -> Box<dyn std::any::Any>;
+    fn refresh_model(&self);
+    fn refresh_display(&self);
+    fn refresh_display_for_address(&self, address: &crate::program::model::address::Address);
+    fn set_showing(&self, is_showing: bool);
+    fn dispose(&self);
+}

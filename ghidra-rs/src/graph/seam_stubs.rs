@@ -66,3 +66,22 @@ impl<V: Clone + PartialEq, E: GEdge<V> + Clone> GraphNavigatorSeam<V, E> for Bot
 /// API level) that callers should pass a timeout-bounded monitor for large graphs, so this stub
 /// declares no members beyond the `TaskMonitor` supertrait bound.
 pub trait TimeoutTaskMonitorSeam: TaskMonitor {}
+
+/// Placeholder for the unported Java type `VisualEdge`, referenced by `FGEdge`.
+/// VisualEdge is generic over vertex and edge types in Java; here we use `any::Any` for those.
+/// This is a partial stub; replace with the real port when available.
+pub trait VisualEdge: Send + Sync {
+    fn set_selected(&self, selected: bool);
+    fn is_selected(&self) -> bool;
+    fn set_in_hovered_vertex_path(&self, in_path: bool);
+    fn is_in_hovered_vertex_path(&self) -> bool;
+    fn set_in_focused_vertex_path(&self, in_path: bool);
+    fn is_in_focused_vertex_path(&self) -> bool;
+    fn get_articulation_points(&self) -> Vec<Box<dyn std::any::Any>>;
+    fn set_articulation_points(&self, points: Vec<Box<dyn std::any::Any>>);
+    fn clone_edge(&self, start: &dyn std::any::Any, end: &dyn std::any::Any) -> Box<dyn VisualEdge>;
+    fn set_emphasis(&self, emphasis_level: f64);
+    fn get_emphasis(&self) -> f64;
+    fn set_alpha(&self, alpha: f64);
+    fn get_alpha(&self) -> f64;
+}
