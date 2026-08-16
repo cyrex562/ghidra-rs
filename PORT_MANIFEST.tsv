@@ -1766,7 +1766,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryName.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryNearest.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryNearestVector.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryNearestVector.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryOptionalExist.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryOptionalValues.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryPair.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 

@@ -1025,3 +1025,4 @@ ts	stub_class	referenced_by
 2026-08-16T08:17:41Z	ResponseDelete	QueryDelete
 2026-08-16T08:24:42Z	BSimFilter	QueryNearest
 2026-08-16T08:24:42Z	ResponseNearest	QueryNearest
+2026-08-16T08:27:52Z	ResponseNearestVector	QueryNearestVector
