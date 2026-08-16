@@ -2782,6 +2782,12 @@ pub trait ResponseInsert: Send + Sync {
     fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
 }
 
+/// Placeholder for `ResponsePrewarm` type. Response from a prewarm-request operation.
+pub trait ResponsePrewarm: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
 /// Placeholder for `LSHVectorFactory` type. Factory for creating and restoring LSH vectors.
 pub trait LSHVectorFactory: Send + Sync {
     fn build_zero_vector(&self) -> Box<dyn LSHVector>;

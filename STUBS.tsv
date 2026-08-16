@@ -1017,3 +1017,4 @@ ts	stub_class	referenced_by
 2026-08-16T07:39:53Z	VectorCompare	AdjustVectorIndex
 2026-08-16T08:00:00Z	ResponsePassword	PasswordChange
 2026-08-16T07:52:54Z	ResponseInsert	InsertRequest
+2026-08-16T08:05:00Z	ResponsePrewarm	PrewarmRequest
