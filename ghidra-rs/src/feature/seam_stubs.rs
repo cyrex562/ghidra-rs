@@ -8,6 +8,7 @@ pub use crate::feature::vt::api::markuptype::vt_markup_type::{VtMarkupType, VtMa
 pub use crate::feature::vt::api::main::vt_association::VtAssociation;
 pub use crate::feature::vt::api::main::vt_markup_item::VtMarkupItem;
 pub use crate::feature::vt::api::main::vt_match::VtMatch;
+pub use crate::feature::bsim::query::protocol::{QueryResponseRecord, QueryResponseRecordBase};
 
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
@@ -2757,8 +2758,6 @@ pub trait BSimError: Send + Sync {}
 /// Placeholder for `BSimQuery` type.
 pub trait BSimQuery: Send + Sync {}
 
-/// Placeholder for `QueryResponseRecord` type.
-pub trait QueryResponseRecord: Send + Sync {}
 
 /// Placeholder for `DescriptionManager` type.
 pub trait DescriptionManager: Send + Sync {}
