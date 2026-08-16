@@ -35,7 +35,7 @@ DONE	trait	2	43	1	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/
 DONE	trait	1	4	4	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledTree.java
 DONE	trait	0	50	30	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangler.java
 DONE	trait	7	19	2	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/BSimJDBCDataSource.java
-TODO	trait	9	20	1	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/SQLFunctionDatabase.java
+DONE	trait	9	20	1	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/SQLFunctionDatabase.java
 TODO	trait	10	43	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryResponseRecord.java
 TODO	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/AdjustVectorIndex.java
 TODO	trait	11	20	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PasswordChange.java
