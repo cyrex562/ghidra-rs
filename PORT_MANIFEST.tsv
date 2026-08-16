@@ -12213,7 +12213,7 @@ orig_src/Ghidra/Framework/Graph/src/test/java/ghidra/service/graph/GraphTypeTest
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/test/AbstractGuiTest.java	TODO	orig_src Ghidra Framework Gui src main java generic test 
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/AbstractThemeReader.java	TODO	orig_src Ghidra Framework Gui src main java generic theme 
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/AllValuesChangedThemeEvent.java	TODO	orig_src Ghidra Framework Gui src main java generic theme 
-orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/ApplicationThemeDefaults.java	TODO	orig_src Ghidra Framework Gui src main java generic theme 
+orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/ApplicationThemeDefaults.java	DONE	orig_src Ghidra Framework Gui src main java generic theme 
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/ApplicationThemeManager.java	TODO	orig_src Ghidra Framework Gui src main java generic theme 
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/BooleanPropertyValue.java	TODO	orig_src Ghidra Framework Gui src main java generic theme 
 orig_src/Ghidra/Framework/Gui/src/main/java/generic/theme/CloseIcon.java	TODO	orig_src Ghidra Framework Gui src main java generic theme 
