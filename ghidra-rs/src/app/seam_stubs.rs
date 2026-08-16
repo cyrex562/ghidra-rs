@@ -7,6 +7,7 @@ use crate::app::decompiler::{
     ClangLine, ClangNode, ClangTokenBase, ClangTokenGroup, DecompiledFunction,
 };
 use crate::app::util::address_factory_service::AddressFactoryService;
+use crate::app::util::opinion::library_exported_symbol::LibraryExportedSymbol;
 use crate::app::util::option_listener::OptionListener;
 use crate::program::model::data::array::Array;
 use crate::program::model::data::data_type::DataType;
@@ -23,6 +24,7 @@ use crate::trace::model::trace::Trace;
 use crate::util::task::TaskMonitor;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::fmt;
 use std::option::Option as StdOption;
 use std::sync::Arc;
@@ -2836,6 +2838,10 @@ pub struct LibrarySymbolTable {
     size: i32,
     version: String,
     forwards: Vec<String>,
+    /// Mirrors the `symMap` field, keyed by [`LibraryExportedSymbol::name`]. Populated only by
+    /// [`Self::insert_symbol`]; `from_exports_file`/`from_program` are not implemented yet, so it
+    /// is always empty coming out of those two constructors.
+    sym_map: HashMap<String, LibraryExportedSymbol>,
 }
 
 impl LibrarySymbolTable {
@@ -2847,6 +2853,21 @@ impl LibrarySymbolTable {
             size,
             version: "unknown".to_string(),
             forwards: Vec::new(),
+            sym_map: HashMap::new(),
+        }
+    }
+
+    /// Mirrors `getSymbol(String)`: the symbol for the specified name, or `None` if not found.
+    pub fn get_symbol(&self, symbol: &str) -> StdOption<&LibraryExportedSymbol> {
+        self.sym_map.get(symbol)
+    }
+
+    /// Not part of the Java API surface (that role is filled by `addSymbol` deep inside the
+    /// unported `.exports` XML reader / `Program`-walking constructor). Exposed for tests, and for
+    /// whichever of those two constructors gets ported first to populate `symMap` with.
+    pub fn insert_symbol(&mut self, symbol: LibraryExportedSymbol) {
+        if let Some(name) = symbol.name() {
+            self.sym_map.insert(name.to_string(), symbol);
         }
     }
 

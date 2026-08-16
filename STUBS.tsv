@@ -955,3 +955,4 @@ ts	stub_class	referenced_by
 2026-08-16T02:45:00.000000+00:00	ResourceDataDirectory	LibraryLookupTable
 2026-08-16T02:45:00.000000+00:00	LibrarySymbolTable	LibraryLookupTable
 2026-08-16T02:45:00.000000+00:00	PeLoader	LibraryLookupTable
+2026-08-16T02:50:00.000000+00:00	LibrarySymbolTable	LibraryExportedSymbol

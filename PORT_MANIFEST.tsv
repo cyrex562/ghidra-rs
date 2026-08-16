@@ -4706,7 +4706,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/IntelHexMemI
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/IntelHexRecord.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/IntelHexRecordReader.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/IntelHexRecordWriter.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryExportedSymbol.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryExportedSymbol.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryHints.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryLookupTable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util opinion 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryPathsDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app util opinion 
