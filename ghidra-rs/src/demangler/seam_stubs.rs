@@ -4,6 +4,7 @@
 use crate::demangler::naming::md_qualification::MdQualification;
 use crate::demangler::naming::md_qualified_name::MdQualifiedName;
 use crate::demangler::object::md_object_cpp::MdObjectCpp;
+use crate::demangler::swift::nodes::swift_node::{NodeProperties, SwiftNode, SwiftNodeBase};
 use crate::program::model::symbol::{Namespace, DELIMITER};
 
 /// Placeholder for `mdemangler.MDMang`, needed by
@@ -1223,5 +1224,86 @@ impl crate::demangler::demangled::Demangled for DemangledUnknown {
     /// Mirrors `getSignature()`, which delegates to `getSignature(false)`.
     fn get_signature(&self) -> String {
         self.get_signature_formatted(false)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.swift.SwiftNativeDemangler`, needed by
+/// [`crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree`].
+///
+/// Java is a concrete class (it launches the native `swift`/`swift-demangle` binary via
+/// `ProcessBuilder`), not an interface, so this is a plain struct rather than a trait. Only
+/// `demangle`, the one method `SwiftDemangledTree`'s constructor calls, is modeled, and it reports
+/// the underlying native-process invocation as not yet available -- the same treatment
+/// [`MdMangGhidra::demangle`] gives its own unported grammar dispatch; the real port also carries
+/// the constructor's demangler-binary discovery loop and the private
+/// `demangle(String, List<String>)` process-launch helper.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SwiftNativeDemangler;
+
+impl SwiftNativeDemangler {
+    /// Mirrors `demangle(String)`.
+    pub fn demangle(&self, _mangled: &str) -> std::io::Result<SwiftNativeDemangledOutput> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "SwiftNativeDemangler: native Swift demangler invocation not yet ported",
+        ))
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.swift.SwiftNativeDemangler.SwiftNativeDemangledOutput`,
+/// needed by [`crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree`].
+///
+/// Java record; immutable value carrier, hence public fields rather than accessor methods.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SwiftNativeDemangledOutput {
+    /// The demangled string, or `None` if demangling finished gracefully but returned nothing.
+    pub demangled: Option<String>,
+    /// The lines of the demangled expanded tree.
+    pub tree: Vec<String>,
+}
+
+/// Placeholder for `ghidra.app.util.demangler.swift.nodes.SwiftUnsupportedNode`, needed by
+/// [`crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree`].
+///
+/// Java is a concrete class, not an interface, so this is a plain struct implementing
+/// [`SwiftNode`] rather than a trait. `SwiftNode.get`'s ~50-arm dispatch to concrete node
+/// subclasses is not ported yet, so [`SwiftDemangledTree`](crate::demangler::swift::swift_demangled_tree::SwiftDemangledTree)
+/// currently constructs one of these for every tree node regardless of kind, carrying the real
+/// parsed [`crate::demangler::swift::swift_demangled_node_kind::SwiftDemangledNodeKind`] (or its
+/// `Unsupported` variant when the native demangler emitted a kind name the enum doesn't
+/// recognize) in the node's properties either way.
+pub struct SwiftUnsupportedNode {
+    base: SwiftNodeBase,
+    original_kind: String,
+}
+
+impl SwiftUnsupportedNode {
+    /// Mirrors `SwiftUnsupportedNode(String originalKind, NodeProperties props)`.
+    pub fn new(original_kind: impl Into<String>, properties: NodeProperties) -> Self {
+        Self { base: SwiftNodeBase::new(properties), original_kind: original_kind.into() }
+    }
+}
+
+impl SwiftNode for SwiftUnsupportedNode {
+    fn base(&self) -> &SwiftNodeBase {
+        &self.base
+    }
+
+    /// Mirrors `demangle(SwiftDemangler)`: marks itself as having skipped a child (faithfully
+    /// reproducing the original's `skip(this)` self-call) and returns its `getUnknown()`.
+    fn demangle(
+        &self,
+        _demangler: &dyn SwiftDemangler,
+    ) -> Result<Option<Box<dyn crate::demangler::demangled::Demangled>>, crate::demangler::demangle_exception::DemangledException>
+    {
+        self.base.skip(self);
+        Ok(Some(Box::new(self.base.unknown())))
+    }
+}
+
+impl std::fmt::Display for SwiftUnsupportedNode {
+    /// Mirrors `toString()`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ({})", self.base, self.original_kind)
     }
 }

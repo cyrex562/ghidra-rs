@@ -148,6 +148,81 @@ impl SwiftDemangledNodeKind {
             Self::Variable => "Variable",
         }
     }
+
+    /// Parses a constant by its Java name.
+    ///
+    /// Mirrors `Enum.valueOf(SwiftDemangledNodeKind.class, name)`; returns `None` where the Java
+    /// call would throw `IllegalArgumentException` for an unrecognized name.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "Allocator" => Some(Self::Allocator),
+            "AnonymousDescriptor" => Some(Self::AnonymousDescriptor),
+            "ArgumentTuple" => Some(Self::ArgumentTuple),
+            "BoundGenericStructure" => Some(Self::BoundGenericStructure),
+            "BuiltinTypeName" => Some(Self::BuiltinTypeName),
+            "Class" => Some(Self::Class),
+            "Constructor" => Some(Self::Constructor),
+            "Deallocator" => Some(Self::Deallocator),
+            "DefaultArgumentInitializer" => Some(Self::DefaultArgumentInitializer),
+            "DependentGenericParamType" => Some(Self::DependentGenericParamType),
+            "DependentGenericType" => Some(Self::DependentGenericType),
+            "Destructor" => Some(Self::Destructor),
+            "DispatchThunk" => Some(Self::DispatchThunk),
+            "Enum" => Some(Self::Enum),
+            "Extension" => Some(Self::Extension),
+            "FirstElementMarker" => Some(Self::FirstElementMarker),
+            "Function" => Some(Self::Function),
+            "FunctionType" => Some(Self::FunctionType),
+            "GenericSpecialization" => Some(Self::GenericSpecialization),
+            "Getter" => Some(Self::Getter),
+            "Global" => Some(Self::Global),
+            "GlobalVariableOnceDeclList" => Some(Self::GlobalVariableOnceDeclList),
+            "GlobalVariableOnceFunction" => Some(Self::GlobalVariableOnceFunction),
+            "Identifier" => Some(Self::Identifier),
+            "InfixOperator" => Some(Self::InfixOperator),
+            "Initializer" => Some(Self::Initializer),
+            "InOut" => Some(Self::InOut),
+            "LabelList" => Some(Self::LabelList),
+            "LazyProtocolWitnessTableAccessor" => Some(Self::LazyProtocolWitnessTableAccessor),
+            "LocalDeclName" => Some(Self::LocalDeclName),
+            "MergedFunction" => Some(Self::MergedFunction),
+            "MethodDescriptor" => Some(Self::MethodDescriptor),
+            "ModifyAccessor" => Some(Self::ModifyAccessor),
+            "Module" => Some(Self::Module),
+            "ModuleDescriptor" => Some(Self::ModuleDescriptor),
+            "NominalTypeDescriptor" => Some(Self::NominalTypeDescriptor),
+            "Number" => Some(Self::Number),
+            "ObjCAttribute" => Some(Self::ObjCAttribute),
+            "OutlinedConsume" => Some(Self::OutlinedConsume),
+            "OutlinedCopy" => Some(Self::OutlinedCopy),
+            "Owned" => Some(Self::Owned),
+            "PrivateDeclName" => Some(Self::PrivateDeclName),
+            "Protocol" => Some(Self::Protocol),
+            "ProtocolConformance" => Some(Self::ProtocolConformance),
+            "ProtocolConformanceDescriptor" => Some(Self::ProtocolConformanceDescriptor),
+            "ProtocolDescriptor" => Some(Self::ProtocolDescriptor),
+            "ProtocolWitness" => Some(Self::ProtocolWitness),
+            "ReflectionMetadataBuiltinDescriptor" => Some(Self::ReflectionMetadataBuiltinDescriptor),
+            "ReflectionMetadataFieldDescriptor" => Some(Self::ReflectionMetadataFieldDescriptor),
+            "ReturnType" => Some(Self::ReturnType),
+            "Setter" => Some(Self::Setter),
+            "Static" => Some(Self::Static),
+            "Structure" => Some(Self::Structure),
+            "Subscript" => Some(Self::Subscript),
+            "Suffix" => Some(Self::Suffix),
+            "Tuple" => Some(Self::Tuple),
+            "TupleElement" => Some(Self::TupleElement),
+            "TupleElementName" => Some(Self::TupleElementName),
+            "Type" => Some(Self::Type),
+            "TypeAlias" => Some(Self::TypeAlias),
+            "TypeList" => Some(Self::TypeList),
+            "TypeMetadataAccessFunction" => Some(Self::TypeMetadataAccessFunction),
+            "UnsafeMutableAddressor" => Some(Self::UnsafeMutableAddressor),
+            "Unsupported" => Some(Self::Unsupported),
+            "Variable" => Some(Self::Variable),
+            _ => None,
+        }
+    }
 }
 
 impl std::fmt::Display for SwiftDemangledNodeKind {
@@ -171,6 +246,14 @@ mod tests {
     #[test]
     fn display_matches_name() {
         assert_eq!(format!("{}", SwiftDemangledNodeKind::Structure), "Structure");
+    }
+
+    #[test]
+    fn from_name_round_trips_and_rejects_unknown_names() {
+        assert_eq!(SwiftDemangledNodeKind::from_name("Global"), Some(SwiftDemangledNodeKind::Global));
+        assert_eq!(SwiftDemangledNodeKind::from_name("InOut"), Some(SwiftDemangledNodeKind::InOut));
+        assert_eq!(SwiftDemangledNodeKind::from_name("VariadicMarker"), None);
+        assert_eq!(SwiftDemangledNodeKind::from_name(""), None);
     }
 
     #[test]

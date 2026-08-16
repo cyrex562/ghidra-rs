@@ -9203,7 +9203,7 @@ orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/ty
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/TypeReferenceKind.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledBuiltinType.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledNodeKind.java	DONE	orig_src Ghidra Features Swift src main java ghidra app util demangler swift 
-orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledTree.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift 
+orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledTree.java	DONE	orig_src Ghidra Features Swift src main java ghidra app util demangler swift
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangler.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemanglerOptions.java	DONE	orig_src Ghidra Features Swift src main java ghidra app util demangler swift 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftNativeDemangler.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift 
