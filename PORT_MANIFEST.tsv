@@ -9239,7 +9239,7 @@ orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nod
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftLazyProtocolWitnessTableAccessorNode.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftLocalDeclNameNode.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftModifyAccessorNode.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 
-orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftNode.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 
+orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftNode.java	DONE	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftOutlinedConsumeNode.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftOutlinedCopyNode.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftPrivateDeclNameNode.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util demangler swift nodes 

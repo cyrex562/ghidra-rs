@@ -157,6 +157,12 @@ impl Demangled for DemangledType {
         self.namespace.as_deref()
     }
 
+    /// Mutable counterpart to `getNamespace()`; see
+    /// [`Demangled::get_namespace_mut`].
+    fn get_namespace_mut(&mut self) -> Option<&mut (dyn Demangled + 'static)> {
+        self.namespace.as_deref_mut()
+    }
+
     /// Mirrors `setNamespace(Demangled)`.
     fn set_namespace(&mut self, namespace: Option<Box<dyn Demangled>>) {
         self.namespace = namespace;

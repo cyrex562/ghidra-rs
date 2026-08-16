@@ -1096,3 +1096,291 @@ pub fn convert_to_demangled_data_type(
 ) -> Option<Box<dyn DemangledDataTypeLike>> {
     None
 }
+
+/// Placeholder for `ghidra.app.util.demangler.swift.SwiftDemangledNodeKind`, needed by
+/// [`crate::demangler::swift::nodes::swift_node::SwiftNode`].
+///
+/// The Java type is a plain enum of node-kind constants (no methods), so the placeholder carries
+/// the full variant list -- a partial list would silently mis-classify nodes -- and nothing else
+/// beyond the `toString()` rendering `SwiftNode` needs. Variant order matches the original, which
+/// follows `DemangleNodes.def`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[allow(missing_docs)]
+pub enum SwiftDemangledNodeKind {
+    Allocator,
+    AnonymousDescriptor,
+    ArgumentTuple,
+    BoundGenericStructure,
+    BuiltinTypeName,
+    Class,
+    Constructor,
+    Deallocator,
+    DefaultArgumentInitializer,
+    DependentGenericParamType,
+    DependentGenericType,
+    Destructor,
+    DispatchThunk,
+    Enum,
+    Extension,
+    FirstElementMarker,
+    Function,
+    FunctionType,
+    GenericSpecialization,
+    Getter,
+    Global,
+    GlobalVariableOnceDeclList,
+    GlobalVariableOnceFunction,
+    Identifier,
+    InfixOperator,
+    Initializer,
+    InOut,
+    LabelList,
+    LazyProtocolWitnessTableAccessor,
+    LocalDeclName,
+    MergedFunction,
+    MethodDescriptor,
+    ModifyAccessor,
+    Module,
+    ModuleDescriptor,
+    NominalTypeDescriptor,
+    Number,
+    ObjCAttribute,
+    OutlinedConsume,
+    OutlinedCopy,
+    Owned,
+    PrivateDeclName,
+    Protocol,
+    ProtocolConformance,
+    ProtocolConformanceDescriptor,
+    ProtocolDescriptor,
+    ProtocolWitness,
+    ReflectionMetadataBuiltinDescriptor,
+    ReflectionMetadataFieldDescriptor,
+    ReturnType,
+    Setter,
+    Static,
+    Structure,
+    Subscript,
+    Suffix,
+    Tuple,
+    TupleElement,
+    TupleElementName,
+    Type,
+    TypeAlias,
+    TypeList,
+    TypeMetadataAccessFunction,
+    UnsafeMutableAddressor,
+    Unsupported,
+    Variable,
+}
+
+impl SwiftDemangledNodeKind {
+    /// Returns the constant's Java name.
+    ///
+    /// Mirrors `Enum.name()` / `Enum.toString()`.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Allocator => "Allocator",
+            Self::AnonymousDescriptor => "AnonymousDescriptor",
+            Self::ArgumentTuple => "ArgumentTuple",
+            Self::BoundGenericStructure => "BoundGenericStructure",
+            Self::BuiltinTypeName => "BuiltinTypeName",
+            Self::Class => "Class",
+            Self::Constructor => "Constructor",
+            Self::Deallocator => "Deallocator",
+            Self::DefaultArgumentInitializer => "DefaultArgumentInitializer",
+            Self::DependentGenericParamType => "DependentGenericParamType",
+            Self::DependentGenericType => "DependentGenericType",
+            Self::Destructor => "Destructor",
+            Self::DispatchThunk => "DispatchThunk",
+            Self::Enum => "Enum",
+            Self::Extension => "Extension",
+            Self::FirstElementMarker => "FirstElementMarker",
+            Self::Function => "Function",
+            Self::FunctionType => "FunctionType",
+            Self::GenericSpecialization => "GenericSpecialization",
+            Self::Getter => "Getter",
+            Self::Global => "Global",
+            Self::GlobalVariableOnceDeclList => "GlobalVariableOnceDeclList",
+            Self::GlobalVariableOnceFunction => "GlobalVariableOnceFunction",
+            Self::Identifier => "Identifier",
+            Self::InfixOperator => "InfixOperator",
+            Self::Initializer => "Initializer",
+            Self::InOut => "InOut",
+            Self::LabelList => "LabelList",
+            Self::LazyProtocolWitnessTableAccessor => "LazyProtocolWitnessTableAccessor",
+            Self::LocalDeclName => "LocalDeclName",
+            Self::MergedFunction => "MergedFunction",
+            Self::MethodDescriptor => "MethodDescriptor",
+            Self::ModifyAccessor => "ModifyAccessor",
+            Self::Module => "Module",
+            Self::ModuleDescriptor => "ModuleDescriptor",
+            Self::NominalTypeDescriptor => "NominalTypeDescriptor",
+            Self::Number => "Number",
+            Self::ObjCAttribute => "ObjCAttribute",
+            Self::OutlinedConsume => "OutlinedConsume",
+            Self::OutlinedCopy => "OutlinedCopy",
+            Self::Owned => "Owned",
+            Self::PrivateDeclName => "PrivateDeclName",
+            Self::Protocol => "Protocol",
+            Self::ProtocolConformance => "ProtocolConformance",
+            Self::ProtocolConformanceDescriptor => "ProtocolConformanceDescriptor",
+            Self::ProtocolDescriptor => "ProtocolDescriptor",
+            Self::ProtocolWitness => "ProtocolWitness",
+            Self::ReflectionMetadataBuiltinDescriptor => "ReflectionMetadataBuiltinDescriptor",
+            Self::ReflectionMetadataFieldDescriptor => "ReflectionMetadataFieldDescriptor",
+            Self::ReturnType => "ReturnType",
+            Self::Setter => "Setter",
+            Self::Static => "Static",
+            Self::Structure => "Structure",
+            Self::Subscript => "Subscript",
+            Self::Suffix => "Suffix",
+            Self::Tuple => "Tuple",
+            Self::TupleElement => "TupleElement",
+            Self::TupleElementName => "TupleElementName",
+            Self::Type => "Type",
+            Self::TypeAlias => "TypeAlias",
+            Self::TypeList => "TypeList",
+            Self::TypeMetadataAccessFunction => "TypeMetadataAccessFunction",
+            Self::UnsafeMutableAddressor => "UnsafeMutableAddressor",
+            Self::Unsupported => "Unsupported",
+            Self::Variable => "Variable",
+        }
+    }
+}
+
+impl std::fmt::Display for SwiftDemangledNodeKind {
+    /// Mirrors `Enum.toString()`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name())
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.swift.SwiftDemangler`, needed by
+/// [`crate::demangler::swift::nodes::swift_node::SwiftNode`].
+///
+/// `SwiftNode` only threads the demangler through to its subclasses, so the one method declared
+/// here is what the node tree actually calls back into: `getDemangled`, which demangles a nested
+/// mangled string. The rest of the Java class (its `Demangler` implementation,
+/// `getTypeMetadata()`, `isSwiftMangledSymbol(...)`) arrives with the real port.
+pub trait SwiftDemangler {
+    /// Demangles a nested mangled string.
+    ///
+    /// Mirrors `SwiftDemangler.getDemangled(String, SwiftDemanglerOptions)`.
+    fn get_demangled(
+        &self,
+        mangled: &str,
+        options: &crate::demangler::swift::swift_demangler_options::SwiftDemanglerOptions,
+    ) -> Result<
+        Option<Box<dyn crate::demangler::demangled::Demangled>>,
+        crate::demangler::demangle_exception::DemangledException,
+    >;
+}
+
+/// Placeholder for `ghidra.app.util.demangler.DemangledUnknown`, needed by
+/// [`crate::demangler::swift::nodes::swift_node::SwiftNodeBase::unknown`].
+///
+/// Java extends `DemangledObject`; Rust has no struct inheritance, so this composes the
+/// already-ported [`crate::demangler::demangled_object::DemangledObjectBase`] instead. Only the
+/// constructor and the two overrides (`getSignature`, `getName`) are modeled -- the inherited
+/// `applyTo`/`generatePlateComment` surface arrives with the real port -- but the
+/// [`crate::demangler::demangled::Demangled`] implementation is provided so this can be used
+/// wherever a `Demangled` is expected, as the original is.
+pub struct DemangledUnknown {
+    base: crate::demangler::demangled_object::DemangledObjectBase,
+}
+
+impl DemangledUnknown {
+    /// Mirrors `DemangledUnknown(String mangled, String originalDemangled, String name)`.
+    pub fn new(
+        mangled: impl Into<String>,
+        original_demangled: Option<String>,
+        name: Option<&str>,
+    ) -> Self {
+        let mut base =
+            crate::demangler::demangled_object::DemangledObjectBase::new(mangled, original_demangled);
+        base.set_name(name);
+        Self { base }
+    }
+
+    /// Mirrors the `getSignature(boolean)` override, which ignores `format` and returns the
+    /// original demangled string.
+    pub fn get_signature_formatted(&self, _format: bool) -> String {
+        self.base.original_demangled.clone().unwrap_or_default()
+    }
+}
+
+impl crate::demangler::demangled::Demangled for DemangledUnknown {
+    /// Mirrors `getMangledString()`.
+    fn get_mangled_string(&self) -> String {
+        self.base.get_mangled_string().to_string()
+    }
+
+    /// Mirrors `getOriginalDemangled()`.
+    fn get_original_demangled(&self) -> String {
+        self.base.original_demangled.clone().unwrap_or_default()
+    }
+
+    /// Mirrors the `getName()` override: these items likely have no name, so fall back to the
+    /// signature (with symbol-invalid characters replaced), then to `NO_NAME`.
+    fn get_name(&self) -> String {
+        if let Some(name) = self.base.get_name() {
+            if !name.is_empty() {
+                return name.to_string();
+            }
+        }
+
+        let signature = self.get_signature_formatted(true);
+        if !signature.is_empty() {
+            use crate::program::model::symbol::symbol_utilities::{
+                DefaultSymbolUtilities, SymbolUtilities,
+            };
+            return DefaultSymbolUtilities
+                .replace_invalid_chars(Some(&signature), true)
+                .unwrap_or_default();
+        }
+
+        "NO_NAME".to_string()
+    }
+
+    /// Mirrors `setName(String)`.
+    fn set_name(&mut self, name: &str) {
+        self.base.set_name(Some(name));
+    }
+
+    /// Mirrors `getDemangledName()`.
+    fn get_demangled_name(&self) -> String {
+        self.base.get_demangled_name().unwrap_or_default().to_string()
+    }
+
+    /// Mirrors `getNamespace()`.
+    fn get_namespace(&self) -> Option<&dyn crate::demangler::demangled::Demangled> {
+        self.base.get_namespace()
+    }
+
+    /// Mirrors mutable traversal of the namespace chain; see
+    /// [`crate::demangler::demangled::Demangled::get_namespace_mut`].
+    fn get_namespace_mut(&mut self) -> Option<&mut (dyn crate::demangler::demangled::Demangled + 'static)> {
+        self.base.namespace.as_deref_mut()
+    }
+
+    /// Mirrors `setNamespace(Demangled)`.
+    fn set_namespace(&mut self, namespace: Option<Box<dyn crate::demangler::demangled::Demangled>>) {
+        self.base.set_namespace(namespace);
+    }
+
+    /// Mirrors `getNamespaceString()`.
+    fn get_namespace_string(&self) -> String {
+        self.base.namespace_string_with(&self.get_name())
+    }
+
+    /// Mirrors `getNamespaceName()`.
+    fn get_namespace_name(&self) -> String {
+        self.get_name()
+    }
+
+    /// Mirrors `getSignature()`, which delegates to `getSignature(false)`.
+    fn get_signature(&self) -> String {
+        self.get_signature_formatted(false)
+    }
+}

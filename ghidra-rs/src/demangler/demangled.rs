@@ -62,6 +62,14 @@ pub trait Demangled: Send + Sync {
     /// Mirrors `Demangled.getNamespace()`.
     fn get_namespace(&self) -> Option<&dyn Demangled>;
 
+    /// Returns the namespace containing this demangled object, for mutation.
+    ///
+    /// Has no Java counterpart: the original walks a namespace chain with `getNamespace()` and
+    /// then mutates the innermost link with `setNamespace(...)` (see
+    /// `ghidra.app.util.demangler.swift.nodes.SwiftNode.join`), which Rust cannot do through the
+    /// shared reference `get_namespace` hands back.
+    fn get_namespace_mut(&mut self) -> Option<&mut (dyn Demangled + 'static)>;
+
     /// Sets the namespace of this demangled object.
     ///
     /// Mirrors `Demangled.setNamespace(Demangled)`.
@@ -122,6 +130,10 @@ mod tests {
 
         fn get_namespace(&self) -> Option<&dyn Demangled> {
             self.namespace.as_deref()
+        }
+
+        fn get_namespace_mut(&mut self) -> Option<&mut (dyn Demangled + 'static)> {
+            self.namespace.as_deref_mut()
         }
 
         fn set_namespace(&mut self, namespace: Option<Box<dyn Demangled>>) {
