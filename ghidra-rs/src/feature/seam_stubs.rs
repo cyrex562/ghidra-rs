@@ -2787,30 +2787,6 @@ impl Ord for CallgraphEntry {
     }
 }
 
-/// Placeholder for the unported Java type `BSimServerInfo`, referenced by `BSimJDBCDataSource`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait BSimServerInfo: Send + Sync {
-    fn is_windows_file_path(&self) -> bool;
-    fn to_url_string(&self) -> String;
-    fn to_url(&self) -> std::io::Result<Box<dyn URL>>;
-    fn get_db_type(&self) -> Box<dyn DBType>;
-    fn set_user_info(&self, bds: &dyn BasicDataSource);
-    fn has_password(&self) -> bool;
-    fn has_default_login(&self) -> bool;
-    fn get_user_name(&self) -> String;
-    fn get_user_info(&self) -> String;
-    fn get_server_name(&self) -> String;
-    fn get_port(&self) -> i32;
-    fn get_db_name(&self) -> String;
-    fn get_short_db_name(&self) -> String;
-    fn hash_code(&self) -> i32;
-    fn equals(&self, obj: &dyn std::any::Any) -> bool;
-    fn to_string(&self) -> String;
-    fn get_function_database(&self, async_: bool) -> Box<dyn FunctionDatabase>;
-    fn compare_to(&self, o: &dyn BSimServerInfo) -> i32;
-}
-
 /// Placeholder for the unported Java type `FunctionDatabase`, referenced by `BSimJDBCDataSource`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
@@ -2825,7 +2801,7 @@ pub trait FunctionDatabase: Send + Sync {
     fn get_lsh_vector_factory(&self) -> Arc<crate::generic::seam_stubs::LSHVectorFactory>;
     fn get_info(&self) -> Box<dyn DatabaseInformation>;
     fn compare_layout(&self) -> i32;
-    fn get_server_info(&self) -> Box<dyn BSimServerInfo>;
+    fn get_server_info(&self) -> crate::feature::bsim::query::BSimServerInfo;
     fn get_url_string(&self) -> String;
     fn initialize(&self) -> bool;
     fn close(&self);
@@ -2893,15 +2869,6 @@ pub trait FunctionDatabase: Send + Sync {
         None
     }
 }
-
-/// Placeholder for `URL` type.
-pub trait URL: Send + Sync {}
-
-/// Placeholder for `DBType` type.
-pub trait DBType: Send + Sync {}
-
-/// Placeholder for `BasicDataSource` type.
-pub trait BasicDataSource: Send + Sync {}
 
 /// Placeholder for `DatabaseInformation` type.
 pub trait DatabaseInformation: Send + Sync {}
@@ -3389,7 +3356,7 @@ macro_rules! impl_bsim_function_database_stub {
                 unimplemented!(concat!($label, "::compare_layout is not ported yet"))
             }
 
-            fn get_server_info(&self) -> Box<dyn BSimServerInfo> {
+            fn get_server_info(&self) -> crate::feature::bsim::query::BSimServerInfo {
                 unimplemented!(concat!($label, "::get_server_info is not ported yet"))
             }
 
