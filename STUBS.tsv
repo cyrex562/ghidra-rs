@@ -1027,3 +1027,4 @@ ts	stub_class	referenced_by
 2026-08-16T08:24:42Z	ResponseNearest	QueryNearest
 2026-08-16T08:27:52Z	ResponseNearestVector	QueryNearestVector
 2026-08-16T08:32:13.871891+00:00	ResponseUpdate	QueryUpdate
+2026-08-16T08:37:04.791297+00:00	ResponseVectorId	QueryVectorId
