@@ -780,6 +780,10 @@ pub(crate) mod tests {
             self.base.get_namespace()
         }
 
+        fn get_namespace_mut(&mut self) -> Option<&mut (dyn Demangled + 'static)> {
+            self.base.namespace.as_deref_mut()
+        }
+
         fn set_namespace(&mut self, namespace: Option<Box<dyn Demangled>>) {
             self.base.set_namespace(namespace);
         }

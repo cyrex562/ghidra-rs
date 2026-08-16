@@ -998,3 +998,6 @@ ts	stub_class	referenced_by
 2026-08-16T05:58:54.173912+00:00	GThemeValueMap	ApplicationThemeDefaults
 2026-08-16T05:58:54.174161+00:00	LafType	ApplicationThemeDefaults
 2026-08-16T06:16:47Z	ThemeEvent	ThemeListener
+2026-08-16T06:21:02Z	SwiftDemangledNodeKind	SwiftNode
+2026-08-16T06:21:02Z	SwiftDemangler	SwiftNode
+2026-08-16T06:21:02Z	DemangledUnknown	SwiftNode
