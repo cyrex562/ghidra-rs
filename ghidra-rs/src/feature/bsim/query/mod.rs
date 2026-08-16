@@ -17,5 +17,5 @@ pub use b_sim_jdbc_data_source::{BSimJDBCDataSource, Status, ConnectionType};
 pub use decompile_function_task::DecompileFunctionTask;
 pub use lsh_exception::LshException;
 pub use minimal_error_logger::MinimalErrorLogger;
-pub use protocol::{AdjustVectorIndex, QueryResponseRecord, QueryResponseRecordBase};
+pub use protocol::{AdjustVectorIndex, PasswordChange, QueryResponseRecord, QueryResponseRecordBase};
 pub use sql_function_database::SQLFunctionDatabase;

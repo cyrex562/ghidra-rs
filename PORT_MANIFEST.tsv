@@ -1755,7 +1755,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/NullStaging.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PairInput.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PairNote.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PasswordChange.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PasswordChange.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PreFilter.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PrewarmRequest.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryChildren.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
