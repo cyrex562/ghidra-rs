@@ -158,6 +158,24 @@ mod tests {
         fn go_method_structure_length(&self) -> i32 {
             self.go_method_structure_length
         }
+
+        fn get_go_ver(&self) -> crate::format::golang::go_ver::GoVer {
+            unimplemented!()
+        }
+
+        fn get_safe_name(
+            &self,
+            _supplier: &dyn Fn() -> std::io::Result<Option<Box<dyn GoName>>>,
+            _fallback_structure_name: &str,
+            _fallback_structure_start: i64,
+            _default_value: &str,
+        ) -> String {
+            unimplemented!()
+        }
+
+        fn get_go_types(&self) -> Box<dyn crate::format::seam_stubs::GoTypeManager> {
+            unimplemented!()
+        }
     }
 
     struct MockStructureContext {
