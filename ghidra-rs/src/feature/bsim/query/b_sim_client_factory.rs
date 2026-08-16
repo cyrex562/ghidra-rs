@@ -33,9 +33,9 @@
 
 use std::io;
 
+use crate::feature::bsim::query::b_sim_server_info::BSimServerInfo;
 use crate::feature::seam_stubs::{
-    BSimServerInfo, ElasticDatabase, FunctionDatabase, H2FileFunctionDatabase,
-    PostgresFunctionDatabase,
+    ElasticDatabase, FunctionDatabase, H2FileFunctionDatabase, PostgresFunctionDatabase,
 };
 use crate::framework::protocol::ghidra::{GhidraURL, PROTOCOL};
 
@@ -172,7 +172,7 @@ pub fn derive_bsim_url(ghidra_url: &dyn GhidraURL, url_string: &str) -> io::Resu
 /// # Panics
 /// Panics if `bsim_server_info` produces a malformed BSim URL.
 pub fn build_client_from_server_info(
-    bsim_server_info: &dyn BSimServerInfo,
+    bsim_server_info: &BSimServerInfo,
     is_async: bool,
 ) -> Box<dyn FunctionDatabase> {
     build_client(&bsim_server_info.to_url_string(), is_async)

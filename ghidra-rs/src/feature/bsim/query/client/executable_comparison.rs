@@ -577,9 +577,9 @@ mod tests {
     use std::sync::Mutex;
 
     use crate::feature::bsim::query::b_sim_jdbc_data_source::{ConnectionType, Status};
+    use crate::feature::bsim::query::BSimServerInfo;
     use crate::feature::seam_stubs::{
-        BSimError, BSimQuery, BSimServerInfo, Configuration, QueryResponseRecord,
-        WeightedLSHCosineVectorFactory,
+        BSimError, BSimQuery, Configuration, QueryResponseRecord, WeightedLSHCosineVectorFactory,
     };
     use crate::generic::seam_stubs::WeightedLSHCosineVector;
 
@@ -774,7 +774,7 @@ mod tests {
             unimplemented!("not used by ExecutableComparison")
         }
 
-        fn get_server_info(&self) -> Box<dyn BSimServerInfo> {
+        fn get_server_info(&self) -> BSimServerInfo {
             unimplemented!("not used by ExecutableComparison")
         }
 

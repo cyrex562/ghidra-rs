@@ -1,7 +1,7 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::feature::seam_stubs::{BSimServerInfo, FunctionDatabase};
+use crate::feature::bsim::query::b_sim_server_info::BSimServerInfo;
 
 /// Status of a connection to a BSim database.
 ///
@@ -63,7 +63,7 @@ pub trait BSimJDBCDataSource: Send + Sync {
     /// It is important to note that the returned instance is normalized for the purpose of
     /// caching and may not match the original server info object used to obtain this data source
     /// instance.
-    fn get_server_info(&self) -> Arc<dyn BSimServerInfo>;
+    fn get_server_info(&self) -> BSimServerInfo;
 
     /// Get the number of active connections in the associated connection pool.
     fn get_active_connections(&self) -> i32;

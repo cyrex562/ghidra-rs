@@ -1,6 +1,7 @@
 pub mod b_sim_client_factory;
 pub mod b_sim_initializer;
 pub mod b_sim_jdbc_data_source;
+pub mod b_sim_server_info;
 pub mod client;
 pub mod decompile_function_task;
 pub mod description;
@@ -16,6 +17,7 @@ pub mod sql_function_database;
 
 pub use b_sim_initializer::BSimInitializer;
 pub use b_sim_jdbc_data_source::{BSimJDBCDataSource, Status, ConnectionType};
+pub use b_sim_server_info::{BSimServerInfo, DBType};
 pub use decompile_function_task::DecompileFunctionTask;
 pub use gen_signatures::{CallRecord, GenSignatures};
 pub use lsh_exception::LshException;

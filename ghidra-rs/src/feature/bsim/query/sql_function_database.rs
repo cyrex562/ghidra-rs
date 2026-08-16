@@ -66,7 +66,7 @@ mod tests {
             0
         }
 
-        fn get_server_info(&self) -> Box<dyn crate::feature::seam_stubs::BSimServerInfo> {
+        fn get_server_info(&self) -> crate::feature::bsim::query::BSimServerInfo {
             panic!("Not implemented in mock")
         }
 
