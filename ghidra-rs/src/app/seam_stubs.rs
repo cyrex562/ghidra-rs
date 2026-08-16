@@ -761,6 +761,112 @@ impl LoadSpec {
     }
 }
 
+/// Placeholder for `ghidra.app.util.opinion.ElfProgramBuilder`, referenced by
+/// [`ElfLoader::load`](crate::app::util::opinion::elf_loader::ElfLoader::load) before the real
+/// class is ported. Java's `loadElf` is the sole static entry point `ElfLoader.load` calls (the
+/// rest of the class -- program creation, memory/symbol/relocation processing -- is a large
+/// unported subsystem), so it is modeled as a free function rather than a trait, the same way
+/// [`option_utils`]/[`query_opinion_service_handler`] stand in for other statics-only Java
+/// classes.
+pub mod elf_program_builder {
+    use super::{MessageLog, Option};
+    use crate::format::elf::elf_exception::ElfException;
+    use crate::format::seam_stubs::ElfHeader;
+    use crate::program::model::listing::Program;
+    use crate::util::task::TaskMonitor;
+
+    /// Mirrors the static `ElfProgramBuilder.loadElf(ElfHeader, Program, List<Option>,
+    /// MessageLog, TaskMonitor)`. The real method builds an entire `Program` from the parsed ELF
+    /// (memory blocks, symbols, relocations, ...); that subsystem is not ported yet, so this
+    /// placeholder always panics until it lands.
+    pub fn load_elf(
+        elf: &dyn ElfHeader,
+        program: &mut dyn Program,
+        options: &[Box<dyn Option>],
+        log: &dyn MessageLog,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<(), ElfException> {
+        let _ = (elf, program, options, log, monitor);
+        unimplemented!("elf_program_builder::load_elf placeholder not overridden")
+    }
+}
+
+/// Placeholder for `ghidra.program.util.ExternalSymbolResolver`, referenced by
+/// [`ElfLoader::post_load_program_fixups`](crate::app::util::opinion::elf_loader::ElfLoader::post_load_program_fixups)
+/// before the real class is ported. Java's version is a concrete `Closeable` class that resolves
+/// unresolved external-library symbols against sibling programs found via `ProjectData`; that
+/// resolution logic (`ProgramSymbolResolver`) is a large unported subsystem, so only the
+/// bookkeeping half -- `addProgramToFixup` collecting the programs to later process, and both
+/// `fixUnresolvedExternalSymbols`/`logInfo` correctly no-op-ing when nothing was collected (their
+/// real bodies are themselves just a loop over that collection) -- is modeled for real. `close()`
+/// (Java's `Closeable.close`, called at the end of the `try`-with-resources block) releases the
+/// `Program` consumers this stub never registers, so it is not modeled; a value simply drops.
+pub struct ExternalSymbolResolver {
+    /// Count of `Loaded` programs handed to
+    /// [`add_program_to_fixup`](Self::add_program_to_fixup), standing in for the real class's
+    /// internal `programsToFix` list (whose element type wraps a `Program` this stub cannot open
+    /// on its own).
+    programs_to_fixup: usize,
+}
+
+impl ExternalSymbolResolver {
+    /// Port of `ExternalSymbolResolver(ProjectData, TaskMonitor)`. The real constructor retains
+    /// both parameters for later library lookups; this placeholder does neither, since nothing
+    /// here reads them yet.
+    pub fn new(
+        project_data: StdOption<Box<dyn crate::framework::model::ProjectData>>,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> Self {
+        let _ = (project_data, monitor);
+        ExternalSymbolResolver { programs_to_fixup: 0 }
+    }
+
+    /// Port of `ExternalSymbolResolver.addProgramToFixup(Loaded<Program>)`. Only the
+    /// `Loaded`-taking overload is modeled; `ElfLoader.postLoadProgramFixups` is the only current
+    /// caller and it always has a `Loaded<Program>` in hand, not a bare `Program`.
+    pub fn add_program_to_fixup(
+        &mut self,
+        loaded: &dyn crate::app::util::opinion::loaded::Loaded,
+    ) {
+        let _ = loaded;
+        self.programs_to_fixup += 1;
+    }
+
+    /// Port of `ExternalSymbolResolver.hasProblemLibraries()`. Not yet implemented; the real body
+    /// reports whether any fixup pass recorded a missing library.
+    pub fn has_problem_libraries(&self) -> bool {
+        unimplemented!("ExternalSymbolResolver::has_problem_libraries placeholder not overridden")
+    }
+
+    /// Port of `ExternalSymbolResolver.fixUnresolvedExternalSymbols()`. The real body is a loop
+    /// over every collected program; with none collected there is nothing to resolve, so that
+    /// case is modeled exactly, while a non-empty collection still needs the unported
+    /// `ProgramSymbolResolver`.
+    pub fn fix_unresolved_external_symbols(
+        &self,
+    ) -> Result<(), crate::util::exception::CancelledException> {
+        if self.programs_to_fixup == 0 {
+            return Ok(());
+        }
+        unimplemented!(
+            "ExternalSymbolResolver::fix_unresolved_external_symbols placeholder not overridden"
+        )
+    }
+
+    /// Port of `ExternalSymbolResolver.logInfo(Consumer<String>, boolean)`. Java's `logger` is a
+    /// `Consumer<String>`; modeled as `&mut dyn FnMut(&str)` since [`MessageLog::append_msg`]
+    /// takes `&str`. The real body is a loop over every collected program, so (matching
+    /// [`fix_unresolved_external_symbols`](Self::fix_unresolved_external_symbols)) an empty
+    /// collection is modeled exactly as calling `logger` zero times.
+    pub fn log_info(&self, logger: &mut dyn FnMut(&str), short_summary: bool) {
+        let _ = short_summary;
+        if self.programs_to_fixup == 0 {
+            return;
+        }
+        unimplemented!("ExternalSymbolResolver::log_info placeholder not overridden")
+    }
+}
+
 /// Placeholder for `ghidra.app.util.opinion.LoaderMap`, referenced by
 /// [`LoadSpecChooser`](crate::app::util::importer::load_spec_chooser::LoadSpecChooser) before the
 /// real class is ported. Java's version is a `TreeMap<Loader, Collection<LoadSpec>>` sorted by

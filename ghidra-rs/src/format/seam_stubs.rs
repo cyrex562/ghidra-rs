@@ -1194,6 +1194,47 @@ pub trait ElfHeader: Send + Sync {
 
     fn get_sections(&self) -> Vec<Box<dyn ElfSectionHeader>>;
 
+    /// `ElfHeader.isBigEndian()`, needed by
+    /// [`ElfLoader::find_supported_load_specs`](crate::app::util::opinion::elf_loader::ElfLoader::find_supported_load_specs).
+    /// Defaults to `false`, matching the other endian/width predicates' "not exercised by
+    /// pre-existing mock implementors" default (see [`is_shared_object`](Self::is_shared_object)).
+    fn is_big_endian(&self) -> bool {
+        false
+    }
+
+    /// `ElfHeader.isLittleEndian()`, needed by the same caller as
+    /// [`is_big_endian`](Self::is_big_endian). Unlike Java's independent field check, this
+    /// defaults to the negation of [`is_big_endian`](Self::is_big_endian) (mirroring
+    /// [`is64_bit`](Self::is64_bit)'s derivation from [`is32_bit`](Self::is32_bit)) so a stub
+    /// implementor only needs to override one of the pair.
+    fn is_little_endian(&self) -> bool {
+        !self.is_big_endian()
+    }
+
+    /// `ElfHeader.getMachineName()`, needed by
+    /// [`ElfLoader::find_supported_load_specs`](crate::app::util::opinion::elf_loader::ElfLoader::find_supported_load_specs).
+    /// Defaults to the empty string for the same "not exercised by pre-existing mock
+    /// implementors" reason as [`is_shared_object`](Self::is_shared_object).
+    fn get_machine_name(&self) -> String {
+        String::new()
+    }
+
+    /// `ElfHeader.getFlags()` -- a string rendering of the numeric `e_flags` field, needed by the
+    /// same caller as [`get_machine_name`](Self::get_machine_name). Defaults to the empty string
+    /// for the same reason.
+    fn get_flags(&self) -> String {
+        String::new()
+    }
+
+    /// `ElfHeader.parseSectionHeaders()`, needed by
+    /// [`ElfLoader`](crate::app::util::opinion::elf_loader::ElfLoader)'s Golang-section
+    /// detection. Java re-parses (idempotently; the header already parses its sections during
+    /// construction) and can fail with an `IOException`; this stub holds nothing to (re-)parse,
+    /// so the default is a no-op success.
+    fn parse_section_headers(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+
     /// Placeholder for `ElfHeader.getLoadAdapter()`, needed by
     /// [`ElfRelocationContextBase::get_load_adapter`](crate::format::elf::relocation::elf_relocation_context::ElfRelocationContextBase::get_load_adapter).
     ///

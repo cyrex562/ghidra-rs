@@ -3,6 +3,7 @@ pub mod decompile_debug_format_manager;
 pub mod def_export_line;
 pub mod dyld_cache_loader;
 pub mod dyld_cache_options;
+pub mod elf_loader;
 pub mod elf_loader_options_factory;
 pub mod intel_hex_record;
 pub mod intel_hex_record_reader;
