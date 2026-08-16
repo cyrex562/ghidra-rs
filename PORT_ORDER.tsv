@@ -33,7 +33,7 @@ DONE	trait	0	52	1	generic	Ghidra/Framework/Gui/src/main/java/generic/theme/Theme
 DONE	trait	3	47	68	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftNode.java
 DONE	trait	2	43	1	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledNodeKind.java
 DONE	trait	1	4	4	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledTree.java
-TODO	trait	0	50	30	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangler.java
+DONE	trait	0	50	30	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangler.java
 TODO	trait	7	19	2	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/BSimJDBCDataSource.java
 TODO	trait	9	20	1	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/SQLFunctionDatabase.java
 TODO	trait	10	43	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryResponseRecord.java
