@@ -30,7 +30,7 @@ DONE	trait	0	52	1	format	Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin
 DONE	trait	0	52	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphSatelliteListener.java
 DONE	trait	0	52	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/PathHighlightMode.java
 DONE	trait	0	52	1	generic	Ghidra/Framework/Gui/src/main/java/generic/theme/ThemeListener.java
-TODO	trait	3	47	68	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftNode.java
+DONE	trait	3	47	68	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftNode.java
 TODO	trait	2	43	1	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledNodeKind.java
 TODO	trait	1	4	4	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangledTree.java
 TODO	trait	0	50	30	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/SwiftDemangler.java
