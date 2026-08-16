@@ -1760,7 +1760,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PrewarmRequest.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryChildren.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryCluster.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryDelete.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryDelete.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryExeCount.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryExeInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
