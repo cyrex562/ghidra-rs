@@ -980,3 +980,4 @@ ts	stub_class	referenced_by
 2026-08-16T04:19:52+00:00	ExecutableRecord	DescriptionManager
 2026-08-16T04:19:52+00:00	SignatureRecord	DescriptionManager
 2026-08-16T04:19:52+00:00	LSHVectorFactory	DescriptionManager
+2026-08-16T05:00:49.971024+00:00	CaptureFunctionDataTypesCmd	CaptureFunctionDataTypesListener
