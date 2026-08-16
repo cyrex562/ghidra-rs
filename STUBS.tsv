@@ -990,3 +990,4 @@ ts	stub_class	referenced_by
 2026-08-16T05:30:00.000000+00:00	MicrosoftMangledContext	MicrosoftDemangler
 2026-08-16T05:30:00.000000+00:00	MicrosoftDemanglerUtil	MicrosoftDemangler
 2026-08-16T05:30:00.000000+00:00	DemangledDataType	MicrosoftDemangler
+2026-08-16T05:31:15.830739+00:00	GraphDisplay	GraphDisplayListener
