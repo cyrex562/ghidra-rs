@@ -1033,3 +1033,6 @@ ts	stub_class	referenced_by
 2026-08-16T08:52:29.953179+00:00	WeightedLSHCosineVector	GenSignatures
 2026-08-16T09:45:00.000000+00:00	ExecutableScorer	ExecutableComparison
 2026-08-16T09:45:00.000000+00:00	VectorResult	ExecutableComparison
+2026-08-16T09:50:00.000000+00:00	PostgresFunctionDatabase	BSimClientFactory
+2026-08-16T09:50:00.000000+00:00	ElasticDatabase	BSimClientFactory
+2026-08-16T09:50:00.000000+00:00	H2FileFunctionDatabase	BSimClientFactory
