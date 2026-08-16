@@ -4,7 +4,7 @@ use crate::program::model::address::{Address, AddressFactory, AddressSet, Addres
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::compiler_spec::CompilerSpec;
 use crate::program::model::lang::{CompilerSpecID, RegisterRef};
-use crate::program::model::listing::{FunctionManager, Listing, ProgramContext};
+use crate::program::model::listing::{BookmarkManager, FunctionManager, Listing, ProgramContext};
 use crate::program::model::mem::Memory;
 use crate::program::model::reloc::relocation_table::RelocationTable;
 use crate::program::model::symbol::{EquateTable, ExternalManager, Namespace, ReferenceManager, SymbolTable};
@@ -123,6 +123,39 @@ pub trait Program: DomainObject + Send + Sync {
     /// fixup's outcome.
     fn get_relocation_table(&mut self) -> Option<&mut dyn RelocationTable> {
         None
+    }
+
+    /// Get the bookmark manager for this program.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`GenSignatures`](crate::feature::bsim::query::gen_signatures::GenSignatures)'s port of
+    /// `GenSignatures.recoverAttributes`, which reads the bookmarks at a function's entry point
+    /// to recover the BSim function-tag flags. `&self` rather than `&mut self` because the
+    /// program is reached through a shared handle there.
+    fn get_bookmark_manager(&self) -> Option<Arc<dyn BookmarkManager>> {
+        None
+    }
+
+    /// The MD5 hash of the executable this program was imported from, as a lower-case hex
+    /// string, or `None` if the program was not imported from a file.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`GenSignatures::open_program`](crate::feature::bsim::query::gen_signatures::GenSignatures::open_program),
+    /// which uses it as the executable record's identity and falls back to a metadata hash when
+    /// it is absent. Stands in for `Program.getExecutableMD5()`.
+    fn get_executable_md5(&self) -> Option<String> {
+        None
+    }
+
+    /// The date the program was created, in milliseconds since the epoch.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`GenSignatures`](crate::feature::bsim::query::gen_signatures::GenSignatures), which
+    /// stamps it onto the executable record. Java's `Program.getCreationDate()` returns a
+    /// `Date`; dates are reduced to epoch milliseconds throughout the BSim port (see
+    /// `ExecutableRecord`), and `0` is Java's `ExecutableRecord.EMPTY_DATE`.
+    fn get_creation_date(&self) -> i64 {
+        0
     }
 
     /// Get the data type manager for this program.

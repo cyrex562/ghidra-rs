@@ -746,7 +746,7 @@ mod tests {
         let mut man = DescriptionManager::new();
         let fdesc = FunctionDescription::restore_xml(
             &mut parser,
-            &LSHVectorFactory,
+            &LSHVectorFactory::default(),
             &mut man,
             exe("aaa"),
         )
@@ -766,7 +766,7 @@ mod tests {
         let mut man = DescriptionManager::new();
         let fdesc = FunctionDescription::restore_xml(
             &mut parser,
-            &LSHVectorFactory,
+            &LSHVectorFactory::default(),
             &mut man,
             exe("aaa"),
         )
@@ -793,7 +793,7 @@ mod tests {
         let mut man = DescriptionManager::new();
         let restored = FunctionDescription::restore_xml(
             &mut parser,
-            &LSHVectorFactory,
+            &LSHVectorFactory::default(),
             &mut man,
             exe("aaa"),
         )
@@ -809,7 +809,7 @@ mod tests {
         let mut man = DescriptionManager::new();
         assert!(FunctionDescription::restore_xml(
             &mut parser,
-            &LSHVectorFactory,
+            &LSHVectorFactory::default(),
             &mut man,
             exe("aaa")
         )

@@ -2069,6 +2069,9 @@ pub struct ExecutableRecord {
 }
 
 impl ExecutableRecord {
+    /// Java: `ExecutableRecord.EMPTY_DATE`, which is `new Date(0)`.
+    pub const EMPTY_DATE: i64 = 0;
+
     /// Java: `ExecutableRecord.METADATA_NAME` and friends, the bits `compare_metadata` returns.
     pub const METADATA_NAME: i32 = 1;
     pub const METADATA_ARCH: i32 = 2;
@@ -2503,6 +2506,103 @@ impl PartialOrd for ExecutableRecord {
 impl Ord for ExecutableRecord {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.md5sum.cmp(&other.md5sum)
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionTagBSimFilterType`, referenced by
+/// [`crate::feature::bsim::query::gen_signatures::GenSignatures`].
+///
+/// The real filter type participates in BSim's filter/SQL machinery; all `GenSignatures` needs
+/// are the bit assignments of the function-flag field it fills in, so only those are modelled.
+/// Replace with the real port when `FunctionTagBSimFilterType.java` is ported.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FunctionTagBSimFilterType;
+
+impl FunctionTagBSimFilterType {
+    /// The number of low bits of the flag field reserved for the built-in tags below; the first
+    /// user-defined tag starts at `1 << RESERVED_BITS`.
+    pub const RESERVED_BITS: i32 = 3;
+
+    /// The most user-defined tags that fit in the remaining bits of the 32-bit flag field.
+    pub const MAX_TAG_COUNT: i32 = 32 - Self::RESERVED_BITS;
+
+    /// The function is known to come from a library.
+    pub const KNOWN_LIBRARY_MASK: i32 = 1;
+
+    /// The decompiler hit an unimplemented instruction while decompiling the function.
+    pub const HAS_UNIMPLEMENTED_MASK: i32 = 2;
+
+    /// Instruction flow ran into bad data while decompiling the function.
+    pub const HAS_BADDATA_MASK: i32 = 4;
+}
+
+/// A predicate over a program and one of its function descriptions, as held by [`PreFilter`].
+///
+/// Stands in for Java's `BiPredicate<Program, FunctionDescription>`.
+pub type PreFilterPredicate = Box<
+    dyn Fn(
+            &dyn crate::program::model::listing::Program,
+            &crate::feature::bsim::query::description::FunctionDescription,
+        ) -> bool
+        + Send
+        + Sync,
+>;
+
+/// Placeholder for the unported Java type `PreFilter`, referenced by
+/// [`GenSignatures::transfer_cached_functions`](crate::feature::bsim::query::gen_signatures::GenSignatures::transfer_cached_functions).
+///
+/// A set of predicates applied to functions before they are handed to the database. Java stores
+/// `BiPredicate<Program, FunctionDescription>` objects and reduces them with `and`/`or`; the
+/// placeholder keeps the same shape with boxed closures. Replace with the real port when
+/// `PreFilter.java` is ported.
+#[derive(Default)]
+pub struct PreFilter {
+    pre_filters: Vec<PreFilterPredicate>,
+}
+
+impl PreFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Java: `addPredicate(BiPredicate<Program, FunctionDescription>)`.
+    pub fn add_predicate(&mut self, predicate: PreFilterPredicate) {
+        self.pre_filters.push(predicate);
+    }
+
+    /// Java: `getAndReducedPredicate()`, which reduces the filters with `and` starting from a
+    /// predicate that accepts everything -- so an empty filter set accepts every function.
+    pub fn get_and_reduced_predicate(
+        &self,
+    ) -> impl Fn(
+        &dyn crate::program::model::listing::Program,
+        &crate::feature::bsim::query::description::FunctionDescription,
+    ) -> bool
+           + '_ {
+        move |program, desc| self.pre_filters.iter().all(|f| f(program, desc))
+    }
+
+    /// Java: `getOrReducedPredicate()`, which reduces the filters with `or` starting from a
+    /// predicate that rejects everything -- so an empty filter set rejects every function.
+    pub fn get_or_reduced_predicate(
+        &self,
+    ) -> impl Fn(
+        &dyn crate::program::model::listing::Program,
+        &crate::feature::bsim::query::description::FunctionDescription,
+    ) -> bool
+           + '_ {
+        move |program, desc| self.pre_filters.iter().any(|f| f(program, desc))
+    }
+
+    /// Java: `clearFilters()`.
+    pub fn clear_filters(&mut self) {
+        self.pre_filters.clear();
+    }
+}
+
+impl std::fmt::Debug for PreFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PreFilter").field("pre_filters", &self.pre_filters.len()).finish()
     }
 }
 

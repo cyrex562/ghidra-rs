@@ -1028,3 +1028,6 @@ ts	stub_class	referenced_by
 2026-08-16T08:27:52Z	ResponseNearestVector	QueryNearestVector
 2026-08-16T08:32:13.871891+00:00	ResponseUpdate	QueryUpdate
 2026-08-16T08:37:04.791297+00:00	ResponseVectorId	QueryVectorId
+2026-08-16T08:52:29.644170+00:00	FunctionTagBSimFilterType	GenSignatures
+2026-08-16T08:52:29.936124+00:00	PreFilter	GenSignatures
+2026-08-16T08:52:29.953179+00:00	WeightedLSHCosineVector	GenSignatures
