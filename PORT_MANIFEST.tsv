@@ -12052,7 +12052,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphPerspecti
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphSatelliteListener.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphViewer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphViewerUtils.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/PathHighlightMode.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/PathHighlightMode.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/SatelliteGraphViewer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/VisualEdge.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/VisualGraphLayeredPaneButton.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
