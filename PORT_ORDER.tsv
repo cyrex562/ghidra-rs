@@ -11,7 +11,7 @@ DONE	trait	16	33	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinio
 DONE	trait	15	32	37	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractOrdinalSupportLoader.java
 DONE	trait	11	2	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliRepresentable.java
 DONE	trait	4	25	5	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/COMDescriptorDataDirectory.java
-TODO	trait	2	26	16	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DebugDataDirectory.java
+DONE	trait	2	26	16	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DebugDataDirectory.java
 TODO	trait	2	41	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/ProgramTableModel.java
 TODO	trait	0	72	32	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/DecompilerActionContext.java
 TODO	trait	2	47	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/FunctionDescription.java
