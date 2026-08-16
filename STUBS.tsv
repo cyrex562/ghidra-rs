@@ -981,3 +981,6 @@ ts	stub_class	referenced_by
 2026-08-16T04:19:52+00:00	SignatureRecord	DescriptionManager
 2026-08-16T04:19:52+00:00	LSHVectorFactory	DescriptionManager
 2026-08-16T05:00:49.971024+00:00	CaptureFunctionDataTypesCmd	CaptureFunctionDataTypesListener
+2026-08-16T05:06:01.669676+00:00	ContextState	FunctionAnalyzer
+2026-08-16T05:06:01.671307+00:00	ResultsState	FunctionAnalyzer
+2026-08-16T05:06:01.671591+00:00	VarnodeOperation	FunctionAnalyzer
