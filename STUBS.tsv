@@ -995,3 +995,5 @@ ts	stub_class	referenced_by
 2026-08-16T05:52:09.326800+00:00	FGController	FGEdge
 2026-08-16T05:52:09.326900+00:00	FunctionGraphVertexAttributes	FGEdge
 2026-08-16T05:52:09.327000+00:00	GroupHistoryInfo	FGEdge
+2026-08-16T05:58:54.173912+00:00	GThemeValueMap	ApplicationThemeDefaults
+2026-08-16T05:58:54.174161+00:00	LafType	ApplicationThemeDefaults

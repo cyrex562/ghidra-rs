@@ -254,3 +254,74 @@ pub trait VectorCompare: Send + Sync {
 /// replace with the real port when `LSHVectorFactory.java` is ported.
 #[derive(Debug, Default, Clone)]
 pub struct LSHVectorFactory;
+
+/// Placeholder for the unported Java type `GThemeValueMap`, referenced by
+/// [`crate::generic::theme::application_theme_defaults::ApplicationThemeDefaults`].
+/// Generated stub: only a shape hint. Replace with the real port when available.
+pub trait GThemeValueMap: Send + Sync {
+    fn add_color(&self, value: &dyn ColorValue) -> Box<dyn ColorValue>;
+    fn add_font(&self, value: &dyn FontValue) -> Box<dyn FontValue>;
+    fn add_icon(&self, value: &dyn IconValue) -> Box<dyn IconValue>;
+    fn add_property(&self, value: &dyn JavaPropertyValue) -> Box<dyn JavaPropertyValue>;
+    fn get_color(&self, id: &str) -> Box<dyn ColorValue>;
+    fn get_font(&self, id: &str) -> Box<dyn FontValue>;
+    fn get_icon(&self, id: &str) -> Box<dyn IconValue>;
+    fn get_property(&self, id: &str) -> Box<dyn JavaPropertyValue>;
+    fn load(&self, value_map: &dyn GThemeValueMap);
+    fn get_colors(&self) -> Vec<Box<dyn ColorValue>>;
+    fn get_fonts(&self) -> Vec<Box<dyn FontValue>>;
+    fn get_icons(&self) -> Vec<Box<dyn IconValue>>;
+    fn get_properties(&self) -> Vec<Box<dyn JavaPropertyValue>>;
+    fn contains_color(&self, id: &str) -> bool;
+    fn contains_font(&self, id: &str) -> bool;
+    fn contains_icon(&self, id: &str) -> bool;
+    fn contains_property(&self, id: &str) -> bool;
+    fn size(&self) -> Box<dyn std::any::Any>;
+    fn clear(&self);
+    fn is_empty(&self) -> bool;
+    fn remove_color(&self, id: &str);
+    fn remove_font(&self, id: &str);
+    fn remove_icon(&self, id: &str);
+    fn remove_property(&self, id: &str);
+    fn get_changed_values(&self, base: &dyn GThemeValueMap) -> Box<dyn GThemeValueMap>;
+    fn get_external_icon_files(&self) -> Vec<Box<dyn File>>;
+    fn hash_code(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn check_for_unresolved_references(&self);
+    fn get_color_ids(&self) -> Vec<String>;
+    fn get_font_ids(&self) -> Vec<String>;
+    fn get_icon_ids(&self) -> Vec<String>;
+    fn get_property_ids(&self) -> Vec<String>;
+    fn get_resolved_color(&self, id: &str) -> Box<dyn Color>;
+    fn get_resolved_font(&self, id: &str) -> Box<dyn Font>;
+    fn get_resolved_icon(&self, id: &str) -> Box<dyn Icon>;
+    fn get_resolved_property(&self, id: &str) -> Box<dyn std::any::Any>;
+}
+
+/// Placeholder for dependent types referenced by [`GThemeValueMap`].
+pub trait ColorValue: Send + Sync {}
+pub trait FontValue: Send + Sync {}
+pub trait IconValue: Send + Sync {}
+pub trait JavaPropertyValue: Send + Sync {}
+pub trait File: Send + Sync {}
+pub trait Color: Send + Sync {}
+pub trait Font: Send + Sync {}
+pub trait Icon: Send + Sync {}
+
+/// Placeholder for the unported Java type `LafType`, referenced by
+/// [`crate::generic::theme::application_theme_defaults::ApplicationThemeDefaults`].
+/// Generated stub: only a shape hint. Replace with the real port when available.
+pub trait LafType: Send + Sync {
+    fn get_display_string(&self) -> String;
+    fn get_name(&self) -> String;
+    fn uses_dark_defaults(&self) -> bool;
+    fn from_name(&self, name: &str) -> Box<dyn LafType>;
+    fn is_supported(&self) -> bool;
+    fn get_look_and_feel_manager(&self, theme_manager: &dyn ApplicationThemeManager) -> Box<dyn LookAndFeelManager>;
+    fn get_default_look_and_feel(&self) -> Box<dyn LafType>;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for dependent types referenced by [`LafType`].
+pub trait ApplicationThemeManager: Send + Sync {}
+pub trait LookAndFeelManager: Send + Sync {}
