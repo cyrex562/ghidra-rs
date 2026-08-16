@@ -7,7 +7,8 @@ use std::rc::{Rc, Weak};
 
 use crate::demangler::demangle_exception::DemangledException;
 use crate::demangler::demangled::Demangled;
-use crate::demangler::seam_stubs::{DemangledUnknown, SwiftDemangledNodeKind, SwiftDemangler};
+use crate::demangler::seam_stubs::{DemangledUnknown, SwiftDemangler};
+use crate::demangler::swift::swift_demangled_node_kind::SwiftDemangledNodeKind;
 
 /// The properties of a [`SwiftNode`].
 ///
