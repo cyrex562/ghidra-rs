@@ -82,7 +82,7 @@ mod tests {
             panic!("Not implemented in mock")
         }
 
-        fn query(&self, _query: &dyn crate::feature::seam_stubs::BSimQuery) -> Box<dyn crate::feature::seam_stubs::QueryResponseRecord> {
+        fn query(&self, _query: &dyn crate::feature::seam_stubs::BSimQuery) -> Box<dyn crate::feature::bsim::query::protocol::QueryResponseRecord> {
             panic!("Not implemented in mock")
         }
 
