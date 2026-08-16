@@ -6,10 +6,8 @@ use std::io::{self, Write};
 use std::sync::Arc;
 
 use crate::feature::bsim::query::LshException;
-use crate::feature::bsim::query::description::RowKey;
-use crate::feature::seam_stubs::{
-    CallgraphEntry, DescriptionManager, ExecutableRecord, SignatureRecord,
-};
+use crate::feature::bsim::query::description::{DescriptionManager, RowKey};
+use crate::feature::seam_stubs::{CallgraphEntry, ExecutableRecord, SignatureRecord};
 use crate::generic::seam_stubs::LSHVectorFactory;
 use crate::util::xml::spec_xml_utils;
 use crate::util::xml::xml_element::XmlElement;
@@ -745,7 +743,7 @@ mod tests {
             ],
             pos: 0,
         };
-        let mut man = DescriptionManager;
+        let mut man = DescriptionManager::new();
         let fdesc = FunctionDescription::restore_xml(
             &mut parser,
             &LSHVectorFactory,
@@ -765,7 +763,7 @@ mod tests {
             elements: vec![start("fdesc", &[("name", "printf")]), end("fdesc", "")],
             pos: 0,
         };
-        let mut man = DescriptionManager;
+        let mut man = DescriptionManager::new();
         let fdesc = FunctionDescription::restore_xml(
             &mut parser,
             &LSHVectorFactory,
@@ -792,7 +790,7 @@ mod tests {
             ],
             pos: 0,
         };
-        let mut man = DescriptionManager;
+        let mut man = DescriptionManager::new();
         let restored = FunctionDescription::restore_xml(
             &mut parser,
             &LSHVectorFactory,
@@ -808,7 +806,7 @@ mod tests {
     fn test_restore_xml_rejects_wrong_element() {
         let mut parser =
             VecParser { elements: vec![start("exe", &[]), end("exe", "")], pos: 0 };
-        let mut man = DescriptionManager;
+        let mut man = DescriptionManager::new();
         assert!(FunctionDescription::restore_xml(
             &mut parser,
             &LSHVectorFactory,
