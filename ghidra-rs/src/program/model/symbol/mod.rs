@@ -197,7 +197,41 @@ pub trait SymbolTable: Send + Sync {
         source: SourceType,
     ) -> io::Result<Arc<dyn Symbol>>;
 
+    /// Create a label named `name` at `addr` inside `namespace`. Stands in for
+    /// `SymbolTable.createLabel(Address, String, Namespace, SourceType)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`AbstractOrdinalSupportLoader`](crate::app::util::opinion::abstract_ordinal_support_loader::AbstractOrdinalSupportLoader)'s
+    /// port of `applyLibrarySymbols`, which names ordinal symbols in the global namespace.
+    ///
+    /// Defaults to [`create_label`](Self::create_label), i.e. to whichever namespace that
+    /// overload places a label in, since the only namespace in-repo callers pass is the global
+    /// one.
+    fn create_label_in_namespace(
+        &mut self,
+        addr: &Address,
+        name: &str,
+        namespace: Arc<dyn Namespace>,
+        source: SourceType,
+    ) -> io::Result<Arc<dyn Symbol>> {
+        let _ = namespace;
+        self.create_label(addr, name, source)
+    }
+
     fn get_symbol(&self, id: i64) -> io::Result<Option<Arc<dyn Symbol>>>;
+
+    /// Iterate the symbols whose names match `search_str`, in which `*` matches any run of
+    /// characters. Stands in for `SymbolTable.getSymbolIterator(String, boolean)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`AbstractOrdinalSupportLoader`](crate::app::util::opinion::abstract_ordinal_support_loader::AbstractOrdinalSupportLoader)'s
+    /// port of `applyLibrarySymbols`, which walks every `Ordinal_*` symbol.
+    ///
+    /// Defaults to an empty iterator so existing implementors are unaffected.
+    fn get_symbol_iterator(&self, search_str: &str, case_sensitive: bool) -> Box<dyn SymbolIterator> {
+        let _ = (search_str, case_sensitive);
+        Box::new(EmptySymbolIterator)
+    }
 
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>>;
 
