@@ -5067,10 +5067,17 @@ pub trait FieldOutputInfo<T>: Send + Sync {
     fn set_output_func_class(&self, func_class: &dyn std::any::Any, getter_name: Option<&str>);
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.StructureMappingInfo`,
+/// referenced by `StructureContext` (and, through it, by `StructureMarkup`) before the real
+/// class is ported.
+pub trait StructureMappingInfo<T>: Send + Sync {
+    fn structure_name(&self) -> String;
+}
+
 /// Placeholder for `ghidra.app.util.bin.format.golang.structmapping.StructureContext`,
 /// referenced by `FieldOutputFunction` before the real class is ported.
 pub trait StructureContext<T>: Send + Sync {
-    fn get_mapping_info(&self) -> Box<dyn std::any::Any>;
+    fn get_mapping_info(&self) -> Box<dyn StructureMappingInfo<T>>;
     fn get_data_type_mapper(&self) -> Box<dyn std::any::Any>;
     fn get_containing_field_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
     fn get_structure_address(&self) -> Address;

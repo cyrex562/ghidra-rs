@@ -39,7 +39,7 @@ mod tests {
     }
 
     impl StructureContext<TestType> for MockStructureContext {
-        fn get_mapping_info(&self) -> Box<dyn Any> {
+        fn get_mapping_info(&self) -> Box<dyn crate::format::seam_stubs::StructureMappingInfo<TestType>> {
             unimplemented!()
         }
 
