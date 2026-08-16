@@ -1,5 +1,5 @@
+use super::graph_display::GraphDisplay;
 use super::AttributedVertex;
-use crate::service::seam_stubs::GraphDisplay;
 
 /// Listener for notifications when the user interacts with a visual graph display.
 ///
@@ -37,35 +37,36 @@ mod tests {
 
     struct MockGraphDisplay;
     impl GraphDisplay for MockGraphDisplay {
-        fn set_graph_display_listener(&self, _listener: &dyn crate::service::seam_stubs::GraphDisplayListener) {}
-        fn set_focused_vertex(&self, _vertex: &AttributedVertex, _event_trigger: &crate::docking::widgets::EventTrigger) {}
-        fn get_graph(&self) -> crate::service::graph::AttributedGraph {
-            let graph_type = crate::service::graph::GraphType::new(
-                "mock".to_string(),
-                "mock graph type".to_string(),
-                vec![],
-                vec![],
-            );
-            crate::service::graph::AttributedGraph::new("mock", graph_type)
-        }
-        fn get_focused_vertex(&self) -> Option<AttributedVertex> {
+        fn set_graph_display_listener(&mut self, _listener: Box<dyn GraphDisplayListener>) {}
+        fn set_focused_vertex(&mut self, _vertex: &AttributedVertex, _event_trigger: crate::docking::widgets::EventTrigger) {}
+        fn get_graph(&self) -> Option<&crate::service::graph::AttributedGraph> {
             None
         }
-        fn select_vertices(&self, _vertex_set: Vec<AttributedVertex>, _event_trigger: &crate::docking::widgets::EventTrigger) {}
-        fn get_selected_vertices(&self) -> Vec<AttributedVertex> {
+        fn get_focused_vertex(&self) -> Option<&AttributedVertex> {
+            None
+        }
+        fn select_vertices(&mut self, _vertex_set: &[&AttributedVertex], _event_trigger: crate::docking::widgets::EventTrigger) {}
+        fn get_selected_vertices(&self) -> Vec<&AttributedVertex> {
             vec![]
         }
-        fn close(&self) {}
-        fn set_graph(&self, _graph: &crate::service::graph::AttributedGraph, _title: &str, _append: bool, _monitor: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()> {
+        fn close(&mut self) {}
+        fn set_graph(
+            &mut self,
+            _graph: crate::service::graph::AttributedGraph,
+            _options: &dyn crate::service::seam_stubs::GraphDisplayOptions,
+            _title: &str,
+            _append: bool,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
             Ok(())
         }
-        fn clear(&self) {}
-        fn update_vertex_name(&self, _vertex: &AttributedVertex, _new_name: &str) {}
+        fn clear(&mut self) {}
+        fn update_vertex_name(&mut self, _vertex: &AttributedVertex, _new_name: &str) {}
         fn get_graph_title(&self) -> String {
             String::new()
         }
-        fn add_action(&self, _action: &dyn crate::docking::action::docking_action_if::DockingActionIf) {}
-        fn get_actions(&self) -> Vec<Box<dyn crate::docking::action::docking_action_if::DockingActionIf>> {
+        fn add_action(&mut self, _action: Box<dyn crate::docking::action::docking_action_if::DockingActionIf>) {}
+        fn get_actions(&self) -> Vec<&dyn crate::docking::action::docking_action_if::DockingActionIf> {
             vec![]
         }
     }

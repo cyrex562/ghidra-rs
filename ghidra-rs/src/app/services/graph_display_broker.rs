@@ -7,15 +7,16 @@
 //! events if they want interactive support.
 //!
 //! The Java `@ServiceInfo` annotation (default provider `GraphDisplayBrokerPlugin`) has no Rust
-//! equivalent and is omitted. `GraphDisplayProvider` and `GraphDisplay` are not yet ported, so
-//! they are represented by placeholder traits in [`crate::app::seam_stubs`]. Java's two
-//! overloaded `getGraphExporters` methods are given distinct Rust names, since Rust traits cannot
-//! overload on parameter type/arity alone. `removeGraphDisplayBrokerLisetener` (sic, per the Java
-//! source) is spelled correctly here as `remove_graph_display_broker_listener`.
+//! equivalent and is omitted. `GraphDisplayProvider` is not yet ported, so it is represented by a
+//! placeholder trait in [`crate::app::seam_stubs`]. Java's two overloaded `getGraphExporters`
+//! methods are given distinct Rust names, since Rust traits cannot overload on parameter
+//! type/arity alone. `removeGraphDisplayBrokerLisetener` (sic, per the Java source) is spelled
+//! correctly here as `remove_graph_display_broker_listener`.
 
 use crate::app::plugin::core::graph::GraphDisplayBrokerListener;
-use crate::app::seam_stubs::{GraphDisplay, GraphDisplayProvider};
+use crate::app::seam_stubs::GraphDisplayProvider;
 use crate::service::graph::AttributedGraphExporter;
+use crate::service::graph::GraphDisplay;
 use crate::util::exception::GraphException;
 use crate::util::task::TaskMonitor;
 
@@ -96,7 +97,54 @@ mod tests {
     impl GraphDisplayProvider for MockProvider {}
 
     struct MockDisplay;
-    impl GraphDisplay for MockDisplay {}
+    impl GraphDisplay for MockDisplay {
+        fn set_graph_display_listener(
+            &mut self,
+            _listener: Box<dyn crate::service::graph::GraphDisplayListener>,
+        ) {
+        }
+        fn set_focused_vertex(
+            &mut self,
+            _vertex: &crate::service::graph::AttributedVertex,
+            _event_trigger: crate::docking::widgets::EventTrigger,
+        ) {
+        }
+        fn get_graph(&self) -> Option<&AttributedGraph> {
+            None
+        }
+        fn get_focused_vertex(&self) -> Option<&crate::service::graph::AttributedVertex> {
+            None
+        }
+        fn select_vertices(
+            &mut self,
+            _vertex_set: &[&crate::service::graph::AttributedVertex],
+            _event_trigger: crate::docking::widgets::EventTrigger,
+        ) {
+        }
+        fn get_selected_vertices(&self) -> Vec<&crate::service::graph::AttributedVertex> {
+            vec![]
+        }
+        fn close(&mut self) {}
+        fn set_graph(
+            &mut self,
+            _graph: AttributedGraph,
+            _options: &dyn crate::service::seam_stubs::GraphDisplayOptions,
+            _title: &str,
+            _append: bool,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<(), crate::util::exception::CancelledException> {
+            Ok(())
+        }
+        fn clear(&mut self) {}
+        fn update_vertex_name(&mut self, _vertex: &crate::service::graph::AttributedVertex, _new_name: &str) {}
+        fn get_graph_title(&self) -> String {
+            String::new()
+        }
+        fn add_action(&mut self, _action: Box<dyn crate::docking::action::docking_action_if::DockingActionIf>) {}
+        fn get_actions(&self) -> Vec<&dyn crate::docking::action::docking_action_if::DockingActionIf> {
+            vec![]
+        }
+    }
 
     struct MockExporter;
     impl ExtensionPoint for MockExporter {}
