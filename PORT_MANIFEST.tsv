@@ -4293,7 +4293,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/I
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/chpe/ImageChpeRangeEntry.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe chpe 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliMetadataDirectory.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliMetadataRoot.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliRepresentable.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliRepresentable.java	DONE	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliStreamHeader.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/blobs/CliAbstractSig.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli blobs 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/blobs/CliBlob.java	TODO	orig_src Ghidra Features Base src main java ghidra app util bin format pe cli blobs 

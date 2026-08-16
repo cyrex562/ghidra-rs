@@ -958,3 +958,9 @@ ts	stub_class	referenced_by
 2026-08-16T02:50:00.000000+00:00	LibrarySymbolTable	LibraryExportedSymbol
 2026-08-16T02:59:05.498142+00:00	LibrarySymbolTable	AbstractOrdinalSupportLoader
 2026-08-16T02:59:05.498142+00:00	LocalFileSystemLike	AbstractOrdinalSupportLoader
+2026-08-16T03:01:58.734762+00:00	CliStreamGuid	CliRepresentable
+2026-08-16T03:01:58.735000+00:00	CliStreamUserStrings	CliRepresentable
+2026-08-16T03:01:58.735100+00:00	CliStreamStrings	CliRepresentable
+2026-08-16T03:01:58.735200+00:00	CliStreamBlob	CliRepresentable
+2026-08-16T03:01:58.735300+00:00	CliAbstractTable	CliRepresentable
+2026-08-16T03:01:58.735400+00:00	CliStreamMetadata	CliRepresentable
