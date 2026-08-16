@@ -3,7 +3,7 @@ DONE	trait	35	12	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/fo
 DONE	trait	31	26	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureMarkup.java
 DONE	trait	39	7	32	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoUncommonType.java
 DONE	trait	38	7	14	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoBaseType.java
-TODO	trait	32	12	28	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoItab.java
+DONE	trait	32	12	28	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoItab.java
 TODO	trait	30	16	42	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFuncData.java
 TODO	trait	27	52	30	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ElfLoader.java
 TODO	trait	17	35	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryLookupTable.java
