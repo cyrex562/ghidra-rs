@@ -1789,6 +1789,22 @@ impl DecompilerUtils {
         }
         vec![line]
     }
+
+    /// Stands in for `DecompilerUtils.getFunction(Program, ClangFuncNameToken)`, called by
+    /// [`DecompilerActionContext::get_function_for_location`](crate::app::plugin::core::decompile::decompiler_action_context::DecompilerActionContext::get_function_for_location).
+    /// Java dispatches on the `ClangFuncNameToken` subclass via its static type; `ClangToken`'s
+    /// subclasses aren't ported (see the module docs), so callers instead check
+    /// [`ClangToken::kind`](crate::app::decompiler::ClangToken::kind) `==`
+    /// [`ClangTokenKind::FuncName`](crate::app::decompiler::ClangTokenKind::FuncName) themselves
+    /// and pass the token through as a plain `&dyn ClangToken`. The real body resolves the
+    /// function at the token's underlying `Varnode`/high-symbol address; not yet implemented.
+    pub fn get_function(
+        program: &dyn Program,
+        token: &dyn crate::app::decompiler::ClangToken,
+    ) -> StdOption<Arc<dyn crate::program::model::listing::Function>> {
+        let _ = (program, token);
+        unimplemented!("DecompilerUtils::get_function placeholder not overridden")
+    }
 }
 
 /// Placeholder for `ghidra.app.decompiler.signature.BlockSignature`, referenced by
@@ -1959,8 +1975,63 @@ pub trait HighFunction: Send + Sync {}
 /// Placeholder trait for `ghidra.app.decompiler.HighParamID`.
 pub trait HighParamID: Send + Sync {}
 
-/// Placeholder trait for `ghidra.app.decompiler.component.DecompilerPanel`.
-pub trait DecompilerPanel: Send + Sync {}
+/// Placeholder trait for `ghidra.app.decompiler.component.DecompilerPanel`, referenced by
+/// [`DecompilerActionContext`](crate::app::plugin::core::decompile::decompiler_action_context::DecompilerActionContext)
+/// (whose `getTokenAtCursor()` mirrors `DecompilerPanel.getTokenAtCursor()`) before the real
+/// class is ported. Defaults to panicking so the existing zero-method implementor
+/// ([`DecompilerMarginService`](crate::app::decompiler::decompiler_margin_service)'s test double)
+/// keeps compiling unchanged.
+pub trait DecompilerPanel: Send + Sync {
+    /// Stands in for `DecompilerPanel.getTokenAtCursor()`, which returns `null` when the cursor
+    /// isn't over a token.
+    fn get_token_at_cursor(&self) -> StdOption<Box<dyn crate::app::decompiler::ClangToken>> {
+        unimplemented!("DecompilerPanel::get_token_at_cursor placeholder not overridden")
+    }
+}
+
+/// Placeholder trait for `ghidra.app.decompiler.component.DecompilerController`, referenced by
+/// [`DecompilerActionContext`](crate::app::plugin::core::decompile::decompiler_action_context::DecompilerActionContext)
+/// before the real class is ported. Only the four members that class calls are modeled; the
+/// controller's much larger decompile-lifecycle/location surface belongs to its own future port.
+pub trait DecompilerController: Send + Sync {
+    /// Stands in for `DecompilerController.getFunction()`, which returns `null` before a
+    /// decompile has produced results.
+    fn get_function(&self) -> StdOption<Arc<dyn crate::program::model::listing::Function>>;
+
+    /// Stands in for `DecompilerController.getHighFunction()`, which returns `null` before a
+    /// decompile has produced results.
+    fn get_high_function(&self) -> StdOption<Arc<dyn crate::program::model::pcode::HighFunction>>;
+
+    /// Stands in for `DecompilerController.getCCodeModel()`, which returns `null` before a
+    /// decompile has produced results.
+    fn get_c_code_model(&self) -> StdOption<crate::app::decompiler::ClangTokenGroup>;
+
+    /// Stands in for `DecompilerController.setStatusMessage(String)`.
+    fn set_status_message(&self, message: &str);
+}
+
+/// Placeholder trait for `ghidra.app.plugin.core.decompile.DecompilerProvider`, referenced by
+/// [`DecompilerActionContext`](crate::app::plugin::core::decompile::decompiler_action_context::DecompilerActionContext)
+/// before the real class is ported. Java's version extends `NavigatableComponentProviderAdapter`
+/// (hence `Navigatable`, whose `isConnected`/`getProgram` back
+/// [`NavigatableActionContext::get_navigatable`](crate::app::context::NavigatableActionContext::get_navigatable));
+/// only the members `DecompilerActionContext` itself calls beyond that are modeled here.
+pub trait DecompilerProvider: Navigatable + Send + Sync {
+    /// Stands in for `ComponentProvider.getTool()`, inherited by `DecompilerProvider` from its
+    /// (unported) `ComponentProviderAdapter` ancestor.
+    fn get_tool(&self) -> Arc<dyn crate::framework::seam_stubs::PluginTool>;
+
+    /// Stands in for `DecompilerProvider.getDecompilerPanel()`.
+    fn get_decompiler_panel(&self) -> Box<dyn DecompilerPanel>;
+
+    /// Stands in for `DecompilerProvider.getController()`.
+    fn get_controller(&self) -> Box<dyn DecompilerController>;
+
+    /// Stands in for `DecompilerProvider.getTextSelection()`. Java may return `null` or a blank
+    /// string; both collapse to the empty string here, matching this crate's usual "empty string
+    /// stands in for null" convention for nullable `String` accessors (see e.g. [`MessageLog`]).
+    fn get_text_selection(&self) -> String;
+}
 
 /// Placeholder trait for `ghidra.app.decompiler.component.margin.DecompilerMarginProvider`.
 pub trait DecompilerMarginProvider: Send + Sync {}
