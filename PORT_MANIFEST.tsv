@@ -9147,7 +9147,7 @@ orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/plugin/core/analysis/Swi
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/plugin/core/analysis/SwiftTypeMetadataAnalyzer.java	TODO	orig_src Ghidra Features Swift src main java ghidra app plugin core analysis 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/SwiftSection.java	DONE	orig_src Ghidra Features Swift src main java ghidra app util bin format swift 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/SwiftTypeMetadata.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift 
-orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/SwiftTypeMetadataStructure.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift 
+orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/SwiftTypeMetadataStructure.java	DONE	orig_src Ghidra Features Swift src main java ghidra app util bin format swift
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/SwiftTypeMetadataUtils.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/AssociatedTypeDescriptor.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
 orig_src/Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/types/AssociatedTypeRecord.java	TODO	orig_src Ghidra Features Swift src main java ghidra app util bin format swift types 
