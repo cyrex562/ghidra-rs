@@ -44,7 +44,7 @@ DONE	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsi
 DONE	trait	9	19	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PrewarmRequest.java
 DONE	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryChildren.java
 DONE	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryCluster.java
-TODO	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryDelete.java
+DONE	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryDelete.java
 TODO	trait	12	21	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryNearest.java
 TODO	trait	12	20	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryNearestVector.java
 TODO	trait	12	20	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryUpdate.java
