@@ -3077,3 +3077,15 @@ impl LibrarySymbolTable {
         }
     }
 }
+
+/// Placeholder for `ghidra.app.cmd.function.CaptureFunctionDataTypesCmd`, referenced by
+/// [`CaptureFunctionDataTypesListener`](crate::app::cmd::function::CaptureFunctionDataTypesListener)
+/// before the real class is ported. Mirrors the command's status-reporting interface for
+/// listeners; only `apply_to` and `task_completed` are modeled.
+pub trait CaptureFunctionDataTypesCmd: Send + Sync {
+    /// Mirrors `CaptureFunctionDataTypesCmd.applyTo(Program, TaskMonitor)`.
+    fn apply_to(&self, program: &dyn crate::program::model::listing::Program, monitor: &dyn crate::util::task::TaskMonitor) -> bool;
+
+    /// Mirrors `CaptureFunctionDataTypesCmd.taskCompleted()`.
+    fn task_completed(&self);
+}
