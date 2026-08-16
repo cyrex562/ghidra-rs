@@ -94,6 +94,12 @@ pub trait AddParameterCommand {
             .take()
             .ok_or_else(|| InvalidInputException::with_message("no parameter available"))
     }
+
+    /// Java: `AddParameterCommand.getName`, not `final` -- overridden by subclasses such as
+    /// `AddMemoryParameterCommand` to describe their specific parameter kind.
+    fn command_name(&self) -> String {
+        "Add Parameter Command".to_string()
+    }
 }
 
 #[allow(deprecated)]
@@ -158,7 +164,7 @@ impl<T: AddParameterCommand> Command<dyn Program + 'static> for T {
     }
 
     fn name(&self) -> String {
-        "Add Parameter Command".to_string()
+        self.command_name()
     }
 }
 

@@ -2091,7 +2091,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/formats/MachoBinaryAn
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/formats/PefBinaryAnalysisCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd formats 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/formats/PortableExecutableBinaryAnalysisCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd formats 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddFunctionTagCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd function 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddMemoryParameterCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd function 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddMemoryParameterCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddMemoryVarCmd.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddParameterCommand.java	DONE	orig_src Ghidra Features Base src main java ghidra app cmd function 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddRegisterParameterCommand.java	TODO	orig_src Ghidra Features Base src main java ghidra app cmd function 
