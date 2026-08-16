@@ -1015,3 +1015,4 @@ ts	stub_class	referenced_by
 2026-08-16T07:39:53Z	WeightFactory	AdjustVectorIndex
 2026-08-16T07:39:53Z	IDFLookup	AdjustVectorIndex
 2026-08-16T07:39:53Z	VectorCompare	AdjustVectorIndex
+2026-08-16T08:00:00Z	ResponsePassword	PasswordChange
