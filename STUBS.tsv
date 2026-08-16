@@ -1006,3 +1006,5 @@ ts	stub_class	referenced_by
 2026-08-16T06:54:21Z	MessageLog	SwiftDemangler
 2026-08-16T06:54:21Z	SwiftTypeMetadata	SwiftDemangler
 2026-08-16T06:54:21Z	DemangledLabel	SwiftDemangler
+2026-08-16T07:14:45Z	BSimServerInfo	BSimJDBCDataSource
+2026-08-16T07:14:45Z	FunctionDatabase	BSimJDBCDataSource
