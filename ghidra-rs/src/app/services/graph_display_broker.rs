@@ -14,9 +14,9 @@
 //! correctly here as `remove_graph_display_broker_listener`.
 
 use crate::app::plugin::core::graph::GraphDisplayBrokerListener;
-use crate::app::seam_stubs::GraphDisplayProvider;
 use crate::service::graph::AttributedGraphExporter;
 use crate::service::graph::GraphDisplay;
+use crate::service::graph::GraphDisplayProvider;
 use crate::util::exception::GraphException;
 use crate::util::task::TaskMonitor;
 
@@ -94,7 +94,46 @@ mod tests {
     struct MockProvider {
         name: String,
     }
-    impl GraphDisplayProvider for MockProvider {}
+    impl ExtensionPoint for MockProvider {}
+    impl GraphDisplayProvider for MockProvider {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+
+        fn get_graph_display_reuse(
+            &mut self,
+            _reuse_graph: bool,
+            _append: bool,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Box<dyn GraphDisplay>, GraphException> {
+            Ok(Box::new(MockDisplay))
+        }
+
+        fn get_active_graph_display(&self) -> Option<Box<dyn GraphDisplay>> {
+            None
+        }
+
+        fn get_all_graph_displays(&self) -> Vec<Box<dyn GraphDisplay>> {
+            vec![]
+        }
+
+        fn initialize(
+            &mut self,
+            _tool: &dyn crate::framework::seam_stubs::PluginTool,
+            _options: &mut dyn crate::framework::options::Options,
+        ) {
+        }
+
+        fn options_changed(&mut self, _options: &dyn crate::framework::options::Options) {}
+
+        fn dispose(&mut self) {}
+
+        fn get_help_location(&self) -> Box<dyn crate::framework::seam_stubs::HelpLocation> {
+            struct StubHelpLocation;
+            impl crate::framework::seam_stubs::HelpLocation for StubHelpLocation {}
+            Box::new(StubHelpLocation)
+        }
+    }
 
     struct MockDisplay;
     impl GraphDisplay for MockDisplay {

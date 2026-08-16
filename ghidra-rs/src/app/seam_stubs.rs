@@ -334,12 +334,6 @@ pub trait RunResult: Send {
 /// this is too).
 pub trait GoToOverrideService: Send + Sync {}
 
-/// Placeholder for `ghidra.service.graph.GraphDisplayProvider`, referenced by
-/// [`GraphDisplayBroker`](crate::app::services::GraphDisplayBroker) before the real class is
-/// ported. `GraphDisplayBroker` only ever passes this type through as a parameter/return value,
-/// so no members are needed yet.
-pub trait GraphDisplayProvider {}
-
 /// Placeholder for `ghidra.debug.api.modules.DebuggerAddressTranslator`, the base interface
 /// extended by
 /// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
