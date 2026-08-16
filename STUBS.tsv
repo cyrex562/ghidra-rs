@@ -966,3 +966,7 @@ ts	stub_class	referenced_by
 2026-08-16T03:01:58.735400+00:00	CliStreamMetadata	CliRepresentable
 2026-08-15T23:08:00+00:00	ImageCor20Header	COMDescriptorDataDirectory
 2026-08-15T23:08:00+00:00	PeUtils	COMDescriptorDataDirectory
+2026-08-15T23:30:00+00:00	DebugDirectory	DebugDataDirectory
+2026-08-15T23:30:00+00:00	DebugMisc	DebugDataDirectory
+2026-08-15T23:30:00+00:00	DebugCodeView	DebugDataDirectory
+2026-08-15T23:30:00+00:00	DebugDirectoryParser	DebugDataDirectory
