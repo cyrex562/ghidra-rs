@@ -39,7 +39,7 @@ DONE	trait	9	20	1	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsi
 DONE	trait	10	43	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryResponseRecord.java
 DONE	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/AdjustVectorIndex.java
 DONE	trait	11	20	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PasswordChange.java
-TODO	trait	10	19	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseOptionalExist.java
+DONE	trait	10	19	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ResponseOptionalExist.java
 TODO	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/InsertRequest.java
 TODO	trait	9	19	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/PrewarmRequest.java
 TODO	trait	9	19	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryChildren.java
