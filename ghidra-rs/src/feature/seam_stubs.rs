@@ -2788,6 +2788,18 @@ pub trait ResponsePrewarm: Send + Sync {
     fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
 }
 
+/// Placeholder for `ResponseChildren` type. Response from a query-children operation.
+pub trait ResponseChildren: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `FunctionEntry` type. A saved key referencing a specific function by name
+/// (and optionally address) within an executable, used by [`crate::feature::bsim::query::protocol::QueryChildren`].
+pub trait FunctionEntry: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+}
+
 /// Placeholder for `LSHVectorFactory` type. Factory for creating and restoring LSH vectors.
 pub trait LSHVectorFactory: Send + Sync {
     fn build_zero_vector(&self) -> Box<dyn LSHVector>;
