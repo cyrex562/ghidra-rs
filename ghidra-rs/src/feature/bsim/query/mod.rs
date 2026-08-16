@@ -9,9 +9,11 @@ pub mod lsh_exception;
 pub mod minimal_error_logger;
 pub mod postgresql;
 pub mod server_config;
+pub mod sql_function_database;
 
 pub use b_sim_initializer::BSimInitializer;
 pub use b_sim_jdbc_data_source::{BSimJDBCDataSource, Status, ConnectionType};
 pub use decompile_function_task::DecompileFunctionTask;
 pub use lsh_exception::LshException;
 pub use minimal_error_logger::MinimalErrorLogger;
+pub use sql_function_database::SQLFunctionDatabase;
