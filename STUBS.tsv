@@ -1008,3 +1008,10 @@ ts	stub_class	referenced_by
 2026-08-16T06:54:21Z	DemangledLabel	SwiftDemangler
 2026-08-16T07:14:45Z	BSimServerInfo	BSimJDBCDataSource
 2026-08-16T07:14:45Z	FunctionDatabase	BSimJDBCDataSource
+2026-08-16T07:39:53Z	BSimQuery	AdjustVectorIndex
+2026-08-16T07:39:53Z	ResponseAdjustIndex	AdjustVectorIndex
+2026-08-16T07:39:53Z	LSHVectorFactory	AdjustVectorIndex
+2026-08-16T07:39:53Z	LSHVector	AdjustVectorIndex
+2026-08-16T07:39:53Z	WeightFactory	AdjustVectorIndex
+2026-08-16T07:39:53Z	IDFLookup	AdjustVectorIndex
+2026-08-16T07:39:53Z	VectorCompare	AdjustVectorIndex

@@ -9,6 +9,7 @@ pub use crate::feature::vt::api::main::vt_association::VtAssociation;
 pub use crate::feature::vt::api::main::vt_markup_item::VtMarkupItem;
 pub use crate::feature::vt::api::main::vt_match::VtMatch;
 pub use crate::feature::bsim::query::protocol::{QueryResponseRecord, QueryResponseRecordBase};
+pub use crate::util::seam_stubs::XmlPullParser;
 
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
@@ -2755,8 +2756,34 @@ pub trait DatabaseInformation: Send + Sync {}
 /// Placeholder for `BSimError` type.
 pub trait BSimError: Send + Sync {}
 
-/// Placeholder for `BSimQuery` type.
-pub trait BSimQuery: Send + Sync {}
+/// Placeholder for `BSimQuery` type. Abstract base for all BSim queries.
+pub trait BSimQuery: Send + Sync {
+    fn build_response_template(&self);
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `ResponseAdjustIndex` type. Response from vector index adjustment operations.
+pub trait ResponseAdjustIndex: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for `LSHVectorFactory` type. Factory for creating and restoring LSH vectors.
+pub trait LSHVectorFactory: Send + Sync {
+    fn build_zero_vector(&self) -> Box<dyn LSHVector>;
+    fn build_vector(&self, feature: &[i32]) -> Box<dyn LSHVector>;
+    fn restore_vector_from_xml(&self, parser: &dyn XmlPullParser) -> Box<dyn LSHVector>;
+    fn restore_vector_from_sql(&self, sql: &str) -> std::io::Result<Box<dyn LSHVector>>;
+    fn set(&self, w_factory: &dyn WeightFactory, i_lookup: &dyn IDFLookup, settings: i32);
+    fn is_loaded(&self) -> bool;
+    fn get_significance_scale(&self) -> f64;
+    fn get_significance_addend(&self) -> f64;
+    fn get_settings(&self) -> i32;
+    fn get_self_significance(&self, vector: &dyn LSHVector) -> f64;
+    fn calculate_significance(&self, data: &dyn VectorCompare) -> f64;
+    fn read_weights(&self, parser: &dyn XmlPullParser) -> std::io::Result<()>;
+}
 
 
 /// Placeholder for `DescriptionManager` type.
@@ -2770,3 +2797,15 @@ pub trait WeightedLSHCosineVectorFactory: Send + Sync {}
 
 /// Placeholder for `LSHVectorFactory` type.
 pub trait LSHVectorFactoryStub: Send + Sync {}
+
+/// Placeholder for `LSHVector` type.
+pub trait LSHVector: Send + Sync {}
+
+/// Placeholder for `WeightFactory` type.
+pub trait WeightFactory: Send + Sync {}
+
+/// Placeholder for `IDFLookup` type.
+pub trait IDFLookup: Send + Sync {}
+
+/// Placeholder for `VectorCompare` type.
+pub trait VectorCompare: Send + Sync {}
