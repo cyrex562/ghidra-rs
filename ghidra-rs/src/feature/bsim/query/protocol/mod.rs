@@ -6,6 +6,7 @@ pub mod query_children;
 pub mod query_cluster;
 pub mod query_delete;
 pub mod query_nearest;
+pub mod query_nearest_vector;
 pub mod query_response_record;
 pub mod response_optional_exist;
 
@@ -17,5 +18,6 @@ pub use query_children::QueryChildren;
 pub use query_cluster::QueryCluster;
 pub use query_delete::QueryDelete;
 pub use query_nearest::QueryNearest;
+pub use query_nearest_vector::QueryNearestVector;
 pub use query_response_record::{QueryResponseRecord, QueryResponseRecordBase};
 pub use response_optional_exist::ResponseOptionalExist;
