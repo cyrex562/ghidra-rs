@@ -12,6 +12,8 @@ use crate::format::dwarf::external::object_type::ObjectType;
 use crate::filesystem::ghidra::g_binary_reader::GBinaryReader;
 use crate::format::dwarf::dwarf_range::DWARFRange;
 use crate::format::elf::elf_load_helper::ElfLoadHelper;
+use crate::format::golang::go_ver::GoVer;
+use crate::format::golang::go_ver_range::GoVerRange;
 use crate::format::pdb2::pdbreader::r#type::abstract_ms_type::AbstractMsType;
 use crate::format::pe::rich::ms_product_type::MsProductType;
 use crate::format::unixaout::unix_aout_symbol::UnixAoutSymbol;
@@ -5117,11 +5119,115 @@ pub trait GoSlice: Send + Sync {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoRttiMapper`, referenced by
-/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType)
-/// before the real class is ported.
+/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType) and
+/// [`GoBaseType`](crate::format::golang::rtti::types::go_base_type::GoBaseType) before the real
+/// class is ported.
 pub trait GoRttiMapper: Send + Sync {
     fn resolve_name_off(&self, ptr_in_module: i64, off: i64) -> std::io::Result<Option<Box<dyn GoName>>>;
     fn new_slice(&self, array: i64, len: i64, cap: i64) -> Box<dyn GoSlice>;
     fn go_method_structure_length(&self) -> i32;
+    /// Mirrors `GoRttiMapper.getGoVer()`.
+    fn get_go_ver(&self) -> GoVer;
+    /// Mirrors `GoRttiMapper.getSafeName(GoNameSupplier, T, String)`, simplified to return the
+    /// resolved name string directly rather than a `GoName` wrapper, since every current call
+    /// site immediately calls `.getName()` on the result. `fallback_structure_name` and
+    /// `fallback_structure_start` stand in for the `StructureContext<T>` that the real method
+    /// derives its fallback name from when `supplier` fails or returns nothing.
+    fn get_safe_name(
+        &self,
+        supplier: &dyn Fn() -> std::io::Result<Option<Box<dyn GoName>>>,
+        fallback_structure_name: &str,
+        fallback_structure_start: i64,
+        default_value: &str,
+    ) -> String;
+    /// Mirrors `GoRttiMapper.getGoTypes()`.
+    fn get_go_types(&self) -> Box<dyn GoTypeManager>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoTypeFlag`, referenced by
+/// [`GoBaseType`](crate::format::golang::rtti::types::go_base_type::GoBaseType) before the real
+/// class is ported. `GoTypeFlag` is a concrete Java enum (not an interface), so it is modeled
+/// here as a concrete enum. Its only real dependencies ([`GoVer`] and [`GoVerRange`]) are already
+/// ported, so this mirrors the Java enum's logic 1:1 rather than being a bare shape hint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GoTypeFlag {
+    Uncommon,
+    ExtraStar,
+    Named,
+    RegularMemory,
+    UnrolledBitmap,
+    GCMaskOnDemand,
+    DirectIFace,
+}
+
+impl GoTypeFlag {
+    const ALL: [GoTypeFlag; 7] = [
+        GoTypeFlag::Uncommon,
+        GoTypeFlag::ExtraStar,
+        GoTypeFlag::Named,
+        GoTypeFlag::RegularMemory,
+        GoTypeFlag::UnrolledBitmap,
+        GoTypeFlag::GCMaskOnDemand,
+        GoTypeFlag::DirectIFace,
+    ];
+
+    /// Mirrors `GoTypeFlag.getValue()`.
+    pub fn value(self) -> i32 {
+        match self {
+            GoTypeFlag::Uncommon => 1 << 0,
+            GoTypeFlag::ExtraStar => 1 << 1,
+            GoTypeFlag::Named => 1 << 2,
+            GoTypeFlag::RegularMemory => 1 << 3,
+            GoTypeFlag::UnrolledBitmap => 1 << 4,
+            GoTypeFlag::GCMaskOnDemand => 1 << 4,
+            GoTypeFlag::DirectIFace => 1 << 5,
+        }
+    }
+
+    fn valid_versions(self) -> GoVerRange {
+        match self {
+            GoTypeFlag::Uncommon
+            | GoTypeFlag::ExtraStar
+            | GoTypeFlag::Named
+            | GoTypeFlag::RegularMemory => GoVerRange::ALL,
+            GoTypeFlag::UnrolledBitmap => GoVerRange::parse("1.22-1.23"),
+            GoTypeFlag::GCMaskOnDemand | GoTypeFlag::DirectIFace => GoVerRange::parse("1.24-"),
+        }
+    }
+
+    /// Mirrors `GoTypeFlag.isSet(int, GoVer)`.
+    pub fn is_set(self, i: i32, ver: GoVer) -> bool {
+        self.valid_versions().contains(ver) && (i & self.value()) != 0
+    }
+
+    /// Mirrors `GoTypeFlag.isValid(int, GoVer)`.
+    pub fn is_valid(b: i32, ver: GoVer) -> bool {
+        let mut remaining = b;
+        for flag in Self::ALL {
+            if flag.valid_versions().contains(ver) {
+                remaining &= !flag.value();
+            }
+        }
+        remaining == 0
+    }
+
+    /// Mirrors `GoTypeFlag.parseFlags(int, GoVer)`.
+    pub fn parse_flags(b: i32, ver: GoVer) -> Vec<GoTypeFlag> {
+        Self::ALL.into_iter().filter(|flag| flag.is_set(b, ver)).collect()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoType`, referenced by
+/// [`GoBaseType::get_ptr_to_this`](crate::format::golang::rtti::types::go_base_type::GoBaseType::get_ptr_to_this)
+/// before the real class is ported. `GoBaseType` only ever returns this type opaquely, so no
+/// members are needed yet.
+pub trait GoType: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoTypeManager`, referenced by
+/// [`GoBaseType::get_ptr_to_this`](crate::format::golang::rtti::types::go_base_type::GoBaseType::get_ptr_to_this)
+/// before the real class is ported. Models only `resolveTypeOff`, the accessor `GoBaseType`
+/// needs.
+pub trait GoTypeManager: Send + Sync {
+    fn resolve_type_off(&self, ptr_in_module: i64, off: i64) -> std::io::Result<Box<dyn GoType>>;
 }
 
