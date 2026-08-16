@@ -18,7 +18,7 @@ DONE	trait	2	47	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsi
 DONE	trait	1	49	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/DescriptionManager.java
 DONE	trait	5	10	11	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddParameterCommand.java
 DONE	trait	4	8	9	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddMemoryParameterCommand.java
-TODO	trait	5	9	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/CaptureFunctionDataTypesListener.java
+DONE	trait	5	9	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/CaptureFunctionDataTypesListener.java
 TODO	trait	7	4	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/state/FunctionAnalyzer.java
 TODO	trait	2	10	61	demangler	Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/MicrosoftDemangler.java
 TODO	trait	1	54	1	service	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/service/graph/GraphDisplayListener.java
