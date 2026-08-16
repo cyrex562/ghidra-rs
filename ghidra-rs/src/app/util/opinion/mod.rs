@@ -8,6 +8,7 @@ pub mod elf_loader_options_factory;
 pub mod intel_hex_record;
 pub mod intel_hex_record_reader;
 pub mod java_loader;
+pub mod library_lookup_table;
 pub mod load_exception;
 pub mod loaded;
 pub mod loader;

@@ -5481,3 +5481,20 @@ pub trait GoInterfaceType: Send + Sync {
 /// `GoItab` only ever stores and returns this type opaquely, so no members are needed yet.
 pub trait GoIMethod: Send + Sync {}
 
+/// The one `ghidra.app.util.bin.format.pe.ResourceDataDirectory` static that
+/// [`library_lookup_table`](crate::app::util::opinion::library_lookup_table) reaches, standing in
+/// for the class until the real port lands. Java hangs it off the class itself; Rust has no
+/// static trait methods, so -- as with the other statics-only seams in this crate -- it becomes a
+/// free function in a module named for the Java class.
+///
+/// The rest of `ResourceDataDirectory` (the `<resource>` tree walker, its `markup`, ...) is a
+/// large unported subsystem and is deliberately not modeled here.
+pub mod resource_data_directory {
+    /// Port of `ResourceDataDirectory.getPeResourceProperty(String)`: the `Program` property name
+    /// under which the PE resource entry named `key` is recorded. Implemented for real (it is
+    /// pure string manipulation) so callers see the same property names Java produces.
+    pub fn get_pe_resource_property(key: &str) -> String {
+        format!("PE Property[{}]", key.replace('.', "_dot_"))
+    }
+}
+
