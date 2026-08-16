@@ -964,3 +964,5 @@ ts	stub_class	referenced_by
 2026-08-16T03:01:58.735200+00:00	CliStreamBlob	CliRepresentable
 2026-08-16T03:01:58.735300+00:00	CliAbstractTable	CliRepresentable
 2026-08-16T03:01:58.735400+00:00	CliStreamMetadata	CliRepresentable
+2026-08-15T23:08:00+00:00	ImageCor20Header	COMDescriptorDataDirectory
+2026-08-15T23:08:00+00:00	PeUtils	COMDescriptorDataDirectory

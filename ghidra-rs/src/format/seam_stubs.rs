@@ -201,6 +201,13 @@ pub trait NTHeader: Send + Sync {
     fn check_pointer(&self, ptr: i64) -> bool;
     fn check_rva(&self, rva: i64) -> bool;
     fn va_to_pointer(&self, va: i32) -> i32;
+    /// Port of the package-private `NTHeader.shouldParseCliHeaders()`, needed by
+    /// [`COMDescriptorDataDirectory`](crate::format::pe::com_descriptor_data_directory::COMDescriptorDataDirectory)
+    /// to decide whether to parse the `.NET` CLI metadata directory. Defaults to `true` (the
+    /// common case) so existing `NTHeader` stub implementors don't need updating.
+    fn should_parse_cli_headers(&self) -> bool {
+        true
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.FileHeader`, referenced by
@@ -210,6 +217,104 @@ pub trait FileHeader: Send + Sync {}
 /// Placeholder for `ghidra.app.util.bin.format.pe.OptionalHeader`, referenced by
 /// [`NTHeader`] before the real class is ported.
 pub trait OptionalHeader: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.ImageCor20Header`, referenced by
+/// [`COMDescriptorDataDirectory`](crate::format::pe::com_descriptor_data_directory::COMDescriptorDataDirectory)
+/// before the real class is ported. `ImageCor20Header` is a concrete Java class (not an
+/// interface), so it is modeled here as a concrete struct rather than a trait object. Only reads
+/// the leading fixed-size fields (`cb`, `MajorRuntimeVersion`, `MinorRuntimeVersion`); the nested
+/// `CliMetadataDirectory` / `DefaultDataDirectory` sub-structures are not modeled yet, so
+/// `parse`, `to_data_type`, and `markup` are minimal placeholders rather than faithful ports.
+pub struct ImageCor20Header {
+    pub cb: i32,
+    pub major_runtime_version: i16,
+    pub minor_runtime_version: i16,
+}
+
+impl ImageCor20Header {
+    /// Port of `ImageCor20Header(BinaryReader, long, NTHeader)`.
+    pub fn new(
+        reader: &mut dyn crate::app::util::bin::binary_reader::BinaryReader,
+        index: u64,
+        _nt_header: &dyn NTHeader,
+    ) -> std::io::Result<Self> {
+        let orig_index = reader.get_pointer_index();
+        reader.set_pointer_index(index);
+        let cb = reader.read_next_int()?;
+        let major_runtime_version = reader.read_next_short()?;
+        let minor_runtime_version = reader.read_next_short()?;
+        reader.set_pointer_index(orig_index);
+        Ok(ImageCor20Header { cb, major_runtime_version, minor_runtime_version })
+    }
+
+    /// Placeholder for `ImageCor20Header.parse()`; always reports success until the nested
+    /// directories are ported.
+    pub fn parse(&mut self) -> std::io::Result<bool> {
+        Ok(true)
+    }
+
+    /// Placeholder for `ImageCor20Header.toDataType()`.
+    pub fn to_data_type(
+        &self,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "ImageCor20Header::to_data_type is not yet ported",
+        ))
+    }
+
+    /// Placeholder for `ImageCor20Header.markup(...)`; a no-op until the nested directories and
+    /// symbol-table markup are ported.
+    pub fn markup(
+        &self,
+        _program: &dyn crate::program::model::listing::program::Program,
+        _is_binary: bool,
+        _monitor: &dyn crate::util::task::TaskMonitor,
+        _log: &dyn MessageLog,
+        _nt_header: &dyn NTHeader,
+    ) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.PeUtils`, referenced by
+/// [`COMDescriptorDataDirectory`](crate::format::pe::com_descriptor_data_directory::COMDescriptorDataDirectory)
+/// before the real class is ported. `PeUtils` is a concrete Java class of static helpers (not an
+/// interface), so it is modeled here as a unit struct with associated functions.
+pub struct PeUtils;
+
+impl PeUtils {
+    /// Port of `PeUtils.getMarkupAddress`. Returns `None` if the program has no default address
+    /// space (Java assumes one always exists and would NPE instead).
+    pub fn get_markup_address(
+        program: &dyn crate::program::model::listing::program::Program,
+        is_binary: bool,
+        nt_header: &dyn NTHeader,
+        offset: i32,
+    ) -> Option<crate::program::model::address::Address> {
+        let space = program.get_address_factory()?.get_default_address_space()?;
+        if is_binary {
+            let ptr = nt_header.rva_to_pointer(offset);
+            if ptr < 0 && offset > 0 {
+                return Some(crate::program::model::address::Address::new(space, offset as i64));
+            }
+            return Some(crate::program::model::address::Address::new(space, ptr as i64));
+        }
+        Some(crate::program::model::address::Address::new(space, offset as i64))
+    }
+
+    /// Placeholder for `PeUtils.createData`; the real implementation looks up/creates listing
+    /// data at `addr`, which needs `Listing` markup support this crate does not have yet, so
+    /// this is a no-op that always succeeds.
+    pub fn create_data(
+        _program: &dyn crate::program::model::listing::program::Program,
+        _addr: &crate::program::model::address::Address,
+        _data_type: &dyn crate::program::model::data::data_type::DataType,
+        _log: &dyn MessageLog,
+    ) -> std::io::Result<()> {
+        Ok(())
+    }
+}
 
 /// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
 /// [`PeMarkupable`](crate::format::pe::pe_markupable::PeMarkupable) before the real class

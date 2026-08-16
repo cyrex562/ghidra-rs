@@ -1,4 +1,5 @@
 pub mod chpe;
+pub mod com_descriptor_data_directory;
 pub mod resource;
 pub mod rich;
 pub mod cli;
