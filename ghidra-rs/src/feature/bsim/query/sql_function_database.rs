@@ -52,7 +52,9 @@ mod tests {
             "mock_user".to_string()
         }
 
-        fn get_lsh_vector_factory(&self) -> Box<dyn crate::feature::seam_stubs::LSHVectorFactoryStub> {
+        fn get_lsh_vector_factory(
+            &self,
+        ) -> std::sync::Arc<crate::generic::seam_stubs::LSHVectorFactory> {
             panic!("Not implemented in mock")
         }
 
