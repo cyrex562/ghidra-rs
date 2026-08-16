@@ -932,3 +932,7 @@ ts	stub_class	referenced_by
 2026-08-15T05:48:00.000000+00:00	StructureContext	FieldOutputFunction
 2026-08-16T01:09:18Z	StringDataItem	StringIDItem
 2026-08-16T01:15:17Z	StructureMappingInfo	StructureMarkup
+2026-08-16T01:22:34.308788+00:00	GoMethod	GoUncommonType
+2026-08-16T01:22:34.308788+00:00	GoName	GoUncommonType
+2026-08-16T01:22:34.308788+00:00	GoSlice	GoUncommonType
+2026-08-16T01:22:34.308788+00:00	GoRttiMapper	GoUncommonType

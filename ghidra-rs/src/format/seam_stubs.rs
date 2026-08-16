@@ -5094,3 +5094,34 @@ pub trait StructureContext<T>: Send + Sync {
     fn to_string(&self) -> String;
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoMethod`, referenced by
+/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType)
+/// before the real class is ported.
+pub trait GoMethod: Send + Sync {
+    fn get_name(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoName`, referenced by
+/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType)
+/// before the real class is ported.
+pub trait GoName: Send + Sync {
+    fn get_name(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoSlice`, referenced by
+/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType)
+/// before the real class is ported.
+pub trait GoSlice: Send + Sync {
+    fn is_valid(&self, element_size: i32) -> bool;
+    fn read_go_methods(&self) -> std::io::Result<Vec<Box<dyn GoMethod>>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoRttiMapper`, referenced by
+/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType)
+/// before the real class is ported.
+pub trait GoRttiMapper: Send + Sync {
+    fn resolve_name_off(&self, ptr_in_module: i64, off: i64) -> std::io::Result<Option<Box<dyn GoName>>>;
+    fn new_slice(&self, array: i64, len: i64, cap: i64) -> Box<dyn GoSlice>;
+    fn go_method_structure_length(&self) -> i32;
+}
+
