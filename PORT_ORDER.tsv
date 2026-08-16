@@ -6,7 +6,7 @@ DONE	trait	38	7	14	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin
 DONE	trait	32	12	28	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoItab.java
 DONE	trait	30	16	42	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFuncData.java
 DONE	trait	27	52	30	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/ElfLoader.java
-TODO	trait	17	35	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryLookupTable.java
+DONE	trait	17	35	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryLookupTable.java
 TODO	trait	16	33	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/LibraryExportedSymbol.java
 TODO	trait	15	32	37	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/AbstractOrdinalSupportLoader.java
 TODO	trait	11	2	1	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/cli/CliRepresentable.java
