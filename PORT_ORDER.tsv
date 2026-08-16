@@ -27,7 +27,7 @@ DONE	trait	0	55	3	service	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra
 DONE	trait	0	54	3	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/FGEdge.java
 DONE	trait	0	54	2	generic	Ghidra/Framework/Gui/src/main/java/generic/theme/ApplicationThemeDefaults.java
 DONE	trait	0	52	1	format	Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/SwiftTypeMetadataStructure.java
-TODO	trait	0	52	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphSatelliteListener.java
+DONE	trait	0	52	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphSatelliteListener.java
 TODO	trait	0	52	1	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/PathHighlightMode.java
 TODO	trait	0	52	1	generic	Ghidra/Framework/Gui/src/main/java/generic/theme/ThemeListener.java
 TODO	trait	3	47	68	demangler	Ghidra/Features/Swift/src/main/java/ghidra/app/util/demangler/swift/nodes/SwiftNode.java
