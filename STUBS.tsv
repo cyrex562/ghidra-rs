@@ -1021,3 +1021,5 @@ ts	stub_class	referenced_by
 2026-08-16T08:05:00Z	ResponseChildren	QueryChildren
 2026-08-16T08:05:00Z	FunctionEntry	QueryChildren
 2026-08-16T08:15:00Z	ResponseCluster	QueryCluster
+2026-08-16T08:17:41Z	ExeSpecifier	QueryDelete
+2026-08-16T08:17:41Z	ResponseDelete	QueryDelete

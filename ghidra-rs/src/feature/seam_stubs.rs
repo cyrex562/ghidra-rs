@@ -2807,6 +2807,18 @@ pub trait ResponseCluster: Send + Sync {
     fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
 }
 
+/// Placeholder for `ExeSpecifier` type. Specifies an executable for query operations.
+pub trait ExeSpecifier: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser);
+}
+
+/// Placeholder for `ResponseDelete` type. Response from a query-delete operation.
+pub trait ResponseDelete: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser);
+}
+
 /// Placeholder for `LSHVectorFactory` type. Factory for creating and restoring LSH vectors.
 pub trait LSHVectorFactory: Send + Sync {
     fn build_zero_vector(&self) -> Box<dyn LSHVector>;
