@@ -2684,3 +2684,90 @@ impl Ord for CallgraphEntry {
         self.dest.cmp(&other.dest)
     }
 }
+
+/// Placeholder for the unported Java type `BSimServerInfo`, referenced by `BSimJDBCDataSource`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait BSimServerInfo: Send + Sync {
+    fn is_windows_file_path(&self) -> bool;
+    fn to_url_string(&self) -> String;
+    fn to_url(&self) -> std::io::Result<Box<dyn URL>>;
+    fn get_db_type(&self) -> Box<dyn DBType>;
+    fn set_user_info(&self, bds: &dyn BasicDataSource);
+    fn has_password(&self) -> bool;
+    fn has_default_login(&self) -> bool;
+    fn get_user_name(&self) -> String;
+    fn get_user_info(&self) -> String;
+    fn get_server_name(&self) -> String;
+    fn get_port(&self) -> i32;
+    fn get_db_name(&self) -> String;
+    fn get_short_db_name(&self) -> String;
+    fn hash_code(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn to_string(&self) -> String;
+    fn get_function_database(&self, async_: bool) -> Box<dyn FunctionDatabase>;
+    fn compare_to(&self, o: &dyn BSimServerInfo) -> i32;
+}
+
+/// Placeholder for the unported Java type `FunctionDatabase`, referenced by `BSimJDBCDataSource`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait FunctionDatabase: Send + Sync {
+    fn to_string(&self) -> String;
+    fn get_integer(&self) -> i32;
+    fn is_password_change_allowed(&self) -> bool;
+    fn change_password(&self, new_password: &[char]) -> String;
+    fn get_status(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::Status;
+    fn get_connection_type(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::ConnectionType;
+    fn get_user_name(&self) -> String;
+    fn get_lsh_vector_factory(&self) -> Box<dyn LSHVectorFactoryStub>;
+    fn get_info(&self) -> Box<dyn DatabaseInformation>;
+    fn compare_layout(&self) -> i32;
+    fn get_server_info(&self) -> Box<dyn BSimServerInfo>;
+    fn get_url_string(&self) -> String;
+    fn initialize(&self) -> bool;
+    fn close(&self);
+    fn get_last_error(&self) -> Box<dyn BSimError>;
+    fn query(&self, query: &dyn BSimQuery) -> Box<dyn QueryResponseRecord>;
+    fn check_settings_for_query(&self, manage: &dyn DescriptionManager, info: &dyn DatabaseInformation) -> std::io::Result<()>;
+    fn check_settings_for_insert(&self, manage: &dyn DescriptionManager, info: &dyn DatabaseInformation) -> std::io::Result<bool>;
+    fn construct_fatal_error(&self, flags: i32, newrec: &ExecutableRecord, orig: &ExecutableRecord) -> String;
+    fn construct_nonfatal_error(&self, flags: i32, newrec: &ExecutableRecord, orig: &ExecutableRecord) -> String;
+    fn load_configuration_template(&self, configname: &str) -> std::io::Result<Box<dyn Configuration>>;
+    fn generate_lsh_vector_factory(&self) -> Box<dyn WeightedLSHCosineVectorFactory>;
+    fn get_queried_functions_per_stage(&self) -> i32;
+    fn get_overview_functions_per_stage(&self) -> i32;
+}
+
+/// Placeholder for `URL` type.
+pub trait URL: Send + Sync {}
+
+/// Placeholder for `DBType` type.
+pub trait DBType: Send + Sync {}
+
+/// Placeholder for `BasicDataSource` type.
+pub trait BasicDataSource: Send + Sync {}
+
+/// Placeholder for `DatabaseInformation` type.
+pub trait DatabaseInformation: Send + Sync {}
+
+/// Placeholder for `BSimError` type.
+pub trait BSimError: Send + Sync {}
+
+/// Placeholder for `BSimQuery` type.
+pub trait BSimQuery: Send + Sync {}
+
+/// Placeholder for `QueryResponseRecord` type.
+pub trait QueryResponseRecord: Send + Sync {}
+
+/// Placeholder for `DescriptionManager` type.
+pub trait DescriptionManager: Send + Sync {}
+
+/// Placeholder for `Configuration` type.
+pub trait Configuration: Send + Sync {}
+
+/// Placeholder for `WeightedLSHCosineVectorFactory` type.
+pub trait WeightedLSHCosineVectorFactory: Send + Sync {}
+
+/// Placeholder for `LSHVectorFactory` type.
+pub trait LSHVectorFactoryStub: Send + Sync {}
