@@ -1275,7 +1275,7 @@ mod tests {
             pos: 0,
         };
         let mut man = DescriptionManager::new();
-        man.restore_xml(&mut parser, &LSHVectorFactory).unwrap();
+        man.restore_xml(&mut parser, &LSHVectorFactory::default()).unwrap();
 
         assert_eq!(man.get_major_version(), 7);
         assert_eq!(man.get_minor_version(), 2);
@@ -1302,13 +1302,13 @@ mod tests {
         let mut parser =
             VecParser { elements: one_exe_one_function(&[("layout_version", "5")]), pos: 0 };
         let mut man = DescriptionManager::new();
-        man.restore_xml(&mut parser, &LSHVectorFactory).unwrap();
+        man.restore_xml(&mut parser, &LSHVectorFactory::default()).unwrap();
 
         let text = xml_of(&man);
         let mut second = DescriptionManager::new();
         let mut parser =
             VecParser { elements: one_exe_one_function(&[("layout_version", "5")]), pos: 0 };
-        second.restore_xml(&mut parser, &LSHVectorFactory).unwrap();
+        second.restore_xml(&mut parser, &LSHVectorFactory::default()).unwrap();
         assert_eq!(xml_of(&second), text);
         assert!(text.contains("<date millis=\"0x1f\">0x2</date>"));
         assert!(text.contains("  <category type=\"Origin\">vendor</category>"));
@@ -1319,7 +1319,7 @@ mod tests {
         let mut parser =
             VecParser { elements: one_exe_one_function(&[("layout_version", "4")]), pos: 0 };
         let mut man = DescriptionManager::new();
-        let err = man.restore_xml(&mut parser, &LSHVectorFactory).unwrap_err();
+        let err = man.restore_xml(&mut parser, &LSHVectorFactory::default()).unwrap_err();
         assert_eq!(err.message(), "Old XML layout is no longer supported");
     }
 
@@ -1328,7 +1328,7 @@ mod tests {
         let mut parser =
             VecParser { elements: one_exe_one_function(&[("layout_version", "6")]), pos: 0 };
         let mut man = DescriptionManager::new();
-        let err = man.restore_xml(&mut parser, &LSHVectorFactory).unwrap_err();
+        let err = man.restore_xml(&mut parser, &LSHVectorFactory::default()).unwrap_err();
         assert_eq!(err.message(), "XML layout for newer version of BSIM");
     }
 
@@ -1337,6 +1337,6 @@ mod tests {
         let mut parser = VecParser { elements: one_exe_one_function(&[]), pos: 0 };
         let mut man = DescriptionManager::new();
         // No attribute leaves layout_version at 0, which Java treats as an old layout.
-        assert!(man.restore_xml(&mut parser, &LSHVectorFactory).is_err());
+        assert!(man.restore_xml(&mut parser, &LSHVectorFactory::default()).is_err());
     }
 }

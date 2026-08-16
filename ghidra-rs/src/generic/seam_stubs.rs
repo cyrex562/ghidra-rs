@@ -6,6 +6,8 @@ use std::sync::{Arc, Mutex};
 
 use thiserror::Error;
 
+use crate::generic::lsh::vector::hash_entry::HashEntry;
+use crate::generic::lsh::vector::lsh_vector::LSHVector;
 use crate::generic::ulong_span;
 
 /// Placeholder for `generic.expressions.ExpressionValue`, needed by
@@ -250,10 +252,147 @@ pub trait VectorCompare: Send + Sync {
 
 /// Placeholder for `generic.lsh.vector.LSHVectorFactory`, referenced by
 /// [`crate::feature::bsim::query::description::FunctionDescription::restore_xml`], which only
-/// passes it through to the signature record's restore path. No members are needed yet;
-/// replace with the real port when `LSHVectorFactory.java` is ported.
+/// passes it through to the signature record's restore path, and by
+/// [`GenSignatures`](crate::feature::bsim::query::gen_signatures::GenSignatures), which needs the
+/// signature settings the factory was configured with.
+/// Replace with the real port when `LSHVectorFactory.java` is ported.
 #[derive(Debug, Default, Clone)]
-pub struct LSHVectorFactory;
+pub struct LSHVectorFactory {
+    settings: i32,
+}
+
+impl LSHVectorFactory {
+    /// A factory configured with the given encoded signature settings.
+    ///
+    /// Java configures the factory through `set(WeightFactory, IDFLookup, int settings)`; only
+    /// the settings are modelled here.
+    pub fn with_settings(settings: i32) -> Self {
+        Self { settings }
+    }
+
+    /// Java: `LSHVectorFactory.getSettings()`, the encoded bit-field of the signature strategy
+    /// this factory generates vectors for.
+    pub fn get_settings(&self) -> i32 {
+        self.settings
+    }
+
+    /// Java: `LSHVectorFactory.buildVector(int[] feature)`, which folds duplicate feature hashes
+    /// together and weights each by the factory's weight table.
+    ///
+    /// The placeholder has no weight table, so every distinct hash gets weight 1.0 and the term
+    /// frequency is the number of times the hash appears -- enough for the vector to carry its
+    /// features, which is all the current callers need.
+    pub fn build_vector(&self, feature: &[i32]) -> WeightedLSHCosineVector {
+        WeightedLSHCosineVector::from_features(feature)
+    }
+
+    /// Java: `LSHVectorFactory.buildZeroVector()`.
+    pub fn build_zero_vector(&self) -> WeightedLSHCosineVector {
+        WeightedLSHCosineVector::from_features(&[])
+    }
+}
+
+/// Placeholder for the unported Java type `generic.lsh.vector.WeightedLSHCosineVector`, the
+/// concrete [`LSHVector`] that [`LSHVectorFactory::build_vector`] returns.
+///
+/// Only the accessors are modelled; the comparison and serialization halves of [`LSHVector`]
+/// need the weight/IDF machinery that is not ported yet, so they are inert. Replace with the
+/// real port when `WeightedLSHCosineVector.java` is ported.
+#[derive(Debug, Default, Clone)]
+pub struct WeightedLSHCosineVector {
+    hashes: Vec<HashEntry>,
+}
+
+impl WeightedLSHCosineVector {
+    /// Build a vector from raw 32-bit feature hashes, folding duplicates into a term frequency.
+    pub fn from_features(feature: &[i32]) -> Self {
+        let mut sorted: Vec<i32> = feature.to_vec();
+        sorted.sort_unstable();
+        let mut hashes: Vec<HashEntry> = Vec::new();
+        let mut i = 0;
+        while i < sorted.len() {
+            let hash = sorted[i];
+            let mut count = 1;
+            while i + count < sorted.len() && sorted[i + count] == hash {
+                count += 1;
+            }
+            hashes.push(HashEntry::with_weight(hash, count as i32, 1.0));
+            i += count;
+        }
+        Self { hashes }
+    }
+}
+
+impl LSHVector for WeightedLSHCosineVector {
+    fn num_entries(&self) -> i32 {
+        self.hashes.len() as i32
+    }
+
+    fn get_entry(&self, i: i32) -> Option<HashEntry> {
+        usize::try_from(i).ok().and_then(|i| self.hashes.get(i)).copied()
+    }
+
+    fn get_entries(&self) -> Vec<HashEntry> {
+        self.hashes.clone()
+    }
+
+    fn get_length(&self) -> f64 {
+        self.hashes.iter().map(|e| e.get_coeff() * e.get_coeff()).sum::<f64>().sqrt()
+    }
+
+    fn compare<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &dyn VectorCompare) -> f64 {
+        0.0
+    }
+
+    fn compare_counts<T: LSHVector + ?Sized>(&self, _op2: &T, _data: &dyn VectorCompare) {}
+
+    fn compare_detail<T: LSHVector + ?Sized>(&self, _op2: &T, _buf: &mut String) -> f64 {
+        0.0
+    }
+
+    fn save_xml(&self, _fwrite: &mut dyn std::io::Write) -> std::io::Result<()> {
+        Ok(())
+    }
+
+    fn save_sql(&self) -> String {
+        String::new()
+    }
+
+    fn save_base64(&self, _buffer: &mut [char], _encoder: &[char]) {}
+
+    fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
+        &mut self,
+        _parser: &mut P,
+        _weight_factory: &crate::generic::lsh::vector::weight_factory::WeightFactory,
+        _idf_lookup: &crate::generic::lsh::vector::idf_lookup::IdfLookup,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        Ok(())
+    }
+
+    fn restore_sql(
+        &mut self,
+        _sql: &str,
+        _weight_factory: &crate::generic::lsh::vector::weight_factory::WeightFactory,
+        _idf_lookup: &crate::generic::lsh::vector::idf_lookup::IdfLookup,
+    ) -> std::io::Result<()> {
+        Ok(())
+    }
+
+    fn restore_base64(
+        &mut self,
+        _input: &mut dyn std::io::Read,
+        _buffer: &[char],
+        _wfactory: &crate::generic::lsh::vector::weight_factory::WeightFactory,
+        _idflookup: &crate::generic::lsh::vector::idf_lookup::IdfLookup,
+        _decode: &[i32],
+    ) -> std::io::Result<()> {
+        Ok(())
+    }
+
+    fn calc_unique_hash(&self) -> u64 {
+        self.hashes.iter().fold(0u64, |acc, e| acc.wrapping_mul(31).wrapping_add(e.get_hash() as u64))
+    }
+}
 
 /// Placeholder for the unported Java type `GThemeValueMap`, referenced by
 /// [`crate::generic::theme::application_theme_defaults::ApplicationThemeDefaults`].
