@@ -2822,7 +2822,7 @@ pub trait FunctionDatabase: Send + Sync {
     fn get_status(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::Status;
     fn get_connection_type(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::ConnectionType;
     fn get_user_name(&self) -> String;
-    fn get_lsh_vector_factory(&self) -> Box<dyn LSHVectorFactoryStub>;
+    fn get_lsh_vector_factory(&self) -> Arc<crate::generic::seam_stubs::LSHVectorFactory>;
     fn get_info(&self) -> Box<dyn DatabaseInformation>;
     fn compare_layout(&self) -> i32;
     fn get_server_info(&self) -> Box<dyn BSimServerInfo>;
@@ -2839,6 +2839,59 @@ pub trait FunctionDatabase: Send + Sync {
     fn generate_lsh_vector_factory(&self) -> Box<dyn WeightedLSHCosineVectorFactory>;
     fn get_queried_functions_per_stage(&self) -> i32;
     fn get_overview_functions_per_stage(&self) -> i32;
+
+    // The typed query paths below stand in for Java's `BSimQuery.execute(FunctionDatabase)`,
+    // which hands the query to `query()` and casts the response back to the query's response
+    // type. The ported response records carry no results yet, so each seam method returns the
+    // one field of the Java response its caller reads, and `None` where Java returns a null
+    // response (i.e. the query failed, and `get_last_error()` explains why). Defaults return
+    // `None` so implementations only override the queries they support.
+
+    /// Java: `new QueryInfo().execute(db).info`.
+    fn query_info(&self) -> Option<crate::feature::bsim::query::description::DatabaseInformation> {
+        None
+    }
+
+    /// Java: `QueryName` limited to `max_func` functions of the executable with the given md5,
+    /// with the callgraph, category and signature fill-ins turned off; yields `ResponseName.manage`.
+    fn query_name(
+        &self,
+        _md5: &str,
+        _max_func: i32,
+    ) -> Option<crate::feature::bsim::query::description::DescriptionManager> {
+        None
+    }
+
+    /// Java: `QueryExeInfo(limit, ...).execute(db).records`.
+    fn query_exe_info(&self, _limit: i32) -> Option<Vec<Arc<ExecutableRecord>>> {
+        None
+    }
+
+    /// Java: `QueryVectorId` with the given ids; yields `ResponseVectorId.vectorResults`, one
+    /// entry per requested id.
+    fn query_vector_id(&self, _ids: &[i64]) -> Option<Vec<VectorResult>> {
+        None
+    }
+
+    /// Java: `QueryNearestVector` for a single vector at similarity threshold `thresh`; yields
+    /// `ResponseNearestVector.result`, one list of near vectors per queried vector.
+    fn query_nearest_vector(
+        &self,
+        _vec: &crate::generic::seam_stubs::WeightedLSHCosineVector,
+        _thresh: f64,
+    ) -> Option<Vec<Vec<VectorResult>>> {
+        None
+    }
+
+    /// Java: `QueryVectorMatch` for the given vector ids, capped at `max` functions per id;
+    /// yields `ResponseVectorMatch.manage`.
+    fn query_vector_match(
+        &self,
+        _vector_ids: &[i64],
+        _max: i32,
+    ) -> Option<crate::feature::bsim::query::description::DescriptionManager> {
+        None
+    }
 }
 
 /// Placeholder for `URL` type.
@@ -2853,8 +2906,12 @@ pub trait BasicDataSource: Send + Sync {}
 /// Placeholder for `DatabaseInformation` type.
 pub trait DatabaseInformation: Send + Sync {}
 
-/// Placeholder for `BSimError` type.
-pub trait BSimError: Send + Sync {}
+/// Placeholder for `BSimError` type. Java's `FunctionDatabase.ErrorStatement`, whose `message`
+/// field is what failed queries report.
+pub trait BSimError: Send + Sync {
+    /// Java: `ErrorStatement.message`.
+    fn message(&self) -> String;
+}
 
 /// Placeholder for `BSimQuery` type. Abstract base for all BSim queries.
 pub trait BSimQuery: Send + Sync {
@@ -2996,4 +3053,289 @@ pub trait ResponseUpdate: Send + Sync {
 pub trait ResponseVectorId: Send + Sync {
     fn save_xml(&self, fwrite: &dyn std::io::Write) -> std::io::Result<()>;
     fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> std::io::Result<()>;
+}
+
+/// Placeholder for the unported Java type `VectorResult`, referenced by
+/// [`ExecutableComparison`](crate::feature::bsim::query::client::ExecutableComparison).
+///
+/// A vector recovered from the database, together with how many functions instantiate it. The
+/// Java field is an `LSHVector`; the ported trait is not object safe, so the placeholder holds
+/// the one concrete vector the placeholder factory builds. Replace with the real port when
+/// `VectorResult.java` is ported.
+#[derive(Debug, Clone, Default)]
+pub struct VectorResult {
+    /// Id of the vector.
+    pub vectorid: i64,
+    /// Similarity score.
+    pub sim: f64,
+    /// Significance score.
+    pub signif: f64,
+    /// Number of functions instantiating this vector.
+    pub hitcount: i32,
+    /// The vector itself.
+    pub vec: crate::generic::seam_stubs::WeightedLSHCosineVector,
+}
+
+impl VectorResult {
+    /// Java: `VectorResult(long vid, int cnt, double sm, double sg, LSHVector v)`.
+    pub fn new(
+        vectorid: i64,
+        hitcount: i32,
+        sim: f64,
+        signif: f64,
+        vec: crate::generic::seam_stubs::WeightedLSHCosineVector,
+    ) -> Self {
+        Self { vectorid, sim, signif, hitcount, vec }
+    }
+}
+
+impl PartialEq for VectorResult {
+    /// Java: `equals` compares the vector id alone.
+    fn eq(&self, other: &Self) -> bool {
+        self.vectorid == other.vectorid
+    }
+}
+
+impl Eq for VectorResult {}
+
+/// Placeholder for the unported Java types `ExecutableScorer` and its subclass
+/// `ExecutableScorerSingle`, referenced by
+/// [`ExecutableComparison`](crate::feature::bsim::query::client::ExecutableComparison), which
+/// constructs one of the two and drives it.
+///
+/// The two Java classes are modelled as one struct with a "single" mode, because the only thing
+/// the comparison does with the distinction is `instanceof` plus the handful of methods that
+/// behave differently (`checkPreliminaryPairThreshold`, `commitSelfScore`, `prefetchSelfScores`);
+/// the comparison has to *construct* the scorer, so a trait object is not an option.
+///
+/// The score matrix itself is not modelled: accumulating scores needs `LSHVector::compare`,
+/// which the placeholder vector does not implement, so [`score_cluster`](Self::score_cluster)
+/// only applies the pair-count threshold that decides whether a cluster contributes at all.
+/// Replace with the real port when `ExecutableScorer.java` is ported.
+pub struct ExecutableScorer {
+    /// Java: `simThreshold`, the similarity threshold associated with the scores, or -1.0.
+    pub sim_threshold: f64,
+    /// Java: `sigThreshold`, the significance threshold associated with the scores, or -1.0.
+    pub sig_threshold: f64,
+    /// Java: `executableSet`, the set of executables being compared.
+    pub executable_set: crate::feature::bsim::query::description::DescriptionManager,
+    /// The self-score cache of `ExecutableScorerSingle`; `None` for the matrix scorer.
+    cache: Option<Box<dyn crate::feature::bsim::query::client::ScoreCaching>>,
+    /// Java: `singleExeXref`, the xref index of the singled-out executable, or -1.
+    single_exe_xref: i32,
+    /// Whether this is the single-executable (row) scorer.
+    single: bool,
+    /// Number of clusters that [`score_cluster`](Self::score_cluster) accepted.
+    clusters_scored: i32,
+}
+
+impl ExecutableScorer {
+    /// Java: `ExecutableScorer()`, the matrix scorer that compares everybody to everybody.
+    pub fn new() -> Self {
+        Self {
+            sim_threshold: -1.0,
+            sig_threshold: -1.0,
+            executable_set: crate::feature::bsim::query::description::DescriptionManager::new(),
+            cache: None,
+            single_exe_xref: -1,
+            single: false,
+            clusters_scored: 0,
+        }
+    }
+
+    /// Java: `ExecutableScorerSingle(ScoreCaching cache)`, the row scorer that compares one
+    /// executable to all the others. A `None` cache is Java's `TemporaryScoreCaching`, which
+    /// starts out unconfigured, hence the -1.0 thresholds.
+    pub fn new_single(
+        cache: Option<Box<dyn crate::feature::bsim::query::client::ScoreCaching>>,
+    ) -> Result<Self, crate::feature::bsim::query::LshException> {
+        let mut scorer = Self::new();
+        scorer.single = true;
+        if let Some(cache) = cache {
+            scorer.sim_threshold = cache.get_sim_threshold()?;
+            scorer.sig_threshold = cache.get_sig_threshold()?;
+            scorer.cache = Some(cache);
+        }
+        Ok(scorer)
+    }
+
+    /// True if this is the row scorer, i.e. Java's `scorer instanceof ExecutableScorerSingle`.
+    pub fn is_single(&self) -> bool {
+        self.single
+    }
+
+    /// Java: `getSimThreshold()`.
+    pub fn get_sim_threshold(&self) -> f64 {
+        self.sim_threshold
+    }
+
+    /// Java: `getSigThreshold()`.
+    pub fn get_sig_threshold(&self) -> f64 {
+        self.sig_threshold
+    }
+
+    /// Java: `numExecutables()`.
+    pub fn num_executables(&self) -> usize {
+        self.executable_set.num_executables()
+    }
+
+    /// Java: `transferSettings(DatabaseInformation)`.
+    pub fn transfer_settings(
+        &mut self,
+        info: &crate::feature::bsim::query::description::DatabaseInformation,
+    ) {
+        self.executable_set.set_version(info.major, info.minor);
+        self.executable_set.set_settings(info.settings);
+    }
+
+    /// Java: `addExecutable(ExecutableRecord)`, which transfers the record into the scorer's
+    /// own container.
+    pub fn add_executable(
+        &mut self,
+        exe_record: &ExecutableRecord,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        self.executable_set.transfer_executable(exe_record)?;
+        Ok(())
+    }
+
+    /// Java: `populateExecutableIndex()`.
+    pub fn populate_executable_index(&mut self) {
+        self.executable_set.populate_executable_xref();
+    }
+
+    /// Java: `setSingleExecutable(String)`. The row scorer refuses to re-single an executable.
+    pub fn set_single_executable(
+        &mut self,
+        md5: &str,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        if self.single && self.single_exe_xref >= 0 {
+            return Err(crate::feature::bsim::query::LshException::new(
+                "Cannot reset singled executable",
+            ));
+        }
+        self.single_exe_xref = self.executable_set.find_executable(md5)?.get_xref_index();
+        Ok(())
+    }
+
+    /// Java: `getSingularExecutable().getXrefIndex()`, or -1 before an executable is singled out.
+    pub fn get_single_exe_xref(&self) -> i32 {
+        self.single_exe_xref
+    }
+
+    /// Java: `initializeScores()`, which zeroes the score matrix (or the single row).
+    pub fn initialize_scores(&mut self) {
+        self.clusters_scored = 0;
+    }
+
+    /// Java: `labelAndFilter(DescriptionManager)`, which copies xref indices onto the queried
+    /// executables, zeroing the ones outside the scoring set.
+    pub fn label_and_filter(
+        &self,
+        manage: &crate::feature::bsim::query::description::DescriptionManager,
+    ) {
+        manage.match_and_set_xrefs(&self.executable_set);
+    }
+
+    /// Java: `checkPreliminaryPairThreshold(int, int)`. The matrix scorer compares the full
+    /// triangular pair count against the threshold; the row scorer defers the decision and only
+    /// rejects on the raw hit count.
+    pub fn check_preliminary_pair_threshold(&self, hitcount: i32, pair_threshold: i32) -> bool {
+        if self.single {
+            return hitcount < pair_threshold;
+        }
+        hitcount * (hitcount + 1) / 2 <= pair_threshold
+    }
+
+    /// Java: `scoreCluster(...)`, which pairs up every function in the cluster and accumulates
+    /// their significance into the score matrix, returning false if the pair threshold is
+    /// exceeded. The placeholder keeps the threshold decision and counts accepted clusters.
+    pub fn score_cluster(
+        &mut self,
+        _vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
+        _vec2_functions: &[crate::feature::bsim::query::description::DescriptionManager],
+        _vectors: &[VectorResult],
+        hitcount: i32,
+        pair_threshold: i32,
+    ) -> bool {
+        if hitcount * (hitcount + 1) / 2 > pair_threshold {
+            return false;
+        }
+        self.clusters_scored += 1;
+        true
+    }
+
+    /// The number of clusters accepted by [`score_cluster`](Self::score_cluster) since the last
+    /// [`initialize_scores`](Self::initialize_scores). Not a Java method; it stands in for
+    /// inspecting the score matrix, which the placeholder does not build.
+    pub fn clusters_scored(&self) -> i32 {
+        self.clusters_scored
+    }
+
+    /// Java: `resetStorage(double, double)`, which drops old scores and, for the row scorer,
+    /// resets the cache to the new thresholds.
+    pub fn reset_storage(
+        &mut self,
+        sim_thresh: f64,
+        sig_thresh: f64,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        self.sim_threshold = sim_thresh;
+        self.sig_threshold = sig_thresh;
+        self.clusters_scored = 0;
+        if let Some(cache) = self.cache.as_mut() {
+            cache.reset_storage(sim_thresh, sig_thresh)?;
+        }
+        Ok(())
+    }
+
+    /// Java: `commitSelfScore(String, float)`. The matrix scorer has nowhere to put the score.
+    pub fn commit_self_score(
+        &mut self,
+        md5: &str,
+        self_score: f32,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        match self.cache.as_mut() {
+            Some(cache) => cache.commit_self_score(md5, self_score),
+            None => Err(crate::feature::bsim::query::LshException::new(
+                "Cannot commit self-score with the matrix scorer",
+            )),
+        }
+    }
+
+    /// Java: `ExecutableScorerSingle.prefetchSelfScores(List)`, which asks the cache to pre-load
+    /// the registered executables' self-scores and reports the ones it has no score for.
+    ///
+    /// Java hands the whole record set to `ScoreCaching.prefetchScores`, which takes ownership of
+    /// the set; the manager's records are shared, so the placeholder derives the same "missing"
+    /// list by probing the cache one md5 at a time.
+    pub fn prefetch_self_scores(
+        &self,
+        missing: &mut Vec<Arc<ExecutableRecord>>,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        let Some(cache) = self.cache.as_ref() else {
+            return Ok(());
+        };
+        for exe in self.executable_set.get_executable_record_set() {
+            if cache.get_self_score(exe.get_md5()).is_err() {
+                missing.push(Arc::clone(exe));
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Default for ExecutableScorer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::fmt::Debug for ExecutableScorer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExecutableScorer")
+            .field("single", &self.single)
+            .field("sim_threshold", &self.sim_threshold)
+            .field("sig_threshold", &self.sig_threshold)
+            .field("num_executables", &self.executable_set.num_executables())
+            .finish()
+    }
 }

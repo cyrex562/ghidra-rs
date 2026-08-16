@@ -290,6 +290,21 @@ impl LSHVectorFactory {
     pub fn build_zero_vector(&self) -> WeightedLSHCosineVector {
         WeightedLSHCosineVector::from_features(&[])
     }
+
+    /// Java: `LSHVectorFactory.getSelfSignificance(LSHVector)`, the significance a vector scores
+    /// when compared against itself.
+    ///
+    /// Java compares the vector with itself and runs the resulting `VectorCompare` through
+    /// `calculateSignificance`, which needs the weight/IDF tables this placeholder does not
+    /// carry. The placeholder returns the squared length of the vector, which is what the
+    /// self-comparison of a cosine vector accumulates, so callers thresholding on
+    /// self-significance (e.g.
+    /// [`ExecutableComparison`](crate::feature::bsim::query::client::ExecutableComparison))
+    /// still see bigger vectors score higher.
+    pub fn get_self_significance<V: LSHVector + ?Sized>(&self, vec: &V) -> f64 {
+        let length = vec.get_length();
+        length * length
+    }
 }
 
 /// Placeholder for the unported Java type `generic.lsh.vector.WeightedLSHCosineVector`, the
