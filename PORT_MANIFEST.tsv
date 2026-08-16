@@ -12049,7 +12049,7 @@ orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/jung/JungDirectedGrap
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/jung/JungToGDirectedGraphAdapter.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph jung 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphComponent.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphPerspectiveInfo.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
-orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphSatelliteListener.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
+orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphSatelliteListener.java	DONE	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphViewer.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/GraphViewerUtils.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
 orig_src/Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/PathHighlightMode.java	TODO	orig_src Ghidra Framework Graph src main java ghidra graph viewer 
