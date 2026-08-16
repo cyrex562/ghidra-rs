@@ -1223,6 +1223,14 @@ pub trait Sequence: Send + Sync {
 /// is available.
 pub trait AbstractStringDataType: Send + Sync {}
 
+/// Placeholder for `ghidra.program.util.ProgramSelection`, referenced by
+/// [`crate::util::table::ProgramTableModel`].
+///
+/// The real `ProgramSelection` is an interface with a large surface; only the subset needed by
+/// `ProgramTableModel` (which only ever constructs and returns these, never calls into them) are
+/// declared here. Until the full port lands, this is a marker trait.
+pub trait ProgramSelection: Send + Sync {}
+
 /// Placeholder for the unported Java type `ClassSearcher`, referenced by `DWARFFunctionFixup`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
