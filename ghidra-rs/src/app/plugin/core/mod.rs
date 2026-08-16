@@ -9,6 +9,7 @@ pub mod console;
 pub mod data_preview;
 pub mod datamgr;
 pub mod debug;
+pub mod decompile;
 pub mod decompiler;
 pub mod diff;
 pub mod eclipse;
