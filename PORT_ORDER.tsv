@@ -53,7 +53,7 @@ DONE	trait	10	20	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bs
 DONE	trait	9	17	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/QueryExeCount.java
 DONE	trait	7	21	59	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/GenSignatures.java
 DONE	trait	7	12	1	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/ScoreCaching.java
-TODO	trait	5	8	75	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/ExecutableComparison.java
+DONE	trait	5	8	75	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/ExecutableComparison.java
 TODO	trait	3	19	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/BSimClientFactory.java
 TODO	trait	2	42	3	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/BSimServerInfo.java
 TODO	trait	1	36	76	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/FunctionDatabase.java
