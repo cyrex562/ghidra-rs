@@ -198,7 +198,7 @@ fn delete_file(file: &ResourceFile) -> bool {
 /// `new File(path).getName()`. Both separators are accepted because the paths this is applied to
 /// are recorded executable paths, which may well be Windows-style on a non-Windows host (the same
 /// allowance [`crate::app::util::opinion::loader`] makes for import paths).
-fn file_name_of(path: &str) -> String {
+pub(crate) fn file_name_of(path: &str) -> String {
     match path.rfind(['/', '\\']) {
         Some(index) => path[index + 1..].to_string(),
         None => path.to_string(),

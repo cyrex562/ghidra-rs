@@ -429,6 +429,13 @@ pub trait Builder: Send + Sync {
     /// Mirrors `AbstractOptionBuilder.commandLineArgument(String)`.
     fn command_line_argument(self: Box<Self>, arg: String) -> Box<dyn Builder>;
 
+    /// Mirrors `AbstractOptionBuilder.stateKey(String)`, which names the project save state the
+    /// built option is persisted under. Added for
+    /// [`AbstractOrdinalSupportLoader`](crate::app::util::opinion::abstract_ordinal_support_loader::AbstractOrdinalSupportLoader),
+    /// whose ordinal-lookup option is saved under
+    /// [`OPTIONS_PROJECT_SAVE_STATE_KEY`](crate::app::util::opinion::loader::OPTIONS_PROJECT_SAVE_STATE_KEY).
+    fn state_key(self: Box<Self>, state_key: String) -> Box<dyn Builder>;
+
     /// Mirrors `AbstractOptionBuilder.build()`.
     fn build(self: Box<Self>) -> Box<dyn Option>;
 }
@@ -533,6 +540,7 @@ struct SimpleOption {
     name: String,
     value: SimpleOptionValue,
     command_line_argument: std::option::Option<String>,
+    state_key: std::option::Option<String>,
 }
 
 impl Option for SimpleOption {
@@ -551,6 +559,12 @@ impl Option for SimpleOption {
     fn get_arg(&self) -> String {
         self.command_line_argument.clone().unwrap_or_default()
     }
+
+    /// The empty string stands in for Java's `null` default, as it already does for
+    /// [`get_arg`](Self::get_arg).
+    fn get_state_key(&self) -> String {
+        self.state_key.clone().unwrap_or_default()
+    }
 }
 
 /// Builder for [`SimpleOption`]; see that type's docs. Returned (as `Box<dyn Builder>`) by
@@ -559,6 +573,18 @@ struct SimpleOptionBuilder {
     name: String,
     value: std::option::Option<SimpleOptionValue>,
     command_line_argument: std::option::Option<String>,
+    state_key: std::option::Option<String>,
+}
+
+impl SimpleOptionBuilder {
+    fn named(name: &str) -> Self {
+        SimpleOptionBuilder {
+            name: name.to_string(),
+            value: None,
+            command_line_argument: None,
+            state_key: None,
+        }
+    }
 }
 
 impl Builder for SimpleOptionBuilder {
@@ -589,28 +615,34 @@ impl Builder for SimpleOptionBuilder {
         self
     }
 
+    fn state_key(mut self: Box<Self>, state_key: String) -> Box<dyn Builder> {
+        self.state_key = Some(state_key);
+        self
+    }
+
     fn build(self: Box<Self>) -> Box<dyn Option> {
         Box::new(SimpleOption {
             name: self.name,
             value: self.value.expect("Option value must be set via .value(..) before .build()"),
             command_line_argument: self.command_line_argument,
+            state_key: self.state_key,
         })
     }
 }
 
 /// Mirrors the static factory `Option.newBoolean(String)`.
 pub fn new_boolean(name: &str) -> Box<dyn Builder> {
-    Box::new(SimpleOptionBuilder { name: name.to_string(), value: None, command_line_argument: None })
+    Box::new(SimpleOptionBuilder::named(name))
 }
 
 /// Mirrors the static factory `Option.newString(String)`.
 pub fn new_string(name: &str) -> Box<dyn Builder> {
-    Box::new(SimpleOptionBuilder { name: name.to_string(), value: None, command_line_argument: None })
+    Box::new(SimpleOptionBuilder::named(name))
 }
 
 /// Mirrors the static factory `Option.newInteger(String)`.
 pub fn new_integer(name: &str) -> Box<dyn Builder> {
-    Box::new(SimpleOptionBuilder { name: name.to_string(), value: None, command_line_argument: None })
+    Box::new(SimpleOptionBuilder::named(name))
 }
 
 /// Placeholder for `ghidra.app.util.OptionUtils`, referenced by
@@ -2841,7 +2873,10 @@ pub struct LibrarySymbolTable {
     /// Mirrors the `symMap` field, keyed by [`LibraryExportedSymbol::name`]. Populated only by
     /// [`Self::insert_symbol`]; `from_exports_file`/`from_program` are not implemented yet, so it
     /// is always empty coming out of those two constructors.
-    sym_map: HashMap<String, LibraryExportedSymbol>,
+    sym_map: HashMap<String, Arc<LibraryExportedSymbol>>,
+    /// Mirrors the `ordMap` field, keyed by [`LibraryExportedSymbol::ordinal`]. Java's two maps
+    /// share one symbol instance per export, which is why both hold an `Arc` here.
+    ord_map: HashMap<i32, Arc<LibraryExportedSymbol>>,
 }
 
 impl LibrarySymbolTable {
@@ -2854,21 +2889,30 @@ impl LibrarySymbolTable {
             version: "unknown".to_string(),
             forwards: Vec::new(),
             sym_map: HashMap::new(),
+            ord_map: HashMap::new(),
         }
     }
 
     /// Mirrors `getSymbol(String)`: the symbol for the specified name, or `None` if not found.
     pub fn get_symbol(&self, symbol: &str) -> StdOption<&LibraryExportedSymbol> {
-        self.sym_map.get(symbol)
+        self.sym_map.get(symbol).map(|s| &**s)
+    }
+
+    /// Mirrors `getSymbol(int)`: the symbol exported under the specified ordinal, or `None` if
+    /// not found.
+    pub fn get_symbol_by_ordinal(&self, ordinal: i32) -> StdOption<&LibraryExportedSymbol> {
+        self.ord_map.get(&ordinal).map(|s| &**s)
     }
 
     /// Not part of the Java API surface (that role is filled by `addSymbol` deep inside the
     /// unported `.exports` XML reader / `Program`-walking constructor). Exposed for tests, and for
-    /// whichever of those two constructors gets ported first to populate `symMap` with.
+    /// whichever of those two constructors gets ported first to populate `symMap`/`ordMap` with.
     pub fn insert_symbol(&mut self, symbol: LibraryExportedSymbol) {
+        let symbol = Arc::new(symbol);
         if let Some(name) = symbol.name() {
-            self.sym_map.insert(name.to_string(), symbol);
+            self.sym_map.insert(name.to_string(), Arc::clone(&symbol));
         }
+        self.ord_map.insert(symbol.ordinal(), symbol);
     }
 
     /// Mirrors `LibrarySymbolTable(ResourceFile libraryFile, int size)`, which parses an existing

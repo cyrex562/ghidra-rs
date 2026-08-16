@@ -182,9 +182,26 @@ pub trait CachedFsrlLike: FsrlLike {
 /// `FileSystemService` only ever hands this value back to its own caller
 /// (`getLocalFS()`); it never calls a method on it internally (its own `isLocal`/
 /// `getLocalFSRL` are ported as separate trait methods, not as default bodies that delegate
-/// through this seam), so this is an empty marker trait until the real `LocalFileSystem` is
-/// ported.
-pub trait LocalFileSystemLike {}
+/// through this seam), so the only member modeled is the one an outside caller reaches for.
+pub trait LocalFileSystemLike {
+    /// Mirrors `LocalFileSystem.getLocalFile(FSRL)`: the local file `fsrl` names.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`AbstractOrdinalSupportLoader`](crate::app::util::opinion::abstract_ordinal_support_loader::AbstractOrdinalSupportLoader)'s
+    /// port of `processLibrary`, which timestamp-matches a loaded library against its cached
+    /// `.exports` file.
+    ///
+    /// # Errors
+    /// Returns `Err` if `fsrl` does not name a file on the local filesystem, mirroring Java's
+    /// `throws IOException`. The default implementation always does, since a placeholder knows
+    /// of no local files.
+    fn get_local_file(&self, fsrl: &dyn Fsrl) -> std::io::Result<std::path::PathBuf> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{} is not a local file", fsrl.fsrl_string()),
+        ))
+    }
+}
 
 /// Placeholder for `ghidra.formats.gfilesystem.FileCache.FileCacheEntry`, needed by
 /// [`crate::filesystem::gfilesystem::file_system_service::FileSystemService::get_named_temp_file`].
