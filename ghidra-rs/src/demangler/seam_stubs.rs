@@ -1098,25 +1098,173 @@ pub fn convert_to_demangled_data_type(
     None
 }
 
-/// Placeholder for `ghidra.app.util.demangler.swift.SwiftDemangler`, needed by
-/// [`crate::demangler::swift::nodes::swift_node::SwiftNode`].
+/// Placeholder for `ghidra.app.util.sourcelanguage.SwiftSourceLanguage`, needed by
+/// [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
 ///
-/// `SwiftNode` only threads the demangler through to its subclasses, so the one method declared
-/// here is what the node tree actually calls back into: `getDemangled`, which demangles a nested
-/// mangled string. The rest of the Java class (its `Demangler` implementation,
-/// `getTypeMetadata()`, `isSwiftMangledSymbol(...)`) arrives with the real port.
-pub trait SwiftDemangler {
-    /// Demangles a nested mangled string.
-    ///
-    /// Mirrors `SwiftDemangler.getDemangled(String, SwiftDemanglerOptions)`.
-    fn get_demangled(
+/// Java is an abstract class (implementing `SourceLanguage`) whose only member relevant here is
+/// its `SWIFT_ID` constant; the rest of the (single-method) `SourceLanguage` surface isn't needed
+/// by `SwiftDemangler`, so this is a free function returning that one value rather than a struct.
+pub fn swift_source_language_id(
+) -> crate::app::util::sourcelanguage::source_language_id::SourceLanguageIdValue {
+    crate::app::util::sourcelanguage::source_language_id::SourceLanguageIdValue::new("Swift")
+        .expect("\"Swift\" is a valid source language id")
+}
+
+/// Placeholder for `ghidra.app.util.demangler.swift.datatypes.SwiftDataTypeUtils.SWIFT_CATEGORY`,
+/// needed by [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
+///
+/// `SwiftDataTypeUtils` is a concrete class of static utility members, not an interface, so this
+/// is a plain free function -- the same treatment as [`strip_superfluous_signature_spaces`].
+/// Only the `SWIFT_CATEGORY` constant `SwiftDemangler::initialize` needs is modeled; the real
+/// port also carries `isSwiftNamespace`/`getSwiftNamespace`/`getCategoryPath`/
+/// `extractParameters`.
+pub fn swift_category_path() -> crate::program::model::data::category_path::CategoryPath {
+    crate::program::model::data::category_path::CategoryPath::parse("/Demangler")
+        .expect("\"/Demangler\" is a valid category path")
+}
+
+/// Placeholder for `ghidra.app.util.importer.MessageLog`, needed by
+/// [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
+///
+/// Decided STRUCT (see CONVENTION_QUEUE.tsv): becomes the concrete type, since there is nothing
+/// to dispatch over. Only the no-arg constructor `SwiftDemangler::initialize` needs is modeled;
+/// the real port also carries the message-accumulation surface.
+#[derive(Debug, Clone, Default)]
+pub struct MessageLog;
+
+impl MessageLog {
+    /// Mirrors `new MessageLog()`.
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.swift.SwiftTypeMetadata`, needed by
+/// [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
+///
+/// Java is a concrete class, not an interface (see the dependency-context notes), so this is a
+/// plain struct rather than a trait. Only the constructor `SwiftDemangler::initialize` calls is
+/// modeled; the real port also carries the full Swift type-metadata parsing/markup surface
+/// (`getEntryPoints`, `getFieldDescriptors`, `markup`, ...).
+pub struct SwiftTypeMetadata;
+
+impl SwiftTypeMetadata {
+    /// Mirrors `SwiftTypeMetadata(Program, TaskMonitor, MessageLog)`, which throws both
+    /// `IOException` and `CancelledException`; those are collapsed onto a single `std::io::Error`
+    /// here since the real parsing work (and so either failure mode) isn't ported yet.
+    pub fn new(
+        _program: &dyn crate::program::model::listing::Program,
+        _monitor: &dyn crate::util::task::TaskMonitor,
+        _log: &MessageLog,
+    ) -> std::io::Result<Self> {
+        Ok(Self)
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.DemangledLabel`, needed by
+/// [`crate::demangler::swift::swift_demangler::SwiftDemangler`].
+///
+/// Java extends `DemangledObject`; Rust has no struct inheritance, so this composes the
+/// already-ported [`crate::demangler::demangled_object::DemangledObjectBase`] instead, the same
+/// treatment [`DemangledUnknown`] below gives itself. The constructor and both overrides
+/// (`applyTo`, `getSignature`) are modeled in full, since the Java class itself is tiny.
+pub struct DemangledLabel {
+    base: crate::demangler::demangled_object::DemangledObjectBase,
+}
+
+impl DemangledLabel {
+    /// Mirrors `DemangledLabel(String mangled, String originalDemangled, String name)`.
+    pub fn new(
+        mangled: impl Into<String>,
+        original_demangled: impl Into<String>,
+        name: &str,
+    ) -> Self {
+        let mut base = crate::demangler::demangled_object::DemangledObjectBase::new(
+            mangled,
+            Some(original_demangled.into()),
+        );
+        base.set_name(Some(name));
+        Self { base }
+    }
+}
+
+impl crate::demangler::demangled::Demangled for DemangledLabel {
+    fn get_mangled_string(&self) -> String {
+        self.base.get_mangled_string().to_string()
+    }
+
+    fn get_original_demangled(&self) -> String {
+        self.base.original_demangled.clone().unwrap_or_default()
+    }
+
+    fn get_name(&self) -> String {
+        self.base.get_name().unwrap_or_default().to_string()
+    }
+
+    fn set_name(&mut self, name: &str) {
+        self.base.set_name(Some(name));
+    }
+
+    fn get_demangled_name(&self) -> String {
+        self.base.get_demangled_name().unwrap_or_default().to_string()
+    }
+
+    fn get_namespace(&self) -> Option<&dyn crate::demangler::demangled::Demangled> {
+        self.base.get_namespace()
+    }
+
+    fn get_namespace_mut(&mut self) -> Option<&mut (dyn crate::demangler::demangled::Demangled + 'static)> {
+        self.base.namespace.as_deref_mut()
+    }
+
+    fn set_namespace(&mut self, namespace: Option<Box<dyn crate::demangler::demangled::Demangled>>) {
+        self.base.set_namespace(namespace);
+    }
+
+    fn get_namespace_string(&self) -> String {
+        self.base.namespace_string_with(&self.get_name())
+    }
+
+    fn get_namespace_name(&self) -> String {
+        self.get_name()
+    }
+
+    /// Mirrors `getSignature()`, which delegates to `getSignature(false)`; that override ignores
+    /// `format` and returns the name (see the `DemangledObject::get_signature_formatted`
+    /// override below), so this is inlined directly rather than reaching across traits.
+    fn get_signature(&self) -> String {
+        self.base.get_name().unwrap_or_default().to_string()
+    }
+}
+
+impl crate::demangler::demangled_object::DemangledObject for DemangledLabel {
+    fn base(&self) -> &crate::demangler::demangled_object::DemangledObjectBase {
+        &self.base
+    }
+
+    fn base_mut(&mut self) -> &mut crate::demangler::demangled_object::DemangledObjectBase {
+        &mut self.base
+    }
+
+    /// Mirrors `getSignature(boolean)`, which ignores `format` and returns the name.
+    fn get_signature_formatted(&self, _format: bool) -> String {
+        self.base.get_name().unwrap_or_default().to_string()
+    }
+
+    /// Mirrors `applyTo(Program, Address, DemanglerOptions, TaskMonitor)`.
+    fn apply_to(
         &self,
-        mangled: &str,
-        options: &crate::demangler::swift::swift_demangler_options::SwiftDemanglerOptions,
-    ) -> Result<
-        Option<Box<dyn crate::demangler::demangled::Demangled>>,
-        crate::demangler::demangle_exception::DemangledException,
-    >;
+        program: &mut dyn crate::program::model::listing::Program,
+        address: &crate::program::model::address::Address,
+        _options: &crate::demangler::demangler_options::DemanglerOptions,
+        _monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> Result<bool, crate::demangler::demangle_exception::DemangledException> {
+        let symbol = self
+            .base
+            .apply_demangled_name(None, address, true, false, program)
+            .map_err(crate::demangler::demangle_exception::DemangledException::from_cause)?;
+        Ok(symbol.is_some())
+    }
 }
 
 /// Placeholder for `ghidra.app.util.demangler.DemangledUnknown`, needed by
@@ -1241,6 +1389,14 @@ impl crate::demangler::demangled::Demangled for DemangledUnknown {
 pub struct SwiftNativeDemangler;
 
 impl SwiftNativeDemangler {
+    /// Mirrors `SwiftNativeDemangler(File)`. The `swift_dir` argument is accepted for signature
+    /// fidelity but not stored: the real constructor uses it to search for the native
+    /// `swift`/`swift-demangle` binary, which isn't ported (see this struct's docs), so there is
+    /// nothing here that would read it back.
+    pub fn new(_swift_dir: Option<std::path::PathBuf>) -> std::io::Result<Self> {
+        Ok(Self)
+    }
+
     /// Mirrors `demangle(String)`.
     pub fn demangle(&self, _mangled: &str) -> std::io::Result<SwiftNativeDemangledOutput> {
         Err(std::io::Error::new(
@@ -1293,7 +1449,7 @@ impl SwiftNode for SwiftUnsupportedNode {
     /// reproducing the original's `skip(this)` self-call) and returns its `getUnknown()`.
     fn demangle(
         &self,
-        _demangler: &dyn SwiftDemangler,
+        _demangler: &crate::demangler::swift::swift_demangler::SwiftDemangler,
     ) -> Result<Option<Box<dyn crate::demangler::demangled::Demangled>>, crate::demangler::demangle_exception::DemangledException>
     {
         self.base.skip(self);

@@ -13,7 +13,15 @@ use crate::demangler::mangled_context::MangledContext;
 /// (currently no-op / `null`), modeled here as default methods for the same reason. `set_name`/
 /// `set_namespace` take `&mut self`, not `&self`, since every implementor mutates owned state to
 /// satisfy them.
-pub trait Demangled: Send + Sync {
+///
+/// `Any` is grown in as a supertrait (automatically satisfied by every existing implementor,
+/// since `impl<T: 'static> Any for T` is a blanket impl in `std`) for
+/// [`SwiftDemangler::demangle`](crate::demangler::swift::swift_demangler::SwiftDemangler)'s port
+/// of the `instanceof DemangledFunction`/`DemangledLabel`/`DemangledUnknown` dispatch in
+/// `SwiftDemangler.demangle(MangledContext)`, which downcasts `dyn Demangled`/`Box<dyn Demangled>`
+/// to concrete types via trait-object upcasting (`dyn Demangled` -> `dyn Any`) plus
+/// `Any::downcast_ref`/`Any::downcast`.
+pub trait Demangled: Send + Sync + std::any::Any {
     /// Sets the mangled context.
     ///
     /// Mirrors `Demangled.setMangledContext(MangledContext)`. Defaults to a no-op, mirroring the

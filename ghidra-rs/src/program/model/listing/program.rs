@@ -214,4 +214,32 @@ pub trait Program: DomainObject + Send + Sync {
     fn get_address_map(&self) -> Option<Arc<dyn AddressMap>> {
         None
     }
+
+    /// Get the source language IDs of the source languages found in the program (e.g. the
+    /// language the program was originally written in, if it was compiled from something other
+    /// than the target's native language).
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`SwiftDemangler::can_demangle`](crate::demangler::swift::swift_demangler::SwiftDemangler)'s
+    /// port of `Program.getSourceLanguageIDs()`, which is itself a `default` method on the Java
+    /// interface returning an empty set; this mirrors that same default.
+    fn get_source_language_ids(
+        &self,
+    ) -> Vec<crate::app::util::sourcelanguage::source_language_id::SourceLanguageIdValue> {
+        Vec::new()
+    }
+
+    /// Sets the preferred root data type category path corresponding to the global namespace of
+    /// a namespace-based storage area.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`SwiftDemangler::initialize`](crate::demangler::swift::swift_demangler::SwiftDemangler)'s
+    /// port of `Program.setPreferredRootNamespaceCategoryPath(String)`. Unlike the Java interface
+    /// (whose method is abstract, not defaulted), this defaults to a no-op since no in-repo
+    /// `Program` implementor tracks this setting yet.
+    fn set_preferred_root_namespace_category_path(
+        &mut self,
+        _category_path: crate::program::model::data::category_path::CategoryPath,
+    ) {
+    }
 }
