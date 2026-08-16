@@ -23,7 +23,7 @@ DONE	trait	7	4	3	util	Ghidra/Features/Base/src/main/java/ghidra/util/state/Funct
 DONE	trait	2	10	61	demangler	Ghidra/Features/MicrosoftDemangler/src/main/java/ghidra/app/util/demangler/microsoft/MicrosoftDemangler.java
 DONE	trait	1	54	1	service	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/service/graph/GraphDisplayListener.java
 DONE	trait	0	59	2	service	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/service/graph/GraphDisplay.java
-TODO	trait	0	55	3	service	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/service/graph/GraphDisplayProvider.java
+DONE	trait	0	55	3	service	Ghidra/Framework/SoftwareModeling/src/main/java/ghidra/service/graph/GraphDisplayProvider.java
 TODO	trait	0	54	3	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/FGEdge.java
 TODO	trait	0	54	2	generic	Ghidra/Framework/Gui/src/main/java/generic/theme/ApplicationThemeDefaults.java
 TODO	trait	0	52	1	format	Ghidra/Features/Swift/src/main/java/ghidra/app/util/bin/format/swift/SwiftTypeMetadataStructure.java
