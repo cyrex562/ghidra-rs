@@ -325,3 +325,17 @@ pub trait LafType: Send + Sync {
 /// Placeholder for dependent types referenced by [`LafType`].
 pub trait ApplicationThemeManager: Send + Sync {}
 pub trait LookAndFeelManager: Send + Sync {}
+
+/// Placeholder for the unported Java type `ThemeEvent`, referenced by
+/// [`crate::generic::theme::theme_listener::ThemeListener`].
+/// Generated stub: only a shape hint. Replace with the real port when available.
+pub trait ThemeEvent: Send + Sync {
+    fn is_color_changed(&self, id: &str) -> bool;
+    fn is_font_changed(&self, id: &str) -> bool;
+    fn is_icon_changed(&self, id: &str) -> bool;
+    fn is_look_and_feel_changed(&self) -> bool;
+    fn has_any_color_changed(&self) -> bool;
+    fn has_any_font_changed(&self) -> bool;
+    fn has_any_icon_changed(&self) -> bool;
+    fn have_all_values_changed(&self) -> bool;
+}
