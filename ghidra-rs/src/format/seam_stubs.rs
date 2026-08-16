@@ -5111,11 +5111,34 @@ pub trait GoName: Send + Sync {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoSlice`, referenced by
-/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType)
-/// before the real class is ported.
+/// [`GoUncommonType`](crate::format::golang::rtti::types::go_uncommon_type::GoUncommonType) and
+/// [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) before the real class is ported.
 pub trait GoSlice: Send + Sync {
     fn is_valid(&self, element_size: i32) -> bool;
     fn read_go_methods(&self) -> std::io::Result<Vec<Box<dyn GoMethod>>>;
+    /// Mirrors `GoSlice.getLen()`.
+    fn get_len(&self) -> i64;
+    /// Mirrors `GoSlice.getSubSlice(long, long, long)`.
+    fn get_sub_slice(&self, start_element: i64, element_count: i64, element_size: i64) -> Box<dyn GoSlice>;
+    /// Mirrors `GoSlice.readUIntList(int)`.
+    fn read_u_int_list(&self, int_size: i32) -> std::io::Result<Vec<i64>>;
+    /// Mirrors `GoSlice.markupElementReferences(int, List, MarkupSession)`.
+    fn markup_element_references(
+        &self,
+        element_size: i32,
+        target_addrs: Vec<Address>,
+        session: &dyn MarkupSession,
+    ) -> std::io::Result<()>;
+    /// Mirrors the `GoSlice.markupArray(String, String, DataType, boolean, MarkupSession)`
+    /// overload (the `Class<?>`-based overload isn't needed by any current caller).
+    fn markup_array(
+        &self,
+        slice_name: &str,
+        namespace_name: &str,
+        element_type: Option<&dyn crate::program::model::data::data_type::DataType>,
+        ptr: bool,
+        session: &dyn MarkupSession,
+    ) -> std::io::Result<()>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoRttiMapper`, referenced by
@@ -5142,6 +5165,15 @@ pub trait GoRttiMapper: Send + Sync {
     ) -> String;
     /// Mirrors `GoRttiMapper.getGoTypes()`.
     fn get_go_types(&self) -> Box<dyn GoTypeManager>;
+    /// Mirrors `GoRttiMapper.getPtrSize()`.
+    fn get_ptr_size(&self) -> i32;
+    /// Mirrors `DataTypeMapper.getCodeAddress(long)`, inherited by `GoRttiMapper`.
+    fn get_code_address(&self, offset: i64) -> Address;
+    /// Simplified stand-in for the Java call chain
+    /// `getProgram().getMemory().getLoadedAndInitializedAddressSet().contains(addr)`, following
+    /// the same simplification precedent as [`get_safe_name`](Self::get_safe_name): every current
+    /// call site only cares about the boolean result, not `Program`/`Memory` themselves.
+    fn is_loaded_and_initialized(&self, addr: Address) -> bool;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoTypeFlag`, referenced by
@@ -5219,15 +5251,58 @@ impl GoTypeFlag {
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoType`, referenced by
 /// [`GoBaseType::get_ptr_to_this`](crate::format::golang::rtti::types::go_base_type::GoBaseType::get_ptr_to_this)
-/// before the real class is ported. `GoBaseType` only ever returns this type opaquely, so no
-/// members are needed yet.
-pub trait GoType: Send + Sync {}
+/// and [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) before the real class is ported.
+pub trait GoType: Send + Sync {
+    /// Mirrors `GoType.getName()`.
+    fn get_name(&self) -> String;
+    /// Mirrors `GoType.getSymbolName()`.
+    fn get_symbol_name(&self) -> Box<dyn GoSymbolName>;
+    /// Mirrors `GoType.getStructureNamespace()`.
+    fn get_structure_namespace(&self) -> std::io::Result<String>;
+    /// Mirrors `GoType.discoverGoTypes(Set)`.
+    fn discover_go_types(&self, discovered_types: &mut std::collections::HashSet<i64>) -> std::io::Result<bool>;
+    /// Downcast hook mirroring Java's `result instanceof GoInterfaceType ifaceType` pattern,
+    /// following the same `self: Box<Self>` downcast convention as
+    /// [`DataType::into_array`](crate::program::model::data::data_type::DataType::into_array).
+    /// Defaults to `None`; the real `GoInterfaceType` port overrides it to return `Some(self)`.
+    fn into_interface_type(self: Box<Self>) -> Option<Box<dyn GoInterfaceType>> {
+        None
+    }
+}
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoTypeManager`, referenced by
 /// [`GoBaseType::get_ptr_to_this`](crate::format::golang::rtti::types::go_base_type::GoBaseType::get_ptr_to_this)
-/// before the real class is ported. Models only `resolveTypeOff`, the accessor `GoBaseType`
-/// needs.
+/// and [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) before the real class is ported.
 pub trait GoTypeManager: Send + Sync {
     fn resolve_type_off(&self, ptr_in_module: i64, off: i64) -> std::io::Result<Box<dyn GoType>>;
+    /// Mirrors `GoTypeManager.getType(long)`.
+    fn get_type(&self, offset: i64) -> std::io::Result<Box<dyn GoType>>;
 }
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoSymbolName`, referenced by
+/// [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) before the real class is ported.
+pub trait GoSymbolName: Send + Sync {
+    /// Mirrors `GoSymbolName.asString()`.
+    fn as_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoInterfaceType`, referenced by
+/// [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) before the real class is ported.
+pub trait GoInterfaceType: Send + Sync {
+    /// Mirrors `GoInterfaceType.getMethodsSlice()`.
+    fn get_methods_slice(&self) -> Box<dyn GoSlice>;
+    /// Mirrors `GoInterfaceType.getMethods()`.
+    fn get_methods(&self) -> std::io::Result<Vec<Box<dyn GoIMethod>>>;
+    /// Mirrors `GoInterfaceType.getMethodListString()`.
+    fn get_method_list_string(&self) -> std::io::Result<String>;
+    /// Mirrors `GoType.getName()`, inherited (unchanged) by `GoInterfaceType` in Java.
+    fn get_name(&self) -> String;
+    /// Mirrors `GoType.discoverGoTypes(Set)`, overridden by `GoInterfaceType` in Java.
+    fn discover_go_types(&self, discovered_types: &mut std::collections::HashSet<i64>) -> std::io::Result<bool>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoIMethod`, referenced by
+/// [`GoItab`](crate::format::golang::rtti::go_itab::GoItab) before the real class is ported.
+/// `GoItab` only ever stores and returns this type opaquely, so no members are needed yet.
+pub trait GoIMethod: Send + Sync {}
 

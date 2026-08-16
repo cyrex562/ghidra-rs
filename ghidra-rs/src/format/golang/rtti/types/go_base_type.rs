@@ -137,7 +137,23 @@ mod tests {
 
     struct MockGoType;
 
-    impl GoType for MockGoType {}
+    impl GoType for MockGoType {
+        fn get_name(&self) -> String {
+            unimplemented!()
+        }
+
+        fn get_symbol_name(&self) -> Box<dyn crate::format::seam_stubs::GoSymbolName> {
+            unimplemented!()
+        }
+
+        fn get_structure_namespace(&self) -> std::io::Result<String> {
+            unimplemented!()
+        }
+
+        fn discover_go_types(&self, _discovered_types: &mut std::collections::HashSet<i64>) -> std::io::Result<bool> {
+            unimplemented!()
+        }
+    }
 
     struct MockGoTypeManager {
         resolved: bool,
@@ -151,6 +167,10 @@ mod tests {
             else {
                 Err(std::io::Error::new(std::io::ErrorKind::NotFound, "no type at offset"))
             }
+        }
+
+        fn get_type(&self, _offset: i64) -> std::io::Result<Box<dyn GoType>> {
+            unimplemented!()
         }
     }
 
@@ -198,6 +218,18 @@ mod tests {
 
         fn get_go_types(&self) -> Box<dyn GoTypeManager> {
             Box::new(MockGoTypeManager { resolved: self.types_resolved })
+        }
+
+        fn get_ptr_size(&self) -> i32 {
+            unimplemented!()
+        }
+
+        fn get_code_address(&self, _offset: i64) -> Address {
+            unimplemented!()
+        }
+
+        fn is_loaded_and_initialized(&self, _addr: Address) -> bool {
+            unimplemented!()
         }
     }
 

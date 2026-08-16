@@ -135,6 +135,38 @@ mod tests {
                 .map(|name| Box::new(MockGoMethod { name: name.clone() }) as Box<dyn GoMethod>)
                 .collect())
         }
+
+        fn get_len(&self) -> i64 {
+            unimplemented!()
+        }
+
+        fn get_sub_slice(&self, _start_element: i64, _element_count: i64, _element_size: i64) -> Box<dyn GoSlice> {
+            unimplemented!()
+        }
+
+        fn read_u_int_list(&self, _int_size: i32) -> std::io::Result<Vec<i64>> {
+            unimplemented!()
+        }
+
+        fn markup_element_references(
+            &self,
+            _element_size: i32,
+            _target_addrs: Vec<crate::program::model::address::Address>,
+            _session: &dyn crate::format::seam_stubs::MarkupSession,
+        ) -> std::io::Result<()> {
+            unimplemented!()
+        }
+
+        fn markup_array(
+            &self,
+            _slice_name: &str,
+            _namespace_name: &str,
+            _element_type: Option<&dyn crate::program::model::data::data_type::DataType>,
+            _ptr: bool,
+            _session: &dyn crate::format::seam_stubs::MarkupSession,
+        ) -> std::io::Result<()> {
+            unimplemented!()
+        }
     }
 
     struct MockGoRttiMapper {
@@ -174,6 +206,18 @@ mod tests {
         }
 
         fn get_go_types(&self) -> Box<dyn crate::format::seam_stubs::GoTypeManager> {
+            unimplemented!()
+        }
+
+        fn get_ptr_size(&self) -> i32 {
+            unimplemented!()
+        }
+
+        fn get_code_address(&self, _offset: i64) -> crate::program::model::address::Address {
+            unimplemented!()
+        }
+
+        fn is_loaded_and_initialized(&self, _addr: crate::program::model::address::Address) -> bool {
             unimplemented!()
         }
     }
