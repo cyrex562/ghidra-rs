@@ -1,3 +1,4 @@
+pub mod b_sim_client_factory;
 pub mod b_sim_initializer;
 pub mod b_sim_jdbc_data_source;
 pub mod client;

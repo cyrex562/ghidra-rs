@@ -3339,3 +3339,187 @@ impl std::fmt::Debug for ExecutableScorer {
             .finish()
     }
 }
+
+/// Fills in every [`FunctionDatabase`] method a `BSimClientFactory` protocol-dispatch stub
+/// doesn't need with `unimplemented!()`, leaving only construction and the URL/label accessors
+/// real. `BSimClientFactory` only ever constructs and returns these objects -- it never calls into
+/// them -- so a full behavioral port isn't needed to unblock its own port.
+macro_rules! impl_bsim_function_database_stub {
+    ($ty:ident, $label:literal) => {
+        impl FunctionDatabase for $ty {
+            fn to_string(&self) -> String {
+                format!("{}({})", $label, self.url)
+            }
+
+            fn get_integer(&self) -> i32 {
+                unimplemented!(concat!($label, "::get_integer is not ported yet"))
+            }
+
+            fn is_password_change_allowed(&self) -> bool {
+                unimplemented!(concat!($label, "::is_password_change_allowed is not ported yet"))
+            }
+
+            fn change_password(&self, _new_password: &[char]) -> String {
+                unimplemented!(concat!($label, "::change_password is not ported yet"))
+            }
+
+            fn get_status(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::Status {
+                unimplemented!(concat!($label, "::get_status is not ported yet"))
+            }
+
+            fn get_connection_type(
+                &self,
+            ) -> crate::feature::bsim::query::b_sim_jdbc_data_source::ConnectionType {
+                unimplemented!(concat!($label, "::get_connection_type is not ported yet"))
+            }
+
+            fn get_user_name(&self) -> String {
+                unimplemented!(concat!($label, "::get_user_name is not ported yet"))
+            }
+
+            fn get_lsh_vector_factory(&self) -> Arc<crate::generic::seam_stubs::LSHVectorFactory> {
+                unimplemented!(concat!($label, "::get_lsh_vector_factory is not ported yet"))
+            }
+
+            fn get_info(&self) -> Box<dyn DatabaseInformation> {
+                unimplemented!(concat!($label, "::get_info is not ported yet"))
+            }
+
+            fn compare_layout(&self) -> i32 {
+                unimplemented!(concat!($label, "::compare_layout is not ported yet"))
+            }
+
+            fn get_server_info(&self) -> Box<dyn BSimServerInfo> {
+                unimplemented!(concat!($label, "::get_server_info is not ported yet"))
+            }
+
+            fn get_url_string(&self) -> String {
+                self.url.clone()
+            }
+
+            fn initialize(&self) -> bool {
+                unimplemented!(concat!($label, "::initialize is not ported yet"))
+            }
+
+            fn close(&self) {}
+
+            fn get_last_error(&self) -> Box<dyn BSimError> {
+                unimplemented!(concat!($label, "::get_last_error is not ported yet"))
+            }
+
+            fn query(&self, _query: &dyn BSimQuery) -> Box<dyn QueryResponseRecord> {
+                unimplemented!(concat!($label, "::query is not ported yet"))
+            }
+
+            fn check_settings_for_query(
+                &self,
+                _manage: &dyn DescriptionManager,
+                _info: &dyn DatabaseInformation,
+            ) -> std::io::Result<()> {
+                unimplemented!(concat!($label, "::check_settings_for_query is not ported yet"))
+            }
+
+            fn check_settings_for_insert(
+                &self,
+                _manage: &dyn DescriptionManager,
+                _info: &dyn DatabaseInformation,
+            ) -> std::io::Result<bool> {
+                unimplemented!(concat!($label, "::check_settings_for_insert is not ported yet"))
+            }
+
+            fn construct_fatal_error(
+                &self,
+                _flags: i32,
+                _newrec: &ExecutableRecord,
+                _orig: &ExecutableRecord,
+            ) -> String {
+                unimplemented!(concat!($label, "::construct_fatal_error is not ported yet"))
+            }
+
+            fn construct_nonfatal_error(
+                &self,
+                _flags: i32,
+                _newrec: &ExecutableRecord,
+                _orig: &ExecutableRecord,
+            ) -> String {
+                unimplemented!(concat!($label, "::construct_nonfatal_error is not ported yet"))
+            }
+
+            fn load_configuration_template(
+                &self,
+                _configname: &str,
+            ) -> std::io::Result<Box<dyn Configuration>> {
+                unimplemented!(concat!($label, "::load_configuration_template is not ported yet"))
+            }
+
+            fn generate_lsh_vector_factory(&self) -> Box<dyn WeightedLSHCosineVectorFactory> {
+                unimplemented!(concat!($label, "::generate_lsh_vector_factory is not ported yet"))
+            }
+
+            fn get_queried_functions_per_stage(&self) -> i32 {
+                unimplemented!(concat!($label, "::get_queried_functions_per_stage is not ported yet"))
+            }
+
+            fn get_overview_functions_per_stage(&self) -> i32 {
+                unimplemented!(concat!($label, "::get_overview_functions_per_stage is not ported yet"))
+            }
+        }
+    };
+}
+
+/// Placeholder for the unported Java type `PostgresFunctionDatabase`, referenced by
+/// [`crate::feature::bsim::query::b_sim_client_factory`]. Java's `PostgresFunctionDatabase` is a
+/// concrete `final class` (not an interface), so it is mirrored as a concrete struct rather than a
+/// trait object; only [`FunctionDatabase`], the interface it implements, needs `dyn`. Replace with
+/// the real port when `PostgresFunctionDatabase.java` is ported.
+pub struct PostgresFunctionDatabase {
+    url: String,
+    /// Java: `async`, whether database commits should be asynchronous.
+    pub is_async: bool,
+}
+
+impl PostgresFunctionDatabase {
+    /// Java: `PostgresFunctionDatabase(URL postgresUrl, boolean async)`.
+    pub fn new(postgres_url: &str, is_async: bool) -> Self {
+        Self { url: postgres_url.to_string(), is_async }
+    }
+}
+
+impl_bsim_function_database_stub!(PostgresFunctionDatabase, "PostgresFunctionDatabase");
+
+/// Placeholder for the unported Java type `ElasticDatabase`, referenced by
+/// [`crate::feature::bsim::query::b_sim_client_factory`]. Java's `ElasticDatabase` is a concrete
+/// class implementing the `FunctionDatabase` interface, so it is mirrored as a concrete struct
+/// rather than a trait object; only [`FunctionDatabase`] itself needs `dyn`. Replace with the real
+/// port when `ElasticDatabase.java` is ported.
+pub struct ElasticDatabase {
+    url: String,
+}
+
+impl ElasticDatabase {
+    /// Java: `ElasticDatabase(URL baseURL)`.
+    pub fn new(base_url: &str) -> Self {
+        Self { url: base_url.to_string() }
+    }
+}
+
+impl_bsim_function_database_stub!(ElasticDatabase, "ElasticDatabase");
+
+/// Placeholder for the unported Java type `H2FileFunctionDatabase`, referenced by
+/// [`crate::feature::bsim::query::b_sim_client_factory`]. Java's `H2FileFunctionDatabase` is a
+/// concrete class (extending `AbstractSQLFunctionDatabase`, which implements `FunctionDatabase`
+/// transitively), so it is mirrored as a concrete struct rather than a trait object; only
+/// [`FunctionDatabase`] itself needs `dyn`. Replace with the real port when
+/// `H2FileFunctionDatabase.java` is ported.
+pub struct H2FileFunctionDatabase {
+    url: String,
+}
+
+impl H2FileFunctionDatabase {
+    /// Java: `H2FileFunctionDatabase(URL bsimURL)`.
+    pub fn new(bsim_url: &str) -> Self {
+        Self { url: bsim_url.to_string() }
+    }
+}
+
+impl_bsim_function_database_stub!(H2FileFunctionDatabase, "H2FileFunctionDatabase");
