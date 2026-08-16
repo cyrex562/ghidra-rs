@@ -66,6 +66,15 @@ pub fn append_path(paths: &[Option<&str>]) -> Option<String> {
     Some(buffer)
 }
 
+/// Converts a native OS path (which may use `\` separators) into an absolute unix-style path.
+///
+/// Mirrors `FSUtilities.normalizeNativePath(String)`, which is
+/// `appendPath("/", FilenameUtils.separatorsToUnix(path))`.
+pub fn normalize_native_path(path: &str) -> String {
+    let unix_path = path.replace('\\', "/");
+    append_path(&[Some("/"), Some(&unix_path)]).unwrap_or_else(|| "/".to_string())
+}
+
 /// Returns the file extension of `path` at the given extension depth.
 ///
 /// - `ext_level = 1` returns the last `.ext` suffix.

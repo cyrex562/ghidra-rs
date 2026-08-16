@@ -244,6 +244,10 @@ mod tests {
         fn as_string(&self) -> String {
             self.name.clone()
         }
+
+        fn package_path(&self) -> Option<String> {
+            None
+        }
     }
 
     #[derive(Clone)]
@@ -322,6 +326,26 @@ mod tests {
         ) -> std::io::Result<()> {
             Ok(())
         }
+
+        fn get_array_address(&self) -> Address {
+            unimplemented!()
+        }
+
+        fn get_element_offset(&self, _element_size: i64, _element_index: i64) -> i64 {
+            unimplemented!()
+        }
+
+        fn read_u_int_element(&self, _int_size: i32, _element_index: i32) -> std::io::Result<i64> {
+            unimplemented!()
+        }
+
+        fn get_element_reader(
+            &self,
+            _element_size: i32,
+            _element_index: i32,
+        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+            unimplemented!()
+        }
     }
 
     struct MockGoIMethod;
@@ -376,6 +400,10 @@ mod tests {
             } else {
                 Err(std::io::Error::new(std::io::ErrorKind::NotFound, "no type at offset"))
             }
+        }
+
+        fn get_data_type(&self, _type_name: &str) -> std::io::Result<Box<dyn DataType>> {
+            unimplemented!()
         }
     }
 
@@ -435,6 +463,60 @@ mod tests {
         fn is_loaded_and_initialized(&self, addr: Address) -> bool {
             self.loaded_addrs.contains(&addr.offset())
         }
+
+        fn get_data_address(&self, _offset: i64) -> Address {
+            unimplemented!()
+        }
+
+        fn get_reader(
+            &self,
+            _position: i64,
+        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+            unimplemented!()
+        }
+
+        fn find_containing_module_by_func_data(
+            &self,
+            _offset: i64,
+        ) -> Option<Box<dyn crate::format::seam_stubs::GoModuledata>> {
+            unimplemented!()
+        }
+
+        fn parse_symbol_name(&self, _s: &str) -> Box<dyn GoSymbolName> {
+            unimplemented!()
+        }
+
+        fn get_function_at(
+            &self,
+            _addr: &Address,
+        ) -> Option<std::sync::Arc<dyn crate::program::model::listing::function::Function>> {
+            unimplemented!()
+        }
+
+        fn new_array_data_type(
+            &self,
+            _element_type: &dyn DataType,
+            _num_elements: i32,
+        ) -> Box<dyn DataType> {
+            unimplemented!()
+        }
+
+        fn add_source_file(
+            &self,
+            _source_file: &crate::program::database::sourcemap::SourceFile,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            unimplemented!()
+        }
+
+        fn add_source_map_entry(
+            &self,
+            _source_file: &crate::program::database::sourcemap::SourceFile,
+            _line_number: i32,
+            _base_addr: &Address,
+            _length: i64,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            unimplemented!()
+        }
     }
 
     struct MockStructureContext {
@@ -488,11 +570,14 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_reader(&self) -> Box<dyn Any> {
+        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
             unimplemented!()
         }
 
-        fn get_field_reader(&self, _field_offset: i64) -> Box<dyn Any> {
+        fn get_field_reader(
+            &self,
+            _field_offset: i64,
+        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
             unimplemented!()
         }
 

@@ -5029,10 +5029,26 @@ pub trait MarkupSession: Send + Sync {
     fn get_mapping_context(&self) -> Box<dyn std::any::Any>;
     fn get_markedup_addresses(&self) -> Box<dyn std::any::Any>;
     fn markup(&self, obj: &dyn std::any::Any, nested: bool) -> std::io::Result<()>;
-    fn markup_address(&self, addr: Address, dt: &dyn std::any::Any) -> std::io::Result<()>;
-    fn markup_address_if_undefined(&self, addr: Address, dt: &dyn std::any::Any) -> std::io::Result<()>;
+    fn markup_address(
+        &self,
+        addr: Address,
+        dt: &dyn crate::program::model::data::data_type::DataType,
+    ) -> std::io::Result<()>;
+    fn markup_address_if_undefined(
+        &self,
+        addr: Address,
+        dt: &dyn crate::program::model::data::data_type::DataType,
+    ) -> std::io::Result<()>;
     fn label_structure(&self, obj: &dyn std::any::Any, symbol_name: &str, namespace_name: &str) -> std::io::Result<()>;
     fn label_address(&self, addr: Address, symbol_name: &str) -> std::io::Result<()>;
+    /// Mirrors the `MarkupSession.labelAddress(Address, String, String)` overload; Rust traits
+    /// have no overloading, so the namespace-qualified form gets its own name.
+    fn label_address_in_namespace(
+        &self,
+        addr: Address,
+        symbol_name: &str,
+        namespace_name: &str,
+    ) -> std::io::Result<()>;
     fn append_comment(
         &self,
         field_context: &dyn std::any::Any,
@@ -5089,8 +5105,11 @@ pub trait StructureContext<T>: Send + Sync {
     fn get_structure_end(&self) -> i64;
     fn get_structure_length(&self) -> i32;
     fn get_structure_instance(&self) -> &T;
-    fn get_reader(&self) -> Box<dyn std::any::Any>;
-    fn get_field_reader(&self, field_offset: i64) -> Box<dyn std::any::Any>;
+    fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
+    fn get_field_reader(
+        &self,
+        field_offset: i64,
+    ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
     fn create_field_context(&self, fmi: &dyn std::any::Any, include_reader: bool) -> Box<dyn std::any::Any>;
     fn get_structure_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::structure::Structure>>;
     fn to_string(&self) -> String;
@@ -5139,6 +5158,18 @@ pub trait GoSlice: Send + Sync {
         ptr: bool,
         session: &dyn MarkupSession,
     ) -> std::io::Result<()>;
+    /// Mirrors `GoSlice.getArrayAddress()`.
+    fn get_array_address(&self) -> Address;
+    /// Mirrors `GoSlice.getElementOffset(long, long)`.
+    fn get_element_offset(&self, element_size: i64, element_index: i64) -> i64;
+    /// Mirrors `GoSlice.readUIntElement(int, int)`.
+    fn read_u_int_element(&self, int_size: i32, element_index: i32) -> std::io::Result<i64>;
+    /// Mirrors `GoSlice.getElementReader(int, int)`.
+    fn get_element_reader(
+        &self,
+        element_size: i32,
+        element_index: i32,
+    ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoRttiMapper`, referenced by
@@ -5174,6 +5205,101 @@ pub trait GoRttiMapper: Send + Sync {
     /// the same simplification precedent as [`get_safe_name`](Self::get_safe_name): every current
     /// call site only cares about the boolean result, not `Program`/`Memory` themselves.
     fn is_loaded_and_initialized(&self, addr: Address) -> bool;
+    /// Mirrors `DataTypeMapper.getDataAddress(long)`, inherited by `GoRttiMapper`.
+    fn get_data_address(&self, offset: i64) -> Address;
+    /// Mirrors `DataTypeMapper.getReader(long)`, inherited by `GoRttiMapper`.
+    fn get_reader(&self, position: i64) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader>;
+    /// Mirrors `GoRttiMapper.findContainingModuleByFuncData(long)`. The Java method returns
+    /// `null` when no module contains the offset, which every caller checks for.
+    fn find_containing_module_by_func_data(&self, offset: i64) -> Option<Box<dyn GoModuledata>>;
+    /// Static factory `GoSymbolName.parse(String)`, exposed as an instance method because a
+    /// trait object cannot dispatch a Rust associated function. Every current call site already
+    /// holds the `GoRttiMapper`, so routing the parse through it costs nothing and lets the real
+    /// `GoSymbolName` port supply the implementation later.
+    fn parse_symbol_name(&self, s: &str) -> Box<dyn GoSymbolName>;
+    /// Simplified stand-in for `getProgram().getFunctionManager().getFunctionAt(addr)`, following
+    /// the same precedent as [`is_loaded_and_initialized`](Self::is_loaded_and_initialized): the
+    /// call sites want the function, not the `Program`/`FunctionManager` chain that produces it.
+    fn get_function_at(
+        &self,
+        addr: &Address,
+    ) -> Option<std::sync::Arc<dyn crate::program::model::listing::function::Function>>;
+    /// Simplified stand-in for `new ArrayDataType(elementType, numElements, -1, getDTM())`.
+    /// `ghidra.program.model.data.ArrayDataType` is not ported yet, and the `DataTypeManager`
+    /// argument is always this mapper's own DTM, so the whole construction collapses to one call.
+    fn new_array_data_type(
+        &self,
+        element_type: &dyn crate::program::model::data::data_type::DataType,
+        num_elements: i32,
+    ) -> Box<dyn crate::program::model::data::data_type::DataType>;
+    /// Simplified stand-in for `getProgram().getSourceFileManager().addSourceFile(sourceFile)`.
+    /// Takes `&self` because the real mapper reaches a mutable manager through its `Program`
+    /// handle rather than through this borrow.
+    fn add_source_file(
+        &self,
+        source_file: &crate::program::database::sourcemap::SourceFile,
+    ) -> Result<(), Box<dyn std::error::Error>>;
+    /// Simplified stand-in for
+    /// `getProgram().getSourceFileManager().addSourceMapEntry(sourceFile, lineNumber, baseAddr, length)`.
+    /// See [`add_source_file`](Self::add_source_file) for why this takes `&self`.
+    fn add_source_map_entry(
+        &self,
+        source_file: &crate::program::database::sourcemap::SourceFile,
+        line_number: i32,
+        base_addr: &Address,
+        length: i64,
+    ) -> Result<(), Box<dyn std::error::Error>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoModuledata`, referenced by
+/// [`GoFuncData`](crate::format::golang::rtti::go_func_data::GoFuncData) before the real class is
+/// ported. Only the members `GoFuncData` needs are declared; the nullable Java getters are
+/// modelled as `Option` because `GoFuncData` null-checks each of them.
+pub trait GoModuledata: Send + Sync {
+    /// Mirrors `GoModuledata.getText()`.
+    fn get_text(&self) -> Address;
+    /// Mirrors `GoModuledata.getGofunc()`.
+    fn get_gofunc(&self) -> i64;
+    /// Mirrors `GoModuledata.getFuncnametab()`.
+    fn get_funcnametab(&self) -> Option<Box<dyn GoSlice>>;
+    /// Mirrors `GoModuledata.getCutab()`.
+    fn get_cutab(&self) -> Option<Box<dyn GoSlice>>;
+    /// Mirrors `GoModuledata.getFiletab()`.
+    fn get_filetab(&self) -> Option<Box<dyn GoSlice>>;
+    /// Mirrors `GoModuledata.getPclntable()`.
+    fn get_pclntable(&self) -> Option<Box<dyn GoSlice>>;
+    /// Mirrors `GoModuledata.getPctab()`.
+    fn get_pctab(&self) -> Option<Box<dyn GoSlice>>;
+    /// Stands in for `new GoPcValueEvaluator(funcData, offset)`. The Java constructor takes the
+    /// `GoFuncData` only to reach this moduledata (for `getGoBinary().getMinLC()` and
+    /// `getPcValueTable()`) plus the function's entry PC, so moving the factory here breaks the
+    /// `GoFuncData` <-> `GoPcValueEvaluator` construction cycle without losing any input.
+    fn new_pc_value_evaluator(
+        &self,
+        offset: i64,
+        func_entry: i64,
+    ) -> std::io::Result<Box<dyn GoPcValueEvaluator>>;
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoPcValueEvaluator`, referenced by
+/// [`GoFuncData`](crate::format::golang::rtti::go_func_data::GoFuncData) before the real class is
+/// ported. Evaluation advances an internal reader cursor, value, and PC, so every stepping method
+/// takes `&mut self`.
+pub trait GoPcValueEvaluator: Send + Sync {
+    /// Mirrors `GoPcValueEvaluator.getPC()`.
+    fn get_pc(&self) -> i64;
+    /// Mirrors `GoPcValueEvaluator.reset()`.
+    fn reset(&mut self);
+    /// Mirrors `GoPcValueEvaluator.getMaxPC()`.
+    fn get_max_pc(&mut self) -> std::io::Result<i64>;
+    /// Mirrors `GoPcValueEvaluator.eval(long)`.
+    fn eval(&mut self, target_pc: i64) -> std::io::Result<i32>;
+    /// Mirrors `GoPcValueEvaluator.evalNext()`.
+    fn eval_next(&mut self) -> std::io::Result<i32>;
+    /// Mirrors `GoPcValueEvaluator.evalAll(long)`.
+    fn eval_all(&mut self, target_pc: i64) -> std::io::Result<Vec<i32>>;
+    /// Mirrors `GoPcValueEvaluator.markup(MarkupSession)`.
+    fn markup(&mut self, session: &dyn MarkupSession) -> std::io::Result<()>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoTypeFlag`, referenced by
@@ -5277,6 +5403,11 @@ pub trait GoTypeManager: Send + Sync {
     fn resolve_type_off(&self, ptr_in_module: i64, off: i64) -> std::io::Result<Box<dyn GoType>>;
     /// Mirrors `GoTypeManager.getType(long)`.
     fn get_type(&self, offset: i64) -> std::io::Result<Box<dyn GoType>>;
+    /// Mirrors `GoTypeManager.getDataType(String)`.
+    fn get_data_type(
+        &self,
+        type_name: &str,
+    ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoSymbolName`, referenced by
@@ -5284,6 +5415,9 @@ pub trait GoTypeManager: Send + Sync {
 pub trait GoSymbolName: Send + Sync {
     /// Mirrors `GoSymbolName.asString()`.
     fn as_string(&self) -> String;
+    /// Mirrors the `packagePath()` record accessor (a.k.a. `getPackagePath()`), which is `null`
+    /// for symbols that carry no package path.
+    fn package_path(&self) -> Option<String>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.types.GoInterfaceType`, referenced by
