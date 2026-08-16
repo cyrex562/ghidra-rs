@@ -2819,6 +2819,21 @@ pub trait ResponseDelete: Send + Sync {
     fn restore_xml(&self, parser: &dyn XmlPullParser);
 }
 
+/// Placeholder for `BSimFilter` type. Filters applied to a BSim query, used by
+/// [`crate::feature::bsim::query::protocol::QueryNearest`].
+pub trait BSimFilter: Send + Sync {
+    fn clone(&self) -> Box<dyn BSimFilter>;
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser);
+}
+
+/// Placeholder for `ResponseNearest` type. Response from a query-nearest operation, used by
+/// [`crate::feature::bsim::query::protocol::QueryNearest`].
+pub trait ResponseNearest: Send + Sync {
+    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
+    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
+}
+
 /// Placeholder for `LSHVectorFactory` type. Factory for creating and restoring LSH vectors.
 pub trait LSHVectorFactory: Send + Sync {
     fn build_zero_vector(&self) -> Box<dyn LSHVector>;
