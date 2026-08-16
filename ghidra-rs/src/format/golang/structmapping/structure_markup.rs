@@ -124,11 +124,14 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_reader(&self) -> Box<dyn Any> {
+        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
             unimplemented!()
         }
 
-        fn get_field_reader(&self, _field_offset: i64) -> Box<dyn Any> {
+        fn get_field_reader(
+            &self,
+            _field_offset: i64,
+        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
             unimplemented!()
         }
 
@@ -225,11 +228,19 @@ mod tests {
             Ok(())
         }
 
-        fn markup_address(&self, _addr: Address, _dt: &dyn Any) -> std::io::Result<()> {
+        fn markup_address(
+            &self,
+            _addr: Address,
+            _dt: &dyn crate::program::model::data::data_type::DataType,
+        ) -> std::io::Result<()> {
             Ok(())
         }
 
-        fn markup_address_if_undefined(&self, _addr: Address, _dt: &dyn Any) -> std::io::Result<()> {
+        fn markup_address_if_undefined(
+            &self,
+            _addr: Address,
+            _dt: &dyn crate::program::model::data::data_type::DataType,
+        ) -> std::io::Result<()> {
             Ok(())
         }
 
@@ -238,6 +249,15 @@ mod tests {
         }
 
         fn label_address(&self, _addr: Address, _symbol_name: &str) -> std::io::Result<()> {
+            Ok(())
+        }
+
+        fn label_address_in_namespace(
+            &self,
+            _addr: Address,
+            _symbol_name: &str,
+            _namespace_name: &str,
+        ) -> std::io::Result<()> {
             Ok(())
         }
 

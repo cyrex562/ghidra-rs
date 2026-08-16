@@ -76,11 +76,19 @@ mod tests {
             Ok(())
         }
 
-        fn markup_address(&self, _addr: Address, _dt: &dyn Any) -> std::io::Result<()> {
+        fn markup_address(
+            &self,
+            _addr: Address,
+            _dt: &dyn crate::program::model::data::data_type::DataType,
+        ) -> std::io::Result<()> {
             Ok(())
         }
 
-        fn markup_address_if_undefined(&self, _addr: Address, _dt: &dyn Any) -> std::io::Result<()> {
+        fn markup_address_if_undefined(
+            &self,
+            _addr: Address,
+            _dt: &dyn crate::program::model::data::data_type::DataType,
+        ) -> std::io::Result<()> {
             Ok(())
         }
 
@@ -89,6 +97,15 @@ mod tests {
         }
 
         fn label_address(&self, _addr: Address, _symbol_name: &str) -> std::io::Result<()> {
+            Ok(())
+        }
+
+        fn label_address_in_namespace(
+            &self,
+            _addr: Address,
+            _symbol_name: &str,
+            _namespace_name: &str,
+        ) -> std::io::Result<()> {
             Ok(())
         }
 

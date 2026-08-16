@@ -172,6 +172,13 @@ mod tests {
         fn get_type(&self, _offset: i64) -> std::io::Result<Box<dyn GoType>> {
             unimplemented!()
         }
+
+        fn get_data_type(
+            &self,
+            _type_name: &str,
+        ) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>> {
+            unimplemented!()
+        }
     }
 
     struct MockGoRttiMapper {
@@ -231,6 +238,63 @@ mod tests {
         fn is_loaded_and_initialized(&self, _addr: Address) -> bool {
             unimplemented!()
         }
+
+        fn get_data_address(&self, _offset: i64) -> Address {
+            unimplemented!()
+        }
+
+        fn get_reader(
+            &self,
+            _position: i64,
+        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
+            unimplemented!()
+        }
+
+        fn find_containing_module_by_func_data(
+            &self,
+            _offset: i64,
+        ) -> Option<Box<dyn crate::format::seam_stubs::GoModuledata>> {
+            unimplemented!()
+        }
+
+        fn parse_symbol_name(
+            &self,
+            _s: &str,
+        ) -> Box<dyn crate::format::seam_stubs::GoSymbolName> {
+            unimplemented!()
+        }
+
+        fn get_function_at(
+            &self,
+            _addr: &Address,
+        ) -> Option<std::sync::Arc<dyn crate::program::model::listing::function::Function>> {
+            unimplemented!()
+        }
+
+        fn new_array_data_type(
+            &self,
+            _element_type: &dyn crate::program::model::data::data_type::DataType,
+            _num_elements: i32,
+        ) -> Box<dyn crate::program::model::data::data_type::DataType> {
+            unimplemented!()
+        }
+
+        fn add_source_file(
+            &self,
+            _source_file: &crate::program::database::sourcemap::SourceFile,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            unimplemented!()
+        }
+
+        fn add_source_map_entry(
+            &self,
+            _source_file: &crate::program::database::sourcemap::SourceFile,
+            _line_number: i32,
+            _base_addr: &Address,
+            _length: i64,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            unimplemented!()
+        }
     }
 
     struct MockStructureContext {
@@ -284,11 +348,14 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_reader(&self) -> Box<dyn Any> {
+        fn get_reader(&self) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
             unimplemented!()
         }
 
-        fn get_field_reader(&self, _field_offset: i64) -> Box<dyn Any> {
+        fn get_field_reader(
+            &self,
+            _field_offset: i64,
+        ) -> Box<dyn crate::app::util::bin::binary_reader::BinaryReader> {
             unimplemented!()
         }
 
