@@ -5498,3 +5498,47 @@ pub mod resource_data_directory {
     }
 }
 
+/// Placeholder for `ghidra.app.util.bin.format.pe.cli.streams.CliStreamGuid`, referenced by
+/// [`CliStreamMetadata`] before the real class is ported.
+pub trait CliStreamGuid: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.cli.streams.CliStreamUserStrings`, referenced by
+/// [`CliStreamMetadata`] before the real class is ported.
+pub trait CliStreamUserStrings: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.cli.streams.CliStreamStrings`, referenced by
+/// [`CliStreamMetadata`] before the real class is ported.
+pub trait CliStreamStrings: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.cli.streams.CliStreamBlob`, referenced by
+/// [`CliStreamMetadata`] before the real class is ported.
+pub trait CliStreamBlob: Send + Sync {}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.cli.CliAbstractTable`, referenced by
+/// [`CliStreamMetadata`] before the real class is ported.
+pub trait CliAbstractTable: Send + Sync {}
+
+/// Placeholder for the unported Java type `CliStreamMetadata`, referenced by `CliRepresentable`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait CliStreamMetadata: Send + Sync {
+    fn get_name(&self) -> String;
+    fn parse(&self) -> std::io::Result<bool>;
+    fn get_guid_stream(&self) -> Box<dyn CliStreamGuid>;
+    fn get_user_strings_stream(&self) -> Box<dyn CliStreamUserStrings>;
+    fn get_strings_stream(&self) -> Box<dyn CliStreamStrings>;
+    fn get_blob_stream(&self) -> Box<dyn CliStreamBlob>;
+    fn get_major_version(&self) -> i16;
+    fn get_minor_version(&self) -> i16;
+    fn get_sorted(&self) -> i64;
+    fn get_valid(&self) -> i64;
+    fn get_table(&self, table_type: &crate::format::pe::cli::tables::cli_type_table::CliTypeTable) -> Box<dyn CliAbstractTable>;
+    fn get_number_rows_for_table(&self, table_type: &crate::format::pe::cli::tables::cli_type_table::CliTypeTable) -> i32;
+    fn get_string_index_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+    fn get_guid_index_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+    fn get_blob_index_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+    fn get_table_index_data_type(&self, table: &crate::format::pe::cli::tables::cli_type_table::CliTypeTable) -> Box<dyn crate::program::model::data::data_type::DataType>;
+    fn markup(&self, program: &dyn Program, is_binary: bool, monitor: &dyn crate::util::task::TaskMonitor, log: &dyn MessageLog, nt_header: &dyn NTHeader) -> std::io::Result<()>;
+    fn to_data_type(&self) -> Box<dyn crate::program::model::data::data_type::DataType>;
+}
+
