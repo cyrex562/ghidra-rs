@@ -14,7 +14,7 @@ DONE	trait	4	25	5	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/
 DONE	trait	2	26	16	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/DebugDataDirectory.java
 DONE	trait	2	41	1	util	Ghidra/Features/Base/src/main/java/ghidra/util/table/ProgramTableModel.java
 DONE	trait	0	72	32	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/DecompilerActionContext.java
-TODO	trait	2	47	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/FunctionDescription.java
+DONE	trait	2	47	5	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/FunctionDescription.java
 TODO	trait	1	49	4	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/description/DescriptionManager.java
 TODO	trait	5	10	11	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddParameterCommand.java
 TODO	trait	4	8	9	app	Ghidra/Features/Base/src/main/java/ghidra/app/cmd/function/AddMemoryParameterCommand.java
