@@ -2014,28 +2014,72 @@ impl crate::feature::base::memsearch::format::search_format::SearchFormat for Fl
 // `ghidra.features.bsim.query.description` placeholders
 //
 // `FunctionDescription` sits on a dependency cycle with `CallgraphEntry` (each names the other
-// in a field) and with `DescriptionManager` (which is the factory for both). The three
-// placeholders below break that cycle; each is a concrete Java class, so each stub is a struct
-// rather than a trait. See `STUBS.tsv` for provenance.
+// in a field) and with `ExecutableRecord`/`SignatureRecord` (which the real
+// `DescriptionManager` port interns and hands out). The placeholders below break that cycle;
+// each is a concrete Java class, so each stub is a struct rather than a trait. See `STUBS.tsv`
+// for provenance.
 // ---------------------------------------------------------------------------
 
-/// Placeholder for the unported Java type `ExecutableRecord`, referenced by
-/// [`crate::feature::bsim::query::description::FunctionDescription`].
+/// The state of an [`ExecutableRecord`] that the owning `DescriptionManager` mutates after the
+/// record has been shared.
 ///
-/// Only the members `FunctionDescription` (and the [`CallgraphEntry`] placeholder) need are
-/// present. Equality, ordering and hashing are by md5 alone, matching the Java original.
+/// Java mutates these fields through whatever reference happens to be at hand -- the record in
+/// the manager's set and the record every [`FunctionDescription`] points at are one object, so
+/// `populateExecutableXref` followed by `saveXml` observes the indices it just assigned. The
+/// Rust records are shared through [`Arc`], so that aliasing is modelled with a lock rather than
+/// with `&mut`.
+///
+/// [`FunctionDescription`]: crate::feature::bsim::query::description::FunctionDescription
+#[derive(Debug, Default, Clone)]
+struct ExecutableState {
+    /// Java `rowid`, reduced to its long (see the note on `FunctionDescription`'s id).
+    row_id: Option<i64>,
+    /// Java flag `ALREADY_STORED`.
+    already_stored: bool,
+    /// Java flag `CATEGORIES_SET`.
+    categories_set: bool,
+    /// Java `usercat`, kept sorted.
+    usercat: Option<Vec<crate::feature::bsim::query::description::CategoryRecord>>,
+    repository: Option<String>,
+    path: Option<String>,
+    xref_index: i32,
+}
+
+/// Placeholder for the unported Java type `ExecutableRecord`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription`] and by
+/// [`crate::feature::bsim::query::description::DescriptionManager`].
+///
+/// Only the members those two types need are present. Equality, ordering and hashing are by md5
+/// alone, matching the Java original. The Java `Date` of ingest is held as milliseconds since
+/// the epoch (what `Date.getTime()` returns), and the repository URL is stored verbatim rather
+/// than being normalised through `GhidraURL`.
 /// Replace with the real port when `ExecutableRecord.java` is ported.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct ExecutableRecord {
     md5sum: String,
     executable_name: String,
     architecture: String,
     compiler_name: String,
     library: bool,
+    /// Java `date`, as milliseconds since the epoch. `0` is Java's `EMPTY_DATE`.
+    date: i64,
+    state: std::sync::Mutex<ExecutableState>,
 }
 
 impl ExecutableRecord {
+    /// Java: `ExecutableRecord.METADATA_NAME` and friends, the bits `compare_metadata` returns.
+    pub const METADATA_NAME: i32 = 1;
+    pub const METADATA_ARCH: i32 = 2;
+    pub const METADATA_COMP: i32 = 4;
+    pub const METADATA_DATE: i32 = 8;
+    pub const METADATA_REPO: i32 = 16;
+    pub const METADATA_PATH: i32 = 32;
+    pub const METADATA_LIBR: i32 = 64;
+
     /// Java: `ExecutableRecord(String md5, String enm, String cnm, String arc, ...)`.
+    ///
+    /// Note the argument order, which follows the field order of the struct rather than the
+    /// Java constructor's; [`new_full`](Self::new_full) follows Java.
     pub fn new(
         md5sum: impl Into<String>,
         executable_name: impl Into<String>,
@@ -2048,20 +2092,92 @@ impl ExecutableRecord {
             architecture: architecture.into(),
             compiler_name: compiler_name.into(),
             library: false,
+            date: 0,
+            state: std::sync::Mutex::new(ExecutableState::default()),
         }
     }
 
-    /// Java: the library constructor, which sets the `LIBRARY` flag and synthesizes a
-    /// placeholder md5 via `calcLibraryMd5Placeholder`. The placeholder leaves the md5 empty
-    /// since nothing in the crate hashes a library record yet.
-    pub fn new_library(executable_name: impl Into<String>, architecture: impl Into<String>) -> Self {
-        Self {
-            md5sum: String::new(),
+    /// Java: `ExecutableRecord(String md5, String execName, String compilerName,
+    /// String architecture, Date date, RowKey id, String repo, String path)`.
+    pub fn new_full(
+        md5sum: impl Into<String>,
+        executable_name: impl Into<String>,
+        compiler_name: impl Into<String>,
+        architecture: impl Into<String>,
+        date: i64,
+        row_id: Option<i64>,
+        repository: Option<&str>,
+        path: Option<&str>,
+    ) -> Self {
+        let res = Self {
+            md5sum: md5sum.into(),
             executable_name: executable_name.into(),
             architecture: architecture.into(),
+            compiler_name: compiler_name.into(),
+            library: false,
+            date,
+            state: std::sync::Mutex::new(ExecutableState { row_id, ..Default::default() }),
+        };
+        res.set_repository(repository, path);
+        res
+    }
+
+    /// Java: the library constructor `ExecutableRecord(String enm, String arc, RowKey id)`,
+    /// which sets the `LIBRARY` flag and synthesizes a placeholder md5 via
+    /// [`calc_library_md5_placeholder`](Self::calc_library_md5_placeholder).
+    pub fn new_library_with_id(
+        executable_name: impl Into<String>,
+        architecture: impl Into<String>,
+        row_id: Option<i64>,
+    ) -> Self {
+        let executable_name = executable_name.into();
+        let architecture = architecture.into();
+        Self {
+            md5sum: Self::calc_library_md5_placeholder(&executable_name, &architecture),
+            executable_name,
+            architecture,
             compiler_name: String::new(),
             library: true,
+            date: 0,
+            state: std::sync::Mutex::new(ExecutableState { row_id, ..Default::default() }),
         }
+    }
+
+    /// The library constructor without a database id.
+    pub fn new_library(executable_name: impl Into<String>, architecture: impl Into<String>) -> Self {
+        Self::new_library_with_id(executable_name, architecture, None)
+    }
+
+    /// Java: `ExecutableRecord.calcLibraryMd5Placeholder(String enm, String arc)`, the stand-in
+    /// hash a library record uses in place of a real md5.
+    pub fn calc_library_md5_placeholder(enm: &str, arc: &str) -> String {
+        use crate::generic::hash::simple_crc32::SimpleCRC32;
+
+        fn word_to_ascii(val: u32, buf: &mut String) {
+            for i in (0..=28).rev().step_by(4) {
+                let nibble = (val >> i) & 0xf;
+                buf.push(char::from_digit(nibble, 16).unwrap());
+            }
+        }
+
+        let mut hi: u32 = 0x00b1_b110;
+        let mut lo: u32 = 0xfaba_faba;
+        // Java iterates over UTF-16 code units and masks each to a byte.
+        for c in enm.encode_utf16() {
+            let feed = lo >> 24;
+            lo = SimpleCRC32::hash_one_byte(lo, u32::from(c) & 0xff);
+            hi = SimpleCRC32::hash_one_byte(hi, feed);
+        }
+        lo ^= 0xf1b1_f1b1;
+        for c in arc.encode_utf16() {
+            let feed = lo >> 24;
+            lo = SimpleCRC32::hash_one_byte(lo, u32::from(c) & 0xff);
+            hi = SimpleCRC32::hash_one_byte(hi, feed);
+        }
+        let mut buf = String::from("bbbbbbbbaaaaaaaa");
+        word_to_ascii(hi, &mut buf);
+        word_to_ascii(lo, &mut buf);
+        buf
     }
 
     pub fn get_md5(&self) -> &str {
@@ -2084,12 +2200,281 @@ impl ExecutableRecord {
         self.library
     }
 
+    /// Java: `getDate()`, as milliseconds since the epoch.
+    pub fn get_date(&self) -> i64 {
+        self.date
+    }
+
+    /// Java: `getRowId()`, reduced to the key's long.
+    pub fn get_row_id(&self) -> Option<i64> {
+        self.state.lock().unwrap().row_id
+    }
+
+    pub fn is_already_stored(&self) -> bool {
+        self.state.lock().unwrap().already_stored
+    }
+
+    pub fn categories_are_set(&self) -> bool {
+        self.state.lock().unwrap().categories_set
+    }
+
+    /// Java: `getAllCategories()`, which returns null when no category is set.
+    pub fn get_all_categories(
+        &self,
+    ) -> Option<Vec<crate::feature::bsim::query::description::CategoryRecord>> {
+        self.state.lock().unwrap().usercat.clone()
+    }
+
+    pub fn get_repository(&self) -> Option<String> {
+        self.state.lock().unwrap().repository.clone()
+    }
+
+    pub fn get_path(&self) -> Option<String> {
+        self.state.lock().unwrap().path.clone()
+    }
+
+    pub fn get_xref_index(&self) -> i32 {
+        self.state.lock().unwrap().xref_index
+    }
+
+    /// Java: `setXrefIndex(int)`.
+    pub fn set_xref_index(&self, val: i32) {
+        self.state.lock().unwrap().xref_index = val;
+    }
+
+    /// Java: `setRowId(RowKey)`, reduced to the key's long.
+    pub fn set_row_id(&self, id: i64) {
+        self.state.lock().unwrap().row_id = Some(id);
+    }
+
+    /// Java: `setAlreadyStored()`.
+    pub fn set_already_stored(&self) {
+        self.state.lock().unwrap().already_stored = true;
+    }
+
+    /// Java: `setCategory(List<CategoryRecord>)`. Categories count as *set* even when the list
+    /// is empty or absent, and are kept sorted.
+    pub fn set_category(
+        &self,
+        cats: Option<Vec<crate::feature::bsim::query::description::CategoryRecord>>,
+    ) {
+        let mut state = self.state.lock().unwrap();
+        state.categories_set = true;
+        match cats {
+            Some(mut cats) if !cats.is_empty() => {
+                cats.sort();
+                state.usercat = Some(cats);
+            }
+            _ => state.usercat = None,
+        }
+    }
+
+    /// Java: `cloneCategories(ExecutableRecord op2)`.
+    pub fn clone_categories(&self, op2: &ExecutableRecord) {
+        let (set, cats) = {
+            let other = op2.state.lock().unwrap();
+            (other.categories_set, other.usercat.clone())
+        };
+        let mut state = self.state.lock().unwrap();
+        state.categories_set = set;
+        state.usercat = cats;
+    }
+
+    /// Java: `setRepository(String repo, String newpath)`, minus the `GhidraURL` normalisation
+    /// of `repo`. A leading or trailing slash is stripped from the path, and a path of just
+    /// `"/"` becomes absent, as in Java.
+    pub fn set_repository(&self, repo: Option<&str>, newpath: Option<&str>) {
+        let mut path = newpath.map(str::to_string);
+        if let Some(p) = path.take() {
+            let p = p.strip_suffix('/').unwrap_or(&p).to_string();
+            let p = p.strip_prefix('/').unwrap_or(&p).to_string();
+            path = if p.is_empty() { None } else { Some(p) };
+        }
+        let mut state = self.state.lock().unwrap();
+        state.repository = repo.map(str::to_string);
+        state.path = path;
+    }
+
+    /// Java: `compareMetadata(ExecutableRecord o)`, a bit-field of the `METADATA_*` fields that
+    /// differ. Zero means the two records describe the same executable.
+    pub fn compare_metadata(&self, o: &ExecutableRecord) -> i32 {
+        let mut res = 0;
+        if self.executable_name != o.executable_name {
+            res |= Self::METADATA_NAME;
+        }
+        if self.architecture != o.architecture {
+            res |= Self::METADATA_ARCH;
+        }
+        if self.library != o.library {
+            res |= Self::METADATA_LIBR;
+        }
+        if self.library {
+            return res; // Remaining fields aren't compared for libraries
+        }
+        if self.compiler_name != o.compiler_name {
+            res |= Self::METADATA_COMP;
+        }
+        if self.date != o.date {
+            res |= Self::METADATA_DATE;
+        }
+        let (mine, theirs) = (self.state.lock().unwrap(), o.state.lock().unwrap());
+        if mine.repository != theirs.repository {
+            res |= Self::METADATA_REPO;
+        }
+        if mine.path != theirs.path {
+            res |= Self::METADATA_PATH;
+        }
+        res
+    }
+
     /// Java: `ExecutableRecord.printRaw()`.
     pub fn print_raw(&self) -> String {
         format!(
             "{} {} {} {}",
             self.md5sum, self.executable_name, self.architecture, self.compiler_name
         )
+    }
+
+    /// Java: `ExecutableRecord.saveXml(Writer)`.
+    pub fn save_xml<W: std::io::Write>(&self, fwrite: &mut W) -> std::io::Result<()> {
+        use crate::util::xml::spec_xml_utils;
+
+        write!(fwrite, "<exe")?;
+        if self.library {
+            write!(fwrite, " library=\"true\"")?;
+        }
+        write!(fwrite, ">\n  <md5>{}</md5>\n  <name>", self.md5sum)?;
+        spec_xml_utils::xml_escape_writer(fwrite, &self.executable_name)?;
+        write!(fwrite, "</name>\n  <arch>")?;
+        spec_xml_utils::xml_escape_writer(fwrite, &self.architecture)?;
+        write!(fwrite, "</arch>\n  <compiler>")?;
+        spec_xml_utils::xml_escape_writer(fwrite, &self.compiler_name)?;
+        write!(fwrite, "</compiler>\n")?;
+        let millis = self.date % 1000;
+        let seconds = self.date / 1000;
+        write!(
+            fwrite,
+            "  <date millis=\"{}\">{}</date>\n",
+            spec_xml_utils::encode_unsigned_integer(millis),
+            spec_xml_utils::encode_unsigned_integer(seconds)
+        )?;
+        let (repository, path, usercat) = {
+            let state = self.state.lock().unwrap();
+            (state.repository.clone(), state.path.clone(), state.usercat.clone())
+        };
+        if let Some(repository) = repository {
+            write!(fwrite, "  <repository>")?;
+            spec_xml_utils::xml_escape_writer(fwrite, &repository)?;
+            write!(fwrite, "</repository>\n")?;
+        }
+        if let Some(path) = path {
+            write!(fwrite, "  <path>")?;
+            spec_xml_utils::xml_escape_writer(fwrite, &path)?;
+            write!(fwrite, "</path>\n")?;
+        }
+        for element in usercat.iter().flatten() {
+            element.save_xml(fwrite)?;
+        }
+        write!(fwrite, "</exe>\n")
+    }
+
+    /// Java: `ExecutableRecord.restoreXml(XmlPullParser, DescriptionManager)`, which registers
+    /// the parsed record with `man` and returns the interned instance.
+    pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
+        parser: &mut P,
+        man: &mut crate::feature::bsim::query::description::DescriptionManager,
+    ) -> Result<Arc<ExecutableRecord>, crate::feature::bsim::query::LshException> {
+        use crate::feature::bsim::query::LshException;
+        use crate::feature::bsim::query::description::CategoryRecord;
+        use crate::util::xml::spec_xml_utils;
+        use crate::util::xml::xml_element::XmlElement;
+
+        let xml_err = |e: crate::util::xml::xml_exception::XmlException| {
+            LshException::new(e.to_string())
+        };
+
+        let el = parser.start(&["exe"]).map_err(xml_err)?;
+        let islib = el
+            .get_attribute("library")
+            .map(|v| spec_xml_utils::decode_boolean(&v))
+            .unwrap_or(false);
+        parser.start(&["md5"]).map_err(xml_err)?;
+        let md5sum = parser.end().map_err(xml_err)?.get_text().to_string();
+        parser.start(&["name"]).map_err(xml_err)?;
+        let name_exec = parser.end().map_err(xml_err)?.get_text().to_string();
+        let mut name_compiler = String::new();
+        let mut architecture = String::new();
+        let mut seconds: i64 = 0;
+        let mut millis: i64 = 0;
+        // Java never reads a row id back from the XML.
+        let id: Option<i64> = None;
+        let mut repo: Option<String> = None;
+        let mut path: Option<String> = None;
+        let mut cats: Option<Vec<CategoryRecord>> = None;
+        while parser.peek().is_start() {
+            if parser.peek().get_name() == "category" {
+                cats.get_or_insert_with(Vec::new).push(CategoryRecord::restore_xml(parser)?);
+                continue;
+            }
+            let subel = parser.start(&[]).map_err(xml_err)?;
+            match subel.get_name() {
+                "arch" => architecture = parser.end().map_err(xml_err)?.get_text().to_string(),
+                "compiler" => name_compiler = parser.end().map_err(xml_err)?.get_text().to_string(),
+                "date" => {
+                    millis = spec_xml_utils::decode_long(subel.get_attribute("millis").as_deref());
+                    if !(0..=1000).contains(&millis) {
+                        millis = 0;
+                    }
+                    let text = parser.end().map_err(xml_err)?.get_text().to_string();
+                    seconds = spec_xml_utils::decode_long(Some(&text));
+                }
+                "repository" => {
+                    repo = Some(parser.end().map_err(xml_err)?.get_text().to_string())
+                }
+                "path" => path = Some(parser.end().map_err(xml_err)?.get_text().to_string()),
+                _ => {
+                    parser.end().map_err(xml_err)?;
+                }
+            }
+        }
+        parser.end().map_err(xml_err)?;
+
+        let res = if islib {
+            let res = man.new_executable_library(&name_exec, &architecture, id)?;
+            if res.get_md5() != md5sum {
+                return Err(LshException::new(
+                    "Read bad library placeholder md5 for ExecutableRecord",
+                ));
+            }
+            res
+        } else {
+            man.new_executable_record(
+                &md5sum,
+                &name_exec,
+                &name_compiler,
+                &architecture,
+                seconds * 1000 + millis,
+                repo.as_deref(),
+                path.as_deref(),
+                id,
+            )?
+        };
+        res.set_category(cats);
+        Ok(res)
+    }
+}
+
+impl Clone for ExecutableRecord {
+    fn clone(&self) -> Self {
+        Self {
+            md5sum: self.md5sum.clone(),
+            executable_name: self.executable_name.clone(),
+            architecture: self.architecture.clone(),
+            compiler_name: self.compiler_name.clone(),
+            library: self.library,
+            date: self.date,
+            state: std::sync::Mutex::new(self.state.lock().unwrap().clone()),
+        }
     }
 }
 
@@ -2123,21 +2508,38 @@ impl Ord for ExecutableRecord {
 /// [`crate::feature::bsim::query::description::FunctionDescription`].
 ///
 /// The real record wraps an `LSHVector`; the placeholder carries only the duplicate count that
-/// `FunctionDescription::save_xml` writes as the `sigdup` attribute. Replace with the real port
+/// `FunctionDescription::save_xml` writes as the `sigdup` attribute, and the vector id that
+/// `DescriptionManager::attach_signature` copies onto the function. Replace with the real port
 /// when `SignatureRecord.java` is ported.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SignatureRecord {
     count: i32,
+    vectorid: i64,
 }
 
 impl SignatureRecord {
     pub fn new(count: i32) -> Self {
-        Self { count }
+        Self { count, vectorid: 0 }
     }
 
     /// Java: `SignatureRecord.getCount()`, the number of functions sharing this signature.
     pub fn get_count(&self) -> i32 {
         self.count
+    }
+
+    /// Java: package-private `setCount(int)`.
+    pub(crate) fn set_count(&mut self, c: i32) {
+        self.count = c;
+    }
+
+    /// Java: `SignatureRecord.getVectorId()`.
+    pub fn get_vector_id(&self) -> i64 {
+        self.vectorid
+    }
+
+    /// Java: package-private `setVectorId(long)`.
+    pub(crate) fn set_vector_id(&mut self, i: i64) {
+        self.vectorid = i;
     }
 
     /// Java: `SignatureRecord.saveXml(Writer)`, which delegates to the vector's `saveXml`.
@@ -2146,18 +2548,18 @@ impl SignatureRecord {
         Ok(())
     }
 
-    /// Java: `SignatureRecord.restoreXml(...)`, which builds a vector through the manager and
-    /// attaches it to `fdesc`. The placeholder discards the `<lshcosine>` subtree and attaches a
-    /// count-only record so the surrounding parse stays well formed.
+    /// Java: `SignatureRecord.restoreXml(...)`, which builds a record through the manager and
+    /// attaches it to `fdesc`. The manager's factory discards the `<lshcosine>` subtree, since
+    /// the placeholder record holds no vector, so the surrounding parse stays well formed.
     pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
         parser: &mut P,
-        _vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
-        _man: &mut DescriptionManager,
+        vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
+        man: &mut crate::feature::bsim::query::description::DescriptionManager,
         fdesc: &mut crate::feature::bsim::query::description::FunctionDescription,
         count: i32,
     ) -> Result<(), crate::feature::bsim::query::LshException> {
-        parser.discard_sub_tree();
-        fdesc.set_signature_record(Arc::new(SignatureRecord::new(count)));
+        let srec = man.new_signature_from_xml(parser, vector_factory, count);
+        man.attach_signature(fdesc, Arc::new(srec));
         Ok(())
     }
 }
@@ -2254,7 +2656,7 @@ impl CallgraphEntry {
     /// so that the surrounding parse stays well formed and terminates.
     pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
         parser: &mut P,
-        _man: &mut DescriptionManager,
+        _man: &mut crate::feature::bsim::query::description::DescriptionManager,
         _src: &mut crate::feature::bsim::query::description::FunctionDescription,
     ) -> Result<(), crate::feature::bsim::query::LshException> {
         parser.discard_sub_tree();
@@ -2280,28 +2682,5 @@ impl Ord for CallgraphEntry {
     /// Java: `compareTo` defers entirely to the called function's ordering.
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.dest.cmp(&other.dest)
-    }
-}
-
-/// Placeholder for the unported Java type `DescriptionManager`, referenced by
-/// [`crate::feature::bsim::query::description::FunctionDescription::restore_xml`].
-///
-/// The real manager owns and interns every executable and function record; the placeholder
-/// exposes only the factory method the restore path calls. Replace with the real port when
-/// `DescriptionManager.java` is ported.
-#[derive(Debug, Default)]
-pub struct DescriptionManager;
-
-impl DescriptionManager {
-    /// Java: `DescriptionManager.newFunctionDescription(String fnm, long address,
-    /// ExecutableRecord erec)`. The real method registers the description in the manager and
-    /// returns the interned instance; the placeholder just builds one.
-    pub fn new_function_description(
-        &mut self,
-        fnm: &str,
-        address: i64,
-        erec: Arc<ExecutableRecord>,
-    ) -> crate::feature::bsim::query::description::FunctionDescription {
-        crate::feature::bsim::query::description::FunctionDescription::new(erec, fnm, address)
     }
 }

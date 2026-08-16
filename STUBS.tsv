@@ -974,7 +974,9 @@ ts	stub_class	referenced_by
 2026-08-16T04:00:00+00:00	DecompilerController	DecompilerActionContext
 2026-08-16T04:00:00+00:00	DecompilerProvider	DecompilerActionContext
 2026-08-16T04:05:15+00:00	CallgraphEntry	FunctionDescription
-2026-08-16T04:05:15+00:00	DescriptionManager	FunctionDescription
 2026-08-16T04:05:15+00:00	ExecutableRecord	FunctionDescription
 2026-08-16T04:05:15+00:00	SignatureRecord	FunctionDescription
 2026-08-16T04:05:15+00:00	LSHVectorFactory	FunctionDescription
+2026-08-16T04:19:52+00:00	ExecutableRecord	DescriptionManager
+2026-08-16T04:19:52+00:00	SignatureRecord	DescriptionManager
+2026-08-16T04:19:52+00:00	LSHVectorFactory	DescriptionManager
