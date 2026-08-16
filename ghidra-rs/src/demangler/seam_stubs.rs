@@ -302,6 +302,16 @@ pub trait MdDataTypeLike {
     ///
     /// Mirrors `MDDataType.isUnsigned()`.
     fn is_unsigned(&self) -> bool;
+
+    /// Returns the rendered display text of this data type.
+    ///
+    /// Mirrors `MDDataType.toString()` (inherited from `MDParsableItem`), needed by
+    /// [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`]. Given a
+    /// placeholder default (empty string), the same treatment as
+    /// [`MdParsableItemLike::to_string`] and for the same reason.
+    fn to_string(&self) -> String {
+        String::new()
+    }
 }
 
 /// Placeholder for `mdemangler.typeinfo.MDTypeInfo`, needed by
@@ -512,6 +522,17 @@ pub trait MdParsableItemLike {
     fn as_object_cpp_embedded(&self) -> Option<&dyn MdObjectCpp> {
         None
     }
+
+    /// Returns the rendered display text of this parsed item.
+    ///
+    /// Mirrors `MDParsableItem.toString()`, needed by
+    /// [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`]. Given a
+    /// placeholder default (empty string) rather than a required method, so this addition doesn't
+    /// disturb any existing implementor of this trait; the real port renders through the full
+    /// `insert`/`append` StringBuilder machinery.
+    fn to_string(&self) -> String {
+        String::new()
+    }
 }
 
 /// Placeholder for `mdemangler.datatype.complex.MDComplexType`, needed by
@@ -662,3 +683,416 @@ mod strip_superfluous_signature_spaces_tests {
 /// method, which a concrete implementor supplies; this marker trait exists only to document that
 /// collapse, mirroring the no-method [`MdStringLike`] placeholder above.
 pub trait MdMangObjectParserLike {}
+
+/// Placeholder for `ghidra.app.util.demangler.DemangledDataType`, needed by
+/// [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`].
+///
+/// `MicrosoftDemangler`'s ported surface only ever passes this type through (as the return type of
+/// `demangleType`/`MicrosoftDemanglerUtil.convertToDemangledDataType`, via the `setMangledContext`
+/// it inherits from [`crate::demangler::demangled::Demangled`]), never calling a
+/// `DemangledDataType`-specific member, so no members beyond that supertrait are declared here; the
+/// real port also carries the full pointer/array/signedness/template surface `DemangledDataType`
+/// itself defines (see the much larger suggested stub for it in the dependency-context notes).
+pub trait DemangledDataTypeLike: crate::demangler::demangled::Demangled {}
+
+/// Placeholder for `mdemangler.MDOutputOptions`, needed by [`MdMangGhidra`].
+///
+/// Java is a concrete "quick stub" class in the original codebase (see its own doc comment: "Quick
+/// stub for now. Full implementation was planned for another ticket"), not an interface, so this is
+/// a plain struct rather than a trait -- the same treatment as [`DemangledTemplate`]. Only the two
+/// members [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`] touches are
+/// modeled.
+#[derive(Debug, Clone, Copy)]
+pub struct MdOutputOptions {
+    use_encoded_anonymous_namespace: bool,
+    apply_udt_argument_type_tag: bool,
+}
+
+impl Default for MdOutputOptions {
+    /// Mirrors the field initializers `DEFAULT_USE_ANON_NS = false` /
+    /// `DEFAULT_APPLY_UDT_TAG = true`.
+    fn default() -> Self {
+        Self { use_encoded_anonymous_namespace: false, apply_udt_argument_type_tag: true }
+    }
+}
+
+impl MdOutputOptions {
+    /// Mirrors `setUseEncodedAnonymousNamespace(boolean)`.
+    pub fn set_use_encoded_anonymous_namespace(&mut self, use_encoded_number: bool) {
+        self.use_encoded_anonymous_namespace = use_encoded_number;
+    }
+
+    /// Mirrors `useEncodedAnonymousNamespace()`.
+    pub fn use_encoded_anonymous_namespace(&self) -> bool {
+        self.use_encoded_anonymous_namespace
+    }
+
+    /// Mirrors `setApplyUdtArgumentTypeTag(boolean)`.
+    pub fn set_apply_udt_argument_type_tag(&mut self, apply_udt_argument_type_tag: bool) {
+        self.apply_udt_argument_type_tag = apply_udt_argument_type_tag;
+    }
+
+    /// Mirrors `applyUdtArgumentTypeTag()`.
+    pub fn apply_udt_argument_type_tag(&self) -> bool {
+        self.apply_udt_argument_type_tag
+    }
+}
+
+/// Concrete error type backing [`MdMangGhidra`]'s [`MdExceptionLike`] results.
+///
+/// `mdemangler.MDException` itself is already modeled as the [`MdExceptionLike`] placeholder
+/// trait (see its docs); this is a minimal, constructible implementor of that trait for
+/// [`MdMangGhidra`]'s own internal use, standing in for `new MDException(String)`.
+#[derive(Debug)]
+struct MdMangError(String);
+
+impl std::fmt::Display for MdMangError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl MdExceptionLike for MdMangError {}
+
+/// Placeholder for `mdemangler.MDMangGhidra`, needed by
+/// [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`].
+///
+/// Java is a concrete class (`MDMangGhidra extends MDMangVS2015 extends MDMang`), not an
+/// interface, so this is a plain struct rather than a trait -- the same treatment as
+/// [`DemangledTemplate`]. Models the members `MicrosoftDemangler` touches, including ones
+/// inherited from `MDMang`/`MDMangVS2015` (`setMangledSymbol`, `setErrorOnRemainingChars`,
+/// `setArchitectureSize`, `setIsFunction`, `getOutputOptions`). `MDMangGhidra`'s own
+/// `demangleOnlyKnownPatterns` prefix filter is given a real, faithful implementation since it
+/// doesn't depend on any unported type. The grammar dispatch behind it
+/// (`MDMangObjectParser`/`MDDataTypeParser`, via the unported `MDMang`/`MDContext` chain -- see
+/// [`crate::demangler::md_mang::MdMang`]'s module docs for the same cut) is not modeled, so
+/// [`MdMangGhidra::demangle`]/[`MdMangGhidra::demangle_type`] report it as unavailable for any
+/// mangled string that passes the filter and the blank-string check inherited from
+/// `MDMang.initState()`.
+pub struct MdMangGhidra {
+    mangled_symbol: Option<String>,
+    error_on_remaining_chars: bool,
+    demangle_only_known_patterns: bool,
+    architecture_size: i32,
+    is_function: bool,
+    output_options: MdOutputOptions,
+}
+
+impl Default for MdMangGhidra {
+    fn default() -> Self {
+        Self {
+            mangled_symbol: None,
+            error_on_remaining_chars: false,
+            demangle_only_known_patterns: false,
+            // Mirrors `MDMang.architectureSize`'s field initializer default of 32.
+            architecture_size: 32,
+            is_function: false,
+            output_options: MdOutputOptions::default(),
+        }
+    }
+}
+
+impl MdMangGhidra {
+    /// Mirrors `new MDMangGhidra()`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Mirrors `setMangledSymbol(String)` (inherited from `MDMang`).
+    pub fn set_mangled_symbol(&mut self, mangled: impl Into<String>) {
+        self.mangled_symbol = Some(mangled.into());
+    }
+
+    /// Mirrors `setErrorOnRemainingChars(boolean)` (inherited from `MDMang`).
+    pub fn set_error_on_remaining_chars(&mut self, error_on_remaining_chars: bool) {
+        self.error_on_remaining_chars = error_on_remaining_chars;
+    }
+
+    /// Mirrors `setDemangleOnlyKnownPatterns(boolean)`.
+    pub fn set_demangle_only_known_patterns(&mut self, demangle_only_known_patterns: bool) {
+        self.demangle_only_known_patterns = demangle_only_known_patterns;
+    }
+
+    /// Mirrors `setArchitectureSize(int)` (inherited from `MDMang`).
+    pub fn set_architecture_size(&mut self, size: i32) {
+        self.architecture_size = size;
+    }
+
+    /// Mirrors `setIsFunction(boolean)` (inherited from `MDMang`).
+    pub fn set_is_function(&mut self, is_function: bool) {
+        self.is_function = is_function;
+    }
+
+    /// Mirrors `getOutputOptions()` (inherited from `MDMang`), returning a mutable reference since
+    /// every caller uses it to immediately call a setter.
+    pub fn output_options(&mut self) -> &mut MdOutputOptions {
+        &mut self.output_options
+    }
+
+    /// Mirrors the known-mangled-name-pattern predicate embedded in `MDMangGhidra.demangle()`:
+    /// `mangled.startsWith("?") || mangled.startsWith(".") || mangled.startsWith("_") ||
+    /// (mangled.charAt(0) < 'a') || (isLowerCase) || (isUpperCase)`.
+    fn matches_known_pattern(mangled: &str) -> bool {
+        match mangled.chars().next() {
+            None => false,
+            Some(c) => c == '?' || c == '.' || c == '_' || c < 'a' || c.is_ascii_alphabetic(),
+        }
+    }
+
+    /// Mirrors `demangle()` (`throws MDException`).
+    ///
+    /// The known-pattern filter and the blank-mangled-string check (from the inherited
+    /// `MDMang.initState()`) are faithfully reproduced; a non-blank mangled string that passes the
+    /// filter reports the (unported) grammar dispatch as unavailable rather than a parsed item.
+    pub fn demangle(&mut self) -> Result<Option<Box<dyn MdParsableItemLike>>, Box<dyn MdExceptionLike>> {
+        let mangled = self.mangled_symbol.clone().unwrap_or_default();
+        if self.demangle_only_known_patterns && !Self::matches_known_pattern(&mangled) {
+            return Ok(None);
+        }
+        if mangled.trim().is_empty() {
+            return Err(Box::new(MdMangError(
+                "MDMang: Mangled string is null or blank.".to_string(),
+            )));
+        }
+        Err(Box::new(MdMangError(
+            "MDMangGhidra: grammar dispatch (MDMangObjectParser) not yet ported".to_string(),
+        )))
+    }
+
+    /// Mirrors `demangleType()` (`throws MDException`).
+    pub fn demangle_type(&mut self) -> Result<Box<dyn MdDataTypeLike>, Box<dyn MdExceptionLike>> {
+        let mangled = self.mangled_symbol.clone().unwrap_or_default();
+        if mangled.trim().is_empty() {
+            return Err(Box::new(MdMangError(
+                "MDMang: Mangled string is null or blank.".to_string(),
+            )));
+        }
+        Err(Box::new(MdMangError(
+            "MDMangGhidra: grammar dispatch (MDDataTypeParser) not yet ported".to_string(),
+        )))
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.microsoft.MicrosoftDemanglerOptions`, needed by
+/// [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`].
+///
+/// Java extends the already-ported [`crate::demangler::demangler_options::DemanglerOptions`] to
+/// add Microsoft-specific fields; Rust has no struct inheritance, so this wraps a
+/// `DemanglerOptions` by composition instead (the same treatment [`MicrosoftMangledContext`] gives
+/// `MangledContext`). Only the members `MicrosoftDemangler` touches are modeled; the real port
+/// also carries the `DEFAULT_UNDERLYING_OUTPUT` static and the `Json`-based `toString`.
+#[derive(Debug, Clone)]
+pub struct MicrosoftDemanglerOptions {
+    base: crate::demangler::demangler_options::DemanglerOptions,
+    error_on_remaining_chars: bool,
+    interpretation: crate::demangler::microsoft::ms_c_interpretation::MsCInterpretation,
+    use_encoded_anonymous_namespace: bool,
+    apply_udt_argument_type_tag: bool,
+}
+
+impl Default for MicrosoftDemanglerOptions {
+    /// Mirrors the no-arg constructor's `defaultInits()`.
+    fn default() -> Self {
+        Self {
+            base: crate::demangler::demangler_options::DemanglerOptions::new(),
+            error_on_remaining_chars: true,
+            interpretation:
+                crate::demangler::microsoft::ms_c_interpretation::MsCInterpretation::FunctionIfExists,
+            // Mirrors `DEFAULT_MSD_USE_ANON_NS` / `DEFAULT_MSD_APPLY_UDT_TAG`.
+            use_encoded_anonymous_namespace: true,
+            apply_udt_argument_type_tag: false,
+        }
+    }
+}
+
+impl MicrosoftDemanglerOptions {
+    /// Mirrors the default constructor `MicrosoftDemanglerOptions()`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Mirrors `MicrosoftDemanglerOptions(boolean errorOnRemainingCharsArg)`.
+    pub fn with_error_on_remaining_chars(error_on_remaining_chars: bool) -> Self {
+        Self { error_on_remaining_chars, ..Self::default() }
+    }
+
+    /// Mirrors the `MicrosoftDemanglerOptions(DemanglerOptions copy)` copy constructor's `else`
+    /// branch: since a plain [`crate::demangler::demangler_options::DemanglerOptions`] is never
+    /// also a `MicrosoftDemanglerOptions` in Rust (no downcasting), only the base fields are ever
+    /// preserved and the Microsoft-specific ones always fall back to defaults -- the `if (copy
+    /// instanceof MicrosoftDemanglerOptions mCopy)` branch is unreachable from this constructor.
+    pub fn from_base(base: &crate::demangler::demangler_options::DemanglerOptions) -> Self {
+        Self { base: base.clone(), ..Self::default() }
+    }
+
+    /// Mirrors `setErrorOnRemainingChars(boolean)`.
+    pub fn set_error_on_remaining_chars(&mut self, error_on_remaining_chars_arg: bool) {
+        self.error_on_remaining_chars = error_on_remaining_chars_arg;
+    }
+
+    /// Mirrors `errorOnRemainingChars()`.
+    pub fn error_on_remaining_chars(&self) -> bool {
+        self.error_on_remaining_chars
+    }
+
+    /// Mirrors `setInterpretation(MsCInterpretation)`.
+    pub fn set_interpretation(
+        &mut self,
+        interpretation_arg: crate::demangler::microsoft::ms_c_interpretation::MsCInterpretation,
+    ) {
+        self.interpretation = interpretation_arg;
+    }
+
+    /// Mirrors `getInterpretation()`.
+    pub fn interpretation(
+        &self,
+    ) -> crate::demangler::microsoft::ms_c_interpretation::MsCInterpretation {
+        self.interpretation
+    }
+
+    /// Mirrors `setUseEncodedAnonymousNamespace(boolean)`.
+    pub fn set_use_encoded_anonymous_namespace(&mut self, use_encoded_anonymous_namespace_arg: bool) {
+        self.use_encoded_anonymous_namespace = use_encoded_anonymous_namespace_arg;
+    }
+
+    /// Mirrors `getUseEncodedAnonymousNamespace()`.
+    pub fn use_encoded_anonymous_namespace(&self) -> bool {
+        self.use_encoded_anonymous_namespace
+    }
+
+    /// Mirrors `setApplyUdtArgumentTypeTag(boolean)`.
+    pub fn set_apply_udt_argument_type_tag(&mut self, apply_udt_argument_type_tag_arg: bool) {
+        self.apply_udt_argument_type_tag = apply_udt_argument_type_tag_arg;
+    }
+
+    /// Mirrors `getApplyUdtArgumentTypeTag()`.
+    pub fn apply_udt_argument_type_tag(&self) -> bool {
+        self.apply_udt_argument_type_tag
+    }
+
+    /// Mirrors `demangleOnlyKnownPatterns()`, inherited unchanged from the base
+    /// `DemanglerOptions`.
+    pub fn demangle_only_known_patterns(&self) -> bool {
+        self.base.demangle_only_known_patterns()
+    }
+
+    /// Returns the wrapped base options.
+    ///
+    /// Stands in for an upcast to `DemanglerOptions`, which Rust's lack of struct inheritance
+    /// doesn't otherwise offer.
+    pub fn base(&self) -> &crate::demangler::demangler_options::DemanglerOptions {
+        &self.base
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.microsoft.MicrosoftMangledContext`, needed by
+/// [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`].
+///
+/// Java extends the already-ported [`crate::demangler::mangled_context::MangledContext`]; Rust has
+/// no struct inheritance, so this wraps the same four pieces by composition instead, with
+/// [`MicrosoftDemanglerOptions`] in place of the base's plain `DemanglerOptions` (the base type has
+/// no room for the Microsoft-specific fields -- see [`MicrosoftDemanglerOptions`]'s docs).
+/// `shouldInterpretAsFunction`'s `FUNCTION_IF_EXISTS` branch (`getExistingFunction`) needs
+/// `Program.getFunctionManager()`, which the already-ported `Program` trait only exposes via
+/// `&mut self`; since this context only ever holds a shared `Arc<dyn Program>`, that branch
+/// conservatively answers `false` (no existing function determinable) rather than performing the
+/// lookup.
+pub struct MicrosoftMangledContext {
+    program: Option<std::sync::Arc<dyn crate::program::model::listing::Program>>,
+    options: MicrosoftDemanglerOptions,
+    mangled: String,
+    address: Option<crate::program::model::address::Address>,
+}
+
+impl MicrosoftMangledContext {
+    /// Mirrors `MicrosoftMangledContext(Program, MicrosoftDemanglerOptions, String, Address)`.
+    pub fn new(
+        program: Option<std::sync::Arc<dyn crate::program::model::listing::Program>>,
+        options: MicrosoftDemanglerOptions,
+        mangled: impl Into<String>,
+        address: Option<crate::program::model::address::Address>,
+    ) -> Self {
+        Self { program, options, mangled: mangled.into(), address }
+    }
+
+    /// Mirrors `getProgram()` (inherited from `MangledContext`).
+    pub fn program(&self) -> Option<std::sync::Arc<dyn crate::program::model::listing::Program>> {
+        self.program.as_ref().map(std::sync::Arc::clone)
+    }
+
+    /// Mirrors the covariant-return override `getOptions()`.
+    pub fn options(&self) -> &MicrosoftDemanglerOptions {
+        &self.options
+    }
+
+    /// Mirrors `getMangled()` (inherited from `MangledContext`).
+    pub fn mangled(&self) -> &str {
+        &self.mangled
+    }
+
+    /// Mirrors `getAddress()` (inherited from `MangledContext`).
+    pub fn address(&self) -> Option<crate::program::model::address::Address> {
+        self.address.clone()
+    }
+
+    /// Mirrors `getArchitectureSize()`.
+    pub fn architecture_size(&self) -> i32 {
+        match &self.program {
+            None => 0,
+            Some(program) => program
+                .get_address_factory()
+                .and_then(|factory| factory.get_default_address_space())
+                .map(|space| space.size())
+                .unwrap_or(0),
+        }
+    }
+
+    /// Mirrors the package-private `shouldInterpretAsFunction()`.
+    pub fn should_interpret_as_function(&self) -> bool {
+        use crate::demangler::microsoft::ms_c_interpretation::MsCInterpretation;
+        match self.options.interpretation() {
+            MsCInterpretation::Function => true,
+            MsCInterpretation::NonFunction => false,
+            // See struct docs: the existing-function lookup needs a `&mut dyn Program`, which
+            // isn't available from the shared `Arc<dyn Program>` this context holds.
+            MsCInterpretation::FunctionIfExists => false,
+        }
+    }
+}
+
+/// Placeholder for `ghidra.app.util.demangler.microsoft.MicrosoftDemanglerUtil`, needed by
+/// [`crate::demangler::microsoft::microsoft_demangler::MicrosoftDemangler`].
+///
+/// `MicrosoftDemanglerUtil` is a concrete class of static utility methods, not an interface, so
+/// these are plain free functions -- the same treatment as [`strip_superfluous_signature_spaces`]
+/// above. The real class recursively converts a parsed `MDParsableItem`/`MDDataType` tree into a
+/// `DemangledObject`/`DemangledDataType`, dispatching across more than a dozen still-unported
+/// `mdemangler.*` subpackages (`object`, `typeinfo`, `functiontype`, `template`,
+/// `datatype.complex`, `datatype.modifier`, ...); reproducing that here is out of scope, so both
+/// functions report the conversion as not yet available. Since [`MdMangGhidra::demangle`]/
+/// [`MdMangGhidra::demangle_type`] never actually produce a parsed item for a non-blank mangled
+/// string (see their docs), these are never reached in practice yet either -- they exist so the
+/// calling code's structure mirrors the original faithfully.
+pub fn convert_to_demangled_object(
+    _item: &dyn MdParsableItemLike,
+    _mangled: &str,
+    _original_demangled: &str,
+) -> Result<
+    Option<Box<dyn crate::demangler::demangled_object::DemangledObject>>,
+    crate::demangler::demangle_exception::DemangledException,
+> {
+    Err(crate::demangler::demangle_exception::DemangledException::from_message(
+        "MicrosoftDemanglerUtil: MDParsableItem -> DemangledObject conversion not yet ported",
+    ))
+}
+
+/// Mirrors `MicrosoftDemanglerUtil.convertToDemangledDataType`. See
+/// [`convert_to_demangled_object`]'s docs for why this reports "not yet available" rather than
+/// performing the conversion.
+pub fn convert_to_demangled_data_type(
+    _md_type: &dyn MdDataTypeLike,
+    _mangled: &str,
+    _original_demangled: &str,
+) -> Option<Box<dyn DemangledDataTypeLike>> {
+    None
+}

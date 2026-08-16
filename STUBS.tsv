@@ -984,3 +984,9 @@ ts	stub_class	referenced_by
 2026-08-16T05:06:01.669676+00:00	ContextState	FunctionAnalyzer
 2026-08-16T05:06:01.671307+00:00	ResultsState	FunctionAnalyzer
 2026-08-16T05:06:01.671591+00:00	VarnodeOperation	FunctionAnalyzer
+2026-08-16T05:30:00.000000+00:00	MdMangGhidra	MicrosoftDemangler
+2026-08-16T05:30:00.000000+00:00	MdOutputOptions	MicrosoftDemangler
+2026-08-16T05:30:00.000000+00:00	MicrosoftDemanglerOptions	MicrosoftDemangler
+2026-08-16T05:30:00.000000+00:00	MicrosoftMangledContext	MicrosoftDemangler
+2026-08-16T05:30:00.000000+00:00	MicrosoftDemanglerUtil	MicrosoftDemangler
+2026-08-16T05:30:00.000000+00:00	DemangledDataType	MicrosoftDemangler
