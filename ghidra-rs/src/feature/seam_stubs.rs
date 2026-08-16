@@ -18,6 +18,8 @@ use crate::framework::remote::User;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
+use std::sync::Arc;
+
 /// Placeholder for `VTSession`.
 pub trait VtSession: Send + Sync {
     fn get_name(&self) -> &str;
@@ -2005,5 +2007,301 @@ impl crate::feature::base::memsearch::format::search_format::SearchFormat for Fl
     ) -> crate::feature::base::memsearch::format::search_format::SearchFormatType {
         let _ = self.byte_size;
         crate::feature::base::memsearch::format::search_format::SearchFormatType::FloatingPoint
+    }
+}
+
+// ---------------------------------------------------------------------------
+// `ghidra.features.bsim.query.description` placeholders
+//
+// `FunctionDescription` sits on a dependency cycle with `CallgraphEntry` (each names the other
+// in a field) and with `DescriptionManager` (which is the factory for both). The three
+// placeholders below break that cycle; each is a concrete Java class, so each stub is a struct
+// rather than a trait. See `STUBS.tsv` for provenance.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for the unported Java type `ExecutableRecord`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription`].
+///
+/// Only the members `FunctionDescription` (and the [`CallgraphEntry`] placeholder) need are
+/// present. Equality, ordering and hashing are by md5 alone, matching the Java original.
+/// Replace with the real port when `ExecutableRecord.java` is ported.
+#[derive(Debug, Clone, Default)]
+pub struct ExecutableRecord {
+    md5sum: String,
+    executable_name: String,
+    architecture: String,
+    compiler_name: String,
+    library: bool,
+}
+
+impl ExecutableRecord {
+    /// Java: `ExecutableRecord(String md5, String enm, String cnm, String arc, ...)`.
+    pub fn new(
+        md5sum: impl Into<String>,
+        executable_name: impl Into<String>,
+        architecture: impl Into<String>,
+        compiler_name: impl Into<String>,
+    ) -> Self {
+        Self {
+            md5sum: md5sum.into(),
+            executable_name: executable_name.into(),
+            architecture: architecture.into(),
+            compiler_name: compiler_name.into(),
+            library: false,
+        }
+    }
+
+    /// Java: the library constructor, which sets the `LIBRARY` flag and synthesizes a
+    /// placeholder md5 via `calcLibraryMd5Placeholder`. The placeholder leaves the md5 empty
+    /// since nothing in the crate hashes a library record yet.
+    pub fn new_library(executable_name: impl Into<String>, architecture: impl Into<String>) -> Self {
+        Self {
+            md5sum: String::new(),
+            executable_name: executable_name.into(),
+            architecture: architecture.into(),
+            compiler_name: String::new(),
+            library: true,
+        }
+    }
+
+    pub fn get_md5(&self) -> &str {
+        &self.md5sum
+    }
+
+    pub fn get_name_exec(&self) -> &str {
+        &self.executable_name
+    }
+
+    pub fn get_architecture(&self) -> &str {
+        &self.architecture
+    }
+
+    pub fn get_name_compiler(&self) -> &str {
+        &self.compiler_name
+    }
+
+    pub fn is_library(&self) -> bool {
+        self.library
+    }
+
+    /// Java: `ExecutableRecord.printRaw()`.
+    pub fn print_raw(&self) -> String {
+        format!(
+            "{} {} {} {}",
+            self.md5sum, self.executable_name, self.architecture, self.compiler_name
+        )
+    }
+}
+
+impl PartialEq for ExecutableRecord {
+    fn eq(&self, other: &Self) -> bool {
+        self.md5sum == other.md5sum
+    }
+}
+
+impl Eq for ExecutableRecord {}
+
+impl std::hash::Hash for ExecutableRecord {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.md5sum.hash(state);
+    }
+}
+
+impl PartialOrd for ExecutableRecord {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ExecutableRecord {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.md5sum.cmp(&other.md5sum)
+    }
+}
+
+/// Placeholder for the unported Java type `SignatureRecord`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription`].
+///
+/// The real record wraps an `LSHVector`; the placeholder carries only the duplicate count that
+/// `FunctionDescription::save_xml` writes as the `sigdup` attribute. Replace with the real port
+/// when `SignatureRecord.java` is ported.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SignatureRecord {
+    count: i32,
+}
+
+impl SignatureRecord {
+    pub fn new(count: i32) -> Self {
+        Self { count }
+    }
+
+    /// Java: `SignatureRecord.getCount()`, the number of functions sharing this signature.
+    pub fn get_count(&self) -> i32 {
+        self.count
+    }
+
+    /// Java: `SignatureRecord.saveXml(Writer)`, which delegates to the vector's `saveXml`.
+    /// The placeholder holds no vector, so it writes nothing.
+    pub fn save_xml<W: std::io::Write>(&self, _fwrite: &mut W) -> std::io::Result<()> {
+        Ok(())
+    }
+
+    /// Java: `SignatureRecord.restoreXml(...)`, which builds a vector through the manager and
+    /// attaches it to `fdesc`. The placeholder discards the `<lshcosine>` subtree and attaches a
+    /// count-only record so the surrounding parse stays well formed.
+    pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
+        parser: &mut P,
+        _vector_factory: &crate::generic::seam_stubs::LSHVectorFactory,
+        _man: &mut DescriptionManager,
+        fdesc: &mut crate::feature::bsim::query::description::FunctionDescription,
+        count: i32,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        parser.discard_sub_tree();
+        fdesc.set_signature_record(Arc::new(SignatureRecord::new(count)));
+        Ok(())
+    }
+}
+
+/// Placeholder for the unported Java type `CallgraphEntry`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription`].
+///
+/// A single edge of the call graph: the called function plus a hash of the call site. The
+/// callee is shared with whatever container owns it (Java holds a bare reference), so it is
+/// held by [`Arc`] here -- `FunctionDescription::sort_callgraph` dedups by pointer identity
+/// exactly as the Java does. Replace with the real port when `CallgraphEntry.java` is ported.
+#[derive(Debug, Clone)]
+pub struct CallgraphEntry {
+    dest: Arc<crate::feature::bsim::query::description::FunctionDescription>,
+    lochash: i32,
+}
+
+impl CallgraphEntry {
+    /// Java: `CallgraphEntry(FunctionDescription d, int lhash)`.
+    pub fn new(
+        dest: Arc<crate::feature::bsim::query::description::FunctionDescription>,
+        lochash: i32,
+    ) -> Self {
+        Self { dest, lochash }
+    }
+
+    /// The called function. Returned as the [`Arc`] itself so callers can compare identity.
+    pub fn get_function_description(
+        &self,
+    ) -> &Arc<crate::feature::bsim::query::description::FunctionDescription> {
+        &self.dest
+    }
+
+    pub fn get_local_hash(&self) -> i32 {
+        self.lochash
+    }
+
+    /// Java: `CallgraphEntry.saveXml(FunctionDescription src, Writer fwrite)`.
+    pub fn save_xml<W: std::io::Write>(
+        &self,
+        src: &crate::feature::bsim::query::description::FunctionDescription,
+        fwrite: &mut W,
+    ) -> std::io::Result<()> {
+        use crate::util::xml::spec_xml_utils;
+
+        let mut buf = String::new();
+        buf.push_str("<call");
+        spec_xml_utils::xml_escape_attribute(&mut buf, "dest", self.dest.get_function_name());
+        if self.dest.get_address() != -1 {
+            spec_xml_utils::encode_unsigned_integer_attribute(
+                &mut buf,
+                "addr",
+                self.dest.get_address(),
+            );
+        }
+        if self.lochash != 0 {
+            spec_xml_utils::encode_unsigned_integer_attribute(
+                &mut buf,
+                "local",
+                self.lochash as i64,
+            );
+        }
+        let srcexe = src.get_executable_record();
+        let destexe = self.dest.get_executable_record();
+        if !Arc::ptr_eq(srcexe, destexe) {
+            buf.push_str(">\n");
+            if !destexe.is_library() {
+                buf.push_str("  <md5>");
+                buf.push_str(destexe.get_md5());
+                buf.push_str("</md5>\n");
+            }
+            buf.push_str("  <name>");
+            spec_xml_utils::xml_escape(&mut buf, destexe.get_name_exec());
+            buf.push_str("</name>\n");
+            if srcexe.get_architecture() != destexe.get_architecture() {
+                buf.push_str("  <arch>");
+                spec_xml_utils::xml_escape(&mut buf, destexe.get_architecture());
+                buf.push_str("</arch>\n");
+            }
+            if srcexe.get_name_compiler() != destexe.get_name_compiler() {
+                buf.push_str("  <compiler>");
+                spec_xml_utils::xml_escape(&mut buf, destexe.get_name_compiler());
+                buf.push_str("</compiler>\n");
+            }
+            buf.push_str("</call>\n");
+        } else {
+            buf.push_str("/>\n");
+        }
+        fwrite.write_all(buf.as_bytes())
+    }
+
+    /// Java: `CallgraphEntry.restoreXml(...)`, which resolves the callee through the manager and
+    /// records the link. The placeholder discards the `<call>` subtree -- no link is created --
+    /// so that the surrounding parse stays well formed and terminates.
+    pub(crate) fn restore_xml<P: crate::util::xml::xml_pull_parser::XmlPullParser>(
+        parser: &mut P,
+        _man: &mut DescriptionManager,
+        _src: &mut crate::feature::bsim::query::description::FunctionDescription,
+    ) -> Result<(), crate::feature::bsim::query::LshException> {
+        parser.discard_sub_tree();
+        Ok(())
+    }
+}
+
+impl PartialEq for CallgraphEntry {
+    fn eq(&self, other: &Self) -> bool {
+        *self.dest == *other.dest
+    }
+}
+
+impl Eq for CallgraphEntry {}
+
+impl PartialOrd for CallgraphEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for CallgraphEntry {
+    /// Java: `compareTo` defers entirely to the called function's ordering.
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.dest.cmp(&other.dest)
+    }
+}
+
+/// Placeholder for the unported Java type `DescriptionManager`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription::restore_xml`].
+///
+/// The real manager owns and interns every executable and function record; the placeholder
+/// exposes only the factory method the restore path calls. Replace with the real port when
+/// `DescriptionManager.java` is ported.
+#[derive(Debug, Default)]
+pub struct DescriptionManager;
+
+impl DescriptionManager {
+    /// Java: `DescriptionManager.newFunctionDescription(String fnm, long address,
+    /// ExecutableRecord erec)`. The real method registers the description in the manager and
+    /// returns the interned instance; the placeholder just builds one.
+    pub fn new_function_description(
+        &mut self,
+        fnm: &str,
+        address: i64,
+        erec: Arc<ExecutableRecord>,
+    ) -> crate::feature::bsim::query::description::FunctionDescription {
+        crate::feature::bsim::query::description::FunctionDescription::new(erec, fnm, address)
     }
 }

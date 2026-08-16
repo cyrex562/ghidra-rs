@@ -247,3 +247,10 @@ pub trait VectorCompare: Send + Sync {
     /// Placeholder for `VectorCompare.toString()`.
     fn to_string(&self) -> String;
 }
+
+/// Placeholder for `generic.lsh.vector.LSHVectorFactory`, referenced by
+/// [`crate::feature::bsim::query::description::FunctionDescription::restore_xml`], which only
+/// passes it through to the signature record's restore path. No members are needed yet;
+/// replace with the real port when `LSHVectorFactory.java` is ported.
+#[derive(Debug, Default, Clone)]
+pub struct LSHVectorFactory;
