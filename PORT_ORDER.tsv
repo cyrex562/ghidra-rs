@@ -1,6 +1,6 @@
 status	mode	depth	fanin	rem	module	path
 DONE	trait	35	12	3	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/dex/format/StringIDItem.java
-TODO	trait	31	26	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureMarkup.java
+DONE	trait	31	26	2	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/structmapping/StructureMarkup.java
 TODO	trait	39	7	32	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoUncommonType.java
 TODO	trait	38	7	14	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/types/GoBaseType.java
 TODO	trait	32	12	28	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoItab.java
