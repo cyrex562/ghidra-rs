@@ -2807,3 +2807,137 @@ pub mod abstract_program_loader {
         )
     }
 }
+
+/// Placeholder for `ghidra.app.util.opinion.PeLoader`, referenced by
+/// [`library_lookup_table`](crate::app::util::opinion::library_lookup_table) before the real
+/// class is ported. `LibraryLookupTable` only ever compares a program's executable format against
+/// the loader's name constant, so that constant is the only member modeled.
+pub struct PeLoader;
+
+impl PeLoader {
+    /// `PeLoader.PE_NAME`.
+    pub const PE_NAME: &'static str = "Portable Executable (PE)";
+}
+
+/// Placeholder for `ghidra.app.util.opinion.LibrarySymbolTable`, referenced by
+/// [`library_lookup_table`](crate::app::util::opinion::library_lookup_table) before the real
+/// class is ported. The two form a dependency cycle -- `LibrarySymbolTable.getCacheKey(String,
+/// int)` calls back into
+/// [`strip_possible_extension_from_filename`](crate::app::util::opinion::library_lookup_table::strip_possible_extension_from_filename)
+/// -- which is why this side is stubbed rather than ported alongside it.
+///
+/// Only the members `LibraryLookupTable` reaches are modeled. The two cache-key methods and
+/// [`set_version`](Self::set_version) are implemented for real (they are pure name manipulation
+/// and a field write, and the cache key decides map identity, so a panicking stub would make the
+/// symbol-table cache untestable). Everything that needs the unported `.exports`/`.ord` XML
+/// reader-writer or the `Program`-walking constructor panics.
+pub struct LibrarySymbolTable {
+    table_name: String,
+    size: i32,
+    version: String,
+    forwards: Vec<String>,
+}
+
+impl LibrarySymbolTable {
+    /// Mirrors `LibrarySymbolTable(String tableName, int size)`, which constructs an empty table
+    /// and lowercases the name.
+    pub fn new(table_name: &str, size: i32) -> Self {
+        LibrarySymbolTable {
+            table_name: table_name.to_lowercase(),
+            size,
+            version: "unknown".to_string(),
+            forwards: Vec::new(),
+        }
+    }
+
+    /// Mirrors `LibrarySymbolTable(ResourceFile libraryFile, int size)`, which parses an existing
+    /// `.exports` file. Not yet implemented; the real body is the unported XML reader.
+    pub fn from_exports_file(
+        library_file: &crate::generic::jar::ResourceFile,
+        size: i32,
+    ) -> std::io::Result<Self> {
+        let _ = (library_file, size);
+        unimplemented!("LibrarySymbolTable::from_exports_file placeholder not overridden")
+    }
+
+    /// Mirrors `LibrarySymbolTable(Program library, TaskMonitor monitor)`, which walks the
+    /// program's `Ordinal_#` symbols and pseudo-disassembles each export. Not yet implemented.
+    pub fn from_program(
+        library: &dyn Program,
+        monitor: &dyn TaskMonitor,
+    ) -> Result<Self, crate::util::exception::CancelledException> {
+        let _ = (library, monitor);
+        unimplemented!("LibrarySymbolTable::from_program placeholder not overridden")
+    }
+
+    /// Mirrors the instance `LibrarySymbolTable.getCacheKey()`.
+    pub fn get_cache_key(&self) -> String {
+        Self::cache_key_for(&self.table_name, self.size)
+    }
+
+    /// Mirrors the static `LibrarySymbolTable.getCacheKey(String dllName, int size)`.
+    pub fn cache_key_for(dll_name: &str, size: i32) -> String {
+        let stripped =
+            crate::app::util::opinion::library_lookup_table::strip_possible_extension_from_filename(
+                dll_name,
+            );
+        format!("{}:{size}", stripped.to_lowercase())
+    }
+
+    /// Mirrors `LibrarySymbolTable.getForwards()`, the libraries this one forwards exports to.
+    pub fn get_forwards(&self) -> &[String] {
+        &self.forwards
+    }
+
+    /// Mirrors `LibrarySymbolTable.setVersion(String)`.
+    pub fn set_version(&mut self, version: &str) {
+        self.version = version.to_string();
+    }
+
+    /// Mirrors `LibrarySymbolTable.getVersion()`.
+    pub fn get_version(&self) -> &str {
+        &self.version
+    }
+
+    /// Mirrors `LibrarySymbolTable.applyOrdinalFile(ResourceFile, boolean)`, which folds a
+    /// DUMPBIN-produced `.ord` file into this table. Not yet implemented.
+    pub fn apply_ordinal_file(
+        &mut self,
+        ordinal_exports_file: &crate::generic::jar::ResourceFile,
+        add_missing_ordinals: bool,
+    ) {
+        let _ = (ordinal_exports_file, add_missing_ordinals);
+        unimplemented!("LibrarySymbolTable::apply_ordinal_file placeholder not overridden")
+    }
+
+    /// Mirrors `LibrarySymbolTable.write(File output, File input, String lversion)`, which emits
+    /// the `.exports` XML. Not yet implemented; the real body is the unported XML writer.
+    pub fn write(
+        &self,
+        output: &std::path::Path,
+        input: &std::path::Path,
+        lversion: &str,
+    ) -> std::io::Result<()> {
+        let _ = (output, input, lversion);
+        unimplemented!("LibrarySymbolTable::write placeholder not overridden")
+    }
+
+    /// Mirrors the static `LibrarySymbolTable.hasFileAndPathAndTimeStampMatch(ResourceFile,
+    /// File)`. Java's first act is a null/exists guard on the exports file, which is modeled here
+    /// (`None` stands in for the `null` `LibraryLookupTable` can pass); past that the real body
+    /// parses the exports XML, so it is not yet implemented.
+    pub fn has_file_and_path_and_time_stamp_match(
+        exports_file: StdOption<&crate::generic::jar::ResourceFile>,
+        library_file: &std::path::Path,
+    ) -> std::io::Result<bool> {
+        match exports_file {
+            Some(file) if file.exists() => {
+                let _ = library_file;
+                unimplemented!(
+                    "LibrarySymbolTable::has_file_and_path_and_time_stamp_match placeholder not overridden"
+                )
+            }
+            _ => Ok(false),
+        }
+    }
+}

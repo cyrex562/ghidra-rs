@@ -952,3 +952,6 @@ ts	stub_class	referenced_by
 2026-08-16T01:52:08.832185+00:00	GoPcValueEvaluator	GoFuncData
 2026-08-16T02:20:00.000000+00:00	ElfProgramBuilder	ElfLoader
 2026-08-16T02:20:00.000000+00:00	ExternalSymbolResolver	ElfLoader
+2026-08-16T02:45:00.000000+00:00	ResourceDataDirectory	LibraryLookupTable
+2026-08-16T02:45:00.000000+00:00	LibrarySymbolTable	LibraryLookupTable
+2026-08-16T02:45:00.000000+00:00	PeLoader	LibraryLookupTable
