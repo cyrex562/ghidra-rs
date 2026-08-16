@@ -989,7 +989,10 @@ pub trait Pattern: Send + Sync {
 }
 
 /// Placeholder for `ghidra.xml.XmlPullParser`, referenced by `Pattern` and `MatchAction`.
-pub trait XmlPullParser: Send + Sync {}
+pub trait XmlPullParser: Send + Sync {
+    fn start(&self, name: &str);
+    fn end(&self);
+}
 
 /// Placeholder for `java.io.File`, referenced by `Pattern`.
 pub trait FileMarker: Send + Sync {}

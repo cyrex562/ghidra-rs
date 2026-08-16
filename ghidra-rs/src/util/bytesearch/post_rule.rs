@@ -184,5 +184,8 @@ mod tests {
     /// Mock implementation of XmlPullParser for testing.
     struct MockXmlPullParser;
 
-    impl XmlPullParser for MockXmlPullParser {}
+    impl XmlPullParser for MockXmlPullParser {
+        fn start(&self, _name: &str) {}
+        fn end(&self) {}
+    }
 }
