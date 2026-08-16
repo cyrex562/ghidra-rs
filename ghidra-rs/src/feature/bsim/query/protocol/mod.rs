@@ -10,6 +10,7 @@ pub mod query_nearest_vector;
 pub mod query_response_record;
 pub mod query_update;
 pub mod query_vector_id;
+pub mod response_exe;
 pub mod response_optional_exist;
 
 pub use adjust_vector_index::AdjustVectorIndex;
@@ -24,4 +25,5 @@ pub use query_nearest_vector::QueryNearestVector;
 pub use query_response_record::{QueryResponseRecord, QueryResponseRecordBase};
 pub use query_update::QueryUpdate;
 pub use query_vector_id::QueryVectorId;
+pub use response_exe::ResponseExe;
 pub use response_optional_exist::ResponseOptionalExist;
