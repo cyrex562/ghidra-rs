@@ -3579,3 +3579,158 @@ pub trait BundleStatus: Send + Sync {
     /// Gets the location identifier.
     fn get_location_identifier(&self) -> String;
 }
+
+/// Placeholder for `ghidra.app.plugin.core.datamgr.tree.Category`, referenced by
+/// [`ArchiveNode`] before the real class is ported.
+pub trait Category: Send + Sync {}
+
+/// Placeholder for `ghidra.app.plugin.core.datamgr.tree.CategoryNode`, referenced by
+/// [`ArchiveNode`] before the real class is ported.
+pub trait CategoryNode: Send + Sync {}
+
+/// Placeholder for `ghidra.framework.model.DomainObject`, referenced by
+/// [`ArchiveNode`] before the real class is ported.
+pub trait GTreeNode: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.data.DataTypeManager`, referenced by
+/// [`ArchiveNode`] before the real class is ported.
+pub trait DataTypeManager: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.data.CategoryPath`, referenced by
+/// [`ArchiveNode`] before the real class is ported.
+pub trait CategoryPath: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.data.DataTypePath`, referenced by
+/// [`ArchiveNode`] before the real class is ported.
+pub trait DataTypePath: Send + Sync {}
+
+/// Placeholder for `ghidra.program.model.data.SourceArchive`, referenced by
+/// [`ArchiveNode`] before the real class is ported.
+pub trait SourceArchive: Send + Sync {}
+
+/// Placeholder for `ghidra.app.plugin.core.datamgr.tree.ArchiveNode`, referenced by
+/// [`crate::app::plugin::core::datamgr::tree::ArchiveRootNodeListener`] before the
+/// real class is ported. This stub exposes the methods needed by the listener.
+pub trait ArchiveNode: Send + Sync {
+    /// Disposes this node.
+    fn dispose(&self);
+
+    /// Returns the icon for this node, expanded or collapsed.
+    fn get_icon(&self, expanded: bool) -> Box<dyn crate::generic::seam_stubs::Icon>;
+
+    /// Returns the name of this node.
+    fn get_name(&self) -> String;
+
+    /// Returns the tool tip text for this node.
+    fn get_tool_tip(&self) -> String;
+
+    /// Returns whether this node is a leaf node.
+    fn is_leaf(&self) -> bool;
+
+    /// Returns whether this node is editable.
+    fn is_editable(&self) -> bool;
+
+    /// Returns the archive associated with this node.
+    fn get_archive(&self) -> Box<dyn Archive>;
+
+    /// Called when the structure of this node has changed.
+    fn structure_changed(&self);
+
+    /// Called when this node has changed.
+    fn node_changed(&self);
+
+    /// Returns whether this node can be cut.
+    fn can_cut(&self) -> bool;
+
+    /// Returns whether this node is cut.
+    fn is_cut(&self) -> bool;
+
+    /// Compares this node with another object.
+    fn equals(&self, o: &dyn std::any::Any) -> bool;
+
+    /// Compares this node with another tree node.
+    fn compare_to(&self, node: &dyn GTreeNode) -> i32;
+
+    /// Returns the hash code for this node.
+    fn hash_code(&self) -> i32;
+
+    /// Returns this node as an ArchiveNode.
+    fn get_archive_node(&self) -> Box<dyn ArchiveNode>;
+
+    /// Returns whether this node is modifiable.
+    fn is_modifiable(&self) -> bool;
+
+    /// Finds a category node for the given category.
+    fn find_category_node(&self, local_category: &dyn Category) -> Box<dyn CategoryNode>;
+
+    /// Called when a category is added.
+    fn category_added(&self, dtm: &dyn DataTypeManager, path: &dyn CategoryPath);
+
+    /// Called when a category is moved.
+    fn category_moved(
+        &self,
+        dtm: &dyn DataTypeManager,
+        old_path: &dyn CategoryPath,
+        new_path: &dyn CategoryPath,
+    );
+
+    /// Called when a category is removed.
+    fn category_removed(&self, dtm: &dyn DataTypeManager, path: &dyn CategoryPath);
+
+    /// Called when a category is renamed.
+    fn category_renamed(
+        &self,
+        dtm: &dyn DataTypeManager,
+        old_path: &dyn CategoryPath,
+        new_path: &dyn CategoryPath,
+    );
+
+    /// Called when a data type is added.
+    fn data_type_added(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+
+    /// Called when favorites change.
+    fn favorites_changed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath, is_favorite: bool);
+
+    /// Called when a data type is changed.
+    fn data_type_changed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+
+    /// Called when a data type is moved.
+    fn data_type_moved(
+        &self,
+        dtm: &dyn DataTypeManager,
+        old_path: &dyn DataTypePath,
+        new_path: &dyn DataTypePath,
+    );
+
+    /// Called when a data type is removed.
+    fn data_type_removed(&self, dtm: &dyn DataTypeManager, path: &dyn DataTypePath);
+
+    /// Called when a data type is renamed.
+    fn data_type_renamed(
+        &self,
+        dtm: &dyn DataTypeManager,
+        old_path: &dyn DataTypePath,
+        new_path: &dyn DataTypePath,
+    );
+
+    /// Called when a data type is replaced.
+    fn data_type_replaced(
+        &self,
+        dtm: &dyn DataTypeManager,
+        old_path: &dyn DataTypePath,
+        new_path: &dyn DataTypePath,
+        new_data_type: &dyn DataType,
+    );
+
+    /// Called when a source archive is added.
+    fn source_archive_added(&self, manager: &dyn DataTypeManager, source_archive: &dyn SourceArchive);
+
+    /// Called when a source archive is changed.
+    fn source_archive_changed(&self, manager: &dyn DataTypeManager, source_archive: &dyn SourceArchive);
+
+    /// Called when the program architecture is changed.
+    fn program_architecture_changed(&self, manager: &dyn DataTypeManager);
+
+    /// Called when the manager is restored.
+    fn restored(&self, manager: &dyn DataTypeManager);
+}
