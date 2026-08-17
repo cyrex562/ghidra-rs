@@ -242,6 +242,15 @@ pub trait SearchSettings {}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GhidraBundle;
 
+/// Placeholder for `docking.action.DockingAction`, referenced by
+/// [`InterpreterConsole`](crate::app::plugin::core::interpreter::InterpreterConsole) before the
+/// real class is ported. Java's version is a concrete class (not an interface), so this is a
+/// plain struct rather than a `dyn`-dispatched trait, matching [`LocationMemento`]/[`GhidraBundle`]'s
+/// convention. `InterpreterConsole` only ever passes this type through as a parameter, so no
+/// fields are needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DockingAction;
+
 
 /// Placeholder for `ghidra.app.plugin.core.programtree.ViewProviderService`, referenced by
 /// [`ViewManagerService`](crate::app::services::ViewManagerService) before the real class is
