@@ -328,12 +328,6 @@ pub trait MonitorReceiver {}
 /// are needed yet.
 pub trait ProgressListener {}
 
-/// Placeholder for `ghidra.debug.api.tracermi.TraceRmiConnection`, referenced by
-/// [`TraceRmiService`](crate::app::services::TraceRmiService) before the real interface is
-/// ported. `TraceRmiService` only ever passes this type through as a return value, so no members
-/// are needed yet.
-pub trait TraceRmiConnection {}
-
 /// Placeholder for `ghidra.debug.api.tracermi.TraceRmiAcceptor`, referenced by
 /// [`TraceRmiService`](crate::app::services::TraceRmiService) before the real interface is
 /// ported. `TraceRmiService` only ever passes this type through as a return value, so no members

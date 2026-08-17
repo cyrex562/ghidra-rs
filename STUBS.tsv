@@ -97,7 +97,6 @@ ts	stub_class	referenced_by
 2026-07-10T00:00:00Z	Task	ProgressService
 2026-07-10T12:30:00Z	DefaultTraceRmiAcceptor	InternalTraceRmiService
 2026-07-10T12:30:00Z	TraceRmiHandler	InternalTraceRmiService
-2026-07-11T00:00:00Z	TraceRmiConnection	TraceRmiService
 2026-07-11T00:00:00Z	TraceRmiAcceptor	TraceRmiService
 2026-07-11T00:00:00Z	TraceRmiServiceListener	TraceRmiService
 2026-07-10T13:00:00Z	TraceSchedule	DebuggerEmulationService
@@ -1096,3 +1095,4 @@ ts	stub_class	referenced_by
 2026-08-17T07:03:16.977798+00:00	ActionName	RemoteMethodRegistry
 2026-08-17T07:03:16.977955+00:00	RemoteMethod	RemoteMethodRegistry
 2026-08-17T07:03:16.978112+00:00	TraceObject	RemoteMethodRegistry
+2026-08-17T07:07:34.940896+00:00	Target	TraceRmiConnection
