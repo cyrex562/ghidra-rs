@@ -232,6 +232,15 @@ pub struct LocationMemento;
 /// members are needed yet.
 pub trait SearchSettings {}
 
+/// Placeholder for `ghidra.app.plugin.core.osgi.GhidraBundle`, referenced by
+/// [`BundleHostListener`](crate::app::plugin::core::osgi::BundleHostListener) before the real
+/// class is ported. Java's version is a concrete class (not an interface), so this is a plain
+/// struct rather than a `dyn`-dispatched trait, matching [`LocationMemento`]'s convention.
+/// `BundleHostListener` only ever passes this type through as a parameter, so no fields are
+/// needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GhidraBundle;
+
 
 /// Placeholder for `ghidra.app.plugin.core.programtree.ViewProviderService`, referenced by
 /// [`ViewManagerService`](crate::app::services::ViewManagerService) before the real class is
