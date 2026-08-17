@@ -810,7 +810,6 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None,
             consts = facts["static_fields"] > 0
             tag = "R8a-constants-interface" if consts else "R8b-marker"
             use = marker_use or {}
-            dispatch = use.get("instanceof", 0) + use.get("reflection", 0)
 
             if use.get("ambiguous"):
                 # Same basename declared at more than one path: the evidence cannot be
@@ -826,12 +825,44 @@ def classify(facts: dict, subtype_count: int, permits_resolved=None,
                          "interface with no methods and no usage scan available -- run "
                          "`shape_rules.py index` to regenerate MARKER_USE.tsv",
                          "ambiguous")
-            if dispatch:
+            if use.get("instanceof"):
+                # Real runtime narrowing: something asks "is this THAT specific marker?" and
+                # branches on the answer. Rust has no closed-world `instanceof` -- this needs an
+                # enum discriminant, a downcast seam, or a predicate method, and which one is a
+                # human call.
                 return r(tag, "park",
-                         f"interface with no methods that {dispatch} site(s) branch on via "
-                         "`instanceof`/`.class` -- a genuine runtime type tag. Rust has no "
+                         f"interface with no methods that {use['instanceof']} site(s) branch on "
+                         "via `instanceof` -- a genuine runtime type tag. Rust has no "
                          "equivalent: it needs an enum discriminant, a downcast seam, or a "
                          "predicate method. Decide with a human",
+                         "ambiguous")
+            if use.get("reflection") and not consts:
+                # Reflection-only dispatch (`X.class` used purely as a registry key, e.g.
+                # `tool.getServices(X.class)`), with zero `instanceof` and no constants of its
+                # own to carry -- nothing actually narrows on runtime type, it's Java's
+                # Class<T>-keyed service lookup. This codebase already has a working, proven
+                # recipe for exactly that case: DecompilerHoverService
+                # (ghidra.app.decompiler.component.hover) is an empty marker trait keyed by
+                # `TypeId::of::<dyn X>()`, standing in for the `.class` token, and it is live in
+                # DecompilePlugin's service registry. Apply the same recipe here instead of
+                # parking for a decision this codebase has already made.
+                return r("R8g-reflection-only-marker", "trait",
+                         f"interface with no methods used only as a `.class` registry key "
+                         f"({use['reflection']} site(s)), never via `instanceof` -- Java's "
+                         "Class<T>-keyed service lookup, not runtime type narrowing. Emit an "
+                         "empty marker trait (`pub trait X: ParentTrait {}`) and key the "
+                         "registry on `TypeId::of::<dyn X>()`, the same recipe already proven by "
+                         "`DecompilerHoverService`")
+            if use.get("reflection"):
+                # Same reflection-only shape, but this one also carries constants -- the marker
+                # recipe alone would drop them on the floor, and whether those constants belong
+                # on the trait or beside it is not yet a decision this codebase has made anywhere
+                # else. Keep parking this combination for a human.
+                return r(tag, "park",
+                         f"interface with no methods that {use['reflection']} site(s) use as a "
+                         "`.class` registry key, and it also declares constants -- the marker-"
+                         "trait recipe alone would drop the constants; decide with a human "
+                         "whether they belong on the trait or in a separate module",
                          "ambiguous")
             # An interface can carry `static` methods without being dispatchable. They are
             # free functions, not trait items -- emitting only the marker trait would drop

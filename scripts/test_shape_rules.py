@@ -388,10 +388,30 @@ class TestMarkerInterfaces(unittest.TestCase):
         self.assertEqual(res["rule"], "R8b-marker")
         self.assertIn("instanceof", res["why"])
 
-    def test_reflection_counts_as_dispatch(self):
-        """`X.class` in a registry lookup is a type tag just as much as `instanceof`."""
+    def test_reflection_only_marker_becomes_a_trait(self):
+        """`X.class` used purely as a service-registry key, never `instanceof` -- this is
+        Java's Class<T>-keyed lookup, not runtime narrowing. DecompilerHoverService already
+        proves the recipe (empty marker trait, TypeId-keyed registry), so apply it instead of
+        parking for a decision this codebase has already made."""
         res, _ = shape(MARKER, "JitMemoryVar", marker_use=use(reflection=1))
+        self.assertEqual(res["shape"], "trait")
+        self.assertEqual(res["rule"], "R8g-reflection-only-marker")
+
+    def test_instanceof_outranks_reflection(self):
+        """Any real `instanceof` narrowing still needs a human, even alongside `.class`
+        registry-key uses -- reflection-only is a narrower claim than "nothing dispatches"."""
+        res, _ = shape(MARKER, "JitMemoryVar", marker_use=use(instanceof=1, reflection=3))
         self.assertEqual(res["shape"], "park")
+        self.assertEqual(res["rule"], "R8b-marker")
+        self.assertIn("instanceof", res["why"])
+
+    def test_reflection_only_constants_interface_still_parks(self):
+        """A constants interface that is also used as a `.class` registry key: the marker
+        recipe alone would drop the constants on the floor, and nothing in this codebase has
+        resolved that combination yet -- still a human call."""
+        res, _ = shape(CONSTS, "GenConsts", marker_use=use(reflection=2))
+        self.assertEqual(res["shape"], "park")
+        self.assertEqual(res["rule"], "R8a-constants-interface")
 
     def test_marker_named_as_a_type_becomes_an_empty_trait(self):
         """Used as a parameter/field type but never branched on: `pub trait X {}` carries
