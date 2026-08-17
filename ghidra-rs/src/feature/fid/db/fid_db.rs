@@ -1,9 +1,7 @@
 //! Port of `ghidra.feature.fid.db.FidDB`.
 
 use crate::feature::fid::hash::fid_hash_quad::FidHashQuad;
-use crate::feature::seam_stubs::{
-    FidFile, FunctionRecord, FunctionsTable, LibrariesTable, StringsTable,
-};
+use crate::feature::seam_stubs::{FidFile, FunctionsTable, LibrariesTable, StringsTable};
 use crate::framework::db::db_handle::DBHandle;
 use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
 use crate::program::model::lang::language_id::LanguageID;
@@ -11,6 +9,9 @@ use crate::util::msg::Msg;
 use crate::util::read_only_exception::ReadOnlyException;
 use crate::util::task::TaskMonitor;
 
+use super::function_record::{
+    FunctionRecord, AUTO_FAIL_FLAG, AUTO_PASS_FLAG, FORCE_RELATION_FLAG, FORCE_SPECIFIC_FLAG,
+};
 use super::library_record::LibraryRecord;
 use super::relation_type::RelationType;
 use super::relations_table::RelationsTable;
@@ -19,17 +20,6 @@ use std::fmt;
 use std::io;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
-
-/// Mirrors `FunctionRecord.AUTO_PASS_FLAG` (Java: `db/FunctionRecord.java:30`). `FunctionRecord`
-/// is not ported yet, so the flag masks it declares are mirrored here, the same way
-/// [`super::relations_table`] mirrors `LibrariesTable`'s schema version.
-pub const AUTO_PASS_FLAG: i32 = 2;
-/// Mirrors `FunctionRecord.AUTO_FAIL_FLAG`.
-pub const AUTO_FAIL_FLAG: i32 = 4;
-/// Mirrors `FunctionRecord.FORCE_SPECIFIC_FLAG`.
-pub const FORCE_SPECIFIC_FLAG: i32 = 8;
-/// Mirrors `FunctionRecord.FORCE_RELATION_FLAG`.
-pub const FORCE_RELATION_FLAG: i32 = 16;
 
 /// Java: `FidDB.FID_CONTENT_TYPE`, the content type stamped on packed FID databases.
 pub const FID_CONTENT_TYPE: &str = "Function ID Database";
@@ -194,7 +184,7 @@ impl FidDB {
         &self,
         library: &LibraryRecord,
         name: &str,
-    ) -> Option<Vec<Arc<dyn FunctionRecord>>> {
+    ) -> Option<Vec<Arc<FunctionRecord>>> {
         let table = self.functions_table.as_ref()?;
         match table.get_function_records_by_library_and_name(library, name) {
             Ok(list) => Some(list),
@@ -212,7 +202,7 @@ impl FidDB {
     pub fn find_functions_by_name_substring(
         &self,
         name: &str,
-    ) -> Option<Vec<Arc<dyn FunctionRecord>>> {
+    ) -> Option<Vec<Arc<FunctionRecord>>> {
         let table = self.functions_table.as_ref()?;
         match table.get_function_records_by_name_substring(name) {
             Ok(list) => Some(list),
@@ -227,7 +217,7 @@ impl FidDB {
     pub fn find_functions_by_name_regex(
         &self,
         regex: &str,
-    ) -> Option<Vec<Arc<dyn FunctionRecord>>> {
+    ) -> Option<Vec<Arc<FunctionRecord>>> {
         let table = self.functions_table.as_ref()?;
         match table.get_function_records_by_name_regex(regex) {
             Ok(list) => Some(list),
@@ -245,7 +235,7 @@ impl FidDB {
     pub fn find_functions_by_domain_path_substring(
         &self,
         domain_path: &str,
-    ) -> Option<Vec<Arc<dyn FunctionRecord>>> {
+    ) -> Option<Vec<Arc<FunctionRecord>>> {
         let table = self.functions_table.as_ref()?;
         match table.get_function_records_by_domain_path_substring(domain_path) {
             Ok(list) => Some(list),
@@ -274,7 +264,7 @@ impl FidDB {
     pub fn find_functions_by_specific_hash(
         &self,
         specific_hash: i64,
-    ) -> Option<Vec<Arc<dyn FunctionRecord>>> {
+    ) -> Option<Vec<Arc<FunctionRecord>>> {
         let table = self.functions_table.as_ref()?;
         match table.get_function_records_by_specific_hash(specific_hash) {
             Ok(list) => Some(list),
@@ -289,7 +279,7 @@ impl FidDB {
     pub fn find_functions_by_full_hash(
         &self,
         full_hash: i64,
-    ) -> Option<Vec<Arc<dyn FunctionRecord>>> {
+    ) -> Option<Vec<Arc<FunctionRecord>>> {
         let table = self.functions_table.as_ref()?;
         match table.get_function_records_by_full_hash(full_hash) {
             Ok(list) => Some(list),
@@ -322,7 +312,7 @@ impl FidDB {
     /// representing the inferior (callee) function.
     pub fn get_superior_full_relation(
         &self,
-        superior_function: &dyn FunctionRecord,
+        superior_function: &FunctionRecord,
         inferior_function: &dyn FidHashQuad,
     ) -> bool {
         let (Some(libraries), Some(relations)) =
@@ -349,7 +339,7 @@ impl FidDB {
     pub fn get_inferior_full_relation(
         &self,
         superior_function: &dyn FidHashQuad,
-        inferior_function: &dyn FunctionRecord,
+        inferior_function: &FunctionRecord,
     ) -> bool {
         let (Some(libraries), Some(relations)) =
             (self.libraries_table.as_ref(), self.relations_table.as_ref())
@@ -371,7 +361,7 @@ impl FidDB {
     }
 
     /// Returns a single function record given its id, or `None` if no such record exists.
-    pub fn get_function_by_id(&self, function_id: i64) -> Option<Arc<dyn FunctionRecord>> {
+    pub fn get_function_by_id(&self, function_id: i64) -> Option<Arc<FunctionRecord>> {
         let table = self.functions_table.as_ref()?;
         match table.get_function_by_id(function_id) {
             Ok(record) => record,
@@ -385,7 +375,7 @@ impl FidDB {
     /// Returns the library record in which the provided function record resides.
     pub fn get_library_for_function(
         &self,
-        function_record: &dyn FunctionRecord,
+        function_record: &FunctionRecord,
     ) -> Option<LibraryRecord> {
         let table = self.libraries_table.as_ref()?;
         match table.get_library_by_id(function_record.get_library_id()) {
@@ -455,7 +445,7 @@ impl FidDB {
         entry_point: i64,
         domain_path: &str,
         has_terminator: bool,
-    ) -> Option<Arc<dyn FunctionRecord>> {
+    ) -> Option<Arc<FunctionRecord>> {
         if let Err(e) = self.check_update_allowed() {
             Msg::error(&self.to_string(), &e);
             return None;
@@ -480,8 +470,8 @@ impl FidDB {
     /// Creates a new relation record between a superior (caller) and inferior (callee) function.
     pub fn create_relation(
         &self,
-        superior_function: &dyn FunctionRecord,
-        inferior_function: &dyn FunctionRecord,
+        superior_function: &FunctionRecord,
+        inferior_function: &FunctionRecord,
         relation_type: RelationType,
     ) {
         if let Err(e) = self.check_update_allowed() {
@@ -502,8 +492,8 @@ impl FidDB {
     /// with common functions.
     pub fn create_inferior_relation(
         &self,
-        superior_function: &dyn FunctionRecord,
-        inferior_function: &dyn FunctionRecord,
+        superior_function: &FunctionRecord,
+        inferior_function: &FunctionRecord,
     ) {
         if let Err(e) = self.check_update_allowed() {
             Msg::error(&self.to_string(), &e);
@@ -520,7 +510,7 @@ impl FidDB {
     /// Modifies a single flag to a specific value across a list of functions.
     fn modify_flags(
         &self,
-        func_list: &[Arc<dyn FunctionRecord>],
+        func_list: &[Arc<FunctionRecord>],
         flag_mask: i32,
         value: bool,
     ) -> io::Result<()> {
@@ -539,10 +529,10 @@ impl FidDB {
     /// dropped until `FunctionRecord` is ported.
     fn modify_function_flag(
         &self,
-        func_rec: &dyn FunctionRecord,
+        func_rec: &FunctionRecord,
         flag_mask: i32,
         value: bool,
-    ) -> io::Result<Arc<dyn FunctionRecord>> {
+    ) -> io::Result<Arc<FunctionRecord>> {
         let table = self.functions_table()?;
         let key = func_rec.get_key();
         table.modify_flags(key, flag_mask, value)?;
@@ -599,9 +589,9 @@ impl FidDB {
     /// Changes the auto-pass property on the given record, returning the reloaded record.
     pub fn set_auto_pass_on_function(
         &self,
-        func_rec: &dyn FunctionRecord,
+        func_rec: &FunctionRecord,
         value: bool,
-    ) -> io::Result<Arc<dyn FunctionRecord>> {
+    ) -> io::Result<Arc<FunctionRecord>> {
         self.check_update_allowed().map_err(read_only_to_io)?;
         self.modify_function_flag(func_rec, AUTO_PASS_FLAG, value)
     }
@@ -609,9 +599,9 @@ impl FidDB {
     /// Changes the auto-fail property on the given record, returning the reloaded record.
     pub fn set_auto_fail_on_function(
         &self,
-        func_rec: &dyn FunctionRecord,
+        func_rec: &FunctionRecord,
         value: bool,
-    ) -> io::Result<Arc<dyn FunctionRecord>> {
+    ) -> io::Result<Arc<FunctionRecord>> {
         self.check_update_allowed().map_err(read_only_to_io)?;
         self.modify_function_flag(func_rec, AUTO_FAIL_FLAG, value)
     }
@@ -619,9 +609,9 @@ impl FidDB {
     /// Changes the force-specific property on the given record, returning the reloaded record.
     pub fn set_force_specific_on_function(
         &self,
-        func_rec: &dyn FunctionRecord,
+        func_rec: &FunctionRecord,
         value: bool,
-    ) -> io::Result<Arc<dyn FunctionRecord>> {
+    ) -> io::Result<Arc<FunctionRecord>> {
         self.check_update_allowed().map_err(read_only_to_io)?;
         self.modify_function_flag(func_rec, FORCE_SPECIFIC_FLAG, value)
     }
@@ -629,9 +619,9 @@ impl FidDB {
     /// Changes the force-relation property on the given record, returning the reloaded record.
     pub fn set_force_relation_on_function(
         &self,
-        func_rec: &dyn FunctionRecord,
+        func_rec: &FunctionRecord,
         value: bool,
-    ) -> io::Result<Arc<dyn FunctionRecord>> {
+    ) -> io::Result<Arc<FunctionRecord>> {
         self.check_update_allowed().map_err(read_only_to_io)?;
         self.modify_function_flag(func_rec, FORCE_RELATION_FLAG, value)
     }
@@ -708,15 +698,171 @@ impl fmt::Display for FidDB {
     }
 }
 
+/// Test-only helpers shared with sibling modules (`function_record`, `relations_table`) that need
+/// a real `Arc<FidDB>` to satisfy `FunctionRecord::new`'s back-reference but never exercise any of
+/// `FidDB`'s own behavior.
+#[cfg(test)]
+pub(crate) mod test_support {
+    use super::*;
+    use crate::feature::seam_stubs::StringsTable;
+
+    struct NoopFidFile;
+
+    impl FidFile for NoopFidFile {
+        fn get_name(&self) -> String {
+            String::new()
+        }
+        fn get_path(&self) -> String {
+            String::new()
+        }
+        fn is_installed(&self) -> bool {
+            false
+        }
+        fn closing_fid_db(&self, _fid_db: &FidDB) {}
+    }
+
+    struct NoopLibrariesTable;
+
+    impl LibrariesTable for NoopLibrariesTable {
+        fn create_library(
+            &self,
+            _library_family_name: &str,
+            _library_version: &str,
+            _library_variant: &str,
+            _ghidra_version: &str,
+            _language_id: &LanguageID,
+            _language_version: i32,
+            _language_minor_version: i32,
+            _compiler_spec_id: &CompilerSpecID,
+        ) -> io::Result<crate::framework::db::record::DBRecord> {
+            unimplemented!("minimal_fid_db never creates libraries")
+        }
+
+        fn get_libraries(&self) -> io::Result<Vec<LibraryRecord>> {
+            Ok(Vec::new())
+        }
+
+        fn get_libraries_by_name(
+            &self,
+            _family: &str,
+            _version: Option<&str>,
+            _variant: Option<&str>,
+        ) -> io::Result<Vec<LibraryRecord>> {
+            Ok(Vec::new())
+        }
+
+        fn get_library_by_id(
+            &self,
+            _id: i64,
+        ) -> io::Result<Option<crate::framework::db::record::DBRecord>> {
+            Ok(None)
+        }
+    }
+
+    struct NoopFunctionsTable;
+
+    impl FunctionsTable for NoopFunctionsTable {
+        fn get_full_hash_value_at_or_after(&self, _value: i64) -> io::Result<Option<i64>> {
+            Ok(None)
+        }
+
+        fn get_function_records_by_specific_hash(
+            &self,
+            _hash: i64,
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            Ok(Vec::new())
+        }
+
+        fn get_function_records_by_full_hash(
+            &self,
+            _hash: i64,
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            Ok(Vec::new())
+        }
+
+        fn create_function_record(
+            &self,
+            _library_id: i64,
+            _hash_quad: &dyn FidHashQuad,
+            _name: &str,
+            _entry_point: i64,
+            _domain_path: &str,
+            _has_terminator: bool,
+        ) -> io::Result<Arc<FunctionRecord>> {
+            unimplemented!("minimal_fid_db never creates functions")
+        }
+
+        fn get_function_records_by_name_substring(
+            &self,
+            _name_search: &str,
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            Ok(Vec::new())
+        }
+
+        fn get_function_records_by_name_regex(
+            &self,
+            _regex: &str,
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            Ok(Vec::new())
+        }
+
+        fn get_function_by_id(
+            &self,
+            _function_id: i64,
+        ) -> io::Result<Option<Arc<FunctionRecord>>> {
+            Ok(None)
+        }
+
+        fn get_function_records_by_domain_path_substring(
+            &self,
+            _domain_path_search: &str,
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            Ok(Vec::new())
+        }
+
+        fn get_function_records_by_library_and_name(
+            &self,
+            _library: &LibraryRecord,
+            _name: &str,
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            Ok(Vec::new())
+        }
+
+        fn modify_flags(&self, _function_id: i64, _flag_mask: i32, _value: bool) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// Builds a minimal `FidDB` backed entirely by no-op tables, wrapped in `Arc` so callers can
+    /// pass it straight to `FunctionRecord::new`.
+    pub(crate) fn minimal_fid_db(strings_table: Arc<dyn StringsTable>) -> Arc<FidDB> {
+        let mut handle = DBHandle::new().expect("new db handle");
+        RelationsTable::create_tables(&mut handle).expect("create relation tables");
+        Arc::new(
+            FidDB::new(
+                Arc::new(NoopFidFile),
+                handle,
+                Arc::new(NoopLibrariesTable),
+                strings_table,
+                Arc::new(NoopFunctionsTable),
+                false,
+            )
+            .expect("build minimal fid db"),
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::feature::fid::db::function_record::HAS_TERMINATOR_FLAG;
+    use crate::feature::seam_stubs::StringRecord;
     use crate::framework::db::field::{Field, FieldType};
     use crate::framework::db::record::DBRecord;
     use crate::framework::db::schema::Schema;
     use crate::util::task::DummyMonitor;
     use std::collections::HashMap;
-    use std::sync::atomic::AtomicBool;
+    use std::sync::atomic::{AtomicBool, AtomicI64};
     use std::sync::Mutex;
 
     struct FakeFidFile {
@@ -862,19 +1008,56 @@ mod tests {
         }
     }
 
-    struct FakeStringsTable;
-    impl StringsTable for FakeStringsTable {}
+    /// Column layout mirrored from `FunctionsTable`, used to build `DBRecord`s for the fake
+    /// functions table below (see [`function_record`]'s own copy of this layout).
+    const CODE_UNIT_SIZE_COL: usize = 0;
+    const FULL_HASH_COL: usize = 1;
+    const SPECIFIC_HASH_ADDITIONAL_SIZE_COL: usize = 2;
+    const SPECIFIC_HASH_COL: usize = 3;
+    const LIBRARY_ID_COL: usize = 4;
+    const NAME_ID_COL: usize = 5;
+    const ENTRY_POINT_COL: usize = 6;
+    const DOMAIN_PATH_ID_COL: usize = 7;
+    const FLAGS_COL: usize = 8;
 
-    #[derive(Clone)]
-    struct FakeFunctionRecord {
-        key: i64,
-        library_id: i64,
-        name: String,
-        full_hash: i64,
-        flags: i32,
+    fn function_schema() -> Arc<Schema> {
+        Arc::new(Schema::new(
+            6,
+            FieldType::Long,
+            "Function ID".to_string(),
+            vec![
+                FieldType::Short,
+                FieldType::Long,
+                FieldType::Byte,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Byte,
+            ],
+            vec![
+                "Code Unit Size".to_string(),
+                "Full Hash".to_string(),
+                "Specific Hash Additional Size".to_string(),
+                "Specific Hash".to_string(),
+                "Library ID".to_string(),
+                "Name ID".to_string(),
+                "Entry Point".to_string(),
+                "Domain Path ID".to_string(),
+                "Flags".to_string(),
+            ],
+            vec![],
+        ))
     }
 
-    impl FidHashQuad for FakeFunctionRecord {
+    /// A simple `FidHashQuad` used to drive `FidDB::create_new_function`, independent of any
+    /// `FunctionRecord` (mirrors the hash quad an auto-analyzer would compute for a new function).
+    struct FakeHashQuad {
+        full_hash: i64,
+    }
+
+    impl FidHashQuad for FakeHashQuad {
         fn code_unit_size(&self) -> i16 {
             4
         }
@@ -889,32 +1072,74 @@ mod tests {
         }
     }
 
-    impl FunctionRecord for FakeFunctionRecord {
-        fn get_key(&self) -> i64 {
-            self.key
-        }
-        fn get_name(&self) -> String {
-            self.name.clone()
-        }
-        fn get_library_id(&self) -> i64 {
-            self.library_id
+    #[derive(Default)]
+    struct FakeStringsTable {
+        strings: Mutex<HashMap<i64, String>>,
+        next_id: AtomicI64,
+    }
+
+    impl FakeStringsTable {
+        fn intern(&self, value: &str) -> i64 {
+            let id = self.next_id.fetch_add(1, Ordering::SeqCst) + 1;
+            self.strings.lock().unwrap().insert(id, value.to_string());
+            id
         }
     }
 
-    #[derive(Default)]
+    impl StringsTable for FakeStringsTable {
+        fn lookup_string(&self, id: i64) -> Option<StringRecord> {
+            self.strings.lock().unwrap().get(&id).cloned().map(StringRecord::new)
+        }
+    }
+
+    #[derive(Clone)]
+    struct FakeFunctionEntry {
+        library_id: i64,
+        name_id: i64,
+        domain_path_id: i64,
+        entry_point: i64,
+        full_hash: i64,
+        flags: i32,
+    }
+
+    impl FakeFunctionEntry {
+        fn specific_hash(&self) -> i64 {
+            self.full_hash ^ 1
+        }
+    }
+
     struct FakeFunctionsTable {
-        functions: Mutex<HashMap<i64, FakeFunctionRecord>>,
+        // Each `FunctionRecord` built below needs a real `Arc<FidDB>` for its string-lookup
+        // back-reference (Java: `FunctionRecord.fidDb`). Rather than pointing back at the `FidDB`
+        // under test in `Fixture` (which would need `close`/`save_database`'s `&mut self` to fight
+        // over the same `Arc`), this holds its own minimal, otherwise-inert `FidDB` that shares the
+        // same backing `strings` table, so name/domain-path resolution still works correctly.
+        fid_db: Arc<FidDB>,
+        strings: Arc<FakeStringsTable>,
+        entries: Mutex<HashMap<i64, FakeFunctionEntry>>,
         next_key: AtomicI32,
     }
 
     impl FakeFunctionsTable {
+        fn new(strings: Arc<FakeStringsTable>) -> Self {
+            let fid_db = test_support::minimal_fid_db(strings.clone());
+            Self { fid_db, strings, entries: Mutex::new(HashMap::new()), next_key: AtomicI32::new(0) }
+        }
+
+        fn name_of(&self, entry: &FakeFunctionEntry) -> String {
+            self.strings.lookup_string(entry.name_id).map(|s| s.get_value()).unwrap_or_default()
+        }
+
         fn seed(&self, key: i64, library_id: i64, name: &str, full_hash: i64) {
-            self.functions.lock().unwrap().insert(
+            let name_id = self.strings.intern(name);
+            let domain_path_id = self.strings.intern("");
+            self.entries.lock().unwrap().insert(
                 key,
-                FakeFunctionRecord {
-                    key,
+                FakeFunctionEntry {
                     library_id,
-                    name: name.to_string(),
+                    name_id,
+                    domain_path_id,
+                    entry_point: 0,
                     full_hash,
                     flags: 0,
                 },
@@ -922,28 +1147,46 @@ mod tests {
         }
 
         fn flags_of(&self, key: i64) -> i32 {
-            self.functions.lock().unwrap()[&key].flags
+            self.entries.lock().unwrap()[&key].flags
+        }
+
+        fn build_record(&self, key: i64, entry: &FakeFunctionEntry) -> Arc<FunctionRecord> {
+            let mut record = DBRecord::new(function_schema(), Field::Long(Some(key)));
+            record.set_field(CODE_UNIT_SIZE_COL, Field::Short(Some(4)));
+            record.set_long(FULL_HASH_COL, entry.full_hash);
+            record.set_byte(SPECIFIC_HASH_ADDITIONAL_SIZE_COL, 0);
+            record.set_long(SPECIFIC_HASH_COL, entry.specific_hash());
+            record.set_long(LIBRARY_ID_COL, entry.library_id);
+            record.set_long(NAME_ID_COL, entry.name_id);
+            record.set_long(ENTRY_POINT_COL, entry.entry_point);
+            record.set_long(DOMAIN_PATH_ID_COL, entry.domain_path_id);
+            record.set_byte(FLAGS_COL, entry.flags as i8);
+            Arc::new(FunctionRecord::new(self.fid_db.clone(), record))
         }
 
         fn collect(
             &self,
-            pred: impl Fn(&FakeFunctionRecord) -> bool,
-        ) -> io::Result<Vec<Arc<dyn FunctionRecord>>> {
-            let mut found: Vec<FakeFunctionRecord> =
-                self.functions.lock().unwrap().values().filter(|f| pred(f)).cloned().collect();
-            found.sort_by_key(|f| f.key);
-            Ok(found.into_iter().map(|f| Arc::new(f) as Arc<dyn FunctionRecord>).collect())
+            pred: impl Fn(&FakeFunctionEntry) -> bool,
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            let entries = self.entries.lock().unwrap();
+            let mut found: Vec<(i64, FakeFunctionEntry)> = entries
+                .iter()
+                .filter(|(_, e)| pred(e))
+                .map(|(k, e)| (*k, e.clone()))
+                .collect();
+            found.sort_by_key(|(k, _)| *k);
+            Ok(found.into_iter().map(|(k, e)| self.build_record(k, &e)).collect())
         }
     }
 
     impl FunctionsTable for FakeFunctionsTable {
         fn get_full_hash_value_at_or_after(&self, value: i64) -> io::Result<Option<i64>> {
             Ok(self
-                .functions
+                .entries
                 .lock()
                 .unwrap()
                 .values()
-                .map(|f| f.full_hash)
+                .map(|e| e.full_hash)
                 .filter(|h| *h >= value)
                 .min())
         }
@@ -951,15 +1194,15 @@ mod tests {
         fn get_function_records_by_specific_hash(
             &self,
             hash: i64,
-        ) -> io::Result<Vec<Arc<dyn FunctionRecord>>> {
-            self.collect(|f| f.specific_hash() == hash)
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            self.collect(|e| e.specific_hash() == hash)
         }
 
         fn get_function_records_by_full_hash(
             &self,
             hash: i64,
-        ) -> io::Result<Vec<Arc<dyn FunctionRecord>>> {
-            self.collect(|f| f.full_hash == hash)
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            self.collect(|e| e.full_hash == hash)
         }
 
         fn create_function_record(
@@ -967,55 +1210,54 @@ mod tests {
             library_id: i64,
             hash_quad: &dyn FidHashQuad,
             name: &str,
-            _entry_point: i64,
-            _domain_path: &str,
-            _has_terminator: bool,
-        ) -> io::Result<Arc<dyn FunctionRecord>> {
+            entry_point: i64,
+            domain_path: &str,
+            has_terminator: bool,
+        ) -> io::Result<Arc<FunctionRecord>> {
             let key = self.next_key.fetch_add(1, Ordering::SeqCst) as i64 + 100;
-            let record = FakeFunctionRecord {
-                key,
+            let name_id = self.strings.intern(name);
+            let domain_path_id = self.strings.intern(domain_path);
+            let flags = if has_terminator { HAS_TERMINATOR_FLAG } else { 0 };
+            let entry = FakeFunctionEntry {
                 library_id,
-                name: name.to_string(),
+                name_id,
+                domain_path_id,
+                entry_point,
                 full_hash: hash_quad.full_hash(),
-                flags: 0,
+                flags,
             };
-            self.functions.lock().unwrap().insert(key, record.clone());
-            Ok(Arc::new(record))
+            self.entries.lock().unwrap().insert(key, entry.clone());
+            Ok(self.build_record(key, &entry))
         }
 
         fn get_function_records_by_name_substring(
             &self,
             name_search: &str,
-        ) -> io::Result<Vec<Arc<dyn FunctionRecord>>> {
-            self.collect(|f| f.name.contains(name_search))
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
+            self.collect(|e| self.name_of(e).contains(name_search))
         }
 
         fn get_function_records_by_name_regex(
             &self,
             regex: &str,
-        ) -> io::Result<Vec<Arc<dyn FunctionRecord>>> {
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
             // Enough of a regex for the smoke tests: a trailing `.*` wildcard.
             let prefix = regex.trim_end_matches(".*");
-            self.collect(|f| f.name.starts_with(prefix))
+            self.collect(|e| self.name_of(e).starts_with(prefix))
         }
 
         fn get_function_by_id(
             &self,
             function_id: i64,
-        ) -> io::Result<Option<Arc<dyn FunctionRecord>>> {
-            Ok(self
-                .functions
-                .lock()
-                .unwrap()
-                .get(&function_id)
-                .cloned()
-                .map(|f| Arc::new(f) as Arc<dyn FunctionRecord>))
+        ) -> io::Result<Option<Arc<FunctionRecord>>> {
+            let entries = self.entries.lock().unwrap();
+            Ok(entries.get(&function_id).map(|e| self.build_record(function_id, e)))
         }
 
         fn get_function_records_by_domain_path_substring(
             &self,
             _domain_path_search: &str,
-        ) -> io::Result<Vec<Arc<dyn FunctionRecord>>> {
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
             self.collect(|_| true)
         }
 
@@ -1023,20 +1265,20 @@ mod tests {
             &self,
             library: &LibraryRecord,
             name: &str,
-        ) -> io::Result<Vec<Arc<dyn FunctionRecord>>> {
+        ) -> io::Result<Vec<Arc<FunctionRecord>>> {
             let library_id = library.get_library_id();
-            self.collect(|f| f.library_id == library_id && f.name == name)
+            self.collect(|e| e.library_id == library_id && self.name_of(e) == name)
         }
 
         fn modify_flags(&self, function_id: i64, flag_mask: i32, value: bool) -> io::Result<()> {
-            let mut functions = self.functions.lock().unwrap();
-            let record = functions.get_mut(&function_id).ok_or_else(|| {
+            let mut entries = self.entries.lock().unwrap();
+            let entry = entries.get_mut(&function_id).ok_or_else(|| {
                 io::Error::new(io::ErrorKind::NotFound, "Function record does not exist")
             })?;
             if value {
-                record.flags |= flag_mask;
+                entry.flags |= flag_mask;
             } else {
-                record.flags &= !flag_mask;
+                entry.flags &= !flag_mask;
             }
             Ok(())
         }
@@ -1055,7 +1297,8 @@ mod tests {
 
         let fid_file = FakeFidFile::new("/opt/ghidra/fid/vs2015.fidb", installed);
         let libraries = Arc::new(FakeLibrariesTable::default());
-        let functions = Arc::new(FakeFunctionsTable::default());
+        let strings = Arc::new(FakeStringsTable::default());
+        let functions = Arc::new(FakeFunctionsTable::new(strings.clone()));
 
         libraries
             .create_library(
@@ -1069,21 +1312,22 @@ mod tests {
                 &CompilerSpecID::new(Some("windows")),
             )
             .expect("seed library");
-        functions.seed(10, 1, "memcpy", 0x1111);
-        functions.seed(11, 1, "memmove", 0x1111);
-        functions.seed(12, 1, "strlen", 0x2222);
-        // A function pointing at a library that does not exist in the libraries table.
-        functions.seed(13, 99, "orphan", 0x3333);
 
         let db = FidDB::new(
             fid_file.clone(),
             handle,
             libraries.clone(),
-            Arc::new(FakeStringsTable),
+            strings.clone(),
             functions.clone(),
             open_for_update,
         )
         .expect("open fid db");
+
+        functions.seed(10, 1, "memcpy", 0x1111);
+        functions.seed(11, 1, "memmove", 0x1111);
+        functions.seed(12, 1, "strlen", 0x2222);
+        // A function pointing at a library that does not exist in the libraries table.
+        functions.seed(13, 99, "orphan", 0x3333);
 
         Fixture { db, fid_file, functions, libraries }
     }
@@ -1230,19 +1474,14 @@ mod tests {
         assert_eq!(library.get_library_family_name(), "libc");
         assert_eq!(f.libraries.get_libraries().unwrap().len(), 2);
 
-        let quad = FakeFunctionRecord {
-            key: 0,
-            library_id: 0,
-            name: String::new(),
-            full_hash: 0x4444,
-            flags: 0,
-        };
+        let quad = FakeHashQuad { full_hash: 0x4444 };
         let created = f
             .db
             .create_new_function(&library, &quad, "printf", 0x401000, "/lib/libc", true)
             .expect("create function");
         assert_eq!(created.get_name(), "printf");
         assert_eq!(created.get_library_id(), library.get_library_id());
+        assert_eq!(created.get_domain_path(), "/lib/libc");
         assert_eq!(f.db.find_full_hash_value_at_or_after(0x4444), Some(0x4444));
     }
 
