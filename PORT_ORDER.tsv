@@ -47,7 +47,7 @@ DONE	trait	3	22	1	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/featur
 DONE	trait	2	15	48	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/RelationsTable.java
 DONE	trait	1	18	9	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidDB.java
 DONE	trait	0	24	4	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FunctionRecord.java
-TODO	trait	0	24	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/DataTreeFlavorHandler.java
+DONE	trait	0	24	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/DataTreeFlavorHandler.java
 TODO	trait	0	22	1	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/main/datatree/ArchiveProvider.java
 TODO	trait	1	13	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/MapEntry.java
 TODO	trait	0	21	75	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/DisassemblerPlugin.java
