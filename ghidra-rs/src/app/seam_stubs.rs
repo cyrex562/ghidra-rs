@@ -398,13 +398,6 @@ pub trait GoToOverrideService: Send + Sync {}
 /// `DebuggerAddressTranslator` members, so no members are needed yet.
 pub trait DebuggerAddressTranslator {}
 
-/// Placeholder for `ghidra.debug.api.modules.MapEntry`, referenced by
-/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
-/// the real class is ported. Java's `MapEntry<?, ?>` wildcard generics are dropped, since this
-/// crate has no generic parameters to substitute yet. `DebuggerStaticMappingService` only ever
-/// passes this type through as a parameter, so no members are needed yet.
-pub trait MapEntry {}
-
 /// Placeholder for `ghidra.debug.api.modules.ModuleMapProposal.ModuleMapEntry`, referenced by
 /// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
 /// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
