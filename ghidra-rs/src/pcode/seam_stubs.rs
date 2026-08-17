@@ -54,6 +54,7 @@ use crate::program::model::address::{
     Address, AddressRange, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
     SpecialAddress,
 };
+use crate::pcode::r#struct::abstract_stmt::AbstractStmt;
 use crate::pcode::r#struct::lval_internal::LValInternal;
 use crate::pcode::r#struct::rval_internal::RValInternal;
 use crate::pcode::r#struct::string_tree::StringTree;
@@ -4919,6 +4920,44 @@ pub trait StructuredSleighContext: Send + Sync {
 
     /// Port of `StructuredSleigh.computeDerefType(RVal addr)`.
     fn compute_deref_type(&self, addr: &dyn RValInternal) -> Box<dyn DataType>;
+
+    /// Port of `ctx.FALL`: the singleton fall-through label, referenced by
+    /// [`AbstractStmt::get_next`](crate::pcode::r#struct::abstract_stmt::AbstractStmt::get_next).
+    fn fall(&self) -> Arc<dyn SleighLabel>;
+
+    /// Port of `ctx.stack.peek()`: the innermost open block, or `None` at the top level.
+    /// Referenced by [`crate::pcode::r#struct::abstract_stmt::register`].
+    fn stack_peek(&self) -> Option<Arc<dyn BlockStmt>>;
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.struct.StructuredSleigh.Label`, an inner
+/// interface of `StructuredSleigh` (distinct from the ASM [`Label`] placeholder above, which
+/// stands in for an unrelated Java type of the same simple name). Referenced by
+/// [`AbstractStmt::generate`](crate::pcode::r#struct::abstract_stmt::AbstractStmt::generate) and
+/// [`AbstractStmt::get_next`](crate::pcode::r#struct::abstract_stmt::AbstractStmt::get_next),
+/// which only pass labels along without calling any of their methods, so this stub carries no
+/// members yet. Its three real implementors (`FreshLabel`, `FallLabel`, `BorrowedLabel`) are
+/// private/nested in `StructuredSleigh.java` and will land, along with `freshOrBorrow`/
+/// `genAnchor`/`ref`/`genGoto`, when that class is ported.
+pub trait SleighLabel: Send + Sync {}
+
+/// Placeholder for the unported Java type `ghidra.pcode.struct.BlockStmt`, referenced by
+/// [`AbstractStmt`](crate::pcode::r#struct::abstract_stmt::AbstractStmt)'s constructor
+/// (`ctx.stack.peek()` yields the enclosing block, and construction adds `this` to its
+/// `children`) and `reparent` (which removes `this` from its old parent's `children`). Java's
+/// `BlockStmt extends AbstractStmt`; the real port should implement both traits on one concrete
+/// type. Minimal: only the members those two `AbstractStmt` operations need.
+pub trait BlockStmt: Send + Sync {
+    /// Port of `children.add(child)`.
+    fn add_child(&self, child: Arc<dyn AbstractStmt>);
+
+    /// Port of `children.remove(child)`.
+    fn remove_child(&self, child: &Arc<dyn AbstractStmt>);
+
+    /// Coerces to `Arc<dyn AbstractStmt>`, mirroring the `BlockStmt extends AbstractStmt` upcast.
+    /// Implementors write `{ self }`; see
+    /// [`RValInternal::as_rval_internal`](crate::pcode::r#struct::rval_internal::RValInternal::as_rval_internal).
+    fn as_abstract_stmt(self: Arc<Self>) -> Arc<dyn AbstractStmt>;
 }
 
 /// Port of `BinExpr.generate`: `"(" lhs " " op " " rhs ")"`.
