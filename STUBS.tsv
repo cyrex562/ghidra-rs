@@ -1114,3 +1114,4 @@ ts	stub_class	referenced_by
 2026-08-17T08:11:09.679296+00:00	OatClassStatusEnum_R_S_T	OatClass
 2026-08-17T08:11:09.679379+00:00	OatClassType	OatClass
 2026-08-17T08:11:09.679475+00:00	OatMethodOffsets	OatClass
+2026-08-17T04:25:00+00:00	BackgroundColorModel	ListingBackgroundColorModel
