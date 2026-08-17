@@ -4429,6 +4429,32 @@ impl From<EmuInvalidSystemCallException> for PcodeExecutionException {
     }
 }
 
+/// Placeholder for the unported Java type `ghidra.pcode.emu.sys.EmuIOException`, referenced by
+/// [`EmuUnixFileDescriptor`](crate::pcode::emu::unix::emu_unix_file_descriptor::EmuUnixFileDescriptor)'s
+/// `seek`, `read`, and `write` methods, which raise it on a simulated I/O error.
+///
+/// Java's class extends `EmuInvalidSystemCallException` (see above), whose own base,
+/// `EmuSystemException` / `PcodeExecutionException`, is not yet ported. This carries only the
+/// message Java's `EmuIOException(String)` constructor sets; the `EmuIOException(String,
+/// Throwable)` overload's cause is dropped, matching this crate's other exception placeholders.
+/// Replace with the real port once the `Emu*Exception` hierarchy lands.
+#[derive(Debug, Clone)]
+pub struct EmuIOException {
+    message: String,
+}
+
+impl EmuIOException {
+    /// Port of `EmuIOException(String message)`.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into() }
+    }
+
+    /// The detail message, as Java's `Throwable.getMessage()` would report it.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
 /// Placeholder for the unported Java type `ghidra.pcode.emu.sys.UseropEmuSyscallDefinition`,
 /// referenced by
 /// [`AnnotatedEmuSyscallUseropLibrary`](crate::pcode::emu::sys::annotated_emu_syscall_userop_library::AnnotatedEmuSyscallUseropLibrary).
