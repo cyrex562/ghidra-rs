@@ -126,12 +126,6 @@ pub trait ListingMarginProvider {}
 /// as a parameter/return value, so no members are needed yet.
 pub trait ListingOverviewProvider: Send + Sync {}
 
-/// Placeholder for `ghidra.debug.api.platform.DebuggerPlatformMapper`, referenced by
-/// [`DebuggerPlatformService`](crate::app::services::DebuggerPlatformService) before the real
-/// class is ported. `DebuggerPlatformService` only ever passes this type through as a
-/// parameter/return value, so no members are needed yet.
-pub trait DebuggerPlatformMapper {}
-
 /// Placeholder for `ghidra.debug.api.target.Target`, referenced by
 /// [`DebuggerTargetService`](crate::app::services::DebuggerTargetService),
 /// [`DebuggerTraceManagerService`](crate::app::services::DebuggerTraceManagerService), and
