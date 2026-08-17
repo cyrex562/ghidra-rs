@@ -1105,3 +1105,12 @@ ts	stub_class	referenced_by
 2026-08-17T04:10:00.000000+00:00	ArtHeader	OatBundle
 2026-08-17T04:10:00.000000+00:00	OatHeader	OatBundle
 2026-08-17T04:10:00.000000+00:00	VdexHeader	OatBundle
+2026-08-17T08:11:09.678548+00:00	OatClassStatusEnum_Invalid	OatClass
+2026-08-17T08:11:09.678696+00:00	OatClassStatusEnum_K	OatClass
+2026-08-17T08:11:09.678824+00:00	OatClassStatusEnum_L_M_N	OatClass
+2026-08-17T08:11:09.678942+00:00	OatClassStatusEnum_O	OatClass
+2026-08-17T08:11:09.679059+00:00	OatClassStatusEnum_O_M2	OatClass
+2026-08-17T08:11:09.679178+00:00	OatClassStatusEnum_P_Q	OatClass
+2026-08-17T08:11:09.679296+00:00	OatClassStatusEnum_R_S_T	OatClass
+2026-08-17T08:11:09.679379+00:00	OatClassType	OatClass
+2026-08-17T08:11:09.679475+00:00	OatMethodOffsets	OatClass
