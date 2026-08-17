@@ -1295,3 +1295,27 @@ pub struct ResultsState;
 /// receives one to pass along to the implementor's own bookkeeping; the real port carries the
 /// wrapped `PcodeOp` and its input values.
 pub struct VarnodeOperation;
+
+/// Placeholder for `ghidra.util.task.SwingUpdateManager`, referenced by
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
+/// is ported.
+///
+/// The real class is a timer that coalesces a burst of requests into a single Swing-thread
+/// callback, bounded by a minimum and a maximum delay. The callback itself is supplied at
+/// construction; here it stays with the client (see
+/// [`DecompilePlugin::delayed_location_update`](crate::app::plugin::core::decompile::DecompilePlugin::delayed_location_update)),
+/// since a Rust closure capturing the client would form a reference cycle with it. Only the three
+/// scheduling calls are modeled, all defaulting to inert no-ops (an unscheduled manager never
+/// fires).
+pub trait SwingUpdateManager: Send + Sync {
+    /// Mirrors `AbstractSwingUpdateManager.update()`: run the callback immediately if it has not
+    /// run recently, otherwise schedule it.
+    fn update(&self) {}
+
+    /// Mirrors `AbstractSwingUpdateManager.updateLater()`: always schedule the callback, letting
+    /// further requests inside the delay window coalesce into the same run.
+    fn update_later(&self) {}
+
+    /// Mirrors `AbstractSwingUpdateManager.updateNow()`: run the callback immediately.
+    fn update_now(&self) {}
+}
