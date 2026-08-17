@@ -47,14 +47,14 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::app::seam_stubs::{
-    DebuggerAddressTranslator, MapEntry, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
+    DebuggerAddressTranslator, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
     RegionMapProposal, SectionMapEntry, SectionMapProposal,
 };
 use crate::trace::model::trace_location::TraceLocation;
 use crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException;
 use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::modules::trace_section::TraceSection;
-use crate::debug::api::modules::DebuggerStaticMappingChangeListener;
+use crate::debug::api::modules::{DebuggerStaticMappingChangeListener, MapEntry};
 use crate::framework::model::DomainFile;
 use crate::program::model::address::{Address, AddressSetView, AddressSpace};
 use crate::program::model::listing::Program;
@@ -445,7 +445,38 @@ mod tests {
     }
 
     struct MockMapEntry;
-    impl MapEntry for MockMapEntry {}
+    impl MapEntry for MockMapEntry {
+        fn get_from_trace(&self) -> &dyn Trace {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_object(&self) -> std::boxed::Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_range(&self) -> &crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_lifespan(&self) -> crate::trace::model::lifespan::Lifespan {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_trace_location(&self) -> std::boxed::Box<dyn crate::trace::model::trace_location::TraceLocation> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_program(&self) -> &dyn crate::program::model::listing::Program {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_object(&self) -> std::boxed::Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_range(&self) -> &crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_program_location(&self) -> &dyn crate::program::util::ProgramLocation {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_mapping_length(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockModuleMapEntry;
     impl ModuleMapEntry for MockModuleMapEntry {}
