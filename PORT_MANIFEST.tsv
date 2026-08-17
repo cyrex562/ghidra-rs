@@ -88,7 +88,7 @@ orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/Monit
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/progress/ProgressListener.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api progress 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/target/ActionName.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api target 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/target/Target.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api target 
-orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/target/TargetPublicationListener.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api target 
+orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/target/TargetPublicationListener.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api target 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracemgr/DebuggerCoordinates.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracemgr 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/LaunchParameter.java	DONE	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 
 orig_src/Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteAsyncResult.java	TODO	orig_src Ghidra Debug Debugger-api src main java ghidra debug api tracermi 

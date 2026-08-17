@@ -4,7 +4,8 @@
 //! should publish them using this service. The Java `@ServiceInfo` annotation (default provider
 //! `DebuggerTargetServicePlugin`) has no Rust equivalent and is omitted.
 
-use crate::app::seam_stubs::{Target, TargetPublicationListener};
+use crate::app::seam_stubs::Target;
+use crate::debug::api::target::TargetPublicationListener;
 use crate::trace::model::trace::Trace;
 
 /// A service for tracking a set of published targets.
@@ -46,7 +47,10 @@ mod tests {
     }
 
     struct MockListener;
-    impl TargetPublicationListener for MockListener {}
+    impl TargetPublicationListener for MockListener {
+        fn target_published(&self, _target: &dyn Target) {}
+        fn target_withdrawn(&self, _target: &dyn Target) {}
+    }
 
     struct MockDebuggerTargetService {
         targets: Vec<()>,
