@@ -34,8 +34,9 @@
 use std::io;
 
 use crate::feature::bsim::query::b_sim_server_info::BSimServerInfo;
+use crate::feature::bsim::query::function_database::FunctionDatabase;
 use crate::feature::seam_stubs::{
-    ElasticDatabase, FunctionDatabase, H2FileFunctionDatabase, PostgresFunctionDatabase,
+    ElasticDatabase, H2FileFunctionDatabase, PostgresFunctionDatabase,
 };
 use crate::framework::protocol::ghidra::{GhidraURL, PROTOCOL};
 

@@ -35,7 +35,7 @@
 use std::fmt;
 use std::io;
 
-use crate::feature::seam_stubs::FunctionDatabase;
+use crate::feature::bsim::query::function_database::FunctionDatabase;
 use crate::util::system_utilities::SystemUtilities;
 
 /// Default port used for a [`DBType::Postgres`] server.
