@@ -3,8 +3,12 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::app::util::bin::binary_reader::BinaryReader;
 use crate::app::util::opinion::unix_aout_program_loader::{DOT_BSS, DOT_DATA, DOT_TEXT};
+use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
 use crate::util::msg::Msg;
 use crate::format::dwarf::attribs::dwarf_attribute_def::DWARFAttributeDef;
 use crate::format::dwarf::attribs::dwarf_form::DWARFForm;
@@ -6140,6 +6144,198 @@ impl DebugDirectoryParser {
 
     pub fn get_debug_code_view(&self) -> Option<&DebugCodeViewEntry> {
         self.code_view_debug.as_ref()
+    }
+}
+
+/// A minimal [`BinaryReader`] backed by a [`ByteProvider`], filling the same crate-wide gap (no
+/// canonical production `BinaryReader` implementation exists yet) that
+/// [`JavaLoader`](crate::app::util::opinion::java_loader::JavaLoader)'s local
+/// `JavaClassBinaryReader` already fills for its own caller. [`SeparateDebugHeader`] needs its
+/// own copy to hand a real `&dyn BinaryReader` to [`DebugDirectoryParser::new`].
+struct PeByteProviderReader {
+    provider: Rc<RefCell<dyn ByteProvider>>,
+    is_little_endian: bool,
+    current_index: u64,
+}
+
+impl PeByteProviderReader {
+    fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+        PeByteProviderReader { provider, is_little_endian, current_index: 0 }
+    }
+}
+
+impl BinaryReader for PeByteProviderReader {
+    fn length(&self) -> std::io::Result<u64> {
+        self.provider.borrow_mut().length()
+    }
+
+    fn is_valid_index(&self, index: u64) -> bool {
+        self.provider.borrow_mut().is_valid_index(index)
+    }
+
+    fn get_pointer_index(&self) -> u64 {
+        self.current_index
+    }
+
+    fn set_pointer_index(&mut self, index: u64) -> u64 {
+        let previous = self.current_index;
+        self.current_index = index;
+        previous
+    }
+
+    fn is_little_endian(&self) -> bool {
+        self.is_little_endian
+    }
+
+    fn set_little_endian(&mut self, is_little_endian: bool) {
+        self.is_little_endian = is_little_endian;
+    }
+
+    fn read_byte(&self, index: u64) -> std::io::Result<u8> {
+        self.provider.borrow_mut().read_byte(index)
+    }
+
+    fn read_byte_array(&self, index: u64, n_elements: usize) -> std::io::Result<Vec<u8>> {
+        self.provider.borrow_mut().read_bytes(index, n_elements)
+    }
+
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        Rc::clone(&self.provider)
+    }
+
+    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        Box::new(PeByteProviderReader {
+            provider: Rc::clone(&self.provider),
+            is_little_endian: self.is_little_endian,
+            current_index: new_index,
+        })
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.SeparateDebugHeader`, referenced by
+/// [`DbgLoader`](crate::app::util::opinion::dbg_loader::DbgLoader) before the real class is
+/// ported. `SeparateDebugHeader` is a concrete Java class, so this is modeled as a concrete
+/// struct rather than a trait. Reads exactly the fixed-size `IMAGE_SEPARATE_DEBUG_HEADER` fields
+/// (matching the Java constructor's sequential reads) and computes the byte offset of the debug
+/// directory precisely enough to construct a real [`DebugDirectoryParser`] -- Java's per-section
+/// array (`SectionHeader.readSectionHeader`) and the discarded exported-name string list are both
+/// skipped, since neither this type nor `DebugDirectoryParser::new` (which is given the debug
+/// directory's byte offset directly, not the reader's cursor) reads either back; only the section
+/// *count* affects that offset (`numberOfSections * IMAGE_SIZEOF_SECTION_HEADER`), so it is
+/// applied arithmetically instead of by actually parsing per-section headers with the still-
+/// unported PE `SectionHeader`.
+pub struct SeparateDebugHeader {
+    pub signature: i16,
+    pub flags: i16,
+    pub machine: i16,
+    pub characteristics: i16,
+    pub time_date_stamp: i32,
+    pub check_sum: i32,
+    pub image_base: i32,
+    pub size_of_image: i32,
+    pub number_of_sections: i32,
+    pub exported_names_size: i32,
+    pub debug_directory_size: i32,
+    pub section_alignment: i32,
+    pub reserved: [i32; 2],
+    parser: Option<DebugDirectoryParser>,
+}
+
+impl SeparateDebugHeader {
+    /// `SeparateDebugHeader.IMAGE_SEPARATE_DEBUG_SIGNATURE` ("ID").
+    pub const IMAGE_SEPARATE_DEBUG_SIGNATURE: i16 = 0x4944;
+    /// `SeparateDebugHeader.IMAGE_SEPARATE_DEBUG_SIGNATURE_MAC` ("DI").
+    pub const IMAGE_SEPARATE_DEBUG_SIGNATURE_MAC: i16 = 0x4449;
+
+    /// The on-disk size of a PE `IMAGE_SECTION_HEADER`, i.e.
+    /// `SectionHeader.IMAGE_SIZEOF_SECTION_HEADER`.
+    const IMAGE_SIZEOF_SECTION_HEADER: u64 = 40;
+
+    /// Port of `SeparateDebugHeader(ByteProvider)`.
+    pub fn new(provider: &Rc<RefCell<dyn ByteProvider>>) -> std::io::Result<Self> {
+        let mut reader = PeByteProviderReader::new(Rc::clone(provider), true);
+        reader.set_pointer_index(0);
+
+        let signature = reader.read_next_short()?;
+        if signature != Self::IMAGE_SEPARATE_DEBUG_SIGNATURE {
+            return Ok(SeparateDebugHeader {
+                signature,
+                flags: 0,
+                machine: 0,
+                characteristics: 0,
+                time_date_stamp: 0,
+                check_sum: 0,
+                image_base: 0,
+                size_of_image: 0,
+                number_of_sections: 0,
+                exported_names_size: 0,
+                debug_directory_size: 0,
+                section_alignment: 0,
+                reserved: [0, 0],
+                parser: None,
+            });
+        }
+
+        let flags = reader.read_next_short()?;
+        let machine = reader.read_next_short()?;
+        let characteristics = reader.read_next_short()?;
+        let time_date_stamp = reader.read_next_int()?;
+        let check_sum = reader.read_next_int()?;
+        let image_base = reader.read_next_int()?;
+        let size_of_image = reader.read_next_int()?;
+        let number_of_sections = reader.read_next_int()?;
+        let exported_names_size = reader.read_next_int()?;
+        let debug_directory_size = reader.read_next_int()?;
+        let section_alignment = reader.read_next_int()?;
+        let reserved_vec = reader.read_next_int_array(2)?;
+        let reserved = [reserved_vec[0], reserved_vec[1]];
+
+        let mut header = SeparateDebugHeader {
+            signature,
+            flags,
+            machine,
+            characteristics,
+            time_date_stamp,
+            check_sum,
+            image_base,
+            size_of_image,
+            number_of_sections,
+            exported_names_size,
+            debug_directory_size,
+            section_alignment,
+            reserved,
+            parser: None,
+        };
+
+        if number_of_sections > NT_HEADER_MAX_SANE_COUNT {
+            Msg::error(
+                "SeparateDebugHeader",
+                &format!("Number of sections {number_of_sections}"),
+            );
+            return Ok(header);
+        }
+
+        let sections_end = reader.get_pointer_index()
+            + (number_of_sections.max(0) as u64) * Self::IMAGE_SIZEOF_SECTION_HEADER;
+        let ptr = sections_end + (exported_names_size.max(0) as u64);
+
+        header.parser = Some(DebugDirectoryParser::new(
+            &reader,
+            ptr,
+            debug_directory_size,
+            size_of_image as i64,
+        )?);
+        Ok(header)
+    }
+
+    /// `SeparateDebugHeader.getMachineName()`.
+    pub fn machine_name(&self) -> String {
+        crate::format::pe::machine_name::get_name_i16(self.machine)
+    }
+
+    /// `SeparateDebugHeader.getParser()`.
+    pub fn get_parser(&self) -> Option<&DebugDirectoryParser> {
+        self.parser.as_ref()
     }
 }
 

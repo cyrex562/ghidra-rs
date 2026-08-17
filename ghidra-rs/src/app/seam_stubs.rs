@@ -814,6 +814,114 @@ pub mod elf_program_builder {
     }
 }
 
+/// Placeholder for `ghidra.app.util.bin.RandomAccessByteProvider`, referenced by
+/// [`DbgLoader::load`](crate::app::util::opinion::dbg_loader::DbgLoader::load) before the real
+/// class is ported. Java's version wraps a `GhidraRandomAccessFile` over an arbitrary local file
+/// (opened `"r"`, per the single-`File`-argument constructor `DbgLoader` uses); this stub models
+/// exactly that read path over a real [`std::fs::File`] -- unlike the auto-generated stub shape,
+/// it is backed by the crate's real
+/// [`ByteProvider`](crate::filesystem::ghidra::g_binary_reader::ByteProvider) trait (rather than a
+/// disconnected placeholder trait), so it can actually back a `BinaryReader` once one exists over
+/// it. `getName`/`getAbsolutePath`/`getInputStream`/`toString`/`setFsrl` are not modeled: nothing
+/// in the currently-ported tree reads them.
+pub struct RandomAccessByteProvider {
+    file: std::fs::File,
+    path: std::path::PathBuf,
+}
+
+impl RandomAccessByteProvider {
+    /// Port of `RandomAccessByteProvider(File)`, which delegates to the `(File, "r")` constructor.
+    pub fn new(path: std::path::PathBuf) -> std::io::Result<Self> {
+        let file = std::fs::File::open(&path)?;
+        Ok(RandomAccessByteProvider { file, path })
+    }
+
+    /// Port of `RandomAccessByteProvider.close()`. Rust's `File` has no separate close step (the
+    /// descriptor is released when `self` drops), so this only exists so callers can mirror
+    /// Java's explicit `try`/`finally` call.
+    pub fn close(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+impl crate::filesystem::ghidra::g_binary_reader::ByteProvider for RandomAccessByteProvider {
+    fn length(&mut self) -> std::io::Result<u64> {
+        Ok(self.file.metadata()?.len())
+    }
+
+    fn is_valid_index(&mut self, index: u64) -> bool {
+        self.length().map(|len| index < len).unwrap_or(false)
+    }
+
+    fn read_byte(&mut self, index: u64) -> std::io::Result<u8> {
+        use std::io::{Read, Seek, SeekFrom};
+        self.file.seek(SeekFrom::Start(index))?;
+        let mut buf = [0u8; 1];
+        self.file.read_exact(&mut buf)?;
+        Ok(buf[0])
+    }
+
+    fn read_bytes(&mut self, index: u64, length: usize) -> std::io::Result<Vec<u8>> {
+        use std::io::{Read, Seek, SeekFrom};
+        self.file.seek(SeekFrom::Start(index))?;
+        let mut buf = vec![0u8; length];
+        self.file.read_exact(&mut buf)?;
+        Ok(buf)
+    }
+
+    fn write_byte(&mut self, index: u64, value: u8) -> std::io::Result<()> {
+        use std::io::{Seek, SeekFrom, Write};
+        self.file.seek(SeekFrom::Start(index))?;
+        self.file.write_all(&[value])
+    }
+
+    fn write_bytes(&mut self, index: u64, values: &[u8]) -> std::io::Result<()> {
+        use std::io::{Seek, SeekFrom, Write};
+        self.file.seek(SeekFrom::Start(index))?;
+        self.file.write_all(values)
+    }
+
+    fn get_file(&self) -> std::option::Option<std::path::PathBuf> {
+        Some(self.path.clone())
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.AbstractPeDebugLoader`, the (package-private,
+/// unported) superclass
+/// [`DbgLoader`](crate::app::util::opinion::dbg_loader::DbgLoader) extends. Only `processDebug` is
+/// modeled -- the sole inherited method `DbgLoader.load` calls -- as a free function rather than a
+/// trait, the same way [`elf_program_builder`] stands in for `ElfProgramBuilder`.
+pub mod abstract_pe_debug_loader {
+    use super::Option;
+    use crate::format::seam_stubs::DebugDirectoryParser;
+    use crate::program::model::listing::Program;
+    use crate::util::task::TaskMonitor;
+
+    /// Port of `AbstractPeDebugLoader.processDebug(DebugDirectoryParser, NTHeader,
+    /// Map<SectionHeader, Address>, Program, List<Option>, TaskMonitor)`.
+    ///
+    /// Java's caller (`DbgLoader.load`) always builds the `NTHeader`/`sectionToAddress` argument
+    /// pair first -- by reopening the parent program's backing file and parsing it as a
+    /// `PortableExecutable`, regardless of whether `parser` ends up null -- and only this method
+    /// itself short-circuits on a null `parser`. Since that parsing (`PortableExecutable`,
+    /// `NTHeader`, `FileHeader`, PE `SectionHeader`, plus the misc/fixup/CodeView/COFF debug-info
+    /// application this method performs once a parser is present) is all one large unported
+    /// subsystem with no way to produce a real `NTHeader`/`SectionHeader` tree yet, both halves
+    /// are bundled here as a single placeholder that panics unconditionally, the same way
+    /// [`elf_program_builder::load_elf`] stands in for `ElfProgramBuilder.loadElf` -- `nt_header`
+    /// and `section_to_address` are dropped from the signature entirely since nothing can build
+    /// them.
+    pub fn process_debug(
+        parser: std::option::Option<&DebugDirectoryParser>,
+        program: &mut dyn Program,
+        options: &[Box<dyn Option>],
+        monitor: &dyn TaskMonitor,
+    ) {
+        let _ = (parser, program, options, monitor);
+        unimplemented!("abstract_pe_debug_loader::process_debug placeholder not overridden")
+    }
+}
+
 /// Placeholder for `ghidra.program.util.ExternalSymbolResolver`, referenced by
 /// [`ElfLoader::post_load_program_fixups`](crate::app::util::opinion::elf_loader::ElfLoader::post_load_program_fixups)
 /// before the real class is ported. Java's version is a concrete `Closeable` class that resolves
