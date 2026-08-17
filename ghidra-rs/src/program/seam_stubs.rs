@@ -2536,3 +2536,8 @@ impl SpecExtension {
     pub fn register_options(_program: &dyn crate::program::model::listing::Program) {}
 }
 
+/// Placeholder for `ghidra.program.model.data.Type`, referenced by
+/// [`BundleStatus`](crate::app::seam_stubs::BundleStatus) before the real class is ported.
+/// `Type` is just a marker interface in Java, so no methods are defined here.
+pub trait Type: Send + Sync {}
+
