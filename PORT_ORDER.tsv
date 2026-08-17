@@ -16,7 +16,7 @@ DONE	trait	2	7	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcod
 DONE	trait	1	7	36	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/AbstractEmuUnixSyscallUseropLibrary.java
 DONE	trait	5	5	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LValInternal.java
 DONE	trait	3	19	6	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/RValInternal.java
-TODO	trait	2	12	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AbstractStmt.java
+DONE	trait	2	12	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AbstractStmt.java
 TODO	trait	1	6	4	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AssignStmt.java
 TODO	trait	1	8	96	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchSetDB.java
 TODO	trait	4	9	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleHostListener.java
