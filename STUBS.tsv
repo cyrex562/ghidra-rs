@@ -1082,3 +1082,6 @@ ts	stub_class	referenced_by
 2026-08-17T06:20:59.504896+00:00	UnsupportedScriptProvider	GhidraScriptUtil
 2026-08-17T06:20:59.509871+00:00	ClassSearcher	GhidraScriptUtil
 2026-08-17T06:20:59.513863+00:00	FileUtilities	GhidraScriptUtil
+2026-08-17T06:51:15.648541+00:00	ObjcState	ObjcMethod
+2026-08-17T06:51:15.648541+00:00	ObjcTypeMetadataStructure	ObjcMethod
+2026-08-17T06:51:15.648541+00:00	ObjcUtils	ObjcMethod
