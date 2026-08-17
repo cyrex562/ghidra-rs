@@ -6431,3 +6431,46 @@ impl crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntr
     }
 }
 
+/// Placeholder for the unported Java type `ObjcState`, referenced by `ObjcMethod`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ObjcState: Send + Sync {
+    fn close(&self);
+}
+
+/// Placeholder for the unported Java type `ObjcTypeMetadataStructure`, referenced by `ObjcMethod`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ObjcTypeMetadataStructure: Send + Sync {
+    fn get_program(&self) -> Box<dyn crate::program::model::listing::program::Program>;
+    fn get_base(&self) -> i64;
+    fn get_state(&self) -> Box<dyn ObjcState>;
+    fn get_pointer_size(&self) -> i32;
+    fn is32bit(&self) -> bool;
+    fn is_arm(&self) -> bool;
+    fn apply_to(&self, namespace: &dyn crate::program::model::symbol::namespace::Namespace, monitor: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()>;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `ObjcUtils`, referenced by `ObjcMethod`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ObjcUtils: Send + Sync {
+    fn read_next_index(&self, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader, is32bit: bool) -> std::io::Result<i64>;
+    fn dereference_ascii_string(&self, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader, is32bit: bool) -> std::io::Result<String>;
+    fn is_thumb(&self, program: &dyn crate::program::model::listing::program::Program, address: i64) -> bool;
+    fn set_thumb_bit(&self, program: &dyn crate::program::model::listing::program::Program, state: &dyn ObjcState, address: &crate::program::model::address::Address);
+    fn to_address(&self, program: &dyn crate::program::model::listing::program::Program, offset: i64) -> crate::program::model::address::Address;
+    fn create_data(&self, program: &dyn crate::program::model::listing::program::Program, dt: &dyn crate::program::model::data::data_type::DataType, address: &crate::program::model::address::Address) -> std::io::Result<()>;
+    fn create_string(&self, program: &dyn crate::program::model::listing::program::Program, address: &crate::program::model::address::Address) -> String;
+    fn get_class_namespace(&self, program: &dyn crate::program::model::listing::program::Program, parent_namespace: &dyn crate::program::model::symbol::Namespace, namespace_name: &str) -> std::io::Result<Box<dyn crate::program::model::symbol::Namespace>>;
+    fn create_symbol(&self, program: &dyn crate::program::model::listing::program::Program, parent_namespace: &dyn crate::program::model::symbol::Namespace, symbol_name: &str, symbol_address: &crate::program::model::address::Address) -> std::io::Result<()>;
+    fn create_namespace(&self, program: &dyn crate::program::model::listing::program::Program, namespace_path: &[String]) -> std::io::Result<Box<dyn crate::program::model::symbol::Namespace>>;
+    fn create_methods(&self, program: &dyn crate::program::model::listing::program::Program, state: &dyn ObjcState, log: &dyn MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
+    fn fixup_references(&self, section_names: Vec<String>, program: &dyn crate::program::model::listing::program::Program, monitor: &dyn crate::util::task::TaskMonitor);
+    fn set_blocks_read_only(&self, memory: &dyn crate::program::model::mem::Memory, block_names: Vec<String>);
+    fn get_objc_blocks(&self, section: &str, program: &dyn crate::program::model::listing::program::Program) -> Vec<Box<dyn crate::program::model::mem::MemoryBlock>>;
+    fn is_objc(&self, program: &dyn crate::program::model::listing::program::Program) -> bool;
+    fn strip_class_prefix(&self, name: &str) -> String;
+}
+
