@@ -6431,20 +6431,13 @@ impl crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntr
     }
 }
 
-/// Placeholder for the unported Java type `ObjcState`, referenced by `ObjcMethod`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait ObjcState: Send + Sync {
-    fn close(&self);
-}
-
 /// Placeholder for the unported Java type `ObjcTypeMetadataStructure`, referenced by `ObjcMethod`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait ObjcTypeMetadataStructure: Send + Sync {
     fn get_program(&self) -> Box<dyn crate::program::model::listing::program::Program>;
     fn get_base(&self) -> i64;
-    fn get_state(&self) -> Box<dyn ObjcState>;
+    fn get_state(&self) -> &crate::format::objc::objc_state::ObjcState;
     fn get_pointer_size(&self) -> i32;
     fn is32bit(&self) -> bool;
     fn is_arm(&self) -> bool;
@@ -6459,18 +6452,93 @@ pub trait ObjcUtils: Send + Sync {
     fn read_next_index(&self, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader, is32bit: bool) -> std::io::Result<i64>;
     fn dereference_ascii_string(&self, reader: &dyn crate::app::util::bin::binary_reader::BinaryReader, is32bit: bool) -> std::io::Result<String>;
     fn is_thumb(&self, program: &dyn crate::program::model::listing::program::Program, address: i64) -> bool;
-    fn set_thumb_bit(&self, program: &dyn crate::program::model::listing::program::Program, state: &dyn ObjcState, address: &crate::program::model::address::Address);
+    fn set_thumb_bit(&self, program: &dyn crate::program::model::listing::program::Program, state: &crate::format::objc::objc_state::ObjcState, address: &crate::program::model::address::Address);
     fn to_address(&self, program: &dyn crate::program::model::listing::program::Program, offset: i64) -> crate::program::model::address::Address;
     fn create_data(&self, program: &dyn crate::program::model::listing::program::Program, dt: &dyn crate::program::model::data::data_type::DataType, address: &crate::program::model::address::Address) -> std::io::Result<()>;
     fn create_string(&self, program: &dyn crate::program::model::listing::program::Program, address: &crate::program::model::address::Address) -> String;
     fn get_class_namespace(&self, program: &dyn crate::program::model::listing::program::Program, parent_namespace: &dyn crate::program::model::symbol::Namespace, namespace_name: &str) -> std::io::Result<Box<dyn crate::program::model::symbol::Namespace>>;
     fn create_symbol(&self, program: &dyn crate::program::model::listing::program::Program, parent_namespace: &dyn crate::program::model::symbol::Namespace, symbol_name: &str, symbol_address: &crate::program::model::address::Address) -> std::io::Result<()>;
     fn create_namespace(&self, program: &dyn crate::program::model::listing::program::Program, namespace_path: &[String]) -> std::io::Result<Box<dyn crate::program::model::symbol::Namespace>>;
-    fn create_methods(&self, program: &dyn crate::program::model::listing::program::Program, state: &dyn ObjcState, log: &dyn MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
+    fn create_methods(&self, program: &dyn crate::program::model::listing::program::Program, state: &crate::format::objc::objc_state::ObjcState, log: &dyn MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
     fn fixup_references(&self, section_names: Vec<String>, program: &dyn crate::program::model::listing::program::Program, monitor: &dyn crate::util::task::TaskMonitor);
     fn set_blocks_read_only(&self, memory: &dyn crate::program::model::mem::Memory, block_names: Vec<String>);
     fn get_objc_blocks(&self, section: &str, program: &dyn crate::program::model::listing::program::Program) -> Vec<Box<dyn crate::program::model::mem::MemoryBlock>>;
     fn is_objc(&self, program: &dyn crate::program::model::listing::program::Program) -> bool;
     fn strip_class_prefix(&self, name: &str) -> String;
+}
+
+/// Placeholder for the unported Java type `LibObjcOptimization`, referenced by `ObjcState`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait LibObjcOptimization: Send + Sync {
+    fn get_addr(&self) -> i64;
+    fn get_relative_selector_base_address_offset(&self) -> i64;
+    fn markup(&self, program: &dyn crate::program::model::listing::program::Program, space: &crate::program::model::address::AddressSpace, log: &dyn MessageLog, monitor: &dyn crate::util::task::TaskMonitor);
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
+/// Placeholder for the unported Java type `Objc1TypeEncodings`, referenced by `ObjcState`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait Objc1TypeEncodings: Send + Sync {
+    fn to_string(&self) -> String;
+    fn process_method_signature(&self, program: &dyn crate::program::model::listing::program::Program, method_address: &crate::program::model::address::Address, mangled_signature: &str, method_type: &crate::format::objc::objc_method_type::ObjcMethodType);
+    fn to_function_signature(&self, method_name: &str, mangled_signature: &str) -> Box<dyn FunctionSignature>;
+    fn process_instance_variable_signature(&self, program: &dyn crate::program::model::listing::program::Program, instance_variable_address: &crate::program::model::address::Address, mangled_type: &str, instance_variable_size: i32);
+}
+
+/// Placeholder for the unported Java type `Objc2Class`, referenced by `ObjcState`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait Objc2Class: Send + Sync {
+    fn equals(&self, that: &dyn std::any::Any) -> bool;
+    fn hash_code(&self) -> i32;
+    fn get_isa(&self) -> Box<dyn Objc2Class>;
+    fn get_super_class(&self) -> Box<dyn Objc2Class>;
+    fn get_cache(&self) -> Box<dyn Objc2Cache>;
+    fn get_v_table(&self) -> Box<dyn Objc2Implementation>;
+    fn get_data(&self) -> Box<dyn Objc2ClassRW>;
+    fn get_index(&self) -> i64;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+    fn apply_to(&self, namespace: &dyn crate::program::model::symbol::Namespace, monitor: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()>;
+}
+
+/// Placeholder for the unported Java type `Objc2InstanceVariable`, referenced by `ObjcState`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait Objc2InstanceVariable: Send + Sync {
+    fn get_offset(&self) -> i64;
+    fn get_name(&self) -> String;
+    fn get_type(&self) -> String;
+    fn get_alignment(&self) -> i32;
+    fn get_size(&self) -> i32;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+    fn apply_to(&self, namespace: &dyn crate::program::model::symbol::Namespace, monitor: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()>;
+}
+
+/// Placeholder for the unported Java type `FunctionSignature`, referenced by `Objc1TypeEncodings`.
+pub trait FunctionSignature: Send + Sync {
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `Objc2Cache`, referenced by `Objc2Class`.
+pub trait Objc2Cache: Send + Sync {
+    fn equals(&self, that: &dyn std::any::Any) -> bool;
+    fn hash_code(&self) -> i32;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
+/// Placeholder for the unported Java type `Objc2Implementation`, referenced by `Objc2Class`.
+pub trait Objc2Implementation: Send + Sync {
+    fn equals(&self, that: &dyn std::any::Any) -> bool;
+    fn hash_code(&self) -> i32;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
+}
+
+/// Placeholder for the unported Java type `Objc2ClassRW`, referenced by `Objc2Class`.
+pub trait Objc2ClassRW: Send + Sync {
+    fn equals(&self, that: &dyn std::any::Any) -> bool;
+    fn hash_code(&self) -> i32;
+    fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
 

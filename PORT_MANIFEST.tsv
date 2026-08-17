@@ -8018,7 +8018,7 @@ orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/ob
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethod.java	DONE	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethodList.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethodType.java	DONE	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
-orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcState.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
+orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcState.java	DONE	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcTypeMetadataStructure.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcUtils.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc 
 orig_src/Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/objc1/Objc1Category.java	TODO	orig_src Ghidra Features Objective-C src main java ghidra app util bin format objc objc1 
