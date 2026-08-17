@@ -14,7 +14,7 @@ DONE	trait	3	10	2	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pco
 DONE	trait	3	11	3	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileSystem.java
 DONE	trait	2	7	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/DefaultEmuUnixFileHandle.java
 DONE	trait	1	7	36	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/AbstractEmuUnixSyscallUseropLibrary.java
-TODO	trait	5	5	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LValInternal.java
+DONE	trait	5	5	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LValInternal.java
 TODO	trait	3	19	6	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/RValInternal.java
 TODO	trait	2	12	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AbstractStmt.java
 TODO	trait	1	6	4	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AssignStmt.java
