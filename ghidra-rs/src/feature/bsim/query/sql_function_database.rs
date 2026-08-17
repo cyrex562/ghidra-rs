@@ -74,7 +74,7 @@ mod tests {
 
         fn query(
             &self,
-            _query: &dyn crate::feature::seam_stubs::BSimQuery,
+            _query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
         ) -> Option<Box<dyn crate::feature::bsim::query::protocol::QueryResponseRecord>> {
             None
         }

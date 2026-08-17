@@ -24,5 +24,5 @@ pub use decompile_function_task::DecompileFunctionTask;
 pub use gen_signatures::{CallRecord, GenSignatures};
 pub use lsh_exception::LshException;
 pub use minimal_error_logger::MinimalErrorLogger;
-pub use protocol::{AdjustVectorIndex, InsertRequest, PasswordChange, QueryResponseRecord, QueryResponseRecordBase};
+pub use protocol::{AdjustVectorIndex, BSimQuery, BSimQueryBase, InsertRequest, PasswordChange, QueryResponseRecord, QueryResponseRecordBase};
 pub use sql_function_database::SQLFunctionDatabase;
