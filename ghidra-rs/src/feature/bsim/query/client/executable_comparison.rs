@@ -7,9 +7,8 @@ use std::sync::Arc;
 use crate::feature::bsim::query::client::ScoreCaching;
 use crate::feature::bsim::query::description::{DatabaseInformation, DescriptionManager};
 use crate::feature::bsim::query::LshException;
-use crate::feature::seam_stubs::{
-    ExecutableRecord, ExecutableScorer, FunctionDatabase, VectorResult,
-};
+use crate::feature::bsim::query::function_database::FunctionDatabase;
+use crate::feature::seam_stubs::{ExecutableRecord, ExecutableScorer, VectorResult};
 use crate::generic::seam_stubs::LSHVectorFactory;
 use crate::util::exception::CancelledException;
 use crate::util::task::{DummyMonitor, TaskMonitor};
@@ -536,7 +535,7 @@ impl ExecutableComparison {
 
     /// Java: `new LSHException(database.getLastError().message)`.
     fn last_database_error(&self) -> LshException {
-        LshException::new(self.database.get_last_error().message())
+        LshException::new(self.database.get_last_error().message)
     }
 }
 
@@ -566,7 +565,7 @@ fn pull_connection_info(
     }
     let info = database
         .query_info()
-        .ok_or_else(|| LshException::new(database.get_last_error().message()))?;
+        .ok_or_else(|| LshException::new(database.get_last_error().message))?;
     Ok((info, database.get_lsh_vector_factory()))
 }
 
@@ -576,11 +575,11 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::Mutex;
 
-    use crate::feature::bsim::query::b_sim_jdbc_data_source::{ConnectionType, Status};
-    use crate::feature::bsim::query::BSimServerInfo;
-    use crate::feature::seam_stubs::{
-        BSimError, BSimQuery, Configuration, QueryResponseRecord, WeightedLSHCosineVectorFactory,
+    use crate::feature::bsim::query::function_database::{
+        BSimError, ConnectionType, ErrorCategory, Status,
     };
+    use crate::feature::bsim::query::BSimServerInfo;
+    use crate::feature::seam_stubs::{BSimQuery, QueryResponseRecord};
     use crate::generic::seam_stubs::WeightedLSHCosineVector;
 
     const EXE_A: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -648,21 +647,13 @@ mod tests {
         }
     }
 
-    struct MockError(String);
-
-    impl BSimError for MockError {
-        fn message(&self) -> String {
-            self.0.clone()
-        }
-    }
-
     impl FunctionDatabase for MockDatabase {
         fn initialize(&self) -> bool {
             self.connected
         }
 
-        fn get_last_error(&self) -> Box<dyn BSimError> {
-            Box::new(MockError(self.error.clone()))
+        fn get_last_error(&self) -> BSimError {
+            BSimError::new(ErrorCategory::Connection, self.error.clone())
         }
 
         fn get_lsh_vector_factory(&self) -> Arc<LSHVectorFactory> {
@@ -738,22 +729,6 @@ mod tests {
             Some(manage)
         }
 
-        fn to_string(&self) -> String {
-            "MockDatabase".to_string()
-        }
-
-        fn get_integer(&self) -> i32 {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn is_password_change_allowed(&self) -> bool {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn change_password(&self, _new_password: &[char]) -> String {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
         fn get_status(&self) -> Status {
             unimplemented!("not used by ExecutableComparison")
         }
@@ -766,7 +741,7 @@ mod tests {
             unimplemented!("not used by ExecutableComparison")
         }
 
-        fn get_info(&self) -> Box<dyn crate::feature::seam_stubs::DatabaseInformation> {
+        fn get_info(&self) -> Option<DatabaseInformation> {
             unimplemented!("not used by ExecutableComparison")
         }
 
@@ -784,60 +759,7 @@ mod tests {
 
         fn close(&self) {}
 
-        fn query(&self, _query: &dyn BSimQuery) -> Box<dyn QueryResponseRecord> {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn check_settings_for_query(
-            &self,
-            _manage: &dyn crate::feature::seam_stubs::DescriptionManager,
-            _info: &dyn crate::feature::seam_stubs::DatabaseInformation,
-        ) -> std::io::Result<()> {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn check_settings_for_insert(
-            &self,
-            _manage: &dyn crate::feature::seam_stubs::DescriptionManager,
-            _info: &dyn crate::feature::seam_stubs::DatabaseInformation,
-        ) -> std::io::Result<bool> {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn construct_fatal_error(
-            &self,
-            _flags: i32,
-            _newrec: &ExecutableRecord,
-            _orig: &ExecutableRecord,
-        ) -> String {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn construct_nonfatal_error(
-            &self,
-            _flags: i32,
-            _newrec: &ExecutableRecord,
-            _orig: &ExecutableRecord,
-        ) -> String {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn load_configuration_template(
-            &self,
-            _configname: &str,
-        ) -> std::io::Result<Box<dyn Configuration>> {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn generate_lsh_vector_factory(&self) -> Box<dyn WeightedLSHCosineVectorFactory> {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn get_queried_functions_per_stage(&self) -> i32 {
-            unimplemented!("not used by ExecutableComparison")
-        }
-
-        fn get_overview_functions_per_stage(&self) -> i32 {
+        fn query(&self, _query: &dyn BSimQuery) -> Option<Box<dyn QueryResponseRecord>> {
             unimplemented!("not used by ExecutableComparison")
         }
     }

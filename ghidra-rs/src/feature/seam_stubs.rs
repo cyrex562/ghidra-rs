@@ -11,6 +11,7 @@ pub use crate::feature::vt::api::main::vt_match::VtMatch;
 pub use crate::feature::bsim::query::protocol::{QueryResponseRecord, QueryResponseRecordBase};
 pub use crate::util::seam_stubs::XmlPullParser;
 
+use crate::feature::bsim::query::function_database::FunctionDatabase;
 use crate::feature::vt::api::implementation::markup_item_storage::MarkupItemStorage;
 use crate::feature::vt::api::main::vt_association_markup_status::VtAssociationMarkupStatus;
 use crate::feature::vt::api::main::vt_association_status::VtAssociationStatus;
@@ -2787,99 +2788,6 @@ impl Ord for CallgraphEntry {
     }
 }
 
-/// Placeholder for the unported Java type `FunctionDatabase`, referenced by `BSimJDBCDataSource`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait FunctionDatabase: Send + Sync {
-    fn to_string(&self) -> String;
-    fn get_integer(&self) -> i32;
-    fn is_password_change_allowed(&self) -> bool;
-    fn change_password(&self, new_password: &[char]) -> String;
-    fn get_status(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::Status;
-    fn get_connection_type(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::ConnectionType;
-    fn get_user_name(&self) -> String;
-    fn get_lsh_vector_factory(&self) -> Arc<crate::generic::seam_stubs::LSHVectorFactory>;
-    fn get_info(&self) -> Box<dyn DatabaseInformation>;
-    fn compare_layout(&self) -> i32;
-    fn get_server_info(&self) -> crate::feature::bsim::query::BSimServerInfo;
-    fn get_url_string(&self) -> String;
-    fn initialize(&self) -> bool;
-    fn close(&self);
-    fn get_last_error(&self) -> Box<dyn BSimError>;
-    fn query(&self, query: &dyn BSimQuery) -> Box<dyn QueryResponseRecord>;
-    fn check_settings_for_query(&self, manage: &dyn DescriptionManager, info: &dyn DatabaseInformation) -> std::io::Result<()>;
-    fn check_settings_for_insert(&self, manage: &dyn DescriptionManager, info: &dyn DatabaseInformation) -> std::io::Result<bool>;
-    fn construct_fatal_error(&self, flags: i32, newrec: &ExecutableRecord, orig: &ExecutableRecord) -> String;
-    fn construct_nonfatal_error(&self, flags: i32, newrec: &ExecutableRecord, orig: &ExecutableRecord) -> String;
-    fn load_configuration_template(&self, configname: &str) -> std::io::Result<Box<dyn Configuration>>;
-    fn generate_lsh_vector_factory(&self) -> Box<dyn WeightedLSHCosineVectorFactory>;
-    fn get_queried_functions_per_stage(&self) -> i32;
-    fn get_overview_functions_per_stage(&self) -> i32;
-
-    // The typed query paths below stand in for Java's `BSimQuery.execute(FunctionDatabase)`,
-    // which hands the query to `query()` and casts the response back to the query's response
-    // type. The ported response records carry no results yet, so each seam method returns the
-    // one field of the Java response its caller reads, and `None` where Java returns a null
-    // response (i.e. the query failed, and `get_last_error()` explains why). Defaults return
-    // `None` so implementations only override the queries they support.
-
-    /// Java: `new QueryInfo().execute(db).info`.
-    fn query_info(&self) -> Option<crate::feature::bsim::query::description::DatabaseInformation> {
-        None
-    }
-
-    /// Java: `QueryName` limited to `max_func` functions of the executable with the given md5,
-    /// with the callgraph, category and signature fill-ins turned off; yields `ResponseName.manage`.
-    fn query_name(
-        &self,
-        _md5: &str,
-        _max_func: i32,
-    ) -> Option<crate::feature::bsim::query::description::DescriptionManager> {
-        None
-    }
-
-    /// Java: `QueryExeInfo(limit, ...).execute(db).records`.
-    fn query_exe_info(&self, _limit: i32) -> Option<Vec<Arc<ExecutableRecord>>> {
-        None
-    }
-
-    /// Java: `QueryVectorId` with the given ids; yields `ResponseVectorId.vectorResults`, one
-    /// entry per requested id.
-    fn query_vector_id(&self, _ids: &[i64]) -> Option<Vec<VectorResult>> {
-        None
-    }
-
-    /// Java: `QueryNearestVector` for a single vector at similarity threshold `thresh`; yields
-    /// `ResponseNearestVector.result`, one list of near vectors per queried vector.
-    fn query_nearest_vector(
-        &self,
-        _vec: &crate::generic::seam_stubs::WeightedLSHCosineVector,
-        _thresh: f64,
-    ) -> Option<Vec<Vec<VectorResult>>> {
-        None
-    }
-
-    /// Java: `QueryVectorMatch` for the given vector ids, capped at `max` functions per id;
-    /// yields `ResponseVectorMatch.manage`.
-    fn query_vector_match(
-        &self,
-        _vector_ids: &[i64],
-        _max: i32,
-    ) -> Option<crate::feature::bsim::query::description::DescriptionManager> {
-        None
-    }
-}
-
-/// Placeholder for `DatabaseInformation` type.
-pub trait DatabaseInformation: Send + Sync {}
-
-/// Placeholder for `BSimError` type. Java's `FunctionDatabase.ErrorStatement`, whose `message`
-/// field is what failed queries report.
-pub trait BSimError: Send + Sync {
-    /// Java: `ErrorStatement.message`.
-    fn message(&self) -> String;
-}
-
 /// Placeholder for `BSimQuery` type. Abstract base for all BSim queries.
 pub trait BSimQuery: Send + Sync {
     fn build_response_template(&self);
@@ -2986,7 +2894,15 @@ pub trait LSHVectorFactory: Send + Sync {
 pub trait DescriptionManager: Send + Sync {}
 
 /// Placeholder for `Configuration` type.
-pub trait Configuration: Send + Sync {}
+pub trait Configuration: Send + Sync {
+    /// Java: `Configuration.loadTemplate(ResourceFile rootPath, String filename)`, used by
+    /// [`load_configuration_template`](crate::feature::bsim::query::function_database::load_configuration_template).
+    fn load_template(
+        &mut self,
+        root_path: &crate::generic::jar::resource_file::ResourceFile,
+        filename: &str,
+    ) -> std::io::Result<()>;
+}
 
 /// Placeholder for `WeightedLSHCosineVectorFactory` type.
 pub trait WeightedLSHCosineVectorFactory: Send + Sync {}
@@ -3314,29 +3230,13 @@ impl std::fmt::Debug for ExecutableScorer {
 macro_rules! impl_bsim_function_database_stub {
     ($ty:ident, $label:literal) => {
         impl FunctionDatabase for $ty {
-            fn to_string(&self) -> String {
-                format!("{}({})", $label, self.url)
-            }
-
-            fn get_integer(&self) -> i32 {
-                unimplemented!(concat!($label, "::get_integer is not ported yet"))
-            }
-
-            fn is_password_change_allowed(&self) -> bool {
-                unimplemented!(concat!($label, "::is_password_change_allowed is not ported yet"))
-            }
-
-            fn change_password(&self, _new_password: &[char]) -> String {
-                unimplemented!(concat!($label, "::change_password is not ported yet"))
-            }
-
-            fn get_status(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::Status {
+            fn get_status(&self) -> crate::feature::bsim::query::function_database::Status {
                 unimplemented!(concat!($label, "::get_status is not ported yet"))
             }
 
             fn get_connection_type(
                 &self,
-            ) -> crate::feature::bsim::query::b_sim_jdbc_data_source::ConnectionType {
+            ) -> crate::feature::bsim::query::function_database::ConnectionType {
                 unimplemented!(concat!($label, "::get_connection_type is not ported yet"))
             }
 
@@ -3348,7 +3248,9 @@ macro_rules! impl_bsim_function_database_stub {
                 unimplemented!(concat!($label, "::get_lsh_vector_factory is not ported yet"))
             }
 
-            fn get_info(&self) -> Box<dyn DatabaseInformation> {
+            fn get_info(
+                &self,
+            ) -> Option<crate::feature::bsim::query::description::DatabaseInformation> {
                 unimplemented!(concat!($label, "::get_info is not ported yet"))
             }
 
@@ -3370,65 +3272,19 @@ macro_rules! impl_bsim_function_database_stub {
 
             fn close(&self) {}
 
-            fn get_last_error(&self) -> Box<dyn BSimError> {
+            fn get_last_error(&self) -> crate::feature::bsim::query::function_database::BSimError {
                 unimplemented!(concat!($label, "::get_last_error is not ported yet"))
             }
 
-            fn query(&self, _query: &dyn BSimQuery) -> Box<dyn QueryResponseRecord> {
+            fn query(&self, _query: &dyn BSimQuery) -> Option<Box<dyn QueryResponseRecord>> {
                 unimplemented!(concat!($label, "::query is not ported yet"))
             }
+        }
 
-            fn check_settings_for_query(
-                &self,
-                _manage: &dyn DescriptionManager,
-                _info: &dyn DatabaseInformation,
-            ) -> std::io::Result<()> {
-                unimplemented!(concat!($label, "::check_settings_for_query is not ported yet"))
-            }
-
-            fn check_settings_for_insert(
-                &self,
-                _manage: &dyn DescriptionManager,
-                _info: &dyn DatabaseInformation,
-            ) -> std::io::Result<bool> {
-                unimplemented!(concat!($label, "::check_settings_for_insert is not ported yet"))
-            }
-
-            fn construct_fatal_error(
-                &self,
-                _flags: i32,
-                _newrec: &ExecutableRecord,
-                _orig: &ExecutableRecord,
-            ) -> String {
-                unimplemented!(concat!($label, "::construct_fatal_error is not ported yet"))
-            }
-
-            fn construct_nonfatal_error(
-                &self,
-                _flags: i32,
-                _newrec: &ExecutableRecord,
-                _orig: &ExecutableRecord,
-            ) -> String {
-                unimplemented!(concat!($label, "::construct_nonfatal_error is not ported yet"))
-            }
-
-            fn load_configuration_template(
-                &self,
-                _configname: &str,
-            ) -> std::io::Result<Box<dyn Configuration>> {
-                unimplemented!(concat!($label, "::load_configuration_template is not ported yet"))
-            }
-
-            fn generate_lsh_vector_factory(&self) -> Box<dyn WeightedLSHCosineVectorFactory> {
-                unimplemented!(concat!($label, "::generate_lsh_vector_factory is not ported yet"))
-            }
-
-            fn get_queried_functions_per_stage(&self) -> i32 {
-                unimplemented!(concat!($label, "::get_queried_functions_per_stage is not ported yet"))
-            }
-
-            fn get_overview_functions_per_stage(&self) -> i32 {
-                unimplemented!(concat!($label, "::get_overview_functions_per_stage is not ported yet"))
+        impl std::fmt::Display for $ty {
+            /// Java: the stubbed database's `toString()`, which names the class and its URL.
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}({})", $label, self.url)
             }
         }
     };

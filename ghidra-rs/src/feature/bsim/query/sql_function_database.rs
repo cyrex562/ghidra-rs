@@ -1,4 +1,4 @@
-use crate::feature::seam_stubs::FunctionDatabase;
+use crate::feature::bsim::query::function_database::FunctionDatabase;
 
 /// A function database that uses SQL as the query language.
 ///
@@ -24,28 +24,14 @@ mod tests {
     struct MockSQLFunctionDatabase;
 
     impl FunctionDatabase for MockSQLFunctionDatabase {
-        fn to_string(&self) -> String {
-            "MockSQLFunctionDatabase".to_string()
+        fn get_status(&self) -> crate::feature::bsim::query::function_database::Status {
+            crate::feature::bsim::query::function_database::Status::Unconnected
         }
 
-        fn get_integer(&self) -> i32 {
-            0
-        }
-
-        fn is_password_change_allowed(&self) -> bool {
-            false
-        }
-
-        fn change_password(&self, _new_password: &[char]) -> String {
-            "Not supported".to_string()
-        }
-
-        fn get_status(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::Status {
-            crate::feature::bsim::query::b_sim_jdbc_data_source::Status::Unconnected
-        }
-
-        fn get_connection_type(&self) -> crate::feature::bsim::query::b_sim_jdbc_data_source::ConnectionType {
-            crate::feature::bsim::query::b_sim_jdbc_data_source::ConnectionType::UnencryptedNoAuthentication
+        fn get_connection_type(
+            &self,
+        ) -> crate::feature::bsim::query::function_database::ConnectionType {
+            crate::feature::bsim::query::function_database::ConnectionType::UnencryptedNoAuthentication
         }
 
         fn get_user_name(&self) -> String {
@@ -58,8 +44,10 @@ mod tests {
             panic!("Not implemented in mock")
         }
 
-        fn get_info(&self) -> Box<dyn crate::feature::seam_stubs::DatabaseInformation> {
-            panic!("Not implemented in mock")
+        fn get_info(
+            &self,
+        ) -> Option<crate::feature::bsim::query::description::DatabaseInformation> {
+            None
         }
 
         fn compare_layout(&self) -> i32 {
@@ -80,54 +68,15 @@ mod tests {
 
         fn close(&self) {}
 
-        fn get_last_error(&self) -> Box<dyn crate::feature::seam_stubs::BSimError> {
+        fn get_last_error(&self) -> crate::feature::bsim::query::function_database::BSimError {
             panic!("Not implemented in mock")
         }
 
-        fn query(&self, _query: &dyn crate::feature::seam_stubs::BSimQuery) -> Box<dyn crate::feature::bsim::query::protocol::QueryResponseRecord> {
-            panic!("Not implemented in mock")
-        }
-
-        fn check_settings_for_query(
+        fn query(
             &self,
-            _manage: &dyn crate::feature::seam_stubs::DescriptionManager,
-            _info: &dyn crate::feature::seam_stubs::DatabaseInformation,
-        ) -> std::io::Result<()> {
-            Ok(())
-        }
-
-        fn check_settings_for_insert(
-            &self,
-            _manage: &dyn crate::feature::seam_stubs::DescriptionManager,
-            _info: &dyn crate::feature::seam_stubs::DatabaseInformation,
-        ) -> std::io::Result<bool> {
-            Ok(false)
-        }
-
-        fn construct_fatal_error(
-            &self,
-            _flags: i32,
-            _newrec: &crate::feature::seam_stubs::ExecutableRecord,
-            _orig: &crate::feature::seam_stubs::ExecutableRecord,
-        ) -> String {
-            "Fatal error".to_string()
-        }
-
-        fn construct_nonfatal_error(
-            &self,
-            _flags: i32,
-            _newrec: &crate::feature::seam_stubs::ExecutableRecord,
-            _orig: &crate::feature::seam_stubs::ExecutableRecord,
-        ) -> String {
-            "Non-fatal error".to_string()
-        }
-
-        fn load_configuration_template(&self, _configname: &str) -> std::io::Result<Box<dyn crate::feature::seam_stubs::Configuration>> {
-            Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Not implemented"))
-        }
-
-        fn generate_lsh_vector_factory(&self) -> Box<dyn crate::feature::seam_stubs::WeightedLSHCosineVectorFactory> {
-            panic!("Not implemented in mock")
+            _query: &dyn crate::feature::seam_stubs::BSimQuery,
+        ) -> Option<Box<dyn crate::feature::bsim::query::protocol::QueryResponseRecord>> {
+            None
         }
 
         fn get_queried_functions_per_stage(&self) -> i32 {
