@@ -4389,3 +4389,36 @@ pub struct DecodedStride {
     pub ops: Vec<PcodeOp>,
 }
 
+/// Placeholder for the unported Java type `ghidra.pcode.emu.sys.EmuInvalidSystemCallException`,
+/// referenced by
+/// [`EmuSyscallLibrary::syscall`](crate::pcode::emu::sys::emu_syscall_library::EmuSyscallLibrary::syscall),
+/// which raises it when the emulated program requests a syscall number the library does not
+/// define.
+///
+/// Java's class extends `EmuSystemException`, which extends `PcodeExecutionException`; neither
+/// intermediate class is ported yet. Rust has no exception subtyping, so this carries only the
+/// message Java's `EmuInvalidSystemCallException(long)` constructor builds, and converts into a
+/// [`PcodeExecutionException`] at the throw site. Replace with the real port -- and its place in
+/// whatever shape the `Emu*Exception` hierarchy takes -- when it lands.
+pub struct EmuInvalidSystemCallException {
+    message: String,
+}
+
+impl EmuInvalidSystemCallException {
+    /// Port of `EmuInvalidSystemCallException(long number)`.
+    pub fn for_number(number: i64) -> Self {
+        Self { message: format!("Invalid system call number: {}", number) }
+    }
+
+    /// The detail message, as Java's `Throwable.getMessage()` would report it.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl From<EmuInvalidSystemCallException> for PcodeExecutionException {
+    fn from(err: EmuInvalidSystemCallException) -> Self {
+        PcodeExecutionException::with_message(err.message)
+    }
+}
+

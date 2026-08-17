@@ -233,6 +233,19 @@ pub trait SymbolTable: Send + Sync {
         Box::new(EmptySymbolIterator)
     }
 
+    /// Iterate every symbol, in address order, starting at `start_addr` and running forward or
+    /// backward. Stands in for `SymbolTable.getSymbolIterator(Address, boolean)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`load_syscall_function_map`](crate::pcode::emu::sys::emu_syscall_library::load_syscall_function_map),
+    /// which scrapes the functions in a program's "syscall" space.
+    ///
+    /// Defaults to an empty iterator so existing implementors are unaffected.
+    fn get_symbol_iterator_from(&self, start_addr: &Address, forward: bool) -> Box<dyn SymbolIterator> {
+        let _ = (start_addr, forward);
+        Box::new(EmptySymbolIterator)
+    }
+
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>>;
 
     /// Get a global symbol by name and address.
