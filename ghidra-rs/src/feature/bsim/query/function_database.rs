@@ -17,8 +17,8 @@ use std::sync::Arc;
 use crate::feature::bsim::query::b_sim_server_info::BSimServerInfo;
 use crate::feature::bsim::query::description::{DatabaseInformation, DescriptionManager};
 use crate::feature::bsim::query::lsh_exception::LshException;
-use crate::feature::bsim::query::protocol::QueryResponseRecord;
-use crate::feature::seam_stubs::{BSimQuery, Configuration, ExecutableRecord, VectorResult};
+use crate::feature::bsim::query::protocol::{BSimQuery, QueryResponseRecord};
+use crate::feature::seam_stubs::{Configuration, ExecutableRecord, VectorResult};
 use crate::framework::application::Application;
 use crate::generic::seam_stubs::{LSHVectorFactory, WeightedLSHCosineVector};
 

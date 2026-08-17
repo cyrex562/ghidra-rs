@@ -8,7 +8,7 @@ pub use crate::feature::vt::api::markuptype::vt_markup_type::{VtMarkupType, VtMa
 pub use crate::feature::vt::api::main::vt_association::VtAssociation;
 pub use crate::feature::vt::api::main::vt_markup_item::VtMarkupItem;
 pub use crate::feature::vt::api::main::vt_match::VtMatch;
-pub use crate::feature::bsim::query::protocol::{QueryResponseRecord, QueryResponseRecordBase};
+pub use crate::feature::bsim::query::protocol::{BSimQuery, QueryResponseRecord, QueryResponseRecordBase};
 pub use crate::util::seam_stubs::XmlPullParser;
 
 use crate::feature::bsim::query::function_database::FunctionDatabase;
@@ -2786,13 +2786,6 @@ impl Ord for CallgraphEntry {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.dest.cmp(&other.dest)
     }
-}
-
-/// Placeholder for `BSimQuery` type. Abstract base for all BSim queries.
-pub trait BSimQuery: Send + Sync {
-    fn build_response_template(&self);
-    fn save_xml(&self, fwrite: &mut dyn std::io::Write) -> std::io::Result<()>;
-    fn restore_xml(&self, parser: &dyn XmlPullParser, vector_factory: &dyn LSHVectorFactory) -> Result<(), crate::feature::bsim::query::LshException>;
 }
 
 /// Placeholder for `ResponseAdjustIndex` type. Response from vector index adjustment operations.

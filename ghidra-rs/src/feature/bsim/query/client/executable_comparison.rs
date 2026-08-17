@@ -579,7 +579,7 @@ mod tests {
         BSimError, ConnectionType, ErrorCategory, Status,
     };
     use crate::feature::bsim::query::BSimServerInfo;
-    use crate::feature::seam_stubs::{BSimQuery, QueryResponseRecord};
+    use crate::feature::bsim::query::protocol::{BSimQuery, QueryResponseRecord};
     use crate::generic::seam_stubs::WeightedLSHCosineVector;
 
     const EXE_A: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";

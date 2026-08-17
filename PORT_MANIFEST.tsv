@@ -1737,7 +1737,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/ingest/It
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/postgresql/Handler.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query postgresql 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/AdjustVectorIndex.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/BSimFilter.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/BSimQuery.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/BSimQuery.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ChildAtom.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/ClusterNote.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/CreateDatabase.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query protocol 

@@ -1,4 +1,5 @@
 pub mod adjust_vector_index;
+pub mod bsim_query;
 pub mod insert_request;
 pub mod password_change;
 pub mod prewarm_request;
@@ -15,6 +16,7 @@ pub mod response_exe;
 pub mod response_optional_exist;
 
 pub use adjust_vector_index::AdjustVectorIndex;
+pub use bsim_query::{BSimQuery, BSimQueryBase};
 pub use insert_request::InsertRequest;
 pub use password_change::PasswordChange;
 pub use prewarm_request::PrewarmRequest;
