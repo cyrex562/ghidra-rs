@@ -226,7 +226,6 @@ mod tests {
     use crate::program::model::data::bit_field_packing::BitFieldPacking;
     use crate::program::model::data::category_path::{CategoryPath, ROOT};
     use crate::program::model::data::source_archive::SourceArchive;
-    use std::cell::RefCell;
     use std::sync::Weak;
 
     struct MockSettings;
@@ -321,16 +320,19 @@ mod tests {
     struct MockDataTypeManager;
     impl DataTypeManager for MockDataTypeManager {}
 
+    // Every `set_stored_*` below takes `&mut self`, so the stored state needs no interior
+    // mutability; plain fields also keep this mock `Send + Sync`, as `DataType` requires. The
+    // settings and source-archive boxes are dropped entirely, since the mock's getters always
+    // answer with a fresh `MockSettings`/`None` and `dyn Settings`/`dyn SourceArchive` are
+    // themselves neither `Send` nor `Sync`.
     struct MockBuiltIn {
         name: String,
         length: i32,
         dynamic: bool,
         factory: bool,
-        default_settings: RefCell<Box<dyn Settings>>,
-        source_archive: RefCell<Option<Box<dyn SourceArchive>>>,
-        last_change_time: RefCell<i64>,
-        last_change_time_in_source_archive: RefCell<i64>,
-        parents: RefCell<Vec<Weak<dyn DataType>>>,
+        last_change_time: i64,
+        last_change_time_in_source_archive: i64,
+        parents: Vec<Weak<dyn DataType>>,
     }
 
     impl MockBuiltIn {
@@ -340,11 +342,9 @@ mod tests {
                 length,
                 dynamic: false,
                 factory: false,
-                default_settings: RefCell::new(Box::new(MockSettings)),
-                source_archive: RefCell::new(None),
-                last_change_time: RefCell::new(0),
-                last_change_time_in_source_archive: RefCell::new(0),
-                parents: RefCell::new(Vec::new()),
+                last_change_time: 0,
+                last_change_time_in_source_archive: 0,
+                parents: Vec::new(),
             }
         }
     }
@@ -374,36 +374,31 @@ mod tests {
         fn stored_default_settings(&self) -> Box<dyn Settings> {
             Box::new(MockSettings)
         }
-        fn set_stored_default_settings(&mut self, settings: Box<dyn Settings>) {
-            *self.default_settings.borrow_mut() = settings;
-        }
+        fn set_stored_default_settings(&mut self, _settings: Box<dyn Settings>) {}
         fn stored_source_archive(&self) -> Option<Box<dyn SourceArchive>> {
-            let _ = &self.source_archive;
             None
         }
-        fn set_stored_source_archive(&mut self, archive: Option<Box<dyn SourceArchive>>) {
-            *self.source_archive.borrow_mut() = archive;
-        }
+        fn set_stored_source_archive(&mut self, _archive: Option<Box<dyn SourceArchive>>) {}
         fn stored_universal_id(&self) -> UniversalID {
             UniversalID::new(0)
         }
         fn stored_last_change_time(&self) -> i64 {
-            *self.last_change_time.borrow()
+            self.last_change_time
         }
         fn set_stored_last_change_time(&mut self, last_change_time: i64) {
-            *self.last_change_time.borrow_mut() = last_change_time;
+            self.last_change_time = last_change_time;
         }
         fn stored_last_change_time_in_source_archive(&self) -> i64 {
-            *self.last_change_time_in_source_archive.borrow()
+            self.last_change_time_in_source_archive
         }
         fn set_stored_last_change_time_in_source_archive(&mut self, last_change_time: i64) {
-            *self.last_change_time_in_source_archive.borrow_mut() = last_change_time;
+            self.last_change_time_in_source_archive = last_change_time;
         }
         fn stored_parent_refs(&self) -> Vec<Weak<dyn DataType>> {
-            self.parents.borrow().clone()
+            self.parents.clone()
         }
         fn set_stored_parent_refs(&mut self, parents: Vec<Weak<dyn DataType>>) {
-            *self.parents.borrow_mut() = parents;
+            self.parents = parents;
         }
     }
 

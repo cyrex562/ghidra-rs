@@ -129,18 +129,19 @@ use crate::program::model::listing::CommentType;
         space.address(offset)
     }
 
+    // Holds a count rather than the definitions themselves: `get_settings_definitions` builds a
+    // fresh `MockSettingsDefinition` per entry anyway, and `dyn SettingsDefinition` is neither
+    // `Send` nor `Sync`, which `DataType` requires.
     struct MockDataType {
-        settings_defs: Vec<Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>>,
+        settings_def_count: usize,
     }
 
     impl DataType for MockDataType {
         fn get_settings_definitions(
             &self,
         ) -> Vec<Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>> {
-            // Clone the definitions for testing
-            self.settings_defs
-                .iter()
-                .map(|def| Box::new(MockSettingsDefinition) as Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>)
+            (0..self.settings_def_count)
+                .map(|_| Box::new(MockSettingsDefinition) as Box<dyn crate::docking::settings::settings_definition::SettingsDefinition>)
                 .collect()
         }
     }
@@ -412,7 +413,7 @@ use crate::program::model::listing::CommentType;
 
         fn get_base_data_type(&self) -> Box<dyn DataType> {
             Box::new(MockDataType {
-                settings_defs: vec![Box::new(MockSettingsDefinition)],
+                settings_def_count: 1,
             })
         }
 

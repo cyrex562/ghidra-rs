@@ -305,9 +305,7 @@ mod tests {
 use crate::program::model::mem::MemBuffer;
 use crate::program::model::listing::CommentType;
     use std::any::{Any, TypeId};
-    use std::cell::RefCell;
-    use std::rc::Rc;
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex};
 
     fn mock_address(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 1);
@@ -374,11 +372,11 @@ use crate::program::model::listing::CommentType;
 
     /// A [`Structure`] that actually records added components, so the trait's default
     /// orchestration logic can be exercised end-to-end (not just type-checked). The recorded log
-    /// is shared (via `Rc<RefCell<_>>`) with the factory that created it, so tests can inspect it
+    /// is shared (via `Arc<Mutex<_>>`) with the factory that created it, so tests can inspect it
     /// after the trait object is consumed.
     struct RecordingStructure {
         name: String,
-        added: Rc<RefCell<Vec<(String, i32, Option<String>)>>>,
+        added: Arc<Mutex<Vec<(String, i32, Option<String>)>>>,
     }
     impl DataType for RecordingStructure {
         fn get_name(&self) -> String {
@@ -397,7 +395,8 @@ use crate::program::model::listing::CommentType;
             _comment: Option<String>,
         ) -> Result<Box<dyn DataTypeComponent>, String> {
             self.added
-                .borrow_mut()
+                .lock()
+                .unwrap()
                 .push((data_type.get_name(), length, component_name));
             Ok(Box::new(MockComponent {
                 name: "added",
@@ -410,14 +409,14 @@ use crate::program::model::listing::CommentType;
     /// Exercises every required hook with real (non-placeholder) behavior: builds a
     /// [`RecordingStructure`] and mock provider contexts whose components are set per-test.
     struct MockStructureFactory {
-        log: Rc<RefCell<Vec<(String, i32, Option<String>)>>>,
+        log: Arc<Mutex<Vec<(String, i32, Option<String>)>>>,
         top_components: Vec<(&'static str, i32)>,
         nested_components: Vec<(&'static str, i32)>,
     }
     impl MockStructureFactory {
         fn new(top_components: Vec<(&'static str, i32)>, nested_components: Vec<(&'static str, i32)>) -> Self {
             Self {
-                log: Rc::new(RefCell::new(Vec::new())),
+                log: Arc::new(Mutex::new(Vec::new())),
                 top_components,
                 nested_components,
             }
@@ -427,7 +426,7 @@ use crate::program::model::listing::CommentType;
         fn new_structure(&self, name: &str, _dtm: Option<Box<dyn DataTypeManager>>) -> Box<dyn Structure> {
             Box::new(RecordingStructure {
                 name: name.to_string(),
-                added: Rc::clone(&self.log),
+                added: Arc::clone(&self.log),
             })
         }
         fn new_program_context(
@@ -1278,7 +1277,7 @@ use crate::program::model::listing::CommentType;
 
         assert_eq!(structure.get_name(), "struct_unique");
         assert_eq!(
-            *factory.log.borrow(),
+            *factory.log.lock().unwrap(),
             vec![
                 ("alpha".to_string(), 4, Some("alpha".to_string())),
                 ("beta".to_string(), 4, Some("beta".to_string())),
@@ -1344,7 +1343,7 @@ use crate::program::model::listing::CommentType;
 
         assert_eq!(structure.get_name(), "struct_unique");
         assert_eq!(
-            *factory.log.borrow(),
+            *factory.log.lock().unwrap(),
             vec![("gamma".to_string(), 2, Some("gamma".to_string()))]
         );
     }

@@ -229,7 +229,6 @@ mod tests {
     use crate::program::model::data::composite::Composite;
     use crate::program::model::data::data_organization::DataOrganization;
     use crate::program::model::data::packing_type::PackingType;
-    use std::cell::RefCell;
 
     struct MockDataType {
         name: &'static str,
@@ -360,7 +359,7 @@ mod tests {
         packing_type: PackingType,
         is_union: bool,
         minimum_alignment: i32,
-        computed_alignment_calls: RefCell<Vec<bool>>,
+        computed_alignment_calls: Vec<bool>,
     }
 
     impl DataType for MockCompositeDb {
@@ -389,7 +388,7 @@ mod tests {
             false
         }
         fn get_computed_alignment(&mut self, update_record: bool) -> i32 {
-            self.computed_alignment_calls.borrow_mut().push(update_record);
+            self.computed_alignment_calls.push(update_record);
             4
         }
         fn composite_db_repack(&mut self, _is_auto_change: bool, _notify: bool) -> bool {
@@ -406,7 +405,7 @@ mod tests {
             packing_type: PackingType::Disabled,
             is_union: true,
             minimum_alignment: DEFAULT_ALIGNMENT,
-            computed_alignment_calls: RefCell::new(Vec::new()),
+            computed_alignment_calls: Vec::new(),
         }
     }
 
@@ -415,7 +414,7 @@ mod tests {
             packing_type: PackingType::Disabled,
             is_union: false,
             minimum_alignment: DEFAULT_ALIGNMENT,
-            computed_alignment_calls: RefCell::new(Vec::new()),
+            computed_alignment_calls: Vec::new(),
         }
     }
 
@@ -440,7 +439,7 @@ mod tests {
         assert_eq!(result.get_name(), "undefined1");
         // getAlignment still reaches the trait's abstract get_computed_alignment override.
         assert_eq!(c.composite_db_get_alignment(), 4);
-        assert_eq!(*c.computed_alignment_calls.borrow(), vec![false]);
+        assert_eq!(c.computed_alignment_calls, vec![false]);
     }
 
     #[test]
