@@ -34,7 +34,7 @@ DONE	trait	0	33	2	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin
 DONE	trait	2	7	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/target/TargetPublicationListener.java
 DONE	trait	1	18	4	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiServiceListener.java
 DONE	trait	0	32	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiAcceptor.java
-TODO	trait	0	31	1	feature	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/model/SymValueZ3.java
+PARK	trait	0	31	1	feature	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/model/SymValueZ3.java
 TODO	trait	0	31	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/ArchiveRootNodeListener.java
 TODO	trait	1	19	0	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/platform/DebuggerPlatformMapper.java
 TODO	trait	0	26	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java
