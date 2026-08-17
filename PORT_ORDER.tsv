@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	17	10	10	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFunctabEntry.java
+DONE	trait	17	10	10	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/golang/rtti/GoFunctabEntry.java
 TODO	trait	13	30	43	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DbgLoader.java
 TODO	trait	3	25	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ExceptionDataDirectory.java
 TODO	trait	1	61	1	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionPointer.java
