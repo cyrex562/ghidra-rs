@@ -12,8 +12,7 @@
 use std::io;
 use std::net::SocketAddr;
 
-use crate::app::seam_stubs::TraceRmiAcceptor;
-use crate::debug::api::tracermi::{TraceRmiConnection, TraceRmiServiceListener};
+use crate::debug::api::tracermi::{TraceRmiAcceptor, TraceRmiConnection, TraceRmiServiceListener};
 
 /// A service (both in the Ghidra framework sense, and in the network sense) for connecting Trace
 /// RMI-based back-end debuggers.
@@ -121,7 +120,21 @@ mod tests {
     }
 
     struct MockAcceptor;
-    impl TraceRmiAcceptor for MockAcceptor {}
+    impl TraceRmiAcceptor for MockAcceptor {
+        fn accept(&self) -> io::Result<Box<dyn TraceRmiConnection>> {
+            Ok(Box::new(MockConnection))
+        }
+        fn is_closed(&self) -> bool {
+            false
+        }
+        fn address(&self) -> SocketAddr {
+            "127.0.0.1:0".parse().unwrap()
+        }
+        fn set_timeout(&self, _millis: i32) -> io::Result<()> {
+            Ok(())
+        }
+        fn cancel(&self) {}
+    }
 
     struct MockListener;
     impl TraceRmiServiceListener for MockListener {}

@@ -4,8 +4,7 @@
 
 use std::net::SocketAddr;
 
-use crate::app::seam_stubs::TraceRmiAcceptor;
-use crate::debug::api::tracermi::TraceRmiConnection;
+use crate::debug::api::tracermi::{TraceRmiAcceptor, TraceRmiConnection};
 use crate::debug::seam_stubs::Target;
 
 /// The mechanism for creating a connection.
@@ -148,7 +147,21 @@ mod tests {
     }
 
     struct FakeAcceptor;
-    impl TraceRmiAcceptor for FakeAcceptor {}
+    impl TraceRmiAcceptor for FakeAcceptor {
+        fn accept(&self) -> Result<Box<dyn TraceRmiConnection>, std::io::Error> {
+            Err(std::io::Error::new(std::io::ErrorKind::Other, "not exercised"))
+        }
+        fn is_closed(&self) -> bool {
+            false
+        }
+        fn address(&self) -> std::net::SocketAddr {
+            "127.0.0.1:0".parse().unwrap()
+        }
+        fn set_timeout(&self, _millis: i32) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn cancel(&self) {}
+    }
 
     struct FakeTarget;
     impl Target for FakeTarget {}
