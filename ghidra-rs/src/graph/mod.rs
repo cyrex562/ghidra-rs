@@ -40,7 +40,7 @@ pub use graph_algorithms::{GraphAlgorithms, TimeoutMonitorError};
 pub use graph_path::GraphPath;
 pub use graph_path_set::GraphPathSet;
 pub use job::{AbstractAnimator, Animator, AnimatorBehavior, TimingTarget};
-pub use viewer::{GraphSatelliteListener, PathHighlightListener, PathHighlightMode, VisualGraphContextMarker};
+pub use viewer::{GridPoint, GraphSatelliteListener, PathHighlightListener, PathHighlightMode, VisualGraphContextMarker};
 pub use visualization::{
     Dimension, GhidraGraphCollapser, GraphSelectionView, GroupVertex, GroupableVertex,
     JgtTidierTreeLayoutAlgorithm,
