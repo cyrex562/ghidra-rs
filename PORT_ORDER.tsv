@@ -9,7 +9,7 @@ PARK	trait	2	13	1	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decomp
 DONE	trait	1	24	88	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/DecompilePlugin.java
 DONE	trait	3	8	41	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuSyscallLibrary.java
 DONE	trait	2	7	3	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/AnnotatedEmuSyscallUseropLibrary.java
-TODO	trait	4	8	1	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileDescriptor.java
+DONE	trait	4	8	1	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileDescriptor.java
 TODO	trait	3	10	2	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFile.java
 TODO	trait	3	11	3	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileSystem.java
 TODO	trait	2	7	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/DefaultEmuUnixFileHandle.java
