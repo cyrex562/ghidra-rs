@@ -43,12 +43,13 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
+use crate::app::decompiler::component::hover::DecompilerHoverService;
 use crate::app::decompiler::ClangToken;
 use crate::app::events::{ProgramActivatedPluginEvent, ProgramClosedPluginEvent};
 use crate::app::plugin::plugin_category_names::PluginCategoryNames;
 use crate::app::seam_stubs::{
-    CorePluginPackage, DecompilerHoverService, DecompilerProvider, ProgramLocationPluginEvent,
-    ProgramSelection, ProgramSelectionPluginEvent,
+    CorePluginPackage, DecompilerProvider, ProgramLocationPluginEvent, ProgramSelection,
+    ProgramSelectionPluginEvent,
 };
 use crate::app::services::{GoToService, ProgramManager};
 use crate::framework::plugintool::util::{
@@ -826,6 +827,28 @@ mod tests {
     /// The single hover service the tests register; `DecompilePlugin` only ever compares the
     /// service's interface `TypeId` against `dyn DecompilerHoverService`.
     struct MockHoverService;
+
+    impl crate::app::services::HoverService for MockHoverService {
+        fn priority(&self) -> i32 {
+            0
+        }
+        fn scroll(&self, _amount: i32) {}
+        fn hover_mode_selected(&self) -> bool {
+            true
+        }
+        fn hover_component(
+            &self,
+            _program: &dyn Program,
+            _program_location: &dyn ProgramLocation,
+            _field_location: &dyn crate::app::seam_stubs::FieldLocation,
+            _field: &dyn crate::app::seam_stubs::Field,
+        ) -> Option<Arc<dyn Any + Send + Sync>> {
+            None
+        }
+        fn component_hidden(&self) {}
+        fn component_shown(&self) {}
+    }
+
     impl DecompilerHoverService for MockHoverService {}
 
     #[derive(Default)]

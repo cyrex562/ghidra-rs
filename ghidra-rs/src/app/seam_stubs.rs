@@ -2261,20 +2261,14 @@ pub trait DecompilerPanel: Send + Sync {
     /// gains a hover service. The service arrives type-erased because that is how this crate's
     /// [`ServiceListener`](crate::framework::plugintool::util::ServiceListener) seam delivers it
     /// (a `TypeId` plus an `Arc<dyn Any>`); the real port will take a
-    /// [`DecompilerHoverService`] once services can be handed out typed.
+    /// [`DecompilerHoverService`](crate::app::decompiler::component::hover::DecompilerHoverService)
+    /// once services can be handed out typed.
     fn add_hover_service(&self, _hover_service: Arc<dyn std::any::Any + Send + Sync>) {}
 
     /// Stands in for `DecompilerPanel.removeHoverService(DecompilerHoverService)`; see
     /// [`add_hover_service`](Self::add_hover_service) for why the service is type-erased.
     fn remove_hover_service(&self, _hover_service: Arc<dyn std::any::Any + Send + Sync>) {}
 }
-
-/// Placeholder marker trait for `ghidra.app.decompiler.component.hover.DecompilerHoverService`,
-/// referenced by [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before
-/// the real interface is ported (it is currently parked). `DecompilePlugin` only ever compares a
-/// service's interface class against it -- `TypeId::of::<dyn DecompilerHoverService>()` standing
-/// in for Java's `interfaceClass == DecompilerHoverService.class` -- so no members are needed yet.
-pub trait DecompilerHoverService: Send + Sync {}
 
 /// Placeholder trait for `ghidra.app.decompiler.component.DecompilerController`, referenced by
 /// [`DecompilerActionContext`](crate::app::plugin::core::decompile::decompiler_action_context::DecompilerActionContext)

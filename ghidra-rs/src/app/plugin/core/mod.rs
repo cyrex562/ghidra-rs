@@ -3,6 +3,7 @@ pub mod bookmark;
 pub mod byteviewer;
 pub mod checksums;
 pub mod clear;
+pub mod codebrowser;
 pub mod commentwindow;
 pub mod compositeeditor;
 pub mod console;

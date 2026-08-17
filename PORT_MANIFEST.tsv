@@ -2464,7 +2464,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/h
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/FunctionSignatureListingHoverPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/LabelListingHover.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/LabelListingHoverPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ProgramAddressRelationshipListingHover.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ProgramAddressRelationshipListingHoverPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ReferenceListingHover.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core codebrowser hover 
@@ -3561,7 +3561,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToOverrideServ
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GoToServiceListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/GraphDisplayBroker.java	DONE	orig_src Ghidra Features Base src main java ghidra app services
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/HoverService.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/HoverService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingMarginProviderService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/ListingOverviewProviderService.java	DONE	orig_src Ghidra Features Base src main java ghidra app services 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/services/MarkerDescriptor.java	TODO	orig_src Ghidra Features Base src main java ghidra app services 
@@ -6543,7 +6543,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/componen
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/UserHighlights.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DataTypeDecompilerHover.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DataTypeDecompilerHoverPlugin.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DecompilerHoverService.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DecompilerHoverService.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/FunctionSignatureDecompilerHover.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/FunctionSignatureDecompilerHoverPlugin.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/ReferenceDecompilerHover.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler component hover 
