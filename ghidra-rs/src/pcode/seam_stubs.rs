@@ -54,6 +54,9 @@ use crate::program::model::address::{
     Address, AddressRange, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
     SpecialAddress,
 };
+use crate::pcode::r#struct::lval_internal::LValInternal;
+use crate::pcode::r#struct::rval_internal::RValInternal;
+use crate::pcode::r#struct::string_tree::StringTree;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::endian::Endian;
@@ -4882,12 +4885,462 @@ pub trait IndexExprType: Send + Sync {
     fn to_string(&self) -> String;
 }
 
-/// Placeholder for the unported Java type `RValInternal`, referenced by `LValInternal`.
-pub trait RValInternal: Send + Sync {}
-
 /// Placeholder for the unported Java type `Stmt`, referenced by `LVal`.
 pub trait Stmt: Send + Sync {}
 
 /// Placeholder for the unported Java type `StmtWithVal`, referenced by `LVal`.
 pub trait StmtWithVal: Stmt + RVal {}
+
+// ---------------------------------------------------------------------------
+// The `ghidra.pcode.struct` expression seam, referenced by
+// [`RValInternal`](crate::pcode::r#struct::rval_internal::RValInternal). Each of these is a node
+// `RValInternal`'s combinators construct; every one is a Java *class*, so these are concrete
+// structs rather than traits. They carry only what those combinators need -- construction plus
+// `generate` -- and leave `cast` (which has to re-resolve a `DataType`) unimplemented. Replace
+// them as `ArithBinExpr.java`, `CmpExpr.java`, `NotExpr.java`, `InvExpr.java`, and
+// `DerefExpr.java` land.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for the expression-building half of the unported Java class
+/// `ghidra.pcode.struct.StructuredSleigh`, referenced by
+/// [`RValInternal`](crate::pcode::r#struct::rval_internal::RValInternal).
+///
+/// The generic [`StructuredSleigh`] trait above models the *same* Java class, but from the
+/// userop-library side; its type parameter is an artifact of the one method it carries
+/// (`generate(Map<String, SleighPcodeUseropDefinition<T>>)`). `RValInternal` needs the
+/// non-generic expression-factory members instead, and cannot pick a `T` for them, so they live
+/// here until the real port unifies the two halves.
+pub trait StructuredSleighContext: Send + Sync {
+    /// Port of the `ctx.language.getDefaultSpace()` chain `RValInternal.deref()` walks.
+    fn default_space(&self) -> Arc<AddressSpace>;
+
+    /// Port of `StructuredSleigh.lit(long val, int size)`.
+    fn lit(&self, val: i64, size: i32) -> Arc<dyn RValInternal>;
+
+    /// Port of `StructuredSleigh.computeDerefType(RVal addr)`.
+    fn compute_deref_type(&self, addr: &dyn RValInternal) -> Box<dyn DataType>;
+}
+
+/// Port of `BinExpr.generate`: `"(" lhs " " op " " rhs ")"`.
+fn bin_expr_tree(
+    this: &dyn RValInternal,
+    lhs: &dyn RValInternal,
+    op: &str,
+    rhs: &dyn RValInternal,
+) -> StringTree {
+    let mut st = StringTree::new();
+    st.append("(");
+    st.append_tree(lhs.generate(Some(this)));
+    st.append(" ");
+    st.append(op);
+    st.append(" ");
+    st.append_tree(rhs.generate(Some(this)));
+    st.append(")");
+    st
+}
+
+/// Port of `UnExpr.generate`: `"(" op u ")"`.
+fn un_expr_tree(this: &dyn RValInternal, op: &str, u: &dyn RValInternal) -> StringTree {
+    let mut st = StringTree::new();
+    st.append("(");
+    st.append(op);
+    st.append_tree(u.generate(Some(this)));
+    st.append(")");
+    st
+}
+
+/// Port of `ArithBinExpr.Op`. Rust has no nested enums, hence the flattened name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArithBinExprOp {
+    Orb,
+    Ori,
+    Xorb,
+    Xori,
+    Andb,
+    Andi,
+    Shli,
+    Shriu,
+    Shris,
+    Addi,
+    Addf,
+    Subi,
+    Subf,
+    Muli,
+    Mulf,
+    Diviu,
+    Divis,
+    Divf,
+    Remiu,
+    Remis,
+}
+
+impl ArithBinExprOp {
+    /// The Sleigh operator text; Java stores it in the enum's `str` field.
+    pub fn sleigh(self) -> &'static str {
+        match self {
+            Self::Orb => "||",
+            Self::Ori => "|",
+            Self::Xorb => "^^",
+            Self::Xori => "^",
+            Self::Andb => "&&",
+            Self::Andi => "&",
+            Self::Shli => "<<",
+            Self::Shriu => ">>",
+            Self::Shris => "s>>",
+            Self::Addi => "+",
+            Self::Addf => "f+",
+            Self::Subi => "-",
+            Self::Subf => "f-",
+            Self::Muli => "*",
+            Self::Mulf => "f*",
+            Self::Diviu => "/",
+            Self::Divis => "s/",
+            Self::Divf => "f/",
+            Self::Remiu => "%",
+            Self::Remis => "s%",
+        }
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.struct.ArithBinExpr`.
+pub struct ArithBinExpr {
+    ctx: Arc<dyn StructuredSleighContext>,
+    lhs: Arc<dyn RValInternal>,
+    op: ArithBinExprOp,
+    rhs: Arc<dyn RValInternal>,
+}
+
+impl ArithBinExpr {
+    /// Port of `ArithBinExpr(StructuredSleigh, RVal, Op, RVal)`.
+    pub fn new(
+        ctx: Arc<dyn StructuredSleighContext>,
+        lhs: Arc<dyn RValInternal>,
+        op: ArithBinExprOp,
+        rhs: Arc<dyn RValInternal>,
+    ) -> Self {
+        Self { ctx, lhs, op, rhs }
+    }
+}
+
+impl RVal for ArithBinExpr {
+    fn get_type(&self) -> Box<dyn DataType> {
+        // Java: `super(ctx, lhs, op.str, rhs, lhs.getType())`.
+        self.lhs.get_type()
+    }
+
+    fn cast(&self, _type_: &dyn DataType) -> Box<dyn RVal> {
+        unimplemented!("BinExpr.cast has to store the new DataType; needs the real port")
+    }
+}
+
+impl RValInternal for ArithBinExpr {
+    fn get_context(&self) -> Arc<dyn StructuredSleighContext> {
+        Arc::clone(&self.ctx)
+    }
+
+    fn generate(&self, _parent: Option<&dyn RValInternal>) -> StringTree {
+        bin_expr_tree(self, &*self.lhs, self.op.sleigh(), &*self.rhs)
+    }
+
+    fn as_rval_internal(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        self
+    }
+}
+
+/// Port of `CmpExpr.Op`. Rust has no nested enums, hence the flattened name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CmpExprOp {
+    Eq,
+    Neq,
+    Eqf,
+    Neqf,
+    Ltiu,
+    Ltis,
+    Ltf,
+    Lteiu,
+    Lteis,
+    Ltef,
+    Gtiu,
+    Gtis,
+    Gtf,
+    Gteiu,
+    Gteis,
+    Gtef,
+}
+
+impl CmpExprOp {
+    /// The Sleigh operator text; Java stores it in the enum's `str` field.
+    pub fn sleigh(self) -> &'static str {
+        match self {
+            Self::Eq => "==",
+            Self::Neq => "!=",
+            Self::Eqf => "f==",
+            Self::Neqf => "f!=",
+            Self::Ltiu => "<",
+            Self::Ltis => "s<",
+            Self::Ltf => "f<",
+            Self::Lteiu => "<=",
+            Self::Lteis => "s<=",
+            Self::Ltef => "f<=",
+            Self::Gtiu => ">",
+            Self::Gtis => "s>",
+            Self::Gtf => "f>",
+            Self::Gteiu => ">=",
+            Self::Gteis => "s>=",
+            Self::Gtef => "f>=",
+        }
+    }
+
+    /// Port of `CmpExpr.Op.not()`: the operator that tests the complementary condition.
+    pub fn not(self) -> Self {
+        match self {
+            Self::Eq => Self::Neq,
+            Self::Neq => Self::Eq,
+            Self::Eqf => Self::Neqf,
+            Self::Neqf => Self::Eqf,
+            Self::Ltiu => Self::Gteiu,
+            Self::Ltis => Self::Gteis,
+            Self::Ltf => Self::Gtef,
+            Self::Lteiu => Self::Gtiu,
+            Self::Lteis => Self::Gtis,
+            Self::Ltef => Self::Gtf,
+            Self::Gtiu => Self::Lteiu,
+            Self::Gtis => Self::Lteis,
+            Self::Gtf => Self::Ltef,
+            Self::Gteiu => Self::Ltiu,
+            Self::Gteis => Self::Ltis,
+            Self::Gtef => Self::Ltf,
+        }
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.struct.CmpExpr`.
+pub struct CmpExpr {
+    ctx: Arc<dyn StructuredSleighContext>,
+    lhs: Arc<dyn RValInternal>,
+    op: CmpExprOp,
+    rhs: Arc<dyn RValInternal>,
+}
+
+impl CmpExpr {
+    /// Port of `CmpExpr(StructuredSleigh, RVal, Op, RVal)`.
+    pub fn new(
+        ctx: Arc<dyn StructuredSleighContext>,
+        lhs: Arc<dyn RValInternal>,
+        op: CmpExprOp,
+        rhs: Arc<dyn RValInternal>,
+    ) -> Self {
+        Self { ctx, lhs, op, rhs }
+    }
+}
+
+impl RVal for CmpExpr {
+    fn get_type(&self) -> Box<dyn DataType> {
+        unimplemented!("Java uses BooleanDataType.dataType, which is not ported yet")
+    }
+
+    fn cast(&self, _type_: &dyn DataType) -> Box<dyn RVal> {
+        unimplemented!("BinExpr.cast has to store the new DataType; needs the real port")
+    }
+}
+
+impl RValInternal for CmpExpr {
+    fn get_context(&self) -> Arc<dyn StructuredSleighContext> {
+        Arc::clone(&self.ctx)
+    }
+
+    fn generate(&self, _parent: Option<&dyn RValInternal>) -> StringTree {
+        bin_expr_tree(self, &*self.lhs, self.op.sleigh(), &*self.rhs)
+    }
+
+    fn as_rval_internal(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        self
+    }
+
+    fn notb(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        // Java: `new CmpExpr(ctx, lhs, op.not(), rhs, type)` -- negate in place, no `NotExpr`.
+        Arc::new(CmpExpr::new(
+            Arc::clone(&self.ctx),
+            Arc::clone(&self.lhs),
+            self.op.not(),
+            Arc::clone(&self.rhs),
+        ))
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.struct.NotExpr`.
+pub struct NotExpr {
+    ctx: Arc<dyn StructuredSleighContext>,
+    u: Arc<dyn RValInternal>,
+}
+
+impl NotExpr {
+    /// Port of `NotExpr(StructuredSleigh, RVal)`.
+    pub fn new(ctx: Arc<dyn StructuredSleighContext>, u: Arc<dyn RValInternal>) -> Self {
+        Self { ctx, u }
+    }
+}
+
+impl RVal for NotExpr {
+    fn get_type(&self) -> Box<dyn DataType> {
+        // Java: `super(ctx, "!", u, u.getType())`.
+        self.u.get_type()
+    }
+
+    fn cast(&self, _type_: &dyn DataType) -> Box<dyn RVal> {
+        unimplemented!("UnExpr.cast has to store the new DataType; needs the real port")
+    }
+}
+
+impl RValInternal for NotExpr {
+    fn get_context(&self) -> Arc<dyn StructuredSleighContext> {
+        Arc::clone(&self.ctx)
+    }
+
+    fn generate(&self, _parent: Option<&dyn RValInternal>) -> StringTree {
+        un_expr_tree(self, "!", &*self.u)
+    }
+
+    fn as_rval_internal(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        self
+    }
+
+    fn notb(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        // Java: `return u` -- double negation collapses.
+        Arc::clone(&self.u)
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.struct.InvExpr`.
+pub struct InvExpr {
+    ctx: Arc<dyn StructuredSleighContext>,
+    u: Arc<dyn RValInternal>,
+}
+
+impl InvExpr {
+    /// Port of `InvExpr(StructuredSleigh, RVal)`.
+    pub fn new(ctx: Arc<dyn StructuredSleighContext>, u: Arc<dyn RValInternal>) -> Self {
+        Self { ctx, u }
+    }
+}
+
+impl RVal for InvExpr {
+    fn get_type(&self) -> Box<dyn DataType> {
+        // Java: `super(ctx, "~", u, u.getType())`.
+        self.u.get_type()
+    }
+
+    fn cast(&self, _type_: &dyn DataType) -> Box<dyn RVal> {
+        unimplemented!("UnExpr.cast has to store the new DataType; needs the real port")
+    }
+}
+
+impl RValInternal for InvExpr {
+    fn get_context(&self) -> Arc<dyn StructuredSleighContext> {
+        Arc::clone(&self.ctx)
+    }
+
+    fn generate(&self, _parent: Option<&dyn RValInternal>) -> StringTree {
+        un_expr_tree(self, "~", &*self.u)
+    }
+
+    fn as_rval_internal(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        self
+    }
+
+    fn noti(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        // Java: `return u` -- double inversion collapses.
+        Arc::clone(&self.u)
+    }
+}
+
+/// Placeholder for the unported Java class `ghidra.pcode.struct.DerefExpr`.
+///
+/// Java's `generate` drops the parentheses when the parent is the `AssignStmt` this node is the
+/// left-hand side of. `AssignStmt` is not ported, so this stub always parenthesizes; the real
+/// port restores that case.
+pub struct DerefExpr {
+    ctx: Arc<dyn StructuredSleighContext>,
+    space: Arc<AddressSpace>,
+    addr: Arc<dyn RValInternal>,
+}
+
+impl DerefExpr {
+    /// Port of `DerefExpr(StructuredSleigh, AddressSpace, RValInternal)`.
+    pub fn new(
+        ctx: Arc<dyn StructuredSleighContext>,
+        space: Arc<AddressSpace>,
+        addr: Arc<dyn RValInternal>,
+    ) -> Self {
+        Self { ctx, space, addr }
+    }
+}
+
+impl RVal for DerefExpr {
+    fn get_type(&self) -> Box<dyn DataType> {
+        // Java: `this(ctx, space, addr, ctx.computeDerefType(addr))`.
+        self.ctx.compute_deref_type(&*self.addr)
+    }
+
+    fn cast(&self, _type_: &dyn DataType) -> Box<dyn RVal> {
+        unimplemented!("DerefExpr.cast has to store the new DataType; needs the real port")
+    }
+}
+
+impl RValInternal for DerefExpr {
+    fn get_context(&self) -> Arc<dyn StructuredSleighContext> {
+        Arc::clone(&self.ctx)
+    }
+
+    fn generate(&self, _parent: Option<&dyn RValInternal>) -> StringTree {
+        let mut st = StringTree::new();
+        st.append("(*");
+        if *self.ctx.default_space() != *self.space {
+            st.append("[");
+            st.append(self.space.name());
+            st.append("]");
+        }
+        let length = self.get_type().get_length();
+        if length != 0 {
+            st.append(":");
+            st.append(&length.to_string());
+        }
+        st.append(" ");
+        st.append_tree(self.addr.generate(Some(self)));
+        st.append(")");
+        st
+    }
+
+    fn as_rval_internal(self: Arc<Self>) -> Arc<dyn RValInternal> {
+        self
+    }
+}
+
+impl LVal for DerefExpr {
+    fn field(&self, _name: &str) -> Box<dyn LVal> {
+        unimplemented!("needs FieldExpr, which is not ported yet")
+    }
+
+    fn index(&self, _index: &dyn RVal) -> Box<dyn LVal> {
+        unimplemented!("needs IndexExpr, which is not ported yet")
+    }
+
+    fn index_long(&self, _index: i64) -> Box<dyn LVal> {
+        unimplemented!("needs IndexExpr, which is not ported yet")
+    }
+
+    fn set(&self, _rhs: &dyn RVal) -> Box<dyn StmtWithVal> {
+        unimplemented!("needs AssignStmt, which is not ported yet")
+    }
+
+    fn set_long(&self, _rhs: i64) -> Box<dyn StmtWithVal> {
+        unimplemented!("needs AssignStmt, which is not ported yet")
+    }
+
+    fn addi(&self, _rhs: &dyn RVal) -> Box<dyn RVal> {
+        unimplemented!("use RValInternal::addi, which takes the shared-ownership operands")
+    }
+}
+
+impl LValInternal for DerefExpr {}
 
