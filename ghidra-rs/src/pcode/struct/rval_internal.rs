@@ -469,6 +469,14 @@ mod tests {
         fn compute_deref_type(&self, _addr: &dyn RValInternal) -> Box<dyn DataType> {
             Box::new(TestType { length: 4 })
         }
+
+        fn fall(&self) -> Arc<dyn crate::pcode::seam_stubs::SleighLabel> {
+            unimplemented!("not exercised by these RValInternal combinator tests")
+        }
+
+        fn stack_peek(&self) -> Option<Arc<dyn crate::pcode::seam_stubs::BlockStmt>> {
+            None
+        }
     }
 
     #[derive(Debug)]
