@@ -2,6 +2,7 @@ pub mod character_iterator;
 pub mod datatype;
 pub mod demangle_exception;
 pub mod demangled;
+pub mod demangled_function_pointer;
 pub mod demangled_object;
 pub mod demangled_type;
 pub mod demangler;
