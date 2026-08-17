@@ -50,7 +50,7 @@ DONE	trait	0	24	4	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/featur
 DONE	trait	0	24	3	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/datatree/DataTreeFlavorHandler.java
 DONE	trait	0	22	1	framework	Ghidra/Features/Base/src/main/java/ghidra/framework/main/datatree/ArchiveProvider.java
 DONE	trait	1	13	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/MapEntry.java
-TODO	trait	0	21	75	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/DisassemblerPlugin.java
+DONE	trait	0	21	75	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/DisassemblerPlugin.java
 TODO	trait	0	21	1	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/UniversalDataFormatModel.java
 TODO	trait	0	21	83	app	Ghidra/Features/DecompilerDependent/src/main/java/ghidra/app/plugin/core/decompiler/taint/TaintState.java
 TODO	trait	0	20	5	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/FSBFileHandler.java
