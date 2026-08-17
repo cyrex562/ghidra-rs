@@ -233,19 +233,29 @@ pub struct LocationMemento;
 /// members are needed yet.
 pub trait SearchSettings {}
 
-/// Placeholder for `ghidra.app.plugin.core.osgi.GhidraBundle`, referenced by
-/// [`BundleHostListener`](crate::app::plugin::core::osgi::BundleHostListener) before the real
-/// class is ported. Java's version is a concrete class (not an interface), so this is a plain
-/// struct rather than a `dyn`-dispatched trait, matching [`LocationMemento`]'s convention.
-/// `BundleHostListener` only ever passes this type through as a parameter, so no fields are
-/// needed yet.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GhidraBundle;
+/// Placeholder for `ghidra.app.plugin.core.osgi.BundleHost`, referenced by
+/// [`GhidraBundleBase`](crate::app::plugin::core::osgi::GhidraBundleBase) before the real class
+/// is ported. Java's version is a concrete class (not an interface) with a large API surface for
+/// managing the OSGi framework's installed bundles; `GhidraBundleBase` only ever calls
+/// `getOSGiBundle(String)`, so that's the only method modeled here.
+#[derive(Debug, Clone, Default)]
+pub struct BundleHost;
+
+impl BundleHost {
+    /// Mirrors `BundleHost.getOSGiBundle(String)`. Always returns `None` until the real bundle
+    /// host is ported and can track installed OSGi bundles by location identifier.
+    pub fn get_os_gi_bundle(
+        &self,
+        _location_identifier: &str,
+    ) -> std::option::Option<crate::app::plugin::core::osgi::Bundle> {
+        std::option::Option::None
+    }
+}
 
 /// Placeholder for `docking.action.DockingAction`, referenced by
 /// [`InterpreterConsole`](crate::app::plugin::core::interpreter::InterpreterConsole) before the
 /// real class is ported. Java's version is a concrete class (not an interface), so this is a
-/// plain struct rather than a `dyn`-dispatched trait, matching [`LocationMemento`]/[`GhidraBundle`]'s
+/// plain struct rather than a `dyn`-dispatched trait, matching [`LocationMemento`]'s
 /// convention. `InterpreterConsole` only ever passes this type through as a parameter, so no
 /// fields are needed yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

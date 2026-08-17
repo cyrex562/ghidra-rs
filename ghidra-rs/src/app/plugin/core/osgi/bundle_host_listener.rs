@@ -1,6 +1,4 @@
-use crate::app::seam_stubs::GhidraBundle;
-
-use super::GhidraBundleException;
+use super::{GhidraBundle, GhidraBundleException};
 
 /// Listener for OSGi framework events.
 ///
@@ -11,45 +9,45 @@ pub trait BundleHostListener: Send + Sync {
     /// Invoked when a bundle is built.
     ///
     /// `summary` is `None` if nothing changed (build returned false).
-    fn bundle_built(&self, bundle: &GhidraBundle, summary: Option<&str>) {
+    fn bundle_built(&self, bundle: &dyn GhidraBundle, summary: Option<&str>) {
         let _ = (bundle, summary);
     }
 
     /// Invoked when a bundle is enabled or disabled.
-    fn bundle_enablement_change(&self, bundle: &GhidraBundle, new_enablement: bool) {
+    fn bundle_enablement_change(&self, bundle: &dyn GhidraBundle, new_enablement: bool) {
         let _ = (bundle, new_enablement);
     }
 
     /// Invoked when a bundle is activated or deactivated.
-    fn bundle_activation_change(&self, bundle: &GhidraBundle, new_activation: bool) {
+    fn bundle_activation_change(&self, bundle: &dyn GhidraBundle, new_activation: bool) {
         let _ = (bundle, new_activation);
     }
 
     /// Invoked when a bundle is added to `BundleHost`.
-    fn bundle_added(&self, bundle: &GhidraBundle) {
+    fn bundle_added(&self, bundle: &dyn GhidraBundle) {
         let _ = bundle;
     }
 
     /// Invoked when a number of bundles is added at once. A listener should override this
     /// method to avoid repeated invocation of [`bundle_added`](Self::bundle_added) in quick
     /// succession.
-    fn bundles_added(&self, bundles: &[GhidraBundle]) {
+    fn bundles_added(&self, bundles: &[&dyn GhidraBundle]) {
         for bundle in bundles {
-            self.bundle_added(bundle);
+            self.bundle_added(*bundle);
         }
     }
 
     /// Invoked when a bundle is removed from `BundleHost`.
-    fn bundle_removed(&self, bundle: &GhidraBundle) {
+    fn bundle_removed(&self, bundle: &dyn GhidraBundle) {
         let _ = bundle;
     }
 
     /// Invoked when a number of bundles is removed at once. A listener should override this
     /// method to avoid repeated invocation of [`bundle_removed`](Self::bundle_removed) in quick
     /// succession.
-    fn bundles_removed(&self, bundles: &[GhidraBundle]) {
+    fn bundles_removed(&self, bundles: &[&dyn GhidraBundle]) {
         for bundle in bundles {
-            self.bundle_removed(bundle);
+            self.bundle_removed(*bundle);
         }
     }
 
@@ -62,7 +60,57 @@ pub trait BundleHostListener: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::plugin::core::osgi::{BundleCapability, BundleRequirement, GhidraBundleBase};
+    use crate::app::seam_stubs::BundleHost;
+    use crate::generic::jar::ResourceFile;
+    use std::io::Write;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    /// Minimal `GhidraBundle` implementer for exercising `BundleHostListener` defaults --
+    /// mirrors the pattern used by `ghidra_bundle`'s own tests.
+    struct MockBundle {
+        base: GhidraBundleBase,
+    }
+
+    impl MockBundle {
+        fn new() -> Self {
+            let bundle_file = ResourceFile::new(std::path::PathBuf::from("/bundles/example.jar"));
+            MockBundle {
+                base: GhidraBundleBase::new(Arc::new(BundleHost), bundle_file, true, false),
+            }
+        }
+    }
+
+    impl GhidraBundle for MockBundle {
+        fn base(&self) -> &GhidraBundleBase {
+            &self.base
+        }
+
+        fn base_mut(&mut self) -> &mut GhidraBundleBase {
+            &mut self.base
+        }
+
+        fn clean(&mut self) -> bool {
+            true
+        }
+
+        fn build(&mut self, _writer: &mut dyn Write) -> Result<bool, Box<dyn std::error::Error>> {
+            Ok(true)
+        }
+
+        fn get_location_identifier(&self) -> String {
+            "file:/bundles/example.jar".to_string()
+        }
+
+        fn get_all_requirements(&self) -> Result<Vec<BundleRequirement>, GhidraBundleException> {
+            Ok(Vec::new())
+        }
+
+        fn get_all_capabilities(&self) -> Result<Vec<BundleCapability>, GhidraBundleException> {
+            Ok(Vec::new())
+        }
+    }
 
     /// A listener that only overrides `bundle_added`/`bundle_removed`, matching the common Java
     /// pattern of relying on the default `bundlesAdded`/`bundlesRemoved` loop.
@@ -72,11 +120,11 @@ mod tests {
     }
 
     impl BundleHostListener for CountingListener {
-        fn bundle_added(&self, _bundle: &GhidraBundle) {
+        fn bundle_added(&self, _bundle: &dyn GhidraBundle) {
             self.added.fetch_add(1, Ordering::SeqCst);
         }
 
-        fn bundle_removed(&self, _bundle: &GhidraBundle) {
+        fn bundle_removed(&self, _bundle: &dyn GhidraBundle) {
             self.removed.fetch_add(1, Ordering::SeqCst);
         }
     }
@@ -84,7 +132,10 @@ mod tests {
     #[test]
     fn default_bundles_added_invokes_bundle_added_per_element() {
         let listener = CountingListener { added: AtomicUsize::new(0), removed: AtomicUsize::new(0) };
-        let bundles = [GhidraBundle, GhidraBundle, GhidraBundle];
+        let a = MockBundle::new();
+        let b = MockBundle::new();
+        let c = MockBundle::new();
+        let bundles: [&dyn GhidraBundle; 3] = [&a, &b, &c];
 
         listener.bundles_added(&bundles);
 
@@ -95,7 +146,9 @@ mod tests {
     #[test]
     fn default_bundles_removed_invokes_bundle_removed_per_element() {
         let listener = CountingListener { added: AtomicUsize::new(0), removed: AtomicUsize::new(0) };
-        let bundles = [GhidraBundle, GhidraBundle];
+        let a = MockBundle::new();
+        let b = MockBundle::new();
+        let bundles: [&dyn GhidraBundle; 2] = [&a, &b];
 
         listener.bundles_removed(&bundles);
 
@@ -112,16 +165,17 @@ mod tests {
     #[test]
     fn unoverridden_methods_are_no_ops() {
         let listener = SilentListener;
-        listener.bundle_built(&GhidraBundle, Some("summary"));
-        listener.bundle_built(&GhidraBundle, None);
-        listener.bundle_enablement_change(&GhidraBundle, true);
-        listener.bundle_activation_change(&GhidraBundle, false);
-        listener.bundle_added(&GhidraBundle);
-        listener.bundle_removed(&GhidraBundle);
+        let bundle = MockBundle::new();
+        listener.bundle_built(&bundle, Some("summary"));
+        listener.bundle_built(&bundle, None);
+        listener.bundle_enablement_change(&bundle, true);
+        listener.bundle_activation_change(&bundle, false);
+        listener.bundle_added(&bundle);
+        listener.bundle_removed(&bundle);
         listener.bundle_exception(&GhidraBundleException::with_location("file:/bundle.jar", "boom"));
 
         let listener: Box<dyn BundleHostListener> = Box::new(SilentListener);
-        listener.bundles_added(&[GhidraBundle]);
-        listener.bundles_removed(&[GhidraBundle]);
+        listener.bundles_added(&[&bundle]);
+        listener.bundles_removed(&[&bundle]);
     }
 }

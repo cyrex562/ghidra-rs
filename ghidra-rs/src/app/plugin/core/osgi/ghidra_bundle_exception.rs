@@ -1,27 +1,43 @@
 use thiserror::Error;
 
-use super::OSGiUtils;
+use super::{BundleState, OSGiUtils};
 
 /// Represents an OSGi bundle in the framework.
 ///
-/// Port of `org.osgi.framework.Bundle`. Simplified to include only the properties
-/// used by GhidraBundleException.
+/// Port of `org.osgi.framework.Bundle`. Simplified to include only the properties used by
+/// [`GhidraBundleException`] and [`GhidraBundle`](super::GhidraBundle).
 #[derive(Debug, Clone)]
 pub struct Bundle {
     location: String,
+    state: BundleState,
 }
 
 impl Bundle {
-    /// Creates a new bundle with the given location.
+    /// Creates a new bundle with the given location. Its state defaults to
+    /// [`BundleState::Uninstalled`]; use [`Bundle::with_state`] to set a specific state.
     pub fn new(location: impl Into<String>) -> Self {
         Self {
             location: location.into(),
+            state: BundleState::Uninstalled,
+        }
+    }
+
+    /// Creates a new bundle with the given location and lifecycle state.
+    pub fn with_state(location: impl Into<String>, state: BundleState) -> Self {
+        Self {
+            location: location.into(),
+            state,
         }
     }
 
     /// Returns the location identifier of this bundle.
     pub fn get_location(&self) -> &str {
         &self.location
+    }
+
+    /// Returns the lifecycle state of this bundle.
+    pub fn get_state(&self) -> BundleState {
+        self.state
     }
 }
 
