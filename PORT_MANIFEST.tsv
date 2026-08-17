@@ -9302,7 +9302,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/IOS
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/x86/X86PcodeStateInitializer.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu x86 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AbstractStmt.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/ArithBinExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AssignStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AssignStmt.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/BinExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/BlockStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/BreakStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 

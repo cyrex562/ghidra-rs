@@ -4934,12 +4934,15 @@ pub trait StructuredSleighContext: Send + Sync {
 /// interface of `StructuredSleigh` (distinct from the ASM [`Label`] placeholder above, which
 /// stands in for an unrelated Java type of the same simple name). Referenced by
 /// [`AbstractStmt::generate`](crate::pcode::r#struct::abstract_stmt::AbstractStmt::generate) and
-/// [`AbstractStmt::get_next`](crate::pcode::r#struct::abstract_stmt::AbstractStmt::get_next),
-/// which only pass labels along without calling any of their methods, so this stub carries no
-/// members yet. Its three real implementors (`FreshLabel`, `FallLabel`, `BorrowedLabel`) are
+/// [`AbstractStmt::get_next`](crate::pcode::r#struct::abstract_stmt::AbstractStmt::get_next).
+/// Its three real implementors (`FreshLabel`, `FallLabel`, `BorrowedLabel`) are
 /// private/nested in `StructuredSleigh.java` and will land, along with `freshOrBorrow`/
-/// `genAnchor`/`ref`/`genGoto`, when that class is ported.
-pub trait SleighLabel: Send + Sync {}
+/// `genAnchor`/`ref`, when that class is ported.
+pub trait SleighLabel: Send + Sync {
+    /// Port of `genGoto(Label fall)`: generate the Sleigh code for an unconditional branch to fall.
+    /// Referenced by [`crate::pcode::r#struct::assign_stmt::AssignStmt`].
+    fn gen_goto(&self, fall: &dyn SleighLabel) -> crate::pcode::r#struct::string_tree::StringTree;
+}
 
 /// Placeholder for the unported Java type `ghidra.pcode.struct.BlockStmt`, referenced by
 /// [`AbstractStmt`](crate::pcode::r#struct::abstract_stmt::AbstractStmt)'s constructor

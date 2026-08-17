@@ -149,7 +149,11 @@ mod tests {
     use crate::program::model::data::data_type::DataType;
 
     struct TestLabel;
-    impl SleighLabel for TestLabel {}
+    impl SleighLabel for TestLabel {
+        fn gen_goto(&self, _fall: &dyn SleighLabel) -> StringTree {
+            StringTree::single("goto")
+        }
+    }
 
     struct TestCtx {
         space: Arc<AddressSpace>,
