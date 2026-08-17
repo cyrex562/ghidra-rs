@@ -1122,3 +1122,4 @@ ts	stub_class	referenced_by
 2026-08-17T08:51:37.413844+00:00	StringRecord	FunctionRecord
 2026-08-17T09:15:00.000000+00:00	GTreeNode	DataTreeFlavorHandler
 2026-08-17T09:15:00.500000+00:00	DataTree	DataTreeFlavorHandler
+2026-08-17T09:25:07.447228+00:00	Archive	ArchiveProvider
