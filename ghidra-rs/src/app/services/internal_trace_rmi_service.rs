@@ -96,7 +96,21 @@ mod tests {
     }
 
     struct MockAcceptorOpaque;
-    impl crate::app::seam_stubs::TraceRmiAcceptor for MockAcceptorOpaque {}
+    impl crate::debug::api::tracermi::TraceRmiAcceptor for MockAcceptorOpaque {
+        fn accept(&self) -> io::Result<Box<dyn crate::debug::api::tracermi::TraceRmiConnection>> {
+            Ok(Box::new(MockConnection))
+        }
+        fn is_closed(&self) -> bool {
+            false
+        }
+        fn address(&self) -> SocketAddr {
+            "127.0.0.1:0".parse().unwrap()
+        }
+        fn set_timeout(&self, _millis: i32) -> io::Result<()> {
+            Ok(())
+        }
+        fn cancel(&self) {}
+    }
 
     struct MockInternalTraceRmiService {
         address: Option<SocketAddr>,
@@ -135,7 +149,7 @@ mod tests {
         fn accept_one(
             &self,
             _address: Option<SocketAddr>,
-        ) -> io::Result<Box<dyn crate::app::seam_stubs::TraceRmiAcceptor>> {
+        ) -> io::Result<Box<dyn crate::debug::api::tracermi::TraceRmiAcceptor>> {
             Ok(Box::new(MockAcceptorOpaque))
         }
 
@@ -143,7 +157,7 @@ mod tests {
             Vec::new()
         }
 
-        fn get_all_acceptors(&self) -> Vec<Box<dyn crate::app::seam_stubs::TraceRmiAcceptor>> {
+        fn get_all_acceptors(&self) -> Vec<Box<dyn crate::debug::api::tracermi::TraceRmiAcceptor>> {
             Vec::new()
         }
 
