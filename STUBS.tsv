@@ -1050,3 +1050,5 @@ ts	stub_class	referenced_by
 2026-08-17T02:34:28.691576+00:00	SwingUpdateManager	DecompilePlugin
 2026-08-17T02:34:28.691576+00:00	SpecExtension	DecompilePlugin
 2026-08-17T02:36:08.396062+00:00	EmuInvalidSystemCallException	EmuSyscallLibrary
+2026-08-17T03:13:15.816658+00:00	UseropEmuSyscallDefinition	AnnotatedEmuSyscallUseropLibrary
+2026-08-17T03:13:15.816658+00:00	StructuredSleigh	AnnotatedEmuSyscallUseropLibrary

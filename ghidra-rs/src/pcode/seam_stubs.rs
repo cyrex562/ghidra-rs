@@ -31,10 +31,12 @@ use crate::pcode::emu::instruction_decoder::InstructionDecoder;
 use crate::pcode::emu::jit::decode::decoder_userop_library::DecoderUseropLibrary;
 use crate::pcode::emu::pcode_thread::ErasedPcodeThread;
 use crate::pcode::emu::thread_pcode_executor_state::ThreadPcodeExecutorState;
+use crate::pcode::emu::sys::emu_syscall_library::EmuSyscallDefinition;
 use crate::pcode::exec::abstract_sleigh_pcode_userop_definition::AbstractSleighPcodeUseropDefinitionBase;
 use crate::pcode::exec::concretion_error::ConcretionError;
 use crate::pcode::exec::pcode_arithmetic::{PcodeArithmetic, Purpose};
 use crate::pcode::exec::pcode_execution_exception::PcodeExecutionException;
+use crate::pcode::exec::pcode_executor::PcodeExecutor;
 use crate::pcode::exec::pcode_executor_state::PcodeExecutorState;
 use crate::pcode::exec::pcode_executor_state_piece::{
     ErasedPcodeExecutorStatePiece, PcodeExecutorStatePiece, Reason,
@@ -52,12 +54,17 @@ use crate::program::model::address::{
     Address, AddressRange, AddressSet, AddressSetView, AddressSpace, AddressSpaceType,
     SpecialAddress,
 };
+use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::lang::endian::Endian;
 use crate::program::model::lang::language::Language;
+use crate::program::model::lang::prototype_model::PrototypeModel;
 use crate::program::model::lang::register::RegisterRef;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::listing::default_program_context::DefaultProgramContext;
+use crate::program::model::listing::program::Program;
 use crate::program::model::listing::program_context::ProgramContext;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::program::model::mem::mem_buffer::MemBuffer;
 use crate::program::model::pcode::{OpCode, PcodeOp, SequenceNumber, Varnode};
 use crate::trace::model::memory::trace_memory_state::TraceMemoryState;
@@ -4420,5 +4427,132 @@ impl From<EmuInvalidSystemCallException> for PcodeExecutionException {
     fn from(err: EmuInvalidSystemCallException) -> Self {
         PcodeExecutionException::with_message(err.message)
     }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.sys.UseropEmuSyscallDefinition`,
+/// referenced by
+/// [`AnnotatedEmuSyscallUseropLibrary`](crate::pcode::emu::sys::annotated_emu_syscall_userop_library::AnnotatedEmuSyscallUseropLibrary).
+/// Java's class is concrete (not an interface), so, per the crate's convention for such
+/// placeholders, this is a struct rather than a trait object: it implements the already-ported
+/// [`EmuSyscallDefinition`] directly, carrying only the constructor logic and fields
+/// `AnnotatedEmuSyscallUseropLibrary` needs -- wrapping a p-code userop as a system call by
+/// aliasing each parameter's storage to the userop's respective input, per the platform's syscall
+/// calling convention. Replace with the real port once `UseropEmuSyscallDefinition.java` lands.
+pub struct UseropEmuSyscallDefinition<T: 'static> {
+    op: PcodeOp,
+    opdef: Arc<dyn PcodeUseropDefinition<T>>,
+    in_vars: Vec<Varnode>,
+    out_var: Option<Varnode>,
+}
+
+impl<T: 'static> UseropEmuSyscallDefinition<T> {
+    /// Port of `UseropEmuSyscallDefinition.requirePointerDataType`: the program's "pointer" data
+    /// type.
+    ///
+    /// # Panics
+    ///
+    /// If the program has no data type manager, or the manager has no "pointer" data type --
+    /// mirroring Java's `IllegalArgumentException("No 'pointer' data type in " + program")`.
+    pub fn require_pointer_data_type(program: &dyn Program) -> Arc<dyn DataType> {
+        let dtm = program.get_data_type_manager().expect("program has no data type manager");
+        let pointer =
+            dtm.get_data_type("/pointer").expect("No 'pointer' data type in program");
+        Arc::from(pointer)
+    }
+
+    /// Port of the constructor: alias each syscall parameter's storage to the wrapped userop's
+    /// respective input, per `convention`, and fabricate the `CALLOTHER` op the wrapped userop is
+    /// invoked through.
+    ///
+    /// # Panics
+    ///
+    /// If `opdef` is variadic (Java: `IllegalArgumentException`), if `convention` does not assign
+    /// storage for every parameter, or if any assigned storage is not a single varnode (Java:
+    /// `Unfinished.TODO()`).
+    pub fn new(
+        number: i64,
+        opdef: Arc<dyn PcodeUseropDefinition<T>>,
+        program: &dyn Program,
+        convention: &dyn PrototypeModel,
+        dt_machine_word: Arc<dyn DataType>,
+    ) -> Self {
+        let input_count = opdef.get_input_count();
+        if input_count < 0 {
+            panic!(
+                "Variadic sleigh userop {} cannot be used as a syscall",
+                opdef.get_name()
+            );
+        }
+        let input_count = input_count as usize;
+
+        let locs: Vec<Arc<dyn DataType>> =
+            std::iter::repeat_with(|| Arc::clone(&dt_machine_word)).take(input_count + 1).collect();
+        let storages = convention.get_storage_locations(program, &locs, false, false);
+        assert_eq!(
+            storages.len(),
+            input_count + 1,
+            "syscall calling convention did not assign storage for every parameter"
+        );
+
+        let out_var = Self::single_varnode(&*storages[0]);
+
+        let number_addr = program
+            .get_address_factory()
+            .and_then(|factory| factory.get_constant_address(number))
+            .expect("program has no address factory");
+        let mut op_ins = Vec::with_capacity(input_count + 1);
+        op_ins.push(Varnode::new(number_addr, 4));
+
+        let mut in_vars = Vec::with_capacity(input_count);
+        for storage in &storages[1..] {
+            let vn = Self::single_varnode(&**storage);
+            in_vars.push(vn.clone());
+            op_ins.push(vn);
+        }
+
+        let op = PcodeOp::new(
+            OpCode::CallOther,
+            SequenceNumber::new(SpecialAddress::no_address(), 0),
+            op_ins,
+            Some(out_var.clone()),
+        );
+
+        Self { op, opdef, in_vars, out_var: Some(out_var) }
+    }
+
+    /// Port of `getSingleVnStorage`.
+    fn single_varnode(storage: &dyn VariableStorage) -> Varnode {
+        let varnodes = storage.get_varnodes();
+        assert_eq!(varnodes.len(), 1, "expected a single varnode for syscall parameter storage");
+        varnodes.into_iter().next().unwrap()
+    }
+}
+
+impl<T: 'static> EmuSyscallDefinition<T> for UseropEmuSyscallDefinition<T> {
+    fn invoke(
+        &self,
+        executor: &PcodeExecutor<T>,
+        library: &dyn PcodeUseropLibrary<T>,
+    ) -> Result<(), PcodeExecutionException> {
+        // Java wraps every non-`PcodeExecutionException` throwable from `opdef.execute` in an
+        // `EmuSystemException`; the already-ported `PcodeUseropDefinition::execute` has no
+        // `Result` return, so (as with `AnnotatedPcodeUseropDefinition::execute`) a failure
+        // inside it panics rather than returning here.
+        self.opdef.execute(executor, library, &self.op, self.out_var.as_ref(), &self.in_vars);
+        Ok(())
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.struct.StructuredSleigh`, referenced by
+/// [`AnnotatedEmuSyscallUseropLibrary::new_structured_part`](crate::pcode::emu::sys::annotated_emu_syscall_userop_library::AnnotatedEmuSyscallUseropLibrary::new_structured_part).
+///
+/// Minimal: only the one method that call site invokes, `generate`, which files the
+/// structured-sleigh part's generated userops into the caller's userop map. The rest of the real
+/// class's surface (`StructuredSleigh.s()`/`e()`/control-flow builders, etc.) has no in-repo
+/// caller yet and is left out rather than guessed at; add it, and the `Label`/`StringTree`/
+/// `Stmt`/`Expr` types it needs, when a real implementor requires them.
+pub trait StructuredSleigh<T: 'static>: Send + Sync {
+    /// Port of `StructuredSleigh.generate(Map<String, SleighPcodeUseropDefinition>)`.
+    fn generate(&self, into: &mut UseropMap<T>);
 }
 
