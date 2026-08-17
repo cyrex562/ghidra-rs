@@ -1,6 +1,7 @@
 /// A simulated UNIX user.
 ///
 /// Corresponds to `ghidra.pcode.emu.unix.EmuUnixUser`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EmuUnixUser {
     /// The user's UID.
     pub uid: u32,

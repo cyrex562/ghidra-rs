@@ -9288,7 +9288,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/Pair
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/UseropEmuSyscallDefinition.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu sys 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/AbstractEmuUnixFile.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/AbstractEmuUnixFileSystem.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/AbstractEmuUnixSyscallUseropLibrary.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/AbstractEmuUnixSyscallUseropLibrary.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/AbstractStreamEmuUnixFileHandle.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/BytesEmuUnixFileSystem.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/DefaultEmuUnixFileHandle.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode emu unix 
