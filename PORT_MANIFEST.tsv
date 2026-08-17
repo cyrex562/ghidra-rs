@@ -9330,7 +9330,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/Local
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LoopStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LoopTruncateStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/NotExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/RValInternal.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/RValInternal.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/RawExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/RawStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/ResultStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 

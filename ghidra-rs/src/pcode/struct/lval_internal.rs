@@ -5,7 +5,10 @@
 ///
 /// This trait extends both LVal (from StructuredSleigh) and RValInternal to provide a complete
 /// interface for assignable values in structured Sleigh code generation.
-pub trait LValInternal: crate::pcode::seam_stubs::LVal + crate::pcode::seam_stubs::RValInternal {}
+pub trait LValInternal:
+    crate::pcode::seam_stubs::LVal + crate::pcode::r#struct::rval_internal::RValInternal
+{
+}
 
 #[cfg(test)]
 mod tests {
