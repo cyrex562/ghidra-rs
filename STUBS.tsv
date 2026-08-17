@@ -1120,3 +1120,5 @@ ts	stub_class	referenced_by
 2026-08-17T08:41:32.689537+00:00	StringsTable	FidDB
 2026-08-17T08:41:32.406754+00:00	FunctionsTable	FidDB
 2026-08-17T08:51:37.413844+00:00	StringRecord	FunctionRecord
+2026-08-17T09:15:00.000000+00:00	GTreeNode	DataTreeFlavorHandler
+2026-08-17T09:15:00.500000+00:00	DataTree	DataTreeFlavorHandler

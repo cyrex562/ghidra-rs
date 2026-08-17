@@ -130,3 +130,83 @@ impl AttributedString {
         Color
     }
 }
+
+/// Placeholder for `javax.swing.Icon`, referenced by
+/// [`GTreeNode`] (via `get_icon()`).
+pub trait Icon: Send + Sync {}
+
+/// Placeholder for `javax.swing.tree.TreePath`, referenced by
+/// [`GTreeNode`] (via `get_tree_path()`) and [`DataTree`] (via `remove_selection_path()`).
+pub trait TreePath: Send + Sync {}
+
+/// Placeholder for `docking.widgets.tree.GTreeFilter`, referenced by
+/// [`GTreeNode`] (via `filter()`).
+pub trait GTreeFilter: Send + Sync {}
+
+/// Placeholder for `ghidra.util.task.TaskMonitor`, referenced by
+/// [`GTreeNode`] (via `filter()` and `load_all()`).
+pub trait TaskMonitor: Send + Sync {}
+
+/// Placeholder for `java.util.stream.Stream`, referenced by
+/// [`GTreeNode`] (via `stream()`).
+pub trait Stream: Send + Sync {}
+
+/// Placeholder for `java.util.Iterator`, referenced by
+/// [`GTreeNode`] (via `iterator()`).
+pub trait Iterator: Send + Sync {}
+
+/// Placeholder for the unported Java type `GTreeNode`, referenced by
+/// `DataTreeFlavorHandler`. Generated stub: only a shape hint. Receivers default to `&self`
+/// (some may need `&mut self`); unknown in-repo types map to trait objects. Replace with the
+/// real port when available.
+pub trait GTreeNode: Send + Sync {
+    fn get_display_text(&self) -> String;
+    fn get_name(&self) -> String;
+    fn get_icon(&self, expanded: bool) -> Box<dyn Icon>;
+    fn get_tool_tip(&self) -> String;
+    fn is_leaf(&self) -> bool;
+    fn compare_to(&self, node: &dyn GTreeNode) -> i32;
+    fn add_node(&self, node: &dyn GTreeNode);
+    fn add_nodes(&self, nodes: Vec<Box<dyn GTreeNode>>);
+    fn get_children(&self) -> Vec<Box<dyn GTreeNode>>;
+    fn get_child_count(&self) -> i32;
+    fn get_child(&self, name: &str) -> Box<dyn GTreeNode>;
+    fn get_node_count(&self) -> i32;
+    fn get_leaf_count(&self) -> i32;
+    fn get_index_in_parent(&self) -> i32;
+    fn get_index_of_child(&self, node: &dyn GTreeNode) -> i32;
+    fn get_tree_path(&self) -> Box<dyn TreePath>;
+    fn remove_all(&self);
+    fn remove_node(&self, node: &dyn GTreeNode);
+    fn set_children(&self, child_list: Vec<Box<dyn GTreeNode>>);
+    fn is_ancestor(&self, node: &dyn GTreeNode) -> bool;
+    fn value_changed(&self, new_value: &dyn std::any::Any);
+    fn is_editable(&self) -> bool;
+    fn get_root(&self) -> Box<dyn GTreeNode>;
+    fn filter(&self, filter: &dyn GTreeFilter, monitor: &dyn TaskMonitor) -> std::io::Result<Box<dyn GTreeNode>>;
+    fn load_all(&self, monitor: &dyn TaskMonitor) -> std::io::Result<i32>;
+    fn hash_code(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn stream(&self, depth_first: bool) -> Box<dyn Stream>;
+    fn iterator(&self, depth_first: bool) -> Box<dyn Iterator>;
+    fn to_string(&self) -> String;
+    fn fire_node_structure_changed(&self);
+    fn fire_node_changed(&self);
+    fn expand(&self);
+    fn is_auto_expand_permitted(&self) -> bool;
+    fn collapse(&self);
+    fn is_expanded(&self) -> bool;
+}
+
+/// Placeholder for the unported Java type `DataTree`, referenced by
+/// `DataTreeFlavorHandler`. Generated stub: only a shape hint. Receivers default to `&self`
+/// (some may need `&mut self`); unknown in-repo types map to trait objects. Replace with the
+/// real port when available.
+pub trait DataTree: Send + Sync {
+    fn clear_selection(&self);
+    fn get_selection_count(&self) -> i32;
+    fn get_last_selected_path_component(&self) -> Box<dyn GTreeNode>;
+    fn remove_selection_path(&self, path: &dyn TreePath);
+    fn stop_editing(&self);
+    fn get_real_internal_folder_for_node(&self, node: &dyn GTreeNode) -> Box<dyn crate::framework::model::DomainFolder>;
+}

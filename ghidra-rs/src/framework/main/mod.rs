@@ -13,6 +13,6 @@ pub use application_level_plugin::ApplicationLevelPlugin;
 pub use console_listener::ConsoleListener;
 pub use data_tree_dialog_type::DataTreeDialogType;
 pub use datatable::DomainFileContext;
-pub use datatree::Cuttable;
+pub use datatree::{Cuttable, DataTreeFlavorHandler};
 pub use front_end_service::FrontEndService;
 pub use programatic_use_only::ProgramaticUseOnly;
