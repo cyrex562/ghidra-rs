@@ -12,8 +12,8 @@
 use std::io;
 use std::net::SocketAddr;
 
-use crate::app::seam_stubs::{TraceRmiAcceptor, TraceRmiServiceListener};
-use crate::debug::api::tracermi::TraceRmiConnection;
+use crate::app::seam_stubs::TraceRmiAcceptor;
+use crate::debug::api::tracermi::{TraceRmiConnection, TraceRmiServiceListener};
 
 /// A service (both in the Ghidra framework sense, and in the network sense) for connecting Trace
 /// RMI-based back-end debuggers.

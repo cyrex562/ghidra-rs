@@ -149,13 +149,13 @@ mod tests {
 
         fn add_trace_service_listener(
             &mut self,
-            _listener: Box<dyn crate::app::seam_stubs::TraceRmiServiceListener>,
+            _listener: Box<dyn crate::debug::api::tracermi::TraceRmiServiceListener>,
         ) {
         }
 
         fn remove_trace_service_listener(
             &mut self,
-            _listener: &dyn crate::app::seam_stubs::TraceRmiServiceListener,
+            _listener: &dyn crate::debug::api::tracermi::TraceRmiServiceListener,
         ) {
         }
     }
