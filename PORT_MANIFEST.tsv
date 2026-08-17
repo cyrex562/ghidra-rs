@@ -6322,7 +6322,7 @@ orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteEditInfo.java	DONE	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/CharacterFormatModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/CursorWidthDataFormatModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
-orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/DataFormatModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
+orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/DataFormatModel.java	DONE	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/DisassembledFormatModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/HexFormatModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 
 orig_src/Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/HexIntegerFormatModel.java	TODO	orig_src Ghidra Features ByteViewer src main java ghidra app plugin core format 

@@ -1096,3 +1096,4 @@ ts	stub_class	referenced_by
 2026-08-17T07:03:16.977955+00:00	RemoteMethod	RemoteMethodRegistry
 2026-08-17T07:03:16.978112+00:00	TraceObject	RemoteMethodRegistry
 2026-08-17T07:07:34.940896+00:00	Target	TraceRmiConnection
+2026-08-17T07:20:35.052265+00:00	ByteViewerConfigOptions	DataFormatModel

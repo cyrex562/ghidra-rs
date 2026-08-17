@@ -36,6 +36,15 @@ use std::sync::Arc;
 /// real class is ported. Both services only ever return this type, so no members are needed yet.
 pub trait ToolOptions {}
 
+/// Placeholder for `ghidra.app.plugin.core.byteviewer.ByteViewerConfigOptions`, referenced by
+/// [`DataFormatModel`](crate::app::plugin::core::format::DataFormatModel) before the real class
+/// is ported. Java's version is a concrete class (not an interface), so this is a plain struct
+/// rather than a `dyn`-dispatched trait, matching [`DockingAction`]'s convention.
+/// `DataFormatModel` only ever passes this type through as a parameter, so no fields are needed
+/// yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ByteViewerConfigOptions;
+
 /// Placeholder for `ghidra.app.util.importer.MessageLog`, referenced by
 /// [`Analyzer`](crate::app::services::Analyzer),
 /// [`SourceLanguageSpecExtension`](crate::app::util::sourcelanguage::source_language_spec_extension::SourceLanguageSpecExtension)
