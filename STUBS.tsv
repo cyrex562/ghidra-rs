@@ -1122,3 +1122,6 @@ ts	stub_class	referenced_by
 2026-08-17T09:15:00.000000+00:00	GTreeNode	DataTreeFlavorHandler
 2026-08-17T09:15:00.500000+00:00	DataTree	DataTreeFlavorHandler
 2026-08-17T09:25:07.447228+00:00	Archive	ArchiveProvider
+2026-08-17T09:40:20.320000+00:00	ListingContextAction	DisassemblerPlugin
+2026-08-17T09:40:20.320000+00:00	DisassembleCommand	DisassemblerPlugin
+2026-08-17T09:40:20.320000+00:00	ProcessorStateDialog	DisassemblerPlugin

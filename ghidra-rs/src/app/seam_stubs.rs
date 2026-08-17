@@ -27,6 +27,7 @@ use crate::util::seam_stubs::ResourceFile;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt;
+use std::any::Any;
 use std::option::Option as StdOption;
 use std::sync::Arc;
 
@@ -214,6 +215,18 @@ pub trait Navigatable {
 
     /// Stands in for `Navigatable.getProgram()`.
     fn get_program(&self) -> Box<dyn crate::program::model::listing::program::Program>;
+
+    /// Whether this is a dynamic (debugger) listing rather than a static program listing, mirroring
+    /// `Navigatable.isDynamic()`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin), which
+    /// disables its actions over a dynamic listing (the Debugger has its own Disassemble actions)
+    /// and skips follow-on code analysis there. Java's default implementation on `Navigatable`
+    /// likewise returns `false`.
+    fn is_dynamic(&self) -> bool {
+        false
+    }
 }
 
 /// Placeholder for `ghidra.app.nav.LocationMemento`, referenced by
@@ -1682,7 +1695,17 @@ pub trait ListingPanel {}
 /// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
 /// is ported. Both only ever pass this type through as a parameter (`DecompilePlugin` additionally
 /// holds one across threads, hence `Send + Sync`), so no members are needed yet.
-pub trait ProgramSelection: Send + Sync {}
+///
+/// Grown for [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin),
+/// which branches on `selection.isEmpty()` in every one of its disassemble callbacks. Java's
+/// `ProgramSelection` is an `AddressSetView`, and this placeholder carries no addresses at all, so
+/// the default answer is "empty".
+pub trait ProgramSelection: Send + Sync {
+    /// Whether this selection covers no addresses, mirroring `AddressSetView.isEmpty()`.
+    fn is_empty(&self) -> bool {
+        true
+    }
+}
 
 /// The mode of the Go-to dialog's Sleigh expressions.
 ///
@@ -1720,7 +1743,96 @@ pub trait ClipboardContentProviderService {}
 /// Placeholder for `ghidra.app.context.ListingActionContext`, referenced by
 /// [`DataService`](crate::app::services::DataService) before the real class is ported.
 /// `DataService` only ever passes this type through as a parameter, so no members are needed yet.
-pub trait ListingActionContext {}
+///
+/// Grown for [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin),
+/// whose action callbacks read the program, location, selection, navigatable and component
+/// provider off the context. Java inherits all five from `ProgramActionContext` /
+/// `NavigatableActionContext` / `ActionContext`, where the program and navigatable are non-null;
+/// here every member is defaulted and inert (`None`) so the opaque placeholder above keeps
+/// compiling, and `DisassemblerPlugin` treats a context that yields nothing as nothing to do.
+pub trait ListingActionContext {
+    /// The program the action was invoked against, mirroring `ProgramActionContext.getProgram()`.
+    fn get_program(&self) -> StdOption<Arc<dyn Program>> {
+        None
+    }
+
+    /// The cursor location, mirroring `NavigatableActionContext.getLocation()`.
+    fn get_location(&self) -> StdOption<Arc<dyn ProgramLocation + Send + Sync>> {
+        None
+    }
+
+    /// The current selection, mirroring `NavigatableActionContext.getSelection()`. Java's version
+    /// returns an empty selection rather than null in practice, but callers null-check it anyway.
+    fn get_selection(&self) -> StdOption<Arc<dyn ProgramSelection>> {
+        None
+    }
+
+    /// The navigatable the action was invoked from, mirroring
+    /// `NavigatableActionContext.getNavigatable()`.
+    fn get_navigatable(&self) -> StdOption<Arc<dyn Navigatable + Send + Sync>> {
+        None
+    }
+
+    /// The component provider the action was invoked from, mirroring
+    /// `ActionContext.getComponentProvider()`. Type-erased because `ComponentProvider` is not
+    /// ported (only an empty marker exists in [`docking::seam_stubs`](crate::docking::seam_stubs)).
+    fn get_component_provider(&self) -> StdOption<Arc<dyn Any + Send + Sync>> {
+        None
+    }
+}
+
+/// Placeholder for `ghidra.app.context.ListingContextAction`, the common base of all sixteen
+/// actions [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin)
+/// installs (`DisassembleAction`, `ArmDisassembleAction`, `SetFlowOverrideAction`, ...), none of
+/// which is ported. Java declares those fields as `DockingAction`, a supertype of
+/// `ListingContextAction`; this is typed at the tighter shared base because that is where the
+/// members below live.
+///
+/// Each of those actions is constructed with a back-reference to the plugin (`new
+/// DisassembleAction(this, GROUP_NAME)`), which is the dependency cycle this stub breaks: the
+/// plugin is handed its already-built actions rather than building them.
+pub trait ListingContextAction: Send + Sync {
+    /// Mirrors `ListingContextAction.actionPerformed(ListingActionContext)`.
+    fn action_performed(&self, context: &dyn ListingActionContext);
+
+    /// Mirrors `ListingContextAction.isEnabledForContext(ListingActionContext)`.
+    fn is_enabled_for_context(&self, context: &dyn ListingActionContext) -> bool;
+
+    /// Re-erases this action so it can be handed to
+    /// [`PluginTool::add_action`](crate::framework::seam_stubs::PluginTool::add_action), which
+    /// takes the type-erased handle `crate::framework` uses for unported `crate::app` types (the
+    /// same arrangement [`DecompilerProvider::as_any_arc`] uses).
+    fn as_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
+}
+
+/// Placeholder for `ghidra.app.cmd.disassemble.DisassembleCommand`, referenced by
+/// [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin) before the
+/// real class is ported. The plugin's five architecture-specific commands
+/// (`ArmDisassembleCommand`, `Hcs12DisassembleCommand`, `MipsDisassembleCommand`,
+/// `PowerPCDisassembleCommand`, `X86_64DisassembleCommand`) all extend `DisassembleCommand`, and
+/// the plugin only ever touches the base surface, so one stub covers all six.
+pub trait DisassembleCommand: Send + Sync {
+    /// Mirrors `DisassembleCommand.enableCodeAnalysis(boolean)`.
+    fn enable_code_analysis(&self, enable: bool);
+
+    /// Re-erases this command so it can be handed to
+    /// [`PluginTool::execute_background_command`](crate::framework::seam_stubs::PluginTool::execute_background_command);
+    /// see [`ListingContextAction::as_any_arc`].
+    fn as_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
+}
+
+/// Placeholder for `ghidra.app.plugin.core.disassembler.ProcessorStateDialog`, referenced by
+/// [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin)'s
+/// `setDefaultContext` before the real class is ported.
+pub trait ProcessorStateDialog: Send + Sync {
+    /// Mirrors `ProcessorStateDialog.okCallback()`.
+    fn ok_callback(&self);
+
+    /// Re-erases this dialog so it can be handed to
+    /// [`PluginTool::show_dialog`](crate::framework::seam_stubs::PluginTool::show_dialog); see
+    /// [`ListingContextAction::as_any_arc`].
+    fn as_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
+}
 
 /// Placeholder for `ghidra.app.services.DataTypeReference`, referenced by
 /// [`DataTypeReferenceFinder`](crate::app::services::DataTypeReferenceFinder) before the real

@@ -15,6 +15,12 @@ use std::sync::Arc;
 /// Stands in for `Program.PROGRAM_INFO`.
 pub const PROGRAM_INFO: &str = "Program Information";
 
+/// Name of the properties list holding the disassembler's per-program options.
+///
+/// Stands in for `Program.DISASSEMBLER_PROPERTIES`. The option names registered under it live in
+/// [`crate::program::disassemble`].
+pub const DISASSEMBLER_PROPERTIES: &str = "Disassembler";
+
 pub trait Program: DomainObject + Send + Sync {
     fn get_name(&self) -> String;
     fn get_language_id(&self) -> String;

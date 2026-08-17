@@ -12,6 +12,7 @@ pub mod debug;
 pub mod decompile;
 pub mod decompiler;
 pub mod diff;
+pub mod disassembler;
 pub mod eclipse;
 pub mod entropy;
 pub mod format;

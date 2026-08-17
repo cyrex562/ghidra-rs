@@ -539,6 +539,52 @@ pub trait PluginTool {
     fn get_project(&self) -> Option<Box<dyn crate::framework::model::Project>> {
         None
     }
+
+    /// Installs an action in the tool, mirroring `PluginTool.addAction(DockingActionIf)`.
+    ///
+    /// Grown in for
+    /// [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin), whose
+    /// `createActions()` registers its sixteen listing actions here. The action is type-erased for
+    /// the same reason [`show_component_provider`](Self::show_component_provider)'s provider is:
+    /// the actions this tool is handed are `crate::app` types (see the
+    /// [`ListingContextAction`](crate::app::seam_stubs::ListingContextAction) stub), so callers
+    /// pass the same `Arc<dyn Any>` handle the service registry uses.
+    fn add_action(&self, _action: Arc<dyn Any + Send + Sync>) {}
+
+    /// Runs a command against a domain object on the tool's background task thread, mirroring
+    /// `PluginTool.executeBackgroundCommand(BackgroundCommand<T>, T)`.
+    ///
+    /// Grown in for
+    /// [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin), which
+    /// schedules its disassembly commands here. `BackgroundCommand` is not ported, and the
+    /// commands themselves are `crate::app` types (see the
+    /// [`DisassembleCommand`](crate::app::seam_stubs::DisassembleCommand) stub), so the command is
+    /// type-erased; the domain object stays typed, since Java bounds it by `DomainObject` too.
+    fn execute_background_command(
+        &self,
+        _cmd: Arc<dyn Any + Send + Sync>,
+        _obj: Arc<dyn crate::program::model::listing::Program>,
+    ) {
+    }
+
+    /// Sets the tool's status line, optionally alerting the user, mirroring
+    /// `PluginTool.setStatusInfo(String, boolean)`.
+    fn set_status_info(&self, _text: &str, _beep: bool) {}
+
+    /// Shows a modal dialog, centered over a component provider, mirroring
+    /// `PluginTool.showDialog(DialogComponentProvider, ComponentProvider)`.
+    ///
+    /// Grown in for
+    /// [`DisassemblerPlugin`](crate::app::plugin::core::disassembler::DisassemblerPlugin)'s
+    /// `setDefaultContext`. Neither `DialogComponentProvider` nor `ComponentProvider` is ported,
+    /// so both are type-erased; `None` stands in for Java's null provider (dialog centered over
+    /// the active window instead).
+    fn show_dialog(
+        &self,
+        _dialog_component: Arc<dyn Any + Send + Sync>,
+        _centered_on_provider: Option<Arc<dyn Any + Send + Sync>>,
+    ) {
+    }
 }
 
 /// Adapts a shared [`PluginTool`] handle to the owned `Box<dyn PluginTool>` that the ported
@@ -629,6 +675,30 @@ impl PluginTool for SharedPluginTool {
 
     fn remove_tool_listener(&self, listener: &dyn crate::framework::model::ToolListener) {
         self.0.remove_tool_listener(listener);
+    }
+
+    fn add_action(&self, action: Arc<dyn Any + Send + Sync>) {
+        self.0.add_action(action);
+    }
+
+    fn execute_background_command(
+        &self,
+        cmd: Arc<dyn Any + Send + Sync>,
+        obj: Arc<dyn crate::program::model::listing::Program>,
+    ) {
+        self.0.execute_background_command(cmd, obj);
+    }
+
+    fn set_status_info(&self, text: &str, beep: bool) {
+        self.0.set_status_info(text, beep);
+    }
+
+    fn show_dialog(
+        &self,
+        dialog_component: Arc<dyn Any + Send + Sync>,
+        centered_on_provider: Option<Arc<dyn Any + Send + Sync>>,
+    ) {
+        self.0.show_dialog(dialog_component, centered_on_provider);
     }
 }
 
