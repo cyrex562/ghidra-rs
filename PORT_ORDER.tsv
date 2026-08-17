@@ -24,7 +24,7 @@ DONE	trait	6	8	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/o
 PARK	trait	5	20	1	script	Ghidra/Features/Base/src/main/java/ghidra/app/script/ResourceFileJavaFileManager.java
 DONE	trait	6	8	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/InterpreterConsole.java
 DONE	trait	2	16	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/GhidraBundle.java
-TODO	trait	1	7	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BuildError.java
+DONE	trait	1	7	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BuildError.java
 TODO	trait	0	38	24	script	Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraScriptUtil.java
 TODO	trait	1	30	3	format	Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethod.java
 TODO	trait	0	35	5	format	Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcState.java
