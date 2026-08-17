@@ -682,19 +682,20 @@ impl DataTypeComponent for BasicDataTypeComponent {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
 
+    // Every mutating method below takes `&mut self`, so this mock needs no interior mutability;
+    // plain fields also keep it `Send + Sync`, as `DataType` requires.
     #[derive(Default)]
     struct MockComposite {
-        name: RefCell<String>,
-        description: RefCell<String>,
-        packing: RefCell<i32>,
-        minimum_alignment: RefCell<i32>,
+        name: String,
+        description: String,
+        packing: i32,
+        minimum_alignment: i32,
         num_components: i32,
         components: Vec<(&'static str, i32)>,
-        is_union_flag: RefCell<bool>,
-        repack_calls: RefCell<Vec<bool>>,
-        add_calls: RefCell<Vec<(i32, Option<String>, Option<String>)>>,
+        is_union_flag: bool,
+        repack_calls: Vec<bool>,
+        add_calls: Vec<(i32, Option<String>, Option<String>)>,
     }
 
     /// Test-only component whose [`DataTypeComponent::get_data_type`] returns a real (freshly
@@ -719,13 +720,13 @@ mod tests {
 
     impl DataType for MockComposite {
         fn get_name(&self) -> String {
-            self.name.borrow().clone()
+            self.name.clone()
         }
         fn get_display_name(&self) -> String {
-            format!("display:{}", self.name.borrow())
+            format!("display:{}", self.name)
         }
         fn is_union(&self) -> bool {
-            *self.is_union_flag.borrow()
+            self.is_union_flag
         }
     }
 
@@ -760,31 +761,31 @@ mod tests {
 
     impl CompositeDataTypeImpl for MockComposite {
         fn stored_description(&self) -> String {
-            self.description.borrow().clone()
+            self.description.clone()
         }
         fn set_stored_description(&mut self, description: String) {
-            *self.description.borrow_mut() = description;
+            self.description = description;
         }
         fn stored_minimum_alignment_value(&self) -> i32 {
-            *self.minimum_alignment.borrow()
+            self.minimum_alignment
         }
         fn set_stored_minimum_alignment_value(&mut self, minimum_alignment: i32) {
-            *self.minimum_alignment.borrow_mut() = minimum_alignment;
+            self.minimum_alignment = minimum_alignment;
         }
         fn stored_packing_value(&self) -> i32 {
-            *self.packing.borrow()
+            self.packing
         }
         fn set_stored_packing_value_raw(&mut self, packing: i32) {
-            *self.packing.borrow_mut() = packing;
+            self.packing = packing;
         }
         fn set_stored_name(&mut self, name: String) {
-            *self.name.borrow_mut() = name;
+            self.name = name;
         }
         fn composite_impl_has_language_dependant_length(&self) -> bool {
             false
         }
         fn repack_with_notify(&mut self, notify: bool) -> bool {
-            self.repack_calls.borrow_mut().push(notify);
+            self.repack_calls.push(notify);
             false
         }
         fn composite_impl_alignment(&self) -> i32 {
@@ -802,7 +803,7 @@ mod tests {
             field_name: Option<String>,
             comment: Option<String>,
         ) -> Result<Box<dyn DataTypeComponent>, String> {
-            self.add_calls.borrow_mut().push((length, field_name.clone(), comment.clone()));
+            self.add_calls.push((length, field_name.clone(), comment.clone()));
             Ok(self.composite_impl_create_component(data_type, length, 0, 0, field_name, comment))
         }
         fn composite_impl_insert_with_length_and_name(
@@ -847,9 +848,9 @@ mod tests {
 
     fn sample() -> MockComposite {
         MockComposite {
-            name: RefCell::new("MyStruct".to_string()),
-            packing: RefCell::new(NO_PACKING),
-            minimum_alignment: RefCell::new(DEFAULT_ALIGNMENT),
+            name: "MyStruct".to_string(),
+            packing: NO_PACKING,
+            minimum_alignment: DEFAULT_ALIGNMENT,
             ..Default::default()
         }
     }
@@ -866,35 +867,35 @@ mod tests {
     fn packing_type_reflects_boundaries() {
         let mut c = sample();
         assert_eq!(c.composite_impl_packing_type(), PackingType::Disabled);
-        *c.packing.borrow_mut() = DEFAULT_PACKING;
+        c.packing = DEFAULT_PACKING;
         assert_eq!(c.composite_impl_packing_type(), PackingType::Default);
-        *c.packing.borrow_mut() = 8;
+        c.packing = 8;
         assert_eq!(c.composite_impl_packing_type(), PackingType::Explicit);
     }
 
     #[test]
     fn set_packing_enabled_resets_alignment_and_calls_repack() {
         let mut c = sample();
-        *c.minimum_alignment.borrow_mut() = 16;
+        c.minimum_alignment = 16;
         assert_eq!(c.composite_impl_packing_type(), PackingType::Disabled);
 
         c.composite_impl_set_packing_enabled(true);
         assert_eq!(c.composite_impl_packing_type(), PackingType::Default);
-        assert_eq!(*c.minimum_alignment.borrow(), DEFAULT_ALIGNMENT);
-        assert_eq!(*c.repack_calls.borrow(), vec![true]);
+        assert_eq!(c.minimum_alignment, DEFAULT_ALIGNMENT);
+        assert_eq!(c.repack_calls, vec![true]);
 
         // toggling to the same state again is a no-op
         c.composite_impl_set_packing_enabled(true);
-        assert_eq!(c.repack_calls.borrow().len(), 1);
+        assert_eq!(c.repack_calls.len(), 1);
     }
 
     #[test]
     fn alignment_type_reflects_boundaries() {
         let mut c = sample();
         assert_eq!(c.composite_impl_alignment_type(), AlignmentType::Default);
-        *c.minimum_alignment.borrow_mut() = MACHINE_ALIGNMENT;
+        c.minimum_alignment = MACHINE_ALIGNMENT;
         assert_eq!(c.composite_impl_alignment_type(), AlignmentType::Machine);
-        *c.minimum_alignment.borrow_mut() = 32;
+        c.minimum_alignment = 32;
         assert_eq!(c.composite_impl_alignment_type(), AlignmentType::Explicit);
     }
 
@@ -920,7 +921,7 @@ mod tests {
         assert!(!c.composite_impl_is_not_yet_defined());
 
         c.num_components = 0;
-        *c.packing.borrow_mut() = DEFAULT_PACKING;
+        c.packing = DEFAULT_PACKING;
         assert!(!c.composite_impl_is_not_yet_defined());
     }
 
@@ -971,17 +972,17 @@ mod tests {
         let mut c = sample();
         let dt: Box<dyn DataType> = Box::new(MockPlainDataType { name: "byte", length: 1 });
         c.composite_impl_add(dt).unwrap();
-        assert_eq!(c.add_calls.borrow()[0], (-1, None, None));
+        assert_eq!(c.add_calls[0], (-1, None, None));
 
         let dt2: Box<dyn DataType> = Box::new(MockPlainDataType { name: "word", length: 2 });
         c.composite_impl_add_with_length(dt2, 4).unwrap();
-        assert_eq!(c.add_calls.borrow()[1], (4, None, None));
+        assert_eq!(c.add_calls[1], (4, None, None));
 
         let dt3: Box<dyn DataType> = Box::new(MockPlainDataType { name: "dword", length: 4 });
         c.composite_impl_add_with_name(dt3, Some("field".to_string()), Some("note".to_string()))
             .unwrap();
         assert_eq!(
-            c.add_calls.borrow()[2],
+            c.add_calls[2],
             (-1, Some("field".to_string()), Some("note".to_string()))
         );
     }
@@ -1003,8 +1004,8 @@ mod tests {
 
     #[test]
     fn preferred_component_length_uses_union_size_when_disabled() {
-        let c = sample();
-        *c.is_union_flag.borrow_mut() = true;
+        let mut c = sample();
+        c.is_union_flag = true;
         let dt = MockPlainDataType { name: "qword", length: 8 };
         assert_eq!(c.composite_impl_preferred_component_length(&dt, false, -1, -1), Ok(8));
     }
@@ -1040,7 +1041,7 @@ mod tests {
     fn non_packed_alignment_reflects_boundaries() {
         let mut c = sample();
         assert_eq!(c.composite_impl_non_packed_alignment(), 1);
-        *c.minimum_alignment.borrow_mut() = 4;
+        c.minimum_alignment = 4;
         assert_eq!(c.composite_impl_non_packed_alignment(), 4);
     }
 

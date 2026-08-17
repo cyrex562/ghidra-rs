@@ -1076,3 +1076,9 @@ ts	stub_class	referenced_by
 2026-08-17T05:32:55.676265+00:00	Type	BundleStatus
 2026-08-17T05:32:55.676266+00:00	BundleStatus	BundleStatusChangeRequestListener
 2026-08-17T05:45:23.733063+00:00	DockingAction	InterpreterConsole
+2026-08-17T06:20:59.491752+00:00	BundleHost	GhidraScriptUtil
+2026-08-17T06:20:59.504128+00:00	GhidraScriptProvider	GhidraScriptUtil
+2026-08-17T06:20:59.504694+00:00	ScriptInfo	GhidraScriptUtil
+2026-08-17T06:20:59.504896+00:00	UnsupportedScriptProvider	GhidraScriptUtil
+2026-08-17T06:20:59.509871+00:00	ClassSearcher	GhidraScriptUtil
+2026-08-17T06:20:59.513863+00:00	FileUtilities	GhidraScriptUtil

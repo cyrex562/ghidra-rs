@@ -182,7 +182,7 @@ mod tests {
     use super::*;
 
     struct MockUnionDataType {
-        settings_calls: std::cell::Cell<u32>,
+        settings_calls: std::sync::atomic::AtomicU32,
     }
 
     impl DataType for MockUnionDataType {
@@ -190,7 +190,7 @@ mod tests {
             8
         }
         fn get_settings_definitions(&self) -> Vec<Box<dyn SettingsDefinition>> {
-            self.settings_calls.set(self.settings_calls.get() + 1);
+            self.settings_calls.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             Vec::new()
         }
         fn is_equivalent(&self, dt: &dyn DataType) -> bool {
@@ -218,7 +218,7 @@ mod tests {
     impl PartialUnion for MockPartialUnion {
         fn get_parent(&self) -> Box<dyn DataType> {
             Box::new(MockUnionDataType {
-                settings_calls: std::cell::Cell::new(0),
+                settings_calls: std::sync::atomic::AtomicU32::new(0),
             })
         }
         fn get_offset(&self) -> i32 {
@@ -226,7 +226,7 @@ mod tests {
         }
         fn get_stripped_data_type(&self) -> Box<dyn DataType> {
             Box::new(MockUnionDataType {
-                settings_calls: std::cell::Cell::new(0),
+                settings_calls: std::sync::atomic::AtomicU32::new(0),
             })
         }
         fn partial_union_length(&self) -> i32 {

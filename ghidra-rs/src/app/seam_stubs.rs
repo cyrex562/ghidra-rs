@@ -236,8 +236,9 @@ pub trait SearchSettings {}
 /// Placeholder for `ghidra.app.plugin.core.osgi.BundleHost`, referenced by
 /// [`GhidraBundleBase`](crate::app::plugin::core::osgi::GhidraBundleBase) before the real class
 /// is ported. Java's version is a concrete class (not an interface) with a large API surface for
-/// managing the OSGi framework's installed bundles; `GhidraBundleBase` only ever calls
-/// `getOSGiBundle(String)`, so that's the only method modeled here.
+/// managing the OSGi framework's installed bundles; only the members its current callers
+/// (`GhidraBundleBase` and [`ghidra_script_util`](crate::script::ghidra_script_util)) need are
+/// modeled here. The stub holds no bundles, so every query answers "nothing installed".
 #[derive(Debug, Clone, Default)]
 pub struct BundleHost;
 
@@ -249,6 +250,54 @@ impl BundleHost {
         _location_identifier: &str,
     ) -> std::option::Option<crate::app::plugin::core::osgi::Bundle> {
         std::option::Option::None
+    }
+
+    /// Mirrors `BundleHost.startFramework()`, which starts the embedded OSGi framework.
+    pub fn start_framework(&self) -> std::io::Result<()> {
+        std::result::Result::Ok(())
+    }
+
+    /// Mirrors `BundleHost.stopFramework()`.
+    pub fn stop_framework(&self) {}
+
+    /// Mirrors `BundleHost.add(ResourceFile, boolean, boolean)`, which creates a managed bundle
+    /// for `bundle_file`. The real method returns the new `GhidraBundle`; no caller of this stub
+    /// uses that return value yet, and the stub has nowhere to store it.
+    pub fn add(
+        &self,
+        _bundle_file: &crate::generic::jar::resource_file::ResourceFile,
+        _enabled: bool,
+        _system_bundle: bool,
+    ) {
+    }
+
+    /// Mirrors `BundleHost.add(List<ResourceFile>, boolean, boolean)`.
+    pub fn add_all(
+        &self,
+        _bundle_files: &[crate::generic::jar::resource_file::ResourceFile],
+        _enabled: bool,
+        _system_bundle: bool,
+    ) {
+    }
+
+    /// Mirrors `BundleHost.getBundleFiles()`: the files of all managed bundles.
+    pub fn get_bundle_files(&self) -> Vec<crate::generic::jar::resource_file::ResourceFile> {
+        Vec::new()
+    }
+
+    /// Mirrors `BundleHost.getEnabledBundleFiles()`: the files of the enabled managed bundles.
+    pub fn get_enabled_bundle_files(&self) -> Vec<crate::generic::jar::resource_file::ResourceFile> {
+        Vec::new()
+    }
+
+    /// Mirrors the static `BundleHost.getOsgiDir()`, the user-settings subdirectory holding OSGi
+    /// artifacts. Java resolves it against the `Application` singleton; following this crate's
+    /// convention for Java statics that read the singleton, the application is passed in, and the
+    /// result is `None` when the application has no user settings directory.
+    pub fn get_osgi_dir(
+        app: &dyn crate::framework::application::Application,
+    ) -> std::option::Option<std::path::PathBuf> {
+        app.user_settings_directory().map(|dir| dir.join("osgi"))
     }
 }
 
