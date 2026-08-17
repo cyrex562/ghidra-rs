@@ -5,7 +5,7 @@ DONE	trait	3	25	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/
 DONE	trait	1	61	1	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionPointer.java
 DONE	trait	1	36	58	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/FunctionDatabase.java
 DONE	trait	0	46	10	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/BSimQuery.java
-TODO	trait	2	13	1	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DecompilerHoverService.java
+PARK	trait	2	13	1	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DecompilerHoverService.java
 TODO	trait	1	24	88	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/DecompilePlugin.java
 TODO	trait	3	8	41	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuSyscallLibrary.java
 TODO	trait	2	7	3	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/AnnotatedEmuSyscallUseropLibrary.java
