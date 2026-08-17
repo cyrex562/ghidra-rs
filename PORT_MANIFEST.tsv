@@ -3055,7 +3055,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/lo
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/navigation/locationreferences/XRefLocationDescriptor.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core navigation locationreferences 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BuildError.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleHost.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleHostListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleHostListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleMap.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleStatus.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleStatusChangeRequestListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core osgi 
