@@ -30,7 +30,7 @@ DONE	trait	1	30	3	format	Ghidra/Features/Objective-C/src/main/java/ghidra/app/ut
 DONE	trait	0	35	5	format	Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcState.java
 DONE	trait	1	18	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteMethodRegistry.java
 DONE	trait	0	33	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiConnection.java
-TODO	trait	0	33	2	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/DataFormatModel.java
+DONE	trait	0	33	2	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/DataFormatModel.java
 TODO	trait	2	7	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/target/TargetPublicationListener.java
 TODO	trait	1	18	4	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiServiceListener.java
 TODO	trait	0	32	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiAcceptor.java
