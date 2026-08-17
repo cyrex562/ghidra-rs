@@ -215,6 +215,12 @@ mod tests {
         fn get_key(&self) -> i64 {
             self.key
         }
+        fn get_name(&self) -> String {
+            format!("func_{}", self.key)
+        }
+        fn get_library_id(&self) -> i64 {
+            1
+        }
     }
 
     fn caller() -> FakeFunctionRecord {

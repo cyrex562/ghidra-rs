@@ -3382,5 +3382,148 @@ pub trait AbstractSQLFunctionDatabase:
 /// when `FunctionRecord.java` is ported.
 pub trait FunctionRecord: crate::feature::fid::hash::fid_hash_quad::FidHashQuad + Send + Sync {
     /// Java: `DbObject.getKey()`, the function's primary key in the FID database.
+    ///
+    /// Java's `FunctionRecord.getID()` is defined as `record.getKey()`, so the two are the same
+    /// value and only one accessor is stubbed here.
     fn get_key(&self) -> i64;
+
+    /// Java: `FunctionRecord.getName()`.
+    fn get_name(&self) -> String;
+
+    /// Java: `FunctionRecord.getLibraryID()`, the key of the library this function belongs to.
+    fn get_library_id(&self) -> i64;
+}
+
+/// Placeholder for the unported Java type `FidFile`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`]. Only the members `FidDB` calls are stubbed: the
+/// installation/packed distinction that decides how the database handle is opened, the two name
+/// accessors, and the close callback. Replace with the real port when `FidFile.java` is ported.
+pub trait FidFile: Send + Sync {
+    /// Java: `FidFile.getName()`, the simple file name of the backing FID database file.
+    fn get_name(&self) -> String;
+
+    /// Java: `FidFile.getPath()`, the absolute path of the backing FID database file.
+    fn get_path(&self) -> String;
+
+    /// Java: `FidFile.isInstalled()`, true for the read-only raw database files shipped with
+    /// Ghidra (which can never be opened for update).
+    fn is_installed(&self) -> bool;
+
+    /// Java: `FidFile.closingFidDB(FidDB)`, which clears the file's cached updateable handle when
+    /// the database it points at is actually closed.
+    fn closing_fid_db(&self, fid_db: &crate::feature::fid::db::fid_db::FidDB);
+}
+
+/// Placeholder for the unported Java type `LibrariesTable`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`]. Java's static `createTable(DBHandle)` is omitted
+/// because `FidDB` only calls it from `createNewFidDatabase`, which needs the unported
+/// `PackedDBHandle`. Replace with the real port when `LibrariesTable.java` is ported.
+pub trait LibrariesTable: Send + Sync {
+    /// Java: `createLibrary(...)`, returning the newly inserted library record.
+    #[allow(clippy::too_many_arguments)]
+    fn create_library(
+        &self,
+        library_family_name: &str,
+        library_version: &str,
+        library_variant: &str,
+        ghidra_version: &str,
+        language_id: &crate::program::model::lang::language_id::LanguageID,
+        language_version: i32,
+        language_minor_version: i32,
+        compiler_spec_id: &crate::program::model::lang::compiler_spec_id::CompilerSpecID,
+    ) -> std::io::Result<crate::framework::db::record::DBRecord>;
+
+    /// Java: `getLibraries()`.
+    fn get_libraries(
+        &self,
+    ) -> std::io::Result<Vec<crate::feature::fid::db::library_record::LibraryRecord>>;
+
+    /// Java: `getLibrariesByName(String family, String version, String variant)`, where the
+    /// version and variant are optional filters (Java passes `null` to mean "any").
+    fn get_libraries_by_name(
+        &self,
+        family: &str,
+        version: Option<&str>,
+        variant: Option<&str>,
+    ) -> std::io::Result<Vec<crate::feature::fid::db::library_record::LibraryRecord>>;
+
+    /// Java: `getLibraryByID(long id)`, which returns `null` when no such library exists.
+    fn get_library_by_id(
+        &self,
+        id: i64,
+    ) -> std::io::Result<Option<crate::framework::db::record::DBRecord>>;
+}
+
+/// Placeholder for the unported Java type `StringsTable`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`]. `FidDB` only stores the table and hands it back
+/// from `getStringsTable()`; it never calls a method on it, so this stub is deliberately a marker
+/// trait. Replace with the real port when `StringsTable.java` is ported.
+pub trait StringsTable: Send + Sync {}
+
+/// Placeholder for the unported Java type `FunctionsTable`, referenced by
+/// [`crate::feature::fid::db::fid_db::FidDB`]. Replace with the real port when
+/// `FunctionsTable.java` is ported.
+pub trait FunctionsTable: Send + Sync {
+    /// Java: `getFullHashValueAtOrAfter(long value)`, which returns `null` when the database
+    /// holds no hash at or after `value`.
+    fn get_full_hash_value_at_or_after(&self, value: i64) -> std::io::Result<Option<i64>>;
+
+    /// Java: `getFunctionRecordsBySpecificHash(long hash)`.
+    fn get_function_records_by_specific_hash(
+        &self,
+        hash: i64,
+    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByFullHash(long hash)`.
+    fn get_function_records_by_full_hash(
+        &self,
+        hash: i64,
+    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+
+    /// Java: `createFunctionRecord(long libraryID, FidHashQuad, String name, long entryPoint,
+    /// String domainPath, boolean hasTerminator)`.
+    fn create_function_record(
+        &self,
+        library_id: i64,
+        hash_quad: &dyn crate::feature::fid::hash::fid_hash_quad::FidHashQuad,
+        name: &str,
+        entry_point: i64,
+        domain_path: &str,
+        has_terminator: bool,
+    ) -> std::io::Result<Arc<dyn FunctionRecord>>;
+
+    /// Java: `getFunctionRecordsByNameSubstring(String nameSearch)`.
+    fn get_function_records_by_name_substring(
+        &self,
+        name_search: &str,
+    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByNameRegex(String regex)`.
+    fn get_function_records_by_name_regex(
+        &self,
+        regex: &str,
+    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+
+    /// Java: `getFunctionByID(long functionID)`, which returns `null` for an unknown id.
+    fn get_function_by_id(
+        &self,
+        function_id: i64,
+    ) -> std::io::Result<Option<Arc<dyn FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByDomainPathSubstring(String domainPathSearch)`.
+    fn get_function_records_by_domain_path_substring(
+        &self,
+        domain_path_search: &str,
+    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+
+    /// Java: `getFunctionRecordsByLibraryAndName(LibraryRecord library, String name)`.
+    fn get_function_records_by_library_and_name(
+        &self,
+        library: &crate::feature::fid::db::library_record::LibraryRecord,
+        name: &str,
+    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+
+    /// Java: `modifyFlags(long functionID, int flagMask, boolean value)`, which errors when the
+    /// function record does not exist.
+    fn modify_flags(&self, function_id: i64, flag_mask: i32, value: bool) -> std::io::Result<()>;
 }
