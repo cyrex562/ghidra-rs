@@ -3372,3 +3372,15 @@ pub trait AbstractSQLFunctionDatabase:
         rep_arch: &str,
     ) -> std::io::Result<i64>;
 }
+
+/// Placeholder for the unported Java type `FunctionRecord`, referenced by
+/// [`crate::feature::fid::db::relations_table::RelationsTable`]. Java's
+/// `FunctionRecord extends DbObject implements FidHashQuad`, so this stub extends the
+/// already-ported [`FidHashQuad`](crate::feature::fid::hash::fid_hash_quad::FidHashQuad) trait
+/// rather than repeating its members, and adds only `getKey()` (inherited from `DbObject`), the
+/// one additional member `RelationsTable`'s hash-smash helpers need. Replace with the real port
+/// when `FunctionRecord.java` is ported.
+pub trait FunctionRecord: crate::feature::fid::hash::fid_hash_quad::FidHashQuad + Send + Sync {
+    /// Java: `DbObject.getKey()`, the function's primary key in the FID database.
+    fn get_key(&self) -> i64;
+}
