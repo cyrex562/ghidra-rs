@@ -1658,6 +1658,14 @@ pub trait SleighAssembler: crate::app::plugin::assembler::Assembler {}
 /// needed yet.
 pub trait AutoReadMemorySpec {}
 
+/// Placeholder for `docking.widgets.fieldpanel.support.BackgroundColorModel`, the parent interface
+/// for `ListingBackgroundColorModel`. Referenced by `ListingBackgroundColorModel` and its
+/// implementations. BackgroundColorModel has 11 concrete implementations in Ghidra, so this is
+/// genuinely polymorphic. Replace with the real port when available.
+pub trait BackgroundColorModel: Send + Sync {
+    // (no public methods parsed from the Java source)
+}
+
 /// Placeholder for `ghidra.debug.api.listing.MultiBlendedListingBackgroundColorModel`, referenced
 /// by [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real
 /// class is ported. `DebuggerListingService` only ever returns this type, so no members are
