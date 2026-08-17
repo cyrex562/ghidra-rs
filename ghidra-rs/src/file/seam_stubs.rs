@@ -12,6 +12,8 @@ use std::rc::Rc;
 use crate::app::plugin::core::checksums::md5_digest_checksum_algorithm::MD5DigestChecksumAlgorithm;
 use crate::program::model::data::data_type::DataType;
 use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::struct_converter::{StructConverter, ToDataTypeError};
+use crate::file::formats::android::oat::oat_class_status_enum::OatClassStatusEnum;
 use crate::file::formats::ios::dyldcache::dyld_cache_entry::DyldCacheEntry;
 use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
 use crate::filesystem::gfilesystem::fileinfo::file_attribute_type::FileAttributeType;
@@ -1678,5 +1680,321 @@ impl DyldCacheExtractor {
         _monitor: &dyn TaskMonitor,
     ) -> io::Result<Box<dyn ByteProvider>> {
         Err(io::Error::new(io::ErrorKind::Unsupported, "DyldCacheExtractor.extract_mapping not yet ported"))
+    }
+}
+
+// ─── OAT class status/type seam, for `OatClass` ───────────────────────────────
+
+/// Placeholder for the unported Java class
+/// `ghidra.file.formats.android.oat.oatclass.OatClassStatusEnum_Invalid`, referenced by
+/// `OatClass`.
+///
+/// Concrete stub: Java class, not interface (it implements `OatClassStatusEnum`). Java's
+/// `get(short)` always returns `this` regardless of the requested value (there is no "invalid
+/// within invalid" case); this stub mirrors that by ignoring the argument and cloning its own
+/// stored value. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatClassStatusEnumInvalid {
+    value: i16,
+}
+
+impl OatClassStatusEnumInvalid {
+    /// Mirrors `OatClassStatusEnum_Invalid(short)`.
+    pub fn new(value: i16) -> Self {
+        Self { value }
+    }
+
+    pub fn get_value(&self) -> i16 {
+        self.value
+    }
+}
+
+impl StructConverter for OatClassStatusEnumInvalid {
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        unimplemented!("OatClassStatusEnumInvalid.to_data_type not yet ported")
+    }
+}
+
+impl OatClassStatusEnum for OatClassStatusEnumInvalid {
+    fn get(&self, _value: i16) -> Option<Box<dyn OatClassStatusEnum>> {
+        Some(Box::new(OatClassStatusEnumInvalid::new(self.value)))
+    }
+}
+
+/// Placeholder for the unported Java enum
+/// `ghidra.file.formats.android.oat.oatclass.OatClassStatusEnum_K`, referenced by `OatClass` for
+/// OAT version 007 (KitKat).
+///
+/// Concrete stub: Java is an enum, not an interface. The real enum's `get(short)` scans its ten
+/// named singletons (`kStatusError` .. `kStatusInitialized`) for a matching `getValue()`; that
+/// name table is not ported, so this stub always succeeds and wraps whatever value it is asked
+/// for. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatClassStatusEnumK {
+    value: i16,
+}
+
+impl OatClassStatusEnumK {
+    pub fn new(value: i16) -> Self {
+        Self { value }
+    }
+
+    /// Mirrors `getValue()`.
+    pub fn get_value(&self) -> i16 {
+        self.value
+    }
+}
+
+impl StructConverter for OatClassStatusEnumK {
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        unimplemented!("OatClassStatusEnumK.to_data_type not yet ported")
+    }
+}
+
+impl OatClassStatusEnum for OatClassStatusEnumK {
+    fn get(&self, value: i16) -> Option<Box<dyn OatClassStatusEnum>> {
+        Some(Box::new(OatClassStatusEnumK::new(value)))
+    }
+}
+
+/// Placeholder for the unported Java enum
+/// `ghidra.file.formats.android.oat.oatclass.OatClassStatusEnum_L_M_N`, referenced by `OatClass`
+/// for OAT versions 039/045/051 (Lollipop), 064 (Marshmallow), 079/088 (Nougat).
+///
+/// Concrete stub: Java is an enum, not an interface. See [`OatClassStatusEnumK`] for the
+/// simplification this stub makes. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatClassStatusEnumLMN {
+    value: i16,
+}
+
+impl OatClassStatusEnumLMN {
+    pub fn new(value: i16) -> Self {
+        Self { value }
+    }
+
+    /// Mirrors `getValue()`.
+    pub fn get_value(&self) -> i16 {
+        self.value
+    }
+}
+
+impl StructConverter for OatClassStatusEnumLMN {
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        unimplemented!("OatClassStatusEnumLMN.to_data_type not yet ported")
+    }
+}
+
+impl OatClassStatusEnum for OatClassStatusEnumLMN {
+    fn get(&self, value: i16) -> Option<Box<dyn OatClassStatusEnum>> {
+        Some(Box::new(OatClassStatusEnumLMN::new(value)))
+    }
+}
+
+/// Placeholder for the unported Java enum
+/// `ghidra.file.formats.android.oat.oatclass.OatClassStatusEnum_O`, referenced by `OatClass` for
+/// OAT version 124 (Oreo).
+///
+/// Concrete stub: Java is an enum, not an interface. See [`OatClassStatusEnumK`] for the
+/// simplification this stub makes. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatClassStatusEnumO {
+    value: i16,
+}
+
+impl OatClassStatusEnumO {
+    pub fn new(value: i16) -> Self {
+        Self { value }
+    }
+
+    /// Mirrors `getValue()`.
+    pub fn get_value(&self) -> i16 {
+        self.value
+    }
+}
+
+impl StructConverter for OatClassStatusEnumO {
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        unimplemented!("OatClassStatusEnumO.to_data_type not yet ported")
+    }
+}
+
+impl OatClassStatusEnum for OatClassStatusEnumO {
+    fn get(&self, value: i16) -> Option<Box<dyn OatClassStatusEnum>> {
+        Some(Box::new(OatClassStatusEnumO::new(value)))
+    }
+}
+
+/// Placeholder for the unported Java enum
+/// `ghidra.file.formats.android.oat.oatclass.OatClassStatusEnum_O_M2`, referenced by `OatClass`
+/// for OAT version 131 (Oreo M2).
+///
+/// Concrete stub: Java is an enum, not an interface. See [`OatClassStatusEnumK`] for the
+/// simplification this stub makes. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatClassStatusEnumOM2 {
+    value: i16,
+}
+
+impl OatClassStatusEnumOM2 {
+    pub fn new(value: i16) -> Self {
+        Self { value }
+    }
+
+    /// Mirrors `getValue()`.
+    pub fn get_value(&self) -> i16 {
+        self.value
+    }
+}
+
+impl StructConverter for OatClassStatusEnumOM2 {
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        unimplemented!("OatClassStatusEnumOM2.to_data_type not yet ported")
+    }
+}
+
+impl OatClassStatusEnum for OatClassStatusEnumOM2 {
+    fn get(&self, value: i16) -> Option<Box<dyn OatClassStatusEnum>> {
+        Some(Box::new(OatClassStatusEnumOM2::new(value)))
+    }
+}
+
+/// Placeholder for the unported Java enum
+/// `ghidra.file.formats.android.oat.oatclass.OatClassStatusEnum_P_Q`, referenced by `OatClass`
+/// for OAT versions 138 (Pie) and 170 (Android 10 / Q).
+///
+/// Concrete stub: Java is an enum, not an interface. Its `value` field is a `byte`, unlike the
+/// `short` used by the older families. See [`OatClassStatusEnumK`] for the simplification this
+/// stub makes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatClassStatusEnumPQ {
+    value: i8,
+}
+
+impl OatClassStatusEnumPQ {
+    pub fn new(value: i8) -> Self {
+        Self { value }
+    }
+
+    /// Mirrors `getValue()`.
+    pub fn get_value(&self) -> i8 {
+        self.value
+    }
+}
+
+impl StructConverter for OatClassStatusEnumPQ {
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        unimplemented!("OatClassStatusEnumPQ.to_data_type not yet ported")
+    }
+}
+
+impl OatClassStatusEnum for OatClassStatusEnumPQ {
+    fn get(&self, value: i16) -> Option<Box<dyn OatClassStatusEnum>> {
+        Some(Box::new(OatClassStatusEnumPQ::new(value as i8)))
+    }
+}
+
+/// Placeholder for the unported Java enum
+/// `ghidra.file.formats.android.oat.oatclass.OatClassStatusEnum_R_S_T`, referenced by `OatClass`
+/// for OAT versions 183/195/199 (Android 11/12), 220/223/225 (Android 13).
+///
+/// Concrete stub: Java is an enum, not an interface. Its `value` field is a `byte`, like
+/// [`OatClassStatusEnumPQ`]. See [`OatClassStatusEnumK`] for the simplification this stub makes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatClassStatusEnumRST {
+    value: i8,
+}
+
+impl OatClassStatusEnumRST {
+    pub fn new(value: i8) -> Self {
+        Self { value }
+    }
+
+    /// Mirrors `getValue()`.
+    pub fn get_value(&self) -> i8 {
+        self.value
+    }
+}
+
+impl StructConverter for OatClassStatusEnumRST {
+    fn to_data_type(&self) -> Result<Box<dyn DataType>, ToDataTypeError> {
+        unimplemented!("OatClassStatusEnumRST.to_data_type not yet ported")
+    }
+}
+
+impl OatClassStatusEnum for OatClassStatusEnumRST {
+    fn get(&self, value: i16) -> Option<Box<dyn OatClassStatusEnum>> {
+        Some(Box::new(OatClassStatusEnumRST::new(value as i8)))
+    }
+}
+
+/// Placeholder for the unported Java enum `ghidra.file.formats.android.oat.oatclass.OatClassType`,
+/// referenced by `OatClass::get_type`.
+///
+/// Concrete stub: Java is an enum, not an interface. Only the four variants and the ordinal-based
+/// lookup `OatClass.getType()` needs are included; the real `toData()` builds an `EnumDataType`
+/// via reflection, which is not ported yet. Replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OatClassType {
+    /// OatClass is followed by an OatMethodOffsets for each method.
+    KOatClassAllCompiled,
+    /// A bitmap of which OatMethodOffsets are present follows the OatClass.
+    KOatClassSomeCompiled,
+    /// All methods are interpreted, so no OatMethodOffsets are necessary.
+    KOatClassNoneCompiled,
+    /// Invalid state, mirroring `case kOatClassMax` in `oat_file.cc`.
+    KOatClassMax,
+}
+
+impl OatClassType {
+    /// All variants, in declaration order. Mirrors `values()`.
+    pub const VALUES: [OatClassType; 4] = [
+        OatClassType::KOatClassAllCompiled,
+        OatClassType::KOatClassSomeCompiled,
+        OatClassType::KOatClassNoneCompiled,
+        OatClassType::KOatClassMax,
+    ];
+
+    /// Mirrors `ordinal()`.
+    pub fn ordinal(&self) -> i16 {
+        match self {
+            OatClassType::KOatClassAllCompiled => 0,
+            OatClassType::KOatClassSomeCompiled => 1,
+            OatClassType::KOatClassNoneCompiled => 2,
+            OatClassType::KOatClassMax => 3,
+        }
+    }
+
+    /// Mirrors the static `toData()`.
+    pub fn to_data(&self) -> Box<dyn DataType> {
+        unimplemented!("OatClassType.to_data not yet ported")
+    }
+}
+
+/// Placeholder for the unported Java class
+/// `ghidra.file.formats.android.oat.oatmethod.OatMethodOffsets`, referenced by
+/// `OatClass::methods_pointer`.
+///
+/// Concrete stub: Java class, not interface. Only the code offset accessor `OatClass` needs is
+/// included; the real class additionally parses a `codeOffset`/`gcMapOffset` pair (present or
+/// absent depending on OAT version) directly from a `BinaryReader`. Replace with the real port
+/// when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OatMethodOffsets {
+    code_offset: i32,
+}
+
+impl OatMethodOffsets {
+    pub fn new(code_offset: i32) -> Self {
+        Self { code_offset }
+    }
+
+    /// Mirrors `getCodeOffset()`.
+    pub fn get_code_offset(&self) -> i32 {
+        self.code_offset
+    }
+
+    pub fn to_data_type(&self) -> std::io::Result<Box<dyn DataType>> {
+        unimplemented!("OatMethodOffsets.to_data_type not yet ported")
     }
 }
