@@ -2747,7 +2747,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/ContextAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/DisassembleAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/DisassembledViewPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/DisassemblerPlugin.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/DisassemblerPlugin.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/EntryPointAnalyzer.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/Hcs12DisassembleAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/disassembler/MipsDisassembleAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core disassembler 
