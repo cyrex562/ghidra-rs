@@ -234,3 +234,25 @@ pub trait LogicalBreakpoint: Send + Sync {
     /// Stands in for `!LogicalBreakpoint.getMappedTraces().isEmpty()`.
     fn has_mapped_traces(&self) -> bool;
 }
+
+/// Placeholder for `ghidra.debug.api.action.ActionContext`, referenced by `ActionName`.
+pub trait ActionContext: Send + Sync {}
+
+/// Placeholder for `ghidra.debug.api.target.TraceObject`, referenced by `ActionName`.
+pub trait TraceObject: Send + Sync {}
+
+/// Placeholder for the unported Java type `ActionName`, referenced by `RemoteMethodRegistry`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ActionName: Send + Sync {
+    fn is_showing(&self, context: &dyn ActionContext) -> bool;
+    fn is_enabled(&self, obj: &dyn TraceObject, snap: i64) -> bool;
+    fn name(&self, name: &str) -> Box<dyn ActionName>;
+}
+
+/// Placeholder for the unported Java type `RemoteMethod`, referenced by `RemoteMethodRegistry`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait RemoteMethod: Send + Sync {
+    // (no public methods parsed from the Java source)
+}

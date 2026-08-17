@@ -1092,3 +1092,7 @@ ts	stub_class	referenced_by
 2026-08-17T06:53:40.557966+00:00	Objc2Cache	ObjcState
 2026-08-17T06:53:40.558139+00:00	Objc2Implementation	ObjcState
 2026-08-17T06:53:40.558313+00:00	Objc2ClassRW	ObjcState
+2026-08-17T07:03:16.977655+00:00	ActionContext	RemoteMethodRegistry
+2026-08-17T07:03:16.977798+00:00	ActionName	RemoteMethodRegistry
+2026-08-17T07:03:16.977955+00:00	RemoteMethod	RemoteMethodRegistry
+2026-08-17T07:03:16.978112+00:00	TraceObject	RemoteMethodRegistry
