@@ -27,7 +27,7 @@ DONE	trait	2	16	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/
 DONE	trait	1	7	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BuildError.java
 DONE	trait	0	38	24	script	Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraScriptUtil.java
 DONE	trait	1	30	3	format	Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcMethod.java
-TODO	trait	0	35	5	format	Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcState.java
+DONE	trait	0	35	5	format	Ghidra/Features/Objective-C/src/main/java/ghidra/app/util/bin/format/objc/ObjcState.java
 TODO	trait	1	18	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteMethodRegistry.java
 TODO	trait	0	33	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/TraceRmiConnection.java
 TODO	trait	0	33	2	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/DataFormatModel.java
