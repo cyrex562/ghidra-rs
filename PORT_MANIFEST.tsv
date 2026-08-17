@@ -2698,7 +2698,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/edito
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/editor/FindReferencesToEnumFieldAction.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr editor 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/ArchiveNode.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr tree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/ArchiveRootNode.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr tree 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/ArchiveRootNodeListener.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr tree 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/ArchiveRootNodeListener.java	DONE	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr tree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/BuiltInArchiveNode.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr tree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/CategoryNode.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr tree 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/CenterVerticalIcon.java	TODO	orig_src Ghidra Features Base src main java ghidra app plugin core datamgr tree 

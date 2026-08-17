@@ -1094,3 +1094,11 @@ ts	stub_class	referenced_by
 2026-08-17T07:03:16.978112+00:00	TraceObject	RemoteMethodRegistry
 2026-08-17T07:07:34.940896+00:00	Target	TraceRmiConnection
 2026-08-17T07:20:35.052265+00:00	ByteViewerConfigOptions	DataFormatModel
+2026-08-17T03:50:00.000000+00:00	Category	ArchiveNode
+2026-08-17T03:50:00.000000+00:00	CategoryNode	ArchiveNode
+2026-08-17T03:50:00.000000+00:00	GTreeNode	ArchiveNode
+2026-08-17T03:50:00.000000+00:00	DataTypeManager	ArchiveNode
+2026-08-17T03:50:00.000000+00:00	CategoryPath	ArchiveNode
+2026-08-17T03:50:00.000000+00:00	DataTypePath	ArchiveNode
+2026-08-17T03:50:00.000000+00:00	SourceArchive	ArchiveNode
+2026-08-17T03:50:00.000000+00:00	ArchiveNode	ArchiveRootNodeListener
