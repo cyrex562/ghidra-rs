@@ -4455,6 +4455,22 @@ impl EmuIOException {
     }
 }
 
+impl std::fmt::Display for EmuIOException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for EmuIOException {}
+
+impl From<EmuIOException> for PcodeExecutionException {
+    fn from(err: EmuIOException) -> Self {
+        // Java's `EmuIOException` *is* a `PcodeExecutionException`; here it becomes the converted
+        // exception's cause, so a handler can still recover it by downcasting `source()`.
+        PcodeExecutionException::with_cause(err.message.clone(), err)
+    }
+}
+
 /// Placeholder for the unported Java type `ghidra.pcode.emu.sys.UseropEmuSyscallDefinition`,
 /// referenced by
 /// [`AnnotatedEmuSyscallUseropLibrary`](crate::pcode::emu::sys::annotated_emu_syscall_userop_library::AnnotatedEmuSyscallUseropLibrary).
@@ -4580,5 +4596,252 @@ impl<T: 'static> EmuSyscallDefinition<T> for UseropEmuSyscallDefinition<T> {
 pub trait StructuredSleigh<T: 'static>: Send + Sync {
     /// Port of `StructuredSleigh.generate(Map<String, SleighPcodeUseropDefinition>)`.
     fn generate(&self, into: &mut UseropMap<T>);
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.unix.EmuUnixException`, referenced by
+/// [`AbstractEmuUnixSyscallUseropLibrary`](crate::pcode::emu::unix::abstract_emu_unix_syscall_userop_library::AbstractEmuUnixSyscallUseropLibrary).
+///
+/// Java's class extends `EmuSystemException` -> `PcodeExecutionException`, so a raised
+/// `EmuUnixException` is catchable as the latter and `handleError` recovers it with `instanceof`.
+/// Rust models that with [`From<EmuUnixException>`](PcodeExecutionException), which nests this
+/// value as the converted exception's *cause*; the `instanceof` check becomes a
+/// `source().downcast_ref::<EmuUnixException>()` (see
+/// [`AbstractEmuUnixSyscallUseropLibrary::handle_unix_error`](crate::pcode::emu::unix::abstract_emu_unix_syscall_userop_library::AbstractEmuUnixSyscallUseropLibrary::handle_unix_error)).
+/// The `(String, Throwable)` overloads' cause is dropped, matching this crate's other exception
+/// placeholders. Replace with the real port once the `Emu*Exception` hierarchy lands.
+#[derive(Debug, Clone)]
+pub struct EmuUnixException {
+    message: String,
+    errno: Option<i32>,
+}
+
+impl EmuUnixException {
+    /// Port of `EmuUnixException(String message)`.
+    pub fn new(message: impl Into<String>) -> Self {
+        Self { message: message.into(), errno: None }
+    }
+
+    /// Port of `EmuUnixException(String message, Integer errno)`. Providing an errno lets the
+    /// syscall dispatcher communicate it to the target program instead of interrupting.
+    pub fn with_errno(message: impl Into<String>, errno: i32) -> Self {
+        Self { message: message.into(), errno: Some(errno) }
+    }
+
+    /// The detail message, as Java's `Throwable.getMessage()` would report it.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// Port of `getErrno()`: the errno, or `None`.
+    pub fn get_errno(&self) -> Option<i32> {
+        self.errno
+    }
+}
+
+impl std::fmt::Display for EmuUnixException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for EmuUnixException {}
+
+impl From<EmuUnixException> for PcodeExecutionException {
+    fn from(err: EmuUnixException) -> Self {
+        PcodeExecutionException::with_cause(err.message.clone(), err)
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.pcode.emu.sys.EmuProcessExitedException`,
+/// referenced by
+/// [`AbstractEmuUnixSyscallUseropLibrary`](crate::pcode::emu::unix::abstract_emu_unix_syscall_userop_library::AbstractEmuUnixSyscallUseropLibrary)'s
+/// `exit`/`group_exit` system calls.
+///
+/// Java's `status` field is an untyped `Object` that callers cast back to the throwing machine's
+/// `T`; this stub is generic instead, so the status comes back typed. Replace with the real port
+/// once the `Emu*Exception` hierarchy lands.
+pub struct EmuProcessExitedException<T> {
+    message: String,
+    status: T,
+}
+
+impl<T> EmuProcessExitedException<T> {
+    /// Port of `EmuProcessExitedException(PcodeArithmetic<T>, T)`, which formats the status for
+    /// display but keeps the original for [`get_status`](Self::get_status).
+    pub fn new(arithmetic: &dyn PcodeArithmetic<T>, status: T) -> Self
+    where
+        T: std::fmt::Debug,
+    {
+        let message =
+            format!("Process exited with status {}", Self::try_concrete_to_string(arithmetic, &status));
+        Self { message, status }
+    }
+
+    /// Port of the static `tryConcereteToString`: concretize the status for display, falling back
+    /// to the value's own rendering (Java: `toString()`, here `Debug`) if it cannot be concretized.
+    pub fn try_concrete_to_string(arithmetic: &dyn PcodeArithmetic<T>, status: &T) -> String
+    where
+        T: std::fmt::Debug,
+    {
+        match arithmetic.to_big_integer(status, Purpose::Inspect) {
+            Ok(value) => value.to_string(),
+            Err(_) => format!("{:?}", status),
+        }
+    }
+
+    /// The detail message, as Java's `Throwable.getMessage()` would report it.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// Port of `getStatus()`.
+    pub fn get_status(&self) -> &T {
+        &self.status
+    }
+}
+
+impl<T> std::fmt::Debug for EmuProcessExitedException<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EmuProcessExitedException").field("message", &self.message).finish()
+    }
+}
+
+impl<T> std::fmt::Display for EmuProcessExitedException<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl<T> std::error::Error for EmuProcessExitedException<T> {}
+
+impl<T> From<EmuProcessExitedException<T>> for PcodeExecutionException {
+    fn from(err: EmuProcessExitedException<T>) -> Self {
+        // Not `with_cause`: the nested exception would have to be `Send + Sync + 'static`, which
+        // would push those bounds onto every `T` a syscall library processes. The message already
+        // carries the concretized status, which is all the Java supertype exposes.
+        PcodeExecutionException::with_message(err.message)
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.docking.settings.SettingsImpl`, referenced by
+/// [`AbstractEmuUnixSyscallUseropLibrary`](crate::pcode::emu::unix::abstract_emu_unix_syscall_userop_library::AbstractEmuUnixSyscallUseropLibrary)'s
+/// `open` system call, which constructs a `new SettingsImpl()` purely to hand default string
+/// settings to a [`StringDataInstance`](crate::program::model::data::string_data_instance::StringDataInstance).
+///
+/// That call site never stores or reads a setting, so this carries no map: it is exactly the
+/// empty, all-defaults [`Settings`] Java's no-arg constructor produces. Replace with the real port
+/// once `SettingsImpl.java` lands.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SettingsImpl;
+
+impl SettingsImpl {
+    /// Port of `SettingsImpl()`.
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl crate::docking::settings::settings::Settings for SettingsImpl {}
+
+/// Placeholder for the unported Java type `ghidra.program.model.data.StringDataType`, referenced
+/// by [`AbstractEmuUnixSyscallUseropLibrary`](crate::pcode::emu::unix::abstract_emu_unix_syscall_userop_library::AbstractEmuUnixSyscallUseropLibrary)'s
+/// `open` system call via the `StringDataType.dataType` singleton.
+///
+/// [`AbstractStringDataType`] -- the real base class -- is already ported, so this stub supplies
+/// only the constructor arguments Java's `StringDataType` passes to `super(...)` that its one
+/// in-repo call site reaches: the name, mnemonic, labels, and the `FIXED_LEN` layout that
+/// [`AbstractStringDataType::get_string_data_instance`] consults. The members that call site never
+/// touches -- cloning, C-type declaration, the `char` replacement base type -- would need
+/// `BuiltIn`/`CharDataType` and are left `unimplemented!` rather than guessed at. Replace with the
+/// real port once `StringDataType.java` lands.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct StringDataType;
+
+impl StringDataType {
+    /// Port of the `StringDataType.dataType` singleton.
+    pub const DATA_TYPE: Self = Self;
+}
+
+impl DataType for StringDataType {
+    fn get_name(&self) -> String {
+        "string".to_string()
+    }
+}
+
+impl crate::program::model::data::built_in_data_type::BuiltInDataType for StringDataType {
+    fn get_c_type_declaration(
+        &self,
+        _data_organization: Option<&dyn crate::program::model::data::data_organization::DataOrganization>,
+    ) -> Option<String> {
+        unimplemented!("not reachable from this stub's one call site")
+    }
+
+    fn set_default_settings(&mut self, _settings: &dyn crate::docking::settings::settings::Settings) {
+        unimplemented!("not reachable from this stub's one call site")
+    }
+}
+
+impl crate::program::model::data::dynamic::Dynamic for StringDataType {
+    fn get_dynamic_length(&self, buf: &dyn MemBuffer, max_length: i32) -> i32 {
+        use crate::program::model::data::abstract_string_data_type::AbstractStringDataType;
+        self.string_dynamic_length(buf, max_length)
+    }
+
+    fn can_specify_length(&self) -> bool {
+        true
+    }
+
+    fn get_replacement_base_type(&self) -> Box<dyn DataType> {
+        unimplemented!("needs CharDataType, which is not ported yet")
+    }
+}
+
+impl crate::program::model::data::data_type_with_charset::DataTypeWithCharset for StringDataType {
+    fn string_data_instance(
+        &self,
+        _settings: &dyn crate::docking::settings::settings::Settings,
+        _buf: &dyn MemBuffer,
+    ) -> Box<dyn crate::program::model::data::string_data_instance::StringDataInstance> {
+        // `AbstractStringDataType::get_string_data_instance` borrows its buffer, so it cannot
+        // satisfy this `'static` box; the one call site uses that borrowing form directly.
+        unimplemented!("use AbstractStringDataType::get_string_data_instance instead")
+    }
+
+    fn get_charset_name(&self, settings: &dyn crate::docking::settings::settings::Settings) -> String {
+        use crate::program::model::data::abstract_string_data_type::AbstractStringDataType;
+        self.string_charset_name(settings)
+    }
+}
+
+impl crate::program::model::data::abstract_string_data_type::AbstractStringDataType
+    for StringDataType
+{
+    fn mnemonic(&self) -> String {
+        "ds".to_string()
+    }
+
+    fn description(&self) -> String {
+        "String (fixed length)".to_string()
+    }
+
+    fn default_label(&self) -> String {
+        "STRING".to_string()
+    }
+
+    fn default_label_prefix(&self) -> String {
+        "STR".to_string()
+    }
+
+    fn default_abbrev_label_prefix(&self) -> String {
+        "s".to_string()
+    }
+
+    fn get_string_layout(&self) -> crate::program::model::data::string_layout_enum::StringLayoutEnum {
+        crate::program::model::data::string_layout_enum::StringLayoutEnum::FixedLen
+    }
+
+    fn string_replacement_base_type(&self) -> Option<Box<dyn DataType>> {
+        None
+    }
 }
 
