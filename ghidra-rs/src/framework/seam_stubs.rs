@@ -1718,3 +1718,39 @@ impl crate::framework::model::ToolChest for ToolChestImpl {
         true
     }
 }
+
+/// Placeholder for `ghidra.app.plugin.core.datamgr.archive.Archive`, referenced by
+/// [`ArchiveProvider`](crate::framework::main::datatree::ArchiveProvider) before the real class
+/// is ported.
+pub trait Archive: Send + Sync {
+    /// Gets the name for this data type archive.
+    fn get_name(&self) -> String;
+
+    /// Closes this archive.
+    fn close(&self);
+
+    /// Determines if this is a modifiable archive.
+    fn is_modifiable(&self) -> bool;
+
+    /// Determines if this archive is savable.
+    fn is_savable(&self) -> bool;
+
+    /// Determines if this archive has been changed.
+    fn is_changed(&self) -> bool;
+
+    /// Saves this archive.
+    fn save(&self) -> std::io::Result<()>;
+
+    /// Saves this archive with a component.
+    fn save_as(&self, _component: &dyn std::any::Any) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "save_as not implemented",
+        ))
+    }
+
+    /// Gets the icon for this archive.
+    fn get_icon(&self, _expanded: bool) -> Box<dyn std::any::Any> {
+        Box::new(())
+    }
+}
