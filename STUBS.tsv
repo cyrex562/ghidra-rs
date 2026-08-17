@@ -1040,3 +1040,7 @@ ts	stub_class	referenced_by
 2026-08-17T01:27:23.202642+00:00	RandomAccessByteProvider	DbgLoader
 2026-08-17T01:27:23.202642+00:00	SeparateDebugHeader	DbgLoader
 2026-08-17T01:27:23.202642+00:00	AbstractPeDebugLoader	DbgLoader
+2026-08-16T21:30:00.000000+00:00	LoadConfigDirectory	ExceptionDataDirectory
+2026-08-16T21:30:00.000000+00:00	ImageRuntimeFunctionEntries_X86	ExceptionDataDirectory
+2026-08-16T21:30:00.000000+00:00	ImageRuntimeFunctionEntries_ARM	ExceptionDataDirectory
+2026-08-16T21:30:00.000000+00:00	FileHeader	ExceptionDataDirectory
