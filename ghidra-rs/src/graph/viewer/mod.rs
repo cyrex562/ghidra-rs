@@ -11,7 +11,7 @@ pub use actions::VisualGraphContextMarker;
 pub use edge::PathHighlightListener;
 pub use event::{EventSource, PickListener};
 pub use graph_satellite_listener::GraphSatelliteListener;
-pub use layout::GridRange;
+pub use layout::{GridPoint, GridRange};
 pub use options::RelayoutOption;
 pub use path_highlight_mode::PathHighlightMode;
 pub use vertex::VertexFocusListener;
