@@ -396,6 +396,10 @@ mod tests {
             Arc::new(MockTool)
         }
 
+        fn as_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync> {
+            self
+        }
+
         fn get_decompiler_panel(&self) -> Box<dyn DecompilerPanel> {
             Box::new(self.panel.clone())
         }

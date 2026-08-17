@@ -510,6 +510,35 @@ pub trait PluginTool {
     /// Stops forwarding tool events to `listener`, mirroring
     /// `PluginTool.removeToolListener(ToolListener)`.
     fn remove_tool_listener(&self, _listener: &dyn crate::framework::model::ToolListener) {}
+
+    /// Shows or hides a component provider in the tool, mirroring
+    /// `PluginTool.showComponentProvider(ComponentProvider, boolean)`.
+    ///
+    /// Grown in for [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin),
+    /// which shows/hides its decompiler windows. The provider is type-erased: `ComponentProvider`
+    /// is not ported (only an empty marker exists in
+    /// [`docking::seam_stubs`](crate::docking::seam_stubs)), and its implementors -- such as the
+    /// [`DecompilerProvider`](crate::app::seam_stubs::DecompilerProvider) stub -- live in
+    /// `crate::app`, so callers pass the same `Arc<dyn Any>` handle the service registry uses (see
+    /// [`DecompilerProvider::as_any_arc`](crate::app::seam_stubs::DecompilerProvider::as_any_arc)).
+    fn show_component_provider(
+        &self,
+        _provider: Arc<dyn Any + Send + Sync>,
+        _visible: bool,
+    ) {
+    }
+
+    /// Removes a component provider from the tool, mirroring
+    /// `PluginTool.removeComponentProvider(ComponentProvider)`; see
+    /// [`show_component_provider`](Self::show_component_provider) for why the provider is
+    /// type-erased.
+    fn remove_component_provider(&self, _provider: Arc<dyn Any + Send + Sync>) {}
+
+    /// The project this tool belongs to, mirroring `PluginTool.getProject()`. Returns `None` for
+    /// Java's null (a tool that is not associated with a project).
+    fn get_project(&self) -> Option<Box<dyn crate::framework::model::Project>> {
+        None
+    }
 }
 
 /// Adapts a shared [`PluginTool`] handle to the owned `Box<dyn PluginTool>` that the ported
@@ -734,6 +763,30 @@ pub trait SaveState {
     fn get_enum_name(&self, name: &str) -> Option<String>;
     /// Stores an enum constant's name, mirroring `SaveState.putEnum`.
     fn put_enum_name(&mut self, name: &str, value: Option<&str>);
+
+    /// Creates a new, empty `SaveState`, mirroring Java's `new SaveState()`.
+    ///
+    /// Grown in for [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin),
+    /// which builds one nested state per disconnected decompiler window. Rust cannot construct a
+    /// `dyn SaveState`, so the trait doubles as its own factory -- the same shape as
+    /// [`JdomElement::new_child`]. Returning `None` means "this implementation cannot create
+    /// nested states", which is the default.
+    fn new_save_state(&self) -> Option<Box<dyn SaveState>> {
+        None
+    }
+
+    /// Stores a nested `SaveState`, mirroring `SaveState.putSaveState(String, SaveState)`.
+    ///
+    /// Java's `DecompilePlugin` uses the equivalent `putXmlElement(String,
+    /// saveState.saveToXml())` pairing; the XML round-trip is an implementation detail of the real
+    /// class, so nested states are modeled directly here. No-op by default.
+    fn put_save_state(&mut self, _name: &str, _value: Box<dyn SaveState>) {}
+
+    /// Gets a nested `SaveState`, mirroring `SaveState.getSaveState(String)` (Java's
+    /// `new SaveState(getXmlElement(name))`). Returns `None` when nothing is stored under `name`.
+    fn get_save_state(&self, _name: &str) -> Option<Box<dyn SaveState>> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.async.AsyncReference`, referenced by

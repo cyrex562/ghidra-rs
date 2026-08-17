@@ -1620,10 +1620,11 @@ pub trait CodeViewerService {}
 pub trait ListingPanel {}
 
 /// Placeholder for `ghidra.program.util.ProgramSelection`, referenced by
-/// [`DebuggerListingService`](crate::app::services::DebuggerListingService) before the real class
-/// is ported. `DebuggerListingService` only ever passes this type through as a parameter, so no
-/// members are needed yet.
-pub trait ProgramSelection {}
+/// [`DebuggerListingService`](crate::app::services::DebuggerListingService) and by
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
+/// is ported. Both only ever pass this type through as a parameter (`DecompilePlugin` additionally
+/// holds one across threads, hence `Send + Sync`), so no members are needed yet.
+pub trait ProgramSelection: Send + Sync {}
 
 /// The mode of the Go-to dialog's Sleigh expressions.
 ///
@@ -2084,7 +2085,26 @@ pub trait DecompilerPanel: Send + Sync {
     fn get_token_at_cursor(&self) -> StdOption<Box<dyn crate::app::decompiler::ClangToken>> {
         unimplemented!("DecompilerPanel::get_token_at_cursor placeholder not overridden")
     }
+
+    /// Stands in for `DecompilerPanel.addHoverService(DecompilerHoverService)`, called by
+    /// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) when the tool
+    /// gains a hover service. The service arrives type-erased because that is how this crate's
+    /// [`ServiceListener`](crate::framework::plugintool::util::ServiceListener) seam delivers it
+    /// (a `TypeId` plus an `Arc<dyn Any>`); the real port will take a
+    /// [`DecompilerHoverService`] once services can be handed out typed.
+    fn add_hover_service(&self, _hover_service: Arc<dyn std::any::Any + Send + Sync>) {}
+
+    /// Stands in for `DecompilerPanel.removeHoverService(DecompilerHoverService)`; see
+    /// [`add_hover_service`](Self::add_hover_service) for why the service is type-erased.
+    fn remove_hover_service(&self, _hover_service: Arc<dyn std::any::Any + Send + Sync>) {}
 }
+
+/// Placeholder marker trait for `ghidra.app.decompiler.component.hover.DecompilerHoverService`,
+/// referenced by [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before
+/// the real interface is ported (it is currently parked). `DecompilePlugin` only ever compares a
+/// service's interface class against it -- `TypeId::of::<dyn DecompilerHoverService>()` standing
+/// in for Java's `interfaceClass == DecompilerHoverService.class` -- so no members are needed yet.
+pub trait DecompilerHoverService: Send + Sync {}
 
 /// Placeholder trait for `ghidra.app.decompiler.component.DecompilerController`, referenced by
 /// [`DecompilerActionContext`](crate::app::plugin::core::decompile::decompiler_action_context::DecompilerActionContext)
@@ -2112,11 +2132,26 @@ pub trait DecompilerController: Send + Sync {
 /// before the real class is ported. Java's version extends `NavigatableComponentProviderAdapter`
 /// (hence `Navigatable`, whose `isConnected`/`getProgram` back
 /// [`NavigatableActionContext::get_navigatable`](crate::app::context::NavigatableActionContext::get_navigatable));
-/// only the members `DecompilerActionContext` itself calls beyond that are modeled here.
+/// only the members `DecompilerActionContext` and
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) themselves call
+/// beyond that are modeled here. Everything `DecompilePlugin` needs is defaulted (to a no-op, or
+/// to the value Java's field holds before anything is set) so the existing implementors keep
+/// compiling; [`as_any_arc`](Self::as_any_arc) is the one exception, since no default body can
+/// produce `self`.
 pub trait DecompilerProvider: Navigatable + Send + Sync {
     /// Stands in for `ComponentProvider.getTool()`, inherited by `DecompilerProvider` from its
     /// (unported) `ComponentProviderAdapter` ancestor.
     fn get_tool(&self) -> Arc<dyn crate::framework::seam_stubs::PluginTool>;
+
+    /// Erases this provider to the `Arc<dyn Any>` handle this crate's type-erased plumbing deals
+    /// in: the plugin service registry
+    /// ([`Plugin::register_service_provided`](crate::framework::plugintool::Plugin::register_service_provided),
+    /// which `DecompilePlugin` hands the provider to as its `DecompilerHighlightService` /
+    /// `DecompilerMarginService` implementation) and the tool's component-provider show/remove
+    /// calls ([`PluginTool::show_component_provider`](crate::framework::seam_stubs::PluginTool::show_component_provider)).
+    /// Rust cannot upcast an `Arc<dyn DecompilerProvider>` to an `Arc<dyn Any>`, so implementors
+    /// supply the conversion; the body is always `self`.
+    fn as_any_arc(self: Arc<Self>) -> Arc<dyn std::any::Any + Send + Sync>;
 
     /// Stands in for `DecompilerProvider.getDecompilerPanel()`.
     fn get_decompiler_panel(&self) -> Box<dyn DecompilerPanel>;
@@ -2128,6 +2163,66 @@ pub trait DecompilerProvider: Navigatable + Send + Sync {
     /// string; both collapse to the empty string here, matching this crate's usual "empty string
     /// stands in for null" convention for nullable `String` accessors (see e.g. [`MessageLog`]).
     fn get_text_selection(&self) -> String;
+
+    /// Stands in for `DecompilerProvider.getProgram()`. [`Navigatable::get_program`] hands back an
+    /// owned `Box`, which cannot be compared by identity;
+    /// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) needs exactly
+    /// that (`provider.getProgram() == closedProgram`), so this returns the shared handle, and
+    /// `None` for Java's null (no program set yet).
+    fn get_program_handle(&self) -> StdOption<Arc<dyn Program>> {
+        None
+    }
+
+    /// Stands in for the package-private `DecompilerProvider.doSetProgram(Program)`, which swaps
+    /// the program this provider is decompiling (`None` for Java's null).
+    fn do_set_program(&self, _new_program: StdOption<Arc<dyn Program>>) {}
+
+    /// Stands in for the package-private `DecompilerProvider.setLocation(ProgramLocation,
+    /// ViewerPosition)`; `DecompilePlugin` always passes `None` for the viewer position.
+    fn set_location(
+        &self,
+        _loc: Arc<dyn ProgramLocation + Send + Sync>,
+        _viewer_position: StdOption<crate::docking::widgets::fieldpanel::support::ViewerPosition>,
+    ) {
+    }
+
+    /// Stands in for `DecompilerProvider.setSelection(ProgramSelection)`.
+    fn set_selection(&self, _selection: StdOption<Arc<dyn ProgramSelection>>) {}
+
+    /// Stands in for the package-private `DecompilerProvider.setClipboardService(ClipboardService)`.
+    /// The service arrives type-erased because that is how this crate's
+    /// [`PluginTool::get_service`](crate::framework::seam_stubs::PluginTool::get_service) seam
+    /// hands services back; the real port will take a
+    /// [`ClipboardService`](crate::app::services::ClipboardService) once services can be handed
+    /// out typed.
+    fn set_clipboard_service(&self, _service: Arc<dyn std::any::Any + Send + Sync>) {}
+
+    /// Stands in for the package-private `DecompilerProvider.shouldSendEvents()`: whether this
+    /// provider is the tool's connected provider and is not currently replaying an incoming event.
+    fn should_send_events(&self) -> bool {
+        false
+    }
+
+    /// Stands in for `DecompilerProvider.writeDataState(SaveState)`.
+    fn write_data_state(&self, _save_state: &mut dyn crate::framework::seam_stubs::SaveState) {}
+
+    /// Stands in for `DecompilerProvider.readDataState(SaveState)`.
+    fn read_data_state(&self, _save_state: &dyn crate::framework::seam_stubs::SaveState) {}
+
+    /// Stands in for `DecompilerProvider.programClosed(Program)`.
+    fn program_closed(&self, _closed_program: &dyn Program) {}
+
+    /// Stands in for the package-private `DecompilerProvider.handleTokenRenamed(ClangToken,
+    /// String)`, which forwards the rename to this provider's panel.
+    fn handle_token_renamed(
+        &self,
+        _token_at_cursor: &dyn crate::app::decompiler::ClangToken,
+        _new_name: &str,
+    ) {
+    }
+
+    /// Stands in for `DecompilerProvider.dispose()`.
+    fn dispose(&self) {}
 }
 
 /// Placeholder trait for `ghidra.app.decompiler.component.margin.DecompilerMarginProvider`.
@@ -3252,4 +3347,128 @@ pub trait FGVertex: Send + Sync {
     fn refresh_display_for_address(&self, address: &crate::program::model::address::Address);
     fn set_showing(&self, is_showing: bool);
     fn dispose(&self);
+}
+
+/// Placeholder for `ghidra.app.CorePluginPackage`, referenced by
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin)'s `@PluginInfo`
+/// metadata before the real class is ported. Only its `NAME` is needed; the real class also
+/// carries the package's icon and description.
+pub struct CorePluginPackage;
+
+impl CorePluginPackage {
+    /// Mirrors `CorePluginPackage.NAME`.
+    pub const NAME: &'static str = "Ghidra Core";
+}
+
+impl crate::framework::seam_stubs::PluginPackageLike for CorePluginPackage {
+    fn name(&self) -> String {
+        Self::NAME.to_string()
+    }
+}
+
+/// Placeholder for `ghidra.app.events.ProgramLocationPluginEvent`, referenced by
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
+/// is ported. Java's version is a `final` class extending the abstract
+/// `AbstractLocationPluginEvent`, so this is a concrete struct that composes a
+/// [`PluginEvent`](crate::framework::plugintool::PluginEvent) the same way the already-ported
+/// sibling events ([`ProgramActivatedPluginEvent`](crate::app::events::ProgramActivatedPluginEvent)
+/// and friends) do. Only the ancestor's location/program accessors are modeled.
+pub struct ProgramLocationPluginEvent {
+    event: crate::framework::plugintool::PluginEvent,
+    location: Arc<dyn ProgramLocation + Send + Sync>,
+    program_ref: std::sync::Weak<dyn Program>,
+}
+
+impl ProgramLocationPluginEvent {
+    /// Mirrors `ProgramLocationPluginEvent.NAME`.
+    pub const NAME: &'static str = "ProgramLocationChange";
+
+    /// Mirrors `ProgramLocationPluginEvent(String, ProgramLocation, Program)`. Java logs an error
+    /// (but still constructs the event) when the location is null; a non-null location is required
+    /// here instead.
+    pub fn new(
+        src: impl Into<String>,
+        location: Arc<dyn ProgramLocation + Send + Sync>,
+        program: Arc<dyn Program>,
+    ) -> Self {
+        Self {
+            event: crate::framework::plugintool::PluginEvent::new(src, Self::NAME),
+            location,
+            program_ref: Arc::downgrade(&program),
+        }
+    }
+
+    /// Mirrors `AbstractLocationPluginEvent.getLocation()`.
+    pub fn get_location(&self) -> &Arc<dyn ProgramLocation + Send + Sync> {
+        &self.location
+    }
+
+    /// Mirrors `AbstractLocationPluginEvent.getProgram()`, which reads a `WeakReference` and so
+    /// returns `None` once the program has been closed.
+    pub fn get_program(&self) -> StdOption<Arc<dyn Program>> {
+        self.program_ref.upgrade()
+    }
+
+    /// Returns a reference to the underlying `PluginEvent`.
+    pub fn event(&self) -> &crate::framework::plugintool::PluginEvent {
+        &self.event
+    }
+
+    /// Unwraps the underlying `PluginEvent` so it can be fired through
+    /// [`Plugin::fire_plugin_event`](crate::framework::plugintool::Plugin::fire_plugin_event),
+    /// which takes the base event by value. The location/program payload is dropped in the
+    /// process: this crate's `PluginEvent` has no subclass payload, so only the source and event
+    /// name survive the trip through the tool.
+    pub fn into_plugin_event(self) -> crate::framework::plugintool::PluginEvent {
+        self.event
+    }
+}
+
+/// Placeholder for `ghidra.app.events.ProgramSelectionPluginEvent`, referenced by
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
+/// is ported. Shaped like [`ProgramLocationPluginEvent`] above, mirroring the abstract
+/// `AbstractSelectionPluginEvent` ancestor's selection/program accessors.
+pub struct ProgramSelectionPluginEvent {
+    event: crate::framework::plugintool::PluginEvent,
+    selection: Arc<dyn ProgramSelection>,
+    program_ref: std::sync::Weak<dyn Program>,
+}
+
+impl ProgramSelectionPluginEvent {
+    /// Mirrors `ProgramSelectionPluginEvent.NAME`.
+    pub const NAME: &'static str = "ProgramSelection";
+
+    /// Mirrors `ProgramSelectionPluginEvent(String, ProgramSelection, Program)`.
+    pub fn new(
+        src: impl Into<String>,
+        selection: Arc<dyn ProgramSelection>,
+        program: Arc<dyn Program>,
+    ) -> Self {
+        Self {
+            event: crate::framework::plugintool::PluginEvent::new(src, Self::NAME),
+            selection,
+            program_ref: Arc::downgrade(&program),
+        }
+    }
+
+    /// Mirrors `AbstractSelectionPluginEvent.getSelection()`.
+    pub fn get_selection(&self) -> &Arc<dyn ProgramSelection> {
+        &self.selection
+    }
+
+    /// Mirrors `AbstractSelectionPluginEvent.getProgram()`.
+    pub fn get_program(&self) -> StdOption<Arc<dyn Program>> {
+        self.program_ref.upgrade()
+    }
+
+    /// Returns a reference to the underlying `PluginEvent`.
+    pub fn event(&self) -> &crate::framework::plugintool::PluginEvent {
+        &self.event
+    }
+
+    /// Unwraps the underlying `PluginEvent`; see
+    /// [`ProgramLocationPluginEvent::into_plugin_event`] for what is lost.
+    pub fn into_plugin_event(self) -> crate::framework::plugintool::PluginEvent {
+        self.event
+    }
 }

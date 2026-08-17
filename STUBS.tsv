@@ -1043,3 +1043,9 @@ ts	stub_class	referenced_by
 2026-08-16T21:30:00.000000+00:00	ImageRuntimeFunctionEntries_ARM	ExceptionDataDirectory
 2026-08-16T21:30:00.000000+00:00	FileHeader	ExceptionDataDirectory
 2026-08-17T05:00:00.000000+00:00	AbstractDemangledFunctionDefinitionDataType	DemangledFunctionPointer
+2026-08-17T02:34:28.691576+00:00	DecompilerHoverService	DecompilePlugin
+2026-08-17T02:34:28.691576+00:00	CorePluginPackage	DecompilePlugin
+2026-08-17T02:34:28.691576+00:00	ProgramLocationPluginEvent	DecompilePlugin
+2026-08-17T02:34:28.691576+00:00	ProgramSelectionPluginEvent	DecompilePlugin
+2026-08-17T02:34:28.691576+00:00	SwingUpdateManager	DecompilePlugin
+2026-08-17T02:34:28.691576+00:00	SpecExtension	DecompilePlugin

@@ -2521,3 +2521,18 @@ pub mod comment_utils {
     }
 }
 
+/// Placeholder for `ghidra.program.database.SpecExtension`, referenced by
+/// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
+/// is ported. Java's version is a concrete class, so this is a plain struct carrying the one
+/// static the plugin calls; the real port also parses, validates and installs compiler-spec
+/// extension documents on a program.
+pub struct SpecExtension;
+
+impl SpecExtension {
+    /// Stands in for the static `SpecExtension.registerOptions(Program)`, which installs the
+    /// program's "Specification Extensions" options (one option per installed extension) so they
+    /// show up in the program's options tree. Registering program options is not ported yet, so
+    /// this is a no-op -- equivalent to a program whose extension options are already registered.
+    pub fn register_options(_program: &dyn crate::program::model::listing::Program) {}
+}
+
