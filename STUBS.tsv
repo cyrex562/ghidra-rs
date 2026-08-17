@@ -1082,6 +1082,13 @@ ts	stub_class	referenced_by
 2026-08-17T06:20:59.504896+00:00	UnsupportedScriptProvider	GhidraScriptUtil
 2026-08-17T06:20:59.509871+00:00	ClassSearcher	GhidraScriptUtil
 2026-08-17T06:20:59.513863+00:00	FileUtilities	GhidraScriptUtil
-2026-08-17T06:51:15.648541+00:00	ObjcState	ObjcMethod
 2026-08-17T06:51:15.648541+00:00	ObjcTypeMetadataStructure	ObjcMethod
 2026-08-17T06:51:15.648541+00:00	ObjcUtils	ObjcMethod
+2026-08-17T06:53:40.266638+00:00	LibObjcOptimization	ObjcState
+2026-08-17T06:53:40.557166+00:00	Objc1TypeEncodings	ObjcState
+2026-08-17T06:53:40.557446+00:00	Objc2Class	ObjcState
+2026-08-17T06:53:40.557619+00:00	Objc2InstanceVariable	ObjcState
+2026-08-17T06:53:40.557792+00:00	FunctionSignature	ObjcState
+2026-08-17T06:53:40.557966+00:00	Objc2Cache	ObjcState
+2026-08-17T06:53:40.558139+00:00	Objc2Implementation	ObjcState
+2026-08-17T06:53:40.558313+00:00	Objc2ClassRW	ObjcState
