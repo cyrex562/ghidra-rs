@@ -3,7 +3,7 @@ DONE	trait	17	10	10	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bi
 DONE	trait	13	30	43	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DbgLoader.java
 DONE	trait	3	25	8	format	Ghidra/Features/Base/src/main/java/ghidra/app/util/bin/format/pe/ExceptionDataDirectory.java
 DONE	trait	1	61	1	demangler	Ghidra/Features/Base/src/main/java/ghidra/app/util/demangler/DemangledFunctionPointer.java
-TODO	trait	1	36	58	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/FunctionDatabase.java
+DONE	trait	1	36	58	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/FunctionDatabase.java
 TODO	trait	0	46	10	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/protocol/BSimQuery.java
 TODO	trait	2	13	1	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DecompilerHoverService.java
 TODO	trait	1	24	88	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/DecompilePlugin.java
