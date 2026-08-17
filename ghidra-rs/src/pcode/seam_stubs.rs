@@ -4845,3 +4845,49 @@ impl crate::program::model::data::abstract_string_data_type::AbstractStringDataT
     }
 }
 
+/// Placeholder for the unported Java type `RVal`, referenced by `LValInternal`.
+/// A value which can be used on the RHS of an assignment.
+pub trait RVal: Send + Sync {
+    fn get_type(&self) -> Box<dyn DataType>;
+    fn cast(&self, type_: &dyn DataType) -> Box<dyn RVal>;
+}
+
+/// Placeholder for the unported Java type `LVal`, referenced by `LValInternal`.
+/// A value which can be used on either side of an assignment.
+pub trait LVal: RVal {
+    fn field(&self, name: &str) -> Box<dyn LVal>;
+    fn index(&self, index: &dyn RVal) -> Box<dyn LVal>;
+    fn index_long(&self, index: i64) -> Box<dyn LVal>;
+    fn set(&self, rhs: &dyn RVal) -> Box<dyn StmtWithVal>;
+    fn set_long(&self, rhs: i64) -> Box<dyn StmtWithVal>;
+    fn addi(&self, rhs: &dyn RVal) -> Box<dyn RVal>;
+}
+
+/// Placeholder for the unported Java type `AssignStmt`, referenced by `LValInternal`.
+pub trait AssignStmtType: Send + Sync {
+    fn cast(&self, type_: &dyn DataType) -> Box<dyn RVal>;
+    fn to_string(&self) -> String;
+    fn get_type(&self) -> Box<dyn DataType>;
+}
+
+/// Placeholder for the unported Java type `FieldExprType`, referenced by `LValInternal`.
+pub trait FieldExprType: Send + Sync {
+    fn cast(&self, type_: &dyn DataType) -> Box<dyn LVal>;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `IndexExprType`, referenced by `LValInternal`.
+pub trait IndexExprType: Send + Sync {
+    fn cast(&self, type_: &dyn DataType) -> Box<dyn LVal>;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `RValInternal`, referenced by `LValInternal`.
+pub trait RValInternal: Send + Sync {}
+
+/// Placeholder for the unported Java type `Stmt`, referenced by `LVal`.
+pub trait Stmt: Send + Sync {}
+
+/// Placeholder for the unported Java type `StmtWithVal`, referenced by `LVal`.
+pub trait StmtWithVal: Stmt + RVal {}
+

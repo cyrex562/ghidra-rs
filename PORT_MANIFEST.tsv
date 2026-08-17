@@ -9321,7 +9321,7 @@ orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/GotoS
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/IfStmt.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/IndexExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/InvExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
-orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LValInternal.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
+orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LValInternal.java	DONE	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LangVar.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LiteralExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 
 orig_src/Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/LiteralFloatExpr.java	TODO	orig_src Ghidra Features SystemEmulation src main java ghidra pcode struct 

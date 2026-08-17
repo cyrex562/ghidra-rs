@@ -1057,3 +1057,11 @@ ts	stub_class	referenced_by
 2026-08-17T03:52:00.000000+00:00	EmuProcessExitedException	AbstractEmuUnixSyscallUseropLibrary
 2026-08-17T03:52:00.000000+00:00	SettingsImpl	AbstractEmuUnixSyscallUseropLibrary
 2026-08-17T03:52:00.000000+00:00	StringDataType	AbstractEmuUnixSyscallUseropLibrary
+2026-08-17T04:04:38.656206+00:00	AssignStmtType	LValInternal
+2026-08-17T04:04:38.656359+00:00	FieldExprType	LValInternal
+2026-08-17T04:04:38.656484+00:00	IndexExprType	LValInternal
+2026-08-17T04:04:38.656663+00:00	RValInternal	LValInternal
+2026-08-17T04:04:38.657627+00:00	RVal	LValInternal
+2026-08-17T04:04:38.657700+00:00	LVal	LValInternal
+2026-08-17T04:04:38.657750+00:00	Stmt	LValInternal
+2026-08-17T04:04:38.657800+00:00	StmtWithVal	LValInternal
