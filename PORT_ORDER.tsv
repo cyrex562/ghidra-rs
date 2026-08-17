@@ -8,7 +8,7 @@ DONE	trait	0	46	10	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bs
 PARK	trait	2	13	1	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/component/hover/DecompilerHoverService.java
 DONE	trait	1	24	88	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/plugin/core/decompile/DecompilePlugin.java
 DONE	trait	3	8	41	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/EmuSyscallLibrary.java
-TODO	trait	2	7	3	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/AnnotatedEmuSyscallUseropLibrary.java
+DONE	trait	2	7	3	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/sys/AnnotatedEmuSyscallUseropLibrary.java
 TODO	trait	4	8	1	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileDescriptor.java
 TODO	trait	3	10	2	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFile.java
 TODO	trait	3	11	3	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/emu/unix/EmuUnixFileSystem.java
