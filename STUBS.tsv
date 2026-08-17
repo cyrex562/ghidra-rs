@@ -1102,3 +1102,6 @@ ts	stub_class	referenced_by
 2026-08-17T03:50:00.000000+00:00	SourceArchive	ArchiveNode
 2026-08-17T03:50:00.000000+00:00	ArchiveNode	ArchiveRootNodeListener
 2026-08-17T07:56:39.647040+00:00	AbstractSQLFunctionDatabase	IDSQLResolution
+2026-08-17T04:10:00.000000+00:00	ArtHeader	OatBundle
+2026-08-17T04:10:00.000000+00:00	OatHeader	OatBundle
+2026-08-17T04:10:00.000000+00:00	VdexHeader	OatBundle
