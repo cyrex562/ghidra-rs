@@ -1673,7 +1673,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/Ex
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/ExecutableScorer.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/ExecutableScorerSingle.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/FileScoreCaching.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/IDSQLResolution.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/IDSQLResolution.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/IdHistogram.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/NoDatabaseException.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query client
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/PostgresFunctionDatabase.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query client 

@@ -3339,3 +3339,36 @@ impl H2FileFunctionDatabase {
 }
 
 impl_bsim_function_database_stub!(H2FileFunctionDatabase, "H2FileFunctionDatabase");
+
+/// Placeholder for the unported Java type `AbstractSQLFunctionDatabase`, referenced by
+/// [`crate::feature::bsim::query::client::id_sql_resolution`]. Java's
+/// `AbstractSQLFunctionDatabase<VF extends LSHVectorFactory> implements SQLFunctionDatabase`, so
+/// this stub extends the already-ported
+/// [`SQLFunctionDatabase`](crate::feature::bsim::query::sql_function_database::SQLFunctionDatabase)
+/// trait rather than repeating its members. Trimmed to the four package-private query helpers
+/// `IDSQLResolution`'s subclasses call (`queryArchString`, `queryCompilerString`,
+/// `queryCategoryString`, `recoverExternalFunctionId`); see `AbstractSQLFunctionDatabase.java` for
+/// the type's full surface. Each Java method `throws SQLException` (and
+/// `recoverExternalFunctionId` also `throws LSHException`, which `IDSQLResolution.ExternalFunction`
+/// rewraps into a `SQLException`); both collapse to `io::Error` here. Replace with the real port
+/// when `AbstractSQLFunctionDatabase.java` is ported.
+pub trait AbstractSQLFunctionDatabase:
+    crate::feature::bsim::query::sql_function_database::SQLFunctionDatabase
+{
+    /// Java: `queryArchString(String value)`.
+    fn query_arch_string(&self, value: &str) -> std::io::Result<i64>;
+
+    /// Java: `queryCompilerString(String value)`.
+    fn query_compiler_string(&self, value: &str) -> std::io::Result<i64>;
+
+    /// Java: `queryCategoryString(String value)`.
+    fn query_category_string(&self, value: &str) -> std::io::Result<i64>;
+
+    /// Java: `recoverExternalFunctionId(String exename, String functionname, String reparch)`.
+    fn recover_external_function_id(
+        &self,
+        exe_name: &str,
+        func_name: &str,
+        rep_arch: &str,
+    ) -> std::io::Result<i64>;
+}
