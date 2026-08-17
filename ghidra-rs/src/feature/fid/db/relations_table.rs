@@ -1,5 +1,5 @@
+use crate::feature::fid::db::function_record::FunctionRecord;
 use crate::feature::fid::hash::fid_hash_quad::FidHashQuad;
-use crate::feature::seam_stubs::FunctionRecord;
 use crate::framework::db::db_handle::DBHandle;
 use crate::framework::db::field::{Field, FieldType};
 use crate::framework::db::record::DBRecord;
@@ -18,8 +18,8 @@ use std::sync::{Arc, RwLock};
 /// `FidDBUtils` is not itself ported (it is a stateless static utility), so its two-line bodies
 /// are mirrored here directly rather than through a stub trait.
 fn generate_superior_full_hash_smash(
-    superior_function: &dyn FunctionRecord,
-    inferior_function: &dyn FunctionRecord,
+    superior_function: &FunctionRecord,
+    inferior_function: &FunctionRecord,
 ) -> i64 {
     let hash_value =
         superior_function.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME);
@@ -28,8 +28,8 @@ fn generate_superior_full_hash_smash(
 
 /// Java: `FidDBUtils.generateInferiorFullHashSmash(FunctionRecord, FunctionRecord)`.
 fn generate_inferior_full_hash_smash(
-    superior_function: &dyn FunctionRecord,
-    inferior_function: &dyn FunctionRecord,
+    superior_function: &FunctionRecord,
+    inferior_function: &FunctionRecord,
 ) -> i64 {
     let hash_value =
         inferior_function.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME);
@@ -39,7 +39,7 @@ fn generate_inferior_full_hash_smash(
 /// Java: `FidDBUtils.generateSuperiorFullHashSmash(FunctionRecord, FidHashQuad)`, the overload
 /// used when only a hash quad (not a resolved `FunctionRecord`) is known for the inferior side.
 fn generate_superior_full_hash_smash_quad(
-    superior_function: &dyn FunctionRecord,
+    superior_function: &FunctionRecord,
     inferior_function: &dyn FidHashQuad,
 ) -> i64 {
     let hash_value =
@@ -51,7 +51,7 @@ fn generate_superior_full_hash_smash_quad(
 /// used when only a hash quad is known for the superior side.
 fn generate_inferior_full_hash_smash_quad(
     superior_function: &dyn FidHashQuad,
-    inferior_function: &dyn FunctionRecord,
+    inferior_function: &FunctionRecord,
 ) -> i64 {
     let hash_value =
         inferior_function.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME);
@@ -114,8 +114,8 @@ impl RelationsTable {
     /// Java: `void createRelation(FunctionRecord, FunctionRecord, RelationType)`.
     pub fn create_relation(
         &self,
-        superior_function: &dyn FunctionRecord,
-        inferior_function: &dyn FunctionRecord,
+        superior_function: &FunctionRecord,
+        inferior_function: &FunctionRecord,
         relation_type: RelationType,
     ) -> io::Result<()> {
         let superior_key =
@@ -138,8 +138,8 @@ impl RelationsTable {
     /// Java: `void createInferiorRelation(FunctionRecord, FunctionRecord)`.
     pub fn create_inferior_relation(
         &self,
-        superior_function: &dyn FunctionRecord,
-        inferior_function: &dyn FunctionRecord,
+        superior_function: &FunctionRecord,
+        inferior_function: &FunctionRecord,
     ) -> io::Result<()> {
         let inferior_key =
             generate_inferior_full_hash_smash(superior_function, inferior_function);
@@ -154,7 +154,7 @@ impl RelationsTable {
     /// Java: `boolean getSuperiorFullRelation(FunctionRecord, FidHashQuad)`.
     pub fn get_superior_full_relation(
         &self,
-        superior_function: &dyn FunctionRecord,
+        superior_function: &FunctionRecord,
         inferior_function: &dyn FidHashQuad,
     ) -> io::Result<bool> {
         let superior_key =
@@ -174,7 +174,7 @@ impl RelationsTable {
     pub fn get_inferior_full_relation(
         &self,
         superior_function: &dyn FidHashQuad,
-        inferior_function: &dyn FunctionRecord,
+        inferior_function: &FunctionRecord,
     ) -> io::Result<bool> {
         let inferior_key =
             generate_inferior_full_hash_smash_quad(superior_function, inferior_function);
@@ -190,45 +190,69 @@ impl RelationsTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::feature::fid::db::fid_db::test_support::minimal_fid_db;
+    use crate::feature::seam_stubs::{StringRecord, StringsTable};
 
-    struct FakeFunctionRecord {
-        key: i64,
-        full_hash: i64,
-    }
+    /// This module's tests only exercise the hash-smash arithmetic and key/full-hash accessors,
+    /// so name resolution is never needed.
+    struct NoopStringsTable;
 
-    impl FidHashQuad for FakeFunctionRecord {
-        fn code_unit_size(&self) -> i16 {
-            0
-        }
-        fn full_hash(&self) -> i64 {
-            self.full_hash
-        }
-        fn specific_hash_additional_size(&self) -> i8 {
-            0
-        }
-        fn specific_hash(&self) -> i64 {
-            0
+    impl StringsTable for NoopStringsTable {
+        fn lookup_string(&self, _id: i64) -> Option<StringRecord> {
+            None
         }
     }
 
-    impl FunctionRecord for FakeFunctionRecord {
-        fn get_key(&self) -> i64 {
-            self.key
-        }
-        fn get_name(&self) -> String {
-            format!("func_{}", self.key)
-        }
-        fn get_library_id(&self) -> i64 {
-            1
-        }
+    /// Column layout mirrored from `FunctionsTable`, matching
+    /// [`crate::feature::fid::db::function_record`]'s own copy.
+    const FULL_HASH_COL: usize = 1;
+    const LIBRARY_ID_COL: usize = 4;
+
+    fn function_schema() -> Arc<Schema> {
+        Arc::new(Schema::new(
+            6,
+            FieldType::Long,
+            "Function ID".to_string(),
+            vec![
+                FieldType::Short,
+                FieldType::Long,
+                FieldType::Byte,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Long,
+                FieldType::Byte,
+            ],
+            vec![
+                "Code Unit Size".to_string(),
+                "Full Hash".to_string(),
+                "Specific Hash Additional Size".to_string(),
+                "Specific Hash".to_string(),
+                "Library ID".to_string(),
+                "Name ID".to_string(),
+                "Entry Point".to_string(),
+                "Domain Path ID".to_string(),
+                "Flags".to_string(),
+            ],
+            vec![],
+        ))
     }
 
-    fn caller() -> FakeFunctionRecord {
-        FakeFunctionRecord { key: 42, full_hash: 0x1234_5678_9abc_def0 }
+    fn build_function_record(key: i64, full_hash: i64) -> FunctionRecord {
+        let fid_db = minimal_fid_db(Arc::new(NoopStringsTable));
+        let mut record = DBRecord::new(function_schema(), Field::Long(Some(key)));
+        record.set_long(FULL_HASH_COL, full_hash);
+        record.set_long(LIBRARY_ID_COL, 1);
+        FunctionRecord::new(fid_db, record)
     }
 
-    fn callee() -> FakeFunctionRecord {
-        FakeFunctionRecord { key: 99, full_hash: 0x0fed_cba9_8765_4321 }
+    fn caller() -> FunctionRecord {
+        build_function_record(42, 0x1234_5678_9abc_def0)
+    }
+
+    fn callee() -> FunctionRecord {
+        build_function_record(99, 0x0fed_cba9_8765_4321)
     }
 
     #[test]
@@ -237,12 +261,12 @@ mod tests {
         //       return hashValue ^ inferiorFunction.getFullHash();
         let caller = caller();
         let callee = callee();
-        let expected =
-            (caller.key.wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME)) ^ callee.full_hash;
+        let expected = (caller.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME))
+            ^ callee.full_hash();
         assert_eq!(generate_superior_full_hash_smash(&caller, &callee), expected);
 
-        let expected_inferior =
-            (callee.key.wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME)) ^ caller.full_hash;
+        let expected_inferior = (callee.get_key().wrapping_mul(FNV1a64MessageDigest::FNV_64_PRIME))
+            ^ caller.full_hash();
         assert_eq!(generate_inferior_full_hash_smash(&caller, &callee), expected_inferior);
     }
 
@@ -266,7 +290,7 @@ mod tests {
             .get_inferior_full_relation(&caller, &callee)
             .expect("query inferior relation"));
 
-        let stranger = FakeFunctionRecord { key: 7, full_hash: 0xdead_beef };
+        let stranger = build_function_record(7, 0xdead_beef);
         assert!(!table
             .get_superior_full_relation(&caller, &stranger)
             .expect("query missing superior relation"));

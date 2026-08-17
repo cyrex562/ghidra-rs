@@ -1115,8 +1115,8 @@ ts	stub_class	referenced_by
 2026-08-17T08:11:09.679379+00:00	OatClassType	OatClass
 2026-08-17T08:11:09.679475+00:00	OatMethodOffsets	OatClass
 2026-08-17T04:25:00+00:00	BackgroundColorModel	ListingBackgroundColorModel
-2026-08-17T08:40:03.740170+00:00	FunctionRecord	RelationsTable
 2026-08-17T08:41:32.405928+00:00	FidFile	FidDB
 2026-08-17T08:41:32.407065+00:00	LibrariesTable	FidDB
 2026-08-17T08:41:32.689537+00:00	StringsTable	FidDB
 2026-08-17T08:41:32.406754+00:00	FunctionsTable	FidDB
+2026-08-17T08:51:37.413844+00:00	StringRecord	FunctionRecord

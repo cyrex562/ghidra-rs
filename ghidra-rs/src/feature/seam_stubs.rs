@@ -3373,27 +3373,6 @@ pub trait AbstractSQLFunctionDatabase:
     ) -> std::io::Result<i64>;
 }
 
-/// Placeholder for the unported Java type `FunctionRecord`, referenced by
-/// [`crate::feature::fid::db::relations_table::RelationsTable`]. Java's
-/// `FunctionRecord extends DbObject implements FidHashQuad`, so this stub extends the
-/// already-ported [`FidHashQuad`](crate::feature::fid::hash::fid_hash_quad::FidHashQuad) trait
-/// rather than repeating its members, and adds only `getKey()` (inherited from `DbObject`), the
-/// one additional member `RelationsTable`'s hash-smash helpers need. Replace with the real port
-/// when `FunctionRecord.java` is ported.
-pub trait FunctionRecord: crate::feature::fid::hash::fid_hash_quad::FidHashQuad + Send + Sync {
-    /// Java: `DbObject.getKey()`, the function's primary key in the FID database.
-    ///
-    /// Java's `FunctionRecord.getID()` is defined as `record.getKey()`, so the two are the same
-    /// value and only one accessor is stubbed here.
-    fn get_key(&self) -> i64;
-
-    /// Java: `FunctionRecord.getName()`.
-    fn get_name(&self) -> String;
-
-    /// Java: `FunctionRecord.getLibraryID()`, the key of the library this function belongs to.
-    fn get_library_id(&self) -> i64;
-}
-
 /// Placeholder for the unported Java type `FidFile`, referenced by
 /// [`crate::feature::fid::db::fid_db::FidDB`]. Only the members `FidDB` calls are stubbed: the
 /// installation/packed distinction that decides how the database handle is opened, the two name
@@ -3454,11 +3433,35 @@ pub trait LibrariesTable: Send + Sync {
     ) -> std::io::Result<Option<crate::framework::db::record::DBRecord>>;
 }
 
+/// Placeholder for the unported Java type `StringRecord`, referenced by
+/// [`crate::feature::fid::db::function_record::FunctionRecord`]. `StringRecord` is a concrete
+/// Java class (a thin wrapper around a stored string), not an interface, so this stub is a
+/// concrete struct rather than a trait -- see the "Trait objects" note on this type. Replace with
+/// the real port when `StringRecord.java` is ported.
+pub struct StringRecord {
+    value: String,
+}
+
+impl StringRecord {
+    pub fn new(value: String) -> Self {
+        Self { value }
+    }
+
+    /// Java: `StringRecord.getValue()`.
+    pub fn get_value(&self) -> String {
+        self.value.clone()
+    }
+}
+
 /// Placeholder for the unported Java type `StringsTable`, referenced by
-/// [`crate::feature::fid::db::fid_db::FidDB`]. `FidDB` only stores the table and hands it back
-/// from `getStringsTable()`; it never calls a method on it, so this stub is deliberately a marker
-/// trait. Replace with the real port when `StringsTable.java` is ported.
-pub trait StringsTable: Send + Sync {}
+/// [`crate::feature::fid::db::fid_db::FidDB`] and
+/// [`crate::feature::fid::db::function_record::FunctionRecord`]. Replace with the real port when
+/// `StringsTable.java` is ported.
+pub trait StringsTable: Send + Sync {
+    /// Java: `StringsTable.lookupString(long id)`, returning `None` when no string with that id
+    /// exists.
+    fn lookup_string(&self, id: i64) -> Option<StringRecord>;
+}
 
 /// Placeholder for the unported Java type `FunctionsTable`, referenced by
 /// [`crate::feature::fid::db::fid_db::FidDB`]. Replace with the real port when
@@ -3472,13 +3475,13 @@ pub trait FunctionsTable: Send + Sync {
     fn get_function_records_by_specific_hash(
         &self,
         hash: i64,
-    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
 
     /// Java: `getFunctionRecordsByFullHash(long hash)`.
     fn get_function_records_by_full_hash(
         &self,
         hash: i64,
-    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
 
     /// Java: `createFunctionRecord(long libraryID, FidHashQuad, String name, long entryPoint,
     /// String domainPath, boolean hasTerminator)`.
@@ -3490,38 +3493,38 @@ pub trait FunctionsTable: Send + Sync {
         entry_point: i64,
         domain_path: &str,
         has_terminator: bool,
-    ) -> std::io::Result<Arc<dyn FunctionRecord>>;
+    ) -> std::io::Result<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
 
     /// Java: `getFunctionRecordsByNameSubstring(String nameSearch)`.
     fn get_function_records_by_name_substring(
         &self,
         name_search: &str,
-    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
 
     /// Java: `getFunctionRecordsByNameRegex(String regex)`.
     fn get_function_records_by_name_regex(
         &self,
         regex: &str,
-    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
 
     /// Java: `getFunctionByID(long functionID)`, which returns `null` for an unknown id.
     fn get_function_by_id(
         &self,
         function_id: i64,
-    ) -> std::io::Result<Option<Arc<dyn FunctionRecord>>>;
+    ) -> std::io::Result<Option<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
 
     /// Java: `getFunctionRecordsByDomainPathSubstring(String domainPathSearch)`.
     fn get_function_records_by_domain_path_substring(
         &self,
         domain_path_search: &str,
-    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
 
     /// Java: `getFunctionRecordsByLibraryAndName(LibraryRecord library, String name)`.
     fn get_function_records_by_library_and_name(
         &self,
         library: &crate::feature::fid::db::library_record::LibraryRecord,
         name: &str,
-    ) -> std::io::Result<Vec<Arc<dyn FunctionRecord>>>;
+    ) -> std::io::Result<Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>>;
 
     /// Java: `modifyFlags(long functionID, int flagMask, boolean value)`, which errors when the
     /// function record does not exist.
