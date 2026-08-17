@@ -217,8 +217,14 @@ pub trait NTHeader: Send + Sync {
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.FileHeader`, referenced by
-/// [`NTHeader`] before the real class is ported.
-pub trait FileHeader: Send + Sync {}
+/// [`NTHeader`] before the real class is ported. Extended with the accessors
+/// [`ExceptionDataDirectory`](crate::format::pe::exception_data_directory::ExceptionDataDirectory)
+/// needs to pick a runtime-function-table parser for the image's architecture.
+pub trait FileHeader: Send + Sync {
+    fn get_machine(&self) -> i16;
+    fn is_x86(&self) -> bool;
+    fn is_arm(&self) -> bool;
+}
 
 /// Placeholder for `ghidra.app.util.bin.format.pe.OptionalHeader`, referenced by
 /// [`NTHeader`] before the real class is ported. Extended with the two accessors
@@ -6336,6 +6342,92 @@ impl SeparateDebugHeader {
     /// `SeparateDebugHeader.getParser()`.
     pub fn get_parser(&self) -> Option<&DebugDirectoryParser> {
         self.parser.as_ref()
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.LoadConfigDirectory`, referenced by
+/// [`ExceptionDataDirectory`](crate::format::pe::exception_data_directory::ExceptionDataDirectory)
+/// before the real class is ported. `LoadConfigDirectory` is a concrete Java class (not an
+/// interface), so it is modeled here as a concrete struct. Only exposes
+/// `getChpeMetadataPointer()`, the sole accessor `ExceptionDataDirectory.parse()` needs to detect
+/// a CHPE (hybrid ARM64EC/x86) image.
+pub struct LoadConfigDirectory {
+    chpe_metadata_pointer: i64,
+}
+
+impl LoadConfigDirectory {
+    pub fn new(chpe_metadata_pointer: i64) -> Self {
+        LoadConfigDirectory { chpe_metadata_pointer }
+    }
+
+    /// Port of `LoadConfigDirectory.getChpeMetadataPointer()`.
+    pub fn get_chpe_metadata_pointer(&self) -> i64 {
+        self.chpe_metadata_pointer
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.ImageRuntimeFunctionEntries_X86`, referenced by
+/// [`ExceptionDataDirectory`](crate::format::pe::exception_data_directory::ExceptionDataDirectory)
+/// before the real class is ported. `ImageRuntimeFunctionEntries_X86` is a concrete Java class
+/// (not an interface) implementing the already-ported
+/// [`ImageRuntimeFunctionEntries`](crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntries)
+/// trait, so it is modeled here as a concrete struct. Constructed the same way as the real Java
+/// class (`reader`, `size`, `ntHeader`) but does not parse the `.pdata` runtime function table
+/// yet; `markup` is a no-op until the real class is ported.
+pub struct ImageRuntimeFunctionEntriesX86;
+
+impl ImageRuntimeFunctionEntriesX86 {
+    /// Port of `ImageRuntimeFunctionEntries_X86(BinaryReader, int, NTHeader)`.
+    pub fn new(
+        _reader: &mut dyn BinaryReader,
+        _size: i32,
+        _nt_header: &dyn NTHeader,
+    ) -> std::io::Result<Self> {
+        Ok(ImageRuntimeFunctionEntriesX86)
+    }
+}
+
+impl crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntries
+    for ImageRuntimeFunctionEntriesX86
+{
+    fn markup(
+        &self,
+        _program: &dyn ListingProgram,
+        _start: Address,
+        _log: &dyn MessageLog,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        Ok(())
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.pe.ImageRuntimeFunctionEntries_ARM`, referenced by
+/// [`ExceptionDataDirectory`](crate::format::pe::exception_data_directory::ExceptionDataDirectory)
+/// before the real class is ported. Same rationale as
+/// [`ImageRuntimeFunctionEntriesX86`]: a concrete Java class implementing the already-ported
+/// `ImageRuntimeFunctionEntries` trait, modeled here as a concrete struct with a no-op `markup`.
+pub struct ImageRuntimeFunctionEntriesArm;
+
+impl ImageRuntimeFunctionEntriesArm {
+    /// Port of `ImageRuntimeFunctionEntries_ARM(BinaryReader, int, NTHeader)`.
+    pub fn new(
+        _reader: &mut dyn BinaryReader,
+        _size: i32,
+        _nt_header: &dyn NTHeader,
+    ) -> std::io::Result<Self> {
+        Ok(ImageRuntimeFunctionEntriesArm)
+    }
+}
+
+impl crate::format::pe::image_runtime_function_entries::ImageRuntimeFunctionEntries
+    for ImageRuntimeFunctionEntriesArm
+{
+    fn markup(
+        &self,
+        _program: &dyn ListingProgram,
+        _start: Address,
+        _log: &dyn MessageLog,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        Ok(())
     }
 }
 
