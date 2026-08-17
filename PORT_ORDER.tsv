@@ -43,7 +43,7 @@ DONE	trait	1	13	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/for
 DONE	trait	3	7	9	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/oatclass/OatClass.java
 DONE	trait	0	25	2	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/layout/GridPoint.java
 DONE	trait	0	24	4	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ListingBackgroundColorModel.java
-TODO	trait	3	22	1	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/LibraryRecord.java
+DONE	trait	3	22	1	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/LibraryRecord.java
 TODO	trait	2	15	48	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/RelationsTable.java
 TODO	trait	1	18	9	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidDB.java
 TODO	trait	0	24	4	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FunctionRecord.java
