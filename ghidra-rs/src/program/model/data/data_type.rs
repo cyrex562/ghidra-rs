@@ -83,7 +83,7 @@ impl std::error::Error for UnsupportedOperationError {}
 ///
 /// The Java static singleton fields `DEFAULT` and `VOID` are omitted since they require
 /// `DefaultDataType`/`VoidDataType`, which are not yet ported.
-pub trait DataType {
+pub trait DataType: Send + Sync {
     /// Indicates if the length of this data-type is determined based upon the
     /// `DataOrganization` obtained from the associated `DataTypeManager`.
     fn has_language_dependant_length(&self) -> bool {
