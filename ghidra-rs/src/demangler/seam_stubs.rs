@@ -696,6 +696,39 @@ pub trait MdMangObjectParserLike {}
 /// itself defines (see the much larger suggested stub for it in the dependency-context notes).
 pub trait DemangledDataTypeLike: crate::demangler::demangled::Demangled {}
 
+/// Placeholder for `ghidra.app.util.demangler.AbstractDemangledFunctionDefinitionDataType`,
+/// referenced by `DemangledFunctionPointer`.
+///
+/// Java is an abstract base class with concrete subclasses like `DemangledFunctionPointer`.
+/// This stub declares the public surface that `DemangledFunctionPointer` inherits and extends.
+pub trait AbstractDemangledFunctionDefinitionDataType: DemangledDataTypeLike {
+    fn get_signature(&self) -> String;
+    fn set_return_type(&self, return_type: &dyn DemangledDataType);
+    fn get_return_type(&self) -> Option<&dyn DemangledDataType>;
+    fn set_calling_convention(&self, calling_convention: &str);
+    fn get_calling_convention(&self) -> Option<&str>;
+    fn set_modifier(&self, modifier: &str);
+    fn is_const_pointer(&self) -> bool;
+    fn set_const_pointer(&self);
+    fn is_trailing_pointer64(&self) -> bool;
+    fn set_trailing_pointer64(&self);
+    fn is_trailing_unaligned(&self) -> bool;
+    fn set_trailing_unaligned(&self);
+    fn is_trailing_restrict(&self) -> bool;
+    fn set_trailing_restrict(&self);
+    fn add_parameter(&self, parameter: &dyn DemangledDataType);
+    fn get_parameters(&self) -> Vec<&dyn DemangledDataType>;
+    fn to_signature(&self, name: Option<&str>) -> String;
+    fn get_pointer_levels(&self) -> i32;
+    fn increment_pointer_levels(&self);
+}
+
+/// Placeholder for `ghidra.app.util.demangler.DemangledDataType`, used by
+/// `AbstractDemangledFunctionDefinitionDataType`.
+pub trait DemangledDataType: Send + Sync {
+    fn get_signature(&self) -> String;
+}
+
 /// Placeholder for `mdemangler.MDOutputOptions`, needed by [`MdMangGhidra`].
 ///
 /// Java is a concrete "quick stub" class in the original codebase (see its own doc comment: "Quick
