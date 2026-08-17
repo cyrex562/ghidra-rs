@@ -5436,6 +5436,12 @@ pub trait GoModuledata: Send + Sync {
         offset: i64,
         func_entry: i64,
     ) -> std::io::Result<Box<dyn GoPcValueEvaluator>>;
+    /// Mirrors `GoModuledata.getFuncDataInstance(long)`, referenced by
+    /// [`GoFunctabEntry`](crate::format::golang::rtti::go_functab_entry::GoFunctabEntry).
+    fn get_func_data_instance(
+        &self,
+        offset: i64,
+    ) -> std::io::Result<crate::format::golang::rtti::go_func_data::GoFuncData>;
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.golang.rtti.GoPcValueEvaluator`, referenced by
