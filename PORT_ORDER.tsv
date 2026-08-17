@@ -19,7 +19,7 @@ DONE	trait	3	19	6	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pco
 DONE	trait	2	12	5	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AbstractStmt.java
 DONE	trait	1	6	4	pcode	Ghidra/Features/SystemEmulation/src/main/java/ghidra/pcode/struct/AssignStmt.java
 PARK	trait	1	8	96	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchSetDB.java
-TODO	trait	4	9	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleHostListener.java
+DONE	trait	4	9	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleHostListener.java
 TODO	trait	6	8	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/osgi/BundleStatusChangeRequestListener.java
 TODO	trait	5	20	1	script	Ghidra/Features/Base/src/main/java/ghidra/app/script/ResourceFileJavaFileManager.java
 TODO	trait	6	8	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/interpreter/InterpreterConsole.java
