@@ -37,7 +37,7 @@ DONE	trait	0	32	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api
 PARK	trait	0	31	1	feature	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/model/SymValueZ3.java
 DONE	trait	0	31	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/tree/ArchiveRootNodeListener.java
 DONE	trait	1	19	0	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/platform/DebuggerPlatformMapper.java
-TODO	trait	0	26	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java
+PARK	trait	0	26	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java
 TODO	trait	0	25	2	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/client/IDSQLResolution.java
 TODO	trait	1	13	4	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/bundle/OatBundle.java
 TODO	trait	3	7	9	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/oat/oatclass/OatClass.java
