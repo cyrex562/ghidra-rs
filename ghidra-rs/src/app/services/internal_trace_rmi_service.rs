@@ -39,7 +39,61 @@ mod tests {
     impl TraceRmiHandler for MockHandler {}
 
     struct MockConnection;
-    impl crate::app::seam_stubs::TraceRmiConnection for MockConnection {}
+    impl crate::debug::api::tracermi::TraceRmiConnection for MockConnection {
+        fn description(&self) -> String {
+            "mock connection".to_string()
+        }
+
+        fn remote_address(&self) -> SocketAddr {
+            "127.0.0.1:0".parse().unwrap()
+        }
+
+        fn methods(&self) -> &dyn crate::debug::api::tracermi::RemoteMethodRegistry {
+            unimplemented!("not exercised by InternalTraceRmiService smoke test")
+        }
+
+        fn wait_for_trace(
+            &self,
+            _timeout_millis: u64,
+        ) -> Result<Box<dyn crate::trace::model::trace::Trace>, crate::util::exception::TimeoutException>
+        {
+            unimplemented!("not exercised by InternalTraceRmiService smoke test")
+        }
+
+        fn last_snapshot(&self, _trace: &dyn crate::trace::model::trace::Trace) -> Option<i64> {
+            Some(0)
+        }
+
+        fn force_close_trace(&mut self, _trace: &dyn crate::trace::model::trace::Trace) {}
+
+        fn close(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn is_closed(&self) -> bool {
+            false
+        }
+
+        fn wait_closed(&self) {}
+
+        fn is_target(&self, _trace: &dyn crate::trace::model::trace::Trace) -> bool {
+            false
+        }
+
+        fn targets(&self) -> Vec<Box<dyn crate::debug::seam_stubs::Target>> {
+            Vec::new()
+        }
+
+        fn is_busy(&self) -> bool {
+            false
+        }
+
+        fn is_target_busy(&self, _target: &dyn crate::debug::seam_stubs::Target) -> bool {
+            false
+        }
+
+        fn forcibly_close_transactions(&mut self, _target: &dyn crate::debug::seam_stubs::Target) {}
+    }
 
     struct MockAcceptorOpaque;
     impl crate::app::seam_stubs::TraceRmiAcceptor for MockAcceptorOpaque {}
@@ -74,7 +128,7 @@ mod tests {
         fn connect(
             &self,
             _address: SocketAddr,
-        ) -> io::Result<Box<dyn crate::app::seam_stubs::TraceRmiConnection>> {
+        ) -> io::Result<Box<dyn crate::debug::api::tracermi::TraceRmiConnection>> {
             Ok(Box::new(MockConnection))
         }
 
@@ -85,7 +139,7 @@ mod tests {
             Ok(Box::new(MockAcceptorOpaque))
         }
 
-        fn get_all_connections(&self) -> Vec<Box<dyn crate::app::seam_stubs::TraceRmiConnection>> {
+        fn get_all_connections(&self) -> Vec<Box<dyn crate::debug::api::tracermi::TraceRmiConnection>> {
             Vec::new()
         }
 

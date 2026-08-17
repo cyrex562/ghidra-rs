@@ -256,3 +256,9 @@ pub trait ActionName: Send + Sync {
 pub trait RemoteMethod: Send + Sync {
     // (no public methods parsed from the Java source)
 }
+
+/// Placeholder for the unported Java type `ghidra.debug.api.target.Target`, referenced by
+/// [`TraceRmiConnection`](crate::debug::api::tracermi::TraceRmiConnection).
+/// `TraceRmiConnection` only ever passes this type through (as a collection element or by-value
+/// parameter), so no members are needed yet.
+pub trait Target: Send + Sync {}
