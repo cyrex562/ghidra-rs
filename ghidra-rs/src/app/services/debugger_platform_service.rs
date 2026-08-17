@@ -2,7 +2,7 @@
 //!
 //! Port of `ghidra.app.services.DebuggerPlatformService`.
 
-use crate::app::seam_stubs::DebuggerPlatformMapper;
+use crate::debug::api::platform::DebuggerPlatformMapper;
 use crate::trace::model::target::trace_object::TraceObject;
 use crate::trace::model::trace::Trace;
 
@@ -55,7 +55,39 @@ mod tests {
     use super::*;
 
     struct MockMapper;
-    impl DebuggerPlatformMapper for MockMapper {}
+    impl DebuggerPlatformMapper for MockMapper {
+        fn get_compiler_spec(
+            &self,
+            _object: &dyn TraceObject,
+            _snap: i64,
+        ) -> Option<Box<dyn crate::program::model::lang::CompilerSpec>> {
+            None
+        }
+
+        fn add_to_trace(
+            &self,
+            _new_focus: &dyn TraceObject,
+            _snap: i64,
+        ) -> Box<dyn crate::trace::model::guest::trace_platform::TracePlatform> {
+            unimplemented!("not exercised by this smoke test")
+        }
+
+        fn can_interpret(&self, _new_focus: &dyn TraceObject, _snap: i64) -> bool {
+            false
+        }
+
+        fn disassemble(
+            &self,
+            _thread: Option<&dyn crate::trace::model::thread::TraceThread>,
+            _object: &dyn TraceObject,
+            _start: crate::program::model::address::Address,
+            _restricted: &dyn crate::program::model::address::AddressSetView,
+            _snap: i64,
+            _monitor: &dyn crate::util::task::TaskMonitor,
+        ) -> crate::debug::api::platform::DisassemblyResult {
+            crate::debug::api::platform::DisassemblyResult::cancelled_result()
+        }
+    }
 
     struct MockDebuggerPlatformService;
 
