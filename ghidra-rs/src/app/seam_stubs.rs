@@ -23,6 +23,7 @@ use crate::trace::model::thread::TraceThread;
 use crate::trace::model::trace::Trace;
 use crate::util::task::TaskMonitor;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
+use crate::util::seam_stubs::ResourceFile;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt;
@@ -3480,4 +3481,48 @@ impl ProgramSelectionPluginEvent {
     pub fn into_plugin_event(self) -> crate::framework::plugintool::PluginEvent {
         self.event
     }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.osgi.BundleStatus`, referenced by
+/// [`BundleStatusChangeRequestListener`](crate::app::plugin::core::osgi::BundleStatusChangeRequestListener)
+/// before the real class is ported. This stub exposes the methods needed by the listener.
+pub trait BundleStatus: Send + Sync {
+    /// Compares this bundle status with another.
+    fn compare_to(&self, o: &dyn BundleStatus) -> i32;
+
+    /// Returns whether this bundle is enabled.
+    fn is_enabled(&self) -> bool;
+
+    /// Sets the enabled state of this bundle.
+    fn set_enabled(&self, is_enabled: bool);
+
+    /// Returns whether this bundle is read-only.
+    fn is_read_only(&self) -> bool;
+
+    /// Returns the type of this bundle.
+    fn get_type(&self) -> Box<dyn crate::program::seam_stubs::Type>;
+
+    /// Returns whether this bundle is active.
+    fn is_active(&self) -> bool;
+
+    /// Sets the active state of this bundle.
+    fn set_active(&self, is_active: bool);
+
+    /// Sets the summary for this bundle.
+    fn set_summary(&self, summary: &str);
+
+    /// Gets the summary for this bundle.
+    fn get_summary(&self) -> String;
+
+    /// Returns the file for this bundle.
+    fn get_file(&self) -> Box<dyn ResourceFile>;
+
+    /// Returns whether the bundle's file exists.
+    fn file_exists(&self) -> bool;
+
+    /// Gets the path as a string.
+    fn get_path_as_string(&self) -> String;
+
+    /// Gets the location identifier.
+    fn get_location_identifier(&self) -> String;
 }
