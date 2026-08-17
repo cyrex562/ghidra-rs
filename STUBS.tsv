@@ -1035,3 +1035,5 @@ ts	stub_class	referenced_by
 2026-08-16T09:50:00.000000+00:00	PostgresFunctionDatabase	BSimClientFactory
 2026-08-16T09:50:00.000000+00:00	ElasticDatabase	BSimClientFactory
 2026-08-16T09:50:00.000000+00:00	H2FileFunctionDatabase	BSimClientFactory
+2026-08-17T01:06:49.439941+00:00	GoModuledata	GoFunctabEntry
+2026-08-17T01:06:49.439941+00:00	GoRttiMapper	GoFunctabEntry

@@ -1078,6 +1078,9 @@ mod tests {
             })?;
             Ok(Box::new(MockPcValueEvaluator::new(func_entry, script)))
         }
+        fn get_func_data_instance(&self, _offset: i64) -> std::io::Result<GoFuncData> {
+            unimplemented!()
+        }
     }
 
     struct MockGoTypeManager;
