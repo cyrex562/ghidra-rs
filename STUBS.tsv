@@ -1177,3 +1177,7 @@ ts	stub_class	referenced_by
 2026-08-18T06:02:08.978918+00:00	NumericUtilities	ValueDecoder
 2026-08-18T06:44:51.180627Z	DebuggerPluginPackage	TraceRmiPlugin
 2026-08-18T06:53:55Z	MappedAddressRange	DebuggerAddressTranslator
+2026-08-18T07:54:55Z	ChangeCollector	InfoPerProgram
+2026-08-18T07:54:55Z	InfoPerTrace	InfoPerProgram
+2026-08-18T07:54:55Z	MappingEntry	InfoPerProgram
+2026-08-18T07:54:55Z	DebuggerStaticMappingContext	InfoPerProgram
