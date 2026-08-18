@@ -106,10 +106,8 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	LanguageCompilerSpecQuery	LanguageService
 2026-07-11T00:00:00Z	ExternalLanguageCompilerSpecQuery	LanguageService
 2026-07-11T12:00:00Z	SaveState	Project
-2026-07-11T14:00:00Z	ModuleMapEntry	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	SectionMapEntry	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	RegionMapEntry	DebuggerStaticMappingService
-2026-07-11T14:00:00Z	ModuleMapProposal	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	SectionMapProposal	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	RegionMapProposal	DebuggerStaticMappingService
 2026-08-06T02:12:23.848915+00:00	TraceOverlappedRegionException	TraceMemoryRegion
