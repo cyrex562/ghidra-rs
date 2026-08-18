@@ -1,5 +1,5 @@
 status	mode	depth	fanin	rem	module	path
-TODO	trait	13	30	16	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DefLoader.java
+DONE	trait	13	30	16	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opinion/DefLoader.java
 TODO	trait	1	8	96	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchSetDB.java
 TODO	trait	0	31	1	feature	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/model/SymValueZ3.java
 TODO	trait	3	20	1	script	Ghidra/Features/Base/src/main/java/ghidra/app/script/ResourceFileJavaFileManager.java
