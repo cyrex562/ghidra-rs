@@ -18,7 +18,7 @@ DONE	trait	0	19	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plu
 DONE	trait	1	14	1	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidQueryCloseListener.java
 DONE	trait	0	19	2	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidQueryService.java
 DONE	trait	1	3	0	util	Ghidra/Features/Base/src/main/java/ghidra/util/search/InstructionSkipper.java
-TODO	trait	3	8	0	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatchScore.java
+DONE	trait	3	8	0	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatchScore.java
 TODO	trait	2	8	2	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatch.java
 TODO	trait	0	19	68	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidService.java
 TODO	trait	0	18	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ListingMergeConstants.java
