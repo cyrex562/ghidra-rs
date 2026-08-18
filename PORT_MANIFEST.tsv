@@ -3588,7 +3588,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AddressableR
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AddressableRowObjectToAddressTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AddressableRowObjectToFunctionTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/AddressableRowObjectToProgramLocationTableRowMapper.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/ColumnDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/ColumnDisplay.java	DONE	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/ColumnDisplayDynamicTableColumnAdapter.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/StringColumnDisplay.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/TableChooserDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app tablechooser 
