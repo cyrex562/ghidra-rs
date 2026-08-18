@@ -15,7 +15,7 @@ DONE	trait	0	20	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framew
 DONE	trait	0	19	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteAsyncResult.java
 DONE	trait	0	19	6	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/mvc/CurrentFunctionGraphViewSettings.java
 DONE	trait	0	19	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/mvc/FGControllerListener.java
-TODO	trait	1	14	1	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidQueryCloseListener.java
+DONE	trait	1	14	1	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidQueryCloseListener.java
 TODO	trait	0	19	2	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/db/FidQueryService.java
 TODO	trait	1	3	0	util	Ghidra/Features/Base/src/main/java/ghidra/util/search/InstructionSkipper.java
 TODO	trait	3	8	0	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidMatchScore.java
