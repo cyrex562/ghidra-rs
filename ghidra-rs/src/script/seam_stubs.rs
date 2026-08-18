@@ -34,6 +34,19 @@ pub trait GhidraScriptProvider: Send + Sync {
     }
 }
 
+/// Placeholder for `ghidra.app.script.GhidraScript`, referenced by
+/// [`JavaScriptProvider`](crate::script::java_script_provider::JavaScriptProvider) before the
+/// real class is ported.
+///
+/// Java's version is abstract, with one concrete subclass generated per user script, so the seam
+/// is genuinely polymorphic and is modeled as a trait, matching [`GhidraScriptProvider`]'s
+/// convention. Only the one member a script provider sets after instantiating a script is
+/// modeled.
+pub trait GhidraScript: Send + Sync {
+    /// Mirrors `GhidraScript.setSourceFile(ResourceFile)`.
+    fn set_source_file(&mut self, source_file: ResourceFile);
+}
+
 /// Placeholder for `ghidra.app.script.UnsupportedScriptProvider`, referenced by
 /// [`ghidra_script_util`](crate::script::ghidra_script_util) before the real class is ported.
 ///

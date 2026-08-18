@@ -3518,7 +3518,7 @@ orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraScriptUnsupp
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraScriptUtil.java	DONE	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/GhidraState.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/ImproperUseException.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
-orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/JavaScriptProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
+orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/JavaScriptProvider.java	DONE	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/JythonStubScriptProvider.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/MultipleOptionsDialog.java	TODO	orig_src Ghidra Features Base src main java ghidra app script 
 orig_src/Ghidra/Features/Base/src/main/java/ghidra/app/script/ResourceFileJavaFileManager.java	DONE	orig_src Ghidra Features Base src main java ghidra app script 

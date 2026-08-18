@@ -309,6 +309,71 @@ impl BundleHost {
     ) -> std::option::Option<std::path::PathBuf> {
         app.user_settings_directory().map(|dir| dir.join("osgi"))
     }
+
+    /// Mirrors `BundleHost.getExistingGhidraBundle(ResourceFile)`, which looks up the bundle
+    /// already created for `bundle_file` without creating a new one. Java returns any concrete
+    /// `GhidraBundle` (`JavaScriptProvider` narrows the result to a `GhidraSourceBundle`); since
+    /// the stub tracks no bundles at all (see the struct doc comment), it always answers "no
+    /// bundle registered here yet", same as [`BundleHost::get_bundle_files`].
+    pub fn get_existing_ghidra_bundle(
+        &self,
+        _bundle_file: &crate::generic::jar::resource_file::ResourceFile,
+    ) -> std::option::Option<GhidraSourceBundle> {
+        std::option::Option::None
+    }
+
+    /// Mirrors `BundleHost.deactivateSynchronously(Bundle)`. Always succeeds: the stub never
+    /// activates a bundle in the first place (see [`BundleHost::get_os_gi_bundle`]).
+    pub fn deactivate_synchronously(
+        &self,
+        _bundle: &crate::app::plugin::core::osgi::Bundle,
+    ) -> std::result::Result<(), crate::app::plugin::core::osgi::GhidraBundleException> {
+        std::result::Result::Ok(())
+    }
+
+    /// Mirrors `BundleHost.activateAll(Collection<GhidraBundle>, TaskMonitor, PrintWriter)`. A
+    /// no-op: the stub has no OSGi framework backing it to activate bundles in.
+    pub fn activate_all(
+        &self,
+        _bundles: &[&GhidraSourceBundle],
+        _monitor: &dyn TaskMonitor,
+        _console: &mut dyn std::io::Write,
+    ) {
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.osgi.GhidraSourceBundle`, referenced by
+/// [`BundleHost::get_existing_ghidra_bundle`] before the real class is ported. Java's version is
+/// a concrete leaf subclass of the abstract `GhidraBundle` (compiling a directory of Java source
+/// into an OSGi bundle); only the two members [`JavaScriptProvider`](crate::script::java_script_provider::JavaScriptProvider)
+/// needs -- the OSGi bundle it produces, and the compiled class name for a given source file --
+/// are modeled here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GhidraSourceBundle;
+
+impl GhidraSourceBundle {
+    /// Mirrors `GhidraBundle.getOSGiBundle()` as inherited by `GhidraSourceBundle`. Always `None`
+    /// until the real bundle host can track installed OSGi bundles.
+    pub fn os_gi_bundle(&self) -> std::option::Option<crate::app::plugin::core::osgi::Bundle> {
+        std::option::Option::None
+    }
+
+    /// Mirrors `GhidraSourceBundle.classNameForScript(ResourceFile)`, which resolves the fully
+    /// qualified class name a source file compiles to within its bundle. That resolution depends
+    /// on the bundle's compiled class map, which does not exist until the real bundle host
+    /// activates and builds source bundles; always reports the class as not found until then.
+    pub fn class_name_for_script(
+        &self,
+        source_file: &crate::generic::jar::resource_file::ResourceFile,
+    ) -> std::io::Result<String> {
+        std::result::Result::Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!(
+                "class name for script not available: {} (source bundle activation is not yet ported)",
+                source_file.absolute_path()
+            ),
+        ))
+    }
 }
 
 /// Placeholder for `docking.action.DockingAction`, referenced by
