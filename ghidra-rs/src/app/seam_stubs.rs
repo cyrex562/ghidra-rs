@@ -4719,3 +4719,28 @@ pub trait MappingEntry {
     fn fill_program(&mut self, cc: &mut ChangeCollector, program: &dyn Program);
 }
 
+/// Placeholder for the unported Java type `DataTypeSyncInfo`, referenced by `DataTypeSyncListener`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait DataTypeSyncInfo: Send + Sync {
+    fn get_sync_state(&self) -> crate::app::plugin::core::datamgr::DataTypeSyncState;
+    fn can_update(&self) -> bool;
+    fn can_commit(&self) -> bool;
+    fn can_revert(&self) -> bool;
+    fn commit(&self);
+    fn update(&self);
+    fn revert(&self);
+    fn disassociate(&self);
+    fn get_source_dt_path(&self) -> String;
+    fn get_ref_dt_path(&self) -> String;
+    fn get_last_change_time(&self, use_source: bool) -> i64;
+    fn get_last_change_time_string(&self, use_source: bool) -> String;
+    fn get_last_sync_time_string(&self) -> String;
+    fn get_last_sync_time(&self) -> i64;
+    fn get_ref_data_type(&self) -> Box<dyn DataType>;
+    fn get_source_data_type(&self) -> Box<dyn DataType>;
+    fn has_change(&self) -> bool;
+    fn sync_times(&self);
+    fn get_name(&self) -> String;
+}
+
