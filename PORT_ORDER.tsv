@@ -32,7 +32,7 @@ DONE	trait	0	17	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/
 DONE	trait	0	17	14	feature	Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/FunctionBitPatternInfo.java
 DONE	trait	0	17	0	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ProgramDataFormatModel.java
 DONE	trait	1	14	1	graph	Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertexExpansionListener.java
-TODO	trait	0	17	7	graph	Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FunctionCallGraph.java
+DONE	trait	0	17	7	graph	Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FunctionCallGraph.java
 TODO	trait	6	5	25	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/ValueDecoder.java
 TODO	trait	5	1	1	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/ValueSupplier.java
 TODO	trait	4	14	77	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/disassemble/DebuggerDisassemblerPlugin.java
