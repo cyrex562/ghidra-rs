@@ -719,6 +719,18 @@ pub(crate) mod test_support {
             false
         }
         fn closing_fid_db(&self, _fid_db: &FidDB) {}
+        fn is_active(&self) -> bool {
+            true
+        }
+        fn can_process_language(&self, _language: &dyn crate::program::model::lang::language::Language) -> bool {
+            true
+        }
+        fn get_fid_db(
+            &self,
+            _open_for_update: bool,
+        ) -> Result<FidDB, crate::feature::seam_stubs::GetFidDbError> {
+            unimplemented!("NoopFidFile never opens itself")
+        }
     }
 
     struct NoopLibrariesTable;
@@ -893,6 +905,18 @@ mod tests {
         }
         fn closing_fid_db(&self, _fid_db: &FidDB) {
             self.closed.store(true, Ordering::SeqCst);
+        }
+        fn is_active(&self) -> bool {
+            true
+        }
+        fn can_process_language(&self, _language: &dyn crate::program::model::lang::language::Language) -> bool {
+            true
+        }
+        fn get_fid_db(
+            &self,
+            _open_for_update: bool,
+        ) -> Result<FidDB, crate::feature::seam_stubs::GetFidDbError> {
+            unimplemented!("FakeFidFile never opens itself")
         }
     }
 
