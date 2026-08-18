@@ -1197,3 +1197,10 @@ ts	stub_class	referenced_by
 2026-08-18T09:38:06Z	SarifBookmarkWriter	BookmarksSarifMgr
 2026-08-18T09:38:06Z	SarifWriterTask	BookmarksSarifMgr
 2026-08-18T09:38:06Z	TaskLauncher	BookmarksSarifMgr
+2026-08-18T09:55:00Z	SarifCodeWriter	CodeSarifMgr
+2026-08-18T09:55:00Z	Disassembler	CodeSarifMgr
+2026-08-18T09:55:00Z	SarifMgr	CodeSarifMgr
+2026-08-18T09:55:00Z	SarifProgramOptions	CodeSarifMgr
+2026-08-18T09:55:00Z	MessageLog	CodeSarifMgr
+2026-08-18T09:55:00Z	SarifWriterTask	CodeSarifMgr
+2026-08-18T09:55:00Z	TaskLauncher	CodeSarifMgr
