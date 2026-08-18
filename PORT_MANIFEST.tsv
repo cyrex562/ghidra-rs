@@ -12633,7 +12633,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/ArrowUpAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/ArrowUpSelectionAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/EndAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/FVEvent.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/FVEvent.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/FVEventListener.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/HomeAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/MouseWheelAction.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework main logviewer event 

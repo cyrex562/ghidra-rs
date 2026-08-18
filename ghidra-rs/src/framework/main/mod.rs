@@ -15,4 +15,5 @@ pub use data_tree_dialog_type::DataTreeDialogType;
 pub use datatable::DomainFileContext;
 pub use datatree::{ArchiveProvider, Cuttable, DataTreeFlavorHandler};
 pub use front_end_service::FrontEndService;
+pub use logviewer::{EventType, FVEvent};
 pub use programatic_use_only::ProgramaticUseOnly;

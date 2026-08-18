@@ -1824,3 +1824,10 @@ pub trait Archive: Send + Sync {
         Box::new(())
     }
 }
+
+/// Placeholder for the unported Java type `FVEventListener`, referenced by `FVEvent`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait FVEventListener: Send + Sync {
+    fn send(&self, evt: &crate::framework::main::logviewer::FVEvent);
+}
