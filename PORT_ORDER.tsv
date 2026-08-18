@@ -26,7 +26,7 @@ DONE	trait	0	18	76	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core
 DONE	trait	3	16	4	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/layout/LayoutProviderExtensionPoint.java
 DONE	trait	0	18	12	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/mvc/FunctionGraphRunnable.java
 DONE	trait	0	18	5	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/worker/Worker.java
-TODO	trait	0	17	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/TableChooserExecutor.java
+DONE	trait	0	17	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/TableChooserExecutor.java
 TODO	trait	0	17	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/MarkerClickedListener.java
 TODO	trait	0	17	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ProgramLocationListener.java
 TODO	trait	0	17	14	feature	Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/FunctionBitPatternInfo.java
