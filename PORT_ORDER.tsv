@@ -30,7 +30,7 @@ DONE	trait	0	17	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser
 DONE	trait	0	17	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/MarkerClickedListener.java
 DONE	trait	0	17	0	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ProgramLocationListener.java
 DONE	trait	0	17	14	feature	Ghidra/Features/BytePatterns/src/main/java/ghidra/bitpatterns/info/FunctionBitPatternInfo.java
-TODO	trait	0	17	0	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ProgramDataFormatModel.java
+DONE	trait	0	17	0	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ProgramDataFormatModel.java
 TODO	trait	1	14	1	graph	Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertexExpansionListener.java
 TODO	trait	0	17	7	graph	Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FunctionCallGraph.java
 TODO	trait	6	5	25	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/ValueDecoder.java
