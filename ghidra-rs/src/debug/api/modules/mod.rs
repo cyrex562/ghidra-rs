@@ -4,6 +4,7 @@ pub mod map_entry;
 pub mod map_proposal;
 pub mod module_map_proposal;
 pub mod region_map_proposal;
+pub mod section_map_proposal;
 
 pub use debugger_address_translator::DebuggerAddressTranslator;
 pub use debugger_static_mapping_change_listener::DebuggerStaticMappingChangeListener;
@@ -11,3 +12,4 @@ pub use map_entry::MapEntry;
 pub use map_proposal::MapProposal;
 pub use module_map_proposal::{ModuleMapEntry, ModuleMapProposal};
 pub use region_map_proposal::RegionMapEntry;
+pub use section_map_proposal::{SectionMapEntry, SectionMapProposal};
