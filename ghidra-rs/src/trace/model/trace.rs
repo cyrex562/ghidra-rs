@@ -23,6 +23,26 @@ use crate::trace::seam_stubs::{
 };
 use crate::util::lock_hold::{Lock, LockHold};
 
+/// Reference identity for traces, matching Java: `Trace` (like every `DomainObject`) inherits
+/// `Object`'s `equals`/`hashCode`, so a `Set<Trace>` or `Map<Trace, ?>` keys on the instance, not
+/// on its contents. Two handles are the same trace exactly when they point at the same object.
+impl PartialEq for dyn Trace {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(
+            self as *const dyn Trace as *const (),
+            other as *const dyn Trace as *const (),
+        )
+    }
+}
+
+impl Eq for dyn Trace {}
+
+impl std::hash::Hash for dyn Trace {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        (self as *const dyn Trace as *const ()).hash(state);
+    }
+}
+
 /// Notified when a new [`TraceProgramView`] is created for a [`Trace`].
 ///
 /// Port of `ghidra.trace.model.Trace.TraceProgramViewListener`.
