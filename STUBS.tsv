@@ -1142,3 +1142,6 @@ ts	stub_class	referenced_by
 2026-08-18T02:44:12.431141+00:00	FGLayoutProvider	FgEnv
 2026-08-18T02:44:12.431682+00:00	FunctionGraphOptions	FgEnv
 2026-08-18T02:54:27.472570+00:00	FVEventListener	FVEvent
+2026-08-18T03:10:39+00:00	FGView	CurrentFunctionGraphViewSettings
+2026-08-18T03:10:39+00:00	FunctionGraphViewSettings	CurrentFunctionGraphViewSettings
+2026-08-18T03:10:39+00:00	GraphPerspectiveInfo	CurrentFunctionGraphViewSettings

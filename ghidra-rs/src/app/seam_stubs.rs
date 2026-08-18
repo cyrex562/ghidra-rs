@@ -4039,3 +4039,152 @@ pub struct FunctionGraphOptions;
 /// Placeholder for the unported Java type `FGLayout`, referenced by `FunctionGraph`.
 /// Forward reference stub to break the dependency cycle between FGLayout and FunctionGraph.
 pub trait FGLayout: Send + Sync {}
+
+/// Placeholder for `ghidra.graph.viewer.GraphPerspectiveInfo`, referenced by
+/// [`FunctionGraphViewSettings`] and
+/// [`CurrentFunctionGraphViewSettings`](crate::app::plugin::core::functiongraph::mvc::current_function_graph_view_settings::CurrentFunctionGraphViewSettings)
+/// before the real (generic-over-vertex/edge) class is ported. Java's version is a concrete class
+/// (not an interface), so this is a plain struct rather than a `dyn`-dispatched trait, matching
+/// [`FGLayoutProvider`]'s convention. Only the "invalid" factory/predicate those two callers use
+/// are modeled; the zoom/translate-coordinate accessors are left for a future caller.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct GraphPerspectiveInfo {
+    // `pub(crate)` (rather than private) solely so in-crate tests of callers -- which have no
+    // other way to build a "valid" instance, since the real (non-invalid) Java constructors take
+    // an unported `RenderContext`/`SaveState` -- can construct one directly.
+    pub(crate) invalid: bool,
+}
+
+impl GraphPerspectiveInfo {
+    /// Mirrors the static factory `GraphPerspectiveInfo.createInvalidGraphPerspectiveInfo()`.
+    pub fn create_invalid() -> Self {
+        GraphPerspectiveInfo { invalid: true }
+    }
+
+    /// Mirrors `GraphPerspectiveInfo.isInvalid()`.
+    pub fn is_invalid(&self) -> bool {
+        self.invalid
+    }
+}
+
+impl Default for GraphPerspectiveInfo {
+    fn default() -> Self {
+        Self::create_invalid()
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.mvc.FunctionGraphViewSettings`,
+/// referenced by
+/// [`CurrentFunctionGraphViewSettings`](crate::app::plugin::core::functiongraph::mvc::current_function_graph_view_settings::CurrentFunctionGraphViewSettings)
+/// before the real class is ported. Java's version is a package-private abstract class (not an
+/// interface) that simply holds the location/selection/highlight/perspective state shared by
+/// `CurrentFunctionGraphViewSettings` and `PendingFunctionGraphViewSettings`; modeled here as the
+/// concrete base state `CurrentFunctionGraphViewSettings` composes rather than extends (Rust has
+/// no class inheritance).
+#[derive(Default)]
+pub struct FunctionGraphViewSettings {
+    location: StdOption<Arc<dyn ProgramLocation + Send + Sync>>,
+    selection: StdOption<Arc<dyn ProgramSelection>>,
+    highlight: StdOption<Arc<dyn ProgramSelection>>,
+    info: GraphPerspectiveInfo,
+}
+
+impl FunctionGraphViewSettings {
+    /// Mirrors `FunctionGraphViewSettings.setLocation(ProgramLocation)`.
+    pub fn set_location(&mut self, location: StdOption<Arc<dyn ProgramLocation + Send + Sync>>) {
+        self.location = location;
+    }
+
+    /// Mirrors `FunctionGraphViewSettings.setSelection(ProgramSelection)`.
+    pub fn set_selection(&mut self, selection: StdOption<Arc<dyn ProgramSelection>>) {
+        self.selection = selection;
+    }
+
+    /// Mirrors `FunctionGraphViewSettings.setHighlight(ProgramSelection)`.
+    pub fn set_highlight(&mut self, highlight: StdOption<Arc<dyn ProgramSelection>>) {
+        self.highlight = highlight;
+    }
+
+    /// Mirrors `FunctionGraphViewSettings.setFunctionGraphPerspectiveInfo(GraphPerspectiveInfo)`.
+    pub fn set_function_graph_perspective_info(&mut self, info: GraphPerspectiveInfo) {
+        self.info = info;
+    }
+
+    /// Mirrors `FunctionGraphViewSettings.getLocation()`.
+    pub fn get_location(&self) -> StdOption<Arc<dyn ProgramLocation + Send + Sync>> {
+        self.location.clone()
+    }
+
+    /// Mirrors `FunctionGraphViewSettings.getSelection()`.
+    pub fn get_selection(&self) -> StdOption<Arc<dyn ProgramSelection>> {
+        self.selection.clone()
+    }
+
+    /// Mirrors `FunctionGraphViewSettings.getHighlight()`.
+    pub fn get_highlight(&self) -> StdOption<Arc<dyn ProgramSelection>> {
+        self.highlight.clone()
+    }
+
+    /// Mirrors `FunctionGraphViewSettings.getFunctionGraphPerspectiveInfo()`.
+    pub fn get_function_graph_perspective_info(&self) -> GraphPerspectiveInfo {
+        self.info
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.mvc.FGView`, referenced by
+/// [`CurrentFunctionGraphViewSettings`](crate::app::plugin::core::functiongraph::mvc::current_function_graph_view_settings::CurrentFunctionGraphViewSettings)
+/// before the real class is ported. Java's version is a concrete class (not an interface)
+/// extending `VisualGraphView`; only the package-private location/selection/highlight/perspective
+/// setters `CurrentFunctionGraphViewSettings` calls are modeled, backed by `RefCell` so the stub
+/// can be held behind a shared `Arc` (the real `FGView` is likewise shared with the controller)
+/// while still recording what was last pushed to it, which is what makes this placeholder
+/// test-observable instead of a silent no-op.
+#[derive(Default)]
+pub struct FGView {
+    location: std::cell::RefCell<StdOption<Arc<dyn ProgramLocation + Send + Sync>>>,
+    selection: std::cell::RefCell<StdOption<Arc<dyn ProgramSelection>>>,
+    highlight: std::cell::RefCell<StdOption<Arc<dyn ProgramSelection>>>,
+    perspective: std::cell::RefCell<StdOption<GraphPerspectiveInfo>>,
+}
+
+impl FGView {
+    /// Mirrors (package-private) `FGView.setLocation(ProgramLocation)`.
+    pub fn set_location(&self, location: StdOption<Arc<dyn ProgramLocation + Send + Sync>>) {
+        *self.location.borrow_mut() = location;
+    }
+
+    /// Returns the location most recently pushed via [`Self::set_location`].
+    pub fn get_location(&self) -> StdOption<Arc<dyn ProgramLocation + Send + Sync>> {
+        self.location.borrow().clone()
+    }
+
+    /// Mirrors (package-private) `FGView.setSelection(ProgramSelection)`.
+    pub fn set_selection(&self, selection: StdOption<Arc<dyn ProgramSelection>>) {
+        *self.selection.borrow_mut() = selection;
+    }
+
+    /// Returns the selection most recently pushed via [`Self::set_selection`].
+    pub fn get_selection(&self) -> StdOption<Arc<dyn ProgramSelection>> {
+        self.selection.borrow().clone()
+    }
+
+    /// Mirrors (package-private) `FGView.setHighlight(ProgramSelection)`.
+    pub fn set_highlight(&self, highlight: StdOption<Arc<dyn ProgramSelection>>) {
+        *self.highlight.borrow_mut() = highlight;
+    }
+
+    /// Returns the highlight most recently pushed via [`Self::set_highlight`].
+    pub fn get_highlight(&self) -> StdOption<Arc<dyn ProgramSelection>> {
+        self.highlight.borrow().clone()
+    }
+
+    /// Mirrors `VisualGraphView.setGraphPerspective(GraphPerspectiveInfo)`, inherited by `FGView`.
+    pub fn set_graph_perspective(&self, info: GraphPerspectiveInfo) {
+        *self.perspective.borrow_mut() = Some(info);
+    }
+
+    /// Returns the perspective most recently pushed via [`Self::set_graph_perspective`].
+    pub fn get_graph_perspective(&self) -> StdOption<GraphPerspectiveInfo> {
+        *self.perspective.borrow()
+    }
+}
