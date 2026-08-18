@@ -9,7 +9,7 @@ DONE	trait	0	21	83	app	Ghidra/Features/DecompilerDependent/src/main/java/ghidra/
 DONE	trait	0	20	5	app	Ghidra/Features/Base/src/main/java/ghidra/plugins/fsbrowser/FSBFileHandler.java
 DONE	trait	0	20	0	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/MutableDataFormatModel.java
 DONE	trait	2	17	4	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/FGLayout.java
-TODO	trait	2	7	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/FGLayoutOptions.java
+DONE	trait	2	7	2	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/graph/layout/FGLayoutOptions.java
 TODO	trait	0	20	10	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/mvc/FgEnv.java
 TODO	trait	0	20	1	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/main/logviewer/event/FVEvent.java
 TODO	trait	0	19	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/tracermi/RemoteAsyncResult.java
