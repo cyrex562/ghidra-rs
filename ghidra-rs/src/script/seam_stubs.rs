@@ -141,6 +141,63 @@ impl FileUtilities {
     }
 }
 
+/// Mirrors just enough of `javax.tools.JavaFileObject.Kind` for
+/// [`ResourceFileJavaFileObject`] and
+/// [`ResourceFileJavaFileManager`](crate::script::resource_file_java_file_manager::ResourceFileJavaFileManager)
+/// to distinguish source/class files by extension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileKind {
+    Source,
+    Class,
+    Html,
+    Other,
+}
+
+/// Placeholder for `ghidra.app.script.ResourceFileJavaFileObject`, referenced by
+/// [`ResourceFileJavaFileManager`](crate::script::resource_file_java_file_manager::ResourceFileJavaFileManager)
+/// before the real class is ported.
+///
+/// Java's version implements `javax.tools.JavaFileObject` so a `ResourceFile` can stand in for a
+/// compiler input; only the two members `ResourceFileJavaFileManager` needs (the file's path
+/// relative to its source root, and a URI-like identity for `isSameFile`) are modeled here.
+pub struct ResourceFileJavaFileObject {
+    file: ResourceFile,
+    kind: FileKind,
+    path_name: String,
+}
+
+impl ResourceFileJavaFileObject {
+    /// Mirrors `ResourceFileJavaFileObject(ResourceFile sourceRoot, ResourceFile file, Kind kind)`:
+    /// `path_name` is `file`'s absolute path with `sourceRoot`'s absolute path (and the following
+    /// separator) stripped off.
+    pub fn new(source_root: &ResourceFile, file: ResourceFile, kind: FileKind) -> Self {
+        let source_root_path = source_root.absolute_path();
+        let file_path = file.absolute_path();
+        let path_name = file_path
+            .strip_prefix(&source_root_path)
+            .map(|s| s.trim_start_matches(std::path::MAIN_SEPARATOR).to_string())
+            .unwrap_or(file_path);
+        Self { file, kind, path_name }
+    }
+
+    /// Mirrors `ResourceFileJavaFileObject.getName()`.
+    pub fn get_name(&self) -> &str {
+        &self.path_name
+    }
+
+    /// Mirrors `ResourceFileJavaFileObject.toUri()`. Java returns a real `java.net.URI`; since
+    /// nothing here needs to resolve or parse it (only compare it, via `isSameFile`), a stable
+    /// string identity is enough.
+    pub fn to_uri(&self) -> String {
+        format!("file://{}", self.file.absolute_path())
+    }
+
+    /// Mirrors `ResourceFileJavaFileObject.getKind()`.
+    pub fn kind(&self) -> FileKind {
+        self.kind
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
