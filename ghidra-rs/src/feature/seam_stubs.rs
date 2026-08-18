@@ -3373,10 +3373,22 @@ pub trait AbstractSQLFunctionDatabase:
     ) -> std::io::Result<i64>;
 }
 
+/// Combines the checked exceptions declared on `FidFile.getFidDB(boolean)`.
+#[derive(thiserror::Error, Debug)]
+pub enum GetFidDbError {
+    #[error(transparent)]
+    Version(#[from] crate::util::exception::VersionException),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
+
 /// Placeholder for the unported Java type `FidFile`, referenced by
-/// [`crate::feature::fid::db::fid_db::FidDB`]. Only the members `FidDB` calls are stubbed: the
-/// installation/packed distinction that decides how the database handle is opened, the two name
-/// accessors, and the close callback. Replace with the real port when `FidFile.java` is ported.
+/// [`crate::feature::fid::db::fid_db::FidDB`] and
+/// [`crate::feature::fid::db::fid_query_service::FidQueryService`]. Stubs the members those types
+/// call: the installation/packed distinction that decides how the database handle is opened, the
+/// two name accessors, the close callback, and the active/language-filtering/database-opening
+/// surface used to build a `FidQueryService`. Replace with the real port when `FidFile.java` is
+/// ported.
 pub trait FidFile: Send + Sync {
     /// Java: `FidFile.getName()`, the simple file name of the backing FID database file.
     fn get_name(&self) -> String;
@@ -3391,57 +3403,17 @@ pub trait FidFile: Send + Sync {
     /// Java: `FidFile.closingFidDB(FidDB)`, which clears the file's cached updateable handle when
     /// the database it points at is actually closed.
     fn closing_fid_db(&self, fid_db: &crate::feature::fid::db::fid_db::FidDB);
-}
 
-/// Placeholder for the unported Java type `FidQueryService`, referenced by
-/// [`crate::feature::fid::db::fid_query_close_listener::FidQueryCloseListener`]. Java's
-/// `FidQueryService` is a concrete class (not an interface), but this stub provides the public
-/// interface needed by listeners and other components. Replace with the real port when
-/// `FidQueryService.java` is ported.
-pub trait FidQueryService: Send + Sync {
-    /// Java: `FidQueryService.addCloseListener(FidQueryCloseListener)`.
-    fn add_close_listener(&self, listener: &dyn crate::feature::fid::db::fid_query_close_listener::FidQueryCloseListener);
+    /// Java: `FidFile.isActive()`, whether this file should be included when building a
+    /// `FidQueryService`.
+    fn is_active(&self) -> bool;
 
-    /// Java: `FidQueryService.removeCloseListener(FidQueryCloseListener)`.
-    fn remove_close_listener(&self, listener: &dyn crate::feature::fid::db::fid_query_close_listener::FidQueryCloseListener);
+    /// Java: `FidFile.canProcessLanguage(Language)`, whether the underlying database is
+    /// applicable to the given language.
+    fn can_process_language(&self, language: &dyn crate::program::model::lang::language::Language) -> bool;
 
-    /// Java: `FidQueryService.getFunctionByID(long)`, returning `Option<Arc<FunctionRecord>>`.
-    fn get_function_by_id(&self, function_id: i64) -> Option<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
-
-    /// Java: `FidQueryService.getSuperiorFullRelation(FunctionRecord, FidHashQuad)`.
-    fn get_superior_full_relation(
-        &self,
-        superior_function: &crate::feature::fid::db::function_record::FunctionRecord,
-        inferior_function: &dyn crate::feature::fid::hash::fid_hash_quad::FidHashQuad,
-    ) -> bool;
-
-    /// Java: `FidQueryService.getInferiorFullRelation(FidHashQuad, FunctionRecord)`.
-    fn get_inferior_full_relation(
-        &self,
-        superior_function: &dyn crate::feature::fid::hash::fid_hash_quad::FidHashQuad,
-        inferior_function: &crate::feature::fid::db::function_record::FunctionRecord,
-    ) -> bool;
-
-    /// Java: `FidQueryService.getLibraryForFunction(FunctionRecord)`, returning `Option<Arc<LibraryRecord>>`.
-    fn get_library_for_function(&self, function_record: &crate::feature::fid::db::function_record::FunctionRecord) -> Option<Arc<crate::feature::fid::db::library_record::LibraryRecord>>;
-
-    /// Java: `FidQueryService.findFullHashValueAtOrAfter(long)`.
-    fn find_full_hash_value_at_or_after(&self, value: i64) -> Option<i64>;
-
-    /// Java: `FidQueryService.findFunctionsBySpecificHash(long)`.
-    fn find_functions_by_specific_hash(&self, specific_hash: i64) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
-
-    /// Java: `FidQueryService.findFunctionsByFullHash(long)`.
-    fn find_functions_by_full_hash(&self, full_hash: i64) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
-
-    /// Java: `FidQueryService.findFunctionsByNameSubstring(String)`.
-    fn find_functions_by_name_substring(&self, name: &str) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
-
-    /// Java: `FidQueryService.findFunctionsByDomainPathSubstring(String)`.
-    fn find_functions_by_domain_path_substring(&self, domain_path: &str) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
-
-    /// Java: `FidQueryService.close()`.
-    fn close(&self);
+    /// Java: `FidFile.getFidDB(boolean)`, opening (or returning the cached) `FidDB` for this file.
+    fn get_fid_db(&self, open_for_update: bool) -> Result<crate::feature::fid::db::fid_db::FidDB, GetFidDbError>;
 }
 
 /// Placeholder for the unported Java type `LibrariesTable`, referenced by
