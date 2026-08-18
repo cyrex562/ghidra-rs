@@ -7,6 +7,7 @@ pub mod byte_edit_info;
 pub mod data_format_model;
 pub mod indexed_byte_block_info;
 pub mod mutable_data_format_model;
+pub mod program_data_format_model;
 
 pub use byte_block::ByteBlock;
 pub use byte_block_access_exception::ByteBlockAccessException;
@@ -17,3 +18,4 @@ pub use byte_edit_info::ByteEditInfo;
 pub use data_format_model::DataFormatModel;
 pub use indexed_byte_block_info::IndexedByteBlockInfo;
 pub use mutable_data_format_model::MutableDataFormatModel;
+pub use program_data_format_model::ProgramDataFormatModel;
