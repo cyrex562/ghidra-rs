@@ -1164,3 +1164,7 @@ ts	stub_class	referenced_by
 2026-08-18T04:33:06.688003+00:00	VisualEdge	LayoutProviderExtensionPoint
 2026-08-18T04:33:06.688253+00:00	VisualVertex	LayoutProviderExtensionPoint
 2026-08-18T04:33:06.688387+00:00	LayoutProvider	LayoutProviderExtensionPoint
+2026-08-18T04:38:31.664221+00:00	EmptyFunctionGraphData	FunctionGraphRunnable
+2026-08-18T04:38:31.664091+00:00	FunctionGraphFactory	FunctionGraphRunnable
+2026-08-18T04:38:31.666800+00:00	FGModel	FunctionGraphRunnable
+2026-08-18T04:38:31.669526+00:00	IsolatedEntrySubModel	FunctionGraphRunnable

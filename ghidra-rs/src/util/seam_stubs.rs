@@ -42,6 +42,33 @@ pub trait IsolatedEntrySubModelLike {
     ) -> Result<Option<Box<dyn CodeBlock>>, CancelledException>;
 }
 
+/// Placeholder concrete implementor of [`IsolatedEntrySubModelLike`], standing in for
+/// `new IsolatedEntrySubModel(program)` (used directly by
+/// [`FunctionGraphRunnable`](crate::app::plugin::core::functiongraph::mvc::function_graph_runnable::FunctionGraphRunnable))
+/// until the real class -- with its full entry-point partitioning algorithm -- is ported. Always
+/// reports no code block found, since that real query logic isn't modeled yet.
+pub struct IsolatedEntrySubModel {
+    #[allow(dead_code)]
+    program: Arc<dyn Program>,
+}
+
+impl IsolatedEntrySubModel {
+    /// Stands in for `new IsolatedEntrySubModel(Program)`.
+    pub fn new(program: Arc<dyn Program>) -> Self {
+        IsolatedEntrySubModel { program }
+    }
+}
+
+impl IsolatedEntrySubModelLike for IsolatedEntrySubModel {
+    fn get_first_code_block_containing(
+        &self,
+        _addr: &Address,
+        _monitor: &dyn TaskMonitor,
+    ) -> Result<Option<Box<dyn CodeBlock>>, CancelledException> {
+        Ok(None)
+    }
+}
+
 /// Placeholder for `ghidra.util.filechooser.GhidraFileChooserModel`, needed by
 /// [`crate::util::filechooser::GhidraFileFilter`].
 ///

@@ -3652,10 +3652,35 @@ pub trait CaptureFunctionDataTypesCmd: Send + Sync {
     fn task_completed(&self);
 }
 
-/// Placeholder for the unported Java type `FGController`, referenced by `FGVertex`.
+/// Placeholder for the unported Java type `FGController`, referenced by `FGVertex` and
+/// [`FunctionGraphRunnable`](crate::app::plugin::core::functiongraph::mvc::function_graph_runnable::FunctionGraphRunnable).
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
-pub trait FGController: Send + Sync {}
+pub trait FGController: Send + Sync {
+    /// Port of `FGController.getModel()`.
+    fn get_model(&self) -> Arc<dyn FGModel>;
+}
+
+/// Placeholder for the unported Java type `FGModel`, referenced by
+/// [`FGController::get_model`] and
+/// [`FunctionGraphRunnable`](crate::app::plugin::core::functiongraph::mvc::function_graph_runnable::FunctionGraphRunnable)'s
+/// port of `FGModel.setFunctionGraphData(FunctionGraphRunnable, FGData)`.
+///
+/// `FGModel` is a concrete Java class (not an interface) that in turn constructs and owns
+/// `FunctionGraphRunnable` instances -- a genuine type-level cycle in Java between the two
+/// classes. Since `FunctionGraphRunnable` keeps its required concrete-struct shape (see its own
+/// module docs), this stub breaks the cycle the same way the "Suggested stubs" convention does
+/// for any other forward reference: it takes `&FunctionGraphRunnable` directly rather than
+/// inventing a trait for it. Only the one package-private method `FunctionGraphRunnable.swingRun`
+/// calls is modeled.
+pub trait FGModel: Send + Sync {
+    /// Port of (package-private) `FGModel.setFunctionGraphData(FunctionGraphRunnable, FGData)`.
+    fn set_function_graph_data(
+        &self,
+        graph_runnable: &crate::app::plugin::core::functiongraph::mvc::function_graph_runnable::FunctionGraphRunnable,
+        graph_data: &dyn FGData,
+    );
+}
 
 /// Placeholder for the unported Java type `FunctionGraphVertexAttributes`, referenced by `FGVertex`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
@@ -4364,6 +4389,90 @@ pub trait FGData: Send + Sync {
 
     /// Port of `FGData.toString()`.
     fn to_string(&self) -> String;
+}
+
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.mvc.EmptyFunctionGraphData`, referenced
+/// by [`FunctionGraphRunnable`](crate::app::plugin::core::functiongraph::mvc::function_graph_runnable::FunctionGraphRunnable)
+/// before the real class is ported. Java's version `extends FGData` (a concrete subclass, not an
+/// interface); this implements the [`FGData`] placeholder trait directly rather than modeling
+/// inheritance. `getFunctionGraph`/`getOptions` mirror Java's `UnsupportedOperationException`
+/// throws via `panic!`; `getFunction` has no Java-side null-safe equivalent on this port's
+/// non-`Option` [`FGData::get_function`], so it also panics -- neither is called by any known
+/// caller.
+pub struct EmptyFunctionGraphData {
+    message: String,
+}
+
+impl EmptyFunctionGraphData {
+    /// Stands in for `new EmptyFunctionGraphData(String)`.
+    pub fn new(message: impl Into<String>) -> Self {
+        EmptyFunctionGraphData { message: message.into() }
+    }
+}
+
+impl FGData for EmptyFunctionGraphData {
+    fn get_function_graph(&self) -> Box<dyn FunctionGraph> {
+        panic!("Empty data cannot have a graph")
+    }
+
+    fn has_results(&self) -> bool {
+        false
+    }
+
+    fn get_message(&self) -> String {
+        self.message.clone()
+    }
+
+    fn contains_location(&self, _location: &dyn ProgramLocation) -> bool {
+        false
+    }
+
+    fn contains_selection(&self, _selection: &dyn ProgramSelection) -> bool {
+        false
+    }
+
+    fn get_function(&self) -> Box<dyn crate::program::model::listing::Function> {
+        panic!("Empty data has no function")
+    }
+
+    fn get_options(&self) -> &FunctionGraphOptions {
+        panic!("Empty data cannot have a graph")
+    }
+
+    fn dispose(&self) {}
+
+    fn to_string(&self) -> String {
+        "EmptyFunctionGraphData".to_string()
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.graph.FunctionGraphFactory`, referenced
+/// by [`FunctionGraphRunnable`](crate::app::plugin::core::functiongraph::mvc::function_graph_runnable::FunctionGraphRunnable)
+/// before the real class -- with its full vertex/edge/layout graph construction -- is ported.
+/// Java's version is a `public class` of only `static` methods (never instantiated), so this is a
+/// unit struct with associated functions, matching
+/// [`BookmarkComparator`](crate::program::model::listing::bookmark_comparator::BookmarkComparator)'s
+/// convention, rather than a `dyn`-dispatched trait. Only `createNewGraph`, the one static method
+/// `FunctionGraphRunnable` calls, is modeled; it stands in for the real vertex/edge graph build by
+/// always reporting "no data in function" via [`EmptyFunctionGraphData`], mirroring the real
+/// method's own `graph.getVertices().size() == 0` empty-graph fallback. Note the real method's
+/// declared `throws CancelledException` (not an I/O error), which this signature preserves.
+pub struct FunctionGraphFactory;
+
+impl FunctionGraphFactory {
+    /// Stands in for `FunctionGraphFactory.createNewGraph(Function, FGController, Program,
+    /// TaskMonitor)`.
+    pub fn create_new_graph(
+        function: &dyn crate::program::model::listing::Function,
+        _controller: &dyn FGController,
+        _program: &dyn Program,
+        _monitor: &dyn TaskMonitor,
+    ) -> Result<Box<dyn FGData>, crate::util::exception::CancelledException> {
+        Ok(Box::new(EmptyFunctionGraphData::new(format!(
+            "No data in function: {}",
+            crate::program::model::listing::Function::get_name(function)
+        ))))
+    }
 }
 
 /// Placeholder for `ghidra.app.merge.MergeConstants`, referenced by
