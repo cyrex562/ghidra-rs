@@ -1172,3 +1172,7 @@ ts	stub_class	referenced_by
 2026-08-18T05:04:05.742019+00:00	MarkerSet	MarkerClickedListener
 2026-08-18T05:20:00.000000+00:00	InstructionSequence	FunctionBitPatternInfo
 2026-08-18T01:27:44Z	FcgVertex	FcgVertexExpansionListener
+2026-08-18T05:33:15.031421+00:00	FcgEdge	FunctionCallGraph
+2026-08-18T05:33:15.031778+00:00	FcgLevel	FunctionCallGraph
+2026-08-18T05:33:15.032268+00:00	FcgVertex	FunctionCallGraph
+2026-08-18T05:33:15.034630+00:00	FcgVisualGraphLayout	FunctionCallGraph

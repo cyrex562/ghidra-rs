@@ -1,8 +1,14 @@
 //! Minimal placeholder traits for core types not yet ported, used to break
 //! dependency cycles. Each placeholder is replaced by the real port later.
 
+use std::sync::Arc;
+
+use super::fcg_vertex_expansion_listener::FcgVertexExpansionListener;
+use super::function_call_graph::FunctionCallGraph;
 use super::g_directed_graph::GDirectedGraph;
 use super::g_edge::GEdge;
+use crate::program::model::address::Address;
+use crate::program::model::listing::Function;
 use crate::util::task::TaskMonitor;
 
 /// Placeholder for `ghidra.graph.algo.GraphNavigator`, referenced by
@@ -149,15 +155,21 @@ pub trait LayoutProvider<V: VisualVertex + ?Sized, E: VisualEdge + ?Sized, G: Vi
     fn get_priority_level(&self) -> i32;
 }
 
-/// Placeholder for the unported Java type `FcgVertex`, referenced by `FcgVertexExpansionListener`.
+/// Placeholder for the unported Java type `FcgVertex`, referenced by
+/// `FcgVertexExpansionListener` and `FunctionCallGraph`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
+///
+/// `get_function`/`get_address`/`get_level`/`clone_vertex` are typed using the now-ported
+/// [`Function`], [`Address`] and [`FcgLevel`]/[`FcgVertexExpansionListener`] types (`FunctionCallGraph`
+/// needs concrete values from these, not `Any`); the remaining methods are left as `Any`-erased
+/// placeholders since nothing ported so far calls them.
 pub trait FcgVertex: Send + Sync {
-    fn clone_vertex(&self, new_listener: &dyn std::any::Any) -> Box<dyn FcgVertex>;
-    fn get_function(&self) -> Box<dyn std::any::Any>;
-    fn get_address(&self) -> Box<dyn std::any::Any>;
+    fn clone_vertex(&self, new_listener: &dyn FcgVertexExpansionListener) -> Box<dyn FcgVertex>;
+    fn get_function(&self) -> Arc<dyn Function>;
+    fn get_address(&self) -> Address;
     fn get_options(&self) -> Box<dyn std::any::Any>;
-    fn get_level(&self) -> Box<dyn std::any::Any>;
+    fn get_level(&self) -> FcgLevel;
     fn get_degree(&self) -> i32;
     fn get_direction(&self) -> Box<dyn std::any::Any>;
     fn set_hovered(&self, hovered: bool);
@@ -181,4 +193,87 @@ pub trait FcgVertex: Send + Sync {
     fn hash_code(&self) -> i32;
     fn equals(&self, obj: &dyn std::any::Any) -> bool;
     fn dispose(&self);
+}
+
+/// Placeholder for the unported Java type `FcgLevel`, referenced by `FunctionCallGraph`.
+/// `FcgLevel` is a concrete, dependency-free value class (row + direction) in Java, not an
+/// interface, so this stub is a plain struct rather than the `dyn`-shaped placeholders above.
+/// Only the constructor and accessors `FunctionCallGraph` needs are included (`parent`/`child`/
+/// `compareTo`/etc. are unused here); replace with the real port when available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FcgLevel {
+    row: i32,
+    direction: super::fcg_direction::FcgDirection,
+}
+
+impl FcgLevel {
+    /// Mirrors `FcgLevel(int distance, FcgDirection direction)`.
+    pub fn new(distance: i32, direction: super::fcg_direction::FcgDirection) -> Self {
+        let row = Self::to_row(distance, direction);
+        assert_ne!(row, 0, "The FcgLevel uses a 1-based row system");
+        assert!(
+            !(row == 1 && direction != super::fcg_direction::FcgDirection::InAndOut),
+            "Row 1 must be FcgDirection.IN_AND_OUT"
+        );
+        Self { row, direction }
+    }
+
+    fn to_row(distance: i32, direction: super::fcg_direction::FcgDirection) -> i32 {
+        let one_based = distance + 1;
+        if direction == super::fcg_direction::FcgDirection::Out {
+            -one_based
+        } else {
+            one_based
+        }
+    }
+
+    pub fn get_row(&self) -> i32 {
+        self.row
+    }
+
+    pub fn get_direction(&self) -> super::fcg_direction::FcgDirection {
+        self.direction
+    }
+}
+
+/// Placeholder for the unported Java type `FcgEdge`, referenced by `FunctionCallGraph`.
+/// `FcgEdge` is a concrete, final class in Java (extends `AbstractVisualEdge<FcgVertex>`), not
+/// an interface, so this stub is a plain struct rather than a `dyn`-shaped placeholder. Only the
+/// constructor/accessors `FunctionCallGraph` needs are included (`isDirectEdge` is unused here);
+/// replace with the real port when available.
+#[derive(Clone)]
+pub struct FcgEdge {
+    start: Arc<dyn FcgVertex>,
+    end: Arc<dyn FcgVertex>,
+}
+
+impl FcgEdge {
+    pub fn new(start: Arc<dyn FcgVertex>, end: Arc<dyn FcgVertex>) -> Self {
+        Self { start, end }
+    }
+
+    pub fn get_start(&self) -> &Arc<dyn FcgVertex> {
+        &self.start
+    }
+
+    pub fn get_end(&self) -> &Arc<dyn FcgVertex> {
+        &self.end
+    }
+
+    /// Mirrors `FcgEdge.cloneEdge(FcgVertex, FcgVertex)`.
+    pub fn clone_edge(&self, start: Arc<dyn FcgVertex>, end: Arc<dyn FcgVertex>) -> FcgEdge {
+        FcgEdge::new(start, end)
+    }
+}
+
+/// Placeholder for the unported Java type `ghidra.graph.viewer.layout.VisualGraphLayout<FcgVertex,
+/// FcgEdge>`, the layout algorithm plugged into a `FunctionCallGraph`. The real Java interface is
+/// generic over vertex/edge/graph types and is shared across graph features; [`VisualGraphLayout`]
+/// above already stubs it for the (unrelated) function-graph feature using `Any`-erased
+/// parameters tied to the [`VisualGraph`] placeholder. That shape doesn't fit here because
+/// `FunctionCallGraph` must stay a concrete struct and never appear as `&dyn VisualGraph`, so
+/// this is a second, `FunctionCallGraph`-scoped instantiation with only the method
+/// `FunctionCallGraph::clone_graph` needs. Replace both with the real generic port when available.
+pub trait FcgVisualGraphLayout: Send + Sync {
+    fn clone_layout(&self, new_graph: &FunctionCallGraph) -> Box<dyn FcgVisualGraphLayout>;
 }
