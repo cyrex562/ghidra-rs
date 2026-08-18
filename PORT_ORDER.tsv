@@ -53,7 +53,7 @@ DONE	trait	0	16	57	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugi
 DONE	trait	0	15	43	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOffer.java
 DONE	trait	1	13	48	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarning.java
 DONE	trait	0	15	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/DomainFileArchive.java
-TODO	trait	1	7	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/fbpk/FBPK.java
+DONE	trait	1	7	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/fbpk/FBPK.java
 TODO	trait	0	15	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/fbpk/FBPK_Constants.java
 TODO	trait	3	2	6	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/BookmarksSarifMgr.java
 TODO	trait	3	3	9	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/CodeSarifMgr.java
