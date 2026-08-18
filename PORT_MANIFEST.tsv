@@ -7729,7 +7729,7 @@ orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/Fc
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgEdge.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgLevel.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertex.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
-orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertexExpansionListener.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
+orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertexExpansionListener.java	DONE	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FcgVertexShapeProvider.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/FunctionCallGraph.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph 
 orig_src/Ghidra/Features/GraphFunctionCalls/src/main/java/functioncalls/graph/job/BowTieExpandVerticesJob.java	TODO	orig_src Ghidra Features GraphFunctionCalls src main java functioncalls graph job 

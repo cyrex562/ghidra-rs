@@ -1171,3 +1171,4 @@ ts	stub_class	referenced_by
 2026-08-18T05:04:05.742019+00:00	MarkerLocation	MarkerClickedListener
 2026-08-18T05:04:05.742019+00:00	MarkerSet	MarkerClickedListener
 2026-08-18T05:20:00.000000+00:00	InstructionSequence	FunctionBitPatternInfo
+2026-08-18T01:27:44Z	FcgVertex	FcgVertexExpansionListener
