@@ -1184,3 +1184,7 @@ ts	stub_class	referenced_by
 2026-08-18T08:21:00Z	DataTypeSyncInfo	DataTypeSyncListener
 2026-08-18T04:20:00Z	GColumnRenderer	ColumnDisplay
 2026-08-18T08:37:56Z	ByteViewerComponent	TooltipDataFormatModel
+2026-08-18T08:52:00Z	AddressSetProgramSelection	ProgramByteBlockSet
+2026-08-18T08:52:00Z	ProgramByteViewerComponentProvider	ProgramByteBlockSet
+2026-08-18T08:52:00Z	ByteBlockChangeManager	ProgramByteBlockSet
+2026-08-18T08:52:00Z	MemoryByteBlock	ProgramByteBlockSet
