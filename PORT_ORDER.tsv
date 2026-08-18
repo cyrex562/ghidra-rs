@@ -43,7 +43,7 @@ DONE	trait	1	10	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api
 DONE	trait	1	9	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/RegionMapProposal.java
 DONE	trait	1	8	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/SectionMapProposal.java
 DONE	trait	2	2	40	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/InfoPerProgram.java
-TODO	trait	1	4	16	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/DebuggerStaticMappingContext.java
+DONE	trait	1	4	16	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/service/modules/DebuggerStaticMappingContext.java
 TODO	trait	0	16	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/DataTypeSyncListener.java
 TODO	trait	0	16	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/ColumnDisplay.java
 TODO	trait	0	16	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/listingpanel/ProgramSelectionListener.java
