@@ -1,4 +1,5 @@
-//! Per-program bookkeeping for the (not yet ported) `DebuggerStaticMappingContext`.
+//! Per-program bookkeeping for
+//! [`DebuggerStaticMappingContext`](super::DebuggerStaticMappingContext).
 //!
 //! Port of `ghidra.app.plugin.core.debug.service.modules.InfoPerProgram`.
 //!
@@ -12,12 +13,13 @@
 //!   collection depends on).
 //! * `program.addListener(this)` from the Java constructor is not performed here: `Program`'s
 //!   ported `add_listener` takes an owned `Box<dyn DomainObjectListener>`, which requires a
-//!   registration adapter over shared (`Arc<Mutex<_>>`) ownership of `self` -- a decision that
-//!   belongs to the (not yet ported) `DebuggerStaticMappingContext` that actually constructs and
-//!   owns `InfoPerProgram` instances. This type still implements [`DomainObjectListener`] so a
-//!   caller can register it once that machinery exists.
-//! * `domainObjectChanged`'s `CompletableFuture.runAsync(..., ctx.executor)` dispatch is
-//!   performed synchronously here; no executor abstraction is modeled yet.
+//!   registration adapter over shared (`Arc<Mutex<_>>`) ownership of `self`.
+//! * Java's `ctx` back-reference is dropped: the context owns these infos, so
+//!   pointing back at it would make ownership cyclic. What that field was used for is passed in
+//!   instead -- the open traces' infos for [`clear_entries`](InfoPerProgram::clear_entries) and
+//!   [`fill_entries`](InfoPerProgram::fill_entries) -- and Java's `domainObjectChanged` handler,
+//!   which re-registers a renamed program with its context, moves onto the context itself as
+//!   `DebuggerStaticMappingContext::program_object_changed`.
 //! * Java's `Set<TraceLocation>` return values become `Vec`, since `TraceLocation` trait objects
 //!   have no `Hash`/`Eq` (same rationale used elsewhere in this crate, e.g.
 //!   `DebuggerStaticMappingService`).
@@ -25,10 +27,10 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
+use crate::app::plugin::core::debug::service::modules::ChangeCollector;
 use crate::app::plugin::core::debug::utils::ProgramURLUtils;
-use crate::app::seam_stubs::{ChangeCollector, DebuggerStaticMappingContext, InfoPerTrace, MappingEntry};
+use crate::app::seam_stubs::{InfoPerTrace, MappingEntry};
 use crate::debug::seam_stubs::MappedAddressRange;
-use crate::framework::model::{DomainObjectChangedEvent, DomainObjectEvent, DomainObjectListener};
 use crate::program::model::address::{Address, AddressRange, AddressSetView};
 use crate::program::model::listing::Program;
 use crate::trace::model::default_trace_span::DefaultTraceSpan;
@@ -80,11 +82,11 @@ impl NavMultiMap {
     }
 }
 
-/// Per-program bookkeeping tracked by `DebuggerStaticMappingContext`.
+/// Per-program bookkeeping tracked by
+/// [`DebuggerStaticMappingContext`](super::DebuggerStaticMappingContext).
 ///
 /// Port of `ghidra.app.plugin.core.debug.service.modules.InfoPerProgram`.
 pub struct InfoPerProgram {
-    ctx: Arc<dyn DebuggerStaticMappingContext>,
     /// The program this info tracks.
     pub program: Arc<dyn Program>,
     inbound_by_static_address: NavMultiMap,
@@ -96,12 +98,11 @@ pub struct InfoPerProgram {
 impl InfoPerProgram {
     /// Port of `InfoPerProgram(DebuggerStaticMappingContext, Program)`.
     ///
-    /// See the module-level divergence note: unlike the Java constructor, this does not register
-    /// `self` as a listener on `program`.
-    pub fn new(ctx: Arc<dyn DebuggerStaticMappingContext>, program: Arc<dyn Program>) -> Self {
+    /// See the module-level divergence notes: unlike the Java constructor, this does not register
+    /// `self` as a listener on `program`, and it takes no back-reference to its context.
+    pub fn new(program: Arc<dyn Program>) -> Self {
         let url = ProgramURLUtils::get_url_from_program(program.as_ref());
         InfoPerProgram {
-            ctx,
             program,
             inbound_by_static_address: NavMultiMap::new(),
             url,
@@ -114,7 +115,7 @@ impl InfoPerProgram {
     }
 
     /// Port of `InfoPerProgram.clearProgram(ChangeCollector, MappingEntry)`.
-    pub fn clear_program(&mut self, cc: &dyn ChangeCollector, me: Arc<Mutex<dyn MappingEntry>>) {
+    pub fn clear_program(&mut self, cc: &mut ChangeCollector, me: Arc<Mutex<dyn MappingEntry>>) {
         let static_address = me.lock().unwrap().get_static_address();
         if let Some(addr) = static_address {
             self.inbound_by_static_address.remove(&addr, &me);
@@ -123,7 +124,7 @@ impl InfoPerProgram {
     }
 
     /// Port of `InfoPerProgram.fillProgram(ChangeCollector, MappingEntry)`.
-    pub fn fill_program(&mut self, cc: &dyn ChangeCollector, me: Arc<Mutex<dyn MappingEntry>>) {
+    pub fn fill_program(&mut self, cc: &mut ChangeCollector, me: Arc<Mutex<dyn MappingEntry>>) {
         me.lock().unwrap().fill_program(cc, self.program.as_ref());
         let static_address = me.lock().unwrap().get_static_address();
         if let Some(addr) = static_address {
@@ -132,21 +133,35 @@ impl InfoPerProgram {
     }
 
     /// Port of `InfoPerProgram.clearEntries(ChangeCollector)`.
-    pub fn clear_entries(&self, cc: &dyn ChangeCollector) {
+    ///
+    /// Java reaches the open traces' infos through `ctx`; they are passed in here instead (see the
+    /// module divergence note).
+    pub fn clear_entries(
+        &self,
+        cc: &mut ChangeCollector,
+        trace_infos: &[Arc<Mutex<dyn InfoPerTrace>>],
+    ) {
         if self.url.is_none() {
             return;
         }
-        for info in self.ctx.trace_infos() {
+        for info in trace_infos {
             info.lock().unwrap().clear_entries_for_program(cc, self);
         }
     }
 
     /// Port of `InfoPerProgram.fillEntries(ChangeCollector)`.
-    pub fn fill_entries(&self, cc: &dyn ChangeCollector) {
+    ///
+    /// Java reaches the open traces' infos through `ctx`; they are passed in here instead (see the
+    /// module divergence note).
+    pub fn fill_entries(
+        &self,
+        cc: &mut ChangeCollector,
+        trace_infos: &[Arc<Mutex<dyn InfoPerTrace>>],
+    ) {
         if self.url.is_none() {
             return;
         }
-        for info in self.ctx.trace_infos() {
+        for info in trace_infos {
             info.lock().unwrap().fill_entries_for_program(cc, self);
         }
     }
@@ -244,21 +259,6 @@ impl InfoPerProgram {
     }
 }
 
-impl DomainObjectListener for InfoPerProgram {
-    /// Port of `InfoPerProgram.domainObjectChanged(DomainObjectChangedEvent)`.
-    fn domain_object_changed(&mut self, ev: &DomainObjectChangedEvent<'_>) {
-        if ev.contains(&DomainObjectEvent::FileChanged) || ev.contains(&DomainObjectEvent::Renamed)
-        {
-            if !self.url_matches() {
-                let cc = self.ctx.collect_changes();
-                self.ctx.process_removed_program_info(cc.as_ref(), self);
-                self.ctx
-                    .process_added_program(cc.as_ref(), self.program.as_ref());
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -307,9 +307,6 @@ mod tests {
             "mock:LE:64:default".to_string()
         }
     }
-
-    struct MockChangeCollector;
-    impl ChangeCollector for MockChangeCollector {}
 
     struct MockTrace;
     impl DomainObject for MockTrace {
@@ -531,12 +528,12 @@ mod tests {
             self.deleted
         }
 
-        fn clear_program(&mut self, _cc: &dyn ChangeCollector, _program: &dyn Program) {
+        fn clear_program(&mut self, _cc: &mut ChangeCollector, _program: &dyn Program) {
             self.clear_calls.fetch_add(1, Ordering::SeqCst);
             *self.static_range.lock().unwrap() = None;
         }
 
-        fn fill_program(&mut self, _cc: &dyn ChangeCollector, _program: &dyn Program) {
+        fn fill_program(&mut self, _cc: &mut ChangeCollector, _program: &dyn Program) {
             self.fill_calls.fetch_add(1, Ordering::SeqCst);
             *self.static_range.lock().unwrap() = Some(self.target_static_range.clone());
         }
@@ -558,18 +555,6 @@ mod tests {
         }
     }
 
-    struct MockCtx;
-    impl DebuggerStaticMappingContext for MockCtx {
-        fn collect_changes(&self) -> Box<dyn ChangeCollector> {
-            Box::new(MockChangeCollector)
-        }
-        fn process_removed_program_info(&self, _cc: &dyn ChangeCollector, _info: &InfoPerProgram) {}
-        fn process_added_program(&self, _cc: &dyn ChangeCollector, _program: &dyn Program) {}
-        fn trace_infos(&self) -> Vec<Arc<Mutex<dyn InfoPerTrace>>> {
-            Vec::new()
-        }
-    }
-
     fn make_program(url: Option<&str>) -> Arc<MockProgram> {
         Arc::new(MockProgram {
             url: Mutex::new(url.map(|s| s.to_string())),
@@ -579,7 +564,7 @@ mod tests {
     #[test]
     fn new_computes_url_from_program_domain_file() {
         let program = make_program(Some("ghidra://repo/a"));
-        let info = InfoPerProgram::new(Arc::new(MockCtx), program);
+        let info = InfoPerProgram::new(program);
         assert_eq!(info.url.as_deref(), Some("ghidra://repo/a"));
         assert!(info.url_matches());
     }
@@ -587,7 +572,7 @@ mod tests {
     #[test]
     fn url_matches_false_after_program_url_changes() {
         let program = make_program(Some("ghidra://repo/a"));
-        let info = InfoPerProgram::new(Arc::new(MockCtx), Arc::clone(&program) as Arc<dyn Program>);
+        let info = InfoPerProgram::new(Arc::clone(&program) as Arc<dyn Program>);
         *program.url.lock().unwrap() = Some("ghidra://repo/b".to_string());
         assert!(!info.url_matches());
     }
@@ -595,7 +580,7 @@ mod tests {
     #[test]
     fn fill_program_then_clear_program_round_trips_index() {
         let program = make_program(Some("ghidra://repo/a"));
-        let info = InfoPerProgram::new(Arc::new(MockCtx), Arc::clone(&program) as Arc<dyn Program>);
+        let info = InfoPerProgram::new(Arc::clone(&program) as Arc<dyn Program>);
         let trace: Arc<dyn Trace> = Arc::new(MockTrace);
         let me: Arc<Mutex<dyn MappingEntry>> = Arc::new(Mutex::new(MockMappingEntry {
             trace: Arc::clone(&trace),
@@ -608,9 +593,9 @@ mod tests {
             fill_calls: AtomicUsize::new(0),
         }));
 
-        let cc = MockChangeCollector;
+        let mut cc = ChangeCollector::new();
         let mut info = info;
-        info.fill_program(&cc, Arc::clone(&me));
+        info.fill_program(&mut cc, Arc::clone(&me));
 
         let found = info.get_open_mapped_trace_location(&trace, &addr(0x1800), 5);
         assert!(found.is_some());
@@ -618,7 +603,7 @@ mod tests {
         let locations = info.get_open_mapped_trace_locations(&addr(0x1800));
         assert_eq!(locations.len(), 1);
 
-        info.clear_program(&cc, Arc::clone(&me));
+        info.clear_program(&mut cc, Arc::clone(&me));
         assert!(info
             .get_open_mapped_trace_location(&trace, &addr(0x1800), 5)
             .is_none());
@@ -627,7 +612,7 @@ mod tests {
     #[test]
     fn get_open_mapped_trace_location_respects_lifespan_and_trace_identity() {
         let program = make_program(Some("ghidra://repo/a"));
-        let mut info = InfoPerProgram::new(Arc::new(MockCtx), Arc::clone(&program) as Arc<dyn Program>);
+        let mut info = InfoPerProgram::new(Arc::clone(&program) as Arc<dyn Program>);
         let trace: Arc<dyn Trace> = Arc::new(MockTrace);
         let other_trace: Arc<dyn Trace> = Arc::new(MockTrace);
         let me: Arc<Mutex<dyn MappingEntry>> = Arc::new(Mutex::new(MockMappingEntry {
@@ -640,8 +625,8 @@ mod tests {
             clear_calls: AtomicUsize::new(0),
             fill_calls: AtomicUsize::new(0),
         }));
-        let cc = MockChangeCollector;
-        info.fill_program(&cc, Arc::clone(&me));
+        let mut cc = ChangeCollector::new();
+        info.fill_program(&mut cc, Arc::clone(&me));
 
         // Wrong trace identity.
         assert!(info
@@ -656,7 +641,7 @@ mod tests {
     #[test]
     fn get_open_mapped_views_maps_static_range_to_trace_range() {
         let program = make_program(Some("ghidra://repo/a"));
-        let mut info = InfoPerProgram::new(Arc::new(MockCtx), Arc::clone(&program) as Arc<dyn Program>);
+        let mut info = InfoPerProgram::new(Arc::clone(&program) as Arc<dyn Program>);
         let trace: Arc<dyn Trace> = Arc::new(MockTrace);
         let target = AddressRange::new(addr(0x1000), addr(0x1fff));
         let me: Arc<Mutex<dyn MappingEntry>> = Arc::new(Mutex::new(MockMappingEntry {
@@ -669,8 +654,8 @@ mod tests {
             clear_calls: AtomicUsize::new(0),
             fill_calls: AtomicUsize::new(0),
         }));
-        let cc = MockChangeCollector;
-        info.fill_program(&cc, Arc::clone(&me));
+        let mut cc = ChangeCollector::new();
+        info.fill_program(&mut cc, Arc::clone(&me));
 
         let mut set = crate::program::model::address::AddressSet::new();
         set.add_range(&addr(0x1000), &addr(0x1fff));

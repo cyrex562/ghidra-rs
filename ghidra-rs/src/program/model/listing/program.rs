@@ -31,6 +31,27 @@ pub const ANALYSIS_PROPERTIES: &str = "Analyzers";
 /// Stands in for `Program.ANALYZED_OPTION_NAME`.
 pub const ANALYZED_OPTION_NAME: &str = "Analyzed";
 
+/// Reference identity for programs, matching Java: `Program` (like every `DomainObject`) inherits
+/// `Object`'s `equals`/`hashCode`, so a `Set<Program>` or `Map<Program, ?>` keys on the instance,
+/// not on its contents. Two handles are the same program exactly when they point at the same
+/// object.
+impl PartialEq for dyn Program {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(
+            self as *const dyn Program as *const (),
+            other as *const dyn Program as *const (),
+        )
+    }
+}
+
+impl Eq for dyn Program {}
+
+impl std::hash::Hash for dyn Program {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        (self as *const dyn Program as *const ()).hash(state);
+    }
+}
+
 pub trait Program: DomainObject + Send + Sync {
     fn get_name(&self) -> String;
     fn get_language_id(&self) -> String;
