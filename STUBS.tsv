@@ -106,7 +106,6 @@ ts	stub_class	referenced_by
 2026-07-11T00:00:00Z	LanguageCompilerSpecQuery	LanguageService
 2026-07-11T00:00:00Z	ExternalLanguageCompilerSpecQuery	LanguageService
 2026-07-11T12:00:00Z	SaveState	Project
-2026-07-11T14:00:00Z	DebuggerAddressTranslator	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	ModuleMapEntry	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	SectionMapEntry	DebuggerStaticMappingService
 2026-07-11T14:00:00Z	RegionMapEntry	DebuggerStaticMappingService
@@ -1183,3 +1182,4 @@ ts	stub_class	referenced_by
 2026-08-18T06:02:08.978918+00:00	Value	ValueDecoder
 2026-08-18T06:02:08.978918+00:00	NumericUtilities	ValueDecoder
 2026-08-18T06:44:51.180627Z	DebuggerPluginPackage	TraceRmiPlugin
+2026-08-18T06:53:55Z	MappedAddressRange	DebuggerAddressTranslator

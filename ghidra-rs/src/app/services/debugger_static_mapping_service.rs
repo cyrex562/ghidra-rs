@@ -5,10 +5,10 @@
 //! notifies listeners of changes in the tool's overall mapping picture, and provides for addition
 //! and validation of new mappings. It also provides methods for proposing and adding mappings.
 //!
-//! The Java interface extends `DebuggerAddressTranslator`; that interface is not yet ported, so it
-//! is represented here by the empty [`DebuggerAddressTranslator`](crate::app::seam_stubs::DebuggerAddressTranslator)
-//! placeholder trait, similar to how [`ViewManagerService`](crate::app::services::ViewManagerService)
-//! extends the ported [`ViewService`](crate::app::services::ViewService).
+//! The Java interface extends `DebuggerAddressTranslator`, ported at
+//! [`DebuggerAddressTranslator`](crate::debug::api::modules::DebuggerAddressTranslator), similar to
+//! how [`ViewManagerService`](crate::app::services::ViewManagerService) extends the ported
+//! [`ViewService`](crate::app::services::ViewService).
 //!
 //! Several Java methods are overloaded on parameter type/arity alone, which Rust traits cannot
 //! express; each overload is given a distinct name:
@@ -47,14 +47,14 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::app::seam_stubs::{
-    DebuggerAddressTranslator, ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
-    RegionMapProposal, SectionMapEntry, SectionMapProposal,
+    ModuleMapEntry, ModuleMapProposal, RegionMapEntry, RegionMapProposal, SectionMapEntry,
+    SectionMapProposal,
 };
 use crate::trace::model::trace_location::TraceLocation;
 use crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException;
 use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::modules::trace_section::TraceSection;
-use crate::debug::api::modules::{DebuggerStaticMappingChangeListener, MapEntry};
+use crate::debug::api::modules::{DebuggerAddressTranslator, DebuggerStaticMappingChangeListener, MapEntry};
 use crate::framework::model::DomainFile;
 use crate::program::model::address::{Address, AddressSetView, AddressSpace};
 use crate::program::model::listing::Program;
@@ -1108,7 +1108,82 @@ mod tests {
         listener_count: usize,
     }
 
-    impl DebuggerAddressTranslator for MockService {}
+    impl DebuggerAddressTranslator for MockService {
+        fn get_open_mapped_programs_at_snap(
+            &self,
+            _trace: &dyn Trace,
+            _snap: i64,
+        ) -> Vec<Box<dyn Program>> {
+            vec![Box::new(MockProgram)]
+        }
+
+        fn get_open_mapped_location(
+            &self,
+            _loc: &dyn TraceLocation,
+        ) -> Option<Box<dyn ProgramLocation>> {
+            Some(Box::new(MockProgramLocation))
+        }
+
+        fn get_static_location_from_dynamic(
+            &self,
+            _loc: &dyn ProgramLocation,
+        ) -> Option<Box<dyn ProgramLocation>> {
+            Some(Box::new(MockProgramLocation))
+        }
+
+        fn get_open_mapped_locations(
+            &self,
+            _loc: &dyn ProgramLocation,
+        ) -> Vec<Box<dyn TraceLocation>> {
+            vec![Box::new(MockTraceLocation)]
+        }
+
+        fn get_open_mapped_trace_location(
+            &self,
+            _trace: &dyn Trace,
+            _loc: &dyn ProgramLocation,
+            _snap: i64,
+        ) -> Option<Box<dyn TraceLocation>> {
+            Some(Box::new(MockTraceLocation))
+        }
+
+        fn get_dynamic_location_from_static(
+            &self,
+            _view: &dyn crate::trace::model::program::TraceProgramView,
+            _loc: &dyn ProgramLocation,
+        ) -> Option<Box<dyn ProgramLocation>> {
+            Some(Box::new(MockProgramLocation))
+        }
+
+        fn get_open_mapped_views(
+            &self,
+            _trace: &dyn Trace,
+            _set: &dyn AddressSetView,
+            _snap: i64,
+        ) -> Vec<(Box<dyn Program>, Vec<crate::debug::seam_stubs::MappedAddressRange>)> {
+            vec![(Box::new(MockProgram), Vec::new())]
+        }
+
+        fn get_open_mapped_views_for_program(
+            &self,
+            _program: &dyn Program,
+            _set: &dyn AddressSetView,
+        ) -> Vec<(
+            crate::trace::model::default_trace_span::DefaultTraceSpan,
+            Vec<crate::debug::seam_stubs::MappedAddressRange>,
+        )> {
+            Vec::new()
+        }
+
+        fn get_mapped_program_urls_in_view(
+            &self,
+            _trace: &dyn Trace,
+            _set: &dyn AddressSetView,
+            _snap: i64,
+        ) -> Vec<String> {
+            vec!["ghidra://localhost/repo/static.exe".to_string()]
+        }
+    }
 
     impl DebuggerStaticMappingService for MockService {
         fn add_mapping(
@@ -1414,5 +1489,17 @@ mod tests {
         );
 
         let _future = service.changes_settled();
+
+        // `DebuggerAddressTranslator` is a supertrait, so it must be reachable through the
+        // same boxed `DebuggerStaticMappingService` trait object.
+        assert_eq!(
+            service.get_open_mapped_programs_at_snap(&MockTrace, 0).len(),
+            1
+        );
+        assert!(service.get_open_mapped_location(&MockTraceLocation).is_some());
+        assert_eq!(
+            service.get_mapped_program_urls_in_view(&MockTrace, &MockAddressSetView, 0),
+            vec!["ghidra://localhost/repo/static.exe".to_string()]
+        );
     }
 }

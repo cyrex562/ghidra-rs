@@ -12,6 +12,13 @@ use crate::trace::model::trace::Trace;
 /// so no members are needed yet.
 pub trait LocationTrackingSpec {}
 
+/// Placeholder for `ghidra.debug.api.modules.MappedAddressRange`, referenced by
+/// [`DebuggerAddressTranslator`](crate::debug::api::modules::DebuggerAddressTranslator) before the
+/// real class is ported. In Java this is a concrete class (not an interface), so it becomes a
+/// concrete struct here rather than a trait; `DebuggerAddressTranslator` only ever passes it
+/// through as a collection element in return values, so no members are needed yet.
+pub struct MappedAddressRange;
+
 /// Placeholder for `LogicalBreakpoint.Mode`, the mode of a logical breakpoint's trace locations.
 ///
 /// Ported ahead of the rest of `LogicalBreakpoint` because
