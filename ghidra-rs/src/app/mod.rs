@@ -5,6 +5,7 @@ pub mod decompiler;
 pub mod emulator;
 pub mod events;
 pub mod extension;
+pub mod fsbrowser;
 pub mod merge;
 pub mod nav;
 pub mod plugin;

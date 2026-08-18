@@ -3950,3 +3950,20 @@ impl ClassSearcher {
         Vec::new()
     }
 }
+
+/// Placeholder for `ghidra.plugins.fsbrowser.FSBFileHandlerContext`, referenced by
+/// [`FSBFileHandler`](crate::app::fsbrowser::fsb_file_handler::FSBFileHandler) before the real
+/// class is ported. Java's version is a record (not an interface), so this is a plain struct
+/// rather than a `dyn`-dispatched trait, matching [`DockingAction`]'s convention. The Java source
+/// declares no members yet, so none are modeled here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FSBFileHandlerContext;
+
+/// Placeholder for `ghidra.plugins.fsbrowser.FSBFileNode`, referenced by
+/// [`FSBFileHandler`](crate::app::fsbrowser::fsb_file_handler::FSBFileHandler) before the real
+/// class is ported. Java's version is a concrete `GTreeNode` subclass (not an interface), so this
+/// is a plain struct rather than a `dyn`-dispatched trait, matching [`DockingAction`]'s
+/// convention. `FSBFileHandler` only ever passes this type through as a parameter, so no fields
+/// are needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FSBFileNode;
