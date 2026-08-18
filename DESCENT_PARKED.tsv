@@ -48,3 +48,4 @@ ts	reason	path
 2026-08-17T01:23	timeout-retry	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchSetDB.java
 2026-08-17T03:56	shape-undecided (R8b-marker)	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/codebrowser/hover/ListingHoverService.java
 2026-08-17T22:02	shape-undecided (R8b-marker)	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/UniversalDataFormatModel.java
+2026-08-18T02:32	timeout	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/disassemble/DebuggerDisassemblerPlugin.java
