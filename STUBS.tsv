@@ -1181,3 +1181,4 @@ ts	stub_class	referenced_by
 2026-08-18T07:54:55Z	MappingEntry	InfoPerProgram
 2026-08-18T08:20:00Z	InfoPerTrace	DebuggerStaticMappingContext
 2026-08-18T08:20:00Z	MappingEntry	DebuggerStaticMappingContext
+2026-08-18T08:21:00Z	DataTypeSyncInfo	DataTypeSyncListener
