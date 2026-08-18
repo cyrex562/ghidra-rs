@@ -4493,3 +4493,37 @@ pub mod merge_constants {
     /// Port of `MergeConstants.MY_TITLE`.
     pub const MY_TITLE: &str = "Checked Out";
 }
+
+/// Placeholder for `ghidra.program.util.MarkerLocation`, referenced by
+/// [`MarkerClickedListener`](crate::app::util::viewer::listingpanel::MarkerClickedListener)
+/// before the real class is ported. A `MarkerLocation` describes a location in a program where
+/// the user clicked in the marker margin, providing access to the program, address, marker set,
+/// and pixel coordinates of the click.
+pub trait MarkerLocation: Send + Sync {
+    /// Corresponds to `MarkerLocation.getProgram()`.
+    fn get_program(&self) -> Box<dyn Program>;
+
+    /// Corresponds to `MarkerLocation.getAddr()`.
+    fn get_addr(&self) -> crate::program::model::address::Address;
+
+    /// Corresponds to `MarkerLocation.getMarkerSet()`.
+    fn get_marker_set(&self) -> Box<dyn MarkerSet>;
+
+    /// Corresponds to `MarkerLocation.getX()`, the x-coordinate in pixels.
+    fn get_x(&self) -> i32;
+
+    /// Corresponds to `MarkerLocation.getY()`, the y-coordinate in pixels.
+    fn get_y(&self) -> i32;
+
+    /// Corresponds to `Object.hashCode()`.
+    fn hash_code(&self) -> i32;
+
+    /// Corresponds to `Object.equals(Object)`, downcasted as `Any` for safe dynamic dispatch.
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+}
+
+/// Placeholder for `ghidra.program.util.MarkerSet`, referenced by
+/// [`MarkerLocation`](MarkerLocation) before the real class is ported. A `MarkerSet` is a
+/// collection of markers that can be displayed in the listing margin, typically used to
+/// highlight addresses of interest.
+pub trait MarkerSet: Send + Sync {}
