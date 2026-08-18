@@ -605,7 +605,7 @@ orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/FrameStructureBuilder.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/ListingUnwoundFrame.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SavedRegisterMap.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
-orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarning.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
+orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarning.java	DONE	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarningSet.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwinder.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 
 orig_src/Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/Sym.java	TODO	orig_src Ghidra Debug Debugger src main java ghidra app plugin core debug stack 

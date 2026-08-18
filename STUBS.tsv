@@ -1188,3 +1188,5 @@ ts	stub_class	referenced_by
 2026-08-18T08:52:00Z	ProgramByteViewerComponentProvider	ProgramByteBlockSet
 2026-08-18T08:52:00Z	ByteBlockChangeManager	ProgramByteBlockSet
 2026-08-18T08:52:00Z	MemoryByteBlock	ProgramByteBlockSet
+2026-08-18T09:13:06Z	PcodeOpAst	StackUnwindWarning
+2026-08-18T09:13:06Z	VarnodeAst	StackUnwindWarning
