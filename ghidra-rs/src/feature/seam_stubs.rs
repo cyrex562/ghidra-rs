@@ -3393,6 +3393,57 @@ pub trait FidFile: Send + Sync {
     fn closing_fid_db(&self, fid_db: &crate::feature::fid::db::fid_db::FidDB);
 }
 
+/// Placeholder for the unported Java type `FidQueryService`, referenced by
+/// [`crate::feature::fid::db::fid_query_close_listener::FidQueryCloseListener`]. Java's
+/// `FidQueryService` is a concrete class (not an interface), but this stub provides the public
+/// interface needed by listeners and other components. Replace with the real port when
+/// `FidQueryService.java` is ported.
+pub trait FidQueryService: Send + Sync {
+    /// Java: `FidQueryService.addCloseListener(FidQueryCloseListener)`.
+    fn add_close_listener(&self, listener: &dyn crate::feature::fid::db::fid_query_close_listener::FidQueryCloseListener);
+
+    /// Java: `FidQueryService.removeCloseListener(FidQueryCloseListener)`.
+    fn remove_close_listener(&self, listener: &dyn crate::feature::fid::db::fid_query_close_listener::FidQueryCloseListener);
+
+    /// Java: `FidQueryService.getFunctionByID(long)`, returning `Option<Arc<FunctionRecord>>`.
+    fn get_function_by_id(&self, function_id: i64) -> Option<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
+
+    /// Java: `FidQueryService.getSuperiorFullRelation(FunctionRecord, FidHashQuad)`.
+    fn get_superior_full_relation(
+        &self,
+        superior_function: &crate::feature::fid::db::function_record::FunctionRecord,
+        inferior_function: &dyn crate::feature::fid::hash::fid_hash_quad::FidHashQuad,
+    ) -> bool;
+
+    /// Java: `FidQueryService.getInferiorFullRelation(FidHashQuad, FunctionRecord)`.
+    fn get_inferior_full_relation(
+        &self,
+        superior_function: &dyn crate::feature::fid::hash::fid_hash_quad::FidHashQuad,
+        inferior_function: &crate::feature::fid::db::function_record::FunctionRecord,
+    ) -> bool;
+
+    /// Java: `FidQueryService.getLibraryForFunction(FunctionRecord)`, returning `Option<Arc<LibraryRecord>>`.
+    fn get_library_for_function(&self, function_record: &crate::feature::fid::db::function_record::FunctionRecord) -> Option<Arc<crate::feature::fid::db::library_record::LibraryRecord>>;
+
+    /// Java: `FidQueryService.findFullHashValueAtOrAfter(long)`.
+    fn find_full_hash_value_at_or_after(&self, value: i64) -> Option<i64>;
+
+    /// Java: `FidQueryService.findFunctionsBySpecificHash(long)`.
+    fn find_functions_by_specific_hash(&self, specific_hash: i64) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
+
+    /// Java: `FidQueryService.findFunctionsByFullHash(long)`.
+    fn find_functions_by_full_hash(&self, full_hash: i64) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
+
+    /// Java: `FidQueryService.findFunctionsByNameSubstring(String)`.
+    fn find_functions_by_name_substring(&self, name: &str) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
+
+    /// Java: `FidQueryService.findFunctionsByDomainPathSubstring(String)`.
+    fn find_functions_by_domain_path_substring(&self, domain_path: &str) -> Vec<Arc<crate::feature::fid::db::function_record::FunctionRecord>>;
+
+    /// Java: `FidQueryService.close()`.
+    fn close(&self);
+}
+
 /// Placeholder for the unported Java type `LibrariesTable`, referenced by
 /// [`crate::feature::fid::db::fid_db::FidDB`]. Java's static `createTable(DBHandle)` is omitted
 /// because `FidDB` only calls it from `createNewFidDatabase`, which needs the unported

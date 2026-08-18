@@ -1146,3 +1146,4 @@ ts	stub_class	referenced_by
 2026-08-18T03:10:39+00:00	FunctionGraphViewSettings	CurrentFunctionGraphViewSettings
 2026-08-18T03:10:39+00:00	GraphPerspectiveInfo	CurrentFunctionGraphViewSettings
 2026-08-18T03:21:02+00:00	FGData	FGControllerListener
+2026-08-18T03:22:54.575142+00:00	FidQueryService	FidQueryCloseListener
