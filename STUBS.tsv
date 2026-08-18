@@ -1191,3 +1191,9 @@ ts	stub_class	referenced_by
 2026-08-18T09:13:06Z	PcodeOpAst	StackUnwindWarning
 2026-08-18T09:13:06Z	VarnodeAst	StackUnwindWarning
 2026-08-18T09:22:39Z	FBPK_Partition	FBPK
+2026-08-18T09:38:06Z	SarifMgr	BookmarksSarifMgr
+2026-08-18T09:38:06Z	SarifProgramOptions	BookmarksSarifMgr
+2026-08-18T09:38:06Z	MessageLog	BookmarksSarifMgr
+2026-08-18T09:38:06Z	SarifBookmarkWriter	BookmarksSarifMgr
+2026-08-18T09:38:06Z	SarifWriterTask	BookmarksSarifMgr
+2026-08-18T09:38:06Z	TaskLauncher	BookmarksSarifMgr
