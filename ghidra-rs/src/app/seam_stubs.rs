@@ -487,13 +487,6 @@ pub trait RunResult: Send {
 /// this is too).
 pub trait GoToOverrideService: Send + Sync {}
 
-/// Placeholder for `ghidra.debug.api.modules.DebuggerAddressTranslator`, the base interface
-/// extended by
-/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
-/// the real interface is ported. `DebuggerStaticMappingService` does not itself call any
-/// `DebuggerAddressTranslator` members, so no members are needed yet.
-pub trait DebuggerAddressTranslator {}
-
 /// Placeholder for `ghidra.debug.api.modules.ModuleMapProposal.ModuleMapEntry`, referenced by
 /// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
 /// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through

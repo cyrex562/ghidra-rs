@@ -2,10 +2,9 @@
 //!
 //! Port of `ghidra.app.services.DebuggerListingService`, which extends
 //! `ghidra.app.services.CodeViewerService` -- not yet ported, so it is represented here by the
-//! empty [`CodeViewerService`](crate::app::seam_stubs::CodeViewerService) placeholder trait,
-//! mirroring how [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService)
-//! extends the unported `DebuggerAddressTranslator`. The Java `@ServiceInfo` annotation (default
-//! provider `DebuggerListingPlugin`) has no Rust equivalent and is omitted.
+//! empty [`CodeViewerService`](crate::app::seam_stubs::CodeViewerService) placeholder trait. The
+//! Java `@ServiceInfo` annotation (default provider `DebuggerListingPlugin`) has no Rust
+//! equivalent and is omitted.
 //!
 //! `DebuggerListingService.goTo(Address, boolean)` is distinct from the inherited
 //! `CodeViewerService.goTo(ProgramLocation, boolean)` overload (different parameter type); since
