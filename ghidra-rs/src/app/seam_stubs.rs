@@ -4224,3 +4224,22 @@ pub trait FGData: Send + Sync {
     /// Port of `FGData.toString()`.
     fn to_string(&self) -> String;
 }
+
+/// Placeholder for `ghidra.app.merge.MergeConstants`, referenced by
+/// [`ListingMergeConstants`](crate::app::merge::listing::listing_merge_constants) before the
+/// real class is ported.
+///
+/// `MergeConstants` is, like `ListingMergeConstants`, a Java constant-interface (no methods) --
+/// so this stub is a plain module of `pub const`s rather than a trait, matching the shape the
+/// real port will take. Only the four title strings `ListingMergeConstants` re-exposes are
+/// modeled; add the rest when a real consumer needs them.
+pub mod merge_constants {
+    /// Port of `MergeConstants.RESULT_TITLE`.
+    pub const RESULT_TITLE: &str = "Result";
+    /// Port of `MergeConstants.ORIGINAL_TITLE`.
+    pub const ORIGINAL_TITLE: &str = "Original";
+    /// Port of `MergeConstants.LATEST_TITLE`.
+    pub const LATEST_TITLE: &str = "Latest";
+    /// Port of `MergeConstants.MY_TITLE`.
+    pub const MY_TITLE: &str = "Checked Out";
+}
