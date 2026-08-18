@@ -3817,3 +3817,85 @@ impl FidServiceLibraryIngest {
         Ok(FidPopulateResult)
     }
 }
+
+/// Placeholder for the unported Java type `InstructionSequence`
+/// (`ghidra.bitpatterns.info.InstructionSequence`), referenced by
+/// [`FunctionBitPatternInfo`](crate::feature::bitpatterns::info::function_bit_pattern_info::FunctionBitPatternInfo).
+///
+/// `InstructionSequence` is a concrete Java class (not an interface), so this stub is a struct
+/// rather than a trait. It carries only what `FunctionBitPatternInfo` needs: the three parallel
+/// slot arrays (mnemonic, size, comma-separated operands) that the data-gathering constructor
+/// fills in, plus the `toString` rendering that `FunctionBitPatternInfo.toString` embeds.
+/// Java's arrays are pre-sized to the sequence length and left holding nulls for slots that were
+/// never reached, which is why each slot is an `Option` here. Replace with the real port when
+/// `InstructionSequence.java` is ported.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+pub struct InstructionSequence {
+    instructions: Vec<Option<String>>,
+    sizes: Vec<Option<i32>>,
+    comma_separated_operands: Vec<Option<String>>,
+}
+
+impl InstructionSequence {
+    /// Java: `new InstructionSequence(int length)` - allocates `length` empty slots.
+    pub fn with_length(length: usize) -> Self {
+        Self {
+            instructions: vec![None; length],
+            sizes: vec![None; length],
+            comma_separated_operands: vec![None; length],
+        }
+    }
+
+    /// Java: `getInstructions()`.
+    pub fn get_instructions(&self) -> &[Option<String>] {
+        &self.instructions
+    }
+
+    /// Mutable view of the mnemonic slots, standing in for Java's array writes
+    /// (`getInstructions()[j] = ...`).
+    pub fn instructions_mut(&mut self) -> &mut [Option<String>] {
+        &mut self.instructions
+    }
+
+    /// Java: `getSizes()`.
+    pub fn get_sizes(&self) -> &[Option<i32>] {
+        &self.sizes
+    }
+
+    /// Mutable view of the size slots, standing in for Java's `getSizes()[j] = ...`.
+    pub fn sizes_mut(&mut self) -> &mut [Option<i32>] {
+        &mut self.sizes
+    }
+
+    /// Java: `getCommaSeparatedOperands()`.
+    pub fn get_comma_separated_operands(&self) -> &[Option<String>] {
+        &self.comma_separated_operands
+    }
+
+    /// Mutable view of the operand slots, standing in for Java's
+    /// `getCommaSeparatedOperands()[j] = ...`.
+    pub fn comma_separated_operands_mut(&mut self) -> &mut [Option<String>] {
+        &mut self.comma_separated_operands
+    }
+}
+
+impl std::fmt::Display for InstructionSequence {
+    /// Mirrors `InstructionSequence.toString()`: `mnemonic:size (operands)` per slot, separated by
+    /// a single space. Java renders unset slots through `StringBuilder.append((Object) null)`,
+    /// i.e. the literal text `null`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let size = self.instructions.len();
+        for i in 0..size {
+            let mnemonic = self.instructions[i].as_deref().unwrap_or("null");
+            let operands = self.comma_separated_operands[i].as_deref().unwrap_or("null");
+            match self.sizes[i] {
+                Some(s) => write!(f, "{}:{} ({})", mnemonic, s, operands)?,
+                None => write!(f, "{}:null ({})", mnemonic, operands)?,
+            }
+            if i != size - 1 {
+                write!(f, " ")?;
+            }
+        }
+        Ok(())
+    }
+}
