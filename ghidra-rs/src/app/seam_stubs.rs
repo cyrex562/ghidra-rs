@@ -3900,3 +3900,53 @@ pub trait ArchiveNode: Send + Sync {
     /// Called when the manager is restored.
     fn restored(&self, manager: &dyn DataTypeManager);
 }
+
+/// Placeholder for `ghidra.app.plugin.core.decompiler.taint.TaintPlugin`, referenced by
+/// [`TaintState`](crate::app::plugin::core::decompiler::taint::taint_state::TaintState) before
+/// the real class is ported. `TaintState` only ever holds/passes this reference (e.g. as the
+/// argument to `newInstance`); it never calls a method on it, so no members are modeled yet.
+pub trait TaintPlugin: Send + Sync {}
+
+/// Placeholder for `ghidra.app.plugin.core.decompiler.taint.TaintLabel`, referenced by
+/// [`TaintState`](crate::app::plugin::core::decompiler::taint::taint_state::TaintState) before
+/// the real class is ported. `TaintState` only ever holds/returns this reference; it never calls
+/// a method on it, so no members are modeled yet.
+pub trait TaintLabel: Send + Sync {}
+
+/// Placeholder for `ghidra.app.plugin.core.decompiler.taint.TaintOptions`, referenced by
+/// [`TaintState`](crate::app::plugin::core::decompiler::taint::taint_state::TaintState) before
+/// the real class is ported. `TaintState` only ever returns this reference; it never calls a
+/// method on it, so no members are modeled yet.
+pub trait TaintOptions: Send + Sync {}
+
+/// Placeholder for `ghidra.app.plugin.core.decompiler.taint.TaintQueryResult`, referenced by
+/// [`TaintState`](crate::app::plugin::core::decompiler::taint::taint_state::TaintState) before
+/// the real class is ported. `TaintState` only ever holds/returns this reference; it never calls
+/// a method on it, so no members are modeled yet.
+pub trait TaintQueryResult: Send + Sync {}
+
+/// A `TaintState` implementor discovered by [`ClassSearcher::get_taint_state_classes`], standing
+/// in for a Java `Class<? extends TaintState>` plus its `TaintPlugin`-arg constructor.
+pub struct TaintStateClass {
+    /// Mirrors `Class.getName()`, matched (lowercased) against the requested engine type by
+    /// [`TaintState::new_instance`](crate::app::plugin::core::decompiler::taint::taint_state::TaintState).
+    pub name: &'static str,
+    /// Mirrors `Constructor<?>.newInstance(plugin)`.
+    pub construct: fn(&dyn TaintPlugin) -> Box<dyn crate::app::plugin::core::decompiler::taint::taint_state::TaintState>,
+}
+
+/// Placeholder for the `ghidra.util.classfinder.ClassSearcher` lookup that
+/// [`TaintState::new_instance`](crate::app::plugin::core::decompiler::taint::taint_state::TaintState)
+/// needs, before the real class is ported. Modeled as a statics holder (Java's version is a class
+/// of static methods), matching
+/// [`script::seam_stubs::ClassSearcher`](crate::script::seam_stubs::ClassSearcher).
+pub struct ClassSearcher;
+
+impl ClassSearcher {
+    /// Mirrors `ClassSearcher.getClasses(TaintState.class)`. Java discovers implementations by
+    /// scanning the classpath for extension points; Rust has no equivalent runtime scan, so this
+    /// yields nothing until a provider registry is ported.
+    pub fn get_taint_state_classes() -> Vec<TaintStateClass> {
+        Vec::new()
+    }
+}

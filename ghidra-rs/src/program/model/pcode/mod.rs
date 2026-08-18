@@ -59,7 +59,7 @@ pub use high_function::{
 };
 pub use high_function_db_util::{HighFunctionDb, HighFunctionDBUtil, ReturnCommitOption, AUTO_CAT};
 pub use high_param_id::{HighParamID, DECOMPILER_TAG_MAP};
-pub use high_variable::HighVariable;
+pub use high_variable::{HighVariable, HighVariableKind};
 pub use ids::*;
 pub use linked_byte_buffer::{LinkedByteBuffer, Position as LinkedBufferPosition};
 pub use list_linked::{LinkedIter, ListLinked};

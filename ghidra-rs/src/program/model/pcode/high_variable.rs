@@ -62,6 +62,21 @@ use crate::program::model::pcode::high_function::HighFunction;
 use crate::program::model::pcode::Varnode;
 use crate::program::seam_stubs::{HighSymbol, PlaceholderDataType};
 
+/// Which `HighVariable` subclass a variable stands for, standing in for Java's `instanceof`
+/// checks (`hv instanceof HighConstant`, `hv instanceof HighLocal`, ...) while those subclasses
+/// (`HighConstant`, `HighLocal`, `HighGlobal`, `HighOther`, `HighParam`, ...) are not ported as
+/// distinct concrete types. Follows the same convention as
+/// [`ClangTokenKind`](crate::app::decompiler::clang_token::ClangTokenKind). Once a subclass is
+/// ported it should carry its identity in its own type and override [`HighVariable::kind`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HighVariableKind {
+    Generic,
+    Constant,
+    Local,
+    Global,
+    Other,
+}
+
 /// A high-level variable (as in a high-level language like C/C++) built out of Varnodes
 /// (low-level variables). Port of `ghidra.program.model.pcode.HighVariable`.
 pub trait HighVariable: Send + Sync {
@@ -136,6 +151,12 @@ pub trait HighVariable: Send + Sync {
     /// return their slot.
     fn as_param_slot(&self) -> Option<i32> {
         None
+    }
+
+    /// Which `HighVariable` subclass this variable stands for. See [`HighVariableKind`]; this has
+    /// no Java counterpart (Java uses `instanceof`). Defaults to `Generic`.
+    fn kind(&self) -> HighVariableKind {
+        HighVariableKind::Generic
     }
 
     /// Decode the data-type and the Varnode instances of this `HighVariable`. The representative

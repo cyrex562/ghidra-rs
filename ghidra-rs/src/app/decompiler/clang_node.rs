@@ -81,6 +81,14 @@ pub trait ClangNode: Send + Sync + std::fmt::Display {
     /// * `list` - A mutable vector of node references. This method appends all terminal tokens
     ///   from this node (and recursively its children) into the list.
     fn flatten<'a>(&'a self, list: &mut Vec<&'a dyn ClangNode>);
+
+    /// Expose this node as [`std::any::Any`] so callers can recover its concrete type.
+    ///
+    /// Has no Java counterpart -- Java's `instanceof`/cast checks (e.g. `(ClangTokenGroup)
+    /// token.Parent()`, `next instanceof ClangVariableToken`) work directly against the object
+    /// graph, but a `&dyn ClangNode` trait object erases that information in Rust. Implementors
+    /// return `self`; callers `downcast_ref` to the concrete type they expect.
+    fn as_any(&self) -> &dyn std::any::Any;
 }
 
 #[cfg(test)]
@@ -132,6 +140,10 @@ mod tests {
             for child in &self.children {
                 child.flatten(list);
             }
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
     }
 

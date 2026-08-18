@@ -222,6 +222,10 @@ impl ClangNode for ClangTokenGroup {
     fn flatten<'a>(&'a self, list: &mut Vec<&'a dyn ClangNode>) {
         ClangTokenGroup::flatten(self, list)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl std::fmt::Display for ClangTokenGroup {
@@ -344,6 +348,10 @@ mod tests {
                     c.flatten(list);
                 }
             }
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
     }
 
