@@ -37,7 +37,7 @@ DONE	trait	6	5	25	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/p
 DONE	trait	5	1	1	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/ValueSupplier.java
 PARK	trait	4	14	77	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/disassemble/DebuggerDisassemblerPlugin.java
 DONE	trait	0	16	49	app	Ghidra/Debug/Debugger-rmi-trace/src/main/java/ghidra/app/plugin/core/debug/service/tracermi/TraceRmiPlugin.java
-TODO	trait	1	6	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/DebuggerAddressTranslator.java
+DONE	trait	1	6	2	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/DebuggerAddressTranslator.java
 TODO	trait	1	15	0	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/MapProposal.java
 TODO	trait	1	10	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/ModuleMapProposal.java
 TODO	trait	1	9	1	debug	Ghidra/Debug/Debugger-api/src/main/java/ghidra/debug/api/modules/RegionMapProposal.java
