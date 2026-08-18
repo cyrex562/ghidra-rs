@@ -266,6 +266,10 @@ impl ClangNode for ClangTokenBase {
     fn flatten<'a>(&'a self, list: &mut Vec<&'a dyn ClangNode>) {
         list.push(self);
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 impl std::fmt::Display for ClangTokenBase {
