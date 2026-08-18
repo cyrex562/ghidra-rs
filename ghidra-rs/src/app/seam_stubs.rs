@@ -4754,3 +4754,351 @@ pub trait GColumnRenderer: Send + Sync {}
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
 pub trait ByteViewerComponent: Send + Sync {}
 
+/// Concrete stand-in for `ghidra.program.util.ProgramSelection`, referenced by
+/// [`ProgramByteBlockSet`](crate::app::plugin::core::byteviewer::ProgramByteBlockSet), whose
+/// `convertSelection` *constructs* a `new ProgramSelection(addrSet)`. The existing
+/// [`ProgramSelection`] placeholder above is a trait, because every earlier caller only passed
+/// selections through; this struct supplies the one thing a trait cannot, an instance built from
+/// an address set. Java's class is an `AddressSetView`; only the set itself and `isEmpty` are
+/// modeled here. Replace with the real port when `ProgramSelection` is ported.
+pub struct AddressSetProgramSelection {
+    addresses: crate::program::model::address::AddressSet,
+}
+
+impl AddressSetProgramSelection {
+    /// Mirrors `ProgramSelection(AddressSetView setView)`.
+    pub fn new(addresses: crate::program::model::address::AddressSet) -> Self {
+        Self { addresses }
+    }
+
+    /// The addresses this selection covers; Java reaches them through the `AddressSetView`
+    /// methods `ProgramSelection` inherits.
+    pub fn addresses(&self) -> &crate::program::model::address::AddressSet {
+        &self.addresses
+    }
+}
+
+impl ProgramSelection for AddressSetProgramSelection {
+    fn is_empty(&self) -> bool {
+        use crate::program::model::address::AddressSetView;
+        self.addresses.is_empty()
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.byteviewer.ProgramByteViewerComponentProvider`,
+/// referenced by [`ProgramByteBlockSet`](crate::app::plugin::core::byteviewer::ProgramByteBlockSet)
+/// before the real provider is ported. `ProgramByteBlockSet` sits on a dependency cycle with the
+/// provider, so only the two members it calls back into are modeled: the block/offset overload of
+/// `getLocation` (not the no-argument `Navigatable.getLocation()`) and `notifyEdit`.
+pub trait ProgramByteViewerComponentProvider: Send + Sync {
+    /// Mirrors `ProgramByteViewerComponentProvider.getLocation(ByteBlock, BigInteger, int)`.
+    fn get_location(
+        &self,
+        block: &Arc<dyn crate::app::plugin::core::format::ByteBlock>,
+        offset: i128,
+        column: i32,
+    ) -> Arc<dyn ProgramLocation + Send + Sync>;
+
+    /// Mirrors `ProgramByteViewerComponentProvider.notifyEdit(ByteEditInfo)`.
+    fn notify_edit(&self, edit: &crate::app::plugin::core::format::ByteEditInfo);
+}
+
+/// Placeholder for `ghidra.app.plugin.core.byteviewer.ByteBlockChangeManager`, referenced by
+/// [`ProgramByteBlockSet`](crate::app::plugin::core::byteviewer::ProgramByteBlockSet). Java's
+/// class is concrete and holds the tool's list of byte edits, so this is a struct rather than a
+/// trait.
+///
+/// The Java class keeps a back-reference to its `ProgramByteBlockSet` purely to translate between
+/// blocks and addresses (`getBlockStart`/`getByteBlockNumber`). That back-reference is the
+/// dependency cycle, so it is cut here: this placeholder stores only the change list, and callers
+/// pass the already-resolved block start address in. The `SaveState` round-trip, which likewise
+/// needs the block-number mapping, lives on `ProgramByteBlockSet` for the same reason.
+#[derive(Default)]
+pub struct ByteBlockChangeManager {
+    change_list: Vec<crate::app::plugin::core::format::ByteEditInfo>,
+}
+
+impl ByteBlockChangeManager {
+    /// Mirrors `ByteBlockChangeManager(ProgramByteBlockSet, ByteBlockChangeManager)`: a new
+    /// manager inherits the previous manager's change list, or starts empty when there is none.
+    pub fn new(previous: StdOption<&ByteBlockChangeManager>) -> Self {
+        Self {
+            change_list: previous.map(|m| m.change_list.clone()).unwrap_or_default(),
+        }
+    }
+
+    /// Mirrors `ByteBlockChangeManager.add(ByteEditInfo)`: one entry is recorded per byte whose
+    /// value actually changed, at that byte's offset.
+    pub fn add(&mut self, edit: &crate::app::plugin::core::format::ByteEditInfo) {
+        let old_value = edit.old_value();
+        let new_value = edit.new_value();
+        for i in 0..old_value.len() {
+            if old_value[i] == new_value[i] {
+                continue;
+            }
+            self.change_list
+                .push(crate::app::plugin::core::format::ByteEditInfo::new(
+                    edit.block_address().clone(),
+                    edit.offset() + i as i128,
+                    old_value.to_vec(),
+                    new_value.to_vec(),
+                ));
+        }
+    }
+
+    /// Mirrors `ByteBlockChangeManager.isChanged(ByteBlock, BigInteger, int)`, with the block
+    /// already resolved to its start address by the caller (see the type doc).
+    pub fn is_changed(&self, block_addr: &Address, offset: i128, unit_byte_size: i32) -> bool {
+        (0..unit_byte_size as i128).any(|i| {
+            self.change_list
+                .iter()
+                .any(|edit| edit.block_address() == block_addr && edit.offset() == offset + i)
+        })
+    }
+
+    /// The recorded changes; Java reads its private `changeList` directly from the same package.
+    pub fn changes(&self) -> &[crate::app::plugin::core::format::ByteEditInfo] {
+        &self.change_list
+    }
+
+    /// Replaces the recorded changes, as `restoreUndoRedoState` does after clearing the list.
+    pub fn set_changes(&mut self, changes: Vec<crate::app::plugin::core::format::ByteEditInfo>) {
+        self.change_list = changes;
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.byteviewer.MemoryByteBlock`, the `ByteBlock` over a
+/// program's memory block, referenced by
+/// [`ProgramByteBlockSet`](crate::app::plugin::core::byteviewer::ProgramByteBlockSet), which
+/// creates one per [`MemoryBlock`](crate::program::model::mem::MemoryBlock) and asks each for its
+/// start/end/containment. Java's class is concrete, so this is a struct.
+///
+/// Reads delegate to [`Memory`](crate::program::model::mem::Memory); writes are rejected, because
+/// this crate's `Memory::set_bytes` needs `&mut` access that a shared `Arc<dyn Memory>` cannot
+/// give. Replace with the real port when `MemoryByteBlock` is ported.
+pub struct MemoryByteBlock {
+    program: Arc<dyn Program>,
+    memory: Arc<dyn crate::program::model::mem::Memory>,
+    block: Arc<dyn crate::program::model::mem::MemoryBlock>,
+    start: Address,
+    big_endian: bool,
+}
+
+impl MemoryByteBlock {
+    /// Mirrors `MemoryByteBlock(Program, MemoryBlock)`. Java reads `program.getMemory()` in the
+    /// constructor; this crate's `Program::get_memory` returns an `Option`, so the caller -- which
+    /// has already resolved the memory to enumerate its blocks -- passes it in.
+    pub fn new(
+        program: Arc<dyn Program>,
+        memory: Arc<dyn crate::program::model::mem::Memory>,
+        block: Arc<dyn crate::program::model::mem::MemoryBlock>,
+    ) -> Self {
+        let start = block.get_start();
+        let big_endian = memory.is_big_endian();
+        Self {
+            program,
+            memory,
+            block,
+            start,
+            big_endian,
+        }
+    }
+
+    /// The program this block's memory belongs to, used when generating plugin events.
+    pub fn get_program(&self) -> &Arc<dyn Program> {
+        &self.program
+    }
+
+    /// Mirrors `MemoryByteBlock.getStart()`.
+    pub fn get_start(&self) -> &Address {
+        &self.start
+    }
+
+    /// Mirrors `MemoryByteBlock.getEnd()`.
+    pub fn get_end(&self) -> Address {
+        self.block.get_end()
+    }
+
+    /// Mirrors `MemoryByteBlock.contains(Address)`.
+    pub fn contains(&self, address: &Address) -> bool {
+        self.block.contains(address)
+    }
+
+    /// Mirrors `MemoryByteBlock.getAddress(BigInteger)`, which throws
+    /// `IndexOutOfBoundsException` when the index runs past the address space; `None` here.
+    pub fn get_address(&self, index: i128) -> StdOption<Address> {
+        i64::try_from(index)
+            .ok()
+            .and_then(|index| self.start.add_no_wrap(index).ok())
+    }
+
+    /// Mirrors `MemoryByteBlock.getIndex(Address)`.
+    pub fn get_index(&self, addr: &Address) -> i128 {
+        addr.offset() as i128 - self.start.offset() as i128
+    }
+
+    fn converter(&self) -> &'static dyn crate::util::DataConverter {
+        if self.big_endian {
+            &crate::util::big_endian_data_converter::INSTANCE
+        }
+        else {
+            &crate::util::little_endian_data_converter::INSTANCE
+        }
+    }
+
+    fn read(
+        &self,
+        index: i128,
+        len: usize,
+    ) -> Result<Vec<u8>, crate::app::plugin::core::format::ByteBlockAccessException> {
+        let addr = self.get_address(index).ok_or_else(|| {
+            crate::app::plugin::core::format::ByteBlockAccessException::new(format!(
+                "Index {index} is not in this block"
+            ))
+        })?;
+        let mut buf = vec![0u8; len];
+        let read = self.memory.get_bytes(&addr, &mut buf);
+        if read < len {
+            return Err(
+                crate::app::plugin::core::format::ByteBlockAccessException::new(format!(
+                    "Could not read {len} bytes at {addr}"
+                )),
+            );
+        }
+        Ok(buf)
+    }
+
+    fn not_editable(&self) -> crate::app::plugin::core::format::ByteBlockAccessException {
+        crate::app::plugin::core::format::ByteBlockAccessException::new(
+            "Memory editing is not supported until MemoryByteBlock is ported",
+        )
+    }
+}
+
+impl crate::app::plugin::core::format::ByteBlock for MemoryByteBlock {
+    fn get_location_representation(
+        &self,
+        index: i128,
+    ) -> Result<String, crate::app::plugin::core::format::ByteBlockAccessException> {
+        let addr = self.get_address(index).ok_or_else(|| {
+            crate::app::plugin::core::format::ByteBlockAccessException::new(format!(
+                "Index {index} is not in this block"
+            ))
+        })?;
+        if !self.memory.contains(&addr) {
+            return Err(
+                crate::app::plugin::core::format::ByteBlockAccessException::new(format!(
+                    "{addr} is not in memory"
+                )),
+            );
+        }
+        Ok(addr.to_string())
+    }
+
+    fn get_max_location_representation_size(&self) -> i32 {
+        let space = self.start.space();
+        let digits = ((space.size() as usize) + 3) / 4;
+        space.address(1).format(false, digits).len() as i32
+    }
+
+    fn get_index_name(&self) -> String {
+        "Addresses".to_string()
+    }
+
+    fn get_length(&self) -> i128 {
+        self.block.get_size() as i128
+    }
+
+    fn get_byte(
+        &self,
+        index: i128,
+    ) -> Result<u8, crate::app::plugin::core::format::ByteBlockAccessException> {
+        Ok(self.read(index, 1)?[0])
+    }
+
+    fn get_bytes(
+        &self,
+        bytes: &mut [u8],
+        index: i128,
+        count: usize,
+    ) -> Result<usize, crate::app::plugin::core::format::ByteBlockAccessException> {
+        let addr = self.get_address(index).ok_or_else(|| {
+            crate::app::plugin::core::format::ByteBlockAccessException::new(format!(
+                "Index {index} is not in this block"
+            ))
+        })?;
+        Ok(self.memory.get_bytes(&addr, &mut bytes[..count]))
+    }
+
+    fn get_short(
+        &self,
+        index: i128,
+    ) -> Result<i16, crate::app::plugin::core::format::ByteBlockAccessException> {
+        Ok(self.converter().get_short(&self.read(index, 2)?))
+    }
+
+    fn get_int(
+        &self,
+        index: i128,
+    ) -> Result<i32, crate::app::plugin::core::format::ByteBlockAccessException> {
+        Ok(self.converter().get_int(&self.read(index, 4)?))
+    }
+
+    fn get_long(
+        &self,
+        index: i128,
+    ) -> Result<i64, crate::app::plugin::core::format::ByteBlockAccessException> {
+        Ok(self.converter().get_long(&self.read(index, 8)?))
+    }
+
+    fn set_byte(
+        &mut self,
+        _index: i128,
+        _value: u8,
+    ) -> Result<(), crate::app::plugin::core::format::ByteBlockAccessException> {
+        Err(self.not_editable())
+    }
+
+    fn set_short(
+        &mut self,
+        _index: i128,
+        _value: i16,
+    ) -> Result<(), crate::app::plugin::core::format::ByteBlockAccessException> {
+        Err(self.not_editable())
+    }
+
+    fn set_int(
+        &mut self,
+        _index: i128,
+        _value: i32,
+    ) -> Result<(), crate::app::plugin::core::format::ByteBlockAccessException> {
+        Err(self.not_editable())
+    }
+
+    fn set_long(
+        &mut self,
+        _index: i128,
+        _value: i64,
+    ) -> Result<(), crate::app::plugin::core::format::ByteBlockAccessException> {
+        Err(self.not_editable())
+    }
+
+    /// Java answers `true` unconditionally; this placeholder cannot write memory (see the type
+    /// doc), so it answers `false`.
+    fn is_editable(&self) -> bool {
+        false
+    }
+
+    fn set_big_endian(&mut self, big_endian: bool) {
+        self.big_endian = big_endian;
+    }
+
+    fn is_big_endian(&self) -> bool {
+        self.big_endian
+    }
+
+    fn get_alignment(&self, radix: i32) -> i32 {
+        (self.start.offset() % radix as i64) as i32
+    }
+}
+
