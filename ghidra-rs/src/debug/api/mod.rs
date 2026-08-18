@@ -14,7 +14,7 @@ pub mod watch;
 pub use breakpoint::LogicalBreakpointsChangeListener;
 pub use emulation::PcodeDebuggerDataAccess;
 pub use listing::DebuggerListing;
-pub use modules::{DebuggerStaticMappingChangeListener, MapEntry};
+pub use modules::{DebuggerStaticMappingChangeListener, MapEntry, MapProposal};
 pub use progress::CloseableTaskMonitor;
 pub use target::TargetPublicationListener;
 pub use tracemgr::DebuggerCoordinates;
