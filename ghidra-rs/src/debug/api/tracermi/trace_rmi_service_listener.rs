@@ -25,7 +25,14 @@ pub enum ConnectMode {
 /// Corresponds to `ghidra.debug.api.tracermi.TraceRmiServiceListener`. Every method carries a
 /// no-op default, mirroring the Java interface's default methods: implementors override only the
 /// events they care about.
-pub trait TraceRmiServiceListener {
+///
+/// `Send + Sync`: listeners are handed to [`TraceRmiService::add_trace_service_listener`](
+/// crate::app::services::TraceRmiService::add_trace_service_listener) as a bare
+/// `Box<dyn TraceRmiServiceListener>`, which a concrete `TraceRmiService`/`Plugin` implementor
+/// (e.g. `TraceRmiPlugin`) must be able to store in a field while itself remaining `Send + Sync`
+/// (required transitively through `Plugin: ... + ServiceListener` and `ServiceListener: Send +
+/// Sync`). Every implementor in this crate is already trivially `Send + Sync`.
+pub trait TraceRmiServiceListener: Send + Sync {
     /// The server has been started on the given address.
     fn server_started(&self, _address: SocketAddr) {}
 
