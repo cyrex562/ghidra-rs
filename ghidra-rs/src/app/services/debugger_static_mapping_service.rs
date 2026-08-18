@@ -34,12 +34,13 @@
 //! (the latter an output parameter of [`open_mapped_programs_in_view`](DebuggerStaticMappingService::open_mapped_programs_in_view))
 //! become `Vec`/`&mut Vec` for the same reason.
 //!
-//! `TraceLocation`, `TraceConflictedMappingException`, `SectionMapEntry`, `RegionMapEntry`,
-//! `SectionMapProposal`, and `RegionMapProposal` are not yet ported, so they are represented by
+//! `TraceLocation`, `TraceConflictedMappingException`, `SectionMapEntry`,
+//! `SectionMapProposal` are not yet ported, so they are represented by
 //! placeholder traits in [`crate::app::seam_stubs`]. See `STUBS.tsv` for provenance. `MapEntry`,
-//! `ModuleMapEntry`, and `ModuleMapProposal` have real ports at
-//! [`crate::debug::api::modules::MapEntry`], [`crate::debug::api::modules::ModuleMapEntry`], and
-//! [`crate::debug::api::modules::ModuleMapProposal`]. `TraceModule`, `TraceMemoryRegion`, and
+//! `ModuleMapEntry`, `ModuleMapProposal`, `RegionMapEntry` have real ports at
+//! [`crate::debug::api::modules::MapEntry`], [`crate::debug::api::modules::ModuleMapEntry`],
+//! [`crate::debug::api::modules::ModuleMapProposal`], and
+//! [`crate::debug::api::modules::RegionMapEntry`]. `TraceModule`, `TraceMemoryRegion`, and
 //! `TraceSection` have real ports at
 //! [`crate::trace::model::modules::trace_module::TraceModule`],
 //! [`crate::trace::model::memory::trace_memory_region::TraceMemoryRegion`], and
@@ -49,7 +50,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::app::seam_stubs::{
-    RegionMapEntry, RegionMapProposal, SectionMapEntry, SectionMapProposal,
+    SectionMapEntry, SectionMapProposal,
 };
 use crate::trace::model::trace_location::TraceLocation;
 use crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException;
@@ -57,7 +58,7 @@ use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::modules::trace_section::TraceSection;
 use crate::debug::api::modules::{
     DebuggerAddressTranslator, DebuggerStaticMappingChangeListener, MapEntry, MapProposal,
-    ModuleMapEntry, ModuleMapProposal,
+    ModuleMapEntry, ModuleMapProposal, RegionMapEntry,
 };
 use crate::framework::model::DomainFile;
 use crate::program::model::address::{Address, AddressSetView, AddressSpace};
@@ -343,7 +344,7 @@ pub trait DebuggerStaticMappingService: DebuggerAddressTranslator {
         snap: i64,
         program: &dyn Program,
         block: &dyn MemoryBlock,
-    ) -> Box<dyn RegionMapProposal>;
+    ) -> Box<dyn MapProposal>;
 
     /// Propose a region map for the given regions to the given program.
     ///
@@ -357,7 +358,7 @@ pub trait DebuggerStaticMappingService: DebuggerAddressTranslator {
         regions: &[&dyn TraceMemoryRegion],
         snap: i64,
         program: &dyn Program,
-    ) -> Box<dyn RegionMapProposal>;
+    ) -> Box<dyn MapProposal>;
 
     /// Propose the best-scored maps of trace regions to program memory blocks for each given
     /// "module" given a collection of proposed programs.
@@ -373,7 +374,7 @@ pub trait DebuggerStaticMappingService: DebuggerAddressTranslator {
         regions: &[&dyn TraceMemoryRegion],
         snap: i64,
         programs: &[&dyn Program],
-    ) -> Vec<(Vec<Box<dyn TraceMemoryRegion>>, Box<dyn RegionMapProposal>)>;
+    ) -> Vec<(Vec<Box<dyn TraceMemoryRegion>>, Box<dyn MapProposal>)>;
 }
 
 #[cfg(test)]
@@ -540,7 +541,55 @@ mod tests {
     impl SectionMapEntry for MockSectionMapEntry {}
 
     struct MockRegionMapEntry;
-    impl RegionMapEntry for MockRegionMapEntry {}
+    impl MapEntry for MockRegionMapEntry {
+        fn get_from_trace(&self) -> &dyn Trace {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_object(&self) -> Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_range(&self) -> &crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_lifespan(&self) -> crate::trace::model::lifespan::Lifespan {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_trace_location(&self) -> Box<dyn TraceLocation> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_program(&self) -> &dyn Program {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_object(&self) -> Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_range(&self) -> &crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_program_location(&self) -> &dyn crate::program::util::ProgramLocation {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_mapping_length(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl RegionMapEntry for MockRegionMapEntry {
+        fn get_region(&self) -> Box<dyn TraceMemoryRegion> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_region_name(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_region_min_address(&self) -> crate::program::model::address::Address {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_block(&self) -> std::sync::Arc<dyn MemoryBlock> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_block(&mut self, _program: std::sync::Arc<dyn Program>, _block: std::sync::Arc<dyn MemoryBlock>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockModuleMapProposal;
     impl MapProposal for MockModuleMapProposal {
@@ -569,8 +618,24 @@ mod tests {
     struct MockSectionMapProposal;
     impl SectionMapProposal for MockSectionMapProposal {}
 
-    struct MockRegionMapProposal;
-    impl RegionMapProposal for MockRegionMapProposal {}
+    struct MockMapProposal;
+    impl MapProposal for MockMapProposal {
+        fn get_trace(&self) -> &dyn Trace {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_program(&self) -> &dyn Program {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_object(&self, _from: &dyn std::any::Any) -> Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn compute_score(&self) -> f64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn compute_map(&self) -> Vec<(Box<dyn std::any::Any>, Box<dyn MapEntry>)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockTraceModule;
     impl crate::trace::model::trace_unique_object::TraceUniqueObject for MockTraceModule {
@@ -1452,8 +1517,8 @@ mod tests {
             _snap: i64,
             _program: &dyn Program,
             _block: &dyn MemoryBlock,
-        ) -> Box<dyn RegionMapProposal> {
-            Box::new(MockRegionMapProposal)
+        ) -> Box<dyn MapProposal> {
+            Box::new(MockMapProposal)
         }
 
         fn propose_region_map_for_regions(
@@ -1461,8 +1526,8 @@ mod tests {
             _regions: &[&dyn TraceMemoryRegion],
             _snap: i64,
             _program: &dyn Program,
-        ) -> Box<dyn RegionMapProposal> {
-            Box::new(MockRegionMapProposal)
+        ) -> Box<dyn MapProposal> {
+            Box::new(MockMapProposal)
         }
 
         fn propose_region_maps(
@@ -1470,13 +1535,13 @@ mod tests {
             regions: &[&dyn TraceMemoryRegion],
             _snap: i64,
             _programs: &[&dyn Program],
-        ) -> Vec<(Vec<Box<dyn TraceMemoryRegion>>, Box<dyn RegionMapProposal>)> {
+        ) -> Vec<(Vec<Box<dyn TraceMemoryRegion>>, Box<dyn MapProposal>)> {
             if regions.is_empty() {
                 Vec::new()
             } else {
                 vec![(
                     vec![Box::new(MockTraceMemoryRegion) as Box<dyn TraceMemoryRegion>],
-                    Box::new(MockRegionMapProposal) as Box<dyn RegionMapProposal>,
+                    Box::new(MockMapProposal) as Box<dyn MapProposal>,
                 )]
             }
         }
