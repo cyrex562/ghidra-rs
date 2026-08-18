@@ -56,7 +56,7 @@ DONE	trait	0	15	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/
 DONE	trait	1	7	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/fbpk/FBPK.java
 DONE	trait	0	15	2	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/fbpk/FBPK_Constants.java
 DONE	trait	3	2	6	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/BookmarksSarifMgr.java
-TODO	trait	3	3	9	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/CodeSarifMgr.java
+DONE	trait	3	3	9	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/CodeSarifMgr.java
 TODO	trait	3	4	37	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/CommentsSarifMgr.java
 TODO	trait	6	8	13	program	Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDataTypeWriter.java
 TODO	trait	3	2	17	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/DataTypesSarifMgr.java
