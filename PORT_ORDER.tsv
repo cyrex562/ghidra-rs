@@ -50,7 +50,7 @@ DONE	trait	0	16	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/viewer/
 DONE	trait	1	15	2	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/ByteBlockSet.java
 DONE	trait	1	16	1	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/format/TooltipDataFormatModel.java
 DONE	trait	0	16	57	app	Ghidra/Features/ByteViewer/src/main/java/ghidra/app/plugin/core/byteviewer/ProgramByteBlockSet.java
-TODO	trait	0	15	43	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOffer.java
+DONE	trait	0	15	43	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/mapping/DebuggerPlatformOffer.java
 TODO	trait	1	13	48	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwindWarning.java
 TODO	trait	0	15	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/datamgr/archive/DomainFileArchive.java
 TODO	trait	1	7	1	file	Ghidra/Features/FileFormats/src/main/java/ghidra/file/formats/android/fbpk/FBPK.java
