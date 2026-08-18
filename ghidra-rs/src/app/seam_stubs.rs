@@ -5102,3 +5102,35 @@ impl crate::app::plugin::core::format::ByteBlock for MemoryByteBlock {
     }
 }
 
+/// Placeholder for `ghidra.program.model.pcode.PcodeOpAST`, referenced by
+/// [`StackUnwindWarning`](crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning)
+/// before the real class is ported. Java's version is a concrete subclass of `PcodeOp` (not an
+/// interface) that adds basic-block/iterator linkage for a decompiled `HighFunction`'s AST; the
+/// warnings that carry one only ever embed its `toString()` text in a message, so this wraps the
+/// already-ported base [`PcodeOp`](crate::program::model::pcode::PcodeOp) data (which already
+/// implements `Display`) rather than modeling the AST linkage.
+#[derive(Debug, Clone)]
+pub struct PcodeOpAst(pub crate::program::model::pcode::PcodeOp);
+
+impl fmt::Display for PcodeOpAst {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Placeholder for `ghidra.program.model.pcode.VarnodeAST`, referenced by
+/// [`StackUnwindWarning`](crate::app::plugin::core::debug::stack::stack_unwind_warning::StackUnwindWarning)
+/// before the real class is ported. Java's version is a concrete subclass of `Varnode` (not an
+/// interface) that adds def/descendant graph linkage; the warning that carries one only ever
+/// embeds its `toString()` text in a message, so this wraps the already-ported base
+/// [`Varnode`](crate::program::model::pcode::Varnode) data (which already implements `Display`)
+/// rather than modeling the graph linkage.
+#[derive(Debug, Clone)]
+pub struct VarnodeAst(pub crate::program::model::pcode::Varnode);
+
+impl fmt::Display for VarnodeAst {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
