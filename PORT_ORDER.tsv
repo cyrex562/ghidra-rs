@@ -23,7 +23,7 @@ DONE	trait	2	8	2	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature
 DONE	trait	0	19	68	feature	Ghidra/Features/FunctionID/src/main/java/ghidra/feature/fid/service/FidService.java
 DONE	trait	0	18	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ListingMergeConstants.java
 DONE	trait	0	18	76	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/core/analysis/AutoAnalysisPlugin.java
-TODO	trait	3	16	4	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/layout/LayoutProviderExtensionPoint.java
+DONE	trait	3	16	4	graph	Ghidra/Framework/Graph/src/main/java/ghidra/graph/viewer/layout/LayoutProviderExtensionPoint.java
 TODO	trait	0	18	12	app	Ghidra/Features/FunctionGraph/src/main/java/ghidra/app/plugin/core/functiongraph/mvc/FunctionGraphRunnable.java
 TODO	trait	0	18	5	util	Ghidra/Framework/Generic/src/main/java/ghidra/util/worker/Worker.java
 TODO	trait	0	17	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/tablechooser/TableChooserExecutor.java
