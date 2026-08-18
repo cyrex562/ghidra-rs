@@ -1168,3 +1168,5 @@ ts	stub_class	referenced_by
 2026-08-18T04:38:31.664091+00:00	FunctionGraphFactory	FunctionGraphRunnable
 2026-08-18T04:38:31.666800+00:00	FGModel	FunctionGraphRunnable
 2026-08-18T04:38:31.669526+00:00	IsolatedEntrySubModel	FunctionGraphRunnable
+2026-08-18T05:04:05.742019+00:00	MarkerLocation	MarkerClickedListener
+2026-08-18T05:04:05.742019+00:00	MarkerSet	MarkerClickedListener
