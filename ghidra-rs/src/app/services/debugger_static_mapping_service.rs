@@ -34,11 +34,13 @@
 //! (the latter an output parameter of [`open_mapped_programs_in_view`](DebuggerStaticMappingService::open_mapped_programs_in_view))
 //! become `Vec`/`&mut Vec` for the same reason.
 //!
-//! `TraceLocation`, `TraceConflictedMappingException`, `MapEntry`, `ModuleMapEntry`,
-//! `SectionMapEntry`, `RegionMapEntry`, `ModuleMapProposal`, `SectionMapProposal`, and
-//! `RegionMapProposal` are not yet ported, so they are represented by placeholder traits in
-//! [`crate::app::seam_stubs`]. See `STUBS.tsv` for provenance. `TraceModule`, `TraceMemoryRegion`,
-//! and `TraceSection` have real ports at
+//! `TraceLocation`, `TraceConflictedMappingException`, `SectionMapEntry`, `RegionMapEntry`,
+//! `SectionMapProposal`, and `RegionMapProposal` are not yet ported, so they are represented by
+//! placeholder traits in [`crate::app::seam_stubs`]. See `STUBS.tsv` for provenance. `MapEntry`,
+//! `ModuleMapEntry`, and `ModuleMapProposal` have real ports at
+//! [`crate::debug::api::modules::MapEntry`], [`crate::debug::api::modules::ModuleMapEntry`], and
+//! [`crate::debug::api::modules::ModuleMapProposal`]. `TraceModule`, `TraceMemoryRegion`, and
+//! `TraceSection` have real ports at
 //! [`crate::trace::model::modules::trace_module::TraceModule`],
 //! [`crate::trace::model::memory::trace_memory_region::TraceMemoryRegion`], and
 //! [`crate::trace::model::modules::trace_section::TraceSection`], respectively.
@@ -47,14 +49,16 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::app::seam_stubs::{
-    ModuleMapEntry, ModuleMapProposal, RegionMapEntry, RegionMapProposal, SectionMapEntry,
-    SectionMapProposal,
+    RegionMapEntry, RegionMapProposal, SectionMapEntry, SectionMapProposal,
 };
 use crate::trace::model::trace_location::TraceLocation;
 use crate::trace::model::modules::trace_conflicted_mapping_exception::TraceConflictedMappingException;
 use crate::trace::model::modules::trace_module::TraceModule;
 use crate::trace::model::modules::trace_section::TraceSection;
-use crate::debug::api::modules::{DebuggerAddressTranslator, DebuggerStaticMappingChangeListener, MapEntry};
+use crate::debug::api::modules::{
+    DebuggerAddressTranslator, DebuggerStaticMappingChangeListener, MapEntry, MapProposal,
+    ModuleMapEntry, ModuleMapProposal,
+};
 use crate::framework::model::DomainFile;
 use crate::program::model::address::{Address, AddressSetView, AddressSpace};
 use crate::program::model::listing::Program;
@@ -479,7 +483,58 @@ mod tests {
     }
 
     struct MockModuleMapEntry;
-    impl ModuleMapEntry for MockModuleMapEntry {}
+    impl MapEntry for MockModuleMapEntry {
+        fn get_from_trace(&self) -> &dyn Trace {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_object(&self) -> std::boxed::Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_range(&self) -> &crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_lifespan(&self) -> crate::trace::model::lifespan::Lifespan {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_from_trace_location(&self) -> std::boxed::Box<dyn crate::trace::model::trace_location::TraceLocation> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_program(&self) -> &dyn crate::program::model::listing::Program {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_object(&self) -> std::boxed::Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_range(&self) -> &crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_program_location(&self) -> &dyn crate::program::util::ProgramLocation {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_mapping_length(&self) -> i64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl ModuleMapEntry for MockModuleMapEntry {
+        fn get_module(&self) -> Box<dyn TraceModule> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_module_name(&self) -> String {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_module_range(&self) -> crate::program::model::address::AddressRange {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_program(&mut self, _program: std::sync::Arc<dyn Program>) {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn is_memorize(&self) -> bool {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn set_memorize(&mut self, _memorize: bool) {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockSectionMapEntry;
     impl SectionMapEntry for MockSectionMapEntry {}
@@ -488,7 +543,28 @@ mod tests {
     impl RegionMapEntry for MockRegionMapEntry {}
 
     struct MockModuleMapProposal;
-    impl ModuleMapProposal for MockModuleMapProposal {}
+    impl MapProposal for MockModuleMapProposal {
+        fn get_trace(&self) -> &dyn Trace {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_program(&self) -> &dyn Program {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn get_to_object(&self, _from: &dyn std::any::Any) -> std::boxed::Box<dyn std::any::Any> {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn compute_score(&self) -> f64 {
+            unimplemented!("not exercised by this smoke test")
+        }
+        fn compute_map(&self) -> Vec<(std::boxed::Box<dyn std::any::Any>, std::boxed::Box<dyn MapEntry>)> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
+    impl ModuleMapProposal for MockModuleMapProposal {
+        fn get_module(&self) -> Box<dyn TraceModule> {
+            unimplemented!("not exercised by this smoke test")
+        }
+    }
 
     struct MockSectionMapProposal;
     impl SectionMapProposal for MockSectionMapProposal {}

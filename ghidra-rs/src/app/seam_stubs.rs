@@ -487,12 +487,6 @@ pub trait RunResult: Send {
 /// this is too).
 pub trait GoToOverrideService: Send + Sync {}
 
-/// Placeholder for `ghidra.debug.api.modules.ModuleMapProposal.ModuleMapEntry`, referenced by
-/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
-/// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
-/// as a parameter, so no members are needed yet.
-pub trait ModuleMapEntry {}
-
 /// Placeholder for `ghidra.debug.api.modules.SectionMapProposal.SectionMapEntry`, referenced by
 /// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
 /// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
@@ -504,12 +498,6 @@ pub trait SectionMapEntry {}
 /// the real class is ported. `DebuggerStaticMappingService` only ever passes this type through
 /// as a parameter, so no members are needed yet.
 pub trait RegionMapEntry {}
-
-/// Placeholder for `ghidra.debug.api.modules.ModuleMapProposal`, referenced by
-/// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
-/// the real class is ported. `DebuggerStaticMappingService` only ever returns this type, so no
-/// members are needed yet.
-pub trait ModuleMapProposal {}
 
 /// Placeholder for `ghidra.debug.api.modules.SectionMapProposal`, referenced by
 /// [`DebuggerStaticMappingService`](crate::app::services::DebuggerStaticMappingService) before
