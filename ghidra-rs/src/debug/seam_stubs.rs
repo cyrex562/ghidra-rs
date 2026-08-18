@@ -3,6 +3,7 @@
 //! interface(s) that currently reference it, and is expected to be replaced (or grown into a
 //! supertrait of) the real port once that Java class is ported. See `STUBS.tsv` for provenance.
 
+use crate::program::model::address::AddressRange;
 use crate::program::model::listing::Program;
 use crate::trace::model::trace::Trace;
 
@@ -13,11 +14,46 @@ use crate::trace::model::trace::Trace;
 pub trait LocationTrackingSpec {}
 
 /// Placeholder for `ghidra.debug.api.modules.MappedAddressRange`, referenced by
-/// [`DebuggerAddressTranslator`](crate::debug::api::modules::DebuggerAddressTranslator) before the
-/// real class is ported. In Java this is a concrete class (not an interface), so it becomes a
-/// concrete struct here rather than a trait; `DebuggerAddressTranslator` only ever passes it
-/// through as a collection element in return values, so no members are needed yet.
-pub struct MappedAddressRange;
+/// [`DebuggerAddressTranslator`](crate::debug::api::modules::DebuggerAddressTranslator) and
+/// [`InfoPerProgram`](crate::app::plugin::core::debug::service::modules::InfoPerProgram) before
+/// the real class is ported. In Java this is a concrete class (not an interface), so it becomes a
+/// concrete struct here rather than a trait. `DebuggerAddressTranslator`'s mock implementations
+/// only ever pass this through as an empty collection element, but `InfoPerProgram` constructs
+/// real instances, so the source/destination range fields (and the `shift` they imply) are
+/// modeled, mirroring the real Java fields.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct MappedAddressRange {
+    source_range: AddressRange,
+    destination_range: AddressRange,
+    shift: i64,
+}
+
+impl MappedAddressRange {
+    /// Port of `MappedAddressRange(AddressRange srcRange, AddressRange dstRange)`.
+    pub fn new(source_range: AddressRange, destination_range: AddressRange) -> Self {
+        let shift = destination_range.min_address().offset() - source_range.min_address().offset();
+        Self {
+            source_range,
+            destination_range,
+            shift,
+        }
+    }
+
+    /// Port of `MappedAddressRange.getSourceAddressRange()`.
+    pub fn source_address_range(&self) -> &AddressRange {
+        &self.source_range
+    }
+
+    /// Port of `MappedAddressRange.getDestinationAddressRange()`.
+    pub fn destination_address_range(&self) -> &AddressRange {
+        &self.destination_range
+    }
+
+    /// Port of `MappedAddressRange.getShift()`.
+    pub fn shift(&self) -> i64 {
+        self.shift
+    }
+}
 
 /// Placeholder for `LogicalBreakpoint.Mode`, the mode of a logical breakpoint's trace locations.
 ///

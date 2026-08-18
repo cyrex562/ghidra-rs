@@ -13,14 +13,17 @@ use crate::program::model::data::array::Array;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::typedef::TypeDef;
+use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::listing::Program;
 use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::LanguageCompilerSpecPair;
 use crate::program::util::program_location::ProgramLocation;
+use crate::trace::model::default_trace_span::DefaultTraceSpan;
 use crate::trace::model::stack::trace_stack_frame::TraceStackFrame;
 use crate::trace::model::target::path::KeyPath;
 use crate::trace::model::thread::TraceThread;
 use crate::trace::model::trace::Trace;
+use crate::trace::model::trace_location::TraceLocation;
 use crate::util::task::TaskMonitor;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 use crate::util::seam_stubs::ResourceFile;
@@ -29,7 +32,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::any::Any;
 use std::option::Option as StdOption;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
 /// [`EclipseIntegrationService`](crate::app::services::EclipseIntegrationService) and
@@ -4597,4 +4600,120 @@ impl NumericUtilities {
             .collect::<Vec<_>>()
             .join(delimiter)
     }
+}
+
+/// Placeholder for the inner class `ghidra.app.plugin.core.debug.service.modules.
+/// DebuggerStaticMappingContext.ChangeCollector`, referenced by
+/// [`InfoPerProgram`](crate::app::plugin::core::debug::service::modules::InfoPerProgram) before
+/// `DebuggerStaticMappingContext` is ported. In Java this is an `AutoCloseable` batch-change
+/// scope opened with `ctx.collectChanges()` and closed at the end of a `try`-with-resources
+/// block; `InfoPerProgram` only ever threads the collector through to other calls without
+/// invoking any member on it directly, so this stub carries no methods yet.
+pub trait ChangeCollector {}
+
+/// Placeholder for the unported Java type `ghidra.app.plugin.core.debug.service.modules.
+/// InfoPerTrace`, referenced by
+/// [`InfoPerProgram`](crate::app::plugin::core::debug::service::modules::InfoPerProgram).
+/// `InfoPerProgram` only calls the two package-private `*ForProgram` methods (via
+/// `DebuggerStaticMappingContext.traceInfoByTrace.values()`), so only those are modeled here.
+pub trait InfoPerTrace: Send + Sync {
+    /// Remove all trace-side mapping entries associated with `info`'s program.
+    fn clear_entries_for_program(
+        &mut self,
+        cc: &dyn ChangeCollector,
+        info: &crate::app::plugin::core::debug::service::modules::InfoPerProgram,
+    );
+
+    /// Add trace-side mapping entries associated with `info`'s program.
+    fn fill_entries_for_program(
+        &mut self,
+        cc: &dyn ChangeCollector,
+        info: &crate::app::plugin::core::debug::service::modules::InfoPerProgram,
+    );
+}
+
+/// Placeholder for the unported Java type `ghidra.app.plugin.core.debug.service.modules.
+/// MappingEntry`, referenced by
+/// [`InfoPerProgram`](crate::app::plugin::core::debug::service::modules::InfoPerProgram).
+///
+/// Java's `getStaticRange()`/`getStaticAddress()` return `null` until `fillProgram` has been
+/// called, so they are modeled as `Option` here. `getTraceSpan()` returns the concrete
+/// [`DefaultTraceSpan`] rather than the generic `TraceSpan` trait, since `TraceSpan`'s associated
+/// types make it non-object-safe (matching the convention already established by
+/// [`DebuggerAddressTranslator`](crate::debug::api::modules::DebuggerAddressTranslator)).
+/// `isInTraceRange`/`isInProgramRange` are overloaded in Java on `Address` vs. `AddressRange`;
+/// each overload gets a distinct Rust name. `clearProgram`/`fillProgram`/the `mapping.isDeleted()`
+/// field-chain are package-private members `InfoPerProgram` calls directly, so they are included
+/// even though they are not part of `MappingEntry`'s public surface.
+pub trait MappingEntry {
+    /// The trace this entry maps from.
+    fn get_trace(&self) -> Arc<dyn Trace>;
+
+    /// The static (program) address range this entry currently maps to, or `None` if no static
+    /// program is open for this entry.
+    fn get_static_range(&self) -> StdOption<AddressRange>;
+
+    /// The minimum address of [`get_static_range`](Self::get_static_range), or `None`.
+    fn get_static_address(&self) -> StdOption<Address>;
+
+    /// The (trace, lifespan) pairing this entry maps from.
+    fn get_trace_span(&self) -> DefaultTraceSpan;
+
+    /// True if `snap` falls within this entry's trace lifespan.
+    fn is_in_trace_lifespan(&self, snap: i64) -> bool;
+
+    /// True if `address` falls within this entry's static program range.
+    fn is_in_program_range(&self, address: &Address) -> bool;
+
+    /// True if `rng` intersects this entry's static program range.
+    fn is_in_program_range_for_range(&self, rng: &AddressRange) -> bool;
+
+    /// Map a static program address to the corresponding trace location.
+    fn map_program_address_to_trace_location(&self, address: &Address) -> Box<dyn TraceLocation>;
+
+    /// Map a static program address range to the corresponding trace address range.
+    fn map_program_range_to_trace(&self, rng: &AddressRange) -> AddressRange;
+
+    /// The Ghidra URL of the static program this entry's underlying trace mapping targets.
+    fn get_static_program_url(&self) -> StdOption<String>;
+
+    /// True if the underlying trace mapping record has been deleted.
+    fn is_mapping_deleted(&self) -> bool;
+
+    /// Detach this entry from `program` (clears the static range).
+    fn clear_program(&mut self, cc: &dyn ChangeCollector, program: &dyn Program);
+
+    /// Attach this entry to `program` (computes and stores the static range).
+    fn fill_program(&mut self, cc: &dyn ChangeCollector, program: &dyn Program);
+}
+
+/// Placeholder for the unported Java type `ghidra.app.plugin.core.debug.service.modules.
+/// DebuggerStaticMappingContext`, referenced by
+/// [`InfoPerProgram`](crate::app::plugin::core::debug::service::modules::InfoPerProgram).
+///
+/// The real class implements the already-ported
+/// [`DebuggerAddressTranslator`](crate::debug::api::modules::DebuggerAddressTranslator), but
+/// `InfoPerProgram` never calls through that interface -- it only reaches three package-private
+/// members (`collectChanges`, `processRemovedProgramInfo`, `processAddedProgram`) and the
+/// package-private `traceInfoByTrace` field (exposed here as [`trace_infos`](Self::trace_infos)),
+/// none of which are part of the public interface and so are missed by a public-surface scan. Only
+/// those are modeled here.
+pub trait DebuggerStaticMappingContext: Send + Sync {
+    /// Open a batch change-collection scope.
+    fn collect_changes(&self) -> Box<dyn ChangeCollector>;
+
+    /// Process the removal of `info`'s program from the mapping picture.
+    fn process_removed_program_info(
+        &self,
+        cc: &dyn ChangeCollector,
+        info: &crate::app::plugin::core::debug::service::modules::InfoPerProgram,
+    );
+
+    /// Process the addition of `program` to the mapping picture.
+    fn process_added_program(&self, cc: &dyn ChangeCollector, program: &dyn Program);
+
+    /// The per-trace mapping info tracked by this context, keyed by trace in Java
+    /// (`traceInfoByTrace`); returned here as a plain `Vec` of its values, individually lockable
+    /// since `InfoPerTrace`'s `*ForProgram` methods mutate.
+    fn trace_infos(&self) -> Vec<Arc<Mutex<dyn InfoPerTrace>>>;
 }
