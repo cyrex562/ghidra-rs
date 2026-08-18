@@ -3553,3 +3553,267 @@ pub trait FunctionsTable: Send + Sync {
     /// function record does not exist.
     fn modify_flags(&self, function_id: i64, flag_mask: i32, value: bool) -> std::io::Result<()>;
 }
+
+// ---------------------------------------------------------------------------
+// Placeholders for the `ghidra.feature.fid` types that
+// [`FidService`](crate::feature::fid::service::fid_service::FidService) reaches for before their
+// own ports land. See `STUBS.tsv` for provenance.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for the unported Java type `FidFileManager`, referenced by
+/// [`FidService`](crate::feature::fid::service::fid_service::FidService). Stubs only the two
+/// members `FidService` calls. Java's `FidFileManager.getInstance()` singleton accessor is
+/// deliberately absent: there is no file-manager state to hand out yet, so `FidService` takes the
+/// manager by injection until `FidFileManager.java` is ported.
+pub trait FidFileManager: Send + Sync {
+    /// Java: `FidFileManager.canQuery(Language)`, true when at least one active FID database can
+    /// process programs with the given language.
+    fn can_query(&self, language: &dyn crate::program::model::lang::language::Language) -> bool;
+
+    /// Java: `FidFileManager.openFidQueryService(Language, boolean)`, which opens every
+    /// applicable database and hands back the query service that owns them.
+    fn open_fid_query_service(
+        &self,
+        language: &dyn crate::program::model::lang::language::Language,
+        open_for_update: bool,
+    ) -> Result<crate::feature::fid::db::fid_query_service::FidQueryService, GetFidDbError>;
+}
+
+/// Placeholder for the unported Java type `FunctionBodyFunctionExtentGenerator`, the extent
+/// generator [`FidService`](crate::feature::fid::service::fid_service::FidService) installs by
+/// default. Real extent calculation needs the listing walk from
+/// `FunctionBodyFunctionExtentGenerator.java`; until that lands this yields no code units, which
+/// puts every function below the short-hash length threshold.
+pub struct FunctionBodyFunctionExtentGenerator;
+
+impl crate::feature::fid::hash::FunctionExtentGenerator for FunctionBodyFunctionExtentGenerator {
+    fn calculate_extent(
+        &self,
+        _func: &dyn crate::program::model::listing::Function,
+    ) -> Vec<Arc<dyn crate::program::model::listing::CodeUnit>> {
+        Vec::new()
+    }
+}
+
+/// Placeholder for the unported Java type `MessageDigestFidHasher`, the
+/// [`FidHasher`](crate::feature::fid::hash::FidHasher) that `FidService::get_hasher` builds. The
+/// constructor arguments Java passes are retained and readable, so callers can confirm how the
+/// service configured the hasher; the digesting itself lands with the port of
+/// `MessageDigestFidHasher.java`.
+pub struct MessageDigestFidHasher {
+    generator: Arc<dyn crate::feature::fid::hash::FunctionExtentGenerator + Send + Sync>,
+    code_unit_threshold: i8,
+    digest_factory: Arc<dyn crate::generic::hash::MessageDigestFactory + Send + Sync>,
+    skippers: Vec<Arc<dyn crate::util::search::instruction_skipper::InstructionSkipper + Send + Sync>>,
+}
+
+impl MessageDigestFidHasher {
+    /// Java: `new MessageDigestFidHasher(FunctionExtentGenerator, int, MessageDigestFactory,
+    /// List<InstructionSkipper>)`.
+    pub fn new(
+        generator: Arc<dyn crate::feature::fid::hash::FunctionExtentGenerator + Send + Sync>,
+        code_unit_threshold: i8,
+        digest_factory: Arc<dyn crate::generic::hash::MessageDigestFactory + Send + Sync>,
+        skippers: Vec<Arc<dyn crate::util::search::instruction_skipper::InstructionSkipper + Send + Sync>>,
+    ) -> Self {
+        Self { generator, code_unit_threshold, digest_factory, skippers }
+    }
+
+    /// The code unit count below which a function is too short to hash.
+    pub fn code_unit_threshold(&self) -> i8 {
+        self.code_unit_threshold
+    }
+
+    /// The instruction skippers this hasher was configured with, in the order supplied.
+    pub fn skippers(&self) -> &[Arc<dyn crate::util::search::instruction_skipper::InstructionSkipper + Send + Sync>] {
+        &self.skippers
+    }
+
+    /// The extent generator this hasher was configured with.
+    pub fn generator(
+        &self,
+    ) -> &Arc<dyn crate::feature::fid::hash::FunctionExtentGenerator + Send + Sync> {
+        &self.generator
+    }
+
+    /// The digest factory this hasher was configured with.
+    pub fn digest_factory(
+        &self,
+    ) -> &Arc<dyn crate::generic::hash::MessageDigestFactory + Send + Sync> {
+        &self.digest_factory
+    }
+}
+
+impl crate::feature::fid::hash::FidHasher for MessageDigestFidHasher {
+    fn hash(
+        &self,
+        _func: &dyn crate::program::model::listing::Function,
+    ) -> Result<
+        Option<Arc<dyn crate::feature::fid::hash::FidHashQuad>>,
+        crate::program::model::mem::MemoryAccessException,
+    > {
+        Ok(None)
+    }
+}
+
+/// Placeholder for the unported Java type `FidSearchResult`, the per-function result
+/// `FidProgramSeeker.search` produces. Java's `function`/`hashQuad`/`matches` fields arrive with
+/// the port of `FidSearchResult.java`.
+pub struct FidSearchResult;
+
+impl FidSearchResult {
+    /// Java: `FidSearchResult.filterBySymbolPrefix(String prefix)`, which drops matches whose
+    /// name does not start with the prefix.
+    pub fn filter_by_symbol_prefix(&mut self, _prefix: &str) {}
+}
+
+/// Placeholder for the unported Java type `FidProgramSeeker`, the search context
+/// `FidService::get_program_seeker` hands out. The configuration Java passes to the constructor
+/// is retained and readable; the hash search itself lands with the port of
+/// `FidProgramSeeker.java`.
+pub struct FidProgramSeeker {
+    program: Arc<dyn crate::program::model::listing::Program>,
+    hasher: Arc<dyn crate::feature::fid::hash::FidHasher>,
+    short_hash_code_unit_length: i8,
+    medium_hash_code_unit_length_limit: i8,
+    score_threshold: f32,
+}
+
+impl FidProgramSeeker {
+    /// Java: `new FidProgramSeeker(FidQueryService, Program, FidHasher, int, int, float)`, which
+    /// declares `VersionException`/`IOException` because it eagerly reads from the query service.
+    /// The query service is accepted but not retained until the real seeker lands.
+    pub fn new(
+        _fid_query_service: &crate::feature::fid::db::fid_query_service::FidQueryService,
+        program: Arc<dyn crate::program::model::listing::Program>,
+        hasher: Arc<dyn crate::feature::fid::hash::FidHasher>,
+        short_hash_code_unit_length: i8,
+        medium_hash_code_unit_length_limit: i8,
+        score_threshold: f32,
+    ) -> Result<Self, GetFidDbError> {
+        Ok(Self {
+            program,
+            hasher,
+            short_hash_code_unit_length,
+            medium_hash_code_unit_length_limit,
+            score_threshold,
+        })
+    }
+
+    /// The program this seeker searches.
+    pub fn program(&self) -> &Arc<dyn crate::program::model::listing::Program> {
+        &self.program
+    }
+
+    /// The hasher this seeker was configured with.
+    pub fn hasher(&self) -> &Arc<dyn crate::feature::fid::hash::FidHasher> {
+        &self.hasher
+    }
+
+    /// The short-hash length (in code units) this seeker was configured with.
+    pub fn short_hash_code_unit_length(&self) -> i8 {
+        self.short_hash_code_unit_length
+    }
+
+    /// The medium-hash length limit (in code units) this seeker was configured with.
+    pub fn medium_hash_code_unit_length_limit(&self) -> i8 {
+        self.medium_hash_code_unit_length_limit
+    }
+
+    /// The code unit score a match must meet to be reported.
+    pub fn score_threshold(&self) -> f32 {
+        self.score_threshold
+    }
+
+    /// Java: `FidProgramSeeker.search(TaskMonitor)`.
+    pub fn search(
+        &self,
+        _monitor: &dyn TaskMonitor,
+    ) -> Result<Vec<FidSearchResult>, CancelledException> {
+        Ok(Vec::new())
+    }
+}
+
+/// Placeholder for the unported Java type `FidPopulateResult`, the report
+/// `FidServiceLibraryIngest.create()` returns. Java's tallies and disposition maps arrive with
+/// the port of `FidPopulateResult.java`.
+pub struct FidPopulateResult;
+
+/// Placeholder for the unported Java type `FidServiceLibraryIngest`, which
+/// `FidService::create_new_library_from_programs` drives. The library coordinates Java passes to
+/// the constructor are retained; the ingest itself lands with the port of
+/// `FidServiceLibraryIngest.java`.
+pub struct FidServiceLibraryIngest {
+    library_family_name: String,
+    library_version: String,
+    library_variant: String,
+    language_id: Option<crate::program::model::lang::language_id::LanguageID>,
+    common_symbols: Vec<String>,
+}
+
+impl FidServiceLibraryIngest {
+    /// Java: `new FidServiceLibraryIngest(FidDB, FidService, String, String, String,
+    /// List<DomainFile>, Predicate<Pair<Function, FidHashQuad>>, LanguageID, List<LibraryRecord>,
+    /// TaskMonitor)`. Everything the real ingest would consume while walking the programs -- the
+    /// database, the service, the domain files, the function filter, the link libraries and the
+    /// monitor -- is accepted but not retained yet.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        _fid_db: &crate::feature::fid::db::fid_db::FidDB,
+        _service: &crate::feature::fid::service::fid_service::FidService,
+        library_family_name: &str,
+        library_version: &str,
+        library_variant: &str,
+        _program_domain_files: &[Arc<dyn crate::framework::model::DomainFile>],
+        _function_filter: &dyn Fn(
+            &dyn crate::program::model::listing::Function,
+            &dyn crate::feature::fid::hash::FidHashQuad,
+        ) -> bool,
+        language_id: Option<&crate::program::model::lang::language_id::LanguageID>,
+        _link_libraries: &[crate::feature::fid::db::library_record::LibraryRecord],
+        _monitor: &dyn TaskMonitor,
+    ) -> Self {
+        Self {
+            library_family_name: library_family_name.to_string(),
+            library_version: library_version.to_string(),
+            library_variant: library_variant.to_string(),
+            language_id: language_id.cloned(),
+            common_symbols: Vec::new(),
+        }
+    }
+
+    /// The library family name this ingest was configured with.
+    pub fn library_family_name(&self) -> &str {
+        &self.library_family_name
+    }
+
+    /// The library version this ingest was configured with.
+    pub fn library_version(&self) -> &str {
+        &self.library_version
+    }
+
+    /// The library variant this ingest was configured with.
+    pub fn library_variant(&self) -> &str {
+        &self.library_variant
+    }
+
+    /// The language id this ingest filters programs on, if any.
+    pub fn language_id(&self) -> Option<&crate::program::model::lang::language_id::LanguageID> {
+        self.language_id.as_ref()
+    }
+
+    /// The symbols marked as common, for which no relations are generated.
+    pub fn common_symbols(&self) -> &[String] {
+        &self.common_symbols
+    }
+
+    /// Java: `FidServiceLibraryIngest.markCommonChildReferences(List<String>)`.
+    pub fn mark_common_child_references(&mut self, symbols: &[String]) {
+        self.common_symbols = symbols.to_vec();
+    }
+
+    /// Java: `FidServiceLibraryIngest.create()`.
+    pub fn create(&mut self) -> std::io::Result<FidPopulateResult> {
+        Ok(FidPopulateResult)
+    }
+}
