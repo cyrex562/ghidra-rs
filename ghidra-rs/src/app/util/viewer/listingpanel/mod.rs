@@ -3,5 +3,6 @@ pub mod listing_background_color_model;
 pub mod listing_model;
 pub mod listing_model_listener;
 pub mod marker_clicked_listener;
+pub mod program_location_listener;
 pub mod string_selection_listener;
 pub mod vertical_pixel_address_map;
