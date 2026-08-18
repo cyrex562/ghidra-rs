@@ -118,3 +118,33 @@ pub trait VisualGraphLayout: Send + Sync {
     fn get_edge_label_renderer(&self) -> Box<dyn std::any::Any>;
     fn dispose(&self);
 }
+
+/// Placeholder for the unported Java type `VisualVertex`, referenced by `LayoutProviderExtensionPoint`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle where LayoutProviderExtensionPoint
+/// references VisualVertex. Replace with the real port when available.
+pub trait VisualVertex: Send + Sync {
+    fn get_component(&self) -> Box<dyn std::any::Any>;
+    fn set_focused(&self, focused: bool);
+    fn is_focused(&self) -> bool;
+    fn set_selected(&self, selected: bool);
+    fn is_selected(&self) -> bool;
+    fn set_hovered(&self, hovered: bool);
+    fn is_hovered(&self) -> bool;
+    fn set_location(&self, p: &dyn std::any::Any);
+    fn get_location(&self) -> Box<dyn std::any::Any>;
+    fn is_grabbable(&self, c: &dyn std::any::Any) -> bool;
+    fn dispose(&self);
+    fn set_emphasis(&self, emphasis_level: f64);
+    fn get_emphasis(&self) -> f64;
+    fn set_alpha(&self, alpha: f64);
+    fn get_alpha(&self) -> f64;
+}
+
+/// Placeholder for the unported Java type `LayoutProvider`, referenced by `LayoutProviderExtensionPoint`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle. Replace with the real port when available.
+pub trait LayoutProvider<V: VisualVertex + ?Sized, E: VisualEdge + ?Sized, G: VisualGraph + ?Sized>: Send + Sync {
+    fn get_layout(&self, graph: &G, monitor: &dyn TaskMonitor) -> Result<Box<dyn VisualGraphLayout>, std::io::Error>;
+    fn get_layout_name(&self) -> String;
+    fn get_action_icon(&self) -> Option<Box<dyn std::any::Any>>;
+    fn get_priority_level(&self) -> i32;
+}
