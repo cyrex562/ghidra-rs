@@ -1133,3 +1133,5 @@ ts	stub_class	referenced_by
 2026-08-17T22:02:00.000000+00:00	TaintOptions	TaintState
 2026-08-17T22:02:00.000000+00:00	TaintQueryResult	TaintState
 2026-08-17T22:02:00.000000+00:00	ClassSearcher	TaintState
+2026-08-18T02:22:50.872448+00:00	FSBFileHandlerContext	FSBFileHandler
+2026-08-18T02:22:50.872715+00:00	FSBFileNode	FSBFileHandler
