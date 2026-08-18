@@ -4,8 +4,12 @@
 /// `AutoAnalysisManager`) so the trait can be defined without requiring that
 /// type to already exist in the module tree.
 ///
+/// `Manager` is `?Sized` so a listener can also be written against the manager *interface*
+/// (`AutoAnalysisManagerListener<dyn AutoAnalysisManager>`), which is what
+/// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin) does.
+///
 /// Maps to `ghidra.app.plugin.core.analysis.AutoAnalysisManagerListener`.
-pub trait AutoAnalysisManagerListener<Manager> {
+pub trait AutoAnalysisManagerListener<Manager: ?Sized> {
     /// Called after an auto-analysis session finishes.
     ///
     /// `manager` is the manager that coordinated the analysis session.
