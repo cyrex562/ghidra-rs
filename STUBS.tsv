@@ -1190,3 +1190,4 @@ ts	stub_class	referenced_by
 2026-08-18T08:52:00Z	MemoryByteBlock	ProgramByteBlockSet
 2026-08-18T09:13:06Z	PcodeOpAst	StackUnwindWarning
 2026-08-18T09:13:06Z	VarnodeAst	StackUnwindWarning
+2026-08-18T09:22:39Z	FBPK_Partition	FBPK

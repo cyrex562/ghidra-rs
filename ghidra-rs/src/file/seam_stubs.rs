@@ -28,6 +28,7 @@ use crate::format::macho::commands::chained::dyld_chained_fixups_command::DyldCh
 use crate::format::macho::dyld::dyld_cache_image::DyldCacheImage;
 use crate::format::macho::dyld::dyld_fixup::DyldFixup;
 use crate::format::macho::mach_exception::MachException;
+use crate::format::seam_stubs::Program;
 use crate::util::exception::CancelledException;
 use crate::util::task::TaskMonitor;
 
@@ -1997,4 +1998,27 @@ impl OatMethodOffsets {
     pub fn to_data_type(&self) -> std::io::Result<Box<dyn DataType>> {
         unimplemented!("OatMethodOffsets.to_data_type not yet ported")
     }
+}
+
+/// Placeholder for the unported Java class
+/// `ghidra.file.formats.android.fbpk.FBPK_Partition`, referenced by `FBPK`.
+///
+/// Concrete stub: Java class, not interface. Only methods THIS type needs are included.
+/// Replace with the real port when available.
+pub trait FBPK_Partition: Send + Sync {
+    fn get_header_size(&self) -> i32;
+    fn get_type(&self) -> i32;
+    fn get_name(&self) -> String;
+    fn get_data_start_offset(&self) -> i64;
+    fn get_data_size(&self) -> i32;
+    fn is_file(&self) -> bool;
+    fn get_offset_to_next_partition_table(&self) -> i32;
+    fn get_partition_index(&self) -> i32;
+    fn markup(
+        &self,
+        program: &dyn Program,
+        address: &crate::program::model::address::Address,
+        monitor: &dyn TaskMonitor,
+        log: &dyn crate::format::seam_stubs::MessageLog,
+    ) -> std::io::Result<()>;
 }
