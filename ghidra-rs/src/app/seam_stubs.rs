@@ -4188,3 +4188,39 @@ impl FGView {
         *self.perspective.borrow()
     }
 }
+
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.mvc.FGData`, referenced by
+/// [`FGControllerListener`](crate::app::plugin::core::functiongraph::mvc::FGControllerListener)
+/// before the real class is ported.
+///
+/// `FGData` is a concrete Java class, not an interface. However, it is used by the listener
+/// only through method calls, so a trait placeholder is appropriate. Implementors of
+/// `FGControllerListener` receive `FGData` through the `data_changed` callback.
+pub trait FGData: Send + Sync {
+    /// Port of `FGData.getFunctionGraph()`.
+    fn get_function_graph(&self) -> Box<dyn FunctionGraph>;
+
+    /// Port of `FGData.hasResults()`.
+    fn has_results(&self) -> bool;
+
+    /// Port of `FGData.getMessage()`.
+    fn get_message(&self) -> String;
+
+    /// Port of `FGData.containsLocation(ProgramLocation)`.
+    fn contains_location(&self, location: &dyn ProgramLocation) -> bool;
+
+    /// Port of `FGData.containsSelection(ProgramSelection)`.
+    fn contains_selection(&self, selection: &dyn ProgramSelection) -> bool;
+
+    /// Port of `FGData.getFunction()`.
+    fn get_function(&self) -> Box<dyn crate::program::model::listing::Function>;
+
+    /// Port of `FGData.getOptions()`.
+    fn get_options(&self) -> &FunctionGraphOptions;
+
+    /// Port of `FGData.dispose()`.
+    fn dispose(&self);
+
+    /// Port of `FGData.toString()`.
+    fn to_string(&self) -> String;
+}
