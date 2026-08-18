@@ -4012,6 +4012,30 @@ pub trait FunctionGraph: Send + Sync {
     fn empty_copy(&self) -> Box<dyn std::any::Any>;
 }
 
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.FGColorProvider`, referenced by
+/// [`FgEnv`](crate::app::plugin::core::functiongraph::mvc::fg_env::FgEnv) before the real
+/// interface is ported. `FgEnv` only ever passes this type through opaquely, so no members are
+/// needed yet. Genuine open extension point (two implementors, `IndependentColorProvider` and
+/// `ToolBasedColorProvider`), so this stays a `dyn`-dispatched trait.
+pub trait FGColorProvider: Send + Sync {}
+
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.graph.layout.FGLayoutProvider`,
+/// referenced by [`FgEnv`](crate::app::plugin::core::functiongraph::mvc::fg_env::FgEnv) before
+/// the real class is ported. Java's version is a concrete (abstract) class rather than an
+/// interface, so this is a plain struct rather than a `dyn`-dispatched trait, matching
+/// [`DockingAction`]'s convention. `FgEnv` only ever passes this type through as a return value,
+/// so no fields are needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FGLayoutProvider;
+
+/// Placeholder for `ghidra.app.plugin.core.functiongraph.mvc.FunctionGraphOptions`, referenced by
+/// [`FgEnv`](crate::app::plugin::core::functiongraph::mvc::fg_env::FgEnv) before the real class is
+/// ported. Java's version is a concrete class (not an interface), so this is a plain struct rather
+/// than a `dyn`-dispatched trait, matching [`DockingAction`]'s convention. `FgEnv` only ever
+/// passes this type through as a return value, so no fields are needed yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FunctionGraphOptions;
+
 /// Placeholder for the unported Java type `FGLayout`, referenced by `FunctionGraph`.
 /// Forward reference stub to break the dependency cycle between FGLayout and FunctionGraph.
 pub trait FGLayout: Send + Sync {}

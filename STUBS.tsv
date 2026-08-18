@@ -1138,3 +1138,6 @@ ts	stub_class	referenced_by
 2026-08-18T02:36:25.567503+00:00	FunctionGraph	FGLayout
 2026-08-18T02:36:25.567804+00:00	VisualGraph	FGLayout
 2026-08-18T02:36:25.568105+00:00	VisualGraphLayout	FGLayout
+2026-08-18T02:44:12.429135+00:00	FGColorProvider	FgEnv
+2026-08-18T02:44:12.431141+00:00	FGLayoutProvider	FgEnv
+2026-08-18T02:44:12.431682+00:00	FunctionGraphOptions	FgEnv
