@@ -148,3 +148,37 @@ pub trait LayoutProvider<V: VisualVertex + ?Sized, E: VisualEdge + ?Sized, G: Vi
     fn get_action_icon(&self) -> Option<Box<dyn std::any::Any>>;
     fn get_priority_level(&self) -> i32;
 }
+
+/// Placeholder for the unported Java type `FcgVertex`, referenced by `FcgVertexExpansionListener`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait FcgVertex: Send + Sync {
+    fn clone_vertex(&self, new_listener: &dyn std::any::Any) -> Box<dyn FcgVertex>;
+    fn get_function(&self) -> Box<dyn std::any::Any>;
+    fn get_address(&self) -> Box<dyn std::any::Any>;
+    fn get_options(&self) -> Box<dyn std::any::Any>;
+    fn get_level(&self) -> Box<dyn std::any::Any>;
+    fn get_degree(&self) -> i32;
+    fn get_direction(&self) -> Box<dyn std::any::Any>;
+    fn set_hovered(&self, hovered: bool);
+    fn get_incoming_toggle_button(&self) -> Box<dyn std::any::Any>;
+    fn get_outgoing_toggle_button(&self) -> Box<dyn std::any::Any>;
+    fn set_has_incoming_references(&self, has_incoming: bool);
+    fn set_has_outgoing_references(&self, has_outgoing: bool);
+    fn set_too_many_incoming_references(&self, too_many: bool);
+    fn set_too_many_outgoing_references(&self, too_many: bool);
+    fn has_too_many_incoming_references(&self) -> bool;
+    fn has_too_many_outgoing_references(&self) -> bool;
+    fn is_incoming_expanded(&self) -> bool;
+    fn is_outgoing_expanded(&self) -> bool;
+    fn is_expanded(&self) -> bool;
+    fn can_expand(&self) -> bool;
+    fn can_expand_incoming_references(&self) -> bool;
+    fn can_expand_outgoing_references(&self) -> bool;
+    fn set_incoming_expanded(&self, set_expanded: bool);
+    fn set_outgoing_expanded(&self, set_expanded: bool);
+    fn to_string(&self) -> String;
+    fn hash_code(&self) -> i32;
+    fn equals(&self, obj: &dyn std::any::Any) -> bool;
+    fn dispose(&self);
+}

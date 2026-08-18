@@ -3,6 +3,7 @@ pub mod data;
 pub mod deg_shared_config;
 pub mod event;
 pub mod fcg_direction;
+pub mod fcg_vertex_expansion_listener;
 pub mod function_edge;
 pub mod function_edge_cache;
 pub mod g_directed_graph;
@@ -28,6 +29,7 @@ pub use algo::{FindPathsAlgorithm, GraphAlgorithmStatusListener, SorterException
 pub use deg_shared_config::DegSharedConfig;
 pub use event::VisualGraphChangeListener;
 pub use fcg_direction::FcgDirection;
+pub use fcg_vertex_expansion_listener::FcgVertexExpansionListener;
 pub use function_edge::FunctionEdge;
 pub use function_edge_cache::FunctionEdgeCache;
 pub use g_directed_graph::GDirectedGraph;
