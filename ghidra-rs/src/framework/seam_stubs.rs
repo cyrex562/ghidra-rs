@@ -252,6 +252,18 @@ pub enum LinkStatus {
 /// `Options` only ever passes this type through as an opaque value, so no members are needed yet.
 pub trait OptionType {}
 
+/// The `OptionType.CUSTOM_TYPE` enum constant, as a concrete [`OptionType`].
+///
+/// Grown in for
+/// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin), whose
+/// `programActivated` registers `StoredAnalyzerTimes` under it. Java reaches the constant off the
+/// enum itself; with the enum modeled as an opaque trait, each constant the crate needs becomes a
+/// unit struct implementing it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CustomOptionType;
+
+impl OptionType for CustomOptionType {}
+
 /// Placeholder for `java.beans.PropertyEditor`, referenced by
 /// [`Options`](crate::framework::options::Options) before a Rust equivalent exists. `Options`
 /// only ever passes this type through as an opaque value, so no members are needed yet.
@@ -551,6 +563,43 @@ pub trait PluginTool {
     /// pass the same `Arc<dyn Any>` handle the service registry uses.
     fn add_action(&self, _action: Arc<dyn Any + Send + Sync>) {}
 
+    /// Removes a previously installed action, mirroring
+    /// `PluginTool.removeAction(DockingActionIf)`.
+    ///
+    /// Grown in for
+    /// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin), whose
+    /// `removeOneShotActions()` unregisters the per-analyzer actions it installed when the
+    /// activated program changed. Type-erased for the same reason [`add_action`](Self::add_action)
+    /// is.
+    fn remove_action(&self, _action: Arc<dyn Any + Send + Sync>) {}
+
+    /// Assigns the group a submenu belongs to, mirroring
+    /// `PluginTool.setMenuGroup(String[], String)`.
+    ///
+    /// Grown in for
+    /// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin), whose
+    /// `createActions()` files the `Analysis -> One Shot` submenu under the `Analyze` group.
+    fn set_menu_group(&self, _menu_path: &[&str], _group: &str) {}
+
+    /// The tool's options for `category`, mirroring `PluginTool.getOptions(String)`.
+    ///
+    /// Grown in for
+    /// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin), which reads
+    /// and registers its `Show Analysis Options` setting under `Auto Analysis`. The default hands
+    /// back the inert [`Options`](crate::framework::options::Options) implementation every member
+    /// of that trait defaults to, so a tool that has no options store still answers Java's
+    /// defaults.
+    fn get_options(&self, _category: &str) -> Box<dyn crate::framework::options::Options> {
+        Box::new(DefaultToolOptions)
+    }
+
+    /// Clears the tool's status line, mirroring `PluginTool.clearStatusInfo()`.
+    ///
+    /// Grown in for
+    /// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin)'s
+    /// `showOptionsDialog`.
+    fn clear_status_info(&self) {}
+
     /// Runs a command against a domain object on the tool's background task thread, mirroring
     /// `PluginTool.executeBackgroundCommand(BackgroundCommand<T>, T)`.
     ///
@@ -584,6 +633,18 @@ pub trait PluginTool {
         _dialog_component: Arc<dyn Any + Send + Sync>,
         _centered_on_provider: Option<Arc<dyn Any + Send + Sync>>,
     ) {
+    }
+}
+
+/// The empty options store [`PluginTool::get_options`] hands back by default: every
+/// [`Options`](crate::framework::options::Options) member keeps its inert default, so reads answer
+/// the caller's default value and writes go nowhere. Stands in for Java's `ToolOptions`, which is
+/// not ported.
+struct DefaultToolOptions;
+
+impl crate::framework::options::Options for DefaultToolOptions {
+    fn get_name(&self) -> String {
+        String::new()
     }
 }
 
@@ -679,6 +740,22 @@ impl PluginTool for SharedPluginTool {
 
     fn add_action(&self, action: Arc<dyn Any + Send + Sync>) {
         self.0.add_action(action);
+    }
+
+    fn remove_action(&self, action: Arc<dyn Any + Send + Sync>) {
+        self.0.remove_action(action);
+    }
+
+    fn set_menu_group(&self, menu_path: &[&str], group: &str) {
+        self.0.set_menu_group(menu_path, group);
+    }
+
+    fn get_options(&self, category: &str) -> Box<dyn crate::framework::options::Options> {
+        self.0.get_options(category)
+    }
+
+    fn clear_status_info(&self) {
+        self.0.clear_status_info();
     }
 
     fn execute_background_command(

@@ -83,6 +83,24 @@ pub trait MessageLog: Send + Sync {
     fn to_display_string(&self) -> String {
         String::new()
     }
+
+    /// `MessageLog.hasMessages()`. Defaults to `false`, matching
+    /// [`to_display_string`](Self::to_display_string)'s empty default.
+    ///
+    /// Grown in for
+    /// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin), which only
+    /// raises its analysis summary when the manager's log recorded something.
+    fn has_messages(&self) -> bool {
+        false
+    }
+
+    /// `MessageLog.write(Class<?>, String)`, which flushes the accumulated messages to the
+    /// application log under `header`, attributed to `originator`. Java takes the originating
+    /// class; with no `Class` object to pass, the caller names it. Defaults to discarding the
+    /// write, as [`append_msg`](Self::append_msg) does.
+    fn write(&self, originator: &str, header: &str) {
+        let _ = (originator, header);
+    }
 }
 
 /// Placeholder for `ghidra.features.base.codecompare.model.FunctionComparisonModel`, referenced
@@ -3281,6 +3299,129 @@ pub trait AutoAnalysisManager: Send + Sync {
         analyze_changes: bool,
         worker_monitor: &dyn TaskMonitor,
     ) -> std::io::Result<bool>;
+
+    /// Mirrors `AutoAnalysisManager.initializeOptions()`, which lets every registered analyzer
+    /// register its options with their defaults, then reloads them.
+    fn initialize_options(&self) {}
+
+    /// Mirrors `AutoAnalysisManager.addListener(AutoAnalysisManagerListener)`.
+    ///
+    /// The listener is type-erased. Java registers `this` -- the plugin -- and the ported
+    /// [`AutoAnalysisManagerListener`](crate::app::plugin::core::analysis::AutoAnalysisManagerListener)
+    /// is generic over the manager type, so it is not a trait object this stub can name without
+    /// closing the very cycle it exists to break. Registration is therefore by identity only,
+    /// exactly as [`PluginTool::add_action`](crate::framework::seam_stubs::PluginTool::add_action)
+    /// erases its actions.
+    fn add_listener(&self, listener: Arc<dyn Any + Send + Sync>) {
+        let _ = listener;
+    }
+
+    /// Mirrors `AutoAnalysisManager.removeListener(AutoAnalysisManagerListener)`; the listener is
+    /// matched by identity against the handle [`add_listener`](Self::add_listener) was given.
+    fn remove_listener(&self, listener: &Arc<dyn Any + Send + Sync>) {
+        let _ = listener;
+    }
+
+    /// Mirrors `AutoAnalysisManager.addTool(PluginTool)`.
+    fn add_tool(&self, tool: Arc<dyn crate::framework::seam_stubs::PluginTool>) {
+        let _ = tool;
+    }
+
+    /// Mirrors `AutoAnalysisManager.removeTool(PluginTool)`.
+    fn remove_tool(&self, tool: Arc<dyn crate::framework::seam_stubs::PluginTool>) {
+        let _ = tool;
+    }
+
+    /// Mirrors `AutoAnalysisManager.reAnalyzeAll(AddressSetView)`, which re-runs every enabled
+    /// analyzer over `set` -- or, for Java's null, over all of memory.
+    ///
+    /// The set is a [`ProgramSelection`] rather than an `AddressSetView` because that is what the
+    /// plugin has in hand (Java's `ProgramSelection` *is* an `AddressSetView`, a relationship this
+    /// crate's placeholder does not model yet).
+    fn re_analyze_all(&self, set: StdOption<Arc<dyn ProgramSelection>>) {
+        let _ = set;
+    }
+
+    /// Mirrors `AutoAnalysisManager.askToAnalyze(PluginTool)`: whether the user should be prompted
+    /// to analyze this program now. Defaults to `false`, the answer for an already-analyzed
+    /// program.
+    fn ask_to_analyze(&self, tool: &dyn crate::framework::seam_stubs::PluginTool) -> bool {
+        let _ = tool;
+        false
+    }
+
+    /// Mirrors `AutoAnalysisManager.getMessageLog()`, the log every analyzer writes into.
+    fn get_message_log(&self) -> Arc<dyn MessageLog>;
+
+    /// Mirrors `AutoAnalysisManager.getProgram()`, the program this manager analyzes.
+    fn get_program(&self) -> Arc<dyn Program>;
+
+    /// Mirrors `AutoAnalysisManager.schedule(BackgroundCommand<Program>, int)`. The command is
+    /// type-erased for the same reason
+    /// [`PluginTool::execute_background_command`](crate::framework::seam_stubs::PluginTool::execute_background_command)'s
+    /// is: `BackgroundCommand` is not ported.
+    fn schedule(&self, cmd: Arc<dyn Any + Send + Sync>, priority: i32) {
+        let _ = (cmd, priority);
+    }
+}
+
+/// Placeholder for `ghidra.GhidraOptions`, referenced by
+/// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin) before the real
+/// interface is ported. Java's version is an interface of `String` constants; only the one the
+/// plugin looks its tool options up under is modeled.
+pub struct GhidraOptions;
+
+impl GhidraOptions {
+    /// Mirrors `GhidraOptions.CATEGORY_AUTO_ANALYSIS`.
+    pub const CATEGORY_AUTO_ANALYSIS: &'static str = "Auto Analysis";
+}
+
+/// Placeholder for `ghidra.app.plugin.core.analysis.StoredAnalyzerTimes`, referenced by
+/// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin)'s
+/// `programActivated` before the real class is ported. The plugin only registers the option the
+/// class is stored under, so its two name constants are all that is modeled.
+pub struct StoredAnalyzerTimes;
+
+impl StoredAnalyzerTimes {
+    /// Mirrors `StoredAnalyzerTimes.OPTIONS_LIST`, which Java builds as
+    /// `Program.PROGRAM_INFO + ".Analysis Times"`.
+    pub const OPTIONS_LIST: &'static str = "Program Information.Analysis Times";
+
+    /// Mirrors `StoredAnalyzerTimes.OPTION_NAME`.
+    pub const OPTION_NAME: &'static str = "Times";
+}
+
+/// Placeholder for `docking.widgets.dialogs.MultiLineMessageDialog`, referenced by
+/// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin)'s
+/// `analysisEnded` before the real class is ported. Only the message-type constant the plugin
+/// passes is modeled; the dialog itself is described by
+/// [`AnalysisSummary`](crate::app::plugin::core::analysis::AnalysisSummary).
+pub struct MultiLineMessageDialog;
+
+impl MultiLineMessageDialog {
+    /// Mirrors `MultiLineMessageDialog.WARNING_MESSAGE`, which Java aliases to
+    /// `JOptionPane.WARNING_MESSAGE`.
+    pub const WARNING_MESSAGE: i32 = 2;
+}
+
+/// The one `ghidra.program.util.GhidraProgramUtilities` static
+/// [`AutoAnalysisPlugin`](crate::app::plugin::core::analysis::AutoAnalysisPlugin) calls, before
+/// the real class is ported. Java hangs it off the class itself; Rust has no static trait
+/// methods, so -- as with [`auto_analysis_manager`] -- it becomes a free function in a module
+/// named for the Java class.
+///
+/// Unlike the manager statics, this one has a real body: Java's is a two-line options read, so it
+/// is implemented rather than left `unimplemented!()`.
+pub mod ghidra_program_utilities {
+    use crate::program::model::listing::{Program, ANALYZED_OPTION_NAME, PROGRAM_INFO};
+
+    /// Mirrors `GhidraProgramUtilities.isAnalyzed(Program)`: whether the program's
+    /// `Program Information` options record that it has already been analyzed.
+    pub fn is_analyzed(program: &dyn Program) -> bool {
+        program
+            .get_options(PROGRAM_INFO)
+            .get_boolean(ANALYZED_OPTION_NAME, false)
+    }
 }
 
 /// The two `AutoAnalysisManager` statics

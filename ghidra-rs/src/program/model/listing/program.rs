@@ -21,6 +21,16 @@ pub const PROGRAM_INFO: &str = "Program Information";
 /// [`crate::program::disassemble`].
 pub const DISASSEMBLER_PROPERTIES: &str = "Disassembler";
 
+/// Name of the properties list holding each analyzer's per-program options.
+///
+/// Stands in for `Program.ANALYSIS_PROPERTIES`.
+pub const ANALYSIS_PROPERTIES: &str = "Analyzers";
+
+/// Name of the [`PROGRAM_INFO`] option recording whether the program has been analyzed.
+///
+/// Stands in for `Program.ANALYZED_OPTION_NAME`.
+pub const ANALYZED_OPTION_NAME: &str = "Analyzed";
+
 pub trait Program: DomainObject + Send + Sync {
     fn get_name(&self) -> String;
     fn get_language_id(&self) -> String;

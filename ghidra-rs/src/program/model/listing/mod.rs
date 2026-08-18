@@ -125,7 +125,9 @@ pub use operand_representation_list::{
     OperandRepresentationElement, OperandRepresentationList, OperandRepresentationListImpl,
 };
 pub use parameter::Parameter;
-pub use program::{Program, DISASSEMBLER_PROPERTIES, PROGRAM_INFO};
+pub use program::{
+    Program, ANALYSIS_PROPERTIES, ANALYZED_OPTION_NAME, DISASSEMBLER_PROPERTIES, PROGRAM_INFO,
+};
 pub use program_change_set::ProgramChangeSet;
 pub use program_context::ProgramContext;
 pub use program_fragment::ProgramFragment;
