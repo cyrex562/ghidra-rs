@@ -1176,3 +1176,9 @@ ts	stub_class	referenced_by
 2026-08-18T05:33:15.031778+00:00	FcgLevel	FunctionCallGraph
 2026-08-18T05:33:15.032268+00:00	FcgVertex	FunctionCallGraph
 2026-08-18T05:33:15.034630+00:00	FcgVisualGraphLayout	FunctionCallGraph
+2026-08-18T06:02:08.978918+00:00	Addr	ValueDecoder
+2026-08-18T06:02:08.978918+00:00	AddrRange	ValueDecoder
+2026-08-18T06:02:08.978918+00:00	ObjDesc	ValueDecoder
+2026-08-18T06:02:08.978918+00:00	ObjSpec	ValueDecoder
+2026-08-18T06:02:08.978918+00:00	Value	ValueDecoder
+2026-08-18T06:02:08.978918+00:00	NumericUtilities	ValueDecoder

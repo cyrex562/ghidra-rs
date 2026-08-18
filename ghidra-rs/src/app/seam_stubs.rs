@@ -4527,3 +4527,100 @@ pub trait MarkerLocation: Send + Sync {
 /// collection of markers that can be displayed in the listing margin, typically used to
 /// highlight addresses of interest.
 pub trait MarkerSet: Send + Sync {}
+
+/// Placeholder for the generated protobuf message `ghidra.rmi.trace.TraceRmi.Addr`, referenced
+/// by [`ValueDecoder`](crate::app::plugin::core::debug::service::tracermi::ValueDecoder) before
+/// the Trace RMI protobuf schema (`trace-rmi.proto`) is ported. Field names and types follow the
+/// `.proto` message (`space`/`offset`) directly rather than exposing Java-style getters, since
+/// there is no encode/decode logic to hide behind them yet.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Addr {
+    pub space: String,
+    pub offset: u64,
+}
+
+/// Placeholder for the generated protobuf message `ghidra.rmi.trace.TraceRmi.AddrRange`,
+/// referenced by [`ValueDecoder`](crate::app::plugin::core::debug::service::tracermi::ValueDecoder)
+/// before the Trace RMI protobuf schema is ported. See [`Addr`] for why this is a plain field
+/// struct rather than a getter-bearing trait.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AddrRange {
+    pub space: String,
+    pub offset: u64,
+    pub extend: u64,
+}
+
+/// Placeholder for the generated protobuf message `ghidra.rmi.trace.TraceRmi.ObjDesc`, referenced
+/// by [`ValueDecoder`](crate::app::plugin::core::debug::service::tracermi::ValueDecoder) before
+/// the Trace RMI protobuf schema is ported. `ObjDesc.path` is itself a one-field `ObjPath`
+/// message in the `.proto`, so it is flattened to a plain `String` here rather than adding a
+/// single-field wrapper type.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ObjDesc {
+    pub id: i64,
+    pub path: String,
+}
+
+/// Placeholder for the generated protobuf message `ghidra.rmi.trace.TraceRmi.ObjSpec`, referenced
+/// by [`ValueDecoder`](crate::app::plugin::core::debug::service::tracermi::ValueDecoder) before
+/// the Trace RMI protobuf schema is ported. `ObjSpec` is a `oneof key { int64 id; ObjPath path; }`
+/// in the `.proto`, which maps directly to a Rust enum instead of Java's generated
+/// getKeyCase()/getId()/getPath() trio.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ObjSpec {
+    /// Corresponds to protobuf's `KEY_NOT_SET` oneof case.
+    NotSet,
+    Id(i64),
+    Path(String),
+}
+
+/// Placeholder for the generated protobuf message `ghidra.rmi.trace.TraceRmi.Value`, referenced
+/// by [`ValueDecoder`](crate::app::plugin::core::debug::service::tracermi::ValueDecoder) before
+/// the Trace RMI protobuf schema is ported. `Value` is a `oneof value { ... }` in the `.proto`
+/// with one arm per primitive/array/reference kind; that maps directly to a Rust enum instead of
+/// Java's generated getValueCase()/getXxxValue() accessor pairs. Only the variants
+/// `ValueDecoder.toValue` actually switches on are named after the `.proto`'s oneof fields.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Value {
+    /// Corresponds to protobuf's `VALUE_NOT_SET` oneof case.
+    NotSet,
+    NullValue,
+    BoolValue(bool),
+    ByteValue(i8),
+    CharValue(char),
+    ShortValue(i16),
+    IntValue(i32),
+    LongValue(i64),
+    StringValue(String),
+    BoolArrValue(Vec<bool>),
+    BytesValue(Vec<u8>),
+    CharArrValue(String),
+    ShortArrValue(Vec<i16>),
+    IntArrValue(Vec<i32>),
+    LongArrValue(Vec<i64>),
+    StringArrValue(Vec<String>),
+    AddressValue(Addr),
+    RangeValue(AddrRange),
+    ChildSpec(ObjSpec),
+    ChildDesc(ObjDesc),
+}
+
+/// Placeholder for `ghidra.util.NumericUtilities`, referenced by
+/// [`ValueDecoder`](crate::app::plugin::core::debug::service::tracermi::ValueDecoder) before the
+/// real class is ported. Java's version is a concrete utility class of static methods (not an
+/// interface), so this is a zero-sized struct with associated functions rather than a `dyn`
+/// trait. Only `convertBytesToString(byte[], String)`, the one overload `ValueDecoder` calls, is
+/// modeled.
+pub struct NumericUtilities;
+
+impl NumericUtilities {
+    /// Port of `NumericUtilities.convertBytesToString(byte[] bytes, String delimiter)`: each byte
+    /// rendered as two lowercase hex digits, joined by `delimiter`.
+    pub fn convert_bytes_to_string(bytes: &[u8], delimiter: &str) -> String {
+        bytes
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<Vec<_>>()
+            .join(delimiter)
+    }
+}
