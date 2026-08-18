@@ -1182,3 +1182,4 @@ ts	stub_class	referenced_by
 2026-08-18T06:02:08.978918+00:00	ObjSpec	ValueDecoder
 2026-08-18T06:02:08.978918+00:00	Value	ValueDecoder
 2026-08-18T06:02:08.978918+00:00	NumericUtilities	ValueDecoder
+2026-08-18T06:44:51.180627Z	DebuggerPluginPackage	TraceRmiPlugin

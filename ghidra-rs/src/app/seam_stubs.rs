@@ -3761,6 +3761,23 @@ impl crate::framework::seam_stubs::PluginPackageLike for CorePluginPackage {
     }
 }
 
+/// Placeholder for `ghidra.app.plugin.core.debug.DebuggerPluginPackage`, referenced by
+/// [`TraceRmiPlugin`](crate::app::plugin::core::debug::service::tracermi::TraceRmiPlugin)'s
+/// `@PluginInfo` metadata before the real class is ported. Only its `NAME` is needed, mirroring
+/// [`CorePluginPackage`]; the real class also carries the package's icon and description.
+pub struct DebuggerPluginPackage;
+
+impl DebuggerPluginPackage {
+    /// Mirrors `DebuggerPluginPackage.NAME`.
+    pub const NAME: &'static str = "Debugger";
+}
+
+impl crate::framework::seam_stubs::PluginPackageLike for DebuggerPluginPackage {
+    fn name(&self) -> String {
+        Self::NAME.to_string()
+    }
+}
+
 /// Placeholder for `ghidra.app.events.ProgramLocationPluginEvent`, referenced by
 /// [`DecompilePlugin`](crate::app::plugin::core::decompile::DecompilePlugin) before the real class
 /// is ported. Java's version is a `final` class extending the abstract
