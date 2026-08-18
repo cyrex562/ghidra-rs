@@ -4744,3 +4744,8 @@ pub trait DataTypeSyncInfo: Send + Sync {
     fn get_name(&self) -> String;
 }
 
+/// Placeholder for the unported Java type `GColumnRenderer`, referenced by `ColumnDisplay`.
+/// Java's version is generic over the column type, but this stub is not to allow use in
+/// polymorphic contexts. Replace with the real port when available.
+pub trait GColumnRenderer: Send + Sync {}
+
