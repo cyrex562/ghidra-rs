@@ -1126,3 +1126,5 @@ ts	stub_class	referenced_by
 2026-08-17T09:40:20.320000+00:00	DisassembleCommand	DisassemblerPlugin
 2026-08-17T09:40:20.320000+00:00	ProcessorStateDialog	DisassemblerPlugin
 2026-08-18T01:43:43.959669+00:00	ResourceFileJavaFileObject	ResourceFileJavaFileManager
+2026-08-18T02:00:40.865301+00:00	GhidraSourceBundle	JavaScriptProvider
+2026-08-18T02:00:40.865301+00:00	GhidraScript	JavaScriptProvider
