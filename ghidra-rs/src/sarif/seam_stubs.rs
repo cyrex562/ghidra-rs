@@ -6,9 +6,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::program::model::address::Address;
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
-use crate::program::model::listing::Bookmark;
+use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView};
+use crate::program::model::listing::{Bookmark, Instruction, Program};
+use crate::program::seam_stubs::FlowOverride;
 use crate::util::task::TaskMonitor;
 
 /// Placeholder for the abstract Java base class `sarif.managers.SarifMgr`, which every
@@ -45,6 +46,18 @@ impl SarifMgr {
         _result: &HashMap<String, serde_json::Value>,
     ) -> Result<Option<Address>, AddressOverflowException> {
         Ok(None)
+    }
+
+    /// `SarifMgr.getLocations(Map<String, Object>, AddressSet)`. Placeholder pending the
+    /// `SarifUtils` port: never adds any addresses to `set`, matching
+    /// [`get_location`](Self::get_location)'s always-empty result.
+    pub fn get_locations(
+        &self,
+        _result: &HashMap<String, serde_json::Value>,
+        set: &mut AddressSet,
+    ) -> Result<(), AddressOverflowException> {
+        let _ = set;
+        Ok(())
     }
 }
 
@@ -113,21 +126,23 @@ impl SarifBookmarkWriter {
 }
 
 /// Placeholder for `sarif.export.SarifWriterTask`, referenced by
-/// [`BookmarksSarifMgr::write_as_sarif`](crate::sarif::managers::BookmarksSarifMgr::write_as_sarif).
-/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
-/// constructor and `run` are modeled; `run`'s real behavior (flushing the writer's results into
-/// the shared `JsonArray`) is pending `SarifBookmarkWriter`'s and `TaskLauncher`'s own ports, so
-/// this is a no-op for now.
-pub struct SarifWriterTask {
+/// [`BookmarksSarifMgr::write_as_sarif`](crate::sarif::managers::BookmarksSarifMgr::write_as_sarif)
+/// and [`CodeSarifMgr::write_as_sarif`](crate::sarif::managers::CodeSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct; it is generic
+/// over the writer type (Java's `AbstractIsfWriter`) since more than one `*SarifMgr` now
+/// constructs one with its own writer. Only the constructor and `run` are modeled; `run`'s real
+/// behavior (flushing the writer's results into the shared `JsonArray`) is pending each writer's
+/// own port, so this is a no-op for now.
+pub struct SarifWriterTask<W> {
     pub tag: String,
-    pub writer: SarifBookmarkWriter,
+    pub writer: W,
 }
 
-impl SarifWriterTask {
+impl<W> SarifWriterTask<W> {
     /// `new SarifWriterTask(String tag, AbstractIsfWriter writer, JsonArray results)`, minus the
     /// `results` array (passed to [`run`](Self::run) instead, matching `Task.run(TaskMonitor)`'s
     /// signature).
-    pub fn new(tag: impl Into<String>, writer: SarifBookmarkWriter) -> Self {
+    pub fn new(tag: impl Into<String>, writer: W) -> Self {
         Self { tag: tag.into(), writer }
     }
 
@@ -136,7 +151,8 @@ impl SarifWriterTask {
 }
 
 /// Placeholder for `ghidra.util.task.TaskLauncher`, referenced by
-/// [`BookmarksSarifMgr::write_as_sarif`](crate::sarif::managers::BookmarksSarifMgr::write_as_sarif).
+/// [`BookmarksSarifMgr::write_as_sarif`](crate::sarif::managers::BookmarksSarifMgr::write_as_sarif)
+/// and [`CodeSarifMgr::write_as_sarif`](crate::sarif::managers::CodeSarifMgr::write_as_sarif).
 /// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
 /// modal two-argument constructor `writeAsSARIF` uses (`new TaskLauncher(task, null)`) is
 /// modeled, and since there is no GUI here it just runs the task synchronously.
@@ -145,7 +161,51 @@ pub struct TaskLauncher;
 impl TaskLauncher {
     /// `new TaskLauncher(Task task, Component parent)`, minus the (always `null`, here) parent
     /// component.
-    pub fn launch(task: &SarifWriterTask, monitor: &dyn TaskMonitor, results: &mut Vec<serde_json::Value>) {
+    pub fn launch<W>(task: &SarifWriterTask<W>, monitor: &dyn TaskMonitor, results: &mut Vec<serde_json::Value>) {
         task.run(monitor, results);
+    }
+}
+
+/// Placeholder for `sarif.export.code.SarifCodeWriter`, referenced by
+/// [`CodeSarifMgr::write_as_sarif`](crate::sarif::managers::CodeSarifMgr::write_as_sarif). Java's
+/// version is a concrete class, not an interface, so this is a plain struct. Only the constructor
+/// is modeled; the `genRoot`/`AbstractExtWriter` machinery that turns the code ranges and flow
+/// overrides into SARIF JSON is pending that class's own port.
+pub struct SarifCodeWriter {
+    pub blocks: Vec<AddressRange>,
+    pub overrides: Vec<(Arc<dyn Instruction>, FlowOverride)>,
+}
+
+impl SarifCodeWriter {
+    /// `new SarifCodeWriter(List<AddressRange> target0, List<Pair<Instruction, FlowOverride>>
+    /// target1, Writer baseWriter)`, minus the (always `null`, here) base writer. `Pair<Instruction,
+    /// FlowOverride>` is modeled as a plain tuple rather than a generic `Pair` stub, since that is
+    /// all a two-element pair is.
+    pub fn new(blocks: Vec<AddressRange>, overrides: Vec<(Arc<dyn Instruction>, FlowOverride)>) -> Self {
+        Self { blocks, overrides }
+    }
+}
+
+/// Placeholder for `ghidra.program.disassemble.Disassembler`, referenced by
+/// [`CodeSarifMgr::disassemble`](crate::sarif::managers::CodeSarifMgr::disassemble). Java's
+/// version is a concrete class, not an interface, so this is a plain struct. Only the two methods
+/// `CodeSarifMgr` calls (`getDisassembler`, `disassemble`) are modeled; both are no-ops (disassembles
+/// nothing) pending the real disassembler port, which matches a disassembler that finds no valid
+/// instructions at any candidate address.
+pub struct Disassembler;
+
+impl Disassembler {
+    /// `Disassembler.getDisassembler(Program, TaskMonitor, DisassemblerMessageListener)`.
+    pub fn get_disassembler(
+        _program: &dyn Program,
+        _monitor: &dyn TaskMonitor,
+        _listener: &dyn crate::program::disassemble::DisassemblerMessageListener,
+    ) -> Self {
+        Disassembler
+    }
+
+    /// `Disassembler.disassemble(Address, AddressSetView)`.
+    pub fn disassemble(&self, _start_addr: &Address, _restricted_set: &dyn AddressSetView) -> AddressSet {
+        AddressSet::new()
     }
 }
