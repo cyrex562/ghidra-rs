@@ -3967,3 +3967,51 @@ pub struct FSBFileHandlerContext;
 /// are needed yet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FSBFileNode;
+
+/// Placeholder for the unported Java type `FunctionGraph`, referenced by `FGLayout`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait FunctionGraph: Send + Sync {
+    fn group_description_changed(&self, old_text: &str, new_text: &str);
+    fn find_matching_vertex(&self, v: &dyn FGVertex) -> Box<dyn FGVertex>;
+    fn get_function(&self) -> Box<dyn std::any::Any>;
+    fn restore_settings(&self);
+    fn save_settings(&self);
+    fn clear_vertex_color(&self, vertex: &dyn FGVertex);
+    fn get_settings(&self) -> Box<dyn FunctionGraphVertexAttributes>;
+    fn get_saved_grouped_vertex_settings(&self) -> Box<dyn std::any::Any>;
+    fn get_saved_group_history(&self) -> Box<dyn std::any::Any>;
+    fn get_saved_vertex_locations(&self) -> std::collections::HashMap<Box<dyn FGVertex>, Box<dyn std::any::Any>>;
+    fn clear_saved_vertex_locations(&self);
+    fn clear_all_user_layout_settings(&self);
+    fn vertex_location_changed(&self, v: &dyn FGVertex, point: &dyn std::any::Any, change_type: &dyn std::any::Any);
+    fn get_options(&self) -> Box<dyn std::any::Any>;
+    fn set_options(&self, options: &dyn std::any::Any);
+    fn set_graph_layout(&self, layout: &dyn FGLayout);
+    fn get_layout(&self) -> Box<dyn FGLayout>;
+    fn get_vertex_for_address(&self, address: &dyn std::any::Any) -> Box<dyn FGVertex>;
+    fn set_program_selection(&self, selection: &dyn std::any::Any);
+    fn set_program_highlight(&self, highlight: &dyn std::any::Any);
+    fn get_ungrouped_vertices(&self) -> Vec<Box<dyn FGVertex>>;
+    fn get_ungrouped_edges(&self) -> Vec<Box<dyn std::any::Any>>;
+    fn get_group_history(&self, vertex: &dyn FGVertex) -> Box<dyn std::any::Any>;
+    fn set_group_history(&self, history: Vec<Box<dyn std::any::Any>>);
+    fn remove_from_group_history(&self, vertex: &dyn FGVertex);
+    fn group_restored(&self, group: &dyn std::any::Any);
+    fn group_added(&self, group: &dyn std::any::Any);
+    fn group_removed(&self, group: &dyn std::any::Any);
+    fn get_root_vertex(&self) -> Box<dyn FGVertex>;
+    fn set_root_vertex(&self, root_vertex: &dyn FGVertex);
+    fn get_program_selection_for_all_vertices(&self) -> Box<dyn std::any::Any>;
+    fn get_entry_points(&self) -> Vec<Box<dyn FGVertex>>;
+    fn get_exit_points(&self) -> Vec<Box<dyn FGVertex>>;
+    fn dispose(&self);
+    fn copy(&self) -> Box<dyn FunctionGraph>;
+    fn create_dummy_sources(&self) -> Vec<Box<dyn std::any::Any>>;
+    fn create_dummy_sinks(&self) -> Vec<Box<dyn std::any::Any>>;
+    fn empty_copy(&self) -> Box<dyn std::any::Any>;
+}
+
+/// Placeholder for the unported Java type `FGLayout`, referenced by `FunctionGraph`.
+/// Forward reference stub to break the dependency cycle between FGLayout and FunctionGraph.
+pub trait FGLayout: Send + Sync {}

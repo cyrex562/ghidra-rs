@@ -85,3 +85,36 @@ pub trait VisualEdge: Send + Sync {
     fn set_alpha(&self, alpha: f64);
     fn get_alpha(&self) -> f64;
 }
+
+/// Placeholder for the unported Java type `VisualGraph`, referenced by `FGLayout`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle where FGLayout
+/// references VisualGraph. Replace with the real port when available.
+pub trait VisualGraph: Send + Sync {
+    fn vertex_location_changed(&self, v: &dyn std::any::Any, point: &dyn std::any::Any, change_type: &dyn std::any::Any);
+    fn get_focused_vertex(&self) -> Box<dyn std::any::Any>;
+    fn set_vertex_focused(&self, v: &dyn std::any::Any, b: bool);
+    fn clear_selected_vertices(&self);
+    fn set_selected_vertices(&self, vertices: Vec<Box<dyn std::any::Any>>);
+    fn get_selected_vertices(&self) -> Vec<Box<dyn std::any::Any>>;
+    fn add_graph_change_listener(&self, l: &dyn std::any::Any);
+    fn remove_graph_change_listener(&self, l: &dyn std::any::Any);
+    fn get_layout(&self) -> Box<dyn VisualGraphLayout>;
+    fn copy(&self) -> Box<dyn VisualGraph>;
+}
+
+/// Placeholder for the unported Java type `VisualGraphLayout`, referenced by `FGLayout`.
+/// Generated stub: only a shape hint. This is a seam to break the cycle where FGLayout
+/// references VisualGraphLayout. Replace with the real port when available.
+pub trait VisualGraphLayout: Send + Sync {
+    fn add_layout_listener(&self, listener: &dyn std::any::Any);
+    fn remove_layout_listener(&self, listener: &dyn std::any::Any);
+    fn uses_edge_articulations(&self) -> bool;
+    fn calculate_locations(&self, graph: &dyn VisualGraph, monitor: &dyn TaskMonitor) -> Box<dyn std::any::Any>;
+    fn clone_layout(&self, new_graph: &dyn VisualGraph) -> Box<dyn VisualGraphLayout>;
+    fn set_location(&self, v: &dyn std::any::Any, location: &dyn std::any::Any, change_type: &dyn std::any::Any);
+    fn get_visual_graph(&self) -> Box<dyn VisualGraph>;
+    fn get_edge_renderer(&self) -> Box<dyn std::any::Any>;
+    fn get_edge_shape_transformer(&self, context: &dyn std::any::Any) -> Box<dyn std::any::Any>;
+    fn get_edge_label_renderer(&self) -> Box<dyn std::any::Any>;
+    fn dispose(&self);
+}
