@@ -4749,3 +4749,8 @@ pub trait DataTypeSyncInfo: Send + Sync {
 /// polymorphic contexts. Replace with the real port when available.
 pub trait GColumnRenderer: Send + Sync {}
 
+/// Placeholder for the unported Java type `ByteViewerComponent`, referenced by `TooltipDataFormatModel`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait ByteViewerComponent: Send + Sync {}
+
