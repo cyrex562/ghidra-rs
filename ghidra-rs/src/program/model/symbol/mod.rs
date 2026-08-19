@@ -1,5 +1,5 @@
 use crate::program::model::address::{Address, BoxedAddressIterator, EmptyAddressIterator};
-use crate::program::model::listing::{Function, Variable};
+use crate::program::model::listing::{Function, GhidraClass, Variable};
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use std::io;
 use std::sync::Arc;
@@ -452,5 +452,17 @@ pub trait SymbolTable: Send + Sync {
     fn get_namespace(&self, addr: &Address) -> io::Result<Option<Arc<dyn Namespace>>> {
         let _ = addr;
         Ok(None)
+    }
+
+    /// Iterate every class namespace (`GhidraClass`) defined in the program. Stands in for
+    /// `SymbolTable.getClassNamespaces()`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`ExternalLibSarifMgr::write`](crate::sarif::managers::ExternalLibSarifMgr::write), which
+    /// exports SARIF for every class namespace known to the program.
+    ///
+    /// Defaults to empty so existing implementors are unaffected.
+    fn get_class_namespaces(&self) -> Vec<Arc<dyn GhidraClass>> {
+        Vec::new()
     }
 }
