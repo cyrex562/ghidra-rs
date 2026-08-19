@@ -8,6 +8,7 @@ pub mod external_lib_sarif_mgr;
 pub mod markup_sarif_mgr;
 pub mod memory_map_bytes_file;
 pub mod memory_map_sarif_mgr;
+pub mod program_tree_sarif_mgr;
 
 pub use bookmarks_sarif_mgr::BookmarksSarifMgr;
 pub use code_sarif_mgr::CodeSarifMgr;
@@ -19,3 +20,4 @@ pub use external_lib_sarif_mgr::ExternalLibSarifMgr;
 pub use markup_sarif_mgr::MarkupSarifMgr;
 pub use memory_map_bytes_file::MemoryMapBytesFile;
 pub use memory_map_sarif_mgr::MemoryMapSarifMgr;
+pub use program_tree_sarif_mgr::ProgramTreeSarifMgr;
