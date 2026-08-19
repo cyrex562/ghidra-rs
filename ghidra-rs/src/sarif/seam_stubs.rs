@@ -15,7 +15,7 @@ use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instructio
 use crate::program::model::mem::MemoryBlock;
 use crate::program::model::reloc::Relocation;
 use crate::program::model::symbol::source_type::SourceType;
-use crate::program::model::symbol::Namespace;
+use crate::program::model::symbol::{Namespace, Symbol};
 use crate::program::seam_stubs::FlowOverride;
 use crate::util::exception::DuplicateNameException;
 use crate::util::task::TaskMonitor;
@@ -189,6 +189,7 @@ impl SarifMgr {
 pub struct SarifProgramOptions {
     pub overwrite_bookmark_conflicts: bool,
     pub overwrite_reference_conflicts: bool,
+    pub overwrite_symbol_conflicts: bool,
     pub functions: bool,
     pub external_libraries: bool,
 }
@@ -202,6 +203,12 @@ impl SarifProgramOptions {
     /// `SarifProgramOptions.isOverwriteReferenceConflicts()`.
     pub fn is_overwrite_reference_conflicts(&self) -> bool {
         self.overwrite_reference_conflicts
+    }
+
+    /// `SarifProgramOptions.isOverwriteSymbolConflicts()`, referenced by
+    /// [`SymbolTableSarifMgr::read`](crate::sarif::managers::SymbolTableSarifMgr::read).
+    pub fn is_overwrite_symbol_conflicts(&self) -> bool {
+        self.overwrite_symbol_conflicts
     }
 
     /// `SarifProgramOptions.isFunctions()`.
@@ -221,6 +228,7 @@ impl Default for SarifProgramOptions {
         Self {
             overwrite_bookmark_conflicts: true,
             overwrite_reference_conflicts: true,
+            overwrite_symbol_conflicts: true,
             functions: true,
             external_libraries: true,
         }
@@ -272,6 +280,23 @@ impl SarifRelocationWriter {
     /// `null`, here) base writer.
     pub fn new(relocations: Vec<Relocation>) -> Self {
         Self { relocations }
+    }
+}
+
+/// Placeholder for `sarif.export.symbols.SarifSymbolWriter`, referenced by
+/// [`SymbolTableSarifMgr::write_as_sarif`](crate::sarif::managers::SymbolTableSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor is modeled; the `genRoot`/`AbstractExtWriter` machinery that turns the symbols into
+/// SARIF JSON is pending that class's own port.
+pub struct SarifSymbolWriter {
+    pub symbols: Vec<Arc<dyn Symbol>>,
+}
+
+impl SarifSymbolWriter {
+    /// `new SarifSymbolWriter(List<Symbol> target, Writer baseWriter)`, minus the (always `null`,
+    /// here) base writer.
+    pub fn new(symbols: Vec<Arc<dyn Symbol>>) -> Self {
+        Self { symbols }
     }
 }
 
