@@ -21,7 +21,7 @@ DONE	trait	3	14	8	framework	Ghidra/Framework/Project/src/main/java/ghidra/framew
 DONE	trait	2	11	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTask.java
 DONE	trait	1	12	4	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GScheduledTask.java
 DONE	trait	0	15	4	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskGroup.java
-TODO	trait	2	8	0	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFResultsUpdateListener.java
+DONE	trait	2	8	0	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFResultsUpdateListener.java
 TODO	trait	0	14	60	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SimilarFunctionQueryService.java
 TODO	trait	0	14	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ListingMerger.java
 TODO	trait	4	13	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfEHDecoder.java
