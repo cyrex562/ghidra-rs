@@ -32,11 +32,19 @@ use crate::trace::model::trace_location::TraceLocation;
 use crate::util::task::TaskMonitor;
 use crate::util::xml::xml_pull_parser::XmlPullParser;
 use crate::util::seam_stubs::ResourceFile;
+use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::leb128_info::LEB128Info;
+use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::program::model::address::AddressSpace;
+use crate::program::model::mem::{Memory, MemoryAccessException};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt;
 use std::any::Any;
+use std::cell::RefCell;
+use std::io;
 use std::option::Option as StdOption;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 /// Placeholder for `ghidra.framework.options.ToolOptions`, referenced by
@@ -5647,6 +5655,183 @@ impl SetCommentCmd {
 
     pub fn get_name(&self) -> String {
         "Set Comment".to_string()
+    }
+}
+
+/// [`ByteProvider`] over a program's [`Memory`], addressing bytes by the offset within a fixed
+/// [`AddressSpace`]. Backs [`MemoryBinaryReader`], which in turn backs
+/// [`GccAnalysisUtils::read_sleb128_info`].
+struct MemoryByteProvider {
+    memory: Arc<dyn Memory>,
+    space: Arc<AddressSpace>,
+}
+
+impl ByteProvider for MemoryByteProvider {
+    fn length(&mut self) -> io::Result<u64> {
+        Ok(u64::MAX)
+    }
+
+    fn is_valid_index(&mut self, _index: u64) -> bool {
+        true
+    }
+
+    fn read_byte(&mut self, index: u64) -> io::Result<u8> {
+        let addr = Address::new(self.space.clone(), index as i64);
+        self.memory
+            .get_byte(&addr)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+    }
+
+    fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
+        (0..length as u64).map(|i| self.read_byte(index + i)).collect()
+    }
+
+    fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
+    }
+
+    fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
+        Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.MemoryByteProvider` + `ghidra.app.util.bin.BinaryReader`
+/// wired directly over a program's [`Memory`], referenced by
+/// [`GccAnalysisUtils::read_sleb128_info`] before the real `BinaryReader` producer classes are
+/// ported. The reader's index corresponds directly to an [`Address`] offset within `space`,
+/// matching how `GccAnalysisUtils.readLEB128Info` positions its `BinaryReader` at
+/// `addr.getOffset()`.
+struct MemoryBinaryReader {
+    memory: Arc<dyn Memory>,
+    space: Arc<AddressSpace>,
+    index: u64,
+    little_endian: bool,
+}
+
+impl BinaryReader for MemoryBinaryReader {
+    fn length(&self) -> io::Result<u64> {
+        Ok(u64::MAX)
+    }
+
+    fn is_valid_index(&self, _index: u64) -> bool {
+        true
+    }
+
+    fn get_pointer_index(&self) -> u64 {
+        self.index
+    }
+
+    fn set_pointer_index(&mut self, index: u64) -> u64 {
+        let prev = self.index;
+        self.index = index;
+        prev
+    }
+
+    fn is_little_endian(&self) -> bool {
+        self.little_endian
+    }
+
+    fn set_little_endian(&mut self, is_little_endian: bool) {
+        self.little_endian = is_little_endian;
+    }
+
+    fn read_byte(&self, index: u64) -> io::Result<u8> {
+        let addr = Address::new(self.space.clone(), index as i64);
+        self.memory
+            .get_byte(&addr)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+    }
+
+    fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
+        (0..n_elements as u64).map(|i| self.read_byte(index + i)).collect()
+    }
+
+    fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+        Rc::new(RefCell::new(MemoryByteProvider {
+            memory: self.memory.clone(),
+            space: self.space.clone(),
+        }))
+    }
+
+    fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
+        Box::new(MemoryBinaryReader {
+            memory: self.memory.clone(),
+            space: self.space.clone(),
+            index: new_index,
+            little_endian: self.little_endian,
+        })
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.GccAnalysisUtils`, referenced by
+/// [`LSDAActionRecord`](crate::app::plugin::exceptionhandlers::gcc::structures::gccexcepttable::lsda_action_record::LSDAActionRecord)'s
+/// port of `createTypeFilter`/`createNextActionRef` before the real utility class is ported.
+/// Java's `GccAnalysisUtils` has only static methods, so this stub mirrors the crate's
+/// zero-sized-struct convention for utility classes (see [`DecompilerUtils`]) rather than a
+/// trait. Only `readSLEB128Info` is modeled, since it's the only method the target needs; unlike
+/// the no-op command stubs above, this one is fully implemented -- it decodes a real signed
+/// LEB128 straight from [`Memory`] via [`MemoryBinaryReader`], since [`LEB128Info::signed`] was
+/// already available to drive it.
+pub struct GccAnalysisUtils;
+
+impl GccAnalysisUtils {
+    /// Port of `GccAnalysisUtils.readSLEB128Info(Program, Address)`.
+    pub fn read_sleb128_info(
+        program: &dyn Program,
+        addr: &Address,
+    ) -> Result<LEB128Info, MemoryAccessException> {
+        let memory = program
+            .get_memory()
+            .ok_or_else(|| MemoryAccessException::new("program has no memory"))?;
+        let little_endian = !memory.is_big_endian();
+        let mut reader = MemoryBinaryReader {
+            memory,
+            space: addr.space().clone(),
+            index: addr.unsigned_offset(),
+            little_endian,
+        };
+        LEB128Info::signed(&mut reader).map_err(|e| {
+            MemoryAccessException::new(format!("Error reading LEB128 value at {}: {}", addr, e))
+        })
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.structures.gccexcepttable.LSDAActionTable`,
+/// referenced by
+/// [`LSDAActionRecord::get_next_action`](crate::app::plugin::exceptionhandlers::gcc::structures::gccexcepttable::lsda_action_record::LSDAActionRecord::get_next_action)
+/// before the real class is ported. Concrete struct (the Java type is a class, not an
+/// interface), modeling only the members the caller needs: the table's own base address and the
+/// records it holds.
+pub struct LSDAActionTable {
+    address: StdOption<Address>,
+    records: Vec<
+        crate::app::plugin::exceptionhandlers::gcc::structures::gccexcepttable::lsda_action_record::LSDAActionRecord,
+    >,
+}
+
+impl LSDAActionTable {
+    /// Constructs a table stub with a known base address and set of action records, as if
+    /// `create` had already run.
+    pub fn new(
+        address: StdOption<Address>,
+        records: Vec<
+            crate::app::plugin::exceptionhandlers::gcc::structures::gccexcepttable::lsda_action_record::LSDAActionRecord,
+        >,
+    ) -> Self {
+        Self { address, records }
+    }
+
+    /// Port of package-private `LSDAActionTable.getAddress()`.
+    pub fn get_address(&self) -> StdOption<Address> {
+        self.address.clone()
+    }
+
+    /// Port of `LSDAActionTable.getActionRecords()`.
+    pub fn get_action_records(
+        &self,
+    ) -> &[crate::app::plugin::exceptionhandlers::gcc::structures::gccexcepttable::lsda_action_record::LSDAActionRecord]
+    {
+        &self.records
     }
 }
 

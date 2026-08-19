@@ -10,4 +10,4 @@ pub use dwarf_eh_data_application_mode::DwarfEhDataApplicationMode;
 pub use dwarf_eh_data_decode_format::DwarfEhDataDecodeFormat;
 pub use dwarf_eh_decoder::DwarfEHDecoder;
 pub use sections::{CieSource, CieSourceError};
-pub use structures::ExceptionHandlerFrameException;
+pub use structures::{ExceptionHandlerFrameException, LSDAActionRecord};

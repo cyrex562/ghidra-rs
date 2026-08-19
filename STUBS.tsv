@@ -1274,3 +1274,5 @@ ts	stub_class	referenced_by
 2026-08-19T07:15:00.000000+00:00	FrameDescriptionEntry	AbstractFrameSection
 2026-08-19T07:15:00.000000+00:00	CreateArrayCmd	AbstractFrameSection
 2026-08-19T07:15:00.000000+00:00	SetCommentCmd	AbstractFrameSection
+2026-08-19T07:17:00.000000+00:00	GccAnalysisUtils	LSDAActionRecord
+2026-08-19T07:17:00.000000+00:00	LSDAActionTable	LSDAActionRecord
