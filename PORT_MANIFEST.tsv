@@ -9098,7 +9098,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/io/SarifJacksonIO.java	DONE	o
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/BookmarksSarifMgr.java	DONE	orig_src Ghidra Features Sarif src main java sarif managers
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/CodeSarifMgr.java	DONE	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/CommentsSarifMgr.java	DONE	orig_src Ghidra Features Sarif src main java sarif managers
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/DataTypesSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/DataTypesSarifMgr.java	DONE	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/DefinedDataSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/DtParser.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/managers/EquatesSarifMgr.java	TODO	orig_src Ghidra Features Sarif src main java sarif managers 
