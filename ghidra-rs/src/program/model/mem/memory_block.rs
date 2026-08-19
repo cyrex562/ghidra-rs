@@ -67,6 +67,17 @@ pub trait MemoryBlock: Send + Sync {
         let _ = artificial;
     }
 
+    /// Marks this block as volatile (or not). Stands in for `MemoryBlock.setVolatile(boolean)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`MemoryMapSarifMgr`](crate::sarif::managers::memory_map_sarif_mgr::MemoryMapSarifMgr)'s
+    /// port of `MemoryMapSarifMgr.processMemoryBlock`, which restores the `isVolatile` flag SARIF
+    /// recorded for a block onto the block it (re)creates. The default discards the request,
+    /// matching [`is_volatile`](Self::is_volatile)'s constant `false`.
+    fn set_volatile(&mut self, volatile: bool) {
+        let _ = volatile;
+    }
+
     /// Returns the type of this memory block.
     fn get_type(&self) -> MemoryBlockType {
         MemoryBlockType::Default
