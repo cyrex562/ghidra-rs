@@ -4545,3 +4545,77 @@ impl SFQueryResult {
         &self.response
     }
 }
+
+/// Placeholder for the unported Java type `ghidra.machinelearning.functionfinding.FunctionStartRFParamsDialog`,
+/// referenced by
+/// [`RandomForestFunctionFinderPlugin`](crate::feature::machine_learning::function_finding::random_forest_function_finder_plugin::RandomForestFunctionFinderPlugin).
+/// `FunctionStartRFParamsDialog` is a concrete Java class (not an interface), so this stub is a
+/// struct. Trimmed to the members the plugin actually calls: the training program the dialog was
+/// built for (`getTrainingSource()`, read back by `programClosed` to decide whether to dismiss the
+/// dialog), and the two lifecycle calls (`dispose()`, `dismissCallback()`). The real dialog's
+/// parameter-selection UI (`addGeneralActions`, model training, etc.) is out of scope until the
+/// class itself is ported.
+pub struct FunctionStartRFParamsDialog {
+    training_source: Arc<dyn crate::program::model::listing::program::Program>,
+}
+
+impl FunctionStartRFParamsDialog {
+    /// Java: `FunctionStartRFParamsDialog(RandomForestFunctionFinderPlugin)`, narrowed to the
+    /// training program the real constructor reads off the plugin's active navigation context.
+    pub fn new(training_source: Arc<dyn crate::program::model::listing::program::Program>) -> Self {
+        Self { training_source }
+    }
+
+    /// Java: `getTrainingSource()`.
+    pub fn get_training_source(&self) -> &Arc<dyn crate::program::model::listing::program::Program> {
+        &self.training_source
+    }
+
+    /// Java: `dispose()`. No-op until the real dialog (and anything it would need to release) is
+    /// ported.
+    pub fn dispose(&self) {}
+
+    /// Java: `dismissCallback()`. No-op until the real dialog is ported.
+    pub fn dismiss_callback(&self) {}
+}
+
+/// Placeholder for the unported Java type
+/// `ghidra.machinelearning.functionfinding.ProgramAssociatedComponentProviderAdapter`, referenced
+/// by
+/// [`RandomForestFunctionFinderPlugin`](crate::feature::machine_learning::function_finding::random_forest_function_finder_plugin::RandomForestFunctionFinderPlugin).
+/// Trimmed to the two members `addProvider`/`removeProvider`/`programClosed` actually call:
+/// `getProgram()` (used to key the plugin's `programsToProviders` map) and `closeComponent()`.
+/// `as_any_arc` mirrors the same re-erasure
+/// [`ListingContextAction::as_any_arc`](crate::app::seam_stubs::ListingContextAction::as_any_arc)
+/// uses, so a provider can be handed to
+/// [`PluginTool::add_component_provider`](crate::framework::seam_stubs::PluginTool::add_component_provider).
+pub trait ProgramAssociatedComponentProviderAdapter: Send + Sync {
+    /// Java: `getProgram()`.
+    fn get_program(&self) -> Arc<dyn crate::program::model::listing::program::Program>;
+
+    /// Java: `closeComponent()`.
+    fn close_component(&self);
+
+    /// Re-erases this provider so it can be handed to
+    /// [`PluginTool::add_component_provider`](crate::framework::seam_stubs::PluginTool::add_component_provider).
+    fn as_any_arc(self: Arc<Self>) -> Arc<dyn std::any::Any + Send + Sync>;
+}
+
+/// Placeholder for `ghidra.MiscellaneousPluginPackage`, referenced by
+/// [`RandomForestFunctionFinderPlugin`](crate::feature::machine_learning::function_finding::random_forest_function_finder_plugin::RandomForestFunctionFinderPlugin)'s
+/// `@PluginInfo` metadata (`packageName = MiscellaneousPluginPackage.NAME`) before the real class
+/// is ported. Only its `NAME` is needed, mirroring
+/// [`CorePluginPackage`](crate::app::seam_stubs::CorePluginPackage); the real class also carries
+/// the package's icon and description.
+pub struct MiscellaneousPluginPackage;
+
+impl MiscellaneousPluginPackage {
+    /// Mirrors `MiscellaneousPluginPackage.NAME`.
+    pub const NAME: &'static str = "Miscellaneous";
+}
+
+impl crate::framework::seam_stubs::PluginPackageLike for MiscellaneousPluginPackage {
+    fn name(&self) -> String {
+        Self::NAME.to_string()
+    }
+}

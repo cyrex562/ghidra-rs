@@ -1294,3 +1294,6 @@ ts	stub_class	referenced_by
 2026-08-19T09:15:17.527845+00:00	ArithmeticVarnodeEvaluator	AbstractUnwoundFrame
 2026-08-19T09:33:00.000000+00:00	FrameStructureBuilder	AnalysisUnwoundFrame
 2026-08-19T09:33:00.000000+00:00	BookmarkNavigator	AnalysisUnwoundFrame
+2026-08-19T09:54:55.498612+00:00	FunctionStartRFParamsDialog	RandomForestFunctionFinderPlugin
+2026-08-19T09:54:55.498729+00:00	ProgramAssociatedComponentProviderAdapter	RandomForestFunctionFinderPlugin
+2026-08-19T10:00:00.000000+00:00	MiscellaneousPluginPackage	RandomForestFunctionFinderPlugin
