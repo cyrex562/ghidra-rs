@@ -1213,3 +1213,8 @@ ts	stub_class	referenced_by
 2026-08-19T01:00:37Z	MachHeader	DyldCacheProgramBuilder
 2026-08-18T21:40:00.000000+00:00	VTMatchDB	VTMatchSetDB
 2026-08-18T21:40:00.000000+00:00	ProgramCorrelatorInfoImpl	VTMatchSetDB
+2026-08-19T01:45:00+00:00	Expr	SymValueZ3
+2026-08-19T01:45:00+00:00	BitVecExpr	SymValueZ3
+2026-08-19T01:45:00+00:00	BoolExpr	SymValueZ3
+2026-08-19T01:45:00+00:00	Z3Context	SymValueZ3
+2026-08-19T01:45:00+00:00	Z3InfixPrinter	SymValueZ3
