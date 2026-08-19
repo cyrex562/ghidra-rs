@@ -1236,3 +1236,4 @@ ts	stub_class	referenced_by
 2026-08-19T02:40:00+00:00	PascalUnicodeDataType	DataTypesSarifMgr
 2026-08-19T02:40:00+00:00	LongDoubleDataType	DataTypesSarifMgr
 2026-08-19T02:40:00+00:00	UnsignedInteger3DataType	DataTypesSarifMgr
+2026-08-19T02:43:29.084708+00:00	SarifEquateWriter	EquatesSarifMgr
