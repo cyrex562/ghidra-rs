@@ -5569,3 +5569,84 @@ pub trait Cie: Send + Sync {
     fn get_cie_id(&self) -> i32;
 }
 
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.structures.ehFrame.FrameDescriptionEntry`,
+/// referenced by
+/// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
+/// port of `createAugmentationData` before the real class is ported. Models only the one method
+/// that caller needs.
+pub trait FrameDescriptionEntry: Send + Sync {
+    /// The address of the augmentation-ex data for this FDE, if any. Stands in for
+    /// `FrameDescriptionEntry.getAugmentationExDataAddress()`; `None` corresponds to Java's
+    /// `Address.NO_ADDRESS` sentinel, which the ported `Address` type has no equivalent for.
+    fn get_augmentation_ex_data_address(&self) -> StdOption<crate::program::model::address::Address>;
+}
+
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.RegionDescriptor`, referenced by
+/// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
+/// port of `createAugmentationData` before the real class is ported. Models only the one method
+/// that caller needs.
+pub trait RegionDescriptor: Send + Sync {
+    fn get_frame_descriptor_entry(&self) -> std::sync::Arc<dyn FrameDescriptionEntry>;
+}
+
+/// Placeholder for `ghidra.app.cmd.data.CreateArrayCmd`, referenced by
+/// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
+/// port of `createAugmentationData`, which always constructs it with a `ByteDataType` element.
+/// The crate has no concrete `ByteDataType` singleton yet (see
+/// [`ByteDataType`](crate::program::model::data::byte_data_type::ByteDataType)'s module docs),
+/// so the `dt` constructor argument is dropped; like [`DecompileDebugDataTypeManager`],
+/// `apply_to` no-ops and reports success until the real command class is ported.
+pub struct CreateArrayCmd;
+
+impl CreateArrayCmd {
+    /// Port of `CreateArrayCmd(Address, int, DataType, int)`.
+    pub fn new(address: crate::program::model::address::Address, num_elements: i32, dt_length: i32, alignment: i32) -> Self {
+        let _ = (address, num_elements, dt_length, alignment);
+        CreateArrayCmd
+    }
+
+    pub fn apply_to(&self, program: &mut dyn Program) -> bool {
+        let _ = program;
+        true
+    }
+
+    pub fn get_status_msg(&self) -> String {
+        String::new()
+    }
+
+    pub fn get_name(&self) -> String {
+        "Create Array".to_string()
+    }
+}
+
+/// Placeholder for `ghidra.app.cmd.comments.SetCommentCmd`, referenced by
+/// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
+/// port of `createPlateComment` before the real class is ported. Like [`CreateArrayCmd`],
+/// `apply_to` no-ops and reports success until the real command class is ported.
+pub struct SetCommentCmd;
+
+impl SetCommentCmd {
+    /// Port of `SetCommentCmd(Address, CommentType, String)`.
+    pub fn new(
+        address: crate::program::model::address::Address,
+        comment_type: crate::program::model::listing::CommentType,
+        comment: impl Into<String>,
+    ) -> Self {
+        let _ = (address, comment_type, comment.into());
+        SetCommentCmd
+    }
+
+    pub fn apply_to(&self, program: &mut dyn Program) -> bool {
+        let _ = program;
+        true
+    }
+
+    pub fn get_status_msg(&self) -> String {
+        String::new()
+    }
+
+    pub fn get_name(&self) -> String {
+        "Set Comment".to_string()
+    }
+}
+
