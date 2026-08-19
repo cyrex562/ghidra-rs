@@ -1268,3 +1268,4 @@ ts	stub_class	referenced_by
 2026-08-19T06:20:00.000000+00:00	SFQueryInfo	SimilarFunctionQueryService
 2026-08-19T06:20:00.000000+00:00	SFOverviewInfo	SimilarFunctionQueryService
 2026-08-19T06:20:00.000000+00:00	SFQueryResult	SimilarFunctionQueryService
+2026-08-19T06:20:00.000000+00:00	ListingMergePanel	ListingMerger
