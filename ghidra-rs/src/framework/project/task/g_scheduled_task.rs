@@ -4,8 +4,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::ThreadId;
 
-use crate::framework::project::task::GTask;
-use crate::framework::seam_stubs::GTaskGroup;
+use crate::framework::project::task::{GTask, GTaskGroup};
 use crate::util::task::{DummyMonitor, TaskMonitor};
 
 /// One-up id generator so tasks of equal priority sort in the order they were added, matching
@@ -19,7 +18,7 @@ pub struct GScheduledTask {
     priority: i32,
     thread: Mutex<Option<ThreadId>>,
     id: u64,
-    group: Arc<dyn GTaskGroup>,
+    group: Arc<GTaskGroup>,
     monitor: Arc<dyn TaskMonitor>,
 }
 
@@ -28,7 +27,7 @@ impl GScheduledTask {
     ///
     /// `group` is the group this task belongs to and `priority` is the priority at which this
     /// task is to be executed relative to other scheduled tasks; lower numbers run first.
-    pub fn new(group: Arc<dyn GTaskGroup>, task: Arc<dyn GTask>, priority: i32) -> Self {
+    pub fn new(group: Arc<GTaskGroup>, task: Arc<dyn GTask>, priority: i32) -> Self {
         Self {
             task,
             priority,
@@ -82,7 +81,7 @@ impl GScheduledTask {
     }
 
     /// Returns the `GTaskGroup` for this task.
-    pub fn get_group(&self) -> Arc<dyn GTaskGroup> {
+    pub fn get_group(&self) -> Arc<GTaskGroup> {
         Arc::clone(&self.group)
     }
 
@@ -101,7 +100,6 @@ impl GScheduledTask {
 mod tests {
     use super::*;
     use crate::framework::model::DomainObject;
-    use crate::framework::seam_stubs::GTaskGroupStub;
     use crate::util::exception::CancelledException;
 
     struct NamedTask(String);
@@ -120,8 +118,8 @@ mod tests {
         }
     }
 
-    fn group() -> Arc<dyn GTaskGroup> {
-        GTaskGroupStub::new("group", true) as Arc<dyn GTaskGroup>
+    fn group() -> Arc<GTaskGroup> {
+        GTaskGroup::new("group", true)
     }
 
     #[test]

@@ -1,5 +1,5 @@
-use crate::framework::project::task::GScheduledTask;
-use crate::framework::seam_stubs::{GTaskGroup, GTaskResult};
+use crate::framework::project::task::{GScheduledTask, GTaskGroup};
+use crate::framework::seam_stubs::GTaskResult;
 use std::sync::{Arc, Mutex};
 
 /// Listener interface for tracking the state of a GTaskManager.
@@ -18,16 +18,16 @@ pub trait GTaskListener: Send + Sync {
     fn task_completed(&self, task: &GScheduledTask, result: &dyn GTaskResult);
 
     /// Notification that a GTaskGroup has been scheduled.
-    fn task_group_scheduled(&self, group: &dyn GTaskGroup);
+    fn task_group_scheduled(&self, group: &GTaskGroup);
 
     /// Notification that a new GTask has been scheduled to run.
     fn task_scheduled(&self, scheduled_task: &GScheduledTask);
 
     /// Notification that a new GTaskGroup has started to run.
-    fn task_group_started(&self, task_group: &dyn GTaskGroup);
+    fn task_group_started(&self, task_group: &GTaskGroup);
 
     /// Notification that the GTaskGroup has completed running.
-    fn task_group_completed(&self, task_group: &dyn GTaskGroup);
+    fn task_group_completed(&self, task_group: &GTaskGroup);
 
     /// Notification that the GTaskManager has been suspended or resumed.
     fn suspended_state_changed(&self, suspended: bool);
@@ -48,10 +48,10 @@ mod tests {
 
         fn task_started(&self, _task: &GScheduledTask) {}
         fn task_completed(&self, _task: &GScheduledTask, _result: &dyn GTaskResult) {}
-        fn task_group_scheduled(&self, _group: &dyn GTaskGroup) {}
+        fn task_group_scheduled(&self, _group: &GTaskGroup) {}
         fn task_scheduled(&self, _scheduled_task: &GScheduledTask) {}
-        fn task_group_started(&self, _task_group: &dyn GTaskGroup) {}
-        fn task_group_completed(&self, _task_group: &dyn GTaskGroup) {}
+        fn task_group_started(&self, _task_group: &GTaskGroup) {}
+        fn task_group_completed(&self, _task_group: &GTaskGroup) {}
         fn suspended_state_changed(&self, _suspended: bool) {}
     }
 
