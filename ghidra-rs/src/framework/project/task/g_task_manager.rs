@@ -6,9 +6,9 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard, Weak};
 use std::time::{Duration, Instant};
 
 use crate::framework::model::{DomainObject, DomainObjectClosedListener};
-use crate::framework::project::task::GTaskListener;
+use crate::framework::project::task::{GTask, GTaskListener};
 use crate::framework::seam_stubs::{
-    Exception, GScheduledTask, GTask, GTaskGroup, GTaskGroupStub, GTaskResult, GTaskResultStub,
+    Exception, GScheduledTask, GTaskGroup, GTaskGroupStub, GTaskResult, GTaskResultStub,
 };
 use crate::generic::concurrent::GThreadPool;
 use crate::util::exception::CancelledException;
@@ -573,7 +573,7 @@ impl Inner {
         match outcome {
             Ok(()) => self.task_completed(&scheduled_task, None, false),
             Err(e) => {
-                let exception: Arc<dyn Exception> = Arc::new(e.to_string());
+                let exception: Arc<dyn Exception> = Arc::new(e);
                 self.task_completed(&scheduled_task, Some(exception), false)
             }
         }
@@ -798,7 +798,7 @@ mod tests {
             &self,
             _domain_object: &dyn DomainObject,
             _monitor: &dyn TaskMonitor,
-        ) -> std::io::Result<()> {
+        ) -> Result<(), CancelledException> {
             self.log.lock().unwrap().push(self.name.clone());
             Ok(())
         }
@@ -816,8 +816,8 @@ mod tests {
             &self,
             _domain_object: &dyn DomainObject,
             _monitor: &dyn TaskMonitor,
-        ) -> std::io::Result<()> {
-            Err(std::io::Error::other("task blew up"))
+        ) -> Result<(), CancelledException> {
+            Err(CancelledException::new("task blew up"))
         }
     }
 
