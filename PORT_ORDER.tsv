@@ -38,7 +38,7 @@ DONE	trait	6	11	1	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core
 DONE	trait	7	9	73	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SymPcodeExecutorState.java
 DONE	trait	4	12	51	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/StackUnwinder.java
 DONE	trait	2	9	12	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/UnwoundFrame.java
-TODO	trait	1	9	56	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/AbstractUnwoundFrame.java
+DONE	trait	1	9	56	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/AbstractUnwoundFrame.java
 TODO	trait	1	4	1	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/bookmark/TraceBookmarkOperations.java
 TODO	trait	1	4	3	trace	Ghidra/Debug/Framework-TraceModeling/src/main/java/ghidra/trace/model/bookmark/TraceBookmarkSpace.java
 TODO	trait	0	13	20	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/AnalysisUnwoundFrame.java
