@@ -48,9 +48,10 @@ use std::io;
 use std::rc::Rc;
 
 use crate::app::seam_stubs::{
-    dyld_cache_program_builder, dyld_cache_utils, memory_block_utils, new_boolean, option_utils,
-    DyldArchitecture, DyldCacheHeader, LoadSpec, MessageLog, Option, QueryResult,
+    dyld_cache_utils, memory_block_utils, new_boolean, option_utils, DyldArchitecture,
+    DyldCacheHeader, LoadSpec, MessageLog, Option, QueryResult,
 };
+use crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder;
 use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
 use crate::app::util::opinion::loader::COMMAND_LINE_ARG_PREFIX;
 use crate::app::util::opinion::query_opinion_service;
@@ -179,7 +180,7 @@ impl DyldCacheLoader {
     ) -> io::Result<()> {
         let dyld_cache_options = self.get_dyld_cache_options(options);
         let file_bytes = memory_block_utils::create_file_bytes(program, provider, monitor)?;
-        dyld_cache_program_builder::build_program(
+        DyldCacheProgramBuilder::build_program(
             program,
             provider,
             &file_bytes,
