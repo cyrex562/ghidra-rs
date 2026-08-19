@@ -1292,3 +1292,4 @@ ts	stub_class	referenced_by
 2026-08-19T08:44:48.000000+00:00	UnwindInfo	StackUnwinder
 2026-08-19T08:44:48.000000+00:00	AnalysisUnwoundFrame	StackUnwinder
 2026-08-19T08:44:48.000000+00:00	VariableValueHoverService	StackUnwinder
+2026-08-19T09:15:17.527845+00:00	ArithmeticVarnodeEvaluator	AbstractUnwoundFrame

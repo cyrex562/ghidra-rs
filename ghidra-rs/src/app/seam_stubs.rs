@@ -6622,6 +6622,101 @@ impl SavedRegisterMap {
     pub fn entries(&self) -> &[(crate::program::model::lang::register::RegisterRef, Address)] {
         &self.entries
     }
+
+    /// Where a read or write of `size` bytes at `address` actually lands, or `None` when no saved
+    /// register covers it and the access passes straight through.
+    ///
+    /// Java's `PieceVisitor` splits an access across every recorded entry it partially overlaps
+    /// and concatenates the pieces. This placeholder records whole registers rather than address
+    /// ranges, so it only recognizes an access that lies entirely inside one saved register.
+    pub fn redirect(&self, address: &Address, size: i32) -> StdOption<Address> {
+        for (register, to) in &self.entries {
+            let register = register.borrow();
+            let from = register.address();
+            if !from.same_address_space(address) {
+                continue;
+            }
+            let start = from.offset();
+            let end = start + i64::from(register.num_bytes());
+            if address.offset() >= start && address.offset() + i64::from(size) <= end {
+                return Some(to.add_wrap(address.offset() - start));
+            }
+        }
+        None
+    }
+
+    /// `SavedRegisterMap.getVar(PcodeExecutorState, Address, int, Reason)`: read a variable from
+    /// the given state, redirecting register reads to wherever this frame saved them.
+    ///
+    /// See [`redirect`](Self::redirect) for the simplification against Java's piecewise read.
+    pub fn get_var<T, S>(
+        &self,
+        state: &S,
+        address: &Address,
+        size: i32,
+        reason: crate::pcode::exec::pcode_executor_state_piece::Reason,
+    ) -> T
+    where
+        S: crate::pcode::exec::pcode_executor_state::PcodeExecutorState<T>,
+    {
+        let at = self.redirect(address, size).unwrap_or_else(|| address.clone());
+        state.get_var_address(&at, size, true, reason)
+    }
+
+    /// `SavedRegisterMap.setVar(StateEditor, Address, byte[])`: write a variable through the given
+    /// editor, redirecting register writes to wherever this frame saved them.
+    ///
+    /// Java fans the pieces out over an `AsyncFence`; with a single piece there is nothing to
+    /// join, so the editor's future is returned directly.
+    pub fn set_var(
+        &self,
+        editor: &dyn crate::app::services::debugger_control_service::StateEditor,
+        address: &Address,
+        bytes: &[u8],
+    ) -> crate::app::services::debugger_control_service::StateEditFuture {
+        let at = self
+            .redirect(address, bytes.len() as i32)
+            .unwrap_or_else(|| address.clone());
+        editor.set_variable(&at, bytes)
+    }
+}
+
+/// Placeholder for `ghidra.pcode.eval.ArithmeticVarnodeEvaluator<T>`, referenced by
+/// [`AbstractUnwoundFrame`](crate::app::plugin::core::debug::stack::abstract_unwound_frame).
+///
+/// Only the public static `catenate` is modeled. It is the one member of the class that needs
+/// nothing but a [`PcodeArithmetic`](crate::pcode::exec::pcode_arithmetic::PcodeArithmetic), and
+/// both the frame's value getters and [`SavedRegisterMap::get_var`] join storage pieces with it.
+/// The rest of the class -- the ascent through each varnode's defining p-code op -- cannot be
+/// modeled until high p-code varnodes carry a `getDef()`.
+pub struct ArithmeticVarnodeEvaluator;
+
+impl ArithmeticVarnodeEvaluator {
+    /// `ArithmeticVarnodeEvaluator.catenate(PcodeArithmetic, int, T, T, int)`.
+    ///
+    /// There is no p-code op for catenation, so it is done as one would in C or SLEIGH: shift the
+    /// upper (more significant) piece left by the lower piece's width, then or in the
+    /// zero-extended lower piece.
+    pub fn catenate<T>(
+        arithmetic: &dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<T>,
+        size_total: i32,
+        upper: &T,
+        lower: &T,
+        size_lower: i32,
+    ) -> T {
+        use crate::program::model::pcode::OpCode;
+        let zext = arithmetic.unary_op(OpCode::IntZext, size_total, size_lower, lower);
+        let shift_amount = arithmetic.from_const_u64((size_lower as u64) * 8, 4);
+        let shift = arithmetic.binary_op(
+            OpCode::IntLeft,
+            size_total,
+            size_total,
+            upper,
+            4,
+            &shift_amount,
+        );
+        arithmetic.binary_op(OpCode::IntOr, size_total, size_total, &shift, size_total, &zext)
+    }
 }
 
 /// Placeholder for `ghidra.app.plugin.core.debug.stack.UnwindInfo`, a Java record.
