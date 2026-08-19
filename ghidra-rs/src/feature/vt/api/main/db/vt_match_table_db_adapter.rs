@@ -11,10 +11,9 @@
 use std::io;
 use std::sync::Arc;
 
-use crate::feature::seam_stubs::{
-    VTMatchInfo, VTMatchSetDB, VTMatchTableDBAdapterV0, VTMatchTagDB,
-};
+use crate::feature::seam_stubs::{VTMatchInfo, VTMatchTableDBAdapterV0, VTMatchTagDB};
 use crate::feature::vt::api::db::vt_association_db::VTAssociationDB;
+use crate::feature::vt::api::db::vt_match_set_db::VTMatchSetDB;
 use crate::framework::data::OpenMode;
 use crate::framework::db::{DBHandle, DBRecord, FieldType, RecordIterator, Schema};
 use crate::util::exception::VersionException;
@@ -105,11 +104,11 @@ impl ColumnDescription {
 /// Abstract per-instance operations a concrete match-table adapter must implement.
 ///
 /// Corresponds to the abstract instance methods of the Java `VTMatchTableDBAdapter` class.
-pub trait VTMatchTableDBAdapter {
+pub trait VTMatchTableDBAdapter: Send + Sync {
     fn insert_match_record(
         &self,
         info: &dyn VTMatchInfo,
-        match_set: &dyn VTMatchSetDB,
+        match_set: &VTMatchSetDB,
         association: &VTAssociationDB,
         tag: Option<&dyn VTMatchTagDB>,
     ) -> io::Result<DBRecord>;
@@ -250,10 +249,34 @@ mod tests {
         fn get_destination_length(&self) -> i32 {
             self.dest_len
         }
+        fn get_source_address(&self) -> crate::feature::seam_stubs::AddressType {
+            unimplemented!("insertMatchRecord never reads the info's addresses")
+        }
+        fn get_destination_address(&self) -> crate::feature::seam_stubs::AddressType {
+            unimplemented!("insertMatchRecord never reads the info's addresses")
+        }
+        fn get_association_type(
+            &self,
+        ) -> crate::feature::vt::api::main::vt_association_type::VtAssociationType {
+            unimplemented!("insertMatchRecord never reads the info's association type")
+        }
+        fn get_tag(&self) -> crate::feature::vt::api::main::vt_match_tag::VtMatchTag {
+            unimplemented!("insertMatchRecord takes the resolved tag as a separate argument")
+        }
     }
 
-    struct FakeMatchSet;
-    impl VTMatchSetDB for FakeMatchSet {}
+    /// `insertMatchRecord` never touches its `matchSet` argument, but the parameter is typed, so
+    /// the tests below build a real (empty) match set of their own over table id 99 -- distinct
+    /// from the id 1 table the adapter under test owns.
+    fn fake_match_set(db_handle: &mut DBHandle) -> VTMatchSetDB {
+        use crate::feature::vt::api::db::vt_match_set_db::test_support;
+        let session = test_support::new_session_with_manager(db_handle);
+        test_support::new_match_set(
+            db_handle,
+            session as std::sync::Arc<dyn crate::feature::seam_stubs::VTSessionDB>,
+            99,
+        )
+    }
 
     /// Builds a session-less `VTAssociationDB` whose only interesting property is its key, which
     /// is all `insertMatchRecord` reads off the association.
@@ -282,7 +305,7 @@ mod tests {
             source_len: 10,
             dest_len: 20,
         };
-        let match_set = FakeMatchSet;
+        let match_set = fake_match_set(&mut db_handle);
         let association = fake_association(7);
         let tag = FakeTag(3);
 
@@ -311,6 +334,7 @@ mod tests {
     fn insert_match_record_with_no_tag_stores_negative_one() {
         let mut db_handle = DBHandle::new().unwrap();
         let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
+        let match_set = fake_match_set(&mut db_handle);
 
         let info = FakeMatchInfo {
             similarity: VtScore::new(0.1),
@@ -319,7 +343,7 @@ mod tests {
             dest_len: 2,
         };
         let record = adapter
-            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
+            .insert_match_record(&info, &match_set, &fake_association(1), None)
             .unwrap();
 
         assert_eq!(record.get_long(ColumnDescription::TagKeyCol.column()), Some(-1));
@@ -329,6 +353,7 @@ mod tests {
     fn delete_record_removes_it() {
         let mut db_handle = DBHandle::new().unwrap();
         let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
+        let match_set = fake_match_set(&mut db_handle);
 
         let info = FakeMatchInfo {
             similarity: VtScore::new(0.1),
@@ -337,7 +362,7 @@ mod tests {
             dest_len: 2,
         };
         let record = adapter
-            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
+            .insert_match_record(&info, &match_set, &fake_association(1), None)
             .unwrap();
         let key = record.get_key().get_long_value();
 
@@ -350,6 +375,7 @@ mod tests {
     fn get_records_for_association_filters_by_association_key() {
         let mut db_handle = DBHandle::new().unwrap();
         let adapter = VTMatchTableDBAdapterBase::create_adapter(&mut db_handle, 1).unwrap();
+        let match_set = fake_match_set(&mut db_handle);
 
         let info = FakeMatchInfo {
             similarity: VtScore::new(0.1),
@@ -358,13 +384,13 @@ mod tests {
             dest_len: 2,
         };
         adapter
-            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
+            .insert_match_record(&info, &match_set, &fake_association(1), None)
             .unwrap();
         adapter
-            .insert_match_record(&info, &FakeMatchSet, &fake_association(2), None)
+            .insert_match_record(&info, &match_set, &fake_association(2), None)
             .unwrap();
         adapter
-            .insert_match_record(&info, &FakeMatchSet, &fake_association(1), None)
+            .insert_match_record(&info, &match_set, &fake_association(1), None)
             .unwrap();
 
         let mut iter = adapter.get_records_for_association(1).unwrap();

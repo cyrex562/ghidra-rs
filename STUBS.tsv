@@ -524,7 +524,6 @@ ts	stub_class	referenced_by
 2026-08-11T03:00:15.274089+00:00	VTOptions	VTProgramCorrelatorFactory
 2026-08-10T00:00:00.000000+00:00	VTMatchTagDBAdapterV0	VTMatchTagDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchInfo	VTMatchTableDBAdapter
-2026-08-10T00:00:00.000000+00:00	VTMatchSetDB	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchTagDB	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchTableDBAdapterV0	VTMatchTableDBAdapter
 2026-08-10T00:00:00.000000+00:00	VTMatchSetTableDBAdapterV0	VTMatchSetTableDBAdapter
@@ -1212,3 +1211,5 @@ ts	stub_class	referenced_by
 2026-08-19T01:00:37Z	LibObjcDylib	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	MachoProgramBuilder	DyldCacheProgramBuilder
 2026-08-19T01:00:37Z	MachHeader	DyldCacheProgramBuilder
+2026-08-18T21:40:00.000000+00:00	VTMatchDB	VTMatchSetDB
+2026-08-18T21:40:00.000000+00:00	ProgramCorrelatorInfoImpl	VTMatchSetDB
