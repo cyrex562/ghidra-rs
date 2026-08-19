@@ -19,6 +19,7 @@ use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::typedef::TypeDef;
 use crate::program::model::address::{Address, AddressRange};
 use crate::program::model::listing::Program;
+use crate::program::model::mem::MemoryBlock;
 use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::LanguageCompilerSpecPair;
 use crate::program::util::program_location::ProgramLocation;
@@ -5546,4 +5547,78 @@ impl fmt::Display for VarnodeAst {
 /// this is a unit struct rather than a trait -- there is nothing to dispatch over.
 #[derive(Debug, Default)]
 pub struct ListingMergePanel;
+
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.DwarfDecodeContext`, referenced by
+/// [`DwarfEHDecoder`](crate::app::plugin::exceptionhandlers::gcc::dwarf_eh_decoder::DwarfEHDecoder)
+/// before the real class is ported. Java's version is a concrete class (not an interface), so
+/// this is a plain struct rather than a `dyn`-dispatched trait, matching
+/// [`ListingMergePanel`]'s convention. Records vital data (the program and address of the
+/// encoded value, plus the optional exception-handling memory block and associated function
+/// entry point) used while decoding one DWARF exception-handling value, and the decoded value
+/// once the decode has run.
+#[derive(Clone)]
+pub struct DwarfDecodeContext {
+    program: Arc<dyn Program>,
+    address: Address,
+    eh_block: StdOption<Arc<dyn MemoryBlock>>,
+    function_entry_point: StdOption<Address>,
+    decoded_value: StdOption<i64>,
+    encoded_length: i32,
+}
+
+impl DwarfDecodeContext {
+    /// Constructs a Dwarf decode context for `address` within `program`, optionally recording
+    /// the exception-handling memory block and/or the associated function's entry point.
+    pub fn new(
+        program: Arc<dyn Program>,
+        address: Address,
+        eh_block: StdOption<Arc<dyn MemoryBlock>>,
+        function_entry_point: StdOption<Address>,
+    ) -> Self {
+        Self {
+            program,
+            address,
+            eh_block,
+            function_entry_point,
+            decoded_value: None,
+            encoded_length: 0,
+        }
+    }
+
+    /// Gets the program containing the encoded data.
+    pub fn get_program(&self) -> Arc<dyn Program> {
+        self.program.clone()
+    }
+
+    /// Gets the min address of the encoded data.
+    pub fn get_address(&self) -> Address {
+        self.address.clone()
+    }
+
+    /// Sets the value and value-length after decode.
+    pub fn set_decoded_value(&mut self, value: i64, encoded_length: i32) {
+        self.decoded_value = Some(value);
+        self.encoded_length = encoded_length;
+    }
+
+    /// Gets the decoded value that is at the address, if a decode has run.
+    pub fn get_decoded_value(&self) -> StdOption<i64> {
+        self.decoded_value
+    }
+
+    /// Gets the length of the encoded data that is at the address.
+    pub fn get_encoded_length(&self) -> i32 {
+        self.encoded_length
+    }
+
+    /// Gets the exception handling memory block associated with this dwarf encoded data, if any.
+    pub fn get_eh_block(&self) -> StdOption<Arc<dyn MemoryBlock>> {
+        self.eh_block.clone()
+    }
+
+    /// Gets the associated function's entry point, if any.
+    pub fn get_function_entry_point(&self) -> StdOption<Address> {
+        self.function_entry_point.clone()
+    }
+}
 
