@@ -6635,4 +6635,3 @@ pub trait Objc2ClassRW: Send + Sync {
     fn hash_code(&self) -> i32;
     fn to_data_type(&self) -> std::io::Result<Box<dyn crate::program::model::data::data_type::DataType>>;
 }
-
