@@ -16,7 +16,7 @@ DONE	trait	3	2	6	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/Reloca
 DONE	trait	3	3	18	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/SymbolTableSarifMgr.java
 DONE	trait	1	13	5	sarif	Ghidra/Features/Sarif/src/main/java/sarif/model/SarifDataFrame.java
 DONE	trait	0	15	7	sarif	Ghidra/Features/Sarif/src/main/java/sarif/handlers/SarifResultHandler.java
-TODO	trait	4	7	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskListener.java
+DONE	trait	4	7	5	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskListener.java
 TODO	trait	3	14	8	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskManager.java
 TODO	trait	2	11	2	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTask.java
 TODO	trait	1	12	4	framework	Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GScheduledTask.java
