@@ -1238,3 +1238,5 @@ ts	stub_class	referenced_by
 2026-08-19T02:40:00+00:00	UnsignedInteger3DataType	DataTypesSarifMgr
 2026-08-19T02:43:29.084708+00:00	SarifEquateWriter	EquatesSarifMgr
 2026-08-19T02:50:16.974411+00:00	SarifEntryPointWriter	ExtEntryPointSarifMgr
+2026-08-19T03:15:00+00:00	SarifExternalLibraryWriter	ExternalLibSarifMgr
+2026-08-19T03:15:00+00:00	SarifClassesNamespaceWriter	ExternalLibSarifMgr

@@ -4,6 +4,7 @@ pub mod comments_sarif_mgr;
 pub mod data_types_sarif_mgr;
 pub mod equates_sarif_mgr;
 pub mod ext_entry_point_sarif_mgr;
+pub mod external_lib_sarif_mgr;
 pub mod memory_map_bytes_file;
 
 pub use bookmarks_sarif_mgr::BookmarksSarifMgr;
@@ -12,4 +13,5 @@ pub use comments_sarif_mgr::CommentsSarifMgr;
 pub use data_types_sarif_mgr::DataTypesSarifMgr;
 pub use equates_sarif_mgr::EquatesSarifMgr;
 pub use ext_entry_point_sarif_mgr::ExtEntryPointSarifMgr;
+pub use external_lib_sarif_mgr::ExternalLibSarifMgr;
 pub use memory_map_bytes_file::MemoryMapBytesFile;

@@ -11,7 +11,7 @@ use crate::program::model::address::address_overflow_exception::AddressOverflowE
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView};
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::listing::{Bookmark, CodeUnit, Instruction, Program};
+use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instruction, Program};
 use crate::program::model::symbol::source_type::SourceType;
 use crate::program::seam_stubs::FlowOverride;
 use crate::util::exception::DuplicateNameException;
@@ -255,6 +255,44 @@ impl SarifCodeWriter {
     /// all a two-element pair is.
     pub fn new(blocks: Vec<AddressRange>, overrides: Vec<(Arc<dyn Instruction>, FlowOverride)>) -> Self {
         Self { blocks, overrides }
+    }
+}
+
+/// Placeholder for `sarif.export.extlib.SarifExternalLibraryWriter`, referenced by
+/// [`ExternalLibSarifMgr::write_ext_as_sarif`](crate::sarif::managers::ExternalLibSarifMgr::write_ext_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor's library-name list is modeled; the `ExternalManager` collaborator (needed to look
+/// up each library's path and locations) and the `genRoot`/`AbstractExtWriter` machinery that
+/// turns them into SARIF JSON are pending that class's own port.
+pub struct SarifExternalLibraryWriter {
+    pub library_names: Vec<String>,
+}
+
+impl SarifExternalLibraryWriter {
+    /// `new SarifExternalLibraryWriter(ExternalManager externalManager, List<String> request,
+    /// Writer baseWriter)`, minus the manager (pending its own port) and the (always `null`, here)
+    /// base writer.
+    pub fn new(library_names: Vec<String>) -> Self {
+        Self { library_names }
+    }
+}
+
+/// Placeholder for `sarif.export.extlib.SarifClassesNamespaceWriter`, referenced by
+/// [`ExternalLibSarifMgr::write_namespace_as_sarif`](crate::sarif::managers::ExternalLibSarifMgr::write_namespace_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor's class list is modeled; the `ExternalManager`/`SymbolTable` collaborators (needed
+/// to walk each class's external symbols) and the `genRoot`/`AbstractExtWriter` machinery that
+/// turns them into SARIF JSON are pending that class's own port.
+pub struct SarifClassesNamespaceWriter {
+    pub classes: Vec<Arc<dyn GhidraClass>>,
+}
+
+impl SarifClassesNamespaceWriter {
+    /// `new SarifClassesNamespaceWriter(ExternalManager externalManager, SymbolTable symbolTable,
+    /// List<GhidraClass> request, Writer baseWriter)`, minus the manager/table (pending their own
+    /// ports) and the (always `null`, here) base writer.
+    pub fn new(classes: Vec<Arc<dyn GhidraClass>>) -> Self {
+        Self { classes }
     }
 }
 
