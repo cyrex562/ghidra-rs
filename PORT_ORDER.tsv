@@ -26,7 +26,7 @@ DONE	trait	0	14	60	feature	Ghidra/Features/BSim/src/main/java/ghidra/features/bs
 DONE	trait	0	14	2	app	Ghidra/Features/Base/src/main/java/ghidra/app/merge/listing/ListingMerger.java
 DONE	trait	4	13	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfEHDecoder.java
 DONE	trait	3	12	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/DwarfDecodeContext.java
-TODO	trait	4	3	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/sections/CieSource.java
+DONE	trait	4	3	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/sections/CieSource.java
 TODO	trait	3	3	10	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/sections/AbstractFrameSection.java
 TODO	trait	3	4	11	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/structures/gccexcepttable/LSDAActionRecord.java
 TODO	trait	2	8	64	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/GccExceptionAnalyzer.java
