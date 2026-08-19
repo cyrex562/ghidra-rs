@@ -13,6 +13,7 @@ use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instruction, Program, ProgramModule};
 use crate::program::model::mem::MemoryBlock;
+use crate::program::model::reloc::Relocation;
 use crate::program::model::symbol::source_type::SourceType;
 use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::FlowOverride;
@@ -160,6 +161,23 @@ impl SarifMgr {
             .map(Some)
             .ok_or_else(|| format!("Error converting {addr_string} to address"))
     }
+
+    /// `SarifMgr.parseLong(String)`. Mirrors `NumericUtilities.parseLong`/`parseHexLong`: an
+    /// optional leading `-`, then an optional `0x` prefix selecting radix 16 over the default 10.
+    /// Java's version throws an unchecked `NumberFormatException` on failure; that is modeled here
+    /// as `Err` since none of this crate's error types are unchecked.
+    pub fn parse_long(long_str: &str) -> Result<i64, String> {
+        let (is_negative, rest) = match long_str.strip_prefix('-') {
+            Some(rest) => (true, rest),
+            None => (false, long_str),
+        };
+        let (radix, digits) = match rest.strip_prefix("0x") {
+            Some(hex) => (16, hex),
+            None => (10, rest),
+        };
+        let val = i64::from_str_radix(digits, radix).map_err(|_| long_str.to_string())?;
+        Ok(if is_negative { -val } else { val })
+    }
 }
 
 /// Placeholder for `sarif.SarifProgramOptions`, referenced by
@@ -237,6 +255,23 @@ impl MessageLog {
     /// The messages recorded so far, in append order.
     pub fn messages(&self) -> Vec<String> {
         self.messages.lock().unwrap().clone()
+    }
+}
+
+/// Placeholder for `sarif.export.relocs.SarifRelocationWriter`, referenced by
+/// [`RelocationTableSarifMgr::write_as_sarif`](crate::sarif::managers::RelocationTableSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor is modeled; the `genRoot`/`AbstractExtWriter` machinery that turns the relocations
+/// into SARIF JSON is pending that class's own port.
+pub struct SarifRelocationWriter {
+    pub relocations: Vec<Relocation>,
+}
+
+impl SarifRelocationWriter {
+    /// `new SarifRelocationWriter(List<Relocation> target, Writer baseWriter)`, minus the (always
+    /// `null`, here) base writer.
+    pub fn new(relocations: Vec<Relocation>) -> Self {
+        Self { relocations }
     }
 }
 
