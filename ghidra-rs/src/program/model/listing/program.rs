@@ -173,6 +173,38 @@ pub trait Program: DomainObject + Send + Sync {
         None
     }
 
+    /// Get the bookmark manager for this program for modification.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+    /// which records one `Dyld Cache Header` info bookmark per cache file. Java has only
+    /// `getBookmarkManager()`, because a Java `BookmarkManager` reference is mutable through;
+    /// this port's [`get_bookmark_manager`](Self::get_bookmark_manager) hands out an
+    /// `Arc<dyn BookmarkManager>`, which is not -- the same split
+    /// [`get_memory_mut`](Self::get_memory_mut) makes.
+    fn get_bookmark_manager_mut(&mut self) -> Option<&mut dyn BookmarkManager> {
+        None
+    }
+
+    /// Set the program's image base, optionally committing the change (i.e. relocating every
+    /// existing memory block along with it) rather than merely recording it.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+    /// which sets the image base to the cache's base address before mapping anything. Stands in
+    /// for `Program.setImageBase(Address, boolean)`; Java's `LockException`/`IllegalStateException`
+    /// (raised when the caller holds no exclusive lock, or when the program has changed since it
+    /// was opened) collapse into the same `io::Error` channel as its `AddressOverflowException`,
+    /// as elsewhere in this port.
+    ///
+    /// Defaults to accepting and discarding the request, matching
+    /// [`set_preferred_root_namespace_category_path`](Self::set_preferred_root_namespace_category_path):
+    /// no in-repo `Program` implementor tracks an image base it can move yet.
+    fn set_image_base(&mut self, base: Address, commit: bool) -> std::io::Result<()> {
+        let _ = (base, commit);
+        Ok(())
+    }
+
     /// The MD5 hash of the executable this program was imported from, as a lower-case hex
     /// string, or `None` if the program was not imported from a file.
     ///

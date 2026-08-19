@@ -1930,6 +1930,31 @@ pub trait SegmentCommand: Send + Sync {
     fn get_file_offset(&self) -> i64;
     /// `SegmentCommand.getFileSize()`.
     fn get_file_size(&self) -> i64;
+
+    /// `SegmentCommand.getVMsize()`, needed by
+    /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+    /// which sizes each program-tree segment fragment by it.
+    ///
+    /// Defaults to `0` so existing implementors are unaffected.
+    fn get_v_msize(&self) -> i64 {
+        0
+    }
+
+    /// `SegmentCommand.getSegmentName()`, needed by `DyldCacheProgramBuilder` both to name the
+    /// segment's program-tree fragment and to skip the shared `__LINKEDIT` segment.
+    ///
+    /// Defaults to the empty string so existing implementors are unaffected.
+    fn get_segment_name(&self) -> String {
+        String::new()
+    }
+
+    /// `SegmentCommand.getSections()`, needed by `DyldCacheProgramBuilder`, which creates one
+    /// program-tree fragment per section.
+    ///
+    /// Defaults to empty so existing implementors are unaffected.
+    fn get_sections(&self) -> Vec<Section> {
+        Vec::new()
+    }
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.MachHeader`, referenced by
@@ -1961,6 +1986,41 @@ pub trait MachHeader: Send + Sync {
     fn get_symbol_table_command(&self) -> Option<SymbolTableCommand> {
         None
     }
+
+    /// Stands in for `MachHeader.parse()` *and* for `MachHeader.parse(SplitDyldCache)`, needed by
+    /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+    /// which parses each cached DYLIB's header and each branch island's header. The two Java
+    /// overloads differ only in which byte providers load commands may reach across; a placeholder
+    /// that parses nothing cannot tell them apart, so they collapse into this one method.
+    ///
+    /// Defaults to `Ok(())` so existing implementors are unaffected.
+    fn parse(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+
+    /// `MachHeader.getSize()`, the size in bytes of the header plus its load commands.
+    ///
+    /// Defaults to `0` so existing implementors are unaffected.
+    fn get_size(&self) -> i64 {
+        0
+    }
+}
+
+/// Stands in for the `MachHeader(ByteProvider, long machHeaderStartIndexInProvider)` constructor,
+/// which cannot live on the [`MachHeader`] trait above (Rust traits have no constructors, and the
+/// real Java class is concrete). Referenced by
+/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+/// which builds one header per DYLD branch island.
+///
+/// Not yet implemented: reading a Mach-O header needs the real (unported) class. Java's
+/// constructor throws `MachException` when the bytes at `offset` are not a Mach-O header, which
+/// is exactly the case `DyldCacheProgramBuilder` swallows, hence the error type.
+pub fn mach_header_from_provider(
+    provider: &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+    offset: i64,
+) -> Result<Box<dyn MachHeader>, crate::format::macho::mach_exception::MachException> {
+    let _ = (provider, offset);
+    unimplemented!("format::seam_stubs::mach_header_from_provider placeholder not overridden")
 }
 
 /// Placeholder for `ghidra.app.util.bin.format.macho.RelocationInfo`, referenced by
@@ -2015,11 +2075,35 @@ impl std::fmt::Display for RelocationInfo {
 pub struct Section {
     address: i64,
     section_name: String,
+    size: i64,
+    segment_name: String,
 }
 
 impl Section {
     pub fn new(address: i64, section_name: impl Into<String>) -> Self {
-        Section { address, section_name: section_name.into() }
+        Section {
+            address,
+            section_name: section_name.into(),
+            size: 0,
+            segment_name: String::new(),
+        }
+    }
+
+    /// Like [`new`](Self::new), but also carrying the `size`/`segmentName` fields
+    /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder)
+    /// reads when laying out program-tree fragments.
+    pub fn with_segment(
+        address: i64,
+        section_name: impl Into<String>,
+        size: i64,
+        segment_name: impl Into<String>,
+    ) -> Self {
+        Section {
+            address,
+            section_name: section_name.into(),
+            size,
+            segment_name: segment_name.into(),
+        }
     }
 
     /// `Section.getAddress()`.
@@ -2030,6 +2114,16 @@ impl Section {
     /// `Section.getSectionName()`.
     pub fn get_section_name(&self) -> &str {
         &self.section_name
+    }
+
+    /// `Section.getSize()`.
+    pub fn get_size(&self) -> i64 {
+        self.size
+    }
+
+    /// `Section.getSegmentName()`.
+    pub fn get_segment_name(&self) -> &str {
+        &self.segment_name
     }
 }
 

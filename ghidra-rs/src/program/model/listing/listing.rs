@@ -519,6 +519,21 @@ pub trait Listing {
     /// has existed the longest.
     fn get_default_root_module(&self) -> Arc<dyn ProgramModule>;
 
+    /// Mutable counterpart of [`get_default_root_module`](Self::get_default_root_module).
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+    /// which calls `createModule`/`createFragment` on the root to give each cached DYLIB its own
+    /// program-tree entry. Java needs no such split: a `ProgramModule` reference is mutable
+    /// through, whereas the `Arc<dyn ProgramModule>` above is not -- the same split
+    /// [`Program::get_memory_mut`](crate::program::model::listing::Program::get_memory_mut) makes.
+    ///
+    /// Defaults to `None`, i.e. "this listing has no program tree that can be built up", which
+    /// callers are expected to treat as nothing to do.
+    fn get_default_root_module_mut(&mut self) -> Option<&mut dyn ProgramModule> {
+        None
+    }
+
     /// Get the names of all the trees defined in this listing.
     fn get_tree_names(&self) -> Vec<String>;
 

@@ -1204,3 +1204,11 @@ ts	stub_class	referenced_by
 2026-08-18T09:55:00Z	MessageLog	CodeSarifMgr
 2026-08-18T09:55:00Z	SarifWriterTask	CodeSarifMgr
 2026-08-18T09:55:00Z	TaskLauncher	CodeSarifMgr
+2026-08-19T01:00:37Z	SplitDyldCache	DyldCacheProgramBuilder
+2026-08-19T01:00:37Z	DyldCacheImageRecord	DyldCacheProgramBuilder
+2026-08-19T01:00:37Z	DyldCacheMappingInfo	DyldCacheProgramBuilder
+2026-08-19T01:00:37Z	DyldCacheLocalSymbolsInfo	DyldCacheProgramBuilder
+2026-08-19T01:00:37Z	DyldCacheSlideInfoCommon	DyldCacheProgramBuilder
+2026-08-19T01:00:37Z	LibObjcDylib	DyldCacheProgramBuilder
+2026-08-19T01:00:37Z	MachoProgramBuilder	DyldCacheProgramBuilder
+2026-08-19T01:00:37Z	MachHeader	DyldCacheProgramBuilder

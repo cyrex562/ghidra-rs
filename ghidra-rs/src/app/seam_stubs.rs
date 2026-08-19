@@ -2854,7 +2854,7 @@ impl DyldArchitecture {
 /// [`is_subcache`](Self::is_subcache) are NOT derived from any of the (unparsed) later fields
 /// the real `getBaseAddress()`/`isSubcache()` compute them from, and default to `0`/`false` until
 /// the full port lands.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct DyldCacheHeader {
     /// Port of `DyldCacheHeader.getArchitecture()`.
     pub architecture: StdOption<DyldArchitecture>,
@@ -2864,6 +2864,28 @@ pub struct DyldCacheHeader {
     /// Port of `DyldCacheHeader.isSubcache()`. Always `false` on this placeholder; see the type
     /// docs.
     pub is_subcache: bool,
+    /// Port of `DyldCacheHeader.getUUID()`. Empty on a header built by [`new`](Self::new), which
+    /// parses only the magic.
+    pub uuid: Vec<u8>,
+    /// Port of `DyldCacheHeader.getMappingInfos()`.
+    pub mapping_infos: Vec<DyldCacheMappingInfo>,
+    /// Port of `DyldCacheHeader.getLocalSymbolsInfo()`; `None` stands in for Java's `null`.
+    pub local_symbols_info: StdOption<DyldCacheLocalSymbolsInfo>,
+    /// Port of `DyldCacheHeader.getSlideInfos()`.
+    pub slide_infos: Vec<DyldCacheSlideInfoCommon>,
+    /// Port of `DyldCacheHeader.getBranchPoolAddresses()`.
+    pub branch_pool_addresses: Vec<i64>,
+    /// The `accelerateInfoAddr` field, which doubles as `dyldInCacheEntry` in newer caches. Java
+    /// exposes it as `hasAccelerateInfo()` plus
+    /// `getAccelerateInfoSizeOrDyldInCacheEntry()`; only when the former is false does the latter
+    /// name a program entry point.
+    pub accelerate_info_size_or_dyld_in_cache_entry: i64,
+    /// Port of `DyldCacheHeader.hasAccelerateInfo()`.
+    pub has_accelerate_info: bool,
+    /// The name of the block last handed to [`set_file_block`](Self::set_file_block), standing in
+    /// for the `fileBlock` field Java keeps a `MemoryBlock` reference in. Nothing in this crate
+    /// reads the block back yet, so only its name is retained.
+    pub file_block_name: StdOption<String>,
 }
 
 impl DyldCacheHeader {
@@ -2874,12 +2896,163 @@ impl DyldCacheHeader {
         let magic = reader.read_next_ascii_string_fixed(Self::MAGIC_LEN)?;
         Ok(DyldCacheHeader {
             architecture: DyldArchitecture::get_architecture(magic.trim()),
-            base_address: 0,
-            is_subcache: false,
+            ..Default::default()
         })
     }
 
     const MAGIC_LEN: u64 = DyldArchitecture::DYLD_V1_SIGNATURE_LEN as u64;
+
+    /// Port of `DyldCacheHeader.setFileBlock(MemoryBlock)`.
+    pub fn set_file_block(&mut self, block: &dyn crate::program::model::mem::MemoryBlock) {
+        self.file_block_name = Some(block.get_name().to_string());
+    }
+
+    /// Port of `DyldCacheHeader.parseFromMemory(Program, AddressSpace, MessageLog, TaskMonitor)`.
+    /// The real body re-reads the header out of the now-mapped program memory so that the
+    /// mark-up below can annotate it; this placeholder has nothing to re-read and succeeds
+    /// without recording anything.
+    pub fn parse_from_memory(
+        &mut self,
+        program: &dyn crate::program::model::listing::Program,
+        space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+        log: &dyn MessageLog,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> std::io::Result<()> {
+        let _ = (program, space, log, monitor);
+        Ok(())
+    }
+
+    /// Port of `DyldCacheHeader.markup(Program, boolean, AddressSpace, TaskMonitor, MessageLog)`.
+    /// As for [`parse_from_memory`](Self::parse_from_memory), the placeholder marks nothing up.
+    pub fn markup(
+        &self,
+        program: &mut dyn crate::program::model::listing::Program,
+        markup_local_symbols: bool,
+        space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+        monitor: &dyn crate::util::task::TaskMonitor,
+        log: &dyn MessageLog,
+    ) -> std::io::Result<()> {
+        let _ = (program, markup_local_symbols, space, monitor, log);
+        Ok(())
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheMappingInfo`, referenced by
+/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+/// which turns each mapping into a memory block. Concrete Java class; only the six accessors that
+/// builder reads are modeled (the protection words are exposed solely through
+/// `isRead`/`isWrite`/`isExecute`, which is all it asks for).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DyldCacheMappingInfo {
+    address: i64,
+    size: i64,
+    file_offset: i64,
+    read: bool,
+    write: bool,
+    execute: bool,
+}
+
+impl DyldCacheMappingInfo {
+    pub fn new(
+        address: i64,
+        size: i64,
+        file_offset: i64,
+        read: bool,
+        write: bool,
+        execute: bool,
+    ) -> Self {
+        DyldCacheMappingInfo { address, size, file_offset, read, write, execute }
+    }
+
+    /// `DyldCacheMappingInfo.getAddress()`.
+    pub fn get_address(&self) -> i64 {
+        self.address
+    }
+
+    /// `DyldCacheMappingInfo.getSize()`.
+    pub fn get_size(&self) -> i64 {
+        self.size
+    }
+
+    /// `DyldCacheMappingInfo.getFileOffset()`.
+    pub fn get_file_offset(&self) -> i64 {
+        self.file_offset
+    }
+
+    /// `DyldCacheMappingInfo.isRead()`.
+    pub fn is_read(&self) -> bool {
+        self.read
+    }
+
+    /// `DyldCacheMappingInfo.isWrite()`.
+    pub fn is_write(&self) -> bool {
+        self.write
+    }
+
+    /// `DyldCacheMappingInfo.isExecute()`.
+    pub fn is_execute(&self) -> bool {
+        self.execute
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheLocalSymbolsInfo`, referenced
+/// by [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+/// which turns each nlist into a program label. Only `getNList()` is modeled; the entries table
+/// and the `parse`/`markup` pair are driven from `DyldCacheHeader`, not from that builder.
+///
+/// Reuses the already-placeholdered [`NList`](crate::format::seam_stubs::NList) rather than
+/// introducing a second stand-in for the same Java class.
+#[derive(Debug, Clone, Default)]
+pub struct DyldCacheLocalSymbolsInfo {
+    nlist: Vec<crate::format::seam_stubs::NList>,
+}
+
+impl DyldCacheLocalSymbolsInfo {
+    pub fn new(nlist: Vec<crate::format::seam_stubs::NList>) -> Self {
+        DyldCacheLocalSymbolsInfo { nlist }
+    }
+
+    /// `DyldCacheLocalSymbolsInfo.getNList()`.
+    pub fn get_nlist(&self) -> &[crate::format::seam_stubs::NList] {
+        &self.nlist
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.DyldCacheSlideInfoCommon`, referenced by
+/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+/// which logs each slide-info version and asks it to rewrite the slid pointers. Java's version is
+/// an abstract base with five concrete subclasses (`DyldCacheSlideInfo1`..`5`) that differ only in
+/// how they walk their page tables; since `DyldCacheProgramBuilder` never distinguishes them, one
+/// concrete placeholder carrying the version stands in for the whole family.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DyldCacheSlideInfoCommon {
+    version: i32,
+}
+
+impl DyldCacheSlideInfoCommon {
+    pub fn new(version: i32) -> Self {
+        DyldCacheSlideInfoCommon { version }
+    }
+
+    /// `DyldCacheSlideInfoCommon.getVersion()`.
+    pub fn get_version(&self) -> i32 {
+        self.version
+    }
+
+    /// `DyldCacheSlideInfoCommon.fixupSlidePointers(Program, boolean, boolean, MessageLog,
+    /// TaskMonitor)`. Not yet implemented: the real body walks this cache's page tables and
+    /// rewrites every slid pointer in program memory.
+    pub fn fixup_slide_pointers(
+        &self,
+        program: &mut dyn crate::program::model::listing::Program,
+        markup: bool,
+        add_relocations: bool,
+        log: &dyn MessageLog,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> std::io::Result<()> {
+        let _ = (program, markup, add_relocations, log, monitor);
+        unimplemented!("DyldCacheSlideInfoCommon::fixup_slide_pointers placeholder not overridden")
+    }
 }
 
 /// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils`, referenced by
@@ -2991,36 +3164,269 @@ pub mod memory_block_utils {
     }
 }
 
-/// Placeholder for `ghidra.app.util.opinion.DyldCacheProgramBuilder`, referenced by
-/// [`dyld_cache_loader`](crate::app::util::opinion::dyld_cache_loader) before the real class is
-/// ported. Java's version drives the entire DYLD cache program build (memory blocks, symbols,
-/// exports, load-command markup, program tree); only the single static entry point
-/// `DyldCacheLoader.load` calls is modeled, and it is not yet implemented (see
-/// [`memory_block_utils::create_file_bytes`]) since the real build needs far more infrastructure
-/// than this placeholder models.
-pub mod dyld_cache_program_builder {
+/// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils.DyldCacheImageRecord`, the record
+/// pairing a cached image with the index of the split-cache file it lives in. Referenced by
+/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+/// which walks [`SplitDyldCache::get_image_records`] to find every DYLIB to process.
+///
+/// The image itself is the already-ported
+/// [`DyldCacheImage`](crate::format::macho::dyld::dyld_cache_image::DyldCacheImage) trait, whose
+/// two accessors are exactly what the builder reads.
+#[derive(Clone)]
+pub struct DyldCacheImageRecord {
+    image: std::sync::Arc<dyn crate::format::macho::dyld::dyld_cache_image::DyldCacheImage>,
+    split_cache_index: i32,
+}
+
+impl DyldCacheImageRecord {
+    pub fn new(
+        image: std::sync::Arc<dyn crate::format::macho::dyld::dyld_cache_image::DyldCacheImage>,
+        split_cache_index: i32,
+    ) -> Self {
+        DyldCacheImageRecord { image, split_cache_index }
+    }
+
+    /// `DyldCacheImageRecord.image()`.
+    pub fn image(&self) -> &dyn crate::format::macho::dyld::dyld_cache_image::DyldCacheImage {
+        &*self.image
+    }
+
+    /// `DyldCacheImageRecord.splitCacheIndex()`.
+    pub fn split_cache_index(&self) -> i32 {
+        self.split_cache_index
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.DyldCacheUtils.SplitDyldCache`, referenced by
+/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+/// which drives the whole build off it. Java's version discovers and opens every sub-cache file
+/// sitting beside the primary one, parsing a [`DyldCacheHeader`] per file; this placeholder only
+/// holds whatever entries it is handed, so that the builder's per-file loops can be exercised
+/// without the (unported) discovery machinery.
+///
+/// Java implements `Closeable`; `close()` is not modeled, since dropping this value releases the
+/// providers it holds.
+#[derive(Default)]
+pub struct SplitDyldCache {
+    headers: Vec<DyldCacheHeader>,
+    providers: Vec<std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>>,
+    names: Vec<String>,
+    image_records: Vec<DyldCacheImageRecord>,
+    base_address: i64,
+}
+
+impl SplitDyldCache {
+    /// Port of `SplitDyldCache(ByteProvider, boolean, MessageLog, TaskMonitor)`. Not yet
+    /// implemented: the real constructor globs the directory beside `provider`'s file for
+    /// sub-caches, opens each one, and parses its header and image list.
+    pub fn new(
+        provider: &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>,
+        should_process_local_symbols: bool,
+        log: &dyn MessageLog,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> std::io::Result<Self> {
+        let _ = (provider, should_process_local_symbols, log, monitor);
+        unimplemented!("SplitDyldCache::new placeholder not overridden")
+    }
+
+    /// Builds a split cache directly from already-parsed parts, for callers (and tests) that have
+    /// no file to discover sub-caches from. Has no Java counterpart.
+    pub fn from_parts(
+        headers: Vec<DyldCacheHeader>,
+        providers: Vec<std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>>>,
+        names: Vec<String>,
+        image_records: Vec<DyldCacheImageRecord>,
+        base_address: i64,
+    ) -> Self {
+        SplitDyldCache { headers, providers, names, image_records, base_address }
+    }
+
+    /// `SplitDyldCache.size()`, the number of cache files (primary plus sub-caches).
+    pub fn size(&self) -> usize {
+        self.headers.len()
+    }
+
+    /// `SplitDyldCache.getDyldCacheHeader(int)`.
+    pub fn get_dyld_cache_header(&self, i: usize) -> &DyldCacheHeader {
+        &self.headers[i]
+    }
+
+    /// Mutable counterpart of [`get_dyld_cache_header`](Self::get_dyld_cache_header). Java needs
+    /// no such split: `DyldCacheProgramBuilder` mutates the header it is handed (`setFileBlock`,
+    /// `parseFromMemory`) through the same reference this accessor returns.
+    pub fn get_dyld_cache_header_mut(&mut self, i: usize) -> &mut DyldCacheHeader {
+        &mut self.headers[i]
+    }
+
+    /// `SplitDyldCache.getProvider(int)`.
+    pub fn get_provider(
+        &self,
+        i: usize,
+    ) -> &std::rc::Rc<std::cell::RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
+        &self.providers[i]
+    }
+
+    /// `SplitDyldCache.getName(int)`, the file name of the `i`th cache file.
+    pub fn get_name(&self, i: usize) -> &str {
+        &self.names[i]
+    }
+
+    /// `SplitDyldCache.getBaseAddress()`.
+    pub fn get_base_address(&self) -> i64 {
+        self.base_address
+    }
+
+    /// `SplitDyldCache.getImageRecords()`.
+    pub fn get_image_records(&self) -> &[DyldCacheImageRecord] {
+        &self.image_records
+    }
+
+    /// `SplitDyldCache.getMacho(DyldCacheImageRecord)`, the unparsed [`MachHeader`] for a cached
+    /// image. Not yet implemented: it needs the real Mach-O header class (see
+    /// [`mach_header_from_provider`](crate::format::seam_stubs::mach_header_from_provider)).
+    pub fn get_macho(
+        &self,
+        image_record: &DyldCacheImageRecord,
+    ) -> std::io::Result<Box<dyn crate::format::seam_stubs::MachHeader>> {
+        let _ = image_record;
+        unimplemented!("SplitDyldCache::get_macho placeholder not overridden")
+    }
+}
+
+/// Placeholder for `ghidra.app.util.bin.format.macho.dyld.LibObjcDylib`, referenced by
+/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+/// which builds one over the cache's `libobjc.` DYLIB and asks it to mark up the Objective-C
+/// runtime structures. Only the constructor and `markup()` -- all that builder uses -- are
+/// modeled.
+pub struct LibObjcDylib;
+
+impl LibObjcDylib {
+    /// Port of `LibObjcDylib(MachHeader, Program, AddressSpace, MessageLog, TaskMonitor)`. Kept
+    /// infallible even though Java's constructor declares `throws Exception`, since a placeholder
+    /// that parses nothing has nothing to fail at.
+    pub fn new(
+        header: &dyn crate::format::seam_stubs::MachHeader,
+        program: &dyn crate::program::model::listing::Program,
+        space: &std::sync::Arc<crate::program::model::address::AddressSpace>,
+        log: &dyn MessageLog,
+        monitor: &dyn crate::util::task::TaskMonitor,
+    ) -> Self {
+        let _ = (header, program, space, log, monitor);
+        LibObjcDylib
+    }
+
+    /// `LibObjcDylib.markup()`. Not yet implemented: the real body applies the `objc_opt_t`
+    /// data types and the selector/class/protocol tables to program memory.
+    pub fn markup(
+        &self,
+        program: &mut dyn crate::program::model::listing::Program,
+    ) -> std::io::Result<()> {
+        let _ = program;
+        unimplemented!("LibObjcDylib::markup placeholder not overridden")
+    }
+}
+
+/// Placeholder for `ghidra.app.util.opinion.MachoProgramBuilder`, the Java superclass of
+/// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder).
+/// Rust has no inheritance, so the inherited members that builder calls up into become free
+/// functions here taking the state Java reaches through `this` (the program, its default address
+/// space, the log and the monitor) explicitly. That also matches this crate's convention for
+/// classes reached only through statics (see [`option_utils`], [`memory_block_utils`]).
+///
+/// None of these are implemented yet: each is a substantial subsystem of its own (memory-block
+/// creation, symbol/export processing, load-command mark-up), and `MachoProgramBuilder` is over
+/// two thousand lines. `DyldCacheProgramBuilder` therefore mirrors Java's control flow faithfully
+/// but panics once it reaches the first of these calls.
+pub mod macho_program_builder {
     use super::MessageLog;
-    use crate::app::util::opinion::dyld_cache_options::DyldCacheOptions;
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-    use crate::program::database::mem::file_bytes::FileBytes;
-    use crate::program::model::listing::Program;
+    use crate::format::seam_stubs::MachHeader;
+    use crate::program::model::address::{Address, AddressSpace};
+    use crate::program::model::listing::{Function, Program};
     use crate::util::task::TaskMonitor;
-    use std::cell::RefCell;
-    use std::rc::Rc;
     use std::sync::Arc;
 
-    /// Port of `DyldCacheProgramBuilder.buildProgram(Program, ByteProvider, FileBytes,
-    /// DyldCacheOptions, MessageLog, TaskMonitor)`.
-    pub fn build_program(
+    /// `MachoProgramBuilder.markupHeaders(MachHeader, Address)`.
+    pub fn markup_headers(
         program: &mut dyn Program,
-        provider: &Rc<RefCell<dyn ByteProvider>>,
-        file_bytes: &Arc<dyn FileBytes>,
-        options: DyldCacheOptions,
-        log: &mut dyn MessageLog,
+        header: &dyn MachHeader,
+        header_addr: &Address,
+        log: &dyn MessageLog,
         monitor: &dyn TaskMonitor,
     ) -> std::io::Result<()> {
-        let _ = (program, provider, file_bytes, options, log, monitor);
-        unimplemented!("dyld_cache_program_builder::build_program placeholder not overridden")
+        let _ = (program, header, header_addr, log, monitor);
+        unimplemented!("macho_program_builder::markup_headers placeholder not overridden")
+    }
+
+    /// `MachoProgramBuilder.processMemoryBlocks(MachHeader, String source, boolean processSections,
+    /// boolean allowZeroAddr)`.
+    pub fn process_memory_blocks(
+        program: &mut dyn Program,
+        header: &dyn MachHeader,
+        source: &str,
+        process_sections: bool,
+        allow_zero_addr: bool,
+        log: &dyn MessageLog,
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<()> {
+        let _ = (program, header, source, process_sections, allow_zero_addr, log, monitor);
+        unimplemented!("macho_program_builder::process_memory_blocks placeholder not overridden")
+    }
+
+    /// `MachoProgramBuilder.processExports(MachHeader)`, which reports whether it created any
+    /// exports.
+    pub fn process_exports(
+        program: &mut dyn Program,
+        header: &dyn MachHeader,
+        log: &dyn MessageLog,
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<bool> {
+        let _ = (program, header, log, monitor);
+        unimplemented!("macho_program_builder::process_exports placeholder not overridden")
+    }
+
+    /// `MachoProgramBuilder.processSymbolTables(MachHeader, boolean processExports)`.
+    pub fn process_symbol_tables(
+        program: &mut dyn Program,
+        header: &dyn MachHeader,
+        process_exports: bool,
+        log: &dyn MessageLog,
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<()> {
+        let _ = (program, header, process_exports, log, monitor);
+        unimplemented!("macho_program_builder::process_symbol_tables placeholder not overridden")
+    }
+
+    /// `MachoProgramBuilder.markupLoadCommandData(MachHeader, String source)`.
+    pub fn markup_load_command_data(
+        program: &mut dyn Program,
+        header: &dyn MachHeader,
+        source: &str,
+        log: &dyn MessageLog,
+        monitor: &dyn TaskMonitor,
+    ) -> std::io::Result<()> {
+        let _ = (program, header, source, log, monitor);
+        unimplemented!("macho_program_builder::markup_load_command_data placeholder not overridden")
+    }
+
+    /// `MachoProgramBuilder.createOneByteFunction(Program, String name, Address address)`. `None`
+    /// stands in for the `null` Java returns when the function could not be created (it logs and
+    /// swallows the reason).
+    pub fn create_one_byte_function(
+        program: &mut dyn Program,
+        name: &str,
+        address: &Address,
+    ) -> Option<Arc<dyn Function>> {
+        let _ = (program, name, address);
+        unimplemented!("macho_program_builder::create_one_byte_function placeholder not overridden")
+    }
+
+    /// The `space` field `MachoProgramBuilder`'s constructor initializes with
+    /// `program.getAddressFactory().getDefaultAddressSpace()`, and the `OTHER` space its memory
+    /// helpers park unmapped file bytes in. Not a Java member; factored out here because
+    /// `DyldCacheProgramBuilder` needs both and neither is reachable through a ported accessor
+    /// when the program has no address factory.
+    pub fn default_address_space(program: &dyn Program) -> Option<Arc<AddressSpace>> {
+        program.get_address_factory()?.get_default_address_space()
     }
 }
 
