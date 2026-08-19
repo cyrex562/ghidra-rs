@@ -5548,3 +5548,24 @@ impl fmt::Display for VarnodeAst {
 #[derive(Debug, Default)]
 pub struct ListingMergePanel;
 
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.structures.ehFrame.Cie`, referenced
+/// by [`CieSource`](crate::app::plugin::exceptionhandlers::gcc::sections::CieSource) before the
+/// real class is ported. The Cie stub models only the methods that CieSource needs.
+pub trait Cie: Send + Sync {
+    fn is_in_debug_frame(&self) -> bool;
+    fn create(&self, cie_address: &crate::program::model::address::Address) -> std::io::Result<()>;
+    fn get_next_address(&self) -> crate::program::model::address::Address;
+    fn get_augmentation_string(&self) -> String;
+    fn get_fde_encoding(&self) -> i32;
+    fn get_fde_decoder(&self) -> Box<dyn crate::app::plugin::exceptionhandlers::gcc::DwarfEHDecoder>;
+    fn get_lsda_encoding(&self) -> i32;
+    fn get_lsda_decoder(&self) -> Box<dyn crate::app::plugin::exceptionhandlers::gcc::DwarfEHDecoder>;
+    fn get_address(&self) -> crate::program::model::address::Address;
+    fn get_data_alignment(&self) -> i32;
+    fn get_code_alignment(&self) -> i32;
+    fn is_end_of_frame(&self) -> bool;
+    fn get_segment_size(&self) -> i32;
+    fn get_return_address_register_column(&self) -> i32;
+    fn get_cie_id(&self) -> i32;
+}
+
