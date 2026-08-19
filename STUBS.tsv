@@ -1246,3 +1246,4 @@ ts	stub_class	referenced_by
 2026-08-19T03:49:10.816105+00:00	SarifUtils	MemoryMapSarifMgr
 2026-08-19T03:49:10.816105+00:00	MemoryBlockUtils	MemoryMapSarifMgr
 2026-08-19T03:49:10.816105+00:00	SarifMemoryMapWriter	MemoryMapSarifMgr
+2026-08-19T04:08:21.240742+00:00	SarifTreeWriter	ProgramTreeSarifMgr

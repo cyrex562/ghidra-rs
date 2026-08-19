@@ -8,10 +8,10 @@ use std::sync::{Arc, Mutex};
 
 use crate::docking::settings::settings::Settings;
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
-use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView};
+use crate::program::model::address::{Address, AddressFactory, AddressRange, AddressSet, AddressSetView};
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
-use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instruction, Program};
+use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instruction, Program, ProgramModule};
 use crate::program::model::mem::MemoryBlock;
 use crate::program::model::symbol::source_type::SourceType;
 use crate::program::model::symbol::Namespace;
@@ -141,6 +141,24 @@ impl SarifMgr {
         };
 
         Self::walk_namespace(program, child, &rest, addr, source_type, is_class)
+    }
+
+    /// `SarifMgr.parseAddress(AddressFactory, String)`, referenced by
+    /// [`ProgramTreeSarifMgr`](crate::sarif::managers::ProgramTreeSarifMgr). Java returns `null`
+    /// for a `null` input and otherwise throws an (unchecked) `RuntimeException` when the factory
+    /// fails to resolve the string; the latter is modeled as `Err` here since none of this crate's
+    /// error types are unchecked.
+    pub fn parse_address(
+        factory: Option<&dyn AddressFactory>,
+        addr_string: Option<&str>,
+    ) -> Result<Option<Address>, String> {
+        let Some(addr_string) = addr_string else {
+            return Ok(None);
+        };
+        factory
+            .and_then(|factory| factory.get_address(addr_string))
+            .map(Some)
+            .ok_or_else(|| format!("Error converting {addr_string} to address"))
     }
 }
 
@@ -277,6 +295,24 @@ impl TaskLauncher {
     /// component.
     pub fn launch<W>(task: &SarifWriterTask<W>, monitor: &dyn TaskMonitor, results: &mut Vec<serde_json::Value>) {
         task.run(monitor, results);
+    }
+}
+
+/// Placeholder for `sarif.export.trees.SarifTreeWriter`, referenced by
+/// [`ProgramTreeSarifMgr::write_as_sarif`](crate::sarif::managers::ProgramTreeSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor is modeled; the `genRoot`/`AbstractExtWriter` machinery that turns the tree
+/// hierarchy into SARIF JSON is pending that class's own port.
+pub struct SarifTreeWriter {
+    /// `List<Pair<String, ProgramModule>> request`, one `(treeName, rootModule)` pair per tree.
+    pub request: Vec<(String, Arc<dyn ProgramModule>)>,
+}
+
+impl SarifTreeWriter {
+    /// `new SarifTreeWriter(List<Pair<String, ProgramModule>> req, Writer baseWriter)`, minus the
+    /// (always `null`, here) base writer.
+    pub fn new(request: Vec<(String, Arc<dyn ProgramModule>)>) -> Self {
+        Self { request }
     }
 }
 
