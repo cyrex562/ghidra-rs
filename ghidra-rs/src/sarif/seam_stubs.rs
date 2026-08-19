@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::program::model::address::address_overflow_exception::AddressOverflowException;
 use crate::program::model::address::{Address, AddressRange, AddressSet, AddressSetView};
-use crate::program::model::listing::{Bookmark, Instruction, Program};
+use crate::program::model::listing::{Bookmark, CodeUnit, Instruction, Program};
 use crate::program::seam_stubs::FlowOverride;
 use crate::util::task::TaskMonitor;
 
@@ -163,6 +163,37 @@ impl TaskLauncher {
     /// component.
     pub fn launch<W>(task: &SarifWriterTask<W>, monitor: &dyn TaskMonitor, results: &mut Vec<serde_json::Value>) {
         task.run(monitor, results);
+    }
+}
+
+/// Placeholder for `sarif.export.comments.SarifCommentWriter`, referenced by
+/// [`CommentsSarifMgr::write_as_sarif0`](crate::sarif::managers::CommentsSarifMgr::write_as_sarif0)
+/// and
+/// [`CommentsSarifMgr::write_as_sarif1`](crate::sarif::managers::CommentsSarifMgr::write_as_sarif1).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor is modeled, mirroring `new SarifCommentWriter(List<Pair<CodeUnit, Pair<String,
+/// String>>> target0, List<Pair<Address, Pair<String, String>>> target1)`; the `genRoot`/
+/// `AbstractExtWriter` machinery that turns the comments into SARIF JSON is pending that class's
+/// own port. `Pair<String, String>` (the SARIF tag and comment text) is modeled as a plain tuple
+/// rather than a generic `Pair` stub, since that is all a two-element pair is; likewise the outer
+/// `Pair<CodeUnit, _>`/`Pair<Address, _>` are flattened into a tuple's first element.
+pub struct SarifCommentWriter {
+    pub code_unit_comments: Vec<(Arc<dyn CodeUnit>, (String, String))>,
+    pub address_comments: Vec<(Address, (String, String))>,
+}
+
+impl SarifCommentWriter {
+    /// `new SarifCommentWriter(List<Pair<CodeUnit, Pair<String, String>>> target0,
+    /// List<Pair<Address, Pair<String, String>>> target1)`, minus the (always `null`, here) base
+    /// writer.
+    pub fn new(
+        code_unit_comments: Vec<(Arc<dyn CodeUnit>, (String, String))>,
+        address_comments: Vec<(Address, (String, String))>,
+    ) -> Self {
+        Self {
+            code_unit_comments,
+            address_comments,
+        }
     }
 }
 
