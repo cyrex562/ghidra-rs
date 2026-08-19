@@ -12,6 +12,7 @@ use crate::program::model::address::{Address, AddressRange, AddressSet, AddressS
 use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instruction, Program};
+use crate::program::model::mem::MemoryBlock;
 use crate::program::model::symbol::source_type::SourceType;
 use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::FlowOverride;
@@ -1319,5 +1320,175 @@ impl SarifDataTypeWriter {
     /// minus the manager and the (always `null`, here) base writer.
     pub fn new(data_types: Vec<Box<dyn DataType>>) -> Self {
         Self { data_types }
+    }
+}
+
+/// Placeholder for `sarif.managers.ProgramSarifMgr`, referenced by
+/// [`MemoryMapSarifMgr`](crate::sarif::managers::MemoryMapSarifMgr) (a forward reference: it sits
+/// on the read/write cycle between a per-section manager like `MemoryMapSarifMgr` and the
+/// `ProgramSarifMgr` that owns it). Java's version is a concrete class, not an interface, so this
+/// is a plain struct. Only the member `MemoryMapSarifMgr` reads through it -- the import
+/// directory a `MEMORY_MAP` block's file-backed contents are read from -- is modeled.
+pub struct ProgramSarifMgr {
+    directory: String,
+}
+
+impl ProgramSarifMgr {
+    /// `new ProgramSarifMgr(Program program, MessageLog log)`, minus the program/log fields
+    /// (this placeholder stands in for the directory accessor only).
+    pub fn new(directory: impl Into<String>) -> Self {
+        Self { directory: directory.into() }
+    }
+
+    /// `ProgramSarifMgr.getDirectory()`.
+    pub fn get_directory(&self) -> &str {
+        &self.directory
+    }
+}
+
+/// Placeholder for `sarif.SarifUtils`, referenced by
+/// [`MemoryMapSarifMgr::process_memory_block`](crate::sarif::managers::MemoryMapSarifMgr). Java's
+/// version is a class of static methods backed by SARIF's own `Location`/`PhysicalLocation`
+/// object model (none of which are ported), so this is a statics holder too. Only
+/// `getLocations(Map<String, Object>, Program, AddressSet)` is modeled; since the `"Locations"`
+/// list it would walk cannot be read yet, it always hands back the `set` it was given (or a fresh
+/// empty one), the same as Java does for a result with no `"Locations"` entry.
+pub struct SarifUtils;
+
+impl SarifUtils {
+    /// `SarifUtils.getLocations(Map<String, Object>, Program, AddressSet)`.
+    pub fn get_locations(
+        _result: &HashMap<String, serde_json::Value>,
+        _program: &dyn Program,
+        set: Option<AddressSet>,
+    ) -> Result<AddressSet, AddressOverflowException> {
+        Ok(set.unwrap_or_default())
+    }
+}
+
+/// Placeholder for `ghidra.app.util.MemoryBlockUtils`, referenced by
+/// [`MemoryMapSarifMgr::process_memory_block`](crate::sarif::managers::MemoryMapSarifMgr). Java's
+/// version is a class of static methods that create memory blocks through `Memory`'s
+/// `create*Block` family; the ported [`Memory`](crate::program::model::mem::Memory) trait only
+/// has [`create_initialized_block`](crate::program::model::mem::Memory::create_initialized_block)
+/// so far (a fixed-fill-byte block, not one backed by arbitrary bytes or another block's address
+/// range), so none of the block-creation calls below can actually create a block yet. Each
+/// method mirrors Java's "operation failed" `null` return -- logging the same message Java's own
+/// `catch (Exception e)` clause would -- rather than faking a partial creation the real class
+/// does not offer.
+pub struct MemoryBlockUtils;
+
+impl MemoryBlockUtils {
+    /// `MemoryBlockUtils.createUninitializedBlock(Program, boolean, String, Address, long,
+    /// String, String, boolean, boolean, boolean, MessageLog)`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_uninitialized_block(
+        _program: &dyn Program,
+        _is_overlay: bool,
+        name: &str,
+        _start: &Address,
+        _length: i64,
+        _comment: Option<&str>,
+        _source: Option<&str>,
+        _r: bool,
+        _w: bool,
+        _x: bool,
+        log: &MessageLog,
+    ) -> Option<Arc<dyn MemoryBlock>> {
+        log.append_msg(format!(
+            "Failed to create '{name}' memory block: block creation is not supported yet"
+        ));
+        None
+    }
+
+    /// `MemoryBlockUtils.createInitializedBlock(Program, boolean, String, Address, InputStream,
+    /// long, String, String, boolean, boolean, boolean, MessageLog, TaskMonitor)`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_initialized_block(
+        _program: &dyn Program,
+        _is_overlay: bool,
+        name: &str,
+        _start: &Address,
+        _data: &[u8],
+        _comment: Option<&str>,
+        _source: Option<&str>,
+        _r: bool,
+        _w: bool,
+        _x: bool,
+        log: &MessageLog,
+        _monitor: &dyn TaskMonitor,
+    ) -> Option<Arc<dyn MemoryBlock>> {
+        log.append_msg(format!(
+            "Failed to create '{name}' memory block: block creation is not supported yet"
+        ));
+        None
+    }
+
+    /// `MemoryBlockUtils.createBitMappedBlock(Program, String, Address, Address, int, String,
+    /// String, boolean, boolean, boolean, boolean, MessageLog)`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_bit_mapped_block(
+        _program: &dyn Program,
+        name: &str,
+        _start: &Address,
+        _base: Option<&Address>,
+        _length: i32,
+        _comment: Option<&str>,
+        _source: Option<&str>,
+        _r: bool,
+        _w: bool,
+        _x: bool,
+        _overlay: bool,
+        log: &MessageLog,
+    ) -> Option<Arc<dyn MemoryBlock>> {
+        log.append_msg(format!(
+            "Failed to create '{name}' mapped memory block: block creation is not supported yet"
+        ));
+        None
+    }
+
+    /// `MemoryBlockUtils.createByteMappedBlock(Program, String, Address, Address, int, String,
+    /// String, boolean, boolean, boolean, boolean, MessageLog)`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_byte_mapped_block(
+        _program: &dyn Program,
+        name: &str,
+        _start: &Address,
+        _base: Option<&Address>,
+        _length: i32,
+        _comment: Option<&str>,
+        _source: Option<&str>,
+        _r: bool,
+        _w: bool,
+        _x: bool,
+        _overlay: bool,
+        log: &MessageLog,
+    ) -> Option<Arc<dyn MemoryBlock>> {
+        log.append_msg(format!(
+            "Failed to create '{name}' mapped memory block: block creation is not supported yet"
+        ));
+        None
+    }
+}
+
+/// Placeholder for `sarif.export.mm.SarifMemoryMapWriter`, referenced by
+/// [`MemoryMapSarifMgr::write_as_sarif`](crate::sarif::managers::MemoryMapSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor's request list and write-contents flag are modeled; the `bytesFile` collaborator
+/// (kept by the caller instead, see
+/// [`MemoryMapSarifMgr::write`](crate::sarif::managers::MemoryMapSarifMgr::write)) and the
+/// `genRoot`/`AbstractExtWriter` machinery that turns the request into SARIF JSON are pending that
+/// class's own port.
+pub struct SarifMemoryMapWriter {
+    pub memory: Vec<(AddressRange, Arc<dyn MemoryBlock>)>,
+    pub write_contents: bool,
+}
+
+impl SarifMemoryMapWriter {
+    /// `new SarifMemoryMapWriter(List<Pair<AddressRange, MemoryBlock>> request, Writer baseWriter,
+    /// MemoryMapBytesFile bytes, boolean isWriteContents)`, minus the (always `null`, here) base
+    /// writer and the bytes file.
+    pub fn new(memory: Vec<(AddressRange, Arc<dyn MemoryBlock>)>, write_contents: bool) -> Self {
+        Self { memory, write_contents }
     }
 }

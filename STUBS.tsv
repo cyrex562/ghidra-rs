@@ -1242,3 +1242,7 @@ ts	stub_class	referenced_by
 2026-08-19T03:15:00+00:00	SarifClassesNamespaceWriter	ExternalLibSarifMgr
 2026-08-19T03:40:00+00:00	SarifReferenceWriter	MarkupSarifMgr
 2026-08-19T03:40:00+00:00	SarifEquateRefWriter	MarkupSarifMgr
+2026-08-19T03:49:10.816105+00:00	ProgramSarifMgr	MemoryMapSarifMgr
+2026-08-19T03:49:10.816105+00:00	SarifUtils	MemoryMapSarifMgr
+2026-08-19T03:49:10.816105+00:00	MemoryBlockUtils	MemoryMapSarifMgr
+2026-08-19T03:49:10.816105+00:00	SarifMemoryMapWriter	MemoryMapSarifMgr
