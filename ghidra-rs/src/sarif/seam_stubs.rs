@@ -1422,33 +1422,57 @@ impl SarifDataTypeWriter {
 /// Placeholder for `sarif.managers.ProgramSarifMgr`, referenced by
 /// [`MemoryMapSarifMgr`](crate::sarif::managers::MemoryMapSarifMgr) (a forward reference: it sits
 /// on the read/write cycle between a per-section manager like `MemoryMapSarifMgr` and the
-/// `ProgramSarifMgr` that owns it). Java's version is a concrete class, not an interface, so this
-/// is a plain struct. Only the member `MemoryMapSarifMgr` reads through it -- the import
-/// directory a `MEMORY_MAP` block's file-backed contents are read from -- is modeled.
+/// `ProgramSarifMgr` that owns it) and by
+/// [`SarifDataFrame`](crate::sarif::model::SarifDataFrame) via [`SarifController`]. Java's version
+/// is a concrete class, not an interface, so this is a plain struct. Only the members
+/// `MemoryMapSarifMgr` and `SarifDataFrame` read through it -- the import directory a
+/// `MEMORY_MAP` block's file-backed contents are read from, and the per-manager `getKeys()` map
+/// `SarifDataFrame` turns into extra table columns -- are modeled.
 pub struct ProgramSarifMgr {
     directory: String,
+    keys: HashMap<String, bool>,
 }
 
 impl ProgramSarifMgr {
     /// `new ProgramSarifMgr(Program program, MessageLog log)`, minus the program/log fields
-    /// (this placeholder stands in for the directory accessor only).
+    /// (this placeholder stands in for the directory/keys accessors only). `keys` starts empty;
+    /// set it via [`with_keys`](Self::with_keys) when `SarifDataFrame::new`'s extra-columns
+    /// behavior needs exercising.
     pub fn new(directory: impl Into<String>) -> Self {
-        Self { directory: directory.into() }
+        Self {
+            directory: directory.into(),
+            keys: HashMap::new(),
+        }
+    }
+
+    /// Attaches the map [`get_keys`](Self::get_keys) reports, mirroring each concrete
+    /// `SarifMgr` subclass's own `getKeys()` override (not modeled individually yet).
+    pub fn with_keys(mut self, keys: HashMap<String, bool>) -> Self {
+        self.keys = keys;
+        self
     }
 
     /// `ProgramSarifMgr.getDirectory()`.
     pub fn get_directory(&self) -> &str {
         &self.directory
     }
+
+    /// `ProgramSarifMgr.getKeys()`, referenced by
+    /// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new).
+    pub fn get_keys(&self) -> &HashMap<String, bool> {
+        &self.keys
+    }
 }
 
 /// Placeholder for `sarif.SarifUtils`, referenced by
-/// [`MemoryMapSarifMgr::process_memory_block`](crate::sarif::managers::MemoryMapSarifMgr). Java's
-/// version is a class of static methods backed by SARIF's own `Location`/`PhysicalLocation`
-/// object model (none of which are ported), so this is a statics holder too. Only
-/// `getLocations(Map<String, Object>, Program, AddressSet)` is modeled; since the `"Locations"`
-/// list it would walk cannot be read yet, it always hands back the `set` it was given (or a fresh
-/// empty one), the same as Java does for a result with no `"Locations"` entry.
+/// [`MemoryMapSarifMgr::process_memory_block`](crate::sarif::managers::MemoryMapSarifMgr) and by
+/// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new). Java's version is a class of
+/// static methods backed by SARIF's own `Location`/`PhysicalLocation`/`Run` object model (none of
+/// which are ported), so this is a statics holder too. `getLocations` always hands back the `set`
+/// it was given (or a fresh empty one), the same as Java does for a result with no `"Locations"`
+/// entry; `validateRun`/`setPopulating` are no-ops pending the real port (Java's versions validate
+/// SARIF schema invariants and toggle a re-entrancy flag other `sarif` code checks, neither of
+/// which exists here yet).
 pub struct SarifUtils;
 
 impl SarifUtils {
@@ -1459,6 +1483,97 @@ impl SarifUtils {
         set: Option<AddressSet>,
     ) -> Result<AddressSet, AddressOverflowException> {
         Ok(set.unwrap_or_default())
+    }
+
+    /// `SarifUtils.validateRun(Run)`, referenced by
+    /// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new).
+    pub fn validate_run(_run: &serde_json::Value) {}
+
+    /// `SarifUtils.setPopulating(boolean)`, referenced by
+    /// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new).
+    pub fn set_populating(_populating: bool) {}
+}
+
+/// Placeholder for the unported Java abstract class `sarif.handlers.SarifResultHandler` (an
+/// `ExtensionPoint` with several dynamically-discovered concrete subclasses under
+/// `sarif.handlers.result`, e.g. `SarifCommentResultHandler`), referenced by
+/// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new) via [`SarifController`].
+/// Modeled as a `dyn`-dispatched trait rather than the usual "Java class => concrete struct" rule:
+/// unlike [`SarifController`]/[`SarifUtils`]/[`ProgramSarifMgr`] (each with exactly one Java
+/// implementation), Java resolves a *set* of these at runtime via `ClassSearcher`, so there is
+/// real polymorphism to model. Only the two methods `SarifDataFrame`'s constructor calls
+/// (`isEnabled`, `handle`) are modeled; `getKey`/the table-provider/docking-action methods are not
+/// referenced by `SarifDataFrame` itself.
+pub trait SarifResultHandler: Send + Sync {
+    /// `SarifResultHandler.isEnabled(SarifDataFrame)`.
+    fn is_enabled(&self, dframe: &crate::sarif::model::SarifDataFrame) -> bool;
+
+    /// `SarifResultHandler.handle(SarifDataFrame, Run, Result, Map<String, Object>)`. `run` and
+    /// `result` are the raw SARIF JSON objects (matching the crate's existing convention of
+    /// treating SARIF payloads as [`serde_json::Value`] rather than typed
+    /// `com.contrastsecurity.sarif` classes -- see [`crate::sarif::SarifSchema210`]); `map` is the
+    /// row being built, matching a `Map<String, Object>` deserialized from JSON.
+    fn handle(
+        &self,
+        dframe: &crate::sarif::model::SarifDataFrame,
+        run: &serde_json::Value,
+        result: &serde_json::Value,
+        map: &mut HashMap<String, serde_json::Value>,
+    );
+}
+
+/// Placeholder for the unported Java abstract class `sarif.handlers.SarifRunHandler` (an
+/// `ExtensionPoint`), referenced by
+/// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new) via [`SarifController`]. See
+/// [`SarifResultHandler`] for why this is a trait rather than a struct.
+pub trait SarifRunHandler: Send + Sync {
+    /// `SarifRunHandler.isEnabled(SarifDataFrame)`.
+    fn is_enabled(&self, dframe: &crate::sarif::model::SarifDataFrame) -> bool;
+
+    /// `SarifRunHandler.handle(SarifDataFrame, Run)`.
+    fn handle(&self, dframe: &crate::sarif::model::SarifDataFrame, run: &serde_json::Value);
+}
+
+/// Placeholder for the unported Java class `sarif.SarifController`, referenced by
+/// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new)/`get_controller`. Java's
+/// version is a concrete class (no subclasses), so this is a plain struct rather than a `dyn`
+/// trait -- unlike [`SarifResultHandler`]/[`SarifRunHandler`], there is only ever one
+/// `SarifController` implementation. Only the three members `SarifDataFrame`'s constructor calls
+/// (`getSarifResultHandlers`, `getProgramSarifMgr`, `getSarifRunHandlers`) are modeled.
+pub struct SarifController {
+    pub result_handlers: Vec<Arc<dyn SarifResultHandler>>,
+    pub run_handlers: Vec<Arc<dyn SarifRunHandler>>,
+    pub program_sarif_mgr: ProgramSarifMgr,
+}
+
+impl SarifController {
+    /// `new SarifController(...)`, minus the GUI/program plumbing (`SarifPlugin`, `Program`,
+    /// `ColorizingService`, ...) `SarifDataFrame` never touches.
+    pub fn new(
+        result_handlers: Vec<Arc<dyn SarifResultHandler>>,
+        run_handlers: Vec<Arc<dyn SarifRunHandler>>,
+        program_sarif_mgr: ProgramSarifMgr,
+    ) -> Self {
+        Self {
+            result_handlers,
+            run_handlers,
+            program_sarif_mgr,
+        }
+    }
+
+    /// `SarifController.getSarifResultHandlers()`.
+    pub fn get_sarif_result_handlers(&self) -> &[Arc<dyn SarifResultHandler>] {
+        &self.result_handlers
+    }
+
+    /// `SarifController.getSarifRunHandlers()`.
+    pub fn get_sarif_run_handlers(&self) -> &[Arc<dyn SarifRunHandler>] {
+        &self.run_handlers
+    }
+
+    /// `SarifController.getProgramSarifMgr()`.
+    pub fn get_program_sarif_mgr(&self) -> &ProgramSarifMgr {
+        &self.program_sarif_mgr
     }
 }
 

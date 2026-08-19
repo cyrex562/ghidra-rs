@@ -1250,3 +1250,8 @@ ts	stub_class	referenced_by
 2026-08-19T04:10:59.304191+00:00	SarifRegisterValueWriter	RegisterValuesSarifMgr
 2026-08-19T04:20:24.215945+00:00	SarifRelocationWriter	RelocationTableSarifMgr
 2026-08-19T04:40:08.203088+00:00	SarifSymbolWriter	SymbolTableSarifMgr
+2026-08-19T04:41:50.330256+00:00	SarifController	SarifDataFrame
+2026-08-19T04:41:50.331253+00:00	SarifUtils	SarifDataFrame
+2026-08-19T04:41:50.331573+00:00	SarifResultHandler	SarifDataFrame
+2026-08-19T04:41:50.331706+00:00	SarifRunHandler	SarifDataFrame
+2026-08-19T04:41:50.332472+00:00	ProgramSarifMgr	SarifDataFrame
