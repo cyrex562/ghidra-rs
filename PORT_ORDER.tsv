@@ -12,7 +12,7 @@ DONE	trait	3	2	7	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/Markup
 DONE	trait	3	2	35	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/MemoryMapSarifMgr.java
 DONE	trait	3	2	38	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/ProgramTreeSarifMgr.java
 DONE	trait	3	2	30	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/RegisterValuesSarifMgr.java
-TODO	trait	3	2	6	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/RelocationTableSarifMgr.java
+DONE	trait	3	2	6	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/RelocationTableSarifMgr.java
 TODO	trait	3	3	18	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/SymbolTableSarifMgr.java
 TODO	trait	1	13	5	sarif	Ghidra/Features/Sarif/src/main/java/sarif/model/SarifDataFrame.java
 TODO	trait	0	15	7	sarif	Ghidra/Features/Sarif/src/main/java/sarif/handlers/SarifResultHandler.java
