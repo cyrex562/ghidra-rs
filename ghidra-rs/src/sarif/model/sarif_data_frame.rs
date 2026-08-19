@@ -14,7 +14,11 @@ use crate::sarif::SarifSchema210;
 /// `Artifact`, `ReportingDescriptorReference`, ...) are navigated as raw [`serde_json::Value`]
 /// rather than typed `com.contrastsecurity.sarif` classes, matching the convention already set by
 /// [`SarifSchema210`] and the `sarif::io` readers -- none of those SARIF-schema classes are
-/// ported, and this crate's SARIF layer treats a parsed document as JSON throughout.
+/// ported, and this crate's SARIF layer treats a parsed document as JSON throughout. `Clone` is
+/// derived so [`SarifResultHandlerBase`](crate::sarif::handlers::SarifResultHandlerBase) and
+/// [`SarifResultsTableProvider`](crate::sarif::seam_stubs::SarifResultsTableProvider) can hold an
+/// owned snapshot the way Java's field assignment aliases the same object.
+#[derive(Clone)]
 pub struct SarifDataFrame {
     columns: Vec<SarifColumnKey>,
     table_results: Vec<HashMap<String, Value>>,

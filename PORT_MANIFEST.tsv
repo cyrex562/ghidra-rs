@@ -9079,7 +9079,7 @@ orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/trees/ExtFragment.java
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/trees/ExtFragmentRange.java	DONE	orig_src Ghidra Features Sarif src main java sarif export trees 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/trees/ExtModule.java	DONE	orig_src Ghidra Features Sarif src main java sarif export trees 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/export/trees/SarifTreeWriter.java	TODO	orig_src Ghidra Features Sarif src main java sarif export trees 
-orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/SarifResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers 
+orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/SarifResultHandler.java	DONE	orig_src Ghidra Features Sarif src main java sarif handlers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/SarifRunHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifAddressResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
 orig_src/Ghidra/Features/Sarif/src/main/java/sarif/handlers/result/SarifCodeFlowResultHandler.java	TODO	orig_src Ghidra Features Sarif src main java sarif handlers result 
