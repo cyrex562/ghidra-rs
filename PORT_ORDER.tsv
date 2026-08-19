@@ -3,7 +3,7 @@ DONE	trait	13	31	82	app	Ghidra/Features/Base/src/main/java/ghidra/app/util/opini
 DONE	trait	1	8	96	feature	Ghidra/Features/VersionTracking/src/main/java/ghidra/feature/vt/api/db/VTMatchSetDB.java
 DONE	trait	0	31	1	feature	Ghidra/Extensions/SymbolicSummaryZ3/src/main/java/ghidra/symz3/model/SymValueZ3.java
 DONE	trait	3	4	37	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/CommentsSarifMgr.java
-TODO	trait	6	8	13	program	Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDataTypeWriter.java
+DONE	trait	6	8	13	program	Ghidra/Debug/Debugger-isf/src/main/java/ghidra/program/model/data/ISF/IsfDataTypeWriter.java
 TODO	trait	3	2	17	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/DataTypesSarifMgr.java
 TODO	trait	3	2	6	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/EquatesSarifMgr.java
 TODO	trait	3	2	6	sarif	Ghidra/Features/Sarif/src/main/java/sarif/managers/ExtEntryPointSarifMgr.java
