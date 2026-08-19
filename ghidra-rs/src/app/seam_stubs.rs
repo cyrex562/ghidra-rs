@@ -5540,3 +5540,10 @@ impl fmt::Display for VarnodeAst {
     }
 }
 
+/// Placeholder for `ghidra.app.merge.tool.ListingMergePanel`, referenced by
+/// [`ListingMerger`](crate::app::merge::listing::listing_merger::ListingMerger) before the real
+/// class is ported. Java's version is a concrete Swing `JPanel` subclass (not an interface), so
+/// this is a unit struct rather than a trait -- there is nothing to dispatch over.
+#[derive(Debug, Default)]
+pub struct ListingMergePanel;
+
