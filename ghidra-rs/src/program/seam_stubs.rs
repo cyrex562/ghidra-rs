@@ -2316,6 +2316,20 @@ pub fn get_aligned_offset(alignment: i32, minimum_offset: i32) -> i32 {
 pub trait BitFieldDataType {
     /// Stands in for `BitFieldDataType.getBaseDataType()`.
     fn get_base_data_type(&self) -> Box<dyn DataType>;
+
+    /// Stands in for `BitFieldDataType.getBitSize()` -- the effective width, in bits, of the
+    /// field. Grown (defaulted, so existing implementors keep compiling) for
+    /// [`IsfDataTypeWriter`](crate::program::model::data::isf::IsfDataTypeWriter), whose port of
+    /// `IsfDataTypeBitField` emits it as `bit_length`.
+    fn get_bit_size(&self) -> i32 {
+        0
+    }
+
+    /// Stands in for `BitFieldDataType.getBitOffset()` -- the field's least-significant-bit
+    /// offset within its storage unit. Grown alongside [`get_bit_size`](Self::get_bit_size).
+    fn get_bit_offset(&self) -> i32 {
+        0
+    }
 }
 
 /// Placeholder for `ghidra.program.model.data.AudioPlayer`, referenced by
@@ -2540,4 +2554,172 @@ impl SpecExtension {
 /// [`BundleStatus`](crate::app::seam_stubs::BundleStatus) before the real class is ported.
 /// `Type` is just a marker interface in Java, so no methods are defined here.
 pub trait Type: Send + Sync {}
+
+/// Result of [`IsfUtilities::get_base_data_type`].
+///
+/// Java's `IsfUtilities.getBaseDataType(DataType)` peels array/pointer/bitfield wrappers off a
+/// type and returns whatever is left -- possibly the very type it was handed, possibly `null`
+/// (an untyped pointer). Rust cannot return a borrow and an owned `Box` from one arm, so the
+/// three outcomes are spelled out here instead of collapsing `null` and "already a base type"
+/// into a single `None`, which callers must tell apart: the former renders as ISF `void`.
+pub enum IsfBaseDataType<'a> {
+    /// `dt` wraps nothing; it is its own base type.
+    Same(&'a dyn DataType),
+    /// `dt` was a wrapper; this is what it unwrapped to, or `None` where Java returned `null`.
+    Unwrapped(Option<Box<dyn DataType>>),
+}
+
+/// Placeholder for `ghidra.program.database.data.DataTypeUtilities`, referenced by
+/// [`IsfDataTypeWriter`](crate::program::model::data::isf::IsfDataTypeWriter). A port of that
+/// class exists at `program/database/data/data_type_utilities.rs` but is not yet wired into its
+/// module -- it imports merger placeholders that do not exist -- so this carries the one static
+/// the writer calls until that port lands.
+pub struct DataTypeUtilities;
+
+impl DataTypeUtilities {
+    /// Stands in for the static `DataTypeUtilities.isConflictDataType(DataType)`: whether `dt`
+    /// carries a name Ghidra minted to break a name collision.
+    ///
+    /// Java matches `<base>.conflict` optionally followed by a counter, after stripping pointer
+    /// and array decorations; this tests for the `.conflict` marker itself, which is what
+    /// produces the decorated and undecorated forms alike.
+    pub fn is_conflict_data_type(dt: &dyn DataType) -> bool {
+        dt.get_name().contains(".conflict")
+    }
+}
+
+/// Placeholder for `ghidra.program.model.data.ISF.IsfUtilities`, referenced by
+/// [`IsfDataTypeWriter`](crate::program::model::data::isf::IsfDataTypeWriter) before the real
+/// class is ported. Java's version is a concrete class of statics, so this is a plain unit
+/// struct carrying only the statics that writer calls.
+///
+/// The three `instanceof`-driven statics ([`get_kind`](Self::get_kind),
+/// [`get_built_in_kind`](Self::get_built_in_kind), [`is_base_data_type`](Self::is_base_data_type))
+/// key off the `is_*`/`as_*` predicates [`DataType`] exposes rather than off Ghidra's concrete
+/// data-type classes, which are not all ported; see each method for where that approximation
+/// shows.
+pub struct IsfUtilities;
+
+impl IsfUtilities {
+    /// Stands in for the static `IsfUtilities.getBaseDataType(DataType)`: peel array, pointer
+    /// and bitfield wrappers until something else is reached.
+    pub fn get_base_data_type(dt: &dyn DataType) -> IsfBaseDataType<'_> {
+        let mut current = match Self::unwrap_once(dt) {
+            None => return IsfBaseDataType::Same(dt),
+            Some(next) => next,
+        };
+        loop {
+            let next = match current.as_deref().and_then(Self::unwrap_once) {
+                None => return IsfBaseDataType::Unwrapped(current),
+                Some(next) => next,
+            };
+            current = next;
+        }
+    }
+
+    /// One step of [`get_base_data_type`](Self::get_base_data_type): `None` when `dt` is not a
+    /// wrapper, `Some(target)` when it is (with `target` itself `None` for e.g. an untyped
+    /// pointer, matching Java's `null`).
+    fn unwrap_once(dt: &dyn DataType) -> Option<Option<Box<dyn DataType>>> {
+        if let Some(array) = dt.as_array() {
+            return Some(Some(array.get_data_type()));
+        }
+        if let Some(pointer) = dt.as_pointer() {
+            return Some(pointer.get_data_type());
+        }
+        if let Some(bit_field) = dt.as_bit_field() {
+            return Some(Some(bit_field.get_base_data_type()));
+        }
+        None
+    }
+
+    /// Stands in for the static `IsfUtilities.getLength(DataType)`.
+    pub fn get_length(dt: &dyn DataType) -> i32 {
+        dt.get_length()
+    }
+
+    /// Stands in for the static `IsfUtilities.getEndianness(DataType)`.
+    pub fn get_endianness(dt: &dyn DataType) -> String {
+        if dt.get_data_organization().is_big_endian() {
+            "big".to_string()
+        } else {
+            "little".to_string()
+        }
+    }
+
+    /// Stands in for the static `IsfUtilities.isBaseDataType(DataType)`.
+    ///
+    /// Java tests `AbstractIntegerDataType`, `AbstractFloatDataType`, `AbstractComplexDataType`,
+    /// `AbstractStringDataType`, `Pointer`, `VoidDataType` and `Undefined`. Complex and string
+    /// types have no [`DataType`] predicate of their own yet, so they are the two Java would
+    /// accept and this does not.
+    pub fn is_base_data_type(dt: &dyn DataType) -> bool {
+        dt.is_integer_type()
+            || dt.is_floating_point()
+            || dt.is_pointer()
+            || dt.is_void_type()
+            || dt.is_undefined_type()
+    }
+
+    /// Approximates `dt instanceof BuiltInDataType`, which [`DataType`] cannot yet answer
+    /// directly (there is no `as_built_in` downcast). Every type
+    /// [`is_base_data_type`](Self::is_base_data_type) accepts is a built-in, as are the boolean
+    /// and wide-char built-ins; a built-in outside that set reads here as not-built-in.
+    pub fn is_built_in_data_type(dt: &dyn DataType) -> bool {
+        Self::is_base_data_type(dt) || dt.is_boolean_type() || dt.is_wide_char_type()
+    }
+
+    /// Stands in for the static `IsfUtilities.getKind(DataType)`.
+    ///
+    /// The order of the tests is Java's, which matters: `BuiltInDataType` is checked ahead of
+    /// `Pointer`, so a pointer -- a built-in in Ghidra -- reports `"base"`, not `"pointer"`.
+    pub fn get_kind(dt: &dyn DataType) -> String {
+        let kind = if dt.is_array() {
+            "array"
+        } else if dt.is_structure() {
+            "struct"
+        } else if dt.is_union() {
+            "union"
+        } else if Self::is_built_in_data_type(dt) {
+            "base"
+        } else if dt.is_pointer() {
+            "pointer"
+        } else if dt.as_enum().is_some() {
+            "enum"
+        } else if dt.is_typedef() {
+            "typedef"
+        } else if dt.is_function_definition_type() {
+            "function"
+        } else if dt.is_bit_field_type() {
+            "bitfield"
+        } else if dt.is_default_data_type() {
+            "base"
+        } else {
+            "UNKNOWN"
+        };
+        kind.to_string()
+    }
+
+    /// Stands in for the static `IsfUtilities.getBuiltInKind(BuiltInDataType)`.
+    ///
+    /// Java returns the type's own name for integers, then `"float"`, `"complex"`, `"char"`
+    /// (strings), `"pointer"`, `"void"` (void and undefined), falling back to `"char"`. Complex
+    /// and string types have no [`DataType`] predicate yet, so both land on the `"char"`
+    /// fallback -- which is already what Java returns for strings.
+    pub fn get_built_in_kind(dt: &dyn DataType) -> String {
+        if dt.is_integer_type() {
+            return dt.get_name();
+        }
+        if dt.is_floating_point() {
+            return "float".to_string();
+        }
+        if dt.is_pointer() {
+            return "pointer".to_string();
+        }
+        if dt.is_void_type() || dt.is_undefined_type() {
+            return "void".to_string();
+        }
+        "char".to_string()
+    }
+}
 
