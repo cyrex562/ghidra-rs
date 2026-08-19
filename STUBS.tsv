@@ -1248,3 +1248,4 @@ ts	stub_class	referenced_by
 2026-08-19T03:49:10.816105+00:00	SarifMemoryMapWriter	MemoryMapSarifMgr
 2026-08-19T04:08:21.240742+00:00	SarifTreeWriter	ProgramTreeSarifMgr
 2026-08-19T04:10:59.304191+00:00	SarifRegisterValueWriter	RegisterValuesSarifMgr
+2026-08-19T04:20:24.215945+00:00	SarifRelocationWriter	RelocationTableSarifMgr

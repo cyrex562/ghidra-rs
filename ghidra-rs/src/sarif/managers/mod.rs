@@ -10,6 +10,7 @@ pub mod memory_map_bytes_file;
 pub mod memory_map_sarif_mgr;
 pub mod program_tree_sarif_mgr;
 pub mod register_values_sarif_mgr;
+pub mod relocation_table_sarif_mgr;
 
 pub use bookmarks_sarif_mgr::BookmarksSarifMgr;
 pub use code_sarif_mgr::CodeSarifMgr;
@@ -23,3 +24,4 @@ pub use memory_map_bytes_file::MemoryMapBytesFile;
 pub use memory_map_sarif_mgr::MemoryMapSarifMgr;
 pub use program_tree_sarif_mgr::ProgramTreeSarifMgr;
 pub use register_values_sarif_mgr::RegisterValuesSarifMgr;
+pub use relocation_table_sarif_mgr::RelocationTableSarifMgr;
