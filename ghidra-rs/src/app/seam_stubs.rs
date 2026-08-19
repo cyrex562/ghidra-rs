@@ -17,7 +17,7 @@ use crate::program::model::data::array::Array;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::pointer::Pointer;
 use crate::program::model::data::typedef::TypeDef;
-use crate::program::model::address::{Address, AddressRange};
+use crate::program::model::address::{Address, AddressRange, AddressSet};
 use crate::program::model::listing::Program;
 use crate::program::model::mem::MemoryBlock;
 use crate::program::model::symbol::Namespace;
@@ -84,6 +84,13 @@ pub trait MessageLog: Send + Sync {
     /// `originator + ": " + message`.
     fn append_msg_from(&self, originator: &str, message: &str) {
         self.append_msg(&format!("{originator}: {message}"));
+    }
+
+    /// `MessageLog.appendException(Throwable)`, which appends the exception's message (and, in
+    /// Java, its stack trace) to the log. Defaults to recording the error's `Display` text through
+    /// [`append_msg`](Self::append_msg), since Rust errors carry no stack trace.
+    fn append_exception(&self, error: &dyn std::error::Error) {
+        self.append_msg(&error.to_string());
     }
 
     /// `MessageLog.copyFrom(MessageLog)`, which appends every message of `other` onto this log.
@@ -1870,6 +1877,25 @@ pub trait ListingContextAction: Send + Sync {
 pub trait DisassembleCommand: Send + Sync {
     /// Mirrors `DisassembleCommand.enableCodeAnalysis(boolean)`.
     fn enable_code_analysis(&self, enable: bool);
+
+    /// Mirrors `DisassembleCommand.applyTo(Program)`: runs the disassembly, reporting whether it
+    /// succeeded. Defaults to `false` (the answer for a command that disassembled nothing), so
+    /// existing implementors keep compiling.
+    ///
+    /// Grown for
+    /// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)'s
+    /// port of `disassembleIfNeeded`.
+    fn apply_to(&self, program: &mut dyn Program) -> bool {
+        let _ = program;
+        false
+    }
+
+    /// Mirrors `DisassembleCommand.getDisassembledAddressSet()`, the addresses
+    /// [`apply_to`](Self::apply_to) actually disassembled. Defaults to the empty set, matching
+    /// `apply_to`'s default.
+    fn get_disassembled_address_set(&self) -> AddressSet {
+        AddressSet::new()
+    }
 
     /// Re-erases this command so it can be handed to
     /// [`PluginTool::execute_background_command`](crate::framework::seam_stubs::PluginTool::execute_background_command);
@@ -5593,8 +5619,33 @@ pub trait FrameDescriptionEntry: Send + Sync {
 /// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
 /// port of `createAugmentationData` before the real class is ported. Models only the one method
 /// that caller needs.
+/// Grown with the four accessors
+/// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// walks a region through. All four are defaulted -- to `None`, standing in for the `null` Java
+/// returns for a region whose LSDA tables were never built -- so the existing single-member
+/// implementors keep compiling.
 pub trait RegionDescriptor: Send + Sync {
     fn get_frame_descriptor_entry(&self) -> std::sync::Arc<dyn FrameDescriptionEntry>;
+
+    /// `RegionDescriptor.getRange()`, the instruction-pointer range this region protects.
+    fn get_range(&self) -> StdOption<AddressRange> {
+        None
+    }
+
+    /// `RegionDescriptor.getCallSiteTable()`.
+    fn get_call_site_table(&self) -> StdOption<Arc<LSDACallSiteTable>> {
+        None
+    }
+
+    /// `RegionDescriptor.getActionTable()`.
+    fn get_action_table(&self) -> StdOption<Arc<LSDAActionTable>> {
+        None
+    }
+
+    /// `RegionDescriptor.getTypeTable()`.
+    fn get_type_table(&self) -> StdOption<Arc<LSDATypeTable>> {
+        None
+    }
 }
 
 /// Placeholder for `ghidra.app.cmd.data.CreateArrayCmd`, referenced by
@@ -5832,6 +5883,234 @@ impl LSDAActionTable {
     ) -> &[crate::app::plugin::exceptionhandlers::gcc::structures::gccexcepttable::lsda_action_record::LSDAActionRecord]
     {
         &self.records
+    }
+
+    /// Port of `LSDAActionTable.getActionRecordAtOffset(int)`: the record whose byte range covers
+    /// `action_offset`, counted from the start of the table. `None` stands in for Java's `null`
+    /// "didn't find it" return.
+    ///
+    /// Unlike the rest of this stub, this one is fully implemented -- the Java body is a walk over
+    /// the records it already holds, so
+    /// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)'s
+    /// `getTypeInfos` gets real behavior out of it.
+    pub fn get_action_record_at_offset(
+        &self,
+        action_offset: i32,
+    ) -> StdOption<
+        crate::app::plugin::exceptionhandlers::gcc::structures::gccexcepttable::lsda_action_record::LSDAActionRecord,
+    > {
+        // "records" is a list of action table records that were added in order min to max.
+        let mut current_offset = 0;
+        for record in &self.records {
+            let next_offset = current_offset + record.get_size();
+            if action_offset >= current_offset && action_offset < next_offset {
+                return Some(record.clone());
+            }
+            current_offset = next_offset;
+        }
+        None
+    }
+}
+
+/// Placeholder for
+/// `ghidra.app.plugin.exceptionhandlers.gcc.structures.gccexcepttable.LSDACallSiteRecord`,
+/// referenced by
+/// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// before the real class is ported. Concrete struct (the Java type is a class, not an interface),
+/// like [`LSDAActionTable`], modeling the four values the analyzer reads off a call-site record
+/// once `create` has run.
+pub struct LSDACallSiteRecord {
+    call_site: AddressRange,
+    landing_pad: StdOption<Address>,
+    landing_pad_offset: i64,
+    action_offset: i32,
+}
+
+impl LSDACallSiteRecord {
+    /// Constructs a record stub as if `create` had already decoded it. `landing_pad` is `None`
+    /// where Java holds the `Address.NO_ADDRESS` sentinel (see [`FrameDescriptionEntry`]).
+    pub fn new(
+        call_site: AddressRange,
+        landing_pad: StdOption<Address>,
+        landing_pad_offset: i64,
+        action_offset: i32,
+    ) -> Self {
+        Self { call_site, landing_pad, landing_pad_offset, action_offset }
+    }
+
+    /// Port of `LSDACallSiteRecord.getCallSite()`.
+    pub fn get_call_site(&self) -> &AddressRange {
+        &self.call_site
+    }
+
+    /// Port of `LSDACallSiteRecord.getLandingPad()`.
+    pub fn get_landing_pad(&self) -> StdOption<&Address> {
+        self.landing_pad.as_ref()
+    }
+
+    /// Port of `LSDACallSiteRecord.getLandingPadOffset()`.
+    pub fn get_landing_pad_offset(&self) -> i64 {
+        self.landing_pad_offset
+    }
+
+    /// Port of `LSDACallSiteRecord.getActionOffset()`.
+    pub fn get_action_offset(&self) -> i32 {
+        self.action_offset
+    }
+}
+
+/// Placeholder for
+/// `ghidra.app.plugin.exceptionhandlers.gcc.structures.gccexcepttable.LSDACallSiteTable`,
+/// referenced by
+/// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// before the real class is ported. Concrete struct, like [`LSDAActionTable`], holding only the
+/// records the analyzer iterates.
+pub struct LSDACallSiteTable {
+    records: Vec<LSDACallSiteRecord>,
+}
+
+impl LSDACallSiteTable {
+    /// Constructs a table stub with a known set of call-site records, as if `create` had run.
+    pub fn new(records: Vec<LSDACallSiteRecord>) -> Self {
+        Self { records }
+    }
+
+    /// Port of `LSDACallSiteTable.getCallSiteRecords()`.
+    pub fn get_call_site_records(&self) -> &[LSDACallSiteRecord] {
+        &self.records
+    }
+}
+
+/// Placeholder for
+/// `ghidra.app.plugin.exceptionhandlers.gcc.structures.gccexcepttable.LSDATypeTable`, referenced
+/// by [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// before the real class is ported. Concrete struct, like [`LSDAActionTable`], holding the decoded
+/// type-info addresses.
+pub struct LSDATypeTable {
+    type_info_addrs: Vec<Address>,
+}
+
+impl LSDATypeTable {
+    /// Constructs a table stub over the addresses `create` would have decoded, in table order.
+    pub fn new(type_info_addrs: Vec<Address>) -> Self {
+        Self { type_info_addrs }
+    }
+
+    /// Port of `LSDATypeTable.getTypeInfoAddress(int)`, whose index is 1-based. Java returns the
+    /// `Address.NO_ADDRESS` sentinel for an out-of-range index; that becomes `None` here, the same
+    /// substitution [`FrameDescriptionEntry`] documents.
+    ///
+    /// Fully implemented, as [`LSDAActionTable::get_action_record_at_offset`] is: the Java body is
+    /// a bounds check over the addresses this stub already holds.
+    pub fn get_type_info_address(&self, index: i32) -> StdOption<Address> {
+        if index <= 0 || index as usize > self.type_info_addrs.len() {
+            return None;
+        }
+        // Adjust since the array is 0 based.
+        Some(self.type_info_addrs[index as usize - 1].clone())
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.sections.EhFrameHeaderSection`,
+/// referenced by
+/// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// before the real class is ported. Java's version is a concrete class the analyzer *constructs*,
+/// so -- as with [`SetCommentCmd`] -- this is a struct rather than the `dyn`-dispatched trait a
+/// trait object would need; `analyze` no-ops and reports "no FDE table", the value the analyzer
+/// also derives from a program that has no `.eh_frame_hdr` block at all.
+pub struct EhFrameHeaderSection;
+
+impl EhFrameHeaderSection {
+    /// Mirrors `EhFrameHeaderSection.EH_FRAME_HEADER_BLOCK_NAME`.
+    pub const EH_FRAME_HEADER_BLOCK_NAME: &'static str = ".eh_frame_hdr";
+
+    /// Port of `EhFrameHeaderSection(Program)`. The program is dropped, since the no-op `analyze`
+    /// has nothing to read out of it.
+    pub fn new(program: &dyn Program) -> Self {
+        let _ = program;
+        EhFrameHeaderSection
+    }
+
+    /// Port of `EhFrameHeaderSection.analyze(TaskMonitor)`, the FDE table entry count. Java throws
+    /// `AddressOutOfBoundsException`/`MemoryAccessException`/`ExceptionHandlerFrameException`; the
+    /// three are collapsed into [`io::Error`], the convention the [`Cie`] stub above already uses,
+    /// since every caller only logs them.
+    pub fn analyze(&self, monitor: &dyn TaskMonitor) -> io::Result<i32> {
+        let _ = monitor;
+        Ok(0)
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.sections.EhFrameSection`, referenced
+/// by [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// before the real class is ported. A struct for the same reason
+/// [`EhFrameHeaderSection`] is; `analyze` no-ops and reports no regions.
+pub struct EhFrameSection;
+
+impl EhFrameSection {
+    /// Mirrors `EhFrameSection.EH_FRAME_BLOCK_NAME`.
+    pub const EH_FRAME_BLOCK_NAME: &'static str = ".eh_frame";
+
+    /// Port of `EhFrameSection(TaskMonitor, Program)`. Both arguments are dropped, as in
+    /// [`EhFrameHeaderSection::new`].
+    pub fn new(monitor: &dyn TaskMonitor, program: &dyn Program) -> Self {
+        let _ = (monitor, program);
+        EhFrameSection
+    }
+
+    /// Port of `EhFrameSection.analyze(int)`, the regions described by `.eh_frame`. Errors are
+    /// collapsed into [`io::Error`], as in [`EhFrameHeaderSection::analyze`].
+    pub fn analyze(&self, fde_table_count: i32) -> io::Result<Vec<Arc<dyn RegionDescriptor>>> {
+        let _ = fde_table_count;
+        Ok(Vec::new())
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.sections.DebugFrameSection`,
+/// referenced by
+/// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// before the real class is ported. A struct for the same reason [`EhFrameHeaderSection`] is;
+/// `analyze` no-ops and reports no regions.
+pub struct DebugFrameSection;
+
+impl DebugFrameSection {
+    /// Mirrors `DebugFrameSection.DEBUG_FRAME_BLOCK_NAME`. The analyzer matches memory blocks by
+    /// this *prefix*, since a program may hold several `.debug_frame*` blocks.
+    pub const DEBUG_FRAME_BLOCK_NAME: &'static str = ".debug_frame";
+
+    /// Port of `DebugFrameSection(TaskMonitor, Program)`. Both arguments are dropped, as in
+    /// [`EhFrameHeaderSection::new`].
+    pub fn new(monitor: &dyn TaskMonitor, program: &dyn Program) -> Self {
+        let _ = (monitor, program);
+        DebugFrameSection
+    }
+
+    /// Port of `DebugFrameSection.analyze()`, the regions described by `.debug_frame`. Errors are
+    /// collapsed into [`io::Error`], as in [`EhFrameHeaderSection::analyze`].
+    pub fn analyze(&self) -> io::Result<Vec<Arc<dyn RegionDescriptor>>> {
+        Ok(Vec::new())
+    }
+}
+
+/// The one `ghidra.app.cmd.disassemble.DisassembleCommand` constructor
+/// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
+/// calls. [`DisassembleCommand`] has to stay a trait -- five architecture-specific commands extend
+/// it -- so there is no inherent constructor to hang this off; as with [`auto_analysis_manager`],
+/// it becomes a free function in a module named for the Java class.
+pub mod disassemble_command {
+    use super::DisassembleCommand;
+    use crate::program::model::address::{Address, AddressSetView};
+
+    /// Mirrors `DisassembleCommand(Address, AddressSetView, boolean)`. Not yet implemented, as for
+    /// [`auto_analysis_manager::get_analysis_manager`](super::auto_analysis_manager::get_analysis_manager):
+    /// the real body needs the command class itself.
+    pub fn new(
+        start: Address,
+        restricted_set: Option<&dyn AddressSetView>,
+        follow_flow: bool,
+    ) -> Box<dyn DisassembleCommand> {
+        let _ = (start, restricted_set, follow_flow);
+        unimplemented!("disassemble_command::new placeholder not overridden")
     }
 }
 
