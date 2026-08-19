@@ -356,6 +356,146 @@ impl TaskLauncher {
     pub fn launch<W>(task: &SarifWriterTask<W>, monitor: &dyn TaskMonitor, results: &mut Vec<serde_json::Value>) {
         task.run(monitor, results);
     }
+
+    /// `TaskLauncher.launch(Task task)`, the overload
+    /// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action)
+    /// uses (`TaskLauncher.launch(task)` inside its `actionPerformed` override) -- a different
+    /// static overload than [`Self::launch`] above, which models `writeAsSARIF`'s two-argument
+    /// `new TaskLauncher(task, parent)` constructor instead. No GUI progress dialog exists here,
+    /// so this just runs the task synchronously against a no-op monitor, matching how [`Self::launch`]
+    /// treats the absence of one.
+    pub fn launch_program_task(task: &dyn ProgramTask) {
+        task.run(&crate::util::task::DummyMonitor);
+    }
+}
+
+/// Placeholder for the unported Java abstract class `ghidra.program.util.ProgramTask`, referenced
+/// by
+/// [`SarifResultHandler::get_task`](crate::sarif::handlers::SarifResultHandler::get_task)/
+/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action).
+/// Unlike most single-implementation Java classes in this file, `ProgramTask` itself sits on the
+/// much wider `ghidra.util.task.Task` hierarchy (many unrelated implementations elsewhere in
+/// Ghidra) -- so, despite the usual "Java class => concrete struct" default in this file, this
+/// stays `dyn`-dispatched. Only `run`, the method `create_action`'s `actionPerformed` closure
+/// calls through [`TaskLauncher::launch_program_task`], is modeled.
+pub trait ProgramTask: Send + Sync {
+    /// `ProgramTask.run(TaskMonitor)` (inherited from `Task.run`).
+    fn run(&self, monitor: &dyn TaskMonitor);
+}
+
+/// Placeholder for `sarif.view.SarifResultsTableProvider`, referenced by
+/// [`SarifResultHandler::get_task`](crate::sarif::handlers::SarifResultHandler::get_task)/
+/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action).
+/// Java's version is a concrete class (a `ComponentProviderAdapter` subclass holding the actual
+/// results table and its own docking actions), not an interface, so this is a plain struct rather
+/// than a `dyn`-dispatched trait. Only the two accessors `SarifResultHandler` reads
+/// (`getController`, `getDataFrame`) are modeled.
+pub struct SarifResultsTableProvider {
+    controller: SarifController,
+    data_frame: crate::sarif::model::SarifDataFrame,
+}
+
+impl SarifResultsTableProvider {
+    pub fn new(controller: SarifController, data_frame: crate::sarif::model::SarifDataFrame) -> Self {
+        Self { controller, data_frame }
+    }
+
+    /// `SarifResultsTableProvider.getController()`.
+    pub fn get_controller(&self) -> &SarifController {
+        &self.controller
+    }
+
+    /// `SarifResultsTableProvider.getDataFrame()`.
+    pub fn get_data_frame(&self) -> &crate::sarif::model::SarifDataFrame {
+        &self.data_frame
+    }
+}
+
+/// Placeholder for `docking.action.MenuData`, referenced by
+/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action).
+/// Its eventual Rust shape is an `enum` (see `STUBS.tsv`), but that enum doesn't exist yet, so
+/// this stays a `dyn`-dispatched marker trait until it lands. [`SimpleMenuData`] is the one
+/// concrete implementor this crate currently needs -- a bare menu path, mirroring the
+/// `new MenuData(String[] menuPath)` constructor `create_action` calls.
+pub trait MenuData: Send + Sync {}
+
+/// `new MenuData(String[] menuPath)`: the single-argument constructor
+/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action)
+/// uses.
+pub struct SimpleMenuData {
+    pub menu_path: Vec<String>,
+}
+
+impl SimpleMenuData {
+    pub fn new(menu_path: Vec<String>) -> Self {
+        Self { menu_path }
+    }
+}
+
+impl MenuData for SimpleMenuData {}
+
+/// Placeholder for the unported Java class `docking.action.DockingAction`, referenced by
+/// [`SarifResultHandler::create_action`](crate::sarif::handlers::SarifResultHandler::create_action).
+/// Java's version is a concrete class, so this is a plain struct rather than a `dyn`-dispatched
+/// trait. `createAction`'s anonymous subclass overrides exactly three methods
+/// (`actionPerformed`/`isEnabledForContext`/`isAddToPopup`); this struct models that override as
+/// three stored closures supplied at construction time rather than a full virtual-dispatch
+/// hierarchy, since there is only ever the one "subclass" to represent.
+pub struct DockingAction {
+    pub name: Option<String>,
+    pub owner: Option<String>,
+    pub popup_menu_data: Option<Box<dyn MenuData>>,
+    action_performed: Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) + Send + Sync>,
+    is_enabled_for_context:
+        Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) -> bool + Send + Sync>,
+    is_add_to_popup: Box<dyn Fn(&dyn crate::docking::action_context::ActionContext) -> bool + Send + Sync>,
+}
+
+impl DockingAction {
+    /// `new DockingAction(String name, String owner) { ... }`, with its three overrides supplied
+    /// directly instead of through subclassing.
+    pub fn new(
+        name: Option<String>,
+        owner: Option<String>,
+        action_performed: impl Fn(&dyn crate::docking::action_context::ActionContext) + Send + Sync + 'static,
+        is_enabled_for_context: impl Fn(&dyn crate::docking::action_context::ActionContext) -> bool
+            + Send
+            + Sync
+            + 'static,
+        is_add_to_popup: impl Fn(&dyn crate::docking::action_context::ActionContext) -> bool
+            + Send
+            + Sync
+            + 'static,
+    ) -> Self {
+        Self {
+            name,
+            owner,
+            popup_menu_data: None,
+            action_performed: Box::new(action_performed),
+            is_enabled_for_context: Box::new(is_enabled_for_context),
+            is_add_to_popup: Box::new(is_add_to_popup),
+        }
+    }
+
+    /// `DockingAction.actionPerformed(ActionContext)`.
+    pub fn action_performed(&self, context: &dyn crate::docking::action_context::ActionContext) {
+        (self.action_performed)(context)
+    }
+
+    /// `DockingAction.isEnabledForContext(ActionContext)`.
+    pub fn is_enabled_for_context(&self, context: &dyn crate::docking::action_context::ActionContext) -> bool {
+        (self.is_enabled_for_context)(context)
+    }
+
+    /// `DockingAction.isAddToPopup(ActionContext)`.
+    pub fn is_add_to_popup(&self, context: &dyn crate::docking::action_context::ActionContext) -> bool {
+        (self.is_add_to_popup)(context)
+    }
+
+    /// `DockingAction.setPopupMenuData(MenuData)`.
+    pub fn set_popup_menu_data(&mut self, data: Box<dyn MenuData>) {
+        self.popup_menu_data = Some(data);
+    }
 }
 
 /// Placeholder for `sarif.export.trees.SarifTreeWriter`, referenced by
@@ -1427,7 +1567,11 @@ impl SarifDataTypeWriter {
 /// is a concrete class, not an interface, so this is a plain struct. Only the members
 /// `MemoryMapSarifMgr` and `SarifDataFrame` read through it -- the import directory a
 /// `MEMORY_MAP` block's file-backed contents are read from, and the per-manager `getKeys()` map
-/// `SarifDataFrame` turns into extra table columns -- are modeled.
+/// `SarifDataFrame` turns into extra table columns -- are modeled. `Clone` is derived so
+/// [`SarifController`] (and, through it,
+/// [`SarifResultHandlerBase`](crate::sarif::handlers::SarifResultHandlerBase)) can hold an owned
+/// snapshot the way Java's field assignment aliases the same object.
+#[derive(Clone)]
 pub struct ProgramSarifMgr {
     directory: String,
     keys: HashMap<String, bool>,
@@ -1494,38 +1638,12 @@ impl SarifUtils {
     pub fn set_populating(_populating: bool) {}
 }
 
-/// Placeholder for the unported Java abstract class `sarif.handlers.SarifResultHandler` (an
-/// `ExtensionPoint` with several dynamically-discovered concrete subclasses under
-/// `sarif.handlers.result`, e.g. `SarifCommentResultHandler`), referenced by
-/// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new) via [`SarifController`].
-/// Modeled as a `dyn`-dispatched trait rather than the usual "Java class => concrete struct" rule:
-/// unlike [`SarifController`]/[`SarifUtils`]/[`ProgramSarifMgr`] (each with exactly one Java
-/// implementation), Java resolves a *set* of these at runtime via `ClassSearcher`, so there is
-/// real polymorphism to model. Only the two methods `SarifDataFrame`'s constructor calls
-/// (`isEnabled`, `handle`) are modeled; `getKey`/the table-provider/docking-action methods are not
-/// referenced by `SarifDataFrame` itself.
-pub trait SarifResultHandler: Send + Sync {
-    /// `SarifResultHandler.isEnabled(SarifDataFrame)`.
-    fn is_enabled(&self, dframe: &crate::sarif::model::SarifDataFrame) -> bool;
-
-    /// `SarifResultHandler.handle(SarifDataFrame, Run, Result, Map<String, Object>)`. `run` and
-    /// `result` are the raw SARIF JSON objects (matching the crate's existing convention of
-    /// treating SARIF payloads as [`serde_json::Value`] rather than typed
-    /// `com.contrastsecurity.sarif` classes -- see [`crate::sarif::SarifSchema210`]); `map` is the
-    /// row being built, matching a `Map<String, Object>` deserialized from JSON.
-    fn handle(
-        &self,
-        dframe: &crate::sarif::model::SarifDataFrame,
-        run: &serde_json::Value,
-        result: &serde_json::Value,
-        map: &mut HashMap<String, serde_json::Value>,
-    );
-}
-
 /// Placeholder for the unported Java abstract class `sarif.handlers.SarifRunHandler` (an
 /// `ExtensionPoint`), referenced by
 /// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new) via [`SarifController`]. See
-/// [`SarifResultHandler`] for why this is a trait rather than a struct.
+/// [`SarifResultHandler`](crate::sarif::handlers::SarifResultHandler) for why *that* sibling type
+/// is a trait rather than a struct -- the same reasoning applies here, but `SarifRunHandler`
+/// itself isn't ported yet.
 pub trait SarifRunHandler: Send + Sync {
     /// `SarifRunHandler.isEnabled(SarifDataFrame)`.
     fn is_enabled(&self, dframe: &crate::sarif::model::SarifDataFrame) -> bool;
@@ -1537,11 +1655,15 @@ pub trait SarifRunHandler: Send + Sync {
 /// Placeholder for the unported Java class `sarif.SarifController`, referenced by
 /// [`SarifDataFrame::new`](crate::sarif::model::SarifDataFrame::new)/`get_controller`. Java's
 /// version is a concrete class (no subclasses), so this is a plain struct rather than a `dyn`
-/// trait -- unlike [`SarifResultHandler`]/[`SarifRunHandler`], there is only ever one
-/// `SarifController` implementation. Only the three members `SarifDataFrame`'s constructor calls
-/// (`getSarifResultHandlers`, `getProgramSarifMgr`, `getSarifRunHandlers`) are modeled.
+/// trait -- unlike [`SarifResultHandler`](crate::sarif::handlers::SarifResultHandler)/
+/// [`SarifRunHandler`], there is only ever one `SarifController` implementation. Only the three
+/// members `SarifDataFrame`'s constructor calls (`getSarifResultHandlers`, `getProgramSarifMgr`,
+/// `getSarifRunHandlers`) are modeled. `Clone` is derived so
+/// [`SarifResultHandlerBase`](crate::sarif::handlers::SarifResultHandlerBase) can hold an owned
+/// snapshot the way Java's field assignment aliases the same object.
+#[derive(Clone)]
 pub struct SarifController {
-    pub result_handlers: Vec<Arc<dyn SarifResultHandler>>,
+    pub result_handlers: Vec<Arc<dyn crate::sarif::handlers::SarifResultHandler>>,
     pub run_handlers: Vec<Arc<dyn SarifRunHandler>>,
     pub program_sarif_mgr: ProgramSarifMgr,
 }
@@ -1550,7 +1672,7 @@ impl SarifController {
     /// `new SarifController(...)`, minus the GUI/program plumbing (`SarifPlugin`, `Program`,
     /// `ColorizingService`, ...) `SarifDataFrame` never touches.
     pub fn new(
-        result_handlers: Vec<Arc<dyn SarifResultHandler>>,
+        result_handlers: Vec<Arc<dyn crate::sarif::handlers::SarifResultHandler>>,
         run_handlers: Vec<Arc<dyn SarifRunHandler>>,
         program_sarif_mgr: ProgramSarifMgr,
     ) -> Self {
@@ -1562,7 +1684,7 @@ impl SarifController {
     }
 
     /// `SarifController.getSarifResultHandlers()`.
-    pub fn get_sarif_result_handlers(&self) -> &[Arc<dyn SarifResultHandler>] {
+    pub fn get_sarif_result_handlers(&self) -> &[Arc<dyn crate::sarif::handlers::SarifResultHandler>] {
         &self.result_handlers
     }
 
