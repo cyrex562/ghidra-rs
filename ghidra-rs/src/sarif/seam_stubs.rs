@@ -220,6 +220,24 @@ impl SarifEquateWriter {
     }
 }
 
+/// Placeholder for `sarif.export.ep.SarifEntryPointWriter`, referenced by
+/// [`ExtEntryPointSarifMgr::write_as_sarif`](crate::sarif::managers::ExtEntryPointSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor is modeled, mirroring `new SarifEntryPointWriter(List<Address> target, Writer
+/// baseWriter)`; the `genRoot`/`AbstractExtWriter` machinery that turns the entry points into
+/// SARIF JSON is pending that class's own port.
+pub struct SarifEntryPointWriter {
+    pub addresses: Vec<Address>,
+}
+
+impl SarifEntryPointWriter {
+    /// `new SarifEntryPointWriter(List<Address> target, Writer baseWriter)`, minus the (always
+    /// `null`, here) base writer.
+    pub fn new(addresses: Vec<Address>) -> Self {
+        Self { addresses }
+    }
+}
+
 /// Placeholder for `sarif.export.code.SarifCodeWriter`, referenced by
 /// [`CodeSarifMgr::write_as_sarif`](crate::sarif::managers::CodeSarifMgr::write_as_sarif). Java's
 /// version is a concrete class, not an interface, so this is a plain struct. Only the constructor
