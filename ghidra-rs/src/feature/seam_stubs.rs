@@ -4305,3 +4305,243 @@ pub trait Z3InfixPrinter: Send + Sync {
     /// Java: `Z3InfixPrinter.infix(Expr)`, the human-readable infix rendering of an expression.
     fn infix(&self, e: &dyn Expr) -> String;
 }
+
+// ---------------------------------------------------------------------------
+// BSim query staging + facade seam
+//
+// Placeholders for the unported Java types that
+// `ghidra.features.bsim.query.facade.SimilarFunctionQueryService` reaches for. Only the surface
+// that service actually uses is modelled here; each is replaced by the real port when its Java
+// file comes up.
+// ---------------------------------------------------------------------------
+
+/// Placeholder for the unported Java type `StagingManager`, referenced by
+/// `SimilarFunctionQueryService`.
+///
+/// Java's `StagingManager` is an abstract class holding `globalQuery`, `totalsize` and
+/// `queriesmade`; the two counter accessors are concrete and the rest is abstract. Here the whole
+/// surface is a trait, because that concrete state cannot be shared through a Rust supertype.
+///
+/// Java's `getQuery()` hands back the query the manager is currently staging. `NullStaging`
+/// returns the *global* query it was handed by `initialize`; a Rust manager cannot hold that
+/// borrow, so [`get_query`](StagingManager::get_query) returns [`None`] to mean "the global query
+/// itself" and callers substitute the query they passed to `initialize`.
+pub trait StagingManager: Send + Sync {
+    /// Java: `getTotalSize()`, the total number of separate queries being staged.
+    fn get_total_size(&self) -> i32;
+
+    /// Java: `getQueriesMade()`, the number of queries sent so far.
+    fn get_queries_made(&self) -> i32;
+
+    /// Java: `getQuery()`. [`None`] means "the global query passed to
+    /// [`initialize`](StagingManager::initialize)".
+    fn get_query(
+        &mut self,
+    ) -> Option<&mut (dyn crate::feature::bsim::query::protocol::BSimQuery + 'static)>;
+
+    /// Java: `initialize(BSimQuery)`, establishing the first query stage. Returns `true` if an
+    /// initial stage was constructed.
+    fn initialize(
+        &mut self,
+        query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
+    ) -> Result<bool, crate::feature::bsim::query::LshException>;
+
+    /// Java: `nextStage()`, establishing the next query stage. Returns `true` if one was built.
+    fn next_stage(&mut self) -> Result<bool, crate::feature::bsim::query::LshException>;
+}
+
+/// Placeholder for the unported Java type `NullStaging`, referenced by
+/// `SimilarFunctionQueryService::createStagingManager`.
+///
+/// The staging arithmetic is ported exactly; only the identity of the staged query differs (see
+/// [`StagingManager::get_query`]).
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct NullStaging {
+    total_size: i32,
+    queries_made: i32,
+}
+
+impl NullStaging {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl StagingManager for NullStaging {
+    fn get_total_size(&self) -> i32 {
+        self.total_size
+    }
+
+    fn get_queries_made(&self) -> i32 {
+        self.queries_made
+    }
+
+    fn get_query(
+        &mut self,
+    ) -> Option<&mut (dyn crate::feature::bsim::query::protocol::BSimQuery + 'static)> {
+        None // Java returns `globalQuery`.
+    }
+
+    fn initialize(
+        &mut self,
+        query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
+    ) -> Result<bool, crate::feature::bsim::query::LshException> {
+        self.total_size = 0;
+        self.queries_made = 0;
+        let Some(imanage) = query.get_description_manager() else {
+            return Ok(true);
+        };
+        self.total_size = imanage.num_functions() as i32;
+        Ok(self.total_size != 0) // Is there any data at all for an initial stage
+    }
+
+    fn next_stage(&mut self) -> Result<bool, crate::feature::bsim::query::LshException> {
+        self.queries_made = self.total_size;
+        Ok(false) // There is always only one stage
+    }
+}
+
+/// Placeholder for the unported Java type `FunctionStaging`, referenced by
+/// `SimilarFunctionQueryService::createStagingManager`.
+///
+/// The stage accounting (`totalsize`, `queriesmade`, and how many functions each stage claims) is
+/// ported exactly. Copying the functions of a stage into the staged query's `DescriptionManager`
+/// needs `DescriptionManager.listAllFunctions`, which is not ported yet, so the staged query is
+/// created but left empty.
+pub struct FunctionStaging {
+    stage_size: i32,
+    total_size: i32,
+    queries_made: i32,
+    local_query: Option<Box<dyn crate::feature::bsim::query::protocol::BSimQuery>>,
+}
+
+impl FunctionStaging {
+    /// Java: `FunctionStaging(int stagesize)`.
+    pub fn new(stage_size: i32) -> Self {
+        Self { stage_size, total_size: 0, queries_made: 0, local_query: None }
+    }
+
+    /// The number of functions each stage claims.
+    pub fn get_stage_size(&self) -> i32 {
+        self.stage_size
+    }
+
+    /// Claim up to `stage_size` more functions, as Java's transfer loop does, and report how many
+    /// were claimed.
+    fn claim_stage(&mut self) -> i32 {
+        let count = (self.total_size - self.queries_made).clamp(0, self.stage_size);
+        self.queries_made += count;
+        count
+    }
+}
+
+impl StagingManager for FunctionStaging {
+    fn get_total_size(&self) -> i32 {
+        self.total_size
+    }
+
+    fn get_queries_made(&self) -> i32 {
+        self.queries_made
+    }
+
+    fn get_query(
+        &mut self,
+    ) -> Option<&mut (dyn crate::feature::bsim::query::protocol::BSimQuery + 'static)> {
+        self.local_query.as_deref_mut()
+    }
+
+    fn initialize(
+        &mut self,
+        query: &dyn crate::feature::bsim::query::protocol::BSimQuery,
+    ) -> Result<bool, crate::feature::bsim::query::LshException> {
+        let Some(gmanage) = query.get_description_manager() else {
+            return Err(crate::feature::bsim::query::LshException::new(
+                "Query cannot be function staged",
+            ));
+        };
+        self.total_size = gmanage.num_functions() as i32;
+        self.queries_made = 0;
+        self.local_query = query.get_local_staging_copy();
+        Ok(self.claim_stage() != 0)
+    }
+
+    fn next_stage(&mut self) -> Result<bool, crate::feature::bsim::query::LshException> {
+        Ok(self.claim_stage() != 0)
+    }
+}
+
+/// Placeholder for the unported Java type `SFQueryInfo`, referenced by
+/// `SimilarFunctionQueryService::querySimilarFunctions`.
+///
+/// Only the four accessors the service calls are modelled. Java's `getPreFilter()` returns the
+/// stored [`PreFilter`], which holds boxed closures and so is lent out rather than copied.
+pub trait SFQueryInfo: Send + Sync {
+    /// Java: `buildQueryNearest()`.
+    fn build_query_nearest(&self) -> crate::feature::bsim::query::protocol::QueryNearest;
+
+    /// Java: `getFunctions()`, the set of function symbols to query for.
+    fn get_functions(&self) -> Vec<Box<dyn crate::program::database::symbol::FunctionSymbol>>;
+
+    /// Java: `getPreFilter()`.
+    fn get_pre_filter(&self) -> &PreFilter;
+
+    /// Java: `getNumberOfStages(int queriesPerStage)`.
+    fn get_number_of_stages(&self, queries_per_stage: i32) -> i32;
+}
+
+/// Placeholder for the unported Java type `SFOverviewInfo`, referenced by
+/// `SimilarFunctionQueryService::overviewSimilarFunctions`. The overview counterpart of
+/// [`SFQueryInfo`].
+pub trait SFOverviewInfo: Send + Sync {
+    /// Java: `buildQueryNearestVector()`.
+    fn build_query_nearest_vector(
+        &self,
+    ) -> crate::feature::bsim::query::protocol::QueryNearestVector;
+
+    /// Java: `getFunctions()`, the set of function symbols to query for.
+    fn get_functions(&self) -> Vec<Box<dyn crate::program::database::symbol::FunctionSymbol>>;
+
+    /// Java: `getPreFilter()`.
+    fn get_pre_filter(&self) -> &PreFilter;
+
+    /// Java: `getNumberOfStages(int queriesPerStage)`.
+    fn get_number_of_stages(&self, queries_per_stage: i32) -> i32;
+}
+
+/// Placeholder for the unported Java type `SFQueryResult`, referenced by
+/// `SimilarFunctionQueryService::querySimilarFunctions`, which is the only thing that constructs
+/// one.
+///
+/// Java holds the originating `SFQueryInfo`, the `DatabaseInfo` built from the server URL plus
+/// `DatabaseInformation`, and `ResponseNearest.result` (a `List<SimilarityResult>`). The facade
+/// `DatabaseInfo` is ported, so it is stored for real; the similarity list needs `ResponseNearest`,
+/// so the whole response is kept instead. The originating query info is not stored: it arrives as
+/// a borrowed `&dyn SFQueryInfo` that the result would have to outlive.
+#[derive(Clone)]
+pub struct SFQueryResult {
+    database_info: crate::feature::bsim::query::facade::DatabaseInfo,
+    response: std::sync::Arc<dyn crate::feature::bsim::query::protocol::QueryResponseRecord>,
+}
+
+impl SFQueryResult {
+    /// Java: `SFQueryResult(SFQueryInfo, String serverURL, DatabaseInformation, ResponseNearest)`,
+    /// whose first act is `new DatabaseInfo(serverURL, databaseInformation)`.
+    pub fn new(
+        database_info: crate::feature::bsim::query::facade::DatabaseInfo,
+        response: std::sync::Arc<dyn crate::feature::bsim::query::protocol::QueryResponseRecord>,
+    ) -> Self {
+        Self { database_info, response }
+    }
+
+    /// Java: `getDatabaseInfo()`.
+    pub fn get_database_info(&self) -> &crate::feature::bsim::query::facade::DatabaseInfo {
+        &self.database_info
+    }
+
+    /// Stands in for Java's `getSimilarityResults()`, which reads `ResponseNearest.result`.
+    pub fn get_response(
+        &self,
+    ) -> &std::sync::Arc<dyn crate::feature::bsim::query::protocol::QueryResponseRecord> {
+        &self.response
+    }
+}
