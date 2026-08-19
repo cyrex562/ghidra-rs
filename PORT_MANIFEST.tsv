@@ -1722,7 +1722,7 @@ orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SF
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryInfo.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryResult.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFQueryServiceFactory.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
-orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFResultsUpdateListener.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
+orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SFResultsUpdateListener.java	DONE	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/facade/SimilarFunctionQueryService.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query facade 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimH2FileDBConnectionManager.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query file 
 orig_src/Ghidra/Features/BSim/src/main/java/ghidra/features/bsim/query/file/BSimVectorStoreManager.java	TODO	orig_src Ghidra Features BSim src main java ghidra features bsim query file 
