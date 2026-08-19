@@ -32,7 +32,7 @@ DONE	trait	3	4	11	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/excep
 DONE	trait	2	8	64	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/GccExceptionAnalyzer.java
 DONE	trait	0	14	32	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/RegionDescriptor.java
 DONE	trait	0	14	16	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/ParallelDecompiler.java
-TODO	trait	0	14	2	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPayloadJava.java
+DONE	trait	0	14	2	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPayloadJava.java
 TODO	trait	5	2	0	pcode	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/pcode/eval/VarnodeEvaluator.java
 TODO	trait	6	11	1	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/Sym.java
 TODO	trait	7	9	73	app	Ghidra/Debug/Debugger/src/main/java/ghidra/app/plugin/core/debug/stack/SymPcodeExecutorState.java
