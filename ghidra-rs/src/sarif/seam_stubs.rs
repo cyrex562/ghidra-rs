@@ -1507,6 +1507,26 @@ impl MemoryBlockUtils {
     }
 }
 
+/// Placeholder for `sarif.export.registers.SarifRegisterValueWriter`, referenced by
+/// [`RegisterValuesSarifMgr::write_as_sarif`](crate::sarif::managers::RegisterValuesSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// register list and address ranges are modeled; the `ProgramContext` collaborator (needed to
+/// read register values back out for each range) and the `genRoot`/`AbstractExtWriter` machinery
+/// that turns them into SARIF JSON are pending that class's own port.
+pub struct SarifRegisterValueWriter {
+    pub registers: Vec<crate::program::model::lang::register::RegisterRef>,
+    pub ranges: Vec<AddressRange>,
+}
+
+impl SarifRegisterValueWriter {
+    /// `new SarifRegisterValueWriter(ProgramContext context, List<Register> registers,
+    /// List<AddressRange> request, Writer baseWriter)`, minus the context (pending its own use
+    /// here) and the (always `null`, here) base writer.
+    pub fn new(registers: Vec<crate::program::model::lang::register::RegisterRef>, ranges: Vec<AddressRange>) -> Self {
+        Self { registers, ranges }
+    }
+}
+
 /// Placeholder for `sarif.export.mm.SarifMemoryMapWriter`, referenced by
 /// [`MemoryMapSarifMgr::write_as_sarif`](crate::sarif::managers::MemoryMapSarifMgr::write_as_sarif).
 /// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
