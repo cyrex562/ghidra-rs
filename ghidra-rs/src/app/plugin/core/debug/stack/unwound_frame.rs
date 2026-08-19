@@ -6,8 +6,9 @@
 //! [`StackUnwinder`](crate::app::plugin::core::debug::stack::stack_unwinder::StackUnwinder), when
 //! stack-unwind analysis has not yet been applied to the current trace snapshot, or from
 //! `ListingUnwoundFrame`, when those annotations are already present. The former actually hands
-//! back an [`AnalysisUnwoundFrame`](crate::app::seam_stubs::AnalysisUnwoundFrame), which can apply
-//! the resulting analysis to the snapshot.
+//! back an
+//! [`AnalysisUnwoundFrame`](crate::app::plugin::core::debug::stack::analysis_unwound_frame::AnalysisUnwoundFrame),
+//! which can apply the resulting analysis to the snapshot.
 //!
 //! # Deviations from the Java interface
 //!

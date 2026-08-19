@@ -71,7 +71,56 @@ pub trait AbstractDBTracePropertyMap: Send + Sync {
 
 /// Placeholder for `ghidra.trace.model.bookmark.TraceBookmarkManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported.
-pub trait TraceBookmarkManager {}
+///
+/// Grown to carry the members
+/// [`AnalysisUnwoundFrame`](crate::app::plugin::core::debug::stack::analysis_unwound_frame)'s
+/// `applyToListing` calls: the type lookup it warns through, and the three
+/// [`TraceBookmarkOperations`](crate::trace::model::bookmark::trace_bookmark_operations::TraceBookmarkOperations)
+/// members it inherits in Java. Every one defaults to panicking, so the existing marker
+/// (`impl TraceBookmarkManager for X {}`) implementors keep compiling unchanged; the real port
+/// replaces them all with `TraceBookmarkOperations` as a supertrait.
+pub trait TraceBookmarkManager {
+    /// Mirrors `BookmarkManager.getBookmarkType(String)`, which returns `null` when the type has
+    /// not been defined on this trace.
+    fn get_bookmark_type(&self, type_name: &str) -> Option<Box<dyn TraceBookmarkType>> {
+        let _ = type_name;
+        unimplemented!("TraceBookmarkManager is not yet ported")
+    }
+
+    /// Mirrors `TraceBookmarkOperations.getBookmarksAt(long, Address)`.
+    fn get_bookmarks_at(
+        &self,
+        snap: i64,
+        address: &crate::program::model::address::Address,
+    ) -> Vec<Box<dyn crate::trace::model::bookmark::trace_bookmark::TraceBookmark>> {
+        let _ = (snap, address);
+        unimplemented!("TraceBookmarkManager is not yet ported")
+    }
+
+    /// Mirrors `TraceBookmarkOperations.getBookmarksIntersecting(Lifespan, AddressRange)`.
+    fn get_bookmarks_intersecting(
+        &self,
+        lifespan: crate::trace::model::lifespan::Lifespan,
+        range: &crate::program::model::address::AddressRange,
+    ) -> Vec<Box<dyn crate::trace::model::bookmark::trace_bookmark::TraceBookmark>> {
+        let _ = (lifespan, range);
+        unimplemented!("TraceBookmarkManager is not yet ported")
+    }
+
+    /// Mirrors `TraceBookmarkOperations.addBookmark(Lifespan, Address, TraceBookmarkType, String,
+    /// String)`.
+    fn add_bookmark(
+        &mut self,
+        lifespan: crate::trace::model::lifespan::Lifespan,
+        address: crate::program::model::address::Address,
+        type_: &dyn TraceBookmarkType,
+        category: &str,
+        comment: &str,
+    ) -> Box<dyn crate::trace::model::bookmark::trace_bookmark::TraceBookmark> {
+        let _ = (lifespan, address, type_, category, comment);
+        unimplemented!("TraceBookmarkManager is not yet ported")
+    }
+}
 
 /// Placeholder for `ghidra.trace.model.data.TraceBasedDataTypeManager`, referenced by
 /// [`Trace`](crate::trace::model::trace::Trace) before the real interface is ported. Mirrors the

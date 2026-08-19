@@ -26,11 +26,11 @@ use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 use std::sync::Arc;
 
+use crate::app::plugin::core::debug::stack::analysis_unwound_frame::AnalysisUnwoundFrame;
 use crate::app::plugin::core::debug::stack::stack_unwind_warning::CustomStackUnwindWarning;
 use crate::app::plugin::core::debug::stack::unwind_exception::UnwindException;
 use crate::app::seam_stubs::{
-    AnalysisUnwoundFrame, SavedRegisterMap, StackUnwindWarningSet, UnwindInfo,
-    VariableValueHoverService,
+    SavedRegisterMap, StackUnwindWarningSet, UnwindInfo, VariableValueHoverService,
 };
 use crate::app::services::debugger_static_mapping_service::DebuggerStaticMappingService;
 use crate::debug::api::tracemgr::debugger_coordinates::DebuggerCoordinates;
@@ -161,7 +161,12 @@ impl TraceLocation for PcTraceLocation {
 ///
 /// The iterator unwinds each frame lazily. If [`get_frames`](Self::get_frames) stops sooner than
 /// expected, consider using [`start`](Self::start) directly to get better diagnostics.
-pub struct StackUnwinder {
+///
+/// `S` is the type of machine state the recovered frames evaluate variables against. Java's class
+/// is not generic; it caches `AnalysisUnwoundFrame<WatchValue>`, whose state is a
+/// `PcodeExecutorState<WatchValue>` field. That field is a type parameter here (see the module
+/// docs), so the unwinder that caches such frames carries it too.
+pub struct StackUnwinder<S> {
     tool: Arc<dyn PluginTool>,
     mappings: Option<Arc<dyn DebuggerStaticMappingService>>,
     service: Option<Arc<dyn VariableValueHoverService>>,
@@ -173,11 +178,14 @@ pub struct StackUnwinder {
     pub(crate) code_space: Arc<AddressSpace>,
     sp: RegisterRef,
 
-    unwound: HashMap<ThreadAndSnap, BTreeMap<i32, Rc<AnalysisUnwoundFrame>>>,
+    unwound: HashMap<ThreadAndSnap, BTreeMap<i32, Rc<AnalysisUnwoundFrame<WatchValue, S>>>>,
     return_error_frame: bool,
 }
 
-impl StackUnwinder {
+impl<S> StackUnwinder<S>
+where
+    S: PcodeExecutorState<WatchValue>,
+{
     /// Construct an unwinder.
     ///
     /// * `tool` -- the tool with applicable modules opened as programs
@@ -249,14 +257,13 @@ impl StackUnwinder {
     ///
     /// Panics where Java throws `IllegalArgumentException`, i.e. when the coordinates name a
     /// different platform than this unwinder was built for.
-    pub fn start<S, F>(
+    pub fn start<F>(
         &mut self,
         coordinates: &DebuggerCoordinates,
         monitor: &dyn TaskMonitor,
         states: F,
-    ) -> Option<Rc<AnalysisUnwoundFrame>>
+    ) -> Option<Rc<AnalysisUnwoundFrame<WatchValue, S>>>
     where
-        S: PcodeExecutorState<WatchValue>,
         F: FnMut(&DebuggerCoordinates) -> S,
     {
         match coordinates.get_platform() {
@@ -271,16 +278,15 @@ impl StackUnwinder {
     ///
     /// Java also takes the starting state here and ignores it; the state is obtained per level
     /// from `states` instead. The current strategy is to save the [`UnwindInfo`], not the frames.
-    pub fn get_frame<S, F>(
+    pub fn get_frame<F>(
         &mut self,
         coordinates: &DebuggerCoordinates,
         level: i32,
         warnings: Option<&mut StackUnwindWarningSet>,
         monitor: &dyn TaskMonitor,
         states: F,
-    ) -> Option<Rc<AnalysisUnwoundFrame>>
+    ) -> Option<Rc<AnalysisUnwoundFrame<WatchValue, S>>>
     where
-        S: PcodeExecutorState<WatchValue>,
         F: FnMut(&DebuggerCoordinates) -> S,
     {
         self.unwind_stack(coordinates, level, warnings, monitor, states)
@@ -288,27 +294,32 @@ impl StackUnwinder {
 
     /// Unwind from the coordinates' frame level out to `target_level`, or until the unwind fails
     /// when `target_level` is negative.
-    fn unwind_stack<S, F>(
+    ///
+    /// Java hands every frame in one unwind chain a reference to the same state object. A frame
+    /// owns its state here, so `states` is invoked once more per frame, with the coordinates the
+    /// chain's state was built at -- the same call Java would have made.
+    fn unwind_stack<F>(
         &mut self,
         coordinates: &DebuggerCoordinates,
         target_level: i32,
         mut warnings: Option<&mut StackUnwindWarningSet>,
         monitor: &dyn TaskMonitor,
         mut states: F,
-    ) -> Option<Rc<AnalysisUnwoundFrame>>
+    ) -> Option<Rc<AnalysisUnwoundFrame<WatchValue, S>>>
     where
-        S: PcodeExecutorState<WatchValue>,
         F: FnMut(&DebuggerCoordinates) -> S,
     {
         let mut state: Option<S> = None;
+        let mut state_coord: Option<DebuggerCoordinates> = None;
         let mut register_map = SavedRegisterMap::new();
-        let mut frame: Option<Rc<AnalysisUnwoundFrame>> = None;
+        let mut frame: Option<Rc<AnalysisUnwoundFrame<WatchValue, S>>> = None;
 
         let mut level = coordinates.get_frame();
         while level <= target_level || target_level < 0 {
             let coord = coordinates.frame(level);
             if frame.as_ref().is_none_or(|f| f.get_error().is_some()) {
                 state = Some(states(&coord));
+                state_coord = Some(coord.clone());
                 register_map = SavedRegisterMap::new();
                 frame = None;
             }
@@ -352,8 +363,13 @@ impl StackUnwinder {
             let sp_val = self.pc_or_sp(frame.as_deref(), &coord, state_ref, false)?;
 
             let next_register_map = Self::update_map(frame.as_deref(), &register_map);
+            let frame_state = states(
+                state_coord
+                    .as_ref()
+                    .expect("a state is set on the first pass"),
+            );
             frame = self
-                .unwind(&coord, pc_val, sp_val, next_register_map, monitor)
+                .unwind(&coord, frame_state, pc_val, sp_val, next_register_map, monitor)
                 .map(Rc::new);
             match frame.as_ref() {
                 Some(f) => {
@@ -375,7 +391,7 @@ impl StackUnwinder {
     ///
     /// Port of the private `updateMap`.
     fn update_map(
-        frame: Option<&AnalysisUnwoundFrame>,
+        frame: Option<&AnalysisUnwoundFrame<WatchValue, S>>,
         register_map: &SavedRegisterMap,
     ) -> SavedRegisterMap {
         match frame {
@@ -384,7 +400,7 @@ impl StackUnwinder {
                 if let Some(base) = frame.get_base_pointer() {
                     frame
                         .get_unwind_info()
-                        .map_saved_registers(&base, &mut next_register_map);
+                        .map_saved_registers(base, &mut next_register_map);
                 }
                 next_register_map
             }
@@ -398,16 +414,13 @@ impl StackUnwinder {
     ///
     /// Port of the private `pcOrSp`. Returns `None` where Java would have thrown a
     /// `NullPointerException` or failed to concretize the fall-back register.
-    fn pc_or_sp<S>(
+    fn pc_or_sp(
         &self,
-        frame: Option<&AnalysisUnwoundFrame>,
+        frame: Option<&AnalysisUnwoundFrame<WatchValue, S>>,
         coordinates: &DebuggerCoordinates,
         state: &S,
         get_pc: bool,
-    ) -> Option<Address>
-    where
-        S: PcodeExecutorState<WatchValue>,
-    {
+    ) -> Option<Address> {
         let thread = coordinates.get_thread();
         let level = coordinates.get_frame();
         let view_snap = coordinates.get_view_snap();
@@ -447,9 +460,9 @@ impl StackUnwinder {
             let prev_info = frame.get_unwind_info();
             if let Some(base) = frame.get_base_pointer() {
                 let unwound = if get_pc {
-                    prev_info.compute_next_pc(&base, state, &self.code_space, &self.pc)
+                    prev_info.compute_next_pc(base, state, &self.code_space, &self.pc)
                 } else {
-                    prev_info.compute_next_sp(&base)
+                    prev_info.compute_next_sp(base)
                 };
                 if unwound.is_some() {
                     return unwound;
@@ -565,20 +578,24 @@ impl StackUnwinder {
 
     /// Build one frame at the given coordinates.
     ///
-    /// Java also threads the p-code state into the frame; the
-    /// [`AnalysisUnwoundFrame`] placeholder cannot hold one, so it is omitted here. Java declares
-    /// this method package-private.
+    /// Java declares this method package-private. It reads the platform and the mapping service
+    /// out of the coordinates and the tool; both are passed to the frame directly here, for the
+    /// reasons the module docs give.
     pub(crate) fn unwind(
         &self,
         coordinates: &DebuggerCoordinates,
+        state: S,
         pc_val: Address,
         sp_val: Address,
         register_map: SavedRegisterMap,
         monitor: &dyn TaskMonitor,
-    ) -> Option<AnalysisUnwoundFrame> {
+    ) -> Option<AnalysisUnwoundFrame<WatchValue, S>> {
         match self.compute_unwind_info(coordinates.get_snap(), &pc_val, monitor) {
             Ok(sau) => Some(AnalysisUnwoundFrame::new(
                 coordinates.clone(),
+                Arc::clone(&self.platform),
+                state,
+                self.mappings.clone(),
                 pc_val,
                 sp_val,
                 Some(sau.static_pc),
@@ -587,6 +604,9 @@ impl StackUnwinder {
             )),
             Err(e) if self.return_error_frame => Some(AnalysisUnwoundFrame::new(
                 coordinates.clone(),
+                Arc::clone(&self.platform),
+                state,
+                self.mappings.clone(),
                 pc_val,
                 sp_val,
                 None,
@@ -611,14 +631,13 @@ impl StackUnwinder {
     }
 
     /// Unwind every frame the target reports for the given coordinates, keyed by level.
-    pub fn get_frames<S, F>(
+    pub fn get_frames<F>(
         &mut self,
         coordinates: &DebuggerCoordinates,
         monitor: &dyn TaskMonitor,
         states: F,
-    ) -> Option<&BTreeMap<i32, Rc<AnalysisUnwoundFrame>>>
+    ) -> Option<&BTreeMap<i32, Rc<AnalysisUnwoundFrame<WatchValue, S>>>>
     where
-        S: PcodeExecutorState<WatchValue>,
         F: FnMut(&DebuggerCoordinates) -> S,
     {
         let max = self.get_target_reported_max_frame(coordinates);
@@ -630,16 +649,15 @@ impl StackUnwinder {
     /// level, falling back to the nearest match at a shallower level.
     ///
     /// Java compares functions by reference identity, so this uses [`Arc::ptr_eq`].
-    pub fn find_match_for_function<S, F>(
+    pub fn find_match_for_function<F>(
         &mut self,
         function: &Arc<dyn Function>,
         coordinates: &DebuggerCoordinates,
         warnings: &mut StackUnwindWarningSet,
         monitor: &dyn TaskMonitor,
         states: F,
-    ) -> Option<Rc<AnalysisUnwoundFrame>>
+    ) -> Option<Rc<AnalysisUnwoundFrame<WatchValue, S>>>
     where
-        S: PcodeExecutorState<WatchValue>,
         F: FnMut(&DebuggerCoordinates) -> S,
     {
         let max = self.get_target_reported_max_frame(coordinates);
@@ -1162,7 +1180,92 @@ mod tests {
     struct TestTool;
     impl PluginTool for TestTool {}
 
-    fn unwinder(has_pc: bool, has_sp: bool) -> StackUnwinder {
+    /// A watch-value state the unwinder only ever stores into the frames it builds; nothing in
+    /// these tests reads through it.
+    struct TestState;
+
+    impl crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece for TestState {}
+
+    impl crate::pcode::exec::pcode_executor_state_piece::PcodeExecutorStatePiece<WatchValue, WatchValue>
+        for TestState
+    {
+        fn get_language(&self) -> Box<dyn Language> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address_arithmetic(
+            &self,
+        ) -> Arc<dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<WatchValue>> {
+            self.get_arithmetic()
+        }
+        fn get_arithmetic(
+            &self,
+        ) -> Arc<dyn crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<WatchValue>> {
+            Arc::new(
+                crate::pcode::exec::debugger_pcode_utils::WatchValuePcodeArithmetic::for_endian(
+                    false,
+                ),
+            )
+        }
+        fn stream_pieces(
+            &self,
+        ) -> Vec<&dyn crate::pcode::exec::pcode_executor_state_piece::ErasedPcodeExecutorStatePiece>
+        {
+            vec![self]
+        }
+        fn set_var_abstract(
+            &mut self,
+            _space: &Arc<AddressSpace>,
+            _offset: &WatchValue,
+            _size: i32,
+            _quantize: bool,
+            _val: &WatchValue,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
+        fn set_var_internal_abstract(
+            &mut self,
+            _space: &Arc<AddressSpace>,
+            _offset: &WatchValue,
+            _size: i32,
+            _val: &WatchValue,
+        ) {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_var_abstract(
+            &self,
+            _space: &Arc<AddressSpace>,
+            _offset: &WatchValue,
+            _size: i32,
+            _quantize: bool,
+            _reason: crate::pcode::exec::pcode_executor_state_piece::Reason,
+        ) -> WatchValue {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_var_internal_abstract(
+            &self,
+            _space: &Arc<AddressSpace>,
+            _offset: &WatchValue,
+            _size: i32,
+            _reason: crate::pcode::exec::pcode_executor_state_piece::Reason,
+        ) -> WatchValue {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_register_values(&self) -> Vec<(RegisterRef, WatchValue)> {
+            vec![]
+        }
+        fn get_concrete_buffer(
+            &self,
+            _address: &Address,
+            _purpose: crate::pcode::exec::pcode_arithmetic::Purpose,
+        ) -> Box<dyn MemBuffer> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn clear(&mut self) {}
+    }
+
+    impl PcodeExecutorState<WatchValue> for TestState {}
+
+    fn unwinder(has_pc: bool, has_sp: bool) -> StackUnwinder<TestState> {
         let spaces = TestSpaces::new();
         StackUnwinder::new(
             Arc::new(TestTool),
@@ -1310,6 +1413,7 @@ mod tests {
         assert!(u
             .unwind(
                 &coords,
+                TestState,
                 pc_val.clone(),
                 sp_val.clone(),
                 SavedRegisterMap::new(),
@@ -1321,6 +1425,7 @@ mod tests {
         let frame = u
             .unwind(
                 &coords,
+                TestState,
                 pc_val.clone(),
                 sp_val.clone(),
                 SavedRegisterMap::new(),
@@ -1352,7 +1457,7 @@ mod tests {
 
         // With no frame, Java returns the very same map.
         assert_eq!(
-            StackUnwinder::update_map(None, &base_map).size(),
+            StackUnwinder::<TestState>::update_map(None, &base_map).size(),
             base_map.size()
         );
 
@@ -1370,6 +1475,13 @@ mod tests {
         );
         let frame = AnalysisUnwoundFrame::new(
             DebuggerCoordinates::nowhere(),
+            Arc::new(TestPlatform {
+                spaces: spaces.clone(),
+                has_pc: true,
+                has_sp: true,
+            }),
+            TestState,
+            None,
             spaces.ram.address(0x400000),
             stack.clone(),
             None,
@@ -1377,7 +1489,7 @@ mod tests {
             SavedRegisterMap::new(),
         );
 
-        let next = StackUnwinder::update_map(Some(&frame), &base_map);
+        let next = StackUnwinder::<TestState>::update_map(Some(&frame), &base_map);
         assert_eq!(next.size(), 2);
         // The fork left the original alone.
         assert_eq!(base_map.size(), 1);
