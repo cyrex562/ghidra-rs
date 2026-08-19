@@ -9,6 +9,7 @@ use crate::app::decompiler::{
 use crate::generic::concurrent::{ConcurrentQ, GThreadPool, QCallback};
 use crate::program::model::listing::Function;
 use crate::app::plugin::core::debug::service::modules::ChangeCollector;
+use crate::app::plugin::core::debug::stack::sym::Sym;
 use crate::app::plugin::exceptionhandlers::gcc::RegionDescriptor;
 use crate::debug::seam_stubs::MappedAddressRange;
 use crate::program::model::address::AddressSetView;
@@ -6138,5 +6139,384 @@ where
     /// Port of `ChunkingParallelDecompiler.dispose()`. No-op: `ConcurrentQ` has no disposable
     /// resources to release yet.
     pub fn dispose(&self) {}
+}
+
+/// Placeholder for `ghidra.app.plugin.core.debug.stack.SymPcodeArithmetic`, referenced by
+/// [`SymPcodeExecutorState`](crate::app::plugin::core::debug::stack::sym_pcode_executor_state::SymPcodeExecutorState)
+/// before the real class is ported. The two are mutually dependent in Java (the state constructs
+/// the arithmetic; the arithmetic is handed back out of `getArithmetic`), so this breaks that
+/// cycle. Only the [`PcodeArithmetic`] members the state actually routes through are meaningful;
+/// the rest come from the trait's defaults.
+pub struct SymPcodeArithmetic {
+    c_spec: Arc<dyn crate::program::model::lang::compiler_spec::CompilerSpec>,
+    big_endian: bool,
+}
+
+impl SymPcodeArithmetic {
+    /// Stands in for the `SymPcodeArithmetic(CompilerSpec)` constructor. Java caches
+    /// `cSpec.getLanguage()`; only its endianness is ever consulted, so that is what is cached
+    /// here.
+    pub fn new(c_spec: Arc<dyn crate::program::model::lang::compiler_spec::CompilerSpec>) -> Self {
+        let big_endian = c_spec.get_language().is_big_endian();
+        SymPcodeArithmetic { c_spec, big_endian }
+    }
+}
+
+impl crate::pcode::exec::pcode_arithmetic::PcodeArithmetic<Sym> for SymPcodeArithmetic {
+    fn get_endian(&self) -> StdOption<crate::program::model::lang::endian::Endian> {
+        Some(if self.big_endian {
+            crate::program::model::lang::endian::Endian::Big
+        } else {
+            crate::program::model::lang::endian::Endian::Little
+        })
+    }
+
+    fn unary_op(
+        &self,
+        opcode: crate::program::model::pcode::OpCode,
+        _sizeout: i32,
+        _sizein1: i32,
+        in1: &Sym,
+    ) -> Sym {
+        match opcode {
+            crate::program::model::pcode::OpCode::Copy => in1.clone(),
+            _ => Sym::opaque(),
+        }
+    }
+
+    fn binary_op(
+        &self,
+        opcode: crate::program::model::pcode::OpCode,
+        _sizeout: i32,
+        _sizein1: i32,
+        in1: &Sym,
+        _sizein2: i32,
+        in2: &Sym,
+    ) -> Sym {
+        use crate::program::model::pcode::OpCode;
+        match opcode {
+            OpCode::IntAdd => in1.add(&*self.c_spec, in2),
+            OpCode::IntSub => in1.sub(&*self.c_spec, in2),
+            OpCode::IntAnd => in1.and(&*self.c_spec, in2),
+            _ => Sym::opaque(),
+        }
+    }
+
+    fn mod_before_store(
+        &self,
+        _sizein_offset: i32,
+        _space: &crate::program::model::address::AddressSpace,
+        _in_offset: &Sym,
+        _sizein_value: i32,
+        in_value: &Sym,
+    ) -> Sym {
+        in_value.clone()
+    }
+
+    fn mod_after_load(
+        &self,
+        _sizein_offset: i32,
+        _space: &crate::program::model::address::AddressSpace,
+        _in_offset: &Sym,
+        _sizein_value: i32,
+        in_value: &Sym,
+    ) -> Sym {
+        in_value.clone()
+    }
+
+    fn from_const_bytes(&self, value: &[u8]) -> Sym {
+        Sym::Const {
+            value: crate::pcode::utils::bytes_to_long(value, value.len(), self.big_endian),
+            size: value.len() as i32,
+        }
+    }
+
+    fn to_concrete(
+        &self,
+        value: &Sym,
+        purpose: crate::pcode::exec::pcode_arithmetic::Purpose,
+    ) -> Result<Vec<u8>, crate::pcode::exec::concretion_error::ConcretionError> {
+        match value {
+            Sym::Const { value, size } => Ok(crate::pcode::utils::long_to_bytes(
+                *value,
+                *size as usize,
+                self.big_endian,
+            )),
+            other => Err(crate::pcode::exec::concretion_error::ConcretionError::new(
+                format!("Not a constant: {other:?}"),
+                purpose,
+            )),
+        }
+    }
+
+    fn size_of(&self, value: &Sym) -> i64 {
+        value.size_of(&*self.c_spec)
+    }
+}
+
+/// A symbolic entry in a [`SymStateSpace`]; placeholder for the nested record
+/// `SymStateSpace.SymEntry`.
+///
+/// An entry becomes *truncated* when a later, overlapping write clips its effective range, so both
+/// the original range the symbol describes (`sym_range`) and the effective range still covered by
+/// it (`ent_range`) are remembered.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SymEntry {
+    ent_range: AddressRange,
+    sym_range: AddressRange,
+    sym: Sym,
+}
+
+impl SymEntry {
+    /// Mirrors `SymEntry(AddressRange, Sym)`: a fresh, untruncated entry.
+    pub fn new(range: AddressRange, sym: Sym) -> Self {
+        SymEntry {
+            ent_range: range.clone(),
+            sym_range: range,
+            sym,
+        }
+    }
+
+    /// The range over which this entry is still effective.
+    pub fn ent_range(&self) -> &AddressRange {
+        &self.ent_range
+    }
+
+    /// The range the symbol originally described.
+    pub fn sym_range(&self) -> &AddressRange {
+        &self.sym_range
+    }
+
+    /// The symbol stored by this entry.
+    pub fn sym(&self) -> &Sym {
+        &self.sym
+    }
+
+    /// Port of `SymEntry.isTruncated()`: true when a later write clipped the effective range.
+    pub fn is_truncated(&self) -> bool {
+        self.ent_range != self.sym_range
+    }
+
+    /// Port of `SymEntry.getRegister(Language)`: the register this entry's effective range covers,
+    /// if any.
+    pub fn get_register(
+        &self,
+        language: &dyn crate::program::model::lang::language::Language,
+    ) -> StdOption<crate::program::model::lang::register::RegisterRef> {
+        language.get_register_at(self.ent_range.min_address(), self.ent_range.length() as i32)
+    }
+
+    /// Port of `SymEntry.truncate(AddressRange)`.
+    fn truncate(&self, range: AddressRange) -> SymEntry {
+        assert!(self.ent_range.min_address() <= range.min_address());
+        assert!(self.ent_range.max_address() >= range.max_address());
+        SymEntry {
+            ent_range: range,
+            sym_range: self.sym_range.clone(),
+            sym: self.sym.clone(),
+        }
+    }
+
+    /// Port of `SymEntry.extract(AddressRange, SymPcodeArithmetic)`. Java leaves the sub-range
+    /// extraction as a TODO and falls back to the opaque symbol; so does this.
+    fn extract(&self, range: &AddressRange) -> Sym {
+        if &self.sym_range == range {
+            self.sym.clone()
+        } else {
+            Sym::opaque()
+        }
+    }
+
+    /// Port of `SymEntry.toString(Language)`, which substitutes a register name for the effective
+    /// range when one matches.
+    pub fn display(
+        &self,
+        language: StdOption<&dyn crate::program::model::lang::language::Language>,
+    ) -> String {
+        match language.and_then(|l| self.get_register(l)) {
+            // Java's format string spells the first key "entRanage"; kept verbatim.
+            Some(reg) => format!(
+                "SymEntry[entRanage={},symRange={},sym={:?}]",
+                reg.borrow().name(),
+                self.sym_range,
+                self.sym
+            ),
+            None => format!(
+                "SymEntry[entRange={},symRange={},sym={:?}]",
+                self.ent_range, self.sym_range, self.sym
+            ),
+        }
+    }
+}
+
+/// Placeholder for `ghidra.app.plugin.core.debug.stack.SymStateSpace`, the portion of a
+/// [`SymPcodeExecutorState`](crate::app::plugin::core::debug::stack::sym_pcode_executor_state::SymPcodeExecutorState)
+/// associated with one address space. It carries only what that state needs.
+///
+/// Java layers an `AddressRangeMapSetter` over a `NavigableMap`; this placeholder inlines the
+/// equivalent overlap handling (remove fully-covered entries, clip partially-covered ones on
+/// either side) directly over a [`BTreeMap`](std::collections::BTreeMap), which is enough to keep
+/// [`get`](Self::get) and [`set`](Self::set) faithful.
+#[derive(Clone, Debug, Default)]
+pub struct SymStateSpace {
+    map: std::collections::BTreeMap<Address, SymEntry>,
+}
+
+impl SymStateSpace {
+    /// Construct a new empty space.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Port of `SymStateSpace.fork()`: copy this space.
+    pub fn fork(&self) -> Self {
+        self.clone()
+    }
+
+    /// Port of `SymStateSpace.clear()`.
+    pub fn clear(&mut self) {
+        self.map.clear();
+    }
+
+    /// The entries of this space, ordered by effective start address. Stands in for Java's
+    /// package-private `map.values()` access.
+    pub fn entries(&self) -> impl Iterator<Item = &SymEntry> {
+        self.map.values()
+    }
+
+    /// Port of `SymStateSpace.set(Address, int, Sym)`.
+    ///
+    /// # Panics
+    ///
+    /// Panics where Java throws `AssertionError`, i.e. when the address and size run off the end
+    /// of the address space.
+    pub fn set(&mut self, address: &Address, size: i32, sym: Sym) {
+        let range = AddressRange::from_start_len(address.clone(), size as u64)
+            .expect("AssertionError: entry range overflows its address space");
+        let clipped: Vec<Address> = self
+            .map
+            .iter()
+            .filter(|(_, ent)| ent.ent_range.intersects(&range))
+            .map(|(start, _)| start.clone())
+            .collect();
+        for start in clipped {
+            let ent = self.map.remove(&start).expect("just enumerated");
+            if ent.ent_range.min_address() < range.min_address() {
+                let left = AddressRange::new(
+                    ent.ent_range.min_address().clone(),
+                    range.min_address().previous().expect("has a lower neighbor"),
+                );
+                self.map
+                    .insert(left.min_address().clone(), ent.truncate(left));
+            }
+            if ent.ent_range.max_address() > range.max_address() {
+                let right = AddressRange::new(
+                    range.max_address().next().expect("has an upper neighbor"),
+                    ent.ent_range.max_address().clone(),
+                );
+                self.map
+                    .insert(right.min_address().clone(), ent.truncate(right));
+            }
+        }
+        self.map
+            .insert(range.min_address().clone(), SymEntry::new(range, sym));
+    }
+
+    /// Port of `SymStateSpace.get(Address, int, SymPcodeArithmetic, Language)`. Where no entry
+    /// covers the requested range, a fresh symbol is generated for register and stack addresses.
+    pub fn get(
+        &self,
+        address: &Address,
+        size: i32,
+        arithmetic: &SymPcodeArithmetic,
+        language: &dyn crate::program::model::lang::language::Language,
+    ) -> Sym {
+        use crate::pcode::exec::pcode_arithmetic::PcodeArithmetic;
+        use crate::program::model::pcode::OpCode;
+
+        let range = match AddressRange::from_start_len(address.clone(), size as u64) {
+            Ok(range) => range,
+            Err(_) => return Sym::opaque(),
+        };
+        let mut result: StdOption<Sym> = None;
+        let mut expected_next: StdOption<Address> = None;
+        for ent in self.map.values().filter(|e| e.ent_range.intersects(&range)) {
+            if ent.ent_range == range {
+                return ent.extract(&range);
+            }
+            let intersection = ent.ent_range.intersect(&range).expect("known to intersect");
+            if let Some(expected) = &expected_next {
+                if expected != intersection.min_address() {
+                    return Sym::opaque();
+                }
+            }
+            expected_next = intersection.max_address().next().ok();
+            let piece = ent.extract(&intersection);
+            let piece = arithmetic.unary_op(
+                OpCode::IntZext,
+                size,
+                intersection.length() as i32,
+                &piece,
+            );
+            result = Some(match result {
+                None => piece,
+                Some(result) => {
+                    arithmetic.binary_op(OpCode::IntOr, size, size, &piece, size, &result)
+                }
+            });
+        }
+        if let Some(result) = result {
+            return result;
+        }
+        if address.is_register_address() {
+            return match language.get_register_at(address, size) {
+                Some(register) => Sym::Register { register, mask: -1 },
+                None => {
+                    crate::util::msg::Msg::warn(
+                        "SymStateSpace",
+                        &format!("Could not figure register: address={address},size={size}"),
+                    );
+                    Sym::opaque()
+                }
+            };
+        }
+        if address.is_stack_address() {
+            return Sym::StackDeref {
+                offset: address.offset(),
+                mask: -1,
+                size,
+            };
+        }
+        Sym::opaque()
+    }
+
+    /// Port of `SymStateSpace.toString(String, Language)`.
+    pub fn display(
+        &self,
+        indent: &str,
+        language: StdOption<&dyn crate::program::model::lang::language::Language>,
+    ) -> String {
+        let body: Vec<String> = self.map.values().map(|e| e.display(language)).collect();
+        format!(
+            "{{\n{indent}{indent}{}\n{indent}}}",
+            body.join(&format!("\n{indent}{indent}"))
+        )
+    }
+
+    /// Port of `SymStateSpace.dump(String, Language)`, which writes to standard error.
+    pub fn dump(
+        &self,
+        prefix: &str,
+        language: &dyn crate::program::model::lang::language::Language,
+    ) {
+        for ent in self.map.values() {
+            match ent.get_register(language) {
+                Some(register) => {
+                    eprintln!("{prefix}{} = {:?}", register.borrow().name(), ent.sym)
+                }
+                None => eprintln!("{prefix}{}", ent.display(None)),
+            }
+        }
+    }
 }
 
