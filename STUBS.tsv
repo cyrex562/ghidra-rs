@@ -1263,5 +1263,7 @@ ts	stub_class	referenced_by
 2026-08-19T05:04:33.178931+00:00	GTask	GTaskListener
 2026-08-19T05:04:33.179184+00:00	GTaskGroup	GTaskListener
 2026-08-19T05:04:33.180057+00:00	GTaskResult	GTaskListener
-2026-08-19T05:04:33.179885+00:00	GTaskManager	GTaskListener
 2026-08-19T05:05:00+00:00	Exception	GTaskListener
+2026-08-19T05:30:00.000000+00:00	GTaskGroupStub	GTaskManager
+2026-08-19T05:30:00.000000+00:00	GScheduledTaskStub	GTaskManager
+2026-08-19T05:30:00.000000+00:00	GTaskResultStub	GTaskManager
