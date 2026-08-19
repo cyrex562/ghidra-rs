@@ -1933,31 +1933,15 @@ impl Exception for crate::util::exception::CancelledException {
 /// Placeholder for the unported Java type `GTask`, referenced by `GTaskListener`.
 /// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
 /// unknown in-repo types map to trait objects. Replace with the real port when available.
-/// Placeholder for the unported Java type `GScheduledTask`, referenced by `GTaskListener` and
-/// [`GTaskManager`](crate::framework::project::task::GTaskManager).
-///
-/// Shared handles are `Arc` rather than `Box` because the manager, the owning group and the
-/// thread running the task all refer to the *same* scheduled task; a `Box` would hand out an
-/// unrelated copy and cancellation of a task monitor would be lost.
-pub trait GScheduledTask: Send + Sync {
-    fn get_task(&self) -> Arc<dyn crate::framework::project::task::GTask>;
-    fn get_priority(&self) -> i32;
-    fn get_task_monitor(&self) -> Arc<dyn crate::util::task::TaskMonitor>;
-    fn compare_to(&self, other: &dyn GScheduledTask) -> i32;
-    fn to_string(&self) -> String;
-    fn get_group(&self) -> Arc<dyn GTaskGroup>;
-    fn get_description(&self) -> String;
-    /// Records the calling thread as the thread that is executing this task.
-    fn set_thread(&self);
-    /// True if this task was started on the thread that is asking.
-    fn is_running_in_current_thread(&self) -> bool;
-}
-
 /// Placeholder for the unported Java type `GTaskGroup`, referenced by `GTaskListener` and
 /// [`GTaskManager`](crate::framework::project::task::GTaskManager).
 pub trait GTaskGroup: Send + Sync {
-    fn add_task(&self, task: Arc<dyn crate::framework::project::task::GTask>, priority: i32) -> Arc<dyn GScheduledTask>;
-    fn get_tasks(&self) -> Vec<Arc<dyn GScheduledTask>>;
+    fn add_task(
+        &self,
+        task: Arc<dyn crate::framework::project::task::GTask>,
+        priority: i32,
+    ) -> Arc<crate::framework::project::task::GScheduledTask>;
+    fn get_tasks(&self) -> Vec<Arc<crate::framework::project::task::GScheduledTask>>;
     fn get_task_monitor(&self) -> Arc<dyn crate::util::task::TaskMonitor>;
     fn wants_new_transaction(&self) -> bool;
     fn get_description(&self) -> String;
@@ -2000,7 +1984,7 @@ pub struct GTaskGroupStub {
 
 #[derive(Default)]
 struct GTaskGroupStubState {
-    tasks: Vec<Arc<dyn GScheduledTask>>,
+    tasks: Vec<Arc<crate::framework::project::task::GScheduledTask>>,
     cancelled: bool,
     scheduled: bool,
     tasks_completed: usize,
@@ -2043,18 +2027,24 @@ impl GTaskGroupStub {
 }
 
 impl GTaskGroup for GTaskGroupStub {
-    fn add_task(&self, task: Arc<dyn crate::framework::project::task::GTask>, priority: i32) -> Arc<dyn GScheduledTask> {
+    fn add_task(
+        &self,
+        task: Arc<dyn crate::framework::project::task::GTask>,
+        priority: i32,
+    ) -> Arc<crate::framework::project::task::GScheduledTask> {
         let group = self
             .me
             .upgrade()
-            .expect("GTaskGroupStub must be kept in the Arc returned by its constructor");
-        let scheduled: Arc<dyn GScheduledTask> =
-            Arc::new(GScheduledTaskStub::new(group, task, priority));
+            .expect("GTaskGroupStub must be kept in the Arc returned by its constructor")
+            as Arc<dyn GTaskGroup>;
+        let scheduled = Arc::new(crate::framework::project::task::GScheduledTask::new(
+            group, task, priority,
+        ));
         self.state.lock().unwrap().tasks.push(Arc::clone(&scheduled));
         scheduled
     }
 
-    fn get_tasks(&self) -> Vec<Arc<dyn GScheduledTask>> {
+    fn get_tasks(&self) -> Vec<Arc<crate::framework::project::task::GScheduledTask>> {
         self.state.lock().unwrap().tasks.clone()
     }
 
@@ -2099,70 +2089,6 @@ impl GTaskGroup for GTaskGroupStub {
     }
 }
 
-/// Minimal constructible stand-in for the unported Java class `GScheduledTask`, created by
-/// [`GTaskGroupStub::add_task`].
-pub struct GScheduledTaskStub {
-    group: Arc<GTaskGroupStub>,
-    task: Arc<dyn crate::framework::project::task::GTask>,
-    priority: i32,
-    thread: Mutex<Option<std::thread::ThreadId>>,
-}
-
-impl GScheduledTaskStub {
-    fn new(group: Arc<GTaskGroupStub>, task: Arc<dyn crate::framework::project::task::GTask>, priority: i32) -> Self {
-        Self {
-            group,
-            task,
-            priority,
-            thread: Mutex::new(None),
-        }
-    }
-}
-
-impl GScheduledTask for GScheduledTaskStub {
-    fn get_task(&self) -> Arc<dyn crate::framework::project::task::GTask> {
-        Arc::clone(&self.task)
-    }
-
-    fn get_priority(&self) -> i32 {
-        self.priority
-    }
-
-    fn get_task_monitor(&self) -> Arc<dyn crate::util::task::TaskMonitor> {
-        self.group.get_task_monitor()
-    }
-
-    /// Ordering is by priority only; tasks of equal priority keep the order they were scheduled
-    /// in, which is how the Java `TreeSet` of scheduled tasks behaves.
-    fn compare_to(&self, other: &dyn GScheduledTask) -> i32 {
-        match self.priority.cmp(&other.get_priority()) {
-            std::cmp::Ordering::Less => -1,
-            std::cmp::Ordering::Equal => 0,
-            std::cmp::Ordering::Greater => 1,
-        }
-    }
-
-    fn to_string(&self) -> String {
-        format!("{} (priority {})", self.task.get_name(), self.priority)
-    }
-
-    fn get_group(&self) -> Arc<dyn GTaskGroup> {
-        Arc::clone(&self.group) as Arc<dyn GTaskGroup>
-    }
-
-    fn get_description(&self) -> String {
-        self.task.get_name()
-    }
-
-    fn set_thread(&self) {
-        *self.thread.lock().unwrap() = Some(std::thread::current().id());
-    }
-
-    fn is_running_in_current_thread(&self) -> bool {
-        *self.thread.lock().unwrap() == Some(std::thread::current().id())
-    }
-}
-
 /// Minimal constructible stand-in for the unported Java class `GTaskResult`, recorded by
 /// [`GTaskManager`](crate::framework::project::task::GTaskManager) as each task finishes.
 pub struct GTaskResultStub {
@@ -2177,7 +2103,7 @@ pub struct GTaskResultStub {
 impl GTaskResultStub {
     pub fn new(
         group: Option<&Arc<dyn GTaskGroup>>,
-        task: &dyn GScheduledTask,
+        task: &crate::framework::project::task::GScheduledTask,
         exception: Option<Arc<dyn Exception>>,
         cancelled: bool,
         transaction_id: Option<i32>,
