@@ -1908,3 +1908,89 @@ pub trait Archive: Send + Sync {
 pub trait FVEventListener: Send + Sync {
     fn send(&self, evt: &crate::framework::main::logviewer::FVEvent);
 }
+
+/// Placeholder for the unported Java type `Exception`, referenced by `GTaskResult`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait Exception: Send + Sync {
+    fn get_message(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `GTask`, referenced by `GTaskListener`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait GTask: Send + Sync {
+    fn get_name(&self) -> String;
+    fn run(&self, domain_object: &dyn crate::framework::model::DomainObject, monitor: &dyn crate::util::task::TaskMonitor) -> std::io::Result<()>;
+}
+
+/// Placeholder for the unported Java type `GScheduledTask`, referenced by `GTaskListener`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait GScheduledTask: Send + Sync {
+    fn get_task(&self) -> Box<dyn GTask>;
+    fn get_priority(&self) -> i32;
+    fn get_task_monitor(&self) -> Box<dyn crate::util::task::TaskMonitor>;
+    fn compare_to(&self, other: &dyn GScheduledTask) -> i32;
+    fn to_string(&self) -> String;
+    fn get_group(&self) -> Box<dyn GTaskGroup>;
+    fn get_description(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `GTaskGroup`, referenced by `GTaskListener`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait GTaskGroup: Send + Sync {
+    fn add_task(&self, task: &dyn GTask, priority: i32) -> Box<dyn GScheduledTask>;
+    fn get_tasks(&self) -> Vec<Box<dyn GScheduledTask>>;
+    fn get_task_monitor(&self) -> Box<dyn crate::util::task::TaskMonitor>;
+    fn wants_new_transaction(&self) -> bool;
+    fn get_description(&self) -> String;
+    fn compare_to(&self, group: &dyn GTaskGroup) -> i32;
+    fn to_string(&self) -> String;
+    fn set_cancelled(&self);
+    fn was_cancelled(&self) -> bool;
+    fn task_completed(&self);
+    fn set_scheduled(&self);
+}
+
+/// Placeholder for the unported Java type `GTaskResult`, referenced by `GTaskListener`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait GTaskResult: Send + Sync {
+    fn get_description(&self) -> String;
+    fn was_cancelled(&self) -> bool;
+    fn get_exception(&self) -> Box<dyn Exception>;
+    fn get_priority(&self) -> i32;
+    fn get_group_description(&self) -> String;
+    fn has_same_transaction(&self, result: &dyn GTaskResult) -> bool;
+    fn to_string(&self) -> String;
+}
+
+/// Placeholder for the unported Java type `GTaskManager`, referenced by `GTaskListener`.
+/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
+/// unknown in-repo types map to trait objects. Replace with the real port when available.
+pub trait GTaskManager: Send + Sync {
+    fn domain_object_closed(&self, dobj: &dyn crate::framework::model::DomainObject);
+    fn schedule_task(&self, task: &dyn GTask, priority: i32, use_current_group: bool) -> Box<dyn GScheduledTask>;
+    fn schedule_task_group(&self, group: &dyn GTaskGroup);
+    fn set_suspended(&self, b: bool);
+    fn run_next_task_even_when_suspended(&self);
+    fn add_task_listener(&self, listener: &dyn crate::framework::project::task::GTaskListener);
+    fn remove_task_listener(&self, listener: &dyn crate::framework::project::task::GTaskListener);
+    fn is_busy(&self) -> bool;
+    fn wait_while_busy(&self, timeout_millis: i64) -> bool;
+    fn wait_until_busy(&self, timeout_millis: i64) -> bool;
+    fn is_running(&self) -> bool;
+    fn wait_for_higher_priority_tasks(&self);
+    fn get_task_results(&self) -> Vec<Box<dyn GTaskResult>>;
+    fn get_scheduled_tasks(&self) -> Vec<Box<dyn GScheduledTask>>;
+    fn get_delayed_tasks(&self) -> Vec<Box<dyn GScheduledTask>>;
+    fn get_running_task(&self) -> Box<dyn GScheduledTask>;
+    fn get_current_group(&self) -> Box<dyn GTaskGroup>;
+    fn get_scheduled_groups(&self) -> Vec<Box<dyn GTaskGroup>>;
+    fn is_suspended(&self) -> bool;
+    fn cancel_running_group(&self, group: &dyn GTaskGroup);
+    fn cancel_all(&self);
+    fn run(&self);
+}
