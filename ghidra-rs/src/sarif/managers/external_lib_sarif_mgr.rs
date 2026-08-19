@@ -292,39 +292,16 @@ impl ExternalLibSarifMgr {
         None
     }
 
-    /// `SarifMgr.getSourceType(String)`, inherited from the base class. Not (yet) hoisted onto
-    /// the shared `SarifMgr` stub in `seam_stubs.rs` since no other ported manager needs it; see
-    /// that struct's docs for the members that already are shared.
+    /// `SarifMgr.getSourceType(String)`, inherited from the base class (see
+    /// [`SarifMgr::get_source_type`], which the shared stub now carries because
+    /// [`MarkupSarifMgr`](crate::sarif::managers::MarkupSarifMgr) needs it too).
     fn get_source_type(&self, signature_source: Option<&str>) -> SourceType {
-        let Some(signature_source) = signature_source else {
-            return SourceType::Imported;
-        };
-        match signature_source {
-            "DEFAULT" => SourceType::Default,
-            "ANALYSIS" => SourceType::Analysis,
-            "AI" => SourceType::AI,
-            "IMPORTED" => SourceType::Imported,
-            "USER_DEFINED" => SourceType::UserDefined,
-            _ => {
-                self.log.append_msg(format!("Unknown SourceType: {signature_source}"));
-                SourceType::Imported
-            }
-        }
+        SarifMgr::get_source_type(&self.log, signature_source)
     }
 
     /// `SarifMgr.walkNamespace(Namespace, String, Address, SourceType, Boolean)`, inherited from
-    /// the base class. Not hoisted onto the shared `SarifMgr` stub since it needs this manager's
-    /// own `Program` handle, which that field-less stub deliberately does not hold (see its
-    /// docs).
-    ///
-    /// Java distinguishes a plain namespace lookup (`SymbolTable.getNamespace`) that falls back
-    /// to either `SymbolTable.createClass` or `NamespaceUtils.createNamespaceHierarchy` depending
-    /// on `is_class`; the ported [`SymbolTable`](crate::program::model::symbol::SymbolTable)
-    /// trait has neither a class-typed constructor nor a namespace-only (non-creating) lookup
-    /// yet, so both cases collapse onto its combined
-    /// [`get_or_create_name_space`](crate::program::model::symbol::SymbolTable::get_or_create_name_space),
-    /// which loses the `is_class` distinction until `SymbolTable` grows a `create_class`
-    /// equivalent.
+    /// the base class (see [`SarifMgr::walk_namespace`], which takes the `Program` handle the
+    /// field-less stub does not hold).
     fn walk_namespace(
         &mut self,
         parent: Arc<dyn Namespace>,
@@ -333,40 +310,7 @@ impl ExternalLibSarifMgr {
         source_type: SourceType,
         is_class: bool,
     ) -> Result<Option<Arc<dyn Namespace>>, String> {
-        let Some(sep) = namespace.find("::").filter(|&sep| sep > 0) else {
-            return Ok(Some(parent));
-        };
-        let tag = &namespace[..sep];
-        let rest = namespace[sep + 2..].to_string();
-
-        if let Some(addr) = addr {
-            let func = Arc::get_mut(&mut self.program)
-                .and_then(|p| p.get_function_manager())
-                .and_then(|fm| fm.get_function_containing(addr));
-            match func {
-                Some(func) => {
-                    if func.get_name_with_path(true) == tag {
-                        if let Some(func_ns) = func.get_symbol().as_namespace() {
-                            return self.walk_namespace(func_ns, &rest, Some(addr), source_type, is_class);
-                        }
-                    }
-                }
-                None => {
-                    if tag.starts_with("FUN_") {
-                        return Ok(None); // Defer this until later
-                    }
-                }
-            }
-        }
-
-        let child = match Arc::get_mut(&mut self.program).and_then(|p| p.get_symbol_table()) {
-            Some(symbol_table) => symbol_table
-                .get_or_create_name_space(parent.clone(), tag, source_type)
-                .map_err(|_| format!("Error creating namespace for {tag}"))?,
-            None => parent.clone(),
-        };
-
-        self.walk_namespace(child, &rest, addr, source_type, is_class)
+        SarifMgr::walk_namespace(&mut self.program, parent, namespace, addr, source_type, is_class)
     }
 
     // ------------------------------------------------------------------

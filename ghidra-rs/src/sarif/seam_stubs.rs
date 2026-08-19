@@ -13,6 +13,7 @@ use crate::program::model::data::category_path::CategoryPath;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::{Bookmark, CodeUnit, GhidraClass, Instruction, Program};
 use crate::program::model::symbol::source_type::SourceType;
+use crate::program::model::symbol::Namespace;
 use crate::program::seam_stubs::FlowOverride;
 use crate::util::exception::DuplicateNameException;
 use crate::util::task::TaskMonitor;
@@ -64,21 +65,128 @@ impl SarifMgr {
         let _ = set;
         Ok(())
     }
+
+    /// `SarifMgr.getSourceType(String)`. Takes the caller's log explicitly, since this field-less
+    /// stub does not hold the base class's `log`.
+    pub fn get_source_type(log: &MessageLog, signature_source: Option<&str>) -> SourceType {
+        let Some(signature_source) = signature_source else {
+            return SourceType::Imported;
+        };
+        match signature_source {
+            "DEFAULT" => SourceType::Default,
+            "ANALYSIS" => SourceType::Analysis,
+            "AI" => SourceType::AI,
+            "IMPORTED" => SourceType::Imported,
+            "USER_DEFINED" => SourceType::UserDefined,
+            _ => {
+                log.append_msg(format!("Unknown SourceType: {signature_source}"));
+                SourceType::Imported
+            }
+        }
+    }
+
+    /// `SarifMgr.walkNamespace(Namespace, String, Address, SourceType, Boolean)`. Takes the
+    /// caller's `Program` handle explicitly, since this field-less stub does not hold the base
+    /// class's `program`.
+    ///
+    /// Java distinguishes a plain namespace lookup (`SymbolTable.getNamespace`) that falls back to
+    /// either `SymbolTable.createClass` or `NamespaceUtils.createNamespaceHierarchy` depending on
+    /// `is_class`; the ported [`SymbolTable`](crate::program::model::symbol::SymbolTable) trait has
+    /// neither a class-typed constructor nor a namespace-only (non-creating) lookup yet, so both
+    /// cases collapse onto its combined
+    /// [`get_or_create_name_space`](crate::program::model::symbol::SymbolTable::get_or_create_name_space),
+    /// which loses the `is_class` distinction until `SymbolTable` grows a `create_class`
+    /// equivalent. `Ok(None)` is Java's `null` return: a `FUN_`-prefixed namespace deferred until
+    /// the function it names exists.
+    pub fn walk_namespace(
+        program: &mut Arc<dyn Program>,
+        parent: Arc<dyn Namespace>,
+        namespace: &str,
+        addr: Option<&Address>,
+        source_type: SourceType,
+        is_class: bool,
+    ) -> Result<Option<Arc<dyn Namespace>>, String> {
+        let Some(sep) = namespace.find("::").filter(|&sep| sep > 0) else {
+            return Ok(Some(parent));
+        };
+        let tag = &namespace[..sep];
+        let rest = namespace[sep + 2..].to_string();
+
+        if let Some(addr) = addr {
+            let func = Arc::get_mut(program)
+                .and_then(|p| p.get_function_manager())
+                .and_then(|fm| fm.get_function_containing(addr));
+            match func {
+                Some(func) => {
+                    if func.get_name_with_path(true) == tag {
+                        if let Some(func_ns) = func.get_symbol().as_namespace() {
+                            return Self::walk_namespace(program, func_ns, &rest, Some(addr), source_type, is_class);
+                        }
+                    }
+                }
+                None => {
+                    if tag.starts_with("FUN_") {
+                        return Ok(None); // Defer this until later
+                    }
+                }
+            }
+        }
+
+        let child = match Arc::get_mut(program).and_then(|p| p.get_symbol_table()) {
+            Some(symbol_table) => symbol_table
+                .get_or_create_name_space(parent.clone(), tag, source_type)
+                .map_err(|_| format!("Error creating namespace for {tag}"))?,
+            None => parent.clone(),
+        };
+
+        Self::walk_namespace(program, child, &rest, addr, source_type, is_class)
+    }
 }
 
 /// Placeholder for `sarif.SarifProgramOptions`, referenced by
-/// [`BookmarksSarifMgr::read`](crate::sarif::managers::BookmarksSarifMgr::read). Java's version
-/// is a concrete class, not an interface, so this is a plain struct. Only the one flag
-/// `BookmarksSarifMgr` reads (`isOverwriteBookmarkConflicts`) is modeled.
-#[derive(Debug, Clone, Copy, Default)]
+/// [`BookmarksSarifMgr::read`](crate::sarif::managers::BookmarksSarifMgr::read) and
+/// [`MarkupSarifMgr::read`](crate::sarif::managers::MarkupSarifMgr::read). Java's version is a
+/// concrete class, not an interface, so this is a plain struct. Only the flags those managers
+/// read are modeled; [`Default`] carries the same initial values Java's field initializers do.
+#[derive(Debug, Clone, Copy)]
 pub struct SarifProgramOptions {
     pub overwrite_bookmark_conflicts: bool,
+    pub overwrite_reference_conflicts: bool,
+    pub functions: bool,
+    pub external_libraries: bool,
 }
 
 impl SarifProgramOptions {
     /// `SarifProgramOptions.isOverwriteBookmarkConflicts()`.
     pub fn is_overwrite_bookmark_conflicts(&self) -> bool {
         self.overwrite_bookmark_conflicts
+    }
+
+    /// `SarifProgramOptions.isOverwriteReferenceConflicts()`.
+    pub fn is_overwrite_reference_conflicts(&self) -> bool {
+        self.overwrite_reference_conflicts
+    }
+
+    /// `SarifProgramOptions.isFunctions()`.
+    pub fn is_functions(&self) -> bool {
+        self.functions
+    }
+
+    /// `SarifProgramOptions.isExternalLibraries()`.
+    pub fn is_external_libraries(&self) -> bool {
+        self.external_libraries
+    }
+}
+
+impl Default for SarifProgramOptions {
+    /// The values `new SarifProgramOptions()` starts out with: every flag modeled here is `true`.
+    fn default() -> Self {
+        Self {
+            overwrite_bookmark_conflicts: true,
+            overwrite_reference_conflicts: true,
+            functions: true,
+            external_libraries: true,
+        }
     }
 }
 
@@ -293,6 +401,43 @@ impl SarifClassesNamespaceWriter {
     /// ports) and the (always `null`, here) base writer.
     pub fn new(classes: Vec<Arc<dyn GhidraClass>>) -> Self {
         Self { classes }
+    }
+}
+
+/// Placeholder for `sarif.export.ref.SarifReferenceWriter`, referenced by
+/// [`MarkupSarifMgr::write_refs_as_sarif`](crate::sarif::managers::MarkupSarifMgr::write_refs_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor's address list is modeled; the `ReferenceManager` collaborator (needed to look up
+/// the references leaving each address) and the `genRoot`/`AbstractExtWriter` machinery that turns
+/// them into SARIF JSON are pending that class's own port.
+pub struct SarifReferenceWriter {
+    pub references: Vec<Address>,
+}
+
+impl SarifReferenceWriter {
+    /// `new SarifReferenceWriter(ReferenceManager referenceManager, List<Address> request, Writer
+    /// baseWriter)`, minus the manager (pending its own port) and the (always `null`, here) base
+    /// writer.
+    pub fn new(references: Vec<Address>) -> Self {
+        Self { references }
+    }
+}
+
+/// Placeholder for `sarif.export.ref.SarifEquateRefWriter`, referenced by
+/// [`MarkupSarifMgr::write_equate_refs_as_sarif`](crate::sarif::managers::MarkupSarifMgr::write_equate_refs_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor's address set is modeled -- as an owned [`AddressSet`] snapshot, since the writer
+/// outlives the borrowed view it is built from; the `EquateTable` collaborator and the
+/// `genRoot`/`AbstractExtWriter` machinery are pending that class's own port.
+pub struct SarifEquateRefWriter {
+    pub set: AddressSet,
+}
+
+impl SarifEquateRefWriter {
+    /// `new SarifEquateRefWriter(EquateTable equateTable, AddressSetView set, Writer baseWriter)`,
+    /// minus the table (pending its own port) and the (always `null`, here) base writer.
+    pub fn new(set: AddressSet) -> Self {
+        Self { set }
     }
 }
 
