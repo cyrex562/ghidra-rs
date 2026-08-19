@@ -32,13 +32,18 @@
 //!   ported (see [`seam_stubs::CreateArrayCmd`]/[`seam_stubs::SetCommentCmd`]); their `apply_to`
 //!   stubs are no-ops that report success, matching the Java, which also discards `applyTo`'s
 //!   return value.
+//! * **A region without an FDE is skipped.** `RegionDescriptor.getFrameDescriptorEntry()` can
+//!   return `null` for a region whose FDE was never set;
+//!   [`RegionDescriptor::get_frame_descriptor_entry`](crate::app::plugin::exceptionhandlers::gcc::RegionDescriptor::get_frame_descriptor_entry)
+//!   answers `None` for that case, and `create_augmentation_data` skips the region the same way
+//!   it already skips one with no augmentation-ex-data address.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::app::plugin::exceptionhandlers::gcc::sections::cie_source::{CieSource, CieSourceError};
-use crate::app::plugin::exceptionhandlers::gcc::ExceptionHandlerFrameException;
-use crate::app::seam_stubs::{self, CreateArrayCmd, RegionDescriptor, SetCommentCmd};
+use crate::app::plugin::exceptionhandlers::gcc::{ExceptionHandlerFrameException, RegionDescriptor};
+use crate::app::seam_stubs::{self, CreateArrayCmd, SetCommentCmd};
 use crate::program::model::address::Address;
 use crate::program::model::listing::{CommentType, Program};
 use crate::program::model::symbol::SourceType;
@@ -81,9 +86,11 @@ impl AbstractFrameSectionBase {
     /// # Arguments
     /// * `regions` - the region descriptors for the FDEs.
     /// * `cie` - the CIE for the FDEs.
-    pub fn create_augmentation_data(&mut self, regions: &[Arc<dyn RegionDescriptor>], cie: &dyn seam_stubs::Cie) {
+    pub fn create_augmentation_data(&mut self, regions: &[Arc<RegionDescriptor>], cie: &dyn seam_stubs::Cie) {
         for region in regions {
-            let frame = region.get_frame_descriptor_entry();
+            let Some(frame) = region.get_frame_descriptor_entry() else {
+                continue;
+            };
             let Some(aug_data_ex_addr) = frame.get_augmentation_ex_data_address() else {
                 continue;
             };
@@ -446,13 +453,11 @@ mod tests {
         }
     }
 
-    struct StubRegion {
-        frame: Arc<dyn FrameDescriptionEntry>,
-    }
-    impl RegionDescriptor for StubRegion {
-        fn get_frame_descriptor_entry(&self) -> Arc<dyn FrameDescriptionEntry> {
-            Arc::clone(&self.frame)
-        }
+    /// A region carrying only the FDE `create_augmentation_data` reads.
+    fn region_with_fde(fde: Arc<dyn FrameDescriptionEntry>) -> RegionDescriptor {
+        let mut region = RegionDescriptor::new(Arc::new(MemoryBlockStub::no_address()));
+        region.set_frame_descriptor_entry(fde);
+        region
     }
 
     #[test]
@@ -573,8 +578,8 @@ mod tests {
         let memory = MockMemory { block: None, get_block_calls: Arc::clone(&get_block_calls) };
         let mut section = section_with(MockProgram { memory: Some(Arc::new(memory)), symbol_table: None });
 
-        let region: Arc<dyn RegionDescriptor> =
-            Arc::new(StubRegion { frame: Arc::new(StubFrameDescriptionEntry { aug_address: None }) });
+        let region =
+            Arc::new(region_with_fde(Arc::new(StubFrameDescriptionEntry { aug_address: None })));
         let cie = StubCie {
             address: ram_address(0x5000),
             code_alignment: 4,
@@ -594,9 +599,9 @@ mod tests {
         let memory = MockMemory { block: Some(block), get_block_calls: Arc::clone(&get_block_calls) };
         let mut section = section_with(MockProgram { memory: Some(Arc::new(memory)), symbol_table: None });
 
-        let region: Arc<dyn RegionDescriptor> = Arc::new(StubRegion {
-            frame: Arc::new(StubFrameDescriptionEntry { aug_address: Some(ram_address(0x6000)) }),
-        });
+        let region = Arc::new(region_with_fde(Arc::new(StubFrameDescriptionEntry {
+            aug_address: Some(ram_address(0x6000)),
+        })));
         let cie = StubCie {
             address: ram_address(0x6000),
             code_alignment: 4,
