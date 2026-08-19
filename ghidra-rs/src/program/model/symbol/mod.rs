@@ -1,4 +1,4 @@
-use crate::program::model::address::Address;
+use crate::program::model::address::{Address, BoxedAddressIterator, EmptyAddressIterator};
 use crate::program::model::listing::{Function, Variable};
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use std::io;
@@ -325,6 +325,18 @@ pub trait SymbolTable: Send + Sync {
     fn is_external_entry_point(&self, addr: &Address) -> io::Result<bool> {
         let _ = addr;
         Ok(false)
+    }
+
+    /// Iterate every address marked as an external entry point. Stands in for
+    /// `SymbolTable.getExternalEntryPointIterator()`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`ExtEntryPointSarifMgr::write`](crate::sarif::managers::ExtEntryPointSarifMgr::write),
+    /// which walks every entry point address to export it as SARIF.
+    ///
+    /// Defaults to an empty iterator so existing implementors are unaffected.
+    fn get_external_entry_point_iterator(&self) -> BoxedAddressIterator {
+        Box::new(EmptyAddressIterator)
     }
 
     /// Get the primary symbol at the given address. Stands in for
