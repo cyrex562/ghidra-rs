@@ -1276,3 +1276,10 @@ ts	stub_class	referenced_by
 2026-08-19T07:15:00.000000+00:00	SetCommentCmd	AbstractFrameSection
 2026-08-19T07:17:00.000000+00:00	GccAnalysisUtils	LSDAActionRecord
 2026-08-19T07:17:00.000000+00:00	LSDAActionTable	LSDAActionRecord
+2026-08-19T07:35:00.000000+00:00	LSDACallSiteRecord	GccExceptionAnalyzer
+2026-08-19T07:35:00.000000+00:00	LSDACallSiteTable	GccExceptionAnalyzer
+2026-08-19T07:35:00.000000+00:00	LSDATypeTable	GccExceptionAnalyzer
+2026-08-19T07:35:00.000000+00:00	EhFrameSection	GccExceptionAnalyzer
+2026-08-19T07:35:00.000000+00:00	EhFrameHeaderSection	GccExceptionAnalyzer
+2026-08-19T07:35:00.000000+00:00	DebugFrameSection	GccExceptionAnalyzer
+2026-08-19T07:35:00.000000+00:00	DisassembleCommand	GccExceptionAnalyzer
