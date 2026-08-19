@@ -8,7 +8,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Mutex};
 
 use crate::framework::application_properties::ApplicationProperties;
 use crate::generic::jar::ResourceFile;
@@ -1930,29 +1930,6 @@ impl Exception for crate::util::exception::CancelledException {
     }
 }
 
-/// Placeholder for the unported Java type `GTask`, referenced by `GTaskListener`.
-/// Generated stub: only a shape hint. Receivers default to `&self` (some may need `&mut self`);
-/// unknown in-repo types map to trait objects. Replace with the real port when available.
-/// Placeholder for the unported Java type `GTaskGroup`, referenced by `GTaskListener` and
-/// [`GTaskManager`](crate::framework::project::task::GTaskManager).
-pub trait GTaskGroup: Send + Sync {
-    fn add_task(
-        &self,
-        task: Arc<dyn crate::framework::project::task::GTask>,
-        priority: i32,
-    ) -> Arc<crate::framework::project::task::GScheduledTask>;
-    fn get_tasks(&self) -> Vec<Arc<crate::framework::project::task::GScheduledTask>>;
-    fn get_task_monitor(&self) -> Arc<dyn crate::util::task::TaskMonitor>;
-    fn wants_new_transaction(&self) -> bool;
-    fn get_description(&self) -> String;
-    fn compare_to(&self, group: &dyn GTaskGroup) -> i32;
-    fn to_string(&self) -> String;
-    fn set_cancelled(&self);
-    fn was_cancelled(&self) -> bool;
-    fn task_completed(&self);
-    fn set_scheduled(&self);
-}
-
 /// Placeholder for the unported Java type `GTaskResult`, referenced by `GTaskListener` and
 /// [`GTaskManager`](crate::framework::project::task::GTaskManager).
 pub trait GTaskResult: Send + Sync {
@@ -1968,127 +1945,6 @@ pub trait GTaskResult: Send + Sync {
     fn to_string(&self) -> String;
 }
 
-/// Minimal constructible stand-in for the unported Java class `GTaskGroup`.
-///
-/// [`GTaskManager`](crate::framework::project::task::GTaskManager) has to *create* groups (for
-/// `schedule_task`), so a trait alone is not enough until the real class is ported. Only the
-/// state the manager exercises is modelled: description, transaction preference, task list,
-/// cancelled/scheduled flags and a completed-task count.
-pub struct GTaskGroupStub {
-    description: String,
-    wants_new_transaction: bool,
-    monitor: Arc<dyn crate::util::task::TaskMonitor>,
-    state: Mutex<GTaskGroupStubState>,
-    me: Weak<GTaskGroupStub>,
-}
-
-#[derive(Default)]
-struct GTaskGroupStubState {
-    tasks: Vec<Arc<crate::framework::project::task::GScheduledTask>>,
-    cancelled: bool,
-    scheduled: bool,
-    tasks_completed: usize,
-}
-
-impl GTaskGroupStub {
-    /// Creates a group with a do-nothing task monitor.
-    pub fn new(description: &str, wants_new_transaction: bool) -> Arc<Self> {
-        Self::with_monitor(
-            description,
-            wants_new_transaction,
-            Arc::new(crate::util::task::DummyMonitor),
-        )
-    }
-
-    /// Creates a group whose tasks all report to `monitor`.
-    pub fn with_monitor(
-        description: &str,
-        wants_new_transaction: bool,
-        monitor: Arc<dyn crate::util::task::TaskMonitor>,
-    ) -> Arc<Self> {
-        Arc::new_cyclic(|me| Self {
-            description: description.to_string(),
-            wants_new_transaction,
-            monitor,
-            state: Mutex::new(GTaskGroupStubState::default()),
-            me: me.clone(),
-        })
-    }
-
-    /// Number of tasks in this group that have reported completion.
-    pub fn completed_task_count(&self) -> usize {
-        self.state.lock().unwrap().tasks_completed
-    }
-
-    /// True once the group has been handed to a task manager.
-    pub fn is_scheduled(&self) -> bool {
-        self.state.lock().unwrap().scheduled
-    }
-}
-
-impl GTaskGroup for GTaskGroupStub {
-    fn add_task(
-        &self,
-        task: Arc<dyn crate::framework::project::task::GTask>,
-        priority: i32,
-    ) -> Arc<crate::framework::project::task::GScheduledTask> {
-        let group = self
-            .me
-            .upgrade()
-            .expect("GTaskGroupStub must be kept in the Arc returned by its constructor")
-            as Arc<dyn GTaskGroup>;
-        let scheduled = Arc::new(crate::framework::project::task::GScheduledTask::new(
-            group, task, priority,
-        ));
-        self.state.lock().unwrap().tasks.push(Arc::clone(&scheduled));
-        scheduled
-    }
-
-    fn get_tasks(&self) -> Vec<Arc<crate::framework::project::task::GScheduledTask>> {
-        self.state.lock().unwrap().tasks.clone()
-    }
-
-    fn get_task_monitor(&self) -> Arc<dyn crate::util::task::TaskMonitor> {
-        Arc::clone(&self.monitor)
-    }
-
-    fn wants_new_transaction(&self) -> bool {
-        self.wants_new_transaction
-    }
-
-    fn get_description(&self) -> String {
-        self.description.clone()
-    }
-
-    fn compare_to(&self, group: &dyn GTaskGroup) -> i32 {
-        match self.description.cmp(&group.get_description()) {
-            std::cmp::Ordering::Less => -1,
-            std::cmp::Ordering::Equal => 0,
-            std::cmp::Ordering::Greater => 1,
-        }
-    }
-
-    fn to_string(&self) -> String {
-        self.description.clone()
-    }
-
-    fn set_cancelled(&self) {
-        self.state.lock().unwrap().cancelled = true;
-    }
-
-    fn was_cancelled(&self) -> bool {
-        self.state.lock().unwrap().cancelled
-    }
-
-    fn task_completed(&self) {
-        self.state.lock().unwrap().tasks_completed += 1;
-    }
-
-    fn set_scheduled(&self) {
-        self.state.lock().unwrap().scheduled = true;
-    }
-}
-
 /// Minimal constructible stand-in for the unported Java class `GTaskResult`, recorded by
 /// [`GTaskManager`](crate::framework::project::task::GTaskManager) as each task finishes.
 pub struct GTaskResultStub {
@@ -2102,7 +1958,7 @@ pub struct GTaskResultStub {
 
 impl GTaskResultStub {
     pub fn new(
-        group: Option<&Arc<dyn GTaskGroup>>,
+        group: Option<&Arc<crate::framework::project::task::GTaskGroup>>,
         task: &crate::framework::project::task::GScheduledTask,
         exception: Option<Arc<dyn Exception>>,
         cancelled: bool,

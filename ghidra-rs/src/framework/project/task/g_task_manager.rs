@@ -6,10 +6,8 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard, Weak};
 use std::time::{Duration, Instant};
 
 use crate::framework::model::{DomainObject, DomainObjectClosedListener};
-use crate::framework::project::task::{GScheduledTask, GTask, GTaskListener};
-use crate::framework::seam_stubs::{
-    Exception, GTaskGroup, GTaskGroupStub, GTaskResult, GTaskResultStub,
-};
+use crate::framework::project::task::{GScheduledTask, GTask, GTaskGroup, GTaskListener};
+use crate::framework::seam_stubs::{Exception, GTaskResult, GTaskResultStub};
 use crate::generic::concurrent::GThreadPool;
 use crate::util::exception::CancelledException;
 use crate::util::msg::Msg;
@@ -72,9 +70,9 @@ struct State {
     domain_object: Option<SharedDomainObject>,
     /// Java's `SortedSet<GScheduledTask>`: kept sorted by priority, ties in insertion order.
     priority_q: Vec<Arc<GScheduledTask>>,
-    task_group_list: VecDeque<Arc<dyn GTaskGroup>>,
+    task_group_list: VecDeque<Arc<GTaskGroup>>,
     running_task: Option<Arc<GScheduledTask>>,
-    running_group: Option<Arc<dyn GTaskGroup>>,
+    running_group: Option<Arc<GTaskGroup>>,
     suspended: bool,
     current_group_transaction_id: Option<i32>,
     /// Java chains listeners through `MulticastTaskListener`; a list is the same thing.
@@ -167,14 +165,14 @@ impl GTaskManager {
             .find(|g| g.get_description() == group_name)
             .cloned();
         if let Some(group) = existing {
-            let new_task = group.add_task(task, priority);
+            let new_task = group.do_add_task(task, priority);
             inner.notify_task_scheduled(&state, &new_task);
             inner.run_next_task_if_not_busy_or_suspended(&mut state);
             return;
         }
 
-        let group: Arc<dyn GTaskGroup> = GTaskGroupStub::new(group_name, true);
-        group.add_task(task, priority);
+        let group: Arc<GTaskGroup> = GTaskGroup::new(group_name, true);
+        group.do_add_task(task, priority);
         state.task_group_list.push_back(Arc::clone(&group));
         inner.notify_task_group_scheduled(&state, &group);
         inner.is_busy.notify_all();
@@ -182,7 +180,7 @@ impl GTaskManager {
     }
 
     /// Schedules a task group to run. Groups run in the order they are scheduled.
-    pub fn schedule_task_group(&self, group: Arc<dyn GTaskGroup>) {
+    pub fn schedule_task_group(&self, group: Arc<GTaskGroup>) {
         group.set_scheduled();
         let inner = &self.inner;
         let mut state = inner.state.lock().unwrap();
@@ -348,12 +346,12 @@ impl GTaskManager {
     }
 
     /// Returns the currently running group, or `None` if no group is running.
-    pub fn get_current_group(&self) -> Option<Arc<dyn GTaskGroup>> {
+    pub fn get_current_group(&self) -> Option<Arc<GTaskGroup>> {
         self.inner.state.lock().unwrap().running_group.clone()
     }
 
     /// Returns the groups that are waiting to run.
-    pub fn get_scheduled_groups(&self) -> Vec<Arc<dyn GTaskGroup>> {
+    pub fn get_scheduled_groups(&self) -> Vec<Arc<GTaskGroup>> {
         self.inner
             .state
             .lock()
@@ -374,7 +372,7 @@ impl GTaskManager {
     /// running task is cancelled, but that task keeps running until it checks the monitor.
     ///
     /// Nothing happens unless `group` is the currently running group.
-    pub fn cancel_running_group(&self, group: &Arc<dyn GTaskGroup>) {
+    pub fn cancel_running_group(&self, group: &Arc<GTaskGroup>) {
         let inner = &self.inner;
         let mut state = inner.state.lock().unwrap();
         let is_running_group = state
@@ -444,15 +442,15 @@ impl Inner {
         // If a group is running and this task can use it, add the task to that group.
         if use_current_group && state.running_group.is_some() {
             let group = state.running_group.clone().unwrap();
-            let new_task = group.add_task(task, priority);
+            let new_task = group.do_add_task(task, priority);
             insert_by_priority(&mut state.priority_q, Arc::clone(&new_task));
             self.notify_task_scheduled(state, &new_task);
             new_task
         }
         // Otherwise, if the current group can't be used or there are no groups, start a new one.
         else if state.task_group_list.is_empty() || !use_current_group {
-            let group: Arc<dyn GTaskGroup> = GTaskGroupStub::new(&task.get_name(), true);
-            let new_task = group.add_task(task, priority);
+            let group: Arc<GTaskGroup> = GTaskGroup::new(&task.get_name(), true);
+            let new_task = group.do_add_task(task, priority);
             state.task_group_list.push_back(Arc::clone(&group));
             self.notify_task_group_scheduled(state, &group);
             new_task
@@ -460,7 +458,7 @@ impl Inner {
         // Otherwise add it to the first waiting group (only reachable while suspended).
         else {
             let group = Arc::clone(state.task_group_list.front().unwrap());
-            let new_task = group.add_task(task, priority);
+            let new_task = group.do_add_task(task, priority);
             self.notify_task_scheduled(state, &new_task);
             new_task
         }
@@ -496,7 +494,7 @@ impl Inner {
         self.prepare_group(state, next_group);
     }
 
-    fn prepare_group(self: &Arc<Self>, state: &mut State, task_group: Arc<dyn GTaskGroup>) {
+    fn prepare_group(self: &Arc<Self>, state: &mut State, task_group: Arc<GTaskGroup>) {
         for task in task_group.get_tasks() {
             insert_by_priority(&mut state.priority_q, task);
         }
@@ -616,7 +614,7 @@ impl Inner {
     }
 
     fn process_cancelled_groups(self: &Arc<Self>, state: &mut State) {
-        let groups: Vec<Arc<dyn GTaskGroup>> = state.task_group_list.drain(..).collect();
+        let groups: Vec<Arc<GTaskGroup>> = state.task_group_list.drain(..).collect();
         for group in groups {
             for task in group.get_tasks() {
                 self.task_completed_locked(
@@ -696,7 +694,7 @@ impl Inner {
         });
     }
 
-    fn notify_task_group_scheduled(&self, state: &State, group: &Arc<dyn GTaskGroup>) {
+    fn notify_task_group_scheduled(&self, state: &State, group: &Arc<GTaskGroup>) {
         self.notify_listeners(state, "group scheduled", |l| {
             l.task_group_scheduled(group.as_ref())
         });
@@ -708,13 +706,13 @@ impl Inner {
         });
     }
 
-    fn notify_group_started(&self, state: &State, task_group: &Arc<dyn GTaskGroup>) {
+    fn notify_group_started(&self, state: &State, task_group: &Arc<GTaskGroup>) {
         self.notify_listeners(state, "group started", |l| {
             l.task_group_started(task_group.as_ref())
         });
     }
 
-    fn notify_group_completed(&self, state: &State, task_group: &Arc<dyn GTaskGroup>) {
+    fn notify_group_completed(&self, state: &State, task_group: &Arc<GTaskGroup>) {
         self.notify_listeners(state, "group completed", |l| {
             l.task_group_completed(task_group.as_ref())
         });
@@ -742,7 +740,59 @@ fn insert_by_priority(queue: &mut Vec<Arc<GScheduledTask>>, task: Arc<GScheduled
 mod tests {
     use super::*;
     use crate::util::task::TaskMonitor;
-    use std::sync::atomic::{AtomicI32, Ordering};
+    use std::sync::atomic::{AtomicI32, AtomicI64, Ordering};
+
+    /// A [`TaskMonitor`] that actually records `set_maximum`/`increment_progress` calls, unlike
+    /// [`crate::util::task::DummyMonitor`] which discards them.
+    #[derive(Default)]
+    struct RecordingMonitor {
+        maximum: AtomicI64,
+        progress: AtomicI64,
+    }
+
+    impl TaskMonitor for RecordingMonitor {
+        fn is_cancelled(&self) -> bool {
+            false
+        }
+        fn set_show_progress_value(&self, _show: bool) {}
+        fn set_message(&self, _message: &str) {}
+        fn get_message(&self) -> String {
+            String::new()
+        }
+        fn set_progress(&self, value: i64) {
+            self.progress.store(value, Ordering::SeqCst);
+        }
+        fn initialize(&self, max: i64) {
+            self.maximum.store(max, Ordering::SeqCst);
+        }
+        fn set_maximum(&self, max: i64) {
+            self.maximum.store(max, Ordering::SeqCst);
+        }
+        fn get_maximum(&self) -> i64 {
+            self.maximum.load(Ordering::SeqCst)
+        }
+        fn set_indeterminate(&self, _indeterminate: bool) {}
+        fn is_indeterminate(&self) -> bool {
+            false
+        }
+        fn check_cancelled(&self) -> Result<(), CancelledException> {
+            Ok(())
+        }
+        fn increment_progress(&self, amount: i64) {
+            self.progress.fetch_add(amount, Ordering::SeqCst);
+        }
+        fn get_progress(&self) -> i64 {
+            self.progress.load(Ordering::SeqCst)
+        }
+        fn cancel(&self) {}
+        fn add_cancelled_listener(&self, _listener: Box<dyn crate::util::task::CancelledListener>) {}
+        fn remove_cancelled_listener(&self, _listener: &dyn crate::util::task::CancelledListener) {}
+        fn set_cancel_enabled(&self, _enabled: bool) {}
+        fn is_cancel_enabled(&self) -> bool {
+            true
+        }
+        fn clear_cancelled(&self) {}
+    }
 
     /// Records the transactions the manager opens and closes on it.
     #[derive(Default)]
@@ -846,16 +896,16 @@ mod tests {
         fn task_completed(&self, task: &GScheduledTask, _result: &dyn GTaskResult) {
             self.record(format!("completed:{}", task.get_description()));
         }
-        fn task_group_scheduled(&self, group: &dyn GTaskGroup) {
+        fn task_group_scheduled(&self, group: &GTaskGroup) {
             self.record(format!("group scheduled:{}", group.get_description()));
         }
         fn task_scheduled(&self, scheduled_task: &GScheduledTask) {
             self.record(format!("scheduled:{}", scheduled_task.get_description()));
         }
-        fn task_group_started(&self, group: &dyn GTaskGroup) {
+        fn task_group_started(&self, group: &GTaskGroup) {
             self.record(format!("group started:{}", group.get_description()));
         }
-        fn task_group_completed(&self, group: &dyn GTaskGroup) {
+        fn task_group_completed(&self, group: &GTaskGroup) {
             self.record(format!("group completed:{}", group.get_description()));
         }
         fn suspended_state_changed(&self, suspended: bool) {
@@ -1041,18 +1091,22 @@ mod tests {
         let run_log = Arc::new(Mutex::new(Vec::new()));
 
         manager.set_suspended(true);
-        let group = GTaskGroupStub::new("bulk", true);
-        let handle: Arc<dyn GTaskGroup> = Arc::clone(&group) as Arc<dyn GTaskGroup>;
-        handle.add_task(RecordingTask::new("x", &run_log), 1);
-        handle.add_task(RecordingTask::new("y", &run_log), 1);
-        manager.schedule_task_group(Arc::clone(&handle));
+        let monitor: Arc<dyn TaskMonitor> = Arc::new(RecordingMonitor::default());
+        let group = GTaskGroup::with_monitor("bulk", true, Arc::clone(&monitor));
+        group.add_task(RecordingTask::new("x", &run_log), 1);
+        group.add_task(RecordingTask::new("y", &run_log), 1);
+        manager.schedule_task_group(Arc::clone(&group));
 
-        assert!(group.is_scheduled());
+        // Once scheduled, a group can no longer accept new tasks through the public API.
+        let late_add = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            group.add_task(RecordingTask::new("z", &run_log), 1)
+        }));
+        assert!(late_add.is_err(), "adding to a scheduled group should panic");
         assert_eq!(manager.get_scheduled_groups().len(), 1);
 
         manager.set_suspended(false);
         assert!(manager.wait_while_busy(5_000));
         assert_eq!(*run_log.lock().unwrap(), vec!["x", "y"]);
-        assert_eq!(group.completed_task_count(), 2);
+        assert_eq!(group.get_task_monitor().get_progress(), 2);
     }
 }
