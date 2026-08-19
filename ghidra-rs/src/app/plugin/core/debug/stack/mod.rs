@@ -5,3 +5,4 @@ pub mod stack_unwinder;
 pub mod sym;
 pub mod sym_pcode_executor_state;
 pub mod unwind_exception;
+pub mod unwound_frame;
