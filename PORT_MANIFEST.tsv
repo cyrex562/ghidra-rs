@@ -6563,7 +6563,7 @@ orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompilerCallback.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompilerMapFunction.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/DecompilerReducer.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
-orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/ParallelDecompiler.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel 
+orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/ParallelDecompiler.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler parallel
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/signature/BlockSignature.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler signature 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/signature/CopySignature.java	TODO	orig_src Ghidra Features Decompiler src main java ghidra app decompiler signature 
 orig_src/Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/signature/DebugSignature.java	DONE	orig_src Ghidra Features Decompiler src main java ghidra app decompiler signature 

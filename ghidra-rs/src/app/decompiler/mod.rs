@@ -9,6 +9,7 @@ pub mod decompiler_highlight_service;
 pub mod decompiler_highlighter;
 pub mod decompiler_location;
 pub mod decompiler_margin_service;
+pub mod parallel;
 pub mod pretty_printer;
 pub mod signature;
 

@@ -6,6 +6,8 @@
 use crate::app::decompiler::{
     ClangLine, ClangNode, ClangTokenBase, ClangTokenGroup, DecompiledFunction,
 };
+use crate::generic::concurrent::{ConcurrentQ, GThreadPool, QCallback};
+use crate::program::model::listing::Function;
 use crate::app::plugin::core::debug::service::modules::ChangeCollector;
 use crate::app::plugin::exceptionhandlers::gcc::RegionDescriptor;
 use crate::debug::seam_stubs::MappedAddressRange;
@@ -6096,5 +6098,45 @@ pub mod disassemble_command {
         let _ = (start, restricted_set, follow_flow);
         unimplemented!("disassemble_command::new placeholder not overridden")
     }
+}
+
+/// Placeholder for `ghidra.app.decompiler.parallel.ChunkingParallelDecompiler`, referenced by
+/// [`parallel_decompiler::create_chunking_parallel_decompiler`](crate::app::decompiler::parallel::create_chunking_parallel_decompiler)
+/// before the real class is ported. Java's version is a concrete class (not an interface), so
+/// this is a plain struct rather than a `dyn`-dispatched trait. It wraps the already-ported
+/// [`ConcurrentQ`] the same way `DecompilerConcurrentQ` -- itself unported -- does in Java, since
+/// `DecompilerConcurrentQ`'s only job is gluing a shared [`GThreadPool`] to a `ConcurrentQ`.
+pub struct ChunkingParallelDecompiler<R> {
+    queue: ConcurrentQ<Arc<dyn Function>, R>,
+}
+
+impl<R> ChunkingParallelDecompiler<R>
+where
+    R: Send + Sync + 'static,
+{
+    /// Port of `ChunkingParallelDecompiler(QCallback, TaskMonitor)`. The monitor is not stored:
+    /// `ConcurrentQ` (unlike Java's `ConcurrentQBuilder`) does not yet accept one.
+    pub fn new(callback: Box<dyn QCallback<Arc<dyn Function>, R>>, monitor: &dyn TaskMonitor) -> Self {
+        let _ = monitor;
+        let thread_pool =
+            GThreadPool::get_shared_thread_pool(crate::app::decompiler::parallel::THREAD_POOL_NAME);
+        Self {
+            queue: ConcurrentQ::new(callback, thread_pool, 0, true, false),
+        }
+    }
+
+    /// Port of `ChunkingParallelDecompiler.decompileFunctions(List<Function>)`.
+    pub fn decompile_functions(&self, functions: Vec<Arc<dyn Function>>) -> Vec<R> {
+        self.queue.add_all(functions);
+        self.queue
+            .wait_for_results()
+            .into_iter()
+            .filter_map(|r| r.result)
+            .collect()
+    }
+
+    /// Port of `ChunkingParallelDecompiler.dispose()`. No-op: `ConcurrentQ` has no disposable
+    /// resources to release yet.
+    pub fn dispose(&self) {}
 }
 
