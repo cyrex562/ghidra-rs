@@ -12849,7 +12849,7 @@ orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/protocol/ghidra
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GScheduledTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTask.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskGroup.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task 
-orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskListener.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task 
+orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskListener.java	DONE	orig_src Ghidra Framework Project src main java ghidra framework task 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskListenerAdapter.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskManager.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task 
 orig_src/Ghidra/Framework/Project/src/main/java/ghidra/framework/task/GTaskManagerFactory.java	TODO	orig_src Ghidra Framework Project src main java ghidra framework task 
