@@ -2723,3 +2723,25 @@ impl IsfUtilities {
     }
 }
 
+/// Placeholder for `ghidra.program.model.lang.InjectPayloadCallother`, referenced by
+/// [`InjectPayloadJava`](crate::app::util::pcode_inject::inject_payload_java::InjectPayloadJava)
+/// before the real class is ported. Java's version is a class (not an interface), so this is a
+/// plain struct rather than a `dyn`-dispatched trait. It's the parent class for
+/// `InjectPayloadJava`, so subclasses inherit its behavior.
+pub struct InjectPayloadCallother {
+    /// The source name for this inject payload (from Java constructor: `sourceName`)
+    pub source_name: String,
+}
+
+impl InjectPayloadCallother {
+    /// Creates a new InjectPayloadCallother with the given source name.
+    pub fn new(source_name: String) -> Self {
+        InjectPayloadCallother { source_name }
+    }
+
+    /// Returns the source name for this inject payload.
+    pub fn get_source_name(&self) -> &str {
+        &self.source_name
+    }
+}
+
