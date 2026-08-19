@@ -7,6 +7,7 @@ use crate::app::decompiler::{
     ClangLine, ClangNode, ClangTokenBase, ClangTokenGroup, DecompiledFunction,
 };
 use crate::app::plugin::core::debug::service::modules::ChangeCollector;
+use crate::app::plugin::exceptionhandlers::gcc::RegionDescriptor;
 use crate::debug::seam_stubs::MappedAddressRange;
 use crate::program::model::address::AddressSetView;
 use crate::trace::model::lifespan::Lifespan;
@@ -5615,37 +5616,20 @@ pub trait FrameDescriptionEntry: Send + Sync {
     fn get_augmentation_ex_data_address(&self) -> StdOption<crate::program::model::address::Address>;
 }
 
-/// Placeholder for `ghidra.app.plugin.exceptionhandlers.gcc.RegionDescriptor`, referenced by
-/// [`AbstractFrameSectionBase`](crate::app::plugin::exceptionhandlers::gcc::sections::abstract_frame_section::AbstractFrameSectionBase)'s
-/// port of `createAugmentationData` before the real class is ported. Models only the one method
-/// that caller needs.
-/// Grown with the four accessors
-/// [`GccExceptionAnalyzer`](crate::app::plugin::exceptionhandlers::gcc::GccExceptionAnalyzer)
-/// walks a region through. All four are defaulted -- to `None`, standing in for the `null` Java
-/// returns for a region whose LSDA tables were never built -- so the existing single-member
-/// implementors keep compiling.
-pub trait RegionDescriptor: Send + Sync {
-    fn get_frame_descriptor_entry(&self) -> std::sync::Arc<dyn FrameDescriptionEntry>;
+/// Placeholder for
+/// `ghidra.app.plugin.exceptionhandlers.gcc.structures.gccexcepttable.LSDATable`, referenced by
+/// [`RegionDescriptor`](crate::app::plugin::exceptionhandlers::gcc::RegionDescriptor) before the
+/// real class is ported. Models only the three accessors `RegionDescriptor.getCallSiteTable`/
+/// `getActionTable`/`getTypeTable` delegate to; `LSDATable.create` is not needed by that caller.
+pub trait LSDATable: Send + Sync {
+    /// `LSDATable.getCallSiteTable()`.
+    fn get_call_site_table(&self) -> StdOption<Arc<LSDACallSiteTable>>;
 
-    /// `RegionDescriptor.getRange()`, the instruction-pointer range this region protects.
-    fn get_range(&self) -> StdOption<AddressRange> {
-        None
-    }
+    /// `LSDATable.getActionTable()`.
+    fn get_action_table(&self) -> StdOption<Arc<LSDAActionTable>>;
 
-    /// `RegionDescriptor.getCallSiteTable()`.
-    fn get_call_site_table(&self) -> StdOption<Arc<LSDACallSiteTable>> {
-        None
-    }
-
-    /// `RegionDescriptor.getActionTable()`.
-    fn get_action_table(&self) -> StdOption<Arc<LSDAActionTable>> {
-        None
-    }
-
-    /// `RegionDescriptor.getTypeTable()`.
-    fn get_type_table(&self) -> StdOption<Arc<LSDATypeTable>> {
-        None
-    }
+    /// `LSDATable.getTypeTable()`.
+    fn get_type_table(&self) -> StdOption<Arc<LSDATypeTable>>;
 }
 
 /// Placeholder for `ghidra.app.cmd.data.CreateArrayCmd`, referenced by
@@ -6060,7 +6044,7 @@ impl EhFrameSection {
 
     /// Port of `EhFrameSection.analyze(int)`, the regions described by `.eh_frame`. Errors are
     /// collapsed into [`io::Error`], as in [`EhFrameHeaderSection::analyze`].
-    pub fn analyze(&self, fde_table_count: i32) -> io::Result<Vec<Arc<dyn RegionDescriptor>>> {
+    pub fn analyze(&self, fde_table_count: i32) -> io::Result<Vec<Arc<RegionDescriptor>>> {
         let _ = fde_table_count;
         Ok(Vec::new())
     }
@@ -6087,7 +6071,7 @@ impl DebugFrameSection {
 
     /// Port of `DebugFrameSection.analyze()`, the regions described by `.debug_frame`. Errors are
     /// collapsed into [`io::Error`], as in [`EhFrameHeaderSection::analyze`].
-    pub fn analyze(&self) -> io::Result<Vec<Arc<dyn RegionDescriptor>>> {
+    pub fn analyze(&self) -> io::Result<Vec<Arc<RegionDescriptor>>> {
         Ok(Vec::new())
     }
 }

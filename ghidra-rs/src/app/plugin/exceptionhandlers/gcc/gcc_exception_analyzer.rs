@@ -46,9 +46,10 @@
 use std::collections::HashSet;
 
 use crate::app::plugin::core::analysis::AutoAnalysisManagerListener;
+use crate::app::plugin::exceptionhandlers::gcc::RegionDescriptor;
 use crate::app::seam_stubs::{
     self, disassemble_command, AutoAnalysisManager, DebugFrameSection, EhFrameHeaderSection,
-    EhFrameSection, MessageLog, RegionDescriptor, SetCommentCmd,
+    EhFrameSection, MessageLog, SetCommentCmd,
 };
 use crate::app::services::{AnalysisPriority, Analyzer, AnalyzerType};
 use crate::framework::options::Options;
@@ -198,7 +199,7 @@ impl GccExceptionAnalyzer {
     }
 
     /// Port of `getCallSiteRecordCount(List<RegionDescriptor>)`.
-    fn get_call_site_record_count(regions: &[std::sync::Arc<dyn RegionDescriptor>]) -> usize {
+    fn get_call_site_record_count(regions: &[std::sync::Arc<RegionDescriptor>]) -> usize {
         regions
             .iter()
             .filter_map(|region| region.get_call_site_table())
@@ -212,7 +213,7 @@ impl GccExceptionAnalyzer {
         &self,
         program: &mut dyn Program,
         eh_protected: &mut AddressSet,
-        region: &dyn RegionDescriptor,
+        region: &RegionDescriptor,
         cs: &seam_stubs::LSDACallSiteRecord,
     ) {
         let call_site = cs.get_call_site().clone();
@@ -248,7 +249,7 @@ impl GccExceptionAnalyzer {
 
     /// Port of `getTypeInfos(RegionDescriptor, LSDACallSiteRecord)`.
     fn get_type_infos(
-        region: &dyn RegionDescriptor,
+        region: &RegionDescriptor,
         cs: &seam_stubs::LSDACallSiteRecord,
     ) -> Vec<TypeInfo> {
         let mut type_infos = Vec::new();
@@ -610,11 +611,12 @@ impl AutoAnalysisManagerListener<dyn AutoAnalysisManager> for GccExceptionAnalyz
 mod tests {
     use super::*;
     use crate::app::seam_stubs::{
-        FrameDescriptionEntry, LSDACallSiteRecord, LSDACallSiteTable, LSDATypeTable,
+        LSDAActionTable, LSDACallSiteRecord, LSDACallSiteTable, LSDATable, LSDATypeTable,
     };
     use crate::framework::model::DomainObject;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
     use crate::program::model::lang::CompilerSpecID;
+    use crate::program::model::mem::memory_block_stub::MemoryBlockStub;
     use crate::program::model::mem::{Memory, MemoryAccessException, MemoryBlock};
     use std::sync::Arc;
 
@@ -713,26 +715,47 @@ mod tests {
         MockProgram { compiler_spec_id, memory: Arc::new(FakeMemory { blocks }) }
     }
 
-    /// A region whose LSDA tables are populated, so `get_type_infos` has something to walk.
-    struct StubRegion {
-        range: Option<AddressRange>,
+    /// An [`LSDATable`] stub holding a fixed call-site/action/type table triple, so
+    /// [`region_with`] can build a [`RegionDescriptor`] whose tables `get_type_infos` has
+    /// something to walk.
+    struct StubLsdaTable {
         call_site_table: Option<Arc<LSDACallSiteTable>>,
+        action_table: Option<Arc<LSDAActionTable>>,
         type_table: Option<Arc<LSDATypeTable>>,
     }
 
-    impl RegionDescriptor for StubRegion {
-        fn get_frame_descriptor_entry(&self) -> Arc<dyn FrameDescriptionEntry> {
-            unimplemented!("not needed by these tests")
-        }
-        fn get_range(&self) -> Option<AddressRange> {
-            self.range.clone()
-        }
+    impl LSDATable for StubLsdaTable {
         fn get_call_site_table(&self) -> Option<Arc<LSDACallSiteTable>> {
             self.call_site_table.clone()
+        }
+        fn get_action_table(&self) -> Option<Arc<LSDAActionTable>> {
+            self.action_table.clone()
         }
         fn get_type_table(&self) -> Option<Arc<LSDATypeTable>> {
             self.type_table.clone()
         }
+    }
+
+    /// A region with the given IP range and LSDA call-site/type tables; the LSDA table is left
+    /// unset (so `get_call_site_table`/`get_type_table` answer `None`, as for a Java `null`
+    /// `LSDATable`) when both are absent.
+    fn region_with(
+        range: Option<AddressRange>,
+        call_site_table: Option<Arc<LSDACallSiteTable>>,
+        type_table: Option<Arc<LSDATypeTable>>,
+    ) -> RegionDescriptor {
+        let mut region = RegionDescriptor::new(Arc::new(MemoryBlockStub::no_address()));
+        if let Some(range) = range {
+            region.set_ip_range(range);
+        }
+        if call_site_table.is_some() || type_table.is_some() {
+            region.set_lsda_table(Arc::new(StubLsdaTable {
+                call_site_table,
+                action_table: None,
+                type_table,
+            }));
+        }
+        region
     }
 
     #[test]
@@ -829,19 +852,18 @@ mod tests {
         let call_site = AddressRange::new(ram_address(0x400100), ram_address(0x40011f));
         let record = || LSDACallSiteRecord::new(call_site.clone(), None, 0, 0);
 
-        let two_records: Arc<dyn RegionDescriptor> = Arc::new(StubRegion {
-            range: None,
-            call_site_table: Some(Arc::new(LSDACallSiteTable::new(vec![record(), record()]))),
-            type_table: None,
-        });
+        let two_records = Arc::new(region_with(
+            None,
+            Some(Arc::new(LSDACallSiteTable::new(vec![record(), record()]))),
+            None,
+        ));
         // Java's getCallSiteTable() can return null, which contributes nothing to the total.
-        let no_table: Arc<dyn RegionDescriptor> =
-            Arc::new(StubRegion { range: None, call_site_table: None, type_table: None });
-        let one_record: Arc<dyn RegionDescriptor> = Arc::new(StubRegion {
-            range: None,
-            call_site_table: Some(Arc::new(LSDACallSiteTable::new(vec![record()]))),
-            type_table: None,
-        });
+        let no_table = Arc::new(region_with(None, None, None));
+        let one_record = Arc::new(region_with(
+            None,
+            Some(Arc::new(LSDACallSiteTable::new(vec![record()]))),
+            None,
+        ));
 
         assert_eq!(
             GccExceptionAnalyzer::get_call_site_record_count(&[two_records, no_table, one_record]),
@@ -856,11 +878,11 @@ mod tests {
 
         // Java returns an empty list when either table is null; only the type table is present
         // here, so there are no action records to walk.
-        let region = StubRegion {
-            range: None,
-            call_site_table: None,
-            type_table: Some(Arc::new(LSDATypeTable::new(vec![ram_address(0x400300)]))),
-        };
+        let region = region_with(
+            None,
+            None,
+            Some(Arc::new(LSDATypeTable::new(vec![ram_address(0x400300)]))),
+        );
 
         assert!(GccExceptionAnalyzer::get_type_infos(&region, &cs).is_empty());
     }
