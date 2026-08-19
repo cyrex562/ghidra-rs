@@ -2,8 +2,7 @@
 //!
 //! Decodes a sequence of program bytes to Ghidra addressing types.
 
-use crate::app::plugin::exceptionhandlers::gcc::{DwarfEhDataApplicationMode, DwarfEhDataDecodeFormat};
-use crate::app::seam_stubs::DwarfDecodeContext;
+use crate::app::plugin::exceptionhandlers::gcc::{DwarfDecodeContext, DwarfEhDataApplicationMode, DwarfEhDataDecodeFormat};
 use crate::program::model::address::Address;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::listing::Program;
