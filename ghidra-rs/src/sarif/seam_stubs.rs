@@ -202,6 +202,24 @@ impl SarifCommentWriter {
     }
 }
 
+/// Placeholder for `sarif.export.equates.SarifEquateWriter`, referenced by
+/// [`EquatesSarifMgr::write_as_sarif`](crate::sarif::managers::EquatesSarifMgr::write_as_sarif).
+/// Java's version is a concrete class, not an interface, so this is a plain struct. Only the
+/// constructor is modeled, mirroring `new SarifEquateWriter(List<Equate> target, Writer
+/// baseWriter)`; the `genRoot`/`AbstractExtWriter` machinery that turns the equates into SARIF
+/// JSON is pending that class's own port.
+pub struct SarifEquateWriter {
+    pub equates: Vec<crate::program::model::symbol::SimpleEquate>,
+}
+
+impl SarifEquateWriter {
+    /// `new SarifEquateWriter(List<Equate> target, Writer baseWriter)`, minus the (always `null`,
+    /// here) base writer.
+    pub fn new(equates: Vec<crate::program::model::symbol::SimpleEquate>) -> Self {
+        Self { equates }
+    }
+}
+
 /// Placeholder for `sarif.export.code.SarifCodeWriter`, referenced by
 /// [`CodeSarifMgr::write_as_sarif`](crate::sarif::managers::CodeSarifMgr::write_as_sarif). Java's
 /// version is a concrete class, not an interface, so this is a plain struct. Only the constructor
