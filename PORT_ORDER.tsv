@@ -30,7 +30,7 @@ DONE	trait	4	3	1	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/except
 DONE	trait	3	3	10	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/sections/AbstractFrameSection.java
 DONE	trait	3	4	11	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/structures/gccexcepttable/LSDAActionRecord.java
 DONE	trait	2	8	64	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/GccExceptionAnalyzer.java
-TODO	trait	0	14	32	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/RegionDescriptor.java
+DONE	trait	0	14	32	app	Ghidra/Features/Base/src/main/java/ghidra/app/plugin/exceptionhandlers/gcc/RegionDescriptor.java
 TODO	trait	0	14	16	app	Ghidra/Features/Decompiler/src/main/java/ghidra/app/decompiler/parallel/ParallelDecompiler.java
 TODO	trait	0	14	2	app	Ghidra/Processors/JVM/src/main/java/ghidra/app/util/pcodeInject/InjectPayloadJava.java
 TODO	trait	5	2	0	pcode	Ghidra/Debug/ProposedUtils/src/main/java/ghidra/pcode/eval/VarnodeEvaluator.java
