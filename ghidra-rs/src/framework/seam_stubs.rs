@@ -546,6 +546,18 @@ pub trait PluginTool {
     /// type-erased.
     fn remove_component_provider(&self, _provider: Arc<dyn Any + Send + Sync>) {}
 
+    /// Registers a new component provider with the tool, optionally showing it immediately,
+    /// mirroring `PluginTool.addComponentProvider(ComponentProvider, boolean)`. Distinct from
+    /// [`show_component_provider`](Self::show_component_provider), which only toggles the
+    /// visibility of a provider already registered with the tool.
+    ///
+    /// Grown in for
+    /// [`RandomForestFunctionFinderPlugin`](crate::feature::machine_learning::function_finding::random_forest_function_finder_plugin::RandomForestFunctionFinderPlugin),
+    /// whose `addProvider` registers each program-associated results provider here. Type-erased
+    /// for the same reason [`show_component_provider`](Self::show_component_provider)'s provider
+    /// is.
+    fn add_component_provider(&self, _provider: Arc<dyn Any + Send + Sync>, _show: bool) {}
+
     /// The project this tool belongs to, mirroring `PluginTool.getProject()`. Returns `None` for
     /// Java's null (a tool that is not associated with a project).
     fn get_project(&self) -> Option<Box<dyn crate::framework::model::Project>> {
