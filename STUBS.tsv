@@ -1219,3 +1219,5 @@ ts	stub_class	referenced_by
 2026-08-19T01:45:00+00:00	Z3Context	SymValueZ3
 2026-08-19T01:45:00+00:00	Z3InfixPrinter	SymValueZ3
 2026-08-19T01:50:22.561047+00:00	SarifCommentWriter	CommentsSarifMgr
+2026-08-19T02:10:00+00:00	IsfUtilities	IsfDataTypeWriter
+2026-08-19T02:10:00+00:00	DataTypeUtilities	IsfDataTypeWriter

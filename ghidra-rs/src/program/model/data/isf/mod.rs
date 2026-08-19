@@ -15,6 +15,7 @@ pub mod isf_function_pointer;
 pub mod isf_typedef_integral;
 pub mod isf_dynamic_component;
 pub mod isf_component;
+pub mod isf_data_type_writer;
 
 pub use isf_object::IsfObject;
 pub use isf_data_type_null::IsfDataTypeNull;
@@ -33,3 +34,4 @@ pub use isf_function_pointer::IsfFunctionPointer;
 pub use isf_typedef_integral::IsfTypedefIntegral;
 pub use isf_dynamic_component::IsfDynamicComponent;
 pub use isf_component::IsfComponent;
+pub use isf_data_type_writer::IsfDataTypeWriter;
