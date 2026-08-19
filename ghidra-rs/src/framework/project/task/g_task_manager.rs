@@ -6,9 +6,9 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard, Weak};
 use std::time::{Duration, Instant};
 
 use crate::framework::model::{DomainObject, DomainObjectClosedListener};
-use crate::framework::project::task::{GTask, GTaskListener};
+use crate::framework::project::task::{GScheduledTask, GTask, GTaskListener};
 use crate::framework::seam_stubs::{
-    Exception, GScheduledTask, GTaskGroup, GTaskGroupStub, GTaskResult, GTaskResultStub,
+    Exception, GTaskGroup, GTaskGroupStub, GTaskResult, GTaskResultStub,
 };
 use crate::generic::concurrent::GThreadPool;
 use crate::util::exception::CancelledException;
@@ -71,15 +71,15 @@ struct State {
     /// `None` once the domain object has been closed.
     domain_object: Option<SharedDomainObject>,
     /// Java's `SortedSet<GScheduledTask>`: kept sorted by priority, ties in insertion order.
-    priority_q: Vec<Arc<dyn GScheduledTask>>,
+    priority_q: Vec<Arc<GScheduledTask>>,
     task_group_list: VecDeque<Arc<dyn GTaskGroup>>,
-    running_task: Option<Arc<dyn GScheduledTask>>,
+    running_task: Option<Arc<GScheduledTask>>,
     running_group: Option<Arc<dyn GTaskGroup>>,
     suspended: bool,
     current_group_transaction_id: Option<i32>,
     /// Java chains listeners through `MulticastTaskListener`; a list is the same thing.
     listeners: Vec<Arc<dyn GTaskListener>>,
-    delayed_task_stack: Vec<Arc<dyn GScheduledTask>>,
+    delayed_task_stack: Vec<Arc<GScheduledTask>>,
     results: VecDeque<Arc<dyn GTaskResult>>,
 }
 
@@ -135,7 +135,7 @@ impl GTaskManager {
         task: Arc<dyn GTask>,
         priority: i32,
         use_current_group: bool,
-    ) -> Arc<dyn GScheduledTask> {
+    ) -> Arc<GScheduledTask> {
         let inner = &self.inner;
         let mut state = inner.state.lock().unwrap();
         let new_task = inner.schedule_task_locked(&mut state, task, priority, use_current_group);
@@ -333,17 +333,17 @@ impl GTaskManager {
     }
 
     /// Returns the scheduled tasks of the currently running group, in the order they will run.
-    pub fn get_scheduled_tasks(&self) -> Vec<Arc<dyn GScheduledTask>> {
+    pub fn get_scheduled_tasks(&self) -> Vec<Arc<GScheduledTask>> {
         self.inner.state.lock().unwrap().priority_q.clone()
     }
 
     /// Returns the tasks that are currently waiting for higher priority tasks.
-    pub fn get_delayed_tasks(&self) -> Vec<Arc<dyn GScheduledTask>> {
+    pub fn get_delayed_tasks(&self) -> Vec<Arc<GScheduledTask>> {
         self.inner.state.lock().unwrap().delayed_task_stack.clone()
     }
 
     /// Returns the currently running task, or `None` if no task is running.
-    pub fn get_running_task(&self) -> Option<Arc<dyn GScheduledTask>> {
+    pub fn get_running_task(&self) -> Option<Arc<GScheduledTask>> {
         self.inner.state.lock().unwrap().running_task.clone()
     }
 
@@ -440,7 +440,7 @@ impl Inner {
         task: Arc<dyn GTask>,
         priority: i32,
         use_current_group: bool,
-    ) -> Arc<dyn GScheduledTask> {
+    ) -> Arc<GScheduledTask> {
         // If a group is running and this task can use it, add the task to that group.
         if use_current_group && state.running_group.is_some() {
             let group = state.running_group.clone().unwrap();
@@ -542,7 +542,7 @@ impl Inner {
     }
 
     /// The body of Java's inner `GTaskRunnable`.
-    fn run_task(self: &Arc<Self>, scheduled_task: Arc<dyn GScheduledTask>) {
+    fn run_task(self: &Arc<Self>, scheduled_task: Arc<GScheduledTask>) {
         scheduled_task.set_thread();
         {
             let state = self.state.lock().unwrap();
@@ -581,7 +581,7 @@ impl Inner {
 
     fn task_completed(
         self: &Arc<Self>,
-        task: &Arc<dyn GScheduledTask>,
+        task: &Arc<GScheduledTask>,
         exception: Option<Arc<dyn Exception>>,
         cancelled: bool,
     ) {
@@ -592,7 +592,7 @@ impl Inner {
     fn task_completed_locked(
         self: &Arc<Self>,
         state: &mut State,
-        task: &Arc<dyn GScheduledTask>,
+        task: &Arc<GScheduledTask>,
         exception: Option<Arc<dyn Exception>>,
         cancelled: bool,
     ) {
@@ -631,7 +631,7 @@ impl Inner {
     }
 
     fn process_cancelled_jobs_in_priority_q(self: &Arc<Self>, state: &mut State) {
-        let tasks: Vec<Arc<dyn GScheduledTask>> = state.priority_q.drain(..).collect();
+        let tasks: Vec<Arc<GScheduledTask>> = state.priority_q.drain(..).collect();
         for task in tasks {
             self.task_completed_locked(
                 state,
@@ -681,14 +681,14 @@ impl Inner {
         }
     }
 
-    fn notify_task_started(&self, state: &State, task: &Arc<dyn GScheduledTask>) {
+    fn notify_task_started(&self, state: &State, task: &Arc<GScheduledTask>) {
         self.notify_listeners(state, "task started", |l| l.task_started(task.as_ref()));
     }
 
     fn notify_task_completed(
         &self,
         state: &State,
-        task: &Arc<dyn GScheduledTask>,
+        task: &Arc<GScheduledTask>,
         result: &dyn GTaskResult,
     ) {
         self.notify_listeners(state, "task completed", |l| {
@@ -702,7 +702,7 @@ impl Inner {
         });
     }
 
-    fn notify_task_scheduled(&self, state: &State, scheduled_task: &Arc<dyn GScheduledTask>) {
+    fn notify_task_scheduled(&self, state: &State, scheduled_task: &Arc<GScheduledTask>) {
         self.notify_listeners(state, "task scheduled", |l| {
             l.task_scheduled(scheduled_task.as_ref())
         });
@@ -730,7 +730,7 @@ impl Inner {
 
 /// Inserts `task` into the priority ordered queue, after any task of equal priority, which is how
 /// Java's `TreeSet<GScheduledTask>` orders tasks scheduled with the same priority.
-fn insert_by_priority(queue: &mut Vec<Arc<dyn GScheduledTask>>, task: Arc<dyn GScheduledTask>) {
+fn insert_by_priority(queue: &mut Vec<Arc<GScheduledTask>>, task: Arc<GScheduledTask>) {
     let position = queue
         .iter()
         .position(|queued| queued.compare_to(task.as_ref()) > 0)
@@ -840,16 +840,16 @@ mod tests {
         fn initialize(&self) {
             self.record("initialize".to_string());
         }
-        fn task_started(&self, task: &dyn GScheduledTask) {
+        fn task_started(&self, task: &GScheduledTask) {
             self.record(format!("started:{}", task.get_description()));
         }
-        fn task_completed(&self, task: &dyn GScheduledTask, _result: &dyn GTaskResult) {
+        fn task_completed(&self, task: &GScheduledTask, _result: &dyn GTaskResult) {
             self.record(format!("completed:{}", task.get_description()));
         }
         fn task_group_scheduled(&self, group: &dyn GTaskGroup) {
             self.record(format!("group scheduled:{}", group.get_description()));
         }
-        fn task_scheduled(&self, scheduled_task: &dyn GScheduledTask) {
+        fn task_scheduled(&self, scheduled_task: &GScheduledTask) {
             self.record(format!("scheduled:{}", scheduled_task.get_description()));
         }
         fn task_group_started(&self, group: &dyn GTaskGroup) {

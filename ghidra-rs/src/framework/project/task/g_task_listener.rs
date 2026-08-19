@@ -1,4 +1,5 @@
-use crate::framework::seam_stubs::{GScheduledTask, GTaskGroup, GTaskResult};
+use crate::framework::project::task::GScheduledTask;
+use crate::framework::seam_stubs::{GTaskGroup, GTaskResult};
 use std::sync::{Arc, Mutex};
 
 /// Listener interface for tracking the state of a GTaskManager.
@@ -10,17 +11,17 @@ pub trait GTaskListener: Send + Sync {
     fn initialize(&self);
 
     /// Notification that a task is starting to run.
-    fn task_started(&self, task: &dyn GScheduledTask);
+    fn task_started(&self, task: &GScheduledTask);
 
     /// Notification that a task is no longer running regardless of whether it completed normally,
     /// was cancelled, or threw an unhandled exception.
-    fn task_completed(&self, task: &dyn GScheduledTask, result: &dyn GTaskResult);
+    fn task_completed(&self, task: &GScheduledTask, result: &dyn GTaskResult);
 
     /// Notification that a GTaskGroup has been scheduled.
     fn task_group_scheduled(&self, group: &dyn GTaskGroup);
 
     /// Notification that a new GTask has been scheduled to run.
-    fn task_scheduled(&self, scheduled_task: &dyn GScheduledTask);
+    fn task_scheduled(&self, scheduled_task: &GScheduledTask);
 
     /// Notification that a new GTaskGroup has started to run.
     fn task_group_started(&self, task_group: &dyn GTaskGroup);
@@ -45,10 +46,10 @@ mod tests {
             *self.initialize_called.lock().unwrap() = true;
         }
 
-        fn task_started(&self, _task: &dyn GScheduledTask) {}
-        fn task_completed(&self, _task: &dyn GScheduledTask, _result: &dyn GTaskResult) {}
+        fn task_started(&self, _task: &GScheduledTask) {}
+        fn task_completed(&self, _task: &GScheduledTask, _result: &dyn GTaskResult) {}
         fn task_group_scheduled(&self, _group: &dyn GTaskGroup) {}
-        fn task_scheduled(&self, _scheduled_task: &dyn GScheduledTask) {}
+        fn task_scheduled(&self, _scheduled_task: &GScheduledTask) {}
         fn task_group_started(&self, _task_group: &dyn GTaskGroup) {}
         fn task_group_completed(&self, _task_group: &dyn GTaskGroup) {}
         fn suspended_state_changed(&self, _suspended: bool) {}
