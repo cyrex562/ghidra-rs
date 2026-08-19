@@ -1218,3 +1218,4 @@ ts	stub_class	referenced_by
 2026-08-19T01:45:00+00:00	BoolExpr	SymValueZ3
 2026-08-19T01:45:00+00:00	Z3Context	SymValueZ3
 2026-08-19T01:45:00+00:00	Z3InfixPrinter	SymValueZ3
+2026-08-19T01:50:22.561047+00:00	SarifCommentWriter	CommentsSarifMgr
